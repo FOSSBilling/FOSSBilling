@@ -452,17 +452,10 @@ final class ServiceTest extends \BBTestCase
         $systemService->expects($this->atLeastOnce())
             ->method('getParamValue');
 
-        $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $currencyRepositoryMock->expects($this->atLeastOnce())
-            ->method('getRateByCode')
-            ->willReturn(1.0);
-
         $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
-            ->onlyMethods(['getCurrencyRepository'])->getMock();
-        $currencyServiceMock->expects($this->atLeastOnce())->method('getCurrencyRepository')
-            ->willReturn($currencyRepositoryMock);
+            ->onlyMethods(['getRate'])->getMock();
+        $currencyServiceMock->expects($this->atLeastOnce())->method('getRate')
+            ->willReturn(1.0);
 
         $eventManagerMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventManagerMock->expects($this->atLeastOnce())
@@ -561,19 +554,12 @@ final class ServiceTest extends \BBTestCase
             ->method('getCode')
             ->willReturn($defaultCurrencyCode);
 
-        $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $currencyRepositoryMock->expects($this->atLeastOnce())
-            ->method('findDefault')
-            ->willReturn($currencyModel);
-
         $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
-            ->onlyMethods(['getCurrencyRepository'])
+            ->onlyMethods(['getDefault'])
             ->getMock();
         $currencyServiceMock->expects($this->atLeastOnce())
-            ->method('getCurrencyRepository')
-            ->willReturn($currencyRepositoryMock);
+            ->method('getDefault')
+            ->willReturn($currencyModel);
 
         $itemInvoiceServiceMock = $this->createMock(ServiceInvoiceItem::class);
         $itemInvoiceServiceMock->expects($this->atLeastOnce())

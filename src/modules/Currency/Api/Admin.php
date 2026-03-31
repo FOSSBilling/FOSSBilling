@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Box\Mod\Currency\Api;
 
 use Box\Mod\Currency\Entity\Currency;
+use Box\Mod\Currency\Repository\CurrencyRepository;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \Api_Abstract
@@ -26,8 +27,9 @@ class Admin extends \Api_Abstract
      */
     public function get_list(array $data): array
     {
-        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
-        $repo = $this->getService()->getCurrencyRepository();
+        $em = $this->di['em'];
+        /** @var CurrencyRepository $repo */
+        $repo = $em->getRepository(Currency::class);
 
         $qb = $repo->getSearchQueryBuilder($data);
 
@@ -54,10 +56,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Currency code is missing'])]
     public function get($data): array
     {
-        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
-        $repo = $this->getService()->getCurrencyRepository();
+        $service = $this->getService();
 
-        $model = $repo->findOneByCode($data['code']);
+        $model = $service->getByCode($data['code']);
 
         if (!$model instanceof Currency) {
             throw new \FOSSBilling\Exception('Currency not found');
@@ -71,10 +72,9 @@ class Admin extends \Api_Abstract
      */
     public function get_default(array $data): array
     {
-        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
-        $repo = $this->getService()->getCurrencyRepository();
+        $service = $this->getService();
 
-        $default = $repo->findDefault();
+        $default = $service->getDefault();
 
         if (!$default instanceof Currency) {
             throw new \FOSSBilling\Exception('Default currency not found');
@@ -97,10 +97,7 @@ class Admin extends \Api_Abstract
     {
         $service = $this->getService();
 
-        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
-        $repo = $service->getCurrencyRepository();
-
-        if ($repo->findOneByCode($data['code'] ?? null)) {
+        if ($service->getByCode($data['code'] ?? null)) {
             throw new \FOSSBilling\Exception('Currency already registered');
         }
 
@@ -172,10 +169,7 @@ class Admin extends \Api_Abstract
     {
         $service = $this->getService();
 
-        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
-        $repo = $service->getCurrencyRepository();
-
-        $model = $repo->findOneByCode($data['code']);
+        $model = $service->getByCode($data['code']);
         if (!$model instanceof Currency) {
             throw new \FOSSBilling\Exception('Currency not found');
         }

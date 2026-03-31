@@ -185,9 +185,11 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getSearchQueryBuilder')
             ->willReturn($qbMock);
 
-        $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getCurrencyRepository')
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->atLeastOnce())
+            ->method('getRepository')
             ->willReturn($repositoryMock);
 
         $pager = $this->getMockBuilder('\\' . \FOSSBilling\Pagination::class)
@@ -200,6 +202,10 @@ final class Api_AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['pager'] = $pager;
+        $di['em'] = $emMock;
+
+        $serviceMock = new \Box\Mod\Currency\Service();
+        $serviceMock->setDi($di);
 
         $adminApi->setDi($di);
         $adminApi->setService($serviceMock);
@@ -242,18 +248,11 @@ final class Api_AdminTest extends \BBTestCase
                 'price_format' => '€{{price}}',
             ]);
 
-        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $repositoryMock->expects($this->atLeastOnce())
-            ->method('findOneByCode')
-            ->with('EUR')
-            ->willReturn($model);
-
         $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
-            ->method('getCurrencyRepository')
-            ->willReturn($repositoryMock);
+            ->method('getByCode')
+            ->with('EUR')
+            ->willReturn($model);
 
         $di = $this->getDi();
         $data = [
@@ -286,17 +285,10 @@ final class Api_AdminTest extends \BBTestCase
             ->method('toApiArray')
             ->willReturn($returnArr);
 
-        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $repositoryMock->expects($this->atLeastOnce())
-            ->method('findDefault')
-            ->willReturn($model);
-
         $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
-            ->method('getCurrencyRepository')
-            ->willReturn($repositoryMock);
+            ->method('getDefault')
+            ->willReturn($model);
 
         $adminApi->setService($service);
         $result = $adminApi->get_default([]);
@@ -321,12 +313,12 @@ final class Api_AdminTest extends \BBTestCase
                     'format' => '€{{price}}',
                 ],
                 'atLeastOnce',
-                'currency_exists', // use string flag instead of mock
+                'currency_exists',
                 'never',
             ],
             [
                 [
-                    'code' => 'NON', // Non existing currency
+                    'code' => 'NON',
                     'format' => '€{{price}}',
                 ],
                 'atLeastOnce',
@@ -337,29 +329,20 @@ final class Api_AdminTest extends \BBTestCase
     }
 
     #[DataProvider('CreateExceptionProvider')]
-    public function testCreateException(array $data, string $findOneByCodeCalled, ?string $findOneByCodeReturn, string $getAvailableCurrenciesCalled): void
+    public function testCreateException(array $data, string $getByCodeCalled, ?string $getByCodeReturn, string $getAvailableCurrenciesCalled): void
     {
         $adminApi = new \Box\Mod\Currency\Api\Admin();
 
-        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        // Create mock if needed
-        if ($findOneByCodeReturn === 'currency_exists') {
-            $findOneByCodeReturn = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+        if ($getByCodeReturn === 'currency_exists') {
+            $getByCodeReturn = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
                 ->disableOriginalConstructor()
                 ->getMock();
         }
 
-        $repositoryMock->expects($this->$findOneByCodeCalled())
-            ->method('findOneByCode')
-            ->willReturn($findOneByCodeReturn);
-
         $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
-        $service->expects($this->atLeastOnce())
-            ->method('getCurrencyRepository')
-            ->willReturn($repositoryMock);
+        $service->expects($this->$getByCodeCalled())
+            ->method('getByCode')
+            ->willReturn($getByCodeReturn);
 
         $service->expects($this->$getAvailableCurrenciesCalled())
             ->method('getAvailableCurrencies')
@@ -369,7 +352,7 @@ final class Api_AdminTest extends \BBTestCase
         $adminApi->setService($service);
         $adminApi->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
-        $adminApi->create($data); // Expecting \FOSSBilling\Exception every time
+        $adminApi->create($data);
     }
 
     public function testCreate(): void
@@ -381,17 +364,10 @@ final class Api_AdminTest extends \BBTestCase
             'format' => '€{{price}}',
         ];
 
-        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $repositoryMock->expects($this->atLeastOnce())
-            ->method('findOneByCode')
-            ->willReturn(null);
-
         $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
-            ->method('getCurrencyRepository')
-            ->willReturn($repositoryMock);
+            ->method('getByCode')
+            ->willReturn(null);
         $service->expects($this->atLeastOnce())
             ->method('getAvailableCurrencies')
             ->willReturn($this->availableCurrencies);
@@ -437,9 +413,6 @@ final class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \FOSSBilling\Exception
-     */
     public function testDeleteException(): void
     {
         $adminApi = new \Box\Mod\Currency\Api\Admin();
@@ -486,42 +459,25 @@ final class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public static function SetDefaultExceptionProvider(): array
-    {
-        return [
-            [
-                [
-                    'code' => 'EUR', // model is not instance of Currency
-                ],
-                'atLeastOnce',
-                null,
-            ],
-        ];
-    }
-
-    #[DataProvider('SetDefaultExceptionProvider')]
-    public function testSetDefaultException(array $data, string $getByCodeCalled, $getByCodeReturn): void
+    public function testSetDefaultException(): void
     {
         $adminApi = new \Box\Mod\Currency\Api\Admin();
 
-        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $repositoryMock->expects($this->atLeastOnce())
-            ->method('findOneByCode')
-            ->willReturn(null);
+        $data = [
+            'code' => 'EUR',
+        ];
 
         $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
-            ->method('getCurrencyRepository')
-            ->willReturn($repositoryMock);
+            ->method('getByCode')
+            ->willReturn(null);
 
         $di = $this->getDi();
         $adminApi->setDi($di);
 
         $adminApi->setService($service);
         $this->expectException(\FOSSBilling\Exception::class);
-        $adminApi->set_default($data); // Expecting \FOSSBilling\Exception every time
+        $adminApi->set_default($data);
     }
 
     public function testSetDefault(): void
@@ -537,17 +493,10 @@ final class Api_AdminTest extends \BBTestCase
             'format' => '€{{price}}',
         ];
 
-        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $repositoryMock->expects($this->atLeastOnce())
-            ->method('findOneByCode')
-            ->willReturn($model);
-
         $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)->getMock();
         $service->expects($this->atLeastOnce())
-            ->method('getCurrencyRepository')
-            ->willReturn($repositoryMock);
+            ->method('getByCode')
+            ->willReturn($model);
         $service->expects($this->atLeastOnce())
             ->method('setAsDefault')
             ->willReturn(true);

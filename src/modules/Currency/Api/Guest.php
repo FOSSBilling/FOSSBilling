@@ -21,10 +21,7 @@ class Guest extends \Api_Abstract
      */
     public function get_pairs(array $data): array
     {
-        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
-        $repo = $this->getService()->getCurrencyRepository();
-
-        return $repo->getPairs();
+        return $this->getService()->getPairs();
     }
 
     /**
@@ -32,13 +29,12 @@ class Guest extends \Api_Abstract
      */
     public function get(array $data): array
     {
-        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
-        $repo = $this->getService()->getCurrencyRepository();
+        $service = $this->getService();
 
         if (isset($data['code']) && !empty($data['code'])) {
-            $model = $repo->findOneByCode($data['code']);
+            $model = $service->getByCode($data['code']);
         } else {
-            $model = $repo->findDefault();
+            $model = $service->getDefault();
         }
 
         if (!$model instanceof Currency) {

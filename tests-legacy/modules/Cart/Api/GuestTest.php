@@ -64,17 +64,10 @@ final class GuestTest extends \BBTestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $currencyRepositoryMock->expects($this->atLeastOnce())
-            ->method('findOneByCode')
-            ->willReturn($currencyMock);
-
         $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
-            ->onlyMethods(['getCurrencyRepository'])->getMock();
-        $currencyServiceMock->expects($this->atLeastOnce())->method('getCurrencyRepository')
-            ->willReturn($currencyRepositoryMock);
+            ->onlyMethods(['getByCode'])->getMock();
+        $currencyServiceMock->expects($this->atLeastOnce())->method('getByCode')
+            ->willReturn($currencyMock);
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
@@ -103,17 +96,10 @@ final class GuestTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
-        $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $currencyRepositoryMock->expects($this->atLeastOnce())
-            ->method('findOneByCode')
-            ->willReturn(null);
-
         $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
-            ->onlyMethods(['getCurrencyRepository'])->getMock();
-        $currencyServiceMock->expects($this->atLeastOnce())->method('getCurrencyRepository')
-            ->willReturn($currencyRepositoryMock);
+            ->onlyMethods(['getByCode'])->getMock();
+        $currencyServiceMock->expects($this->atLeastOnce())->method('getByCode')
+            ->willReturn(null);
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
@@ -150,19 +136,12 @@ final class GuestTest extends \BBTestCase
             ->method('toApiArray')
             ->willReturn([]);
 
-        $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $currencyRepositoryMock->expects($this->atLeastOnce())
-            ->method('find')
-            ->willReturn($currencyMock);
-        $currencyRepositoryMock->expects($this->never())
-            ->method('findDefault');
-
         $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
-            ->onlyMethods(['getCurrencyRepository'])->getMock();
-        $currencyServiceMock->expects($this->atLeastOnce())->method('getCurrencyRepository')
-            ->willReturn($currencyRepositoryMock);
+            ->onlyMethods(['getById', 'getDefault'])->getMock();
+        $currencyServiceMock->expects($this->atLeastOnce())->method('getById')
+            ->willReturn($currencyMock);
+        $currencyServiceMock->expects($this->never())
+            ->method('getDefault');
 
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $currencyServiceMock);
@@ -196,20 +175,13 @@ final class GuestTest extends \BBTestCase
             ->method('toApiArray')
             ->willReturn([]);
 
-        $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $currencyRepositoryMock->expects($this->atLeastOnce())
-            ->method('find')
-            ->willReturn(null);
-        $currencyRepositoryMock->expects($this->atLeastOnce())
-            ->method('findDefault')
-            ->willReturn($currencyMock);
-
         $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
-            ->onlyMethods(['getCurrencyRepository'])->getMock();
-        $currencyServiceMock->expects($this->atLeastOnce())->method('getCurrencyRepository')
-            ->willReturn($currencyRepositoryMock);
+            ->onlyMethods(['getById', 'getDefault'])->getMock();
+        $currencyServiceMock->expects($this->atLeastOnce())->method('getById')
+            ->willReturn(null);
+        $currencyServiceMock->expects($this->atLeastOnce())
+            ->method('getDefault')
+            ->willReturn($currencyMock);
 
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $currencyServiceMock);

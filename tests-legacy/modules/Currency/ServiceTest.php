@@ -255,8 +255,7 @@ final class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Currency\Service();
         $service->setDi($di);
 
-        // Access repository directly since getBaseCurrencyRate uses it internally
-        $result = $service->getCurrencyRepository()->getRateByCode($code);
+        $result = $service->getRate($code);
         $this->assertEquals($expected, $result);
     }
 
@@ -401,7 +400,7 @@ final class ServiceTest extends \BBTestCase
 
         $service = new \Box\Mod\Currency\Service();
         $service->setDi($di);
-        $result = $service->getCurrencyRepository()->getPairs();
+        $result = $service->getPairs();
 
         $this->assertEquals($result, $pairs);
     }

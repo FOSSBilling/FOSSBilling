@@ -43,36 +43,6 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    /**
-     * @internal For internal use only. Use the service layer methods for cross-module access.
-     */
-    public function getExtensionRepository(): ExtensionRepository
-    {
-        if ($this->extensionRepository === null) {
-            if ($this->di === null) {
-                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
-            }
-            $this->extensionRepository = $this->di['em']->getRepository(Extension::class);
-        }
-
-        return $this->extensionRepository;
-    }
-
-    /**
-     * @internal For internal use only. Use getMeta(), setMeta(), deleteMeta(), findMeta() for cross-module access.
-     */
-    public function getExtensionMetaRepository(): ExtensionMetaRepository
-    {
-        if ($this->extensionMetaRepository === null) {
-            if ($this->di === null) {
-                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
-            }
-            $this->extensionMetaRepository = $this->di['em']->getRepository(ExtensionMeta::class);
-        }
-
-        return $this->extensionMetaRepository;
-    }
-
     public function getModulePermissions(): array
     {
         return [
@@ -915,5 +885,29 @@ class Service implements InjectionAwareInterface
     public function createMetaQueryBuilder(string $extension, string $alias = 'em'): \Doctrine\ORM\QueryBuilder
     {
         return $this->getExtensionMetaRepository()->createQueryBuilderForExtension($extension, $alias);
+    }
+
+    private function getExtensionRepository(): ExtensionRepository
+    {
+        if ($this->extensionRepository === null) {
+            if ($this->di === null) {
+                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
+            }
+            $this->extensionRepository = $this->di['em']->getRepository(Extension::class);
+        }
+
+        return $this->extensionRepository;
+    }
+
+    private function getExtensionMetaRepository(): ExtensionMetaRepository
+    {
+        if ($this->extensionMetaRepository === null) {
+            if ($this->di === null) {
+                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
+            }
+            $this->extensionMetaRepository = $this->di['em']->getRepository(ExtensionMeta::class);
+        }
+
+        return $this->extensionMetaRepository;
     }
 }
