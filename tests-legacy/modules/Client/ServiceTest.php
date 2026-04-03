@@ -193,7 +193,7 @@ final class ServiceTest extends \BBTestCase
             [[], 'SELECT c.*', []],
             [
                 ['id' => 1],
-                'c.id = :client_id or c.aid = :alt_client_id',
+                '(c.id = :client_id OR c.aid = :alt_client_id)',
                 [':client_id' => '', ':alt_client_id' => ''],
             ],
             [

@@ -2,7 +2,7 @@
 
 {% import 'macro_functions.html.twig' as mf %}
 
-{% block meta_title %}{{ 'Invoice settings'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Invoice Settings'|trans }}{% endblock %}
 
 {% set active_menu = 'system' %}
 
@@ -18,14 +18,14 @@
         <li class="breadcrumb-item">
             <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
-        <li class="breadcrumb-item active" aria-current="page">{{ 'Invoice settings'|trans }}</li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Invoice Settings'|trans }}</li>
     </ol>
 {% endblock %}
 
 {% block content %}
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">{{ 'Invoice settings'|trans }}</h3>
+            <h3 class="card-title">{{ 'Invoice Settings'|trans }}</h3>
         </div>
         <form method="post" action="{{ 'system/update_params'|api_url }}" {{ fb_api_form({message: 'Settings Updated'|trans}) }}>
             <div class="card-body">
@@ -98,7 +98,7 @@
                 </div>
             </div>
             <div class="card-body">
-                <h3 class="card-title">{{ 'Document settings'|trans }}</h3>
+                <h3 class="card-title">{{ 'Document Settings'|trans }}</h3>
                 <div class="mb-3 row">
                     <label class="col-md-3 col-form-label">{{ 'Document format'|trans }}</label>
                     <div class="col-md-6">
@@ -128,7 +128,7 @@
                 </div>
             </div>
             <div class="card-body">
-                <h3 class="card-title">{{ 'Refunds settings'|trans }}</h3>
+                <h3 class="card-title">{{ 'Refunds Settings'|trans }}</h3>
                 <div class="mb-3 row">
                     <label class="col-md-3 col-form-label">{{ 'Refunds logic'|trans }}</label>
                     <div class="col-md-6">
@@ -148,7 +148,7 @@
                 </div>
             </div>
             <div class="card-body">
-                <h3 class="card-title">{{ 'Add funds settings'|trans }}</h3>
+                <h3 class="card-title">{{ 'Add Funds Settings'|trans }}</h3>
                 <div class="mb-3 row">
                     <label class="col-md-3 col-form-label">{{ 'Minimum amount for add funds invoice'|trans }}</label>
                     <div class="col-md-6">

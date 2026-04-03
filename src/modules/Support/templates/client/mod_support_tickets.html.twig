@@ -2,11 +2,11 @@
 
 {% import "macro_functions.html.twig" as mf %}
 
-{% block meta_title %}{{ 'Support tickets'|trans }}{% endblock %}
-{% block page_header %}{{ 'Support tickets'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Support Tickets'|trans }}{% endblock %}
+{% block page_header %}{{ 'Support Tickets'|trans }}{% endblock %}
 
 {% block body_class %}support-tickets{% endblock %}
-{% block breadcrumb %}<li class="breadcrumb-item active" aria-current="page">{{ 'Support tickets'|trans }}</li>{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active" aria-current="page">{{ 'Support Tickets'|trans }}</li>{% endblock %}
 
 {% block head %}
     {{ mf.wysiwyg('.editor-textarea') }}
@@ -19,11 +19,11 @@
             <div class="card-header py-3 py-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h1 class="mb-1">{{ 'Support tickets'|trans }}</h1>
+                        <h1 class="mb-1">{{ 'Support Tickets'|trans }}</h1>
                         <span class="mt-1 small text-secondary">{{ 'Need an answer? We are here to help!'|trans }}</span>
                     </div>
                     <div>
-                        <button type="button" class="ml-2 btn btn-primary" data-bs-toggle="modal" data-bs-target="#open-ticket-modal">{{ 'New ticket'|trans }}</button>
+                        <button type="button" class="ml-2 btn btn-primary" data-bs-toggle="modal" data-bs-target="#open-ticket-modal">{{ 'New Ticket'|trans }}</button>
                     </div>
                 </div>
             </div>
@@ -35,7 +35,7 @@
                     <tr>
                         <th>{{ 'Id'|trans }}</th>
                         <th>{{ 'Subject'|trans }}</th>
-                        <th>{{ 'Help desk'|trans }}</th>
+                        <th>{{ 'Help Desk'|trans }}</th>
                         <th>{{ 'Status'|trans }}</th>
                         <th>{{ 'Submitted'|trans }}</th>
                         <th>{{ 'Actions'|trans }}</th>
@@ -65,7 +65,7 @@
                 {{ include('partial_pagination.html.twig', { 'list': tickets }) }}
                 {% else %}
                     <div class="d-flex justify-content-center my-2 py-4">
-                        <span class="blockquote m-0">{{ 'No support tickets'|trans }}</span>
+                        <span class="blockquote m-0">{{ 'No Support Tickets'|trans }}</span>
                     </div>
                 {% endif %}
             </div>
@@ -78,7 +78,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h6 class="modal-title">{{ 'Open new ticket'|trans }}</h6>
+                <h6 class="modal-title">{{ 'Open New Ticket'|trans }}</h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
             </div>
             <form action="" method="post" id="ticket-submit" class="form" style="background: none">

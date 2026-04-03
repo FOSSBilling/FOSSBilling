@@ -2,21 +2,21 @@
 
 {% import 'macro_functions.html.twig' as mf %}
 
-{% block meta_title %}Domain management{% endblock %}
+{% block meta_title %}Domain Management{% endblock %}
 
 {% set active_menu = 'system' %}
 
 {% block content %}
     <ul class="nav nav-tabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <a class="nav-link active" href="#tab-tlds" data-bs-toggle="tab">{{ 'Top level domains'|trans }}</a>
+            <a class="nav-link active" href="#tab-tlds" data-bs-toggle="tab">{{ 'Top Level Domains'|trans }}</a>
         </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-new-tld" data-bs-toggle="tab">
                 <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
-                {{ 'New top level domain'|trans }}
+                {{ 'New Top Level Domain'|trans }}
             </a>
         </li>
         <li class="nav-item" role="presentation">
@@ -27,7 +27,7 @@
                 <svg class="icon me-2">
                     <use xlink:href="#plus" />
                 </svg>
-                {{ 'New domain registrar'|trans }}
+                {{ 'New Domain Registrar'|trans }}
             </a>
         </li>
         <li class="nav-item" role="presentation">
@@ -102,7 +102,7 @@
 
         <div class="tab-pane fade" id="tab-new-tld" role="tabpanel">
             <div class="card-body">
-                <h5>{{ 'Add new top level domain'|trans }}</h5>
+                <h5>{{ 'Add New Top Level Domain'|trans }}</h5>
                 <p class="text-muted">{{ 'Setup new TLD prices and properties'|trans }}</p>
 
                 <form method="post" action="{{ 'servicedomain/tld_create'|api_url }}" {{ fb_api_form({reload: true}) }}>
@@ -193,8 +193,8 @@
 
         <div class="tab-pane fade" id="tab-registrars" role="tabpanel">
             <div class="card-body">
-                <h5>{{ 'Domain registrars'|trans }}</h5>
-                <p class="text-muted">{{ 'Manage domain registrars'|trans }}</p>
+                <h5>{{ 'Domain Registrars'|trans }}</h5>
+                <p class="text-muted">{{ 'Manage Domain Registrars'|trans }}</p>
             </div>
 
             <table class="table card-table table-vcenter table-striped text-nowrap">
@@ -236,7 +236,7 @@
 
         <div class="tab-pane fade" id="tab-new-registrar" role="tabpanel">
             <div class="card-body">
-                <h1>{{ 'Adding new domain registrar'|trans }}</h1>
+                <h1>{{ 'Adding New Domain Registrar'|trans }}</h1>
                 <p>{{ 'Follow instructions below to install new domain registrar.'|trans }}</p>
 
                 <div class="">

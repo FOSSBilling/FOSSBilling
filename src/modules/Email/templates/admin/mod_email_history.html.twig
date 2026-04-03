@@ -2,7 +2,7 @@
 
 {% import 'macro_functions.html.twig' as mf %}
 
-{% block meta_title %}{{ 'Email history'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Email History'|trans }}{% endblock %}
 
 {% set active_menu = 'activity' %}
 
@@ -10,14 +10,14 @@
     {% set config = admin.extension_config_get({ 'ext': 'mod_email' }) %}
     {% if config.log_enabled is not defined or config.log_enabled != 1 %}
         <div class="alert alert-primary alert-dismissible fade show mb-3" role="alert">
-            <strong>{{ 'Information'|trans }}:</strong> {{ 'Email logging is not enabled. If you want to log sent mails to database, enable it in'|trans }}<a href="{{ 'extension/settings/email'|url }}">{{ 'email settings.'|trans }}</a>
+            <strong>{{ 'Information'|trans }}:</strong> {{ 'Email logging is not enabled. If you want to log sent mails to database, enable it in'|trans }}<a href="{{ 'extension/settings/email'|url }}">{{ 'Email Settings.'|trans }}</a>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ 'Close'|trans }}"></button>
         </div>
     {% endif %}
 
 <div class="card">
     <div class="card-body">
-        <h3>{{ 'Email history'|trans }}</h3>
+        <h3>{{ 'Email History'|trans }}</h3>
     </div>
 
     {{ include('partial_search.html.twig') }}

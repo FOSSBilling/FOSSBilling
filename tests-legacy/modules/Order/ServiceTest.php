@@ -1280,6 +1280,25 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals([], array_diff_key($result[1], $expectedParams));
     }
 
+    public function testGetSearchQueryKeepsClientScopeWhenActionRequiredFilterIsUsed(): void
+    {
+        $di = $this->getDi();
+
+        $this->service->setDi($di);
+
+        [$query, $bindings] = $this->service->getSearchQuery([
+            'client_id' => 42,
+            'show_action_required' => true,
+        ]);
+
+        $this->assertStringContainsString('co.client_id = :client_id', $query);
+        $this->assertStringContainsString(
+            '(co.status = \'pending_setup\' OR co.status = \'failed_setup\' OR co.status =\'failed_renew\')',
+            $query
+        );
+        $this->assertSame(42, $bindings[':client_id']);
+    }
+
     public function testCreateOrderMissingOrderCurrency(): void
     {
         $modelClient = new \Model_Client();

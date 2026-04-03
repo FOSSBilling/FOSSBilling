@@ -1,6 +1,6 @@
 {% extends 'layout_default.html.twig' %}
 
-{% block meta_title %}{{ 'Manage translations'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Manage Translations'|trans }}{% endblock %}
 
 {% set active_menu = 'extensions' %}
 
@@ -8,7 +8,7 @@
     <div class="card-tabs">
         <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Manage translations'|trans }}</a>
+                <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Manage Translations'|trans }}</a>
             </li>
             <li class="nav-item" role="presentation">
                 <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
@@ -23,7 +23,7 @@
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
                     <div class="container">
-                        <h2 class="mb-1 mt-1">{{ 'Enabled translations'|trans}}</h2>
+                        <h2 class="mb-1 mt-1">{{ 'Enabled Translations'|trans}}</h2>
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
                             <tr>
@@ -78,7 +78,7 @@
                     <hr/>
 
                     <div class="container">
-                        <h2 class="mb-1 mt-1">{{ 'Disabled translations'|trans}}</h2>
+                        <h2 class="mb-1 mt-1">{{ 'Disabled Translations'|trans}}</h2>
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
                             <tr>
@@ -136,7 +136,7 @@
                 <div class="tab-pane fade" id="tab-new" role="tabpanel">
                     {{ include('partial_extensions.html.twig', { 'type': 'translation', 'header': 'List of translations on the Extension Directory'|trans }, with_context = false) }}
                     <div class="card-body">
-                        <h3 class="card-title">{{ 'FOSSBilling in your language'|trans }}</h3>
+                        <h3 class="card-title">{{ 'FOSSBilling in Your Language'|trans }}</h3>
                         <p class="card-subtitle">{{ 'Although FOSSBilling displays in U.S. English by default, it has the capability to be used in any language. Follow the instructions below to install new language.'|trans }}</p>
                         <div>
                             <ul>

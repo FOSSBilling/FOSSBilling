@@ -16,16 +16,16 @@
         <li class="breadcrumb-item">
             <a href="{{ 'order'|url }}">{{ 'Orders'|trans }}</a>
         </li>
-        <li class="breadcrumb-item active" aria-current="page">{{ 'Create new order'|trans }}</li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Create New Order'|trans }}</li>
     </ol>
 {% endblock %}
 
-{% block meta_title %}{{ 'Create new order'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Create New Order'|trans }}{% endblock %}
 
 {% block content %}
 <div class="card">
     <div class="card-body">
-        <h3>{{ 'Create new order'|trans }}</h3>
+        <h3>{{ 'Create New Order'|trans }}</h3>
         <p class="text-muted">{{ product.title }} {{ 'for'|trans }} {{ client.first_name }} {{ client.last_name }}</h2>
 
         <form method="post" action="{{ 'order/create'|api_url }}" {{ fb_api_form({callback: 'onAfterOrderPlaced'}) }}>

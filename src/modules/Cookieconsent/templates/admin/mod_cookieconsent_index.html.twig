@@ -2,14 +2,14 @@
 
 {% import "macro_functions.html.twig" as mf %}
 
-{% block meta_title %}{{ 'Cookie consent settings'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Cookie Consent Settings'|trans }}{% endblock %}
 
 {% set active_menu = 'extensions' %}
 
 {% block content %}
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">{{ 'Edit cookie consent message text'|trans }}</h3>
+            <h3 class="card-title">{{ 'Edit Cookie Consent Message Text'|trans }}</h3>
         </div>
         <form method="post" action="{{ 'extension/config_save'|api_url }}" {{ fb_api_form({message: 'Configuration Updated'|trans}) }}>
             <div class="card-body">

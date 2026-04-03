@@ -692,6 +692,49 @@ class UpdatePatcher implements InjectionAwareInterface
                     $this->filesystem->remove($oldDir);
                 }
             },
+            52 => function (): void {
+                $schemaManager = $this->di['dbal']->createSchemaManager();
+                $columns = array_map(static fn ($column) => $column->getName(), $schemaManager->listTableColumns('email_template'));
+
+                if (!in_array('is_custom', $columns, true)) {
+                    $this->executeSql("ALTER TABLE `email_template` ADD COLUMN `is_custom` TINYINT(1) DEFAULT '0' AFTER `enabled`;");
+                }
+
+                if (!in_array('is_overridden', $columns, true)) {
+                    $this->executeSql("ALTER TABLE `email_template` ADD COLUMN `is_overridden` TINYINT(1) DEFAULT '0' COMMENT 'Whether subject/content have been customized from file defaults' AFTER `is_custom`;");
+                }
+
+                $templates = $this->di['dbal']->executeQuery('SELECT id, action_code, subject, content FROM email_template')->fetchAllAssociative();
+                foreach ($templates as $template) {
+                    $default = $this->getDefaultEmailTemplateData((string) ($template['action_code'] ?? ''));
+                    if ($default === null) {
+                        $this->di['dbal']->executeStatement('UPDATE email_template SET is_custom = :is_custom WHERE id = :id', [
+                            'is_custom' => 1,
+                            'id' => $template['id'],
+                        ]);
+
+                        continue;
+                    }
+
+                    $subject = (string) ($template['subject'] ?? '');
+                    $content = (string) ($template['content'] ?? '');
+
+                    $isOverridden = (trim($subject) !== trim((string) $default['subject'])) || (trim($content) !== trim((string) $default['content']));
+
+                    if (!$isOverridden) {
+                        $subject = $default['subject'];
+                        $content = $default['content'];
+                    }
+
+                    $this->di['dbal']->executeStatement('UPDATE email_template SET is_custom = :is_custom, is_overridden = :is_overridden, subject = :subject, content = :content WHERE id = :id', [
+                        'is_custom' => 0,
+                        'is_overridden' => $isOverridden ? 1 : 0,
+                        'subject' => $subject,
+                        'content' => $content,
+                        'id' => $template['id'],
+                    ]);
+                }
+            },
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -712,5 +755,44 @@ class UpdatePatcher implements InjectionAwareInterface
         $loader->addNamespace('', PATH_VENDOR);
         $loader->checkClassMap();
         $loader->register(true);
+    }
+
+    private function getDefaultEmailTemplateData(string $code): ?array
+    {
+        $path = $this->getDefaultEmailTemplatePath($code);
+        if ($path === null) {
+            return null;
+        }
+
+        $template = $this->filesystem->readFile($path);
+
+        $subject = ucwords(str_replace('_', ' ', $code));
+        preg_match('#{%.?block subject.?%}((.*?)+){%.?endblock.?%}#', $template, $subjectMatches);
+        if (isset($subjectMatches[1])) {
+            $subject = $subjectMatches[1];
+        }
+
+        $content = '';
+        preg_match('/{%.?block content.?%}((.*?\n)+){%.?endblock.?%}/m', $template, $contentMatches);
+        if (isset($contentMatches[1])) {
+            $content = $contentMatches[1];
+        }
+
+        return [
+            'subject' => $subject,
+            'content' => $content,
+        ];
+    }
+
+    private function getDefaultEmailTemplatePath(string $code): ?string
+    {
+        $matches = [];
+        if (!preg_match('/mod_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)/i', $code, $matches)) {
+            return null;
+        }
+
+        $path = Path::join(PATH_MODS, ucfirst($matches[1]), 'templates/email', "{$code}.html.twig");
+
+        return $this->filesystem->exists($path) ? $path : null;
     }
 }

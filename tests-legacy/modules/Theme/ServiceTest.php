@@ -28,6 +28,7 @@ final class ServiceTest extends \BBTestCase
     {
         $result = $this->service->getTheme('huraga');
         $this->assertInstanceOf('\\' . Model\Theme::class, $result);
+        $this->assertSame('huraga', $result->getName());
     }
 
     public function testGetCurrentThemePreset(): void

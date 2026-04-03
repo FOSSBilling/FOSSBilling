@@ -1,6 +1,6 @@
 {% extends 'layout_default.html.twig' %}
 
-{% block meta_title %}{{ 'Hosting management'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Hosting Management'|trans }}{% endblock %}
 
 {% set active_menu = 'system' %}
 
@@ -23,7 +23,7 @@
 {% block content %}
 <div class="card">
     <div class="card-body">
-        <h3>{{ 'Server management'|trans }}</h3>
+        <h3>{{ 'Server Management'|trans }}</h3>
 
         <form method="post" action="{{ 'servicehosting/server_update'|api_url }}" id="server-update" {{ fb_api_form({message: 'Server Updated'|trans}) }}>
             <div class="mb-3 row">

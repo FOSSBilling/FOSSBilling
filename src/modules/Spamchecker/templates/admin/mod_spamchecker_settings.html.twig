@@ -2,7 +2,7 @@
 
 {% import "macro_functions.html.twig" as mf %}
 
-{% block meta_title %}{{ 'SpamChecker settings'|trans }}{% endblock %}
+{% block meta_title %}{{ 'SpamChecker Settings'|trans }}{% endblock %}
 
 {% set active_menu = 'system' %}
 
@@ -18,14 +18,14 @@
         <li class="breadcrumb-item">
             <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
-        <li class="breadcrumb-item active" aria-current="page">{{ 'SpamChecker settings'|trans }}</li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'SpamChecker Settings'|trans }}</li>
     </ul>
 {% endblock %}
 
 {% block content %}
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">{{ 'SpamChecker settings'|trans }}</h3>
+            <h3 class="card-title">{{ 'SpamChecker Settings'|trans }}</h3>
         </div>
 
         {% set params = admin.extension_config_get({ "ext": "mod_spamchecker" }) %}
@@ -125,7 +125,7 @@
             </div>
 
             <div class="card-body">
-                <h3 class="card-title">{{ 'Stop Forum Spam settings'|trans }}</h3>
+                <h3 class="card-title">{{ 'Stop Forum Spam Settings'|trans }}</h3>
                 <p class="card-subtitle">{{ 'If enabled, client IP will be checked on the <a href="https://stopforumspam.com/" target="_blank">Stop Forum Spam</a> database before registration'|trans|raw }}</p>
                 <div class="mb-3 row">
                     <label class="col-md-3 col-form-label" for="sfs">{{ 'Enable Stop Forum Spam'|trans }}</label>
@@ -139,7 +139,7 @@
             </div>
 
             <div class="card-body">
-                <h3 class="card-title">{{ 'Temporary / disposable email protection'|trans }}</h3>
+                <h3 class="card-title">{{ 'Temporary / Disposable Email Protection'|trans }}</h3>
                 <p class="card-subtitle">{{ 'If enabled, email addresses will be checked against a database of disposable email domains.'|trans }}</p>
                 <p class="card-subtitle">{{ 'This database is updated daily and provided free of charge by the FakeFilter project under the BSD 3-Clause License.'|trans }}</p>
                 <div class="mb-3 row">

@@ -25,7 +25,7 @@ final class ServiceTransactionTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testProcessReceivedATransactions(): void
+    public function testProcessReceivedTransactions(): void
     {
         $transactionModel = new \Model_Transaction();
         $transactionModel->loadBean(new \DummyBean());
@@ -274,7 +274,7 @@ final class ServiceTransactionTest extends \BBTestCase
                 [], [], 'SELECT m.*',
             ],
             [
-                ['search' => 'keyword'], ['note' => '%keyword%', 'search_invoice_id' => '%keyword%', 'search_txn_id' => '%keyword%', 'ipn' => '%keyword%'], 'AND m.note LIKE :note OR m.invoice_id LIKE :search_invoice_id OR m.txn_id LIKE :search_txn_id OR m.ipn LIKE :ipn',
+                ['search' => 'keyword'], ['note' => '%keyword%', 'search_invoice_id' => '%keyword%', 'search_txn_id' => '%keyword%', 'ipn' => '%keyword%'], 'AND (m.note LIKE :note OR m.invoice_id LIKE :search_invoice_id OR m.txn_id LIKE :search_txn_id OR m.ipn LIKE :ipn)',
             ],
             [
                 ['invoice_hash' => 'hashString'], ['hash' => 'hashString'], 'AND i.hash = :hash',
@@ -321,6 +321,29 @@ final class ServiceTransactionTest extends \BBTestCase
 
         $this->assertTrue(str_contains($result[0], $expectedStringPart));
         $this->assertEquals($expectedParams, $result[1]);
+    }
+
+    public function testGetSearchQueryKeepsClientScopeWhenSearchFilterIsUsed(): void
+    {
+        $di = $this->getDi();
+
+        $this->service->setDi($di);
+
+        [$sql, $params] = $this->service->getSearchQuery([
+            'client_id' => 42,
+            'search' => 'needle',
+        ]);
+
+        $this->assertStringContainsString('AND i.client_id = :client_id', $sql);
+        $this->assertStringContainsString(
+            'AND (m.note LIKE :note OR m.invoice_id LIKE :search_invoice_id OR m.txn_id LIKE :search_txn_id OR m.ipn LIKE :ipn)',
+            $sql
+        );
+        $this->assertSame(42, $params['client_id']);
+        $this->assertSame('%needle%', $params['note']);
+        $this->assertSame('%needle%', $params['search_invoice_id']);
+        $this->assertSame('%needle%', $params['search_txn_id']);
+        $this->assertSame('%needle%', $params['ipn']);
     }
 
     public function testCounter(): void
@@ -458,14 +481,14 @@ final class ServiceTransactionTest extends \BBTestCase
         $serviceMock->preProcessTransaction($transactionModel);
     }
 
-    public static function paymentsAdapterProvider_withprocessTransaction(): array
+    public static function paymentsAdapterProvider_withProcessTransaction(): array
     {
         return [
             ['\Payment_Adapter_PayPalEmail'],
         ];
     }
 
-    #[DataProvider('paymentsAdapterProvider_withprocessTransaction')]
+    #[DataProvider('paymentsAdapterProvider_withProcessTransaction')]
     public function testProcessTransactionSupportProcessTransaction(string $adapter): void
     {
         $id = 1;

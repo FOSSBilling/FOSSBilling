@@ -527,7 +527,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($show_action_required) {
-            $where[] = 'co.status = \'pending_setup\' OR co.status = \'failed_setup\' OR co.status =\'failed_renew\'';
+            $where[] = '(co.status = \'pending_setup\' OR co.status = \'failed_setup\' OR co.status =\'failed_renew\')';
         }
 
         if ($status) {
