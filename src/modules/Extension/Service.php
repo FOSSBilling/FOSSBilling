@@ -62,6 +62,19 @@ class Service implements InjectionAwareInterface
         ];
     }
 
+    private function getExtensionRepository(): ExtensionRepository
+    {
+        if ($this->extensionRepository === null) {
+            if ($this->di === null) {
+                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
+            }
+
+            $this->extensionRepository = $this->di['em']->getRepository(Extension::class);
+        }
+
+        return $this->extensionRepository;
+    }
+
     public function isCoreModule(string $mod): bool
     {
         $core = $this->di['mod']('extension')->getCoreModules();
@@ -116,6 +129,7 @@ class Service implements InjectionAwareInterface
 
     public function getSearchQuery($filter): array
     {
+        $this->di['em']->
         $qb = $this->extensionRepository->getSearchQueryBuilder($filter);
 
         return [$qb->getDQL(), $qb->getParameters()->toArray()];
