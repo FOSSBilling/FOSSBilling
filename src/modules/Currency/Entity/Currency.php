@@ -2,8 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
+ * Copyright 2025-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -12,44 +11,45 @@ declare(strict_types=1);
 
 namespace Box\Mod\Currency\Entity;
 
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Interfaces\ApiArrayInterface;
 use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Currency\Repository\CurrencyRepository::class)]
-#[ORM\Table(name: 'currency')]
 #[ORM\HasLifecycleCallbacks]
+#[ORM\Table(name: 'currency')]
 class Currency implements ApiArrayInterface, TimestampInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::INTEGER)]
-    private ?int $id = null;
+    #[ORM\Column]
+    private int $id;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 50, nullable: true)]
+    #[ORM\Column(options: ['default' => new \DateTimeImmutable()], insertable: false, updatable: false)]
+    private \DateTimeImmutable $createdAt;
+
+    #[ORM\Column(options: ['default' => new \DateTimeImmutable()], insertable: false, updatable: true)]
+    private ?\DateTimeImmutable $updatedAt;
+
+    #[ORM\Column(length: 50, nullable: true)]
     private ?string $title = null;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::BOOLEAN, options: ['default' => false])]
+    #[ORM\Column(options: ['default' => false])]
     private bool $isDefault = false;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::DECIMAL, precision: 13, scale: 6, options: ['default' => '1.000000'])]
+    #[ORM\Column(type: Types::DECIMAL, precision: 13, scale: 6, options: ['default' => '1.000000'])]
     private string $conversionRate = '1.000000';
 
     private ?float $conversionRateFloat = null;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 50, nullable: true, options: ['default' => '${{price}}'])]
+    #[ORM\Column(length: 50, nullable: true, options: ['default' => '${{price}}'])]
     private ?string $priceFormat = '${{price}}';
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $createdAt = null;
-
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $updatedAt = null;
-
     public function __construct(
-        #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 3, unique: true)]
+        #[ORM\Column(length: 3, unique: true)]
         private string $code,
-        #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 30, nullable: true)]
+        #[ORM\Column(length: 30, nullable: true)]
         private ?string $format,
     ) {
     }
@@ -64,20 +64,6 @@ class Currency implements ApiArrayInterface, TimestampInterface
             'price_format' => $this->getPriceFormat(),
             'default' => $this->isDefault(),
         ];
-    }
-
-    #[ORM\PrePersist]
-    public function onPrePersist(): void
-    {
-        $now = new \DateTime();
-        $this->createdAt = $now;
-        $this->updatedAt = $now;
-    }
-
-    #[ORM\PreUpdate]
-    public function updateTimestamp(): void
-    {
-        $this->updatedAt = new \DateTime();
     }
 
     public function getId(): ?int
@@ -124,12 +110,12 @@ class Currency implements ApiArrayInterface, TimestampInterface
         return $this->priceFormat;
     }
 
-    public function getCreatedAt(): ?\DateTime
+    public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
     }
 
-    public function getUpdatedAt(): ?\DateTime
+    public function getUpdatedAt(): \DateTimeImmutable
     {
         return $this->updatedAt;
     }
@@ -190,15 +176,5 @@ class Currency implements ApiArrayInterface, TimestampInterface
         $this->priceFormat = $priceFormat;
 
         return $this;
-    }
-
-    public function setCreatedAt(?\DateTime $createdAt): void
-    {
-        $this->createdAt = $createdAt;
-    }
-
-    public function setUpdatedAt(?\DateTime $updatedAt): void
-    {
-        $this->updatedAt = $updatedAt;
     }
 }

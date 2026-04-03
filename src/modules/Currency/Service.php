@@ -28,12 +28,19 @@ class Service implements InjectionAwareInterface
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
-        $this->currencyRepository = $this->di['em']->getRepository(Currency::class);
     }
 
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    public function getModulePermissions(): array
+    {
+        return [
+            'can_always_access' => true,
+            'manage_settings' => [],
+        ];
     }
 
     private function getCurrencyRepository(): CurrencyRepository
@@ -74,14 +81,6 @@ class Service implements InjectionAwareInterface
         return $this->getCurrencyRepository()->getPairs();
     }
 
-    public function getModulePermissions(): array
-    {
-        return [
-            'can_always_access' => true,
-            'manage_settings' => [],
-        ];
-    }
-
     /**
      * Convert foreign price back to default currency.
      *
@@ -94,7 +93,7 @@ class Service implements InjectionAwareInterface
      */
     public function toBaseCurrency(string $foreign_code, float|int $amount): float
     {
-        $default = $this->currencyRepository->findDefault();
+        $default = $this->getDefault();
 
         if ($default === null) {
             throw new \FOSSBilling\Exception('Default currency not found');
@@ -121,7 +120,7 @@ class Service implements InjectionAwareInterface
      */
     public function getBaseCurrencyRate(string $foreign_code): float
     {
-        $rate = $this->currencyRepository->getRateByCode($foreign_code);
+        $rate = $this->getRate($foreign_code);
 
         // Throw exception if currency not found
         if ($rate === null) {
@@ -150,7 +149,7 @@ class Service implements InjectionAwareInterface
         $currencyCode = $this->di['dbal']->fetchOne('SELECT currency FROM client WHERE id = ?', [$client_id]);
 
         if ($currencyCode === null || $currencyCode === '' || $currencyCode === false) {
-            $default = $this->currencyRepository->findDefault();
+            $default = $this->getDefault();
             if ($default === null) {
                 throw new \FOSSBilling\Exception('Default currency not found');
             }

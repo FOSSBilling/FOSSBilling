@@ -43,6 +43,7 @@ class CurrencyRepository extends EntityRepository
      */
     public function findOneByCode(string $code): ?Currency
     {
+
         return $this->findOneBy(['code' => $code]);
     }
 
