@@ -13,13 +13,12 @@ namespace Box\Mod\Currency\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Interfaces\ApiArrayInterface;
 use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Currency\Repository\CurrencyRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Table(name: 'currency')]
-class Currency implements ApiArrayInterface, TimestampInterface
+class Currency implements TimestampInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -41,30 +40,14 @@ class Currency implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(type: Types::DECIMAL, precision: 13, scale: 6, options: ['default' => '1.000000'])]
     private string $conversionRate = '1.000000';
 
-    private ?float $conversionRateFloat = null;
-
     #[ORM\Column(length: 50, nullable: true, options: ['default' => '${{price}}'])]
     private ?string $priceFormat = '${{price}}';
 
-    public function __construct(
-        #[ORM\Column(length: 3, unique: true)]
-        private string $code,
-        #[ORM\Column(length: 30, nullable: true)]
-        private ?string $format,
-    ) {
-    }
+    #[ORM\Column(length: 3, unique: true)]
+    private string $code;
 
-    public function toApiArray(): array
-    {
-        return [
-            'code' => $this->getCode(),
-            'title' => $this->getTitle(),
-            'conversion_rate' => $this->getConversionRate(),
-            'format' => $this->getFormat(),
-            'price_format' => $this->getPriceFormat(),
-            'default' => $this->isDefault(),
-        ];
-    }
+    #[ORM\Column(length: 30, nullable: true)]
+    private ?string $format;
 
     public function getId(): ?int
     {
@@ -88,16 +71,7 @@ class Currency implements ApiArrayInterface, TimestampInterface
 
     public function getConversionRate(): float
     {
-        if ($this->conversionRateFloat === null) {
-            $this->conversionRateFloat = (float) $this->conversionRate;
-        }
-
-        return $this->conversionRateFloat;
-    }
-
-    public function getConversionRateRaw(): string
-    {
-        return $this->conversionRate;
+        return (float) $this->conversionRate;
     }
 
     public function getFormat(): ?string
@@ -120,26 +94,19 @@ class Currency implements ApiArrayInterface, TimestampInterface
         return $this->updatedAt;
     }
 
-    // --- Setters ---
-    public function setTitle(?string $title): self
+    public function setTitle(string $title): void
     {
         $this->title = $title;
-
-        return $this;
     }
 
-    public function setCode(string $code): self
+    public function setCode(string $code): void
     {
         $this->code = $code;
-
-        return $this;
     }
 
-    public function setIsDefault(bool $isDefault): self
+    public function setDefault(bool $isDefault): void
     {
         $this->isDefault = $isDefault;
-
-        return $this;
     }
 
     /**
@@ -149,7 +116,7 @@ class Currency implements ApiArrayInterface, TimestampInterface
      *
      * @param string|float $conversionRate The new conversion rate
      */
-    public function setConversionRate(string|float $conversionRate): self
+    public function setConversionRate(string|float $conversionRate): void
     {
         // Use sprintf to ensure consistent decimal format (avoids scientific notation)
         // and matches the database column precision of 6 decimal places
@@ -158,23 +125,15 @@ class Currency implements ApiArrayInterface, TimestampInterface
         } else {
             $this->conversionRate = $conversionRate;
         }
-        // Invalidate cached float value so it will be recalculated on next access
-        $this->conversionRateFloat = null;
-
-        return $this;
     }
 
-    public function setFormat(?string $format): self
+    public function setFormat(string $format): void
     {
         $this->format = $format;
-
-        return $this;
     }
 
-    public function setPriceFormat(?string $priceFormat): self
+    public function setPriceFormat(string $priceFormat): void
     {
         $this->priceFormat = $priceFormat;
-
-        return $this;
     }
 }

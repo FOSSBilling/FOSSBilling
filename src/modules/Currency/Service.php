@@ -201,7 +201,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception("Currency with code {$currencyCode} not found after clearing identity map");
         }
 
-        $currency->setIsDefault(true);
+        $currency->setDefault(true);
         $em->persist($currency);
         $em->flush();
 

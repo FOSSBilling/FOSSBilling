@@ -2,8 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
+ * Copyright 2025-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -15,8 +14,9 @@ namespace Box\Mod\Currency\Repository;
 use Box\Mod\Currency\Entity\Currency;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\Interfaces\ApiArrayInterface;
 
-class CurrencyRepository extends EntityRepository
+class CurrencyRepository extends EntityRepository implements ApiArrayInterface
 {
     /**
      * Build a QueryBuilder for searching currencies.
@@ -118,5 +118,17 @@ class CurrencyRepository extends EntityRepository
             ->setParameter('isDefault', false)
             ->getQuery()
             ->execute();
+    }
+
+    public function toApiArray(): array
+    {
+        return [
+            'code' => $this->getCode(),
+            'title' => $this->getTitle(),
+            'conversion_rate' => $this->getConversionRate(),
+            'format' => $this->getFormat(),
+            'price_format' => $this->getPriceFormat(),
+            'default' => $this->isDefault(),
+        ];
     }
 }
