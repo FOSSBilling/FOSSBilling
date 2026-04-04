@@ -67,7 +67,6 @@ final class ServiceTest extends \BBTestCase
         $reflection = new \ReflectionClass($service);
         if ($reflection->hasProperty('templateRepository')) {
             $property = $reflection->getProperty('templateRepository');
-            $property->setAccessible(true);
             $property->setValue($service, $repository);
         }
     }
@@ -111,7 +110,6 @@ final class ServiceTest extends \BBTestCase
     {
         $reflection = new \ReflectionClass($entity);
         $property = $reflection->getProperty('id');
-        $property->setAccessible(true);
         $property->setValue($entity, $id);
     }
 

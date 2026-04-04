@@ -718,7 +718,7 @@ class UpdatePatcher implements InjectionAwareInterface
                     $subject = (string) ($template['subject'] ?? '');
                     $content = (string) ($template['content'] ?? '');
 
-                    $isOverridden = (trim($subject) !== trim($default['subject'])) || (trim($content) !== trim($default['content']));
+                    $isOverridden = (trim($subject) !== trim((string) $default['subject'])) || (trim($content) !== trim((string) $default['content']));
 
                     if (!$isOverridden) {
                         $subject = $default['subject'];
