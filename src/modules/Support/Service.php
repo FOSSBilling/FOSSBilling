@@ -1021,7 +1021,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function ticketCreateForClient(\Model_Client $client, \Model_SupportHelpdesk $helpdesk, array $data): int
     {
-        // @todo validate task params
+        SupportTicketValidator::validateTicketCreation($data);
         $rel_id = $data['rel_id'] ?? null;
         $rel_type = $data['rel_type'] ?? null;
 
@@ -1029,25 +1029,28 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $rel_new_value = $data['rel_new_value'] ?? null;
         $rel_status = isset($data['rel_task']) ? \Model_SupportTicket::REL_STATUS_PENDING : \Model_SupportTicket::REL_STATUS_COMPLETE;
 
-        if ($rel_task == 'upgrade') {
-            if (!is_null($rel_id) && $rel_type == \Model_SupportTicket::REL_TYPE_ORDER) {
-                $orderService = $this->di['mod_service']('order');
-                $o = $orderService->findForClientById($client, $rel_id);
-                if (!$o instanceof \Model_ClientOrder) {
-                    throw new \FOSSBilling\Exception('Order ID does not exist');
-                }
+        $order = null;
+        if ($rel_id !== null && $rel_type === \Model_SupportTicket::REL_TYPE_ORDER) {
+            $orderService = $this->di['mod_service']('order');
+            $order = $orderService->findForClientById($client, $rel_id);
+            if (!$order instanceof \Model_ClientOrder) {
+                throw new \FOSSBilling\Exception('You do not have permission to reference this order.');
             }
+        }
 
-            if (!isset($o) || empty($rel_new_value)) {
+        if ($rel_task === \Model_SupportTicket::REL_TASK_UPGRADE) {
+            if (!$order instanceof \Model_ClientOrder) {
                 throw new \FOSSBilling\Exception('You must provide both an order ID and a new product ID in order to request an upgrade.');
             }
 
-            $product = $this->di['db']->getExistingModelById('Product', $o->product_id);
-            $allowedUpgrades = json_decode($product->upgrades ?? '');
-            if (!in_array($rel_new_value, $allowedUpgrades)) {
+            $product = $this->di['db']->getExistingModelById('Product', $order->product_id);
+            $allowedUpgrades = json_decode($product->upgrades ?? '', true) ?? [];
+            if (!in_array($rel_new_value, $allowedUpgrades, true)) {
                 $upgrade = $this->di['db']->getExistingModelById('Product', $rel_new_value);
-
-                throw new InformationException('Sorry, but ":product" is not allowed to be upgraded to ":upgrade"', [':product' => $product->title, ':upgrade' => $upgrade->title ?? 'unknown']);
+                throw new InformationException(
+                    'Sorry, but ":product" is not allowed to be upgraded to ":upgrade"',
+                    [':product' => $product->title, ':upgrade' => $upgrade->title ?? 'unknown']
+                );
             }
         }
 
