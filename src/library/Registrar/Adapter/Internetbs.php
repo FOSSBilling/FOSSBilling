@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 
 class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract

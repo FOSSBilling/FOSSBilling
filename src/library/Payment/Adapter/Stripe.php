@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -111,7 +112,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             ':title' => $invoiceItems[0]['title'],
         ];
         $title = __trans('Payment for invoice :serie:id [:title]', $params);
-        if ((is_countable($invoiceItems) ? count($invoiceItems) : 0) > 1) {
+        if (\FOSSBilling\Tools::safeCount($invoiceItems) > 1) {
             $title = __trans('Payment for invoice :serie:id', $params);
         }
 

@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -110,10 +111,7 @@ class Client extends \Api_Abstract
     public function change_password($data)
     {
         $this->di['validator']->isPasswordStrong($data['new_password']);
-
-        if ($data['new_password'] != $data['confirm_password']) {
-            throw new \FOSSBilling\InformationException('Passwords do not match');
-        }
+        $this->di['validator']->passwordsMatch($data, 'new_password', 'confirm_password');
 
         $client = $this->getIdentity();
 

@@ -179,7 +179,7 @@ globalThis.Modals = {
       options.type === "small-confirm" ? this.templates.smallConfirm : template;
 
     return template.replace(/{{\s?(\w+)\s?}}/g, function (match, key) {
-      return options[key];
+      return options[key] !== undefined ? options[key] : '';
     });
   },
 

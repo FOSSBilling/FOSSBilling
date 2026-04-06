@@ -2,6 +2,12 @@ import backToTop from "./ui/backToTop";
 
 globalThis.FOSSBilling = {
   message: (message, type = "info") => {
+    const titles = {
+      error: "Error",
+      warning: "Warning",
+      success: "Success",
+    };
+    const title = titles[type] || "Info";
     let color;
     switch (type) {
       case "error":
@@ -10,20 +16,22 @@ globalThis.FOSSBilling = {
       case "warning":
         color = "warning";
         break;
+      case "success":
+        color = "success";
+        break;
       default:
         color = "primary";
     }
 
-    const container = document.querySelector(".toast-container"); // Get the existing container or create if not present
+    const container = document.querySelector(".toast-container");
 
     const element = document.createElement("div");
     container.appendChild(element);
-    element.classList.add("toast", "show"); // Add 'show' class to display the toast immediately
+    element.classList.add("toast", "show");
     element.setAttribute("role", "alert");
     element.setAttribute("aria-live", "assertive");
     element.setAttribute("aria-atomic", "true");
 
-    // Create header div and its children elements
     const headerDiv = document.createElement("div");
     headerDiv.className = "toast-header";
 
@@ -33,7 +41,7 @@ globalThis.FOSSBilling = {
 
     const strongEl = document.createElement("strong");
     strongEl.className = "me-auto";
-    strongEl.textContent = "System message";
+    strongEl.textContent = title;
     headerDiv.appendChild(strongEl);
 
     const closeButton = document.createElement("button");
@@ -45,17 +53,15 @@ globalThis.FOSSBilling = {
 
     element.appendChild(headerDiv);
 
-    // Create body div and set its text content
     const bodyDiv = document.createElement("div");
     bodyDiv.className = "toast-body";
-    bodyDiv.textContent = message; // Safely set the message content
+    bodyDiv.textContent = message;
     element.appendChild(bodyDiv);
 
     element.addEventListener("hidden.bs.toast", () => {
-      container.removeChild(element); // Remove the toast element from the container when it's hidden
+      container.removeChild(element);
     });
 
-    // Create a new Bootstrap toast instance and show it
     const toast = new bootstrap.Toast(element);
     toast.show();
   },
@@ -86,25 +92,14 @@ globalThis.FOSSBilling = {
 
   //===== Global ajax methods =====//
   document.addEventListener('DOMContentLoaded', function() {
-    // Global error handler for unhandled Promise rejections
+    // Global error handler for unhandled Promise rejections (API-related only)
     window.addEventListener('unhandledrejection', function(event) {
       const error = event.reason;
-      let message = 'An unexpected error occurred';
-      if (error && typeof error === 'object') {
-        message = error.message || error.code || message;
-      } else if (typeof error === 'string') {
-        message = error;
+      if (error && typeof error === 'object' && error.code) {
+        event.preventDefault();
+        const message = error.message || error.code || 'An unexpected error occurred';
+        FOSSBilling.message(message, 'error');
       }
-      FOSSBilling.message(message, 'error');
-    });
-
-    // Global error handler for synchronous errors
-    window.addEventListener('error', function(event) {
-      let displayMessage = event && event.message ? event.message : 'An unexpected error occurred';
-      if (event && event.error && event.error.message) {
-        displayMessage = event.error.message;
-      }
-      FOSSBilling.message(displayMessage, 'error');
     });
 
     // Attach event listeners to all forms and links with data-fb-api attribute.

@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -205,7 +206,7 @@ class Admin extends \Api_Abstract
         }
         // check if tld is used by any domain
         $service_domains = $this->di['db']->find('ServiceDomain', 'tld = :tld', [':tld' => $data['tld']]);
-        $count = is_countable($service_domains) ? count($service_domains) : 0;
+        $count = \FOSSBilling\Tools::safeCount($service_domains);
         if ($count > 0) {
             throw new \FOSSBilling\InformationException('TLD is used by :count: domains', [':count:' => $count], 707);
         }

@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Class to paginate a list of items in a old digg style.
  *
