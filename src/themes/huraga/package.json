@@ -14,7 +14,7 @@
   },
   "devDependencies": {
     "autoprefixer": "10.4.27",
-    "esbuild": "0.27.7",
+    "esbuild": "0.28.0",
     "postcss": "8.5.8",
     "purgecss": "8.0.0",
     "sass": "1.98.0"
