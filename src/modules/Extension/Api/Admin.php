@@ -87,8 +87,8 @@ class Admin extends \Api_Abstract
      */
     public function languages(array $data): array
     {
-        $data['disabled'] ??= false;
-        $data['details'] ??= true;
+        $data['disabled'] = (bool) ($data['disabled'] ?? false);
+        $data['details'] = (bool) ($data['details'] ?? true);
 
         return \FOSSBilling\i18n::getLocales($data['details'], $data['disabled']);
     }
