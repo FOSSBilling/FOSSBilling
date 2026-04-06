@@ -846,16 +846,16 @@
         },
         {
             "name": "doctrine/orm",
-            "version": "3.6.2",
+            "version": "3.6.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/orm.git",
-                "reference": "4262eb495b4d2a53b45de1ac58881e0091f2970f"
+                "reference": "e88cd591f0786089dee22b972c28aa2076df51c0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/orm/zipball/4262eb495b4d2a53b45de1ac58881e0091f2970f",
-                "reference": "4262eb495b4d2a53b45de1ac58881e0091f2970f",
+                "url": "https://api.github.com/repos/doctrine/orm/zipball/e88cd591f0786089dee22b972c28aa2076df51c0",
+                "reference": "e88cd591f0786089dee22b972c28aa2076df51c0",
                 "shasum": ""
             },
             "require": {
@@ -928,9 +928,9 @@
             ],
             "support": {
                 "issues": "https://github.com/doctrine/orm/issues",
-                "source": "https://github.com/doctrine/orm/tree/3.6.2"
+                "source": "https://github.com/doctrine/orm/tree/3.6.3"
             },
-            "time": "2026-01-30T21:41:41+00:00"
+            "time": "2026-04-02T06:53:27+00:00"
         },
         {
             "name": "doctrine/persistence",
@@ -2661,16 +2661,16 @@
         },
         {
             "name": "php-debugbar/php-debugbar",
-            "version": "v3.6.2",
+            "version": "v3.6.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-debugbar/php-debugbar.git",
-                "reference": "942d4bb6960eacde8c5dcd5af269e2f87db3b39f"
+                "reference": "9b25a64b07a1d6820a3c33e0d59338d30fe1d683"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-debugbar/php-debugbar/zipball/942d4bb6960eacde8c5dcd5af269e2f87db3b39f",
-                "reference": "942d4bb6960eacde8c5dcd5af269e2f87db3b39f",
+                "url": "https://api.github.com/repos/php-debugbar/php-debugbar/zipball/9b25a64b07a1d6820a3c33e0d59338d30fe1d683",
+                "reference": "9b25a64b07a1d6820a3c33e0d59338d30fe1d683",
                 "shasum": ""
             },
             "require": {
@@ -2747,7 +2747,7 @@
             ],
             "support": {
                 "issues": "https://github.com/php-debugbar/php-debugbar/issues",
-                "source": "https://github.com/php-debugbar/php-debugbar/tree/v3.6.2"
+                "source": "https://github.com/php-debugbar/php-debugbar/tree/v3.6.4"
             },
             "funding": [
                 {
@@ -2759,7 +2759,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-04-01T13:49:34+00:00"
+            "time": "2026-04-03T12:04:25+00:00"
         },
         {
             "name": "php-debugbar/twig-bridge",
@@ -8033,16 +8033,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "12.5.15",
+            "version": "12.5.16",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "aeb6899ffdbbf4b4ff5e6b6ebb77b35c51bb6d9a"
+                "reference": "b2429f58ae75cae980b5bb9873abe4de6aac8b58"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/aeb6899ffdbbf4b4ff5e6b6ebb77b35c51bb6d9a",
-                "reference": "aeb6899ffdbbf4b4ff5e6b6ebb77b35c51bb6d9a",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/b2429f58ae75cae980b5bb9873abe4de6aac8b58",
+                "reference": "b2429f58ae75cae980b5bb9873abe4de6aac8b58",
                 "shasum": ""
             },
             "require": {
@@ -8111,7 +8111,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/12.5.15"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/12.5.16"
             },
             "funding": [
                 {
@@ -8119,7 +8119,7 @@
                     "type": "other"
                 }
             ],
-            "time": "2026-03-31T06:41:33+00:00"
+            "time": "2026-04-03T05:26:42+00:00"
         },
         {
             "name": "react/cache",
