@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -68,7 +69,7 @@ class Admin extends \Api_Abstract
                 $this->di['db']->exec('DELETE FROM `cart_product` WHERE cart_id = :id', [':id' => $id]);
                 $this->di['db']->exec('DELETE FROM `cart` WHERE id = :id', [':id' => $id]);
             }
-            $this->di['logger']->info('Removed %s expired shopping carts', is_countable($list) ? count($list) : 0);
+            $this->di['logger']->info('Removed %s expired shopping carts', \FOSSBilling\Tools::safeCount($list));
         }
 
         return true;

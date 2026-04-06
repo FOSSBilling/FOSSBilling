@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -267,7 +268,7 @@ class Admin extends \Api_Abstract
      */
     public function update_form_settings($data)
     {
-        if (!isset($data['form_id']) || (trim($data['form_id']) == '')) {
+        if (!isset($data['form_id']) || (trim((string) $data['form_id']) == '')) {
             throw new \FOSSBilling\InformationException('Form id was not passed', null, 1654);
         }
         if (!isset($data['form_name'])) {

@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -98,7 +99,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         $addon_qty = $addon_sys_period->getQty();
 
         $free_domain_periods = $addon['config']['free_domain_periods'] ?? [];
-        if ((is_countable($free_domain_periods) ? count($free_domain_periods) : 0) > 0) {
+        if (\FOSSBilling\Tools::safeCount($free_domain_periods) > 0) {
             // if hosting and domain periods are equal, return domain quantity (year)
             if ($addon_period == $period) {
                 if (in_array($addon_period, $free_domain_periods)) {

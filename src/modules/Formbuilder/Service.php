@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -72,7 +73,7 @@ class Service implements InjectionAwareInterface
     {
         $unique = array_unique($array);
 
-        return (is_countable($array) ? count($array) : 0) === count($unique);
+        return \FOSSBilling\Tools::safeCount($array) === count($unique);
     }
 
     public function addNewForm($data): int
@@ -206,7 +207,7 @@ class Service implements InjectionAwareInterface
             }
 
             if ($field['type'] == 'textarea') {
-                if ((is_countable($field['textarea_size']) ? count($field['textarea_size']) : 0) != count(array_filter($field['textarea_size'], is_numeric(...)))) {
+                if (\FOSSBilling\Tools::safeCount($field['textarea_size']) != count(array_filter($field['textarea_size'], is_numeric(...)))) {
                     throw new \FOSSBilling\InformationException('Textarea size options must be integer values', null, 3510);
                 }
 

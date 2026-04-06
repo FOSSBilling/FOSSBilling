@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -75,7 +76,7 @@ class Box_EventDispatcher
             $this->listeners[$name] = [];
         }
 
-        return (bool) (is_countable($this->listeners[$name]) ? count($this->listeners[$name]) : 0);
+        return (bool) \FOSSBilling\Tools::safeCount($this->listeners[$name]);
     }
 
     /**

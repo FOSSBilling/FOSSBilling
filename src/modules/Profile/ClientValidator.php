@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace Box\Mod\Profile;
 
 use FOSSBilling\InformationException;

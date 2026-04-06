@@ -132,6 +132,22 @@ class Validate
         return $validTlds[$tld] ?? false;
     }
 
+    /**
+     * Checks that password and password confirmation match.
+     *
+     * @param array $data              The data array containing password fields
+     * @param string $passwordKey      The key for the password field (default: 'password')
+     * @param string $confirmKey       The key for the confirmation field (default: 'password_confirm')
+     *
+     * @throws InformationException if passwords do not match
+     */
+    public function passwordsMatch(array $data, string $passwordKey = 'password', string $confirmKey = 'password_confirm'): void
+    {
+        if (($data[$passwordKey] ?? '') !== ($data[$confirmKey] ?? '')) {
+            throw new InformationException('Passwords do not match.');
+        }
+    }
+
     public function isPasswordStrong($pwd): bool
     {
         if (strlen((string) $pwd) < 8) {
@@ -154,11 +170,6 @@ class Validate
             throw new InformationException('Password must include at least one uppercase letter.');
         }
 
-        /*
-        if( !preg_match("#\W+#", $pwd) ) {
-            $msg = "Password must include at least one symbol!";
-        }
-        */
         return true;
     }
 

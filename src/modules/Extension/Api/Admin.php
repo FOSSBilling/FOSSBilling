@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -86,8 +87,8 @@ class Admin extends \Api_Abstract
      */
     public function languages(array $data): array
     {
-        $data['disabled'] ??= false;
-        $data['details'] ??= true;
+        $data['disabled'] = (bool) ($data['disabled'] ?? false);
+        $data['details'] = (bool) ($data['details'] ?? true);
 
         return \FOSSBilling\i18n::getLocales($data['details'], $data['disabled']);
     }

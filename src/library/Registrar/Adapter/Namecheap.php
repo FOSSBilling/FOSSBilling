@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 use GeoIp2\Model\Domain;
 use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 

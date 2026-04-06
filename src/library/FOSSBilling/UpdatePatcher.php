@@ -266,478 +266,562 @@ class UpdatePatcher implements InjectionAwareInterface
     private function getPatches($patchLevel = 0): array
     {
         $patches = [
-            25 => function (): void {
-                // Migrate email templates to be compatible with Twig 3.x.
-                $this->di['dbal']->createQueryBuilder()
-                    ->update('email_template')
-                    ->set('content', 'REPLACE(content, \'{% filter markdown %}\', \'{% apply markdown %}\')')
-                    ->executeStatement();
-
-                $this->di['dbal']->createQueryBuilder()
-                    ->update('email_template')
-                    ->set('content', 'REPLACE(content, \'{% endfilter %}\', \'{% endapply %}\')')
-                    ->executeStatement();
-            },
-            26 => function (): void {
-                // Migration steps from BoxBilling to FOSSBilling - added favicon settings.
-                $this->di['dbal']->createQueryBuilder()
-                    ->insert('setting')
-                    ->values([
-                        'param' => ':param',
-                        'value' => ':value',
-                        'public' => '0',
-                        'category' => ':category',
-                        'hash' => ':hash',
-                        'created_at' => ':created_at',
-                        'updated_at' => ':updated_at',
-                    ])
-                    ->setParameter('param', 'company_favicon')
-                    ->setParameter('value', 'themes/huraga/assets/favicon.ico')
-                    ->setParameter('category', null)
-                    ->setParameter('hash', null)
-                    ->setParameter('created_at', '2023-01-08 12:00:00')
-                    ->setParameter('updated_at', '2023-01-08 12:00:00')
-                    ->executeStatement();
-            },
-            27 => function (): void {
-                // Migration steps to create table to allow admin users to do password reset.
-                $q = 'CREATE TABLE `admin_password_reset` ( `id` bigint(20) NOT NULL AUTO_INCREMENT, `admin_id` bigint(20) DEFAULT NULL, `hash` varchar(100) DEFAULT NULL, `ip` varchar(45) DEFAULT NULL, `created_at` datetime DEFAULT NULL, `updated_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), KEY `admin_id_idx` (`admin_id`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8;';
-                $this->executeSql($q);
-            },
-            28 => function (): void {
-                // Patch to remove .html from email templates action code.
-                // @see https://github.com/FOSSBilling/FOSSBilling/issues/863
-                $this->di['dbal']->createQueryBuilder()
-                    ->update('email_template')
-                    ->set('action_code', 'REPLACE(action_code, \'.html\', \'\')')
-                    ->executeStatement();
-            },
-            29 => function (): void {
-                // Patch to update email templates to use format_date/format_datetime filters
-                // instead of removed bb_date/bb_datetime filters.
-                // @see https://github.com/FOSSBilling/FOSSBilling/pull/948
-                $this->di['dbal']->createQueryBuilder()
-                    ->update('email_template')
-                    ->set('content', 'REPLACE(content, \'bb_date\', \'format_date\')')
-                    ->executeStatement();
-
-                $this->di['dbal']->createQueryBuilder()
-                    ->update('email_template')
-                    ->set('content', 'REPLACE(content, \'bb_datetime\', \'format_datetime\')')
-                    ->executeStatement();
-            },
-            30 => function (): void {
-                // Patch to remove the old guzzlehttp package, as we no longer
-                // use it. Also serves as an example for how to perform file action.
-                $fileActions = [
-                    Path::join(PATH_VENDOR, 'guzzlehttp') => 'unlink',
-                ];
-                $this->executeFileActions($fileActions);
-            },
-            31 => function (): void {
-                // Patch to remove the old htaccess.txt file, and any old config.php backup.
-                // @see https://github.com/FOSSBilling/FOSSBilling/pull/1075
-                $fileActions = [
-                    Path::join(PATH_ROOT, 'htaccess.txt') => 'unlink',
-                    Path::join(PATH_ROOT, 'config.php.old') => 'unlink',
-                ];
-                $this->executeFileActions($fileActions);
-            },
-            32 => function (): void {
-                // Patch to remove the old phpmailer package, some leftover
-                // admin_default files, and old Box_ classes we've removed or replaced.
-                // @see https://github.com/FOSSBilling/FOSSBilling/pull/1091
-                // @see https://github.com/FOSSBilling/FOSSBilling/pull/1063
-                $fileActions = [
-                    Path::join(PATH_VENDOR, 'phpmailer') => 'unlink',
-                    Path::join(PATH_THEMES, 'admin_default', 'images') => 'unlink',
-                    Path::join(PATH_THEMES, 'admin_default', 'assets', 'scss', 'bb-deprecated.scss') => 'unlink',
-                    Path::join(PATH_THEMES, 'admin_default', 'assets', 'scss', 'dataTable-deprecated.scss') => 'unlink',
-                    Path::join(PATH_THEMES, 'admin_default', 'assets', 'scss', 'main-deprecated.scss') => 'unlink',
-                    Path::join(PATH_LIBRARY, 'Box', 'Mail.php') => 'unlink',
-                    Path::join(PATH_LIBRARY, 'Box', 'Ftp.php') => 'unlink',
-                    Path::join(PATH_LIBRARY, 'Box', 'FileCacheExcption.php') => 'unlink',
-                    Path::join(PATH_LIBRARY, 'Box', 'Zip.php') => 'unlink',
-                    Path::join(PATH_LIBRARY, 'Box', 'Requirements.php') => 'unlink',
-                    Path::join(PATH_LIBRARY, 'Box', 'Version.php') => 'unlink',
-                    Path::join(PATH_LIBRARY, 'Box', 'Extension.php') => 'unlink',
-                    Path::join(PATH_LIBRARY, 'Box', 'Cookie.php') => 'unlink',
-                    Path::join(PATH_LIBRARY, 'Box', 'ExceptionAuth.php') => 'unlink',
-                    Path::join(PATH_LIBRARY, 'Box', 'Response.php') => 'unlink',
-                    Path::join(PATH_LIBRARY, 'Box', 'Config.php') => 'unlink',
-                ];
-                $this->executeFileActions($fileActions);
-            },
-            33 => function (): void {
-                // Patch to remove the old FileCache class that was replaced with Symfony's Cache component.
-                // @see https://github.com/FOSSBilling/FOSSBilling/pull/1184
-                $fileActions = [
-                    Path::join(PATH_LIBRARY, 'FileCache.php') => 'unlink',
-                ];
-                $this->executeFileActions($fileActions);
-            },
-            34 => function (): void {
-                // Adds the new "fingerprint" to the session table, to allow us to fingerprint devices and help prevent against attacks such as session hijacking.
-                $q = 'ALTER TABLE session ADD fingerprint TEXT;';
-                $this->executeSql($q);
-            },
-            35 => function (): void {
-                // Adds the new "created_at" to the session table, to ensure sessions are destroyed after they reach their maximum age.
-                $q = 'ALTER TABLE session ADD created_at int(11);';
-                $this->executeSql($q);
-            },
-            36 => function (): void {
-                // Patch to complete merging the Kb and Support modules.
-                // @see https://github.com/FOSSBilling/FOSSBilling/pull/1180
-
-                // Renames the "kb_article" and "kb_article_category" tables to "support_kb_article" and "support_kb_article_category", respectively.
-                $q = 'RENAME TABLE kb_article TO support_kb_article, kb_article_category TO support_kb_article_category;';
-                $this->executeSql($q);
-
-                // An error here can pretty safely be ignore.
-                try {
-                    // If the Kb extension is currently active, set enabled in Support settings.
-                    $ext_service = $this->di['mod_service']('extension');
-                    if ($ext_service->isExtensionActive('mod', 'kb')) {
-                        $support_ext_config = $ext_service->getConfig('mod_support');
-                        $support_ext_config['kb_enable'] = 'on';
-                        $ext_service->setConfig($support_ext_config);
-                    }
-
-                    // If the Kb extension exists, uninstall it.
-                    $kb_ext = $ext_service->findExtension('mod', 'kb');
-                    if ($kb_ext instanceof \Model_Extension) {
-                        $ext_service->uninstall($kb_ext);
-                    }
-                } catch (\Exception) {
-                }
-
-                // Finally, remove old Kb extension files/folders.
-                $fileActions = [
-                    Path::join(PATH_MODS, 'Kb') => 'unlink',
-                ];
-                $this->executeFileActions($fileActions);
-            },
-            37 => function (): void {
-                // Patch to complete remove the outdated queue module.
-                // @see https://github.com/FOSSBilling/FOSSBilling/pull/1777
-
-                try {
-                    $ext_service = $this->di['mod_service']('extension');
-                    // If the queue extension exists, uninstall it.
-                    $queue_ext = $ext_service->findExtension('mod', 'queue');
-                    if ($queue_ext instanceof \Model_Extension) {
-                        $ext_service->uninstall($queue_ext);
-                    }
-                } catch (\Exception) {
-                }
-
-                // Finally, remove old queue module from the disk.
-                $fileActions = [
-                    Path::join(PATH_MODS, 'Queue') => 'unlink',
-                ];
-                $this->executeFileActions($fileActions);
-            },
-            38 => function (): void {
-                // We need to remove the old ISPConfig3 and Virtualmin server managers from disk or else the leftover files could prevent the "hosting plans and servers" page from being loaded.
-                $fileActions = [
-                    Path::join(PATH_LIBRARY, 'Server', 'Manager', 'Ispconfig3.php') => 'unlink',
-                    Path::join(PATH_LIBRARY, 'Server', 'Manager', 'Virtualmin.php') => 'unlink',
-                ];
-                $this->executeFileActions($fileActions);
-            },
-            39 => function (): void {
-                // The Serbian language was incorrectly placed into a folder named `srp` by Crowdin which is now corrected for via the locale repo and as such we need to delete the old directory.
-                // @see https://github.com/FOSSBilling/locale/issues/212
-                $fileActions = [
-                    Path::join(PATH_LANGS, 'srp') => 'unlink',
-                ];
-                $this->executeFileActions($fileActions);
-            },
-            40 => function (): void {
-                // Added `passwordLength` field to server managers
-                $q = 'ALTER TABLE service_hosting_server ADD COLUMN `password_length` TINYINT DEFAULT NULL;';
-                $this->executeSql($q);
-            },
-            41 => function (): void {
-                // Remove the  `manifest` column from the extensions table since it's no longer used
-                $q = 'ALTER TABLE extension DROP COLUMN manifest;';
-                $this->executeSql($q);
-            },
-            42 => function (): void {
-                // This patch will migrate previous currency exchange rate data provider settings to the new ones
-                // @see https://github.com/FOSSBilling/FOSSBilling/pull/2189
-                $ext_service = $this->di['mod_service']('extension');
-
-                $query = $this->di['dbal']->createQueryBuilder()
-                    ->select('param', 'value')
-                    ->from('setting')
-                    ->executeQuery();
-
-                $pairs = $query->fetchAllKeyValue();
-
-                $config = $ext_service->getConfig('mod_currency');
-                $config['ext'] = 'mod_currency'; // This should automatically be set, but some appear to be having cache issues that causes it to not be
-
-                // Migrate the old currency exchange rate sync settings
-                $key = $pairs['currencylayer'] ?? '';
-                if ($key) {
-                    $config['provider'] = 'currency_data_api';
-                    $config['currencydata_key'] = $key;
-                }
-
-                // Now migrate the cron setting
-                $cron = $pairs['currency_cron_enabled'] ?? 0;
-                if ($cron == '1') {
-                    $config['sync_rate'] = 'auto';
-                } else {
-                    $config['sync_rate'] = 'never';
-                }
-
-                $ext_service->setConfig($config);
-            },
-            43 => function (): void {
-                $fileActions = [
-                    Path::join(PATH_LIBRARY, 'GeoLite2-Country.mmdb') => 'unlink',
-                ];
-                $this->executeFileActions($fileActions);
-            },
-            44 => function (): void {
-                // Add ipn_hash column to transaction table and index it for fast duplicate detection.
-                $q = 'ALTER TABLE `transaction`
-                        ADD COLUMN `ipn_hash` VARCHAR(64) DEFAULT NULL,
-                        ADD INDEX `transaction_ipn_hash_idx` (`gateway_id`, `ipn_hash`(64));';
-                $this->executeSql($q);
-            },
-            45 => function (): void {
-                // Drop updated_at column from activity tables
-                // Activity logs are never meant to be updated, only created
-                $q = 'ALTER TABLE `activity_admin_history` DROP COLUMN `updated_at`;';
-                $this->executeSql($q);
-
-                $q = 'ALTER TABLE `activity_client_email` DROP COLUMN `updated_at`;';
-                $this->executeSql($q);
-
-                $q = 'ALTER TABLE `activity_client_history` DROP COLUMN `updated_at`;';
-                $this->executeSql($q);
-
-                $q = 'ALTER TABLE `activity_system` DROP COLUMN `updated_at`;';
-                $this->executeSql($q);
-            },
-            46 => function (): void {
-                // Change gender column to ENUM type
-                $q1 = 'ALTER TABLE `client`
-                    MODIFY COLUMN `gender` ENUM("male", "female", "nonbinary", "other") DEFAULT NULL;';
-
-                // Change document_type column to ENUM type
-                $q2 = 'ALTER TABLE `client`
-                    MODIFY COLUMN `document_type` ENUM("passport") DEFAULT NULL;';
-
-                $this->executeSql($q1);
-                $this->executeSql($q2);
-            },
-            47 => function (): void {
-                // Migrate "membership" product type to "custom" product type
-                // This is part of removing the Servicemembership module
-                // @see https://github.com/FOSSBilling/FOSSBilling/pull/3066
-
-                // Migrate products to the 'custom' product type
-                $q = 'UPDATE `product` SET `type` = "custom" WHERE `type` = "membership";';
-                $this->executeSql($q);
-
-                // Before migrating existing orders to the 'custom' product type,
-                // set service_id to NULL for orders with service_type = "membership"
-                $q = 'UPDATE `client_order` SET `service_id` = NULL WHERE `service_type` = "membership";';
-                $this->executeSql($q);
-                // Migrate existing orders to the 'custom' product type
-                $q = 'UPDATE `client_order` SET `service_type` = "custom" WHERE `service_type` = "membership";';
-                $this->executeSql($q);
-
-                // Drop the service_membership table as it's no longer needed
-                $q = 'DROP TABLE IF EXISTS `service_membership`;';
-                $this->executeSql($q);
-            },
-            48 => function (): void {
-                $filesystem = new Filesystem();
-                $dbal = $this->di['dbal'];
-
-                $oldUploadsPath = Path::join(PATH_ROOT, 'uploads');
-                $newUploadsPath = Path::join(PATH_ROOT, 'data', 'uploads');
-
-                if ($filesystem->exists($oldUploadsPath) && $filesystem->exists($newUploadsPath)) {
-                    foreach (glob($oldUploadsPath . '/*') as $oldFile) {
-                        if (is_file($oldFile)) {
-                            $filename = basename($oldFile);
-                            $newFilePath = Path::join($newUploadsPath, $filename);
-                            if (!$filesystem->exists($newFilePath)) {
-                                $filesystem->rename($oldFile, $newFilePath);
-                            }
-                        }
-                    }
-                }
-
-                $products = $dbal->executeQuery("SELECT p.id, p.config FROM product p WHERE p.type = 'downloadable'")->fetchAllAssociative();
-
-                foreach ($products as $product) {
-                    $productConfig = json_decode((string) $product['config'], true) ?: [];
-
-                    if (isset($productConfig['filename']) && !empty($productConfig['filename'])) {
-                        continue;
-                    }
-
-                    $foundFilename = null;
-
-                    $orders = $dbal->executeQuery('SELECT co.id, co.config, co.service_id FROM client_order co WHERE co.product_id = :product_id', ['product_id' => $product['id']])->fetchAllAssociative();
-
-                    foreach ($orders as $order) {
-                        $orderConfig = json_decode($order['config'] ?? '', true);
-                        if (!is_array($orderConfig) || !isset($orderConfig['filename'])) {
-                            continue;
-                        }
-
-                        $filePath = Path::join(PATH_UPLOADS, md5((string) $orderConfig['filename']));
-                        if ($filesystem->exists($filePath)) {
-                            $foundFilename = $orderConfig['filename'];
-
-                            break;
-                        }
-                    }
-
-                    if ($foundFilename === null) {
-                        $services = $dbal->executeQuery('SELECT sd.id, sd.filename FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE co.product_id = :product_id AND sd.filename IS NOT NULL AND sd.filename != ""', ['product_id' => $product['id']])->fetchAllAssociative();
-
-                        foreach ($services as $service) {
-                            $filePath = Path::join(PATH_UPLOADS, md5((string) $service['filename']));
-                            if ($filesystem->exists($filePath)) {
-                                $foundFilename = $service['filename'];
-
-                                break;
-                            }
-                        }
-                    }
-
-                    if ($foundFilename !== null) {
-                        $productConfig['filename'] = $foundFilename;
-                        $dbal->executeStatement('UPDATE product SET config = :config, updated_at = :updated_at WHERE id = :id', [
-                            'config' => json_encode($productConfig),
-                            'updated_at' => date('Y-m-d H:i:s'),
-                            'id' => $product['id'],
-                        ]);
-
-                        $dbal->executeStatement('UPDATE service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id SET sd.filename = :filename WHERE co.product_id = :product_id', ['filename' => $foundFilename, 'product_id' => $product['id']]);
-
-                        $ordersToUpdate = $dbal->executeQuery('SELECT id, config FROM client_order WHERE product_id = :product_id AND config LIKE "%filename%"', ['product_id' => $product['id']])->fetchAllAssociative();
-
-                        foreach ($ordersToUpdate as $orderToUpdate) {
-                            $orderConfig = json_decode($orderToUpdate['config'] ?? '', true);
-                            if (is_array($orderConfig) && isset($orderConfig['filename'])) {
-                                $orderConfig['filename'] = $foundFilename;
-                                $dbal->executeStatement('UPDATE client_order SET config = :config, updated_at = :updated_at WHERE id = :id', [
-                                    'config' => json_encode($orderConfig),
-                                    'updated_at' => date('Y-m-d H:i:s'),
-                                    'id' => $orderToUpdate['id'],
-                                ]);
-                            }
-                        }
-                    }
-                }
-
-                $orphans = $dbal->executeQuery('SELECT sd.id, co.config as order_config FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE sd.filename IS NULL OR sd.filename = ""')->fetchAllAssociative();
-
-                foreach ($orphans as $orphan) {
-                    $orderConfig = json_decode($orphan['order_config'] ?? '', true);
-                    if (isset($orderConfig['filename']) && !empty($orderConfig['filename'])) {
-                        $filePath = Path::join(PATH_UPLOADS, md5((string) $orderConfig['filename']));
-                        if ($filesystem->exists($filePath)) {
-                            $dbal->executeStatement('UPDATE service_downloadable SET filename = :filename WHERE id = :id', ['filename' => $orderConfig['filename'], 'id' => $orphan['id']]);
-                        }
-                    }
-                }
-            },
-            49 => function (): void {
-                $q = "UPDATE setting SET value = 'themes/huraga/assets/build/img/logo.svg' WHERE param = 'company_logo' AND value = 'themes/huraga/assets/img/logo.svg';";
-                $this->executeSql($q);
-
-                $q = "UPDATE setting SET value = 'themes/huraga/assets/build/img/logo_white.svg' WHERE param = 'company_logo_dark' AND value = 'themes/huraga/assets/img/logo_white.svg';";
-                $this->executeSql($q);
-
-                $q = "UPDATE setting SET value = 'themes/huraga/assets/build/favicon.ico' WHERE param = 'company_favicon' AND value = 'themes/huraga/assets/favicon.ico';";
-                $this->executeSql($q);
-            },
-            50 => function (): void {
-                $this->migrateEncryptedColumn('email_template', 'id', 'vars', "vars IS NOT NULL AND vars != ''");
-                $this->migrateEncryptedColumn('extension_meta', 'id', 'meta_value', "meta_key = :meta_key AND meta_value IS NOT NULL AND meta_value != ''", [
-                    'meta_key' => 'config',
-                ]);
-            },
-            51 => function (): void {
-                $oldDir = Path::join(PATH_MODS, 'Invoice', 'pdf_template');
-                $newDir = Path::join(PATH_MODS, 'Invoice', 'templates', 'pdf');
-
-                if (!$this->filesystem->exists($oldDir)) {
-                    return;
-                }
-
-                $fileActions = [
-                    Path::join($oldDir, 'custom-pdf.twig') => Path::join($newDir, 'custom-invoice.twig'),
-                    Path::join($oldDir, 'custom-pdf.css') => Path::join($newDir, 'custom-invoice.css'),
-                    Path::join($oldDir, 'default-pdf.twig') => 'unlink',
-                    Path::join($oldDir, 'default-pdf.css') => 'unlink',
-                ];
-                $this->executeFileActions($fileActions);
-
-                $finder = new Finder();
-                if (!$finder->in($oldDir)->depth('== 0')->hasResults()) {
-                    $this->filesystem->remove($oldDir);
-                }
-            },
-            52 => function (): void {
-                $schemaManager = $this->di['dbal']->createSchemaManager();
-                $columns = array_map(static fn ($column) => $column->getName(), $schemaManager->listTableColumns('email_template'));
-
-                if (!in_array('is_custom', $columns, true)) {
-                    $this->executeSql("ALTER TABLE `email_template` ADD COLUMN `is_custom` TINYINT(1) DEFAULT '0' AFTER `enabled`;");
-                }
-
-                if (!in_array('is_overridden', $columns, true)) {
-                    $this->executeSql("ALTER TABLE `email_template` ADD COLUMN `is_overridden` TINYINT(1) DEFAULT '0' COMMENT 'Whether subject/content have been customized from file defaults' AFTER `is_custom`;");
-                }
-
-                $templates = $this->di['dbal']->executeQuery('SELECT id, action_code, subject, content FROM email_template')->fetchAllAssociative();
-                foreach ($templates as $template) {
-                    $default = $this->getDefaultEmailTemplateData((string) ($template['action_code'] ?? ''));
-                    if ($default === null) {
-                        $this->di['dbal']->executeStatement('UPDATE email_template SET is_custom = :is_custom WHERE id = :id', [
-                            'is_custom' => 1,
-                            'id' => $template['id'],
-                        ]);
-
-                        continue;
-                    }
-
-                    $subject = (string) ($template['subject'] ?? '');
-                    $content = (string) ($template['content'] ?? '');
-
-                    $isOverridden = (trim($subject) !== trim((string) $default['subject'])) || (trim($content) !== trim((string) $default['content']));
-
-                    if (!$isOverridden) {
-                        $subject = $default['subject'];
-                        $content = $default['content'];
-                    }
-
-                    $this->di['dbal']->executeStatement('UPDATE email_template SET is_custom = :is_custom, is_overridden = :is_overridden, subject = :subject, content = :content WHERE id = :id', [
-                        'is_custom' => 0,
-                        'is_overridden' => $isOverridden ? 1 : 0,
-                        'subject' => $subject,
-                        'content' => $content,
-                        'id' => $template['id'],
-                    ]);
-                }
-            },
+            25 => 'patch25',
+            26 => 'patch26',
+            27 => 'patch27',
+            28 => 'patch28',
+            29 => 'patch29',
+            30 => 'patch30',
+            31 => 'patch31',
+            32 => 'patch32',
+            33 => 'patch33',
+            34 => 'patch34',
+            35 => 'patch35',
+            36 => 'patch36',
+            37 => 'patch37',
+            38 => 'patch38',
+            39 => 'patch39',
+            40 => 'patch40',
+            41 => 'patch41',
+            42 => 'patch42',
+            43 => 'patch43',
+            44 => 'patch44',
+            45 => 'patch45',
+            46 => 'patch46',
+            47 => 'patch47',
+            48 => 'patch48',
+            49 => 'patch49',
+            50 => 'patch50',
+            51 => 'patch51',
+            52 => 'patch52',
         ];
         ksort($patches, SORT_NATURAL);
 
-        return array_filter($patches, fn ($key): bool => $key > $patchLevel, ARRAY_FILTER_USE_KEY);
+        $patchesToApply = array_filter($patches, fn ($key): bool => $key > $patchLevel, ARRAY_FILTER_USE_KEY);
+
+        return array_map(fn ($method): array => [$this, $method], $patchesToApply);
+    }
+
+    private function patch25(): void
+    {
+        // Migrate email templates to be compatible with Twig 3.x.
+        $this->di['dbal']->createQueryBuilder()
+            ->update('email_template')
+            ->set('content', 'REPLACE(content, \'{% filter markdown %}\', \'{% apply markdown %}\')')
+            ->executeStatement();
+
+        $this->di['dbal']->createQueryBuilder()
+            ->update('email_template')
+            ->set('content', 'REPLACE(content, \'{% endfilter %}\', \'{% endapply %}\')')
+            ->executeStatement();
+    }
+
+    private function patch26(): void
+    {
+        // Migration steps from BoxBilling to FOSSBilling - added favicon settings.
+        $this->di['dbal']->createQueryBuilder()
+            ->insert('setting')
+            ->values([
+                'param' => ':param',
+                'value' => ':value',
+                'public' => '0',
+                'category' => ':category',
+                'hash' => ':hash',
+                'created_at' => ':created_at',
+                'updated_at' => ':updated_at',
+            ])
+            ->setParameter('param', 'company_favicon')
+            ->setParameter('value', 'themes/huraga/assets/favicon.ico')
+            ->setParameter('category', null)
+            ->setParameter('hash', null)
+            ->setParameter('created_at', '2023-01-08 12:00:00')
+            ->setParameter('updated_at', '2023-01-08 12:00:00')
+            ->executeStatement();
+    }
+
+    private function patch27(): void
+    {
+        // Migration steps to create table to allow admin users to do password reset.
+        $q = 'CREATE TABLE `admin_password_reset` ( `id` bigint(20) NOT NULL AUTO_INCREMENT, `admin_id` bigint(20) DEFAULT NULL, `hash` varchar(100) DEFAULT NULL, `ip` varchar(45) DEFAULT NULL, `created_at` datetime DEFAULT NULL, `updated_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), KEY `admin_id_idx` (`admin_id`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8;';
+        $this->executeSql($q);
+    }
+
+    private function patch28(): void
+    {
+        // Patch to remove .html from email templates action code.
+        // @see https://github.com/FOSSBilling/FOSSBilling/issues/863
+        $this->di['dbal']->createQueryBuilder()
+            ->update('email_template')
+            ->set('action_code', 'REPLACE(action_code, \'.html\', \'\')')
+            ->executeStatement();
+    }
+
+    private function patch29(): void
+    {
+        // Patch to update email templates to use format_date/format_datetime filters
+        // instead of removed bb_date/bb_datetime filters.
+        // @see https://github.com/FOSSBilling/FOSSBilling/pull/948
+        $this->di['dbal']->createQueryBuilder()
+            ->update('email_template')
+            ->set('content', 'REPLACE(content, \'bb_date\', \'format_date\')')
+            ->executeStatement();
+
+        $this->di['dbal']->createQueryBuilder()
+            ->update('email_template')
+            ->set('content', 'REPLACE(content, \'bb_datetime\', \'format_datetime\')')
+            ->executeStatement();
+    }
+
+    private function patch30(): void
+    {
+        // Patch to remove the old guzzlehttp package, as we no longer use it.
+        $fileActions = [
+            Path::join(PATH_VENDOR, 'guzzlehttp') => 'unlink',
+        ];
+        $this->executeFileActions($fileActions);
+    }
+
+    private function patch31(): void
+    {
+        // Patch to remove the old htaccess.txt file, and any old config.php backup.
+        // @see https://github.com/FOSSBilling/FOSSBilling/pull/1075
+        $fileActions = [
+            Path::join(PATH_ROOT, 'htaccess.txt') => 'unlink',
+            Path::join(PATH_ROOT, 'config.php.old') => 'unlink',
+        ];
+        $this->executeFileActions($fileActions);
+    }
+
+    private function patch32(): void
+    {
+        // Patch to remove the old phpmailer package, some leftover admin_default files, and old Box_ classes.
+        // @see https://github.com/FOSSBilling/FOSSBilling/pull/1091
+        // @see https://github.com/FOSSBilling/FOSSBilling/pull/1063
+        $fileActions = [
+            Path::join(PATH_VENDOR, 'phpmailer') => 'unlink',
+            Path::join(PATH_THEMES, 'admin_default', 'images') => 'unlink',
+            Path::join(PATH_THEMES, 'admin_default', 'assets', 'scss', 'bb-deprecated.scss') => 'unlink',
+            Path::join(PATH_THEMES, 'admin_default', 'assets', 'scss', 'dataTable-deprecated.scss') => 'unlink',
+            Path::join(PATH_THEMES, 'admin_default', 'assets', 'scss', 'main-deprecated.scss') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'Mail.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'Ftp.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'FileCacheExcption.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'Zip.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'Requirements.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'Version.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'Extension.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'Cookie.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'ExceptionAuth.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'Response.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'Config.php') => 'unlink',
+        ];
+        $this->executeFileActions($fileActions);
+    }
+
+    private function patch33(): void
+    {
+        // Patch to remove the old FileCache class that was replaced with Symfony's Cache component.
+        // @see https://github.com/FOSSBilling/FOSSBilling/pull/1184
+        $fileActions = [
+            Path::join(PATH_LIBRARY, 'FileCache.php') => 'unlink',
+        ];
+        $this->executeFileActions($fileActions);
+    }
+
+    private function patch34(): void
+    {
+        // Adds the new "fingerprint" to the session table, to allow us to fingerprint devices and help prevent against attacks such as session hijacking.
+        $q = 'ALTER TABLE session ADD fingerprint TEXT;';
+        $this->executeSql($q);
+    }
+
+    private function patch35(): void
+    {
+        // Adds the new "created_at" to the session table, to ensure sessions are destroyed after they reach their maximum age.
+        $q = 'ALTER TABLE session ADD created_at int(11);';
+        $this->executeSql($q);
+    }
+
+    private function patch36(): void
+    {
+        // Patch to complete merging the Kb and Support modules.
+        // @see https://github.com/FOSSBilling/FOSSBilling/pull/1180
+
+        // Renames the "kb_article" and "kb_article_category" tables to "support_kb_article" and "support_kb_article_category", respectively.
+        $q = 'RENAME TABLE kb_article TO support_kb_article, kb_article_category TO support_kb_article_category;';
+        $this->executeSql($q);
+
+        // An error here can pretty safely be ignore.
+        try {
+            // If the Kb extension is currently active, set enabled in Support settings.
+            $ext_service = $this->di['mod_service']('extension');
+            if ($ext_service->isExtensionActive('mod', 'kb')) {
+                $support_ext_config = $ext_service->getConfig('mod_support');
+                $support_ext_config['kb_enable'] = 'on';
+                $ext_service->setConfig($support_ext_config);
+            }
+
+            // If the Kb extension exists, uninstall it.
+            $kb_ext = $ext_service->findExtension('mod', 'kb');
+            if ($kb_ext instanceof \Model_Extension) {
+                $ext_service->uninstall($kb_ext);
+            }
+        } catch (\Exception) {
+        }
+
+        // Finally, remove old Kb extension files/folders.
+        $fileActions = [
+            Path::join(PATH_MODS, 'Kb') => 'unlink',
+        ];
+        $this->executeFileActions($fileActions);
+    }
+
+    private function patch37(): void
+    {
+        // Patch to complete remove the outdated queue module.
+        // @see https://github.com/FOSSBilling/FOSSBilling/pull/1777
+
+        try {
+            $ext_service = $this->di['mod_service']('extension');
+            // If the queue extension exists, uninstall it.
+            $queue_ext = $ext_service->findExtension('mod', 'queue');
+            if ($queue_ext instanceof \Model_Extension) {
+                $ext_service->uninstall($queue_ext);
+            }
+        } catch (\Exception) {
+        }
+
+        // Finally, remove old queue module from the disk.
+        $fileActions = [
+            Path::join(PATH_MODS, 'Queue') => 'unlink',
+        ];
+        $this->executeFileActions($fileActions);
+    }
+
+    private function patch38(): void
+    {
+        // We need to remove the old ISPConfig3 and Virtualmin server managers from disk or else the leftover files could prevent the "hosting plans and servers" page from being loaded.
+        $fileActions = [
+            Path::join(PATH_LIBRARY, 'Server', 'Manager', 'Ispconfig3.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Server', 'Manager', 'Virtualmin.php') => 'unlink',
+        ];
+        $this->executeFileActions($fileActions);
+    }
+
+    private function patch39(): void
+    {
+        // The Serbian language was incorrectly placed into a folder named `srp` by Crowdin which is now corrected for via the locale repo and as such we need to delete the old directory.
+        // @see https://github.com/FOSSBilling/locale/issues/212
+        $fileActions = [
+            Path::join(PATH_LANGS, 'srp') => 'unlink',
+        ];
+        $this->executeFileActions($fileActions);
+    }
+
+    private function patch40(): void
+    {
+        // Added `passwordLength` field to server managers
+        $q = 'ALTER TABLE service_hosting_server ADD COLUMN `password_length` TINYINT DEFAULT NULL;';
+        $this->executeSql($q);
+    }
+
+    private function patch41(): void
+    {
+        // Remove the  `manifest` column from the extensions table since it's no longer used
+        $q = 'ALTER TABLE extension DROP COLUMN manifest;';
+        $this->executeSql($q);
+    }
+
+    private function patch42(): void
+    {
+        // This patch will migrate previous currency exchange rate data provider settings to the new ones
+        // @see https://github.com/FOSSBilling/FOSSBilling/pull/2189
+        $ext_service = $this->di['mod_service']('extension');
+
+        $query = $this->di['dbal']->createQueryBuilder()
+            ->select('param', 'value')
+            ->from('setting')
+            ->executeQuery();
+
+        $pairs = $query->fetchAllKeyValue();
+
+        $config = $ext_service->getConfig('mod_currency');
+        $config['ext'] = 'mod_currency'; // This should automatically be set, but some appear to be having cache issues that causes it to not be
+
+        // Migrate the old currency exchange rate sync settings
+        $key = $pairs['currencylayer'] ?? '';
+        if ($key) {
+            $config['provider'] = 'currency_data_api';
+            $config['currencydata_key'] = $key;
+        }
+
+        // Now migrate the cron setting
+        $cron = $pairs['currency_cron_enabled'] ?? 0;
+        if ($cron == '1') {
+            $config['sync_rate'] = 'auto';
+        } else {
+            $config['sync_rate'] = 'never';
+        }
+
+        $ext_service->setConfig($config);
+    }
+
+    private function patch43(): void
+    {
+        $fileActions = [
+            Path::join(PATH_LIBRARY, 'GeoLite2-Country.mmdb') => 'unlink',
+        ];
+        $this->executeFileActions($fileActions);
+    }
+
+    private function patch44(): void
+    {
+        // Add ipn_hash column to transaction table and index it for fast duplicate detection.
+        $q = 'ALTER TABLE `transaction`
+                ADD COLUMN `ipn_hash` VARCHAR(64) DEFAULT NULL,
+                ADD INDEX `transaction_ipn_hash_idx` (`gateway_id`, `ipn_hash`(64));';
+        $this->executeSql($q);
+    }
+
+    private function patch45(): void
+    {
+        // Drop updated_at column from activity tables
+        // Activity logs are never meant to be updated, only created
+        $q = 'ALTER TABLE `activity_admin_history` DROP COLUMN `updated_at`;';
+        $this->executeSql($q);
+
+        $q = 'ALTER TABLE `activity_client_email` DROP COLUMN `updated_at`;';
+        $this->executeSql($q);
+
+        $q = 'ALTER TABLE `activity_client_history` DROP COLUMN `updated_at`;';
+        $this->executeSql($q);
+
+        $q = 'ALTER TABLE `activity_system` DROP COLUMN `updated_at`;';
+        $this->executeSql($q);
+    }
+
+    private function patch46(): void
+    {
+        // Change gender column to ENUM type
+        $q1 = 'ALTER TABLE `client`
+            MODIFY COLUMN `gender` ENUM("male", "female", "nonbinary", "other") DEFAULT NULL;';
+
+        // Change document_type column to ENUM type
+        $q2 = 'ALTER TABLE `client`
+            MODIFY COLUMN `document_type` ENUM("passport") DEFAULT NULL;';
+
+        $this->executeSql($q1);
+        $this->executeSql($q2);
+    }
+
+    private function patch47(): void
+    {
+        // Migrate "membership" product type to "custom" product type
+        // This is part of removing the Servicemembership module
+        // @see https://github.com/FOSSBilling/FOSSBilling/pull/3066
+
+        // Migrate products to the 'custom' product type
+        $q = 'UPDATE `product` SET `type` = "custom" WHERE `type` = "membership";';
+        $this->executeSql($q);
+
+        // Before migrating existing orders to the 'custom' product type,
+        // set service_id to NULL for orders with service_type = "membership"
+        $q = 'UPDATE `client_order` SET `service_id` = NULL WHERE `service_type` = "membership";';
+        $this->executeSql($q);
+        // Migrate existing orders to the 'custom' product type
+        $q = 'UPDATE `client_order` SET `service_type` = "custom" WHERE `service_type` = "membership";';
+        $this->executeSql($q);
+
+        // Drop the service_membership table as it's no longer needed
+        $q = 'DROP TABLE IF EXISTS `service_membership`;';
+        $this->executeSql($q);
+    }
+
+    private function patch48(): void
+    {
+        $filesystem = new Filesystem();
+        $dbal = $this->di['dbal'];
+
+        $oldUploadsPath = Path::join(PATH_ROOT, 'uploads');
+        $newUploadsPath = Path::join(PATH_ROOT, 'data', 'uploads');
+
+        if ($filesystem->exists($oldUploadsPath) && $filesystem->exists($newUploadsPath)) {
+            foreach (glob($oldUploadsPath . '/*') as $oldFile) {
+                if (is_file($oldFile)) {
+                    $filename = basename($oldFile);
+                    $newFilePath = Path::join($newUploadsPath, $filename);
+                    if (!$filesystem->exists($newFilePath)) {
+                        $filesystem->rename($oldFile, $newFilePath);
+                    }
+                }
+            }
+        }
+
+        $products = $dbal->executeQuery("SELECT p.id, p.config FROM product p WHERE p.type = 'downloadable'")->fetchAllAssociative();
+
+        foreach ($products as $product) {
+            $productConfig = json_decode((string) $product['config'], true) ?: [];
+
+            if (isset($productConfig['filename']) && !empty($productConfig['filename'])) {
+                continue;
+            }
+
+            $foundFilename = null;
+
+            $orders = $dbal->executeQuery('SELECT co.id, co.config, co.service_id FROM client_order co WHERE co.product_id = :product_id', ['product_id' => $product['id']])->fetchAllAssociative();
+
+            foreach ($orders as $order) {
+                $orderConfig = json_decode($order['config'] ?? '', true);
+                if (!is_array($orderConfig) || !isset($orderConfig['filename'])) {
+                    continue;
+                }
+
+                $filePath = Path::join(PATH_UPLOADS, md5((string) $orderConfig['filename']));
+                if ($filesystem->exists($filePath)) {
+                    $foundFilename = $orderConfig['filename'];
+
+                    break;
+                }
+            }
+
+            if ($foundFilename === null) {
+                $services = $dbal->executeQuery('SELECT sd.id, sd.filename FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE co.product_id = :product_id AND sd.filename IS NOT NULL AND sd.filename != ""', ['product_id' => $product['id']])->fetchAllAssociative();
+
+                foreach ($services as $service) {
+                    $filePath = Path::join(PATH_UPLOADS, md5((string) $service['filename']));
+                    if ($filesystem->exists($filePath)) {
+                        $foundFilename = $service['filename'];
+
+                        break;
+                    }
+                }
+            }
+
+            if ($foundFilename !== null) {
+                $productConfig['filename'] = $foundFilename;
+                $dbal->executeStatement('UPDATE product SET config = :config, updated_at = :updated_at WHERE id = :id', [
+                    'config' => json_encode($productConfig),
+                    'updated_at' => date('Y-m-d H:i:s'),
+                    'id' => $product['id'],
+                ]);
+
+                $dbal->executeStatement('UPDATE service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id SET sd.filename = :filename WHERE co.product_id = :product_id', ['filename' => $foundFilename, 'product_id' => $product['id']]);
+
+                $ordersToUpdate = $dbal->executeQuery('SELECT id, config FROM client_order WHERE product_id = :product_id AND config LIKE "%filename%"', ['product_id' => $product['id']])->fetchAllAssociative();
+
+                foreach ($ordersToUpdate as $orderToUpdate) {
+                    $orderConfig = json_decode($orderToUpdate['config'] ?? '', true);
+                    if (is_array($orderConfig) && isset($orderConfig['filename'])) {
+                        $orderConfig['filename'] = $foundFilename;
+                        $dbal->executeStatement('UPDATE client_order SET config = :config, updated_at = :updated_at WHERE id = :id', [
+                            'config' => json_encode($orderConfig),
+                            'updated_at' => date('Y-m-d H:i:s'),
+                            'id' => $orderToUpdate['id'],
+                        ]);
+                    }
+                }
+            }
+        }
+
+        $orphans = $dbal->executeQuery('SELECT sd.id, co.config as order_config FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE sd.filename IS NULL OR sd.filename = ""')->fetchAllAssociative();
+
+        foreach ($orphans as $orphan) {
+            $orderConfig = json_decode($orphan['order_config'] ?? '', true);
+            if (isset($orderConfig['filename']) && !empty($orderConfig['filename'])) {
+                $filePath = Path::join(PATH_UPLOADS, md5((string) $orderConfig['filename']));
+                if ($filesystem->exists($filePath)) {
+                    $dbal->executeStatement('UPDATE service_downloadable SET filename = :filename WHERE id = :id', ['filename' => $orderConfig['filename'], 'id' => $orphan['id']]);
+                }
+            }
+        }
+    }
+
+    private function patch49(): void
+    {
+        $q = "UPDATE setting SET value = 'themes/huraga/assets/build/img/logo.svg' WHERE param = 'company_logo' AND value = 'themes/huraga/assets/img/logo.svg';";
+        $this->executeSql($q);
+
+        $q = "UPDATE setting SET value = 'themes/huraga/assets/build/img/logo_white.svg' WHERE param = 'company_logo_dark' AND value = 'themes/huraga/assets/img/logo_white.svg';";
+        $this->executeSql($q);
+
+        $q = "UPDATE setting SET value = 'themes/huraga/assets/build/favicon.ico' WHERE param = 'company_favicon' AND value = 'themes/huraga/assets/favicon.ico';";
+        $this->executeSql($q);
+    }
+
+    private function patch50(): void
+    {
+        $this->migrateEncryptedColumn('email_template', 'id', 'vars', "vars IS NOT NULL AND vars != ''");
+        $this->migrateEncryptedColumn('extension_meta', 'id', 'meta_value', "meta_key = :meta_key AND meta_value IS NOT NULL AND meta_value != ''", [
+            'meta_key' => 'config',
+        ]);
+    }
+
+    private function patch51(): void
+    {
+        $oldDir = Path::join(PATH_MODS, 'Invoice', 'pdf_template');
+        $newDir = Path::join(PATH_MODS, 'Invoice', 'templates', 'pdf');
+
+        if (!$this->filesystem->exists($oldDir)) {
+            return;
+        }
+
+        $fileActions = [
+            Path::join($oldDir, 'custom-pdf.twig') => Path::join($newDir, 'custom-invoice.twig'),
+            Path::join($oldDir, 'custom-pdf.css') => Path::join($newDir, 'custom-invoice.css'),
+            Path::join($oldDir, 'default-pdf.twig') => 'unlink',
+            Path::join($oldDir, 'default-pdf.css') => 'unlink',
+        ];
+        $this->executeFileActions($fileActions);
+
+        $finder = new Finder();
+        if (!$finder->in($oldDir)->depth('== 0')->hasResults()) {
+            $this->filesystem->remove($oldDir);
+        }
+    }
+
+    private function patch52(): void
+    {
+        $schemaManager = $this->di['dbal']->createSchemaManager();
+        $columns = array_map(static fn ($column) => $column->getName(), $schemaManager->listTableColumns('email_template'));
+
+        if (!in_array('is_custom', $columns, true)) {
+            $this->executeSql("ALTER TABLE `email_template` ADD COLUMN `is_custom` TINYINT(1) DEFAULT '0' AFTER `enabled`;");
+        }
+
+        if (!in_array('is_overridden', $columns, true)) {
+            $this->executeSql("ALTER TABLE `email_template` ADD COLUMN `is_overridden` TINYINT(1) DEFAULT '0' COMMENT 'Whether subject/content have been customized from file defaults' AFTER `is_custom`;");
+        }
+
+        $templates = $this->di['dbal']->executeQuery('SELECT id, action_code, subject, content FROM email_template')->fetchAllAssociative();
+        foreach ($templates as $template) {
+            $default = $this->getDefaultEmailTemplateData((string) ($template['action_code'] ?? ''));
+            if ($default === null) {
+                $this->di['dbal']->executeStatement('UPDATE email_template SET is_custom = :is_custom WHERE id = :id', [
+                    'is_custom' => 1,
+                    'id' => $template['id'],
+                ]);
+
+                continue;
+            }
+
+            $subject = (string) ($template['subject'] ?? '');
+            $content = (string) ($template['content'] ?? '');
+
+            $isOverridden = (trim($subject) !== trim((string) $default['subject'])) || (trim($content) !== trim((string) $default['content']));
+
+            if (!$isOverridden) {
+                $subject = $default['subject'];
+                $content = $default['content'];
+            }
+
+            $this->di['dbal']->executeStatement('UPDATE email_template SET is_custom = :is_custom, is_overridden = :is_overridden, subject = :subject, content = :content WHERE id = :id', [
+                'is_custom' => 0,
+                'is_overridden' => $isOverridden ? 1 : 0,
+                'subject' => $subject,
+                'content' => $content,
+                'id' => $template['id'],
+            ]);
+        }
     }
 
     /**
