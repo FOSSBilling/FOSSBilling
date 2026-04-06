@@ -14,7 +14,7 @@ namespace FOSSBilling;
 /**
  * Calculates pagination metadata for rendering page navigation controls.
  *
- * Produces a "Digg-style" page range (e.g., 1 2 3 ... 7 8 9) given a total
+ * Produces a compact page range (e.g., 1 2 3 ... 7 8 9) given a total
  * item count, current page, and items per page. Does not perform any
  * database queries — use the `Pagination` class for data retrieval.
  */
