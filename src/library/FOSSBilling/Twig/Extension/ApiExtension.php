@@ -41,6 +41,7 @@ class ApiExtension
     public function fbApi(array $config): string
     {
         $json = json_encode($config, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+        $json = str_replace("'", "\\'", $json);
 
         return 'data-fb-api=\'' . $json . '\'';
     }
@@ -55,6 +56,7 @@ class ApiExtension
 
         $config['type'] = 'form';
         $json = json_encode($config, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+        $json = str_replace("'", "\\'", $json);
         $attr = 'method="post" data-fb-api=\'' . $json . '\'';
 
         if ($tag === 'form') {

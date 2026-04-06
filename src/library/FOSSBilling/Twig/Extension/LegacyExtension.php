@@ -20,8 +20,12 @@ class LegacyExtension
     }
 
     #[AsTwigFilter('ip_country_name')]
-    public function ipCountryName(string $ip): string
+    public function ipCountryName(?string $ip): string
     {
+        if ($ip === null) {
+            return '';
+        }
+
         try {
             $record = $this->di['geoip']->country($ip);
 

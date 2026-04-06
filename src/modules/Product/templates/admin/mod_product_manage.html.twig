@@ -303,19 +303,19 @@
                 <div class="form-group mb-3 row">
                     <label class="form-label col-3 col-form-label">{{ 'Order Page (via ID)'|trans }}</label>
                     <div class="col">
-                        <input class="form-control" type="text" value='{{ "order/#{product.id}"|url }}' readonly>
+                        <input class="form-control" type="text" value='{{ "order/#{product.id}"|url(area: 'client') }}' readonly>
                     </div>
                 </div>
                 <div class="form-group mb-3 row">
                     <label class="form-label col-3 col-form-label">{{ 'Order Page (via Link)'|trans }}</label>
                     <div class="col">
-                        <input class="form-control" type="text" value='{{ "order/#{product.slug}"|url }}' readonly>
+                        <input class="form-control" type="text" value='{{ "order/#{product.slug}"|url(area: 'client') }}' readonly>
                     </div>
                 </div>
             </div>
 
             <div class="card-footer text-center">
-                <a href='{{ "order/#{product.slug}"|url }}' class="btn btn-primary" target="_blank">
+                <a href='{{ "order/#{product.slug}"|url(area: 'client') }}' class="btn btn-primary" target="_blank">
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#search" />
                     </svg>
