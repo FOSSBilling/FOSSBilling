@@ -501,8 +501,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $systemService = $this->di['mod_service']('System');
         [$subjectTemplate, $contentTemplate] = $this->getEffectiveTemplateParts($template);
-        $pc = $systemService->renderString($contentTemplate, false, $vars);
-        $ps = $systemService->renderString($subjectTemplate, false, $vars);
+        $pc = $systemService->renderEmailTplString($contentTemplate, $vars);
+        $ps = $systemService->renderEmailTplString($subjectTemplate, $vars);
 
         return [$ps, $pc];
     }
@@ -648,13 +648,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         if (isset($subject)) {
             $vars['_tpl'] = $subject;
-            $systemService->renderString($subject, false, $vars);
+            $systemService->renderEmailTplString($subject, $vars);
             $template->setSubject($subject);
         }
 
         if (isset($content)) {
             $vars['_tpl'] = $content;
-            $systemService->renderString($content, false, $vars);
+            $systemService->renderEmailTplString($content, $vars);
             $template->setContent($content);
         }
 

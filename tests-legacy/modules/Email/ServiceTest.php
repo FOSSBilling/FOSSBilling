@@ -398,8 +398,16 @@ final class ServiceTest extends \BBTestCase
 
         $systemService = $this->createMock(\Box\Mod\System\Service::class);
         $systemService->expects($this->atLeastOnce())
-            ->method('getParamValue')
-            ->willReturn('value');
+            ->method('renderEmailTplString')
+            ->willReturn('rendered');
+        $systemService->method('getParamValue')
+            ->willReturnCallback(function ($param) {
+                return match ($param) {
+                    'company_email' => 'company@example.com',
+                    'company_name' => 'Test Company',
+                    default => 'value',
+                };
+            });
 
         $twig = $this->getMockBuilder(\Twig\Environment::class)->disableOriginalConstructor()->getMock();
 
