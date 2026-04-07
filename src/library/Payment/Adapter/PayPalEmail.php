@@ -296,8 +296,6 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         }
 
         $client = $this->getHttpClient()->withOptions([
-            'verify_peer' => false,
-            'verify_host' => false,
             'timeout' => 600,
         ]);
         $response = $client->request('POST', $url, [
