@@ -90,7 +90,7 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
         $priority = strtoupper((string) $method);
         $params = $this->maskParams($params);
         if (($priority = array_search($priority, $this->_priorities)) !== false) {
-            switch (\FOSSBilling\Tools::safeCount($params)) {
+            switch (FOSSBilling\Tools::safeCount($params)) {
                 case 0:
                     throw new FOSSBilling\Exception('Missing log message');
                 case 1:
