@@ -76,7 +76,7 @@ class Guest extends \Api_Abstract
         $c = $this->get($data);
 
         $price = $data['price'] ?? 0;
-        $convert = $data['convert'] ?? true;
+        $convert = Tools::normalizeBoolean($data['convert'] ?? true, true);
         $without_currency = Tools::normalizeBoolean($data['without_currency'] ?? false);
 
         $p = floatval($price);
