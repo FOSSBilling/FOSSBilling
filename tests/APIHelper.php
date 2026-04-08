@@ -10,7 +10,7 @@ use Symfony\Component\Filesystem\Path;
 class Request
 {
     /**
-     * Handles making a response to the FOSSBilling server.
+     * Handles making a request to the FOSSBilling server.
      *
      * @param string      $endpoint the API endpoint to call (Example: `guest/system/company`)
      * @param string      $method   set to POST to have cURL make a POST request to the server
@@ -92,7 +92,9 @@ class Response
 
     public function wasSuccessful(): bool
     {
-        return $this->decodedResponse && !$this->decodedResponse['error'];
+        return !empty($this->decodedResponse)
+            && array_key_exists('error', $this->decodedResponse)
+            && empty($this->decodedResponse['error']);
     }
 
     public function getErrorMessage(): string
