@@ -104,13 +104,6 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function getAdminsCount()
-    {
-        $sql = 'SELECT COUNT(*) FROM admin WHERE 1';
-
-        return $this->di['db']->getCell($sql);
-    }
-
     public function getPairs(array $data = [])
     {
         $limit = $data['per_page'] ?? 30;
@@ -619,29 +612,6 @@ class Service implements InjectionAwareInterface
         $this->di['logger']->info('Created new staff member %s', $newId);
 
         return (int) $newId;
-    }
-
-    /**
-     * Used to create the initial admin account and then goes unused.
-     */
-    public function createAdmin(array $data)
-    {
-        $admin = $this->di['db']->dispense('Admin');
-        $admin->role = 'admin';
-        $admin->admin_group_id = 1;
-        $admin->name = 'Administrator';
-        $admin->email = $data['email'];
-        $admin->pass = $this->di['password']->hashIt($data['password']);
-        $admin->protected = 1;
-        $admin->status = 'active';
-        $admin->created_at = date('Y-m-d H:i:s');
-        $admin->updated_at = date('Y-m-d H:i:s');
-
-        $newId = $this->di['db']->store($admin);
-
-        $this->di['logger']->info('Main administrator %s account created', $admin->email);
-
-        return $newId;
     }
 
     /**

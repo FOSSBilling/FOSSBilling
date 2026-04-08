@@ -21,39 +21,6 @@ use FOSSBilling\Validation\Api\RequiredParams;
 class Guest extends \Api_Abstract
 {
     /**
-     * Gives ability to create administrator account if no admins exists on
-     * the system.
-     * Database structure must be installed before calling this action.
-     * config.php file must already be present and configured.
-     * Used by automated FOSSBilling installer.
-     */
-    public function create($data): bool
-    {
-        $allow = !\FOSSBilling\Tools::safeCount($this->di['db']->findOne('Admin', '1=1'));
-        if (!$allow) {
-            throw new \FOSSBilling\InformationException('Administrator account already exists', null, 55);
-        }
-        $required = [
-            'email' => 'Administrator email is missing.',
-            'password' => 'Administrator password is missing.',
-        ];
-        $validator = $this->di['validator'];
-        $validator->checkRequiredParamsForArray($required, $data);
-        $validator->isPasswordStrong($data['password']);
-
-        if (!is_null($data['email'])) {
-            $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
-        }
-
-        $result = $this->getService()->createAdmin($data);
-        if ($result) {
-            $this->login($data);
-        }
-
-        return true;
-    }
-
-    /**
      * Login to admin area and save information to session.
      *
      * @return array
