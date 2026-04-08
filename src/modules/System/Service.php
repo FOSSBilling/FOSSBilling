@@ -76,9 +76,9 @@ class Service
 
     /**
      * @param string $param
-     * @param bool   $default
+     * @param mixed  $default
      */
-    public function getParamValue($param, $default = null)
+    public function getParamValue(string $param, $default = null)
     {
         if (empty($param)) {
             throw new \FOSSBilling\Exception('Parameter key is missing');
