@@ -639,7 +639,7 @@ class Server_Manager_Directadmin extends Server_Manager
             'quota' => $package->getQuota(), // Disk space quota in MB
             'spam' => $package->getHasSpamFilter() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to run scan email with SpamAssassin.
             'ssh' => $package->getHasShell() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have an ssh account.
-            'ssl' => $package->getHasSll() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to access their websites through secure https://.
+            'ssl' => $package->getHasSsl() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to access their websites through secure https://.
             'sysinfo' => 'ON', // ON or OFF. If ON, the User will have access to a page that shows the system information.
             'user' => $account->getUsername(),
             'vdomains' => $package->getMaxDomains(), // Domain quota
