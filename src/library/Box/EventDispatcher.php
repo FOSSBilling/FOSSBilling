@@ -76,7 +76,7 @@ class Box_EventDispatcher
             $this->listeners[$name] = [];
         }
 
-        return (bool) \FOSSBilling\Tools::safeCount($this->listeners[$name]);
+        return (bool) FOSSBilling\Tools::safeCount($this->listeners[$name]);
     }
 
     /**

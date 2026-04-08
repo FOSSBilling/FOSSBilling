@@ -349,7 +349,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ];
 
         $rows = $this->di['db']->getAll($sql, $bindings);
-        if (\FOSSBilling\Tools::safeCount($rows) > 1) {
+        if (FOSSBilling\Tools::safeCount($rows) > 1) {
             return true;
         }
 
