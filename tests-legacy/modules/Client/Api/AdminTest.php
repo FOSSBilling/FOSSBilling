@@ -113,12 +113,20 @@ final class AdminTest extends \BBTestCase
         $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('toSessionArray')->willReturn($sessionArray);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'impersonate_login');
+
         $sessionMock = $this->getMockBuilder(\FOSSBilling\Session::class)->disableOriginalConstructor()->getMock();
         $sessionMock->expects($this->atLeastOnce())->method('set');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+            'client' => $serviceMock,
+            'staff' => $staffServiceMock,
+        });
         $di['session'] = $sessionMock;
         $di['logger'] = new \Box_Log();
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
@@ -147,6 +155,11 @@ final class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('emailAlreadyRegistered')->willReturn(false);
         $serviceMock->expects($this->atLeastOnce())->method('adminCreateClient')->willReturn(1);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'create');
+
         $eventMock = $this->createMock('\\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
@@ -156,6 +169,9 @@ final class AdminTest extends \BBTestCase
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['tools'] = $toolsMock;
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+            'staff' => $staffServiceMock,
+        });
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -176,11 +192,19 @@ final class AdminTest extends \BBTestCase
         $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('emailAlreadyRegistered')->willReturn(true);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'create');
+
         $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di = $this->getDi();
         $di['tools'] = $toolsMock;
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+            'staff' => $staffServiceMock,
+        });
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -211,10 +235,18 @@ final class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('remove');
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'delete');
+
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+            'staff' => $staffServiceMock,
+        });
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
@@ -282,6 +314,11 @@ final class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('emailAlreadyRegistered')->willReturn(false);
         $serviceMock->expects($this->atLeastOnce())->method('canChangeCurrency')->willReturn(true);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'edit_profile');
+
         $eventMock = $this->createMock('\\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
@@ -290,7 +327,10 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+            'client' => $serviceMock,
+            'staff' => $staffServiceMock,
+        });
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
         $di['tools'] = $toolsMock;
@@ -355,12 +395,20 @@ final class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('emailAlreadyRegistered')->willReturn(true);
         $serviceMock->expects($this->never())->method('canChangeCurrency')->willReturn(true);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'edit_profile');
+
         $eventMock = $this->createMock('\\Box_EventManager');
         $eventMock->expects($this->never())->method('fire');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+            'client' => $serviceMock,
+            'staff' => $staffServiceMock,
+        });
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
         $di['validator'] = new \FOSSBilling\Validate();
@@ -420,6 +468,10 @@ final class AdminTest extends \BBTestCase
             ->with($data['password']);
 
         $profileService = $this->createMock(\Box\Mod\Profile\Service::class);
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'change_password');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -429,7 +481,10 @@ final class AdminTest extends \BBTestCase
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $profileService);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+            'profile' => $profileService,
+            'staff' => $staffServiceMock,
+        });
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -447,10 +502,18 @@ final class AdminTest extends \BBTestCase
         ];
         $admin_Client = new \Box\Mod\Client\Api\Admin();
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'change_password');
+
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+            'staff' => $staffServiceMock,
+        });
         $admin_Client->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -517,9 +580,17 @@ final class AdminTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'manage_balance');
+
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+            'staff' => $staffServiceMock,
+        });
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
@@ -549,9 +620,17 @@ final class AdminTest extends \BBTestCase
         $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('addFunds');
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'manage_balance');
+
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+            'client' => $serviceMock,
+            'staff' => $staffServiceMock,
+        });
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
@@ -562,6 +641,32 @@ final class AdminTest extends \BBTestCase
 
         $result = $admin_Client->balance_add_funds($data);
         $this->assertTrue($result);
+    }
+
+    public function testExportCsvChecksPermission(): void
+    {
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->once())
+            ->method('exportCSV')
+            ->with([])
+            ->willReturn('csv-data');
+
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'export');
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+            'staff' => $staffServiceMock,
+        });
+
+        $admin_Client = new \Box\Mod\Client\Api\Admin();
+        $admin_Client->setDi($di);
+        $admin_Client->setService($serviceMock);
+
+        $result = $admin_Client->export_csv([]);
+        $this->assertSame('csv-data', $result);
     }
 
     public function testBatchExpirePasswordReminders(): void
@@ -601,6 +706,11 @@ final class AdminTest extends \BBTestCase
             ->method('getHistorySearchQuery')
             ->willReturn(['String', []]);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'view_login_history');
+
         $pagerMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
             ->onlyMethods(['getPaginatedResultSet'])
             ->getMock();
@@ -611,6 +721,9 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['pager'] = $pagerMock;
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+            'staff' => $staffServiceMock,
+        });
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -658,7 +771,15 @@ final class AdminTest extends \BBTestCase
         $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('createGroup')->willReturn($newGroupId);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'manage_groups');
+
         $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+            'staff' => $staffServiceMock,
+        });
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setService($serviceMock);
         $admin_Client->setDi($di);
@@ -683,8 +804,16 @@ final class AdminTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store')->willReturn(1);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'manage_groups');
+
         $di = $this->getDi();
         $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+            'staff' => $staffServiceMock,
+        });
 
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
@@ -719,9 +848,17 @@ final class AdminTest extends \BBTestCase
             ->method('deleteGroup')
             ->willReturn(true);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'manage_groups');
+
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+            'staff' => $staffServiceMock,
+        });
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
         $di['validator'] = $validatorMock;
@@ -768,10 +905,18 @@ final class AdminTest extends \BBTestCase
         $activityMock = $this->getMockBuilder(\Box\Mod\Client\Api\Admin::class)->onlyMethods(['delete'])->getMock();
         $activityMock->expects($this->atLeastOnce())->method('delete')->willReturn(true);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'bulk_delete');
+
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+            'staff' => $staffServiceMock,
+        });
         $activityMock->setDi($di);
 
         $result = $activityMock->batch_delete(['ids' => [1, 2, 3]]);

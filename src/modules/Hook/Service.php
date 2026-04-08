@@ -31,7 +31,16 @@ class Service implements InjectionAwareInterface
     public function getModulePermissions(): array
     {
         return [
-            'hide_permissions' => true,
+            'manage_hooks' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage hooks'),
+                'description' => __trans('Allows the staff member to view and reconnect registered event hooks.'),
+            ],
+            'trigger_hooks' => [
+                'type' => 'bool',
+                'display_name' => __trans('Trigger hooks'),
+                'description' => __trans('Allows the staff member to invoke hooks manually with custom event payloads.'),
+            ],
         ];
     }
 

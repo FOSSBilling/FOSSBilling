@@ -136,4 +136,41 @@ final class AdminTest extends \BBTestCase
         $result = $adminApi->change_password(['current_password' => 'oldpw', 'new_password' => '84asasd221AS', 'confirm_password' => '84asasd221AS']);
         $this->assertTrue($result);
     }
+
+    public function testApiKeyResetChecksClientPermission(): void
+    {
+        $client = new \Model_Client();
+        $client->loadBean(new \DummyBean());
+
+        $profileServiceMock = $this->createMock(\Box\Mod\Profile\Service::class);
+        $profileServiceMock->expects($this->once())
+            ->method('resetApiKey')
+            ->with($client)
+            ->willReturn('new-api-key');
+
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'manage_api_keys');
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('getExistingModelById')
+            ->with('Client', 1)
+            ->willReturn($client);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (string $name) => match (strtolower($name)) {
+            'staff' => $staffServiceMock,
+            default => throw new \RuntimeException('Unexpected module service request: ' . $name),
+        });
+
+        $adminApi = new \Box\Mod\Profile\Api\Admin();
+        $adminApi->setDi($di);
+        $adminApi->setService($profileServiceMock);
+
+        $result = $adminApi->api_key_reset(['id' => 1]);
+        $this->assertSame('new-api-key', $result);
+    }
 }
