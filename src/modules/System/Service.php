@@ -75,7 +75,8 @@ class Service
     }
 
     /**
-     * @param bool $default
+     * @param string $param
+     * @param mixed  $default
      */
     public function getParamValue(string $param, $default = null)
     {
