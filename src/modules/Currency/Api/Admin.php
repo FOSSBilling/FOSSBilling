@@ -95,6 +95,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Currency code is missing', 'format' => 'Currency format is missing'])]
     public function create($data = []): string
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'create');
+
         $service = $this->getService();
 
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
@@ -126,6 +128,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Currency code is missing'])]
     public function update($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'edit');
+
         $format = $data['format'] ?? null;
         $title = $data['title'] ?? null;
         $priceFormat = $data['price_format'] ?? null;
@@ -147,6 +151,8 @@ class Admin extends \Api_Abstract
      */
     public function update_rates(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'update_rates');
+
         return $this->service->updateCurrencyRates();
     }
 
@@ -158,6 +164,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Currency code is missing'])]
     public function delete($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'delete');
+
         return $this->getService()->deleteCurrencyByCode($data['code']);
     }
 
@@ -170,6 +178,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Currency code is missing'])]
     public function set_default($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'set_default');
+
         $service = $this->getService();
 
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */

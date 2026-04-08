@@ -4,6 +4,11 @@
 
 {% set active_menu = 'system' %}
 {% set params = admin.extension_config_get({ 'ext': 'mod_currency' }) %}
+{% set can_create_currency = has_permission('currency', 'create') %}
+{% set can_edit_currency = has_permission('currency', 'edit') %}
+{% set can_delete_currency = has_permission('currency', 'delete') %}
+{% set can_set_default_currency = has_permission('currency', 'set_default') %}
+{% set can_update_currency_rates = has_permission('currency', 'update_rates') %}
 
 {% block meta_title %}{{ 'Currency Settings'|trans }}{% endblock %}
 
@@ -29,6 +34,7 @@
             <li class="nav-item" role="presentation">
                 <a class="nav-link active" href="#tab-currencies" data-bs-toggle="tab" role="tab">{{ 'Currencies'|trans }}</a>
             </li>
+            {% if can_create_currency %}
             <li class="nav-item" role="presentation">
                 <a class="nav-link" href="#tab-new-currency" data-bs-toggle="tab" role="tab">
                     <svg class="icon me-2">
@@ -37,6 +43,7 @@
                     {{ 'Add new currency'|trans }}
                 </a>
             </li>
+            {% endif %}
             <li class="nav-item" role="presentation">
                 <a class="nav-link" href="#tab-api-settings" data-bs-toggle="tab" role="tab">{{ 'Integrations / Automation'|trans }}</a>
             </li>
@@ -81,12 +88,15 @@
                                     <td>{{ currency.conversion_rate }}</td>
                                     <td>{{ mf.currency_format(1) }} = {{ mf.currency(1, currency.code) }}</td>
                                     <td>
+                                        {% if can_edit_currency %}
                                         <a class="btn btn-icon" href="{{ '/currency/manage'|alink }}/{{ currency.code }}"
                                            data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
                                             <svg class="icon">
                                                 <use xlink:href="#edit" />
                                             </svg>
                                         </a>
+                                        {% endif %}
+                                        {% if can_delete_currency %}
                                         <a class="btn btn-icon" href="{{ 'api/admin/currency/delete'|link({ 'code': currency.code }) }}"
                                             data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
                                             {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Delete'|trans}, redirect: 'extension/settings/currency'|alink}) }}>
@@ -94,7 +104,8 @@
                                                 <use xlink:href="#delete" />
                                             </svg>
                                         </a>
-                                        {% if not currency.default %}
+                                        {% endif %}
+                                        {% if can_set_default_currency and not currency.default %}
                                             <a class="btn btn-icon" href="{{'api/admin/currency/set_default'|link({ 'code': currency.code }) }}"
                                                 data-bs-toggle="tooltip" data-bs-title="{{ 'Set as default'|trans }}"
                                                 {{ fb_api_link({redirect: 'extension/settings/currency'|alink}) }}>
@@ -115,18 +126,21 @@
                     </div>
 
                     <div class="card-footer text-center">
+                        {% if can_update_currency_rates %}
                         <a class="btn btn-primary" href="{{ 'api/admin/currency/update_rates'|link }}" {{ fb_api_link({redirect: 'extension/settings/currency'|alink}) }}>
                             <svg class="icon icon-tabler" width="24" height="24">
                                 <use xlink:href="#refresh" />
                             </svg>
                             <span>{{ 'Update Rates'|trans }}</span>
                         </a>
+                        {% endif %}
                         {% if params.provider|default('exchangerate-api') == "exchangerate-api" and not params.exchangerate_api_key %}
                             <a href="https://www.exchangerate-api.com" target="_blank"><p class="mt-1 mb-0">{{ 'Currency exchange rates By ExchangeRate-API.'|trans }}</p></a>
                         {% endif %}
                     </div>
                 </div>
 
+                {% if can_create_currency %}
                 <div class="tab-pane fade" id="tab-new-currency" role="tabpanel">
                     <form method="post" action="{{ 'api/admin/currency/create'|link }}" {{ fb_api_form({redirect: 'extension/settings/currency'|alink}) }}>
 
@@ -161,6 +175,7 @@
                         </div>
                     </form>
                 </div>
+                {% endif %}
 
                 <div class="tab-pane fade" id="tab-api-settings" role="tabpanel">
                     <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" {{ fb_api_form({message: 'Successfully Updated Settings'|trans}) }}>
