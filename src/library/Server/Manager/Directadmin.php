@@ -709,6 +709,8 @@ class Server_Manager_Directadmin extends Server_Manager
      */
     private function request(string $command, array $fields = [], bool $post = true, string $asUser = ''): array
     {
+        $verifyTls = (bool) ($this->_config['config']['tls_verify'] ?? true);
+
         // Get the host from the configuration
         $host = $this->_config['host'];
 
@@ -728,8 +730,8 @@ class Server_Manager_Directadmin extends Server_Manager
         $httpClient = $this->getHttpClient()->withOptions([
             'auth_basic' => [$username, $this->_config['password']],
             'timeout' => 60,
-            'verify_host' => false,
-            'verify_peer' => false,
+            'verify_host' => $verifyTls,
+            'verify_peer' => $verifyTls,
         ]);
 
         // Construct the URL for the request
@@ -809,7 +811,7 @@ class Server_Manager_Directadmin extends Server_Manager
         parse_str($data, $response);
 
         // Log the parsed response data for debugging purposes
-        $this->getLog()->debug('Parsed Response: ' . print_r($response, 1));
+        $this->getLog()->debug('Parsed Response: ' . print_r($response, true));
 
         // Return the parsed response data
         return $response;
