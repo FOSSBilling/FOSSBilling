@@ -62,7 +62,7 @@
                 <div class="form-group mb-3 row">
                     <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}</label>
                     <div class="col">
-                        {{ mf.selectbox('status', admin.support_ticket_get_statuses({ 'titles': 1 }), request.status, 0, 'All statuses'|trans) }}
+                        {{ mf.selectbox('status', admin.support_ticket_get_statuses({ 'titles': true }), request.status, 0, 'All statuses'|trans) }}
                     </div>
                 </div>
                 <div class="form-group mb-3 row">

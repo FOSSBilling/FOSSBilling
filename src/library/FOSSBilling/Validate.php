@@ -148,7 +148,7 @@ class Validate
         }
     }
 
-    public function isPasswordStrong($pwd): bool
+    public function isPasswordStrong(string $pwd): bool
     {
         if (strlen((string) $pwd) < 8) {
             throw new InformationException('Minimum password length is 8 characters.');
