@@ -494,7 +494,7 @@ class Admin extends \Api_Abstract
 
         $clients = $this->di['db']->find('Client', 'client_group_id = :group_id', [':group_id' => $data['id']]);
 
-        if (\FOSSBilling\Tools::safeCount($clients) > 0) {
+        if (Tools::safeCount($clients) > 0) {
             throw new InformationException('Group has clients assigned. Please reassign them first.');
         }
 

@@ -131,7 +131,7 @@ class Server_Manager_Plesk extends Server_Manager
                 // throw new Server_Exception('Out of free IP addresses');
             }
             */
-            if (\FOSSBilling\Tools::safeCount($ips['exclusive']) > 0) {
+            if (FOSSBilling\Tools::safeCount($ips['exclusive']) > 0) {
                 $ips['exclusive'] = array_values($ips['exclusive']);
                 $rand = array_rand($ips['exclusive']);
                 $account->setIp($ips['exclusive'][$rand]['ip']);
@@ -142,7 +142,7 @@ class Server_Manager_Plesk extends Server_Manager
         $client = $account->getClient();
 
         if (!$id) {
-            $placeholders = [':action:' => __trans('create account'), ':type"' => 'Plesk'];
+            $placeholders = [':action:' => __trans('create account'), ':type:' => 'Plesk'];
 
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }

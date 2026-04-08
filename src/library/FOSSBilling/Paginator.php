@@ -21,10 +21,10 @@ namespace FOSSBilling;
 class Paginator
 {
     /**
-     * @param int $itemsCount total number of items across all pages
+     * @param int $itemsCount  total number of items across all pages
      * @param int $currentPage current page number (1-based)
-     * @param int $limit items per page (0 or less means unlimited)
-     * @param int $midRange number of page links to show in the middle
+     * @param int $limit       items per page (0 or less means unlimited)
+     * @param int $midRange    number of page links to show in the middle
      */
     public function __construct(
         private readonly int $itemsCount = 0,

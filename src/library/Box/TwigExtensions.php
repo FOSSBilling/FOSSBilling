@@ -340,7 +340,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             $number = '0';
         }
 
-        return number_format(floatval($number), $decimals, $dec_point, $thousands_sep);
+        return number_format(floatval($number), intval($decimals), (string) $dec_point, (string) $thousands_sep);
     }
 
     public function twig_daysleft_filter($iso8601): int
