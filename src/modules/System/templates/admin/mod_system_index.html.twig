@@ -14,7 +14,7 @@
         </div>
         <div class="card-body">
             <div class="datagrid">
-                {% for ext in admin.extension_get_list({ 'active': 1, 'has_settings': 1 }|merge(request)) %}
+                {% for ext in admin.extension_get_list({ 'active': true, 'has_settings': 1 }|merge(request)) %}
                     <div class="datagrid-item">
                         <div class="datagrid-title">
                             <a href="{{ 'extension/settings'|alink }}/{{ ext.id }}">

@@ -485,7 +485,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% set orders = admin.order_get_list({ 'per_page': '20', 'client_id': client.id }) %}
+                        {% set orders = admin.order_get_list({ 'per_page': 20, 'client_id': client.id }) %}
                         {% for order in orders.list %}
                         <tr>
                             <td>{{ order.id }}</td>
@@ -554,7 +554,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% set invoices = admin.invoice_get_list({ 'per_page': '100', 'client_id': client.id }) %}
+                        {% set invoices = admin.invoice_get_list({ 'per_page': 100, 'client_id': client.id }) %}
                         {% for invoice in invoices.list %}
                         <tr>
                             <td>
@@ -622,7 +622,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% set tickets = admin.support_ticket_get_list({ 'per_page': '20', 'client_id': client.id, 'deep': 0, 'include_first': 0 }) %}
+                        {% set tickets = admin.support_ticket_get_list({ 'per_page': 20, 'client_id': client.id, 'deep': 0, 'include_first': 0 }) %}
                         {% for ticket in tickets.list %}
                         <tr>
                             <td>{{ ticket.id }}</td>
@@ -796,7 +796,7 @@
                     </thead>
 
                     <tbody>
-                        {% set emails = admin.email_email_get_list({ 'per_page': '20', 'client_id': client.id }) %}
+                        {% set emails = admin.email_email_get_list({ 'per_page': 20, 'client_id': client.id }) %}
                         {% for i, email in emails.list %}
                         <tr>
                             <td>{{ email.subject }}</td>
