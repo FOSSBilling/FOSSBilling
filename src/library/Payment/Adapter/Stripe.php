@@ -112,7 +112,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             ':title' => $invoiceItems[0]['title'],
         ];
         $title = __trans('Payment for invoice :serie:id [:title]', $params);
-        if (\FOSSBilling\Tools::safeCount($invoiceItems) > 1) {
+        if (FOSSBilling\Tools::safeCount($invoiceItems) > 1) {
             $title = __trans('Payment for invoice :serie:id', $params);
         }
 

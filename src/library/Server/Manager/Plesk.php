@@ -131,7 +131,7 @@ class Server_Manager_Plesk extends Server_Manager
                 // throw new Server_Exception('Out of free IP addresses');
             }
             */
-            if (\FOSSBilling\Tools::safeCount($ips['exclusive']) > 0) {
+            if (FOSSBilling\Tools::safeCount($ips['exclusive']) > 0) {
                 $ips['exclusive'] = array_values($ips['exclusive']);
                 $rand = array_rand($ips['exclusive']);
                 $account->setIp($ips['exclusive'][$rand]['ip']);
