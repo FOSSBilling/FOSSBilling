@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -130,7 +131,7 @@ class Guest extends \Api_Abstract
         $type = $data['type'] ?? 'hosting';
 
         $products = $this->di['db']->find('Product', 'type = :type', [':type' => $type]);
-        if ((is_countable($products) ? count($products) : 0) <= 0) {
+        if (\FOSSBilling\Tools::safeCount($products) <= 0) {
             return [];
         }
 

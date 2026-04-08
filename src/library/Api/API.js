@@ -344,11 +344,10 @@ const API = {
     } else if (['post', 'put', 'patch', 'delete'].includes(methodLower)) {
       if (isFormData) {
         body = params;
-      } else {
-        if (!Tools.isJSON(params)) {
-          params = JSON.stringify(params);
-        }
+      } else if (typeof params === 'string') {
         body = params;
+      } else {
+        body = JSON.stringify(params);
       }
     }
 
@@ -394,14 +393,6 @@ const API = {
         }
       })
       .then((response) => {
-        if (enableLoader && loader) {
-          if (loader._fadeInTimeout) {
-            clearTimeout(loader._fadeInTimeout);
-          }
-          document.body.removeChild(loader);
-          loader = null;
-        }
-
         if (response.error) {
           const error = new Error(response.error.message || 'Unknown API error');
           error.code = response.error.code;
@@ -416,14 +407,6 @@ const API = {
       })
       .catch((error) => {
         clearTimeout(timeoutId);
-
-        if (enableLoader && loader) {
-          if (loader._fadeInTimeout) {
-            clearTimeout(loader._fadeInTimeout);
-          }
-          document.body.removeChild(loader);
-          loader = null;
-        }
 
         let errorObj;
         if (error.name === 'AbortError') {
@@ -452,6 +435,17 @@ const API = {
           const normalizedError = new Error(errorObj.message);
           normalizedError.code = errorObj.code;
           throw normalizedError;
+        }
+      })
+      .finally(() => {
+        if (enableLoader && loader) {
+          if (loader._fadeInTimeout) {
+            clearTimeout(loader._fadeInTimeout);
+          }
+          if (document.body.contains(loader)) {
+            document.body.removeChild(loader);
+          }
+          loader = null;
         }
       });
   },

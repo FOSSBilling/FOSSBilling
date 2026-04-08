@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -577,10 +578,12 @@ class Server_Manager_Whm extends Server_Manager
      */
     private function request(string $action, array $params = []): mixed
     {
+        $verifyTls = \FOSSBilling\Tools::normalizeBoolean($this->_config['config']['tls_verify'] ?? true, true);
+
         // Create the HTTP client with the necessary options
         $client = $this->getHttpClient()->withOptions([
-            'verify_peer' => false,
-            'verify_host' => false,
+            'verify_peer' => $verifyTls,
+            'verify_host' => $verifyTls,
             'timeout' => 90, // Account creation can timeout if set too low - see #1086.
         ]);
 

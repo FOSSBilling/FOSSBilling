@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -11,6 +12,7 @@
 
 namespace Box\Mod\Servicehosting\Api;
 
+use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 /**
@@ -197,6 +199,7 @@ class Admin extends \Api_Abstract
      * @optional string $port - server API port
      * @optional string $passwordLength - password length for generated accounts
      * @optional bool $secure - flag to define whether to use secure connection (https) to server or not (http)
+     * @optional bool $tls_verify - flag to define whether to verify TLS certificates when calling server APIs
      * @optional bool $active - flag to enable/disable server
      *
      * @return int - server id
@@ -211,6 +214,11 @@ class Admin extends \Api_Abstract
     public function server_create($data): int
     {
         $service = $this->getService();
+
+        $data['config'] = [
+            'userprefix' => $data['userprefix'] ?? null,
+            'tls_verify' => Tools::normalizeBoolean($data['tls_verify'] ?? true, true),
+        ];
 
         return (int) $service->createServer($data['name'], $data['ip'], $data['manager'], $data);
     }
@@ -267,6 +275,7 @@ class Admin extends \Api_Abstract
      * @optional string $port - server API port
      * @optional string $passwordLength - password length for generated accounts
      * @optional bool $secure - flag to define whether to use secure connection (https) to server or not (http)
+     * @optional bool $tls_verify - flag to define whether to verify TLS certificates when calling server APIs
      * @optional bool $active - flag to enable/disable server
      *
      * @throws \FOSSBilling\Exception
@@ -277,9 +286,11 @@ class Admin extends \Api_Abstract
         $model = $this->di['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
         $service = $this->getService();
 
-        $data['config'] = [
-            'userprefix' => $data['userprefix'] ?? null,
-        ];
+        $existingConfig = json_decode($model->config ?? '', true) ?? [];
+
+        $data['config'] = $existingConfig;
+        $data['config']['userprefix'] = $data['userprefix'] ?? ($existingConfig['userprefix'] ?? null);
+        $data['config']['tls_verify'] = Tools::normalizeBoolean($data['tls_verify'] ?? ($existingConfig['tls_verify'] ?? true), true);
 
         return (bool) $service->updateServer($model, $data);
     }

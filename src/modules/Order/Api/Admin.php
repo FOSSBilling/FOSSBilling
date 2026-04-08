@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -15,6 +16,7 @@
 
 namespace Box\Mod\Order\Api;
 
+use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \Api_Abstract
@@ -148,7 +150,7 @@ class Admin extends \Api_Abstract
     public function suspend($data)
     {
         $order = $this->_getOrder($data);
-        $skip_event = isset($data['skip_event']) && (bool) $data['skip_event'];
+        $skip_event = Tools::normalizeBoolean($data['skip_event'] ?? false);
 
         $reason = $data['reason'] ?? null;
 
@@ -180,7 +182,7 @@ class Admin extends \Api_Abstract
     public function cancel($data)
     {
         $order = $this->_getOrder($data);
-        $skip_event = isset($data['skip_event']) && (bool) $data['skip_event'];
+        $skip_event = Tools::normalizeBoolean($data['skip_event'] ?? false);
 
         $reason = $data['reason'] ?? null;
 
@@ -212,8 +214,8 @@ class Admin extends \Api_Abstract
     public function delete($data)
     {
         $order = $this->_getOrder($data);
-        $delete_addons = isset($data['delete_addons']) && (bool) $data['delete_addons'];
-        $forceDelete = (bool) ($data['force_delete'] ?? false);
+        $delete_addons = Tools::normalizeBoolean($data['delete_addons'] ?? false);
+        $forceDelete = Tools::normalizeBoolean($data['force_delete'] ?? false);
 
         if ($delete_addons) {
             $list = $this->getService()->getOrderAddonsList($order);
@@ -387,7 +389,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ids' => 'Order IDs were not passed'])]
     public function batch_delete($data): bool
     {
-        $delete_addons = isset($data['delete_addons']) && (bool) $data['delete_addons'];
+        $delete_addons = Tools::normalizeBoolean($data['delete_addons'] ?? false);
 
         foreach ($data['ids'] as $id) {
             $this->delete(['id' => $id, 'delete_addons' => $delete_addons]);

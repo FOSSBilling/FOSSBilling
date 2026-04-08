@@ -64,7 +64,7 @@
                     </tr>
                     <tr>
                         <td>{{ 'Status'|trans }}</td>
-                            {% for tcode, tstatus in admin.support_ticket_get_statuses({ 'titles': 1 }) %}
+                            {% for tcode, tstatus in admin.support_ticket_get_statuses({ 'titles': true }) %}
                                 {% if ticket.status == tcode %}
                                 <td>{{ tstatus|trans }}</td>
                                 {% endif %}
@@ -144,7 +144,7 @@
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}</label>
                         <div class="col">
-                            {{ mf.selectbox('status', admin.support_ticket_get_statuses({ 'titles': 1 }), ticket.status, 1) }}
+                            {{ mf.selectbox('status', admin.support_ticket_get_statuses({ 'titles': true }), ticket.status, 1) }}
                         </div>
                     </div>
                     <div class="mb-3 row">
@@ -213,7 +213,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% set tickets = admin.support_ticket_get_list({ 'per_page': '20', 'client_id': ticket.client.id, 'deep': 0, 'include_first': 0 }) %}
+                    {% set tickets = admin.support_ticket_get_list({ 'per_page': 20, 'client_id': ticket.client.id, 'deep': 0, 'include_first': 0 }) %}
                     {% for ticket in tickets.list %}
                     <tr>
                         <td>{{ ticket.id }}</td>

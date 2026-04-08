@@ -79,7 +79,7 @@ parameters:
 			path: src/library/Server/Manager/Directadmin.php
 
 		-
-			message: '#^Call to an undefined method Server_Package\:\:getHasSll\(\)\.$#'
+			message: '#^Call to an undefined method Server_Package\:\:getHasSsl\(\)\.$#'
 			identifier: method.notFound
 			count: 1
 			path: src/library/Server/Manager/Directadmin.php

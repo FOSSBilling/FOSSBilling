@@ -311,7 +311,7 @@
     </div>
     {% endif %}
 
-    {% set orders = admin.order_get_list({ 'per_page': '5', 'status': 'active' }) %}
+    {% set orders = admin.order_get_list({ 'per_page': 5, 'status': 'active' }) %}
     {% if orders.list|length > 0 %}
         <div class="col-lg-6">
             <div class="card">

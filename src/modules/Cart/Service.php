@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -327,7 +328,7 @@ class Service implements InjectionAwareInterface
     {
         $cartProducts = $this->di['db']->find('CartProduct', 'cart_id = :cart_id', [':cart_id' => $cart->id]);
 
-        return (is_countable($cartProducts) ? count($cartProducts) : 0) == 0;
+        return \FOSSBilling\Tools::safeCount($cartProducts) == 0;
     }
 
     public function rm(\Model_Cart $cart): bool
@@ -523,7 +524,7 @@ class Service implements InjectionAwareInterface
     {
         $cart = $this->getSessionCart();
         $ca = $this->toApiArray($cart);
-        if ((is_countable($ca['items']) ? count($ca['items']) : 0) == 0) {
+        if (\FOSSBilling\Tools::safeCount($ca['items']) == 0) {
             throw new \FOSSBilling\InformationException('Cannot checkout an empty cart');
         }
 

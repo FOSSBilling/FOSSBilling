@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -75,9 +76,9 @@ class Service
 
     /**
      * @param string $param
-     * @param bool   $default
+     * @param mixed  $default
      */
-    public function getParamValue($param, $default = null)
+    public function getParamValue(string $param, $default = null)
     {
         if (empty($param)) {
             throw new \FOSSBilling\Exception('Parameter key is missing');
@@ -1030,6 +1031,13 @@ class Service
     public function getVersion(): string
     {
         return Version::VERSION;
+    }
+
+    public function shouldExposeVersion(): bool
+    {
+        $hideVersionPublic = $this->getParamValue('hide_version_public');
+
+        return $this->di['auth']->isAdminLoggedIn() || !$hideVersionPublic;
     }
 
     public function getPendingMessages()

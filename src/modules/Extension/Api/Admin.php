@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Extension\Api;
 
+use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \Api_Abstract
@@ -88,10 +89,10 @@ class Admin extends \Api_Abstract
      */
     public function languages(array $data): array
     {
-        return \FOSSBilling\i18n::getLocales(
-            (bool) ($data['details'] ?? true),
-            (bool) ($data['disabled'] ?? false)
-        );
+        $data['disabled'] = Tools::normalizeBoolean($data['disabled'] ?? false);
+        $data['details'] = Tools::normalizeBoolean($data['details'] ?? true, true);
+
+        return \FOSSBilling\i18n::getLocales($data['details'], $data['disabled']);
     }
 
     /**

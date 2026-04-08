@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -243,49 +244,24 @@ class Admin extends \Api_Abstract
         }
 
         // Special handling for the phone number itself
-        $phone = (!empty($data['phone']) ? $data['phone'] : $client->phone);
+        $phone = $data['phone'] ?? $client->phone;
         if (!empty($phone) && is_string($phone)) {
             $client->phone = Tools::validatePhoneNumber($phone);
         }
 
-        $client->email = (!empty($data['email']) ? $data['email'] : $client->email);
-        $client->first_name = (!empty($data['first_name']) ? $data['first_name'] : $client->first_name);
-        $client->last_name = (!empty($data['last_name']) ? $data['last_name'] : $client->last_name);
-        $client->aid = (!empty($data['aid']) ? $data['aid'] : $client->aid);
-        $client->gender = (!empty($data['gender']) ? $data['gender'] : $client->gender);
-        $client->birthday = (!empty($data['birthday']) ? $data['birthday'] : $client->birthday);
-        $client->company = (!empty($data['company']) ? $data['company'] : $client->company);
-        $client->company_vat = (!empty($data['company_vat']) ? $data['company_vat'] : $client->company_vat);
-        $client->address_1 = (!empty($data['address_1']) ? $data['address_1'] : $client->address_1);
-        $client->address_2 = (!empty($data['address_2']) ? $data['address_2'] : $client->address_2);
-        $client->document_type = (!empty($data['document_type']) ? $data['document_type'] : $client->document_type);
-        $client->document_nr = (!empty($data['document_nr']) ? $data['document_nr'] : $client->document_nr);
-        $client->notes = (!empty($data['notes']) ? $data['notes'] : $client->notes);
-        $client->country = (!empty($data['country']) ? $data['country'] : $client->country);
-        $client->postcode = (!empty($data['postcode']) ? $data['postcode'] : $client->postcode);
-        $client->state = (!empty($data['state']) ? $data['state'] : $client->state);
-        $client->city = (!empty($data['city']) ? $data['city'] : $client->city);
+        $allowedFields = [
+            'email', 'first_name', 'last_name', 'aid', 'gender', 'birthday',
+            'company', 'company_vat', 'address_1', 'address_2', 'document_type',
+            'document_nr', 'notes', 'country', 'postcode', 'state', 'city',
+            'status', 'email_approved', 'tax_exempt', 'created_at',
+            'custom_1', 'custom_2', 'custom_3', 'custom_4', 'custom_5',
+            'custom_6', 'custom_7', 'custom_8', 'custom_9', 'custom_10',
+            'client_group_id', 'company_number', 'type', 'lang',
+        ];
 
-        $client->status = (!empty($data['status']) ? $data['status'] : $client->status);
-        $client->email_approved = (!empty($data['email_approved']) ? $data['email_approved'] : $client->email_approved);
-        $client->tax_exempt = (!empty($data['tax_exempt']) ? $data['tax_exempt'] : $client->tax_exempt);
-        $client->created_at = (!empty($data['created_at']) ? $data['created_at'] : $client->created_at);
-
-        $client->custom_1 = (!empty($data['custom_1']) ? $data['custom_1'] : $client->custom_1);
-        $client->custom_2 = (!empty($data['custom_2']) ? $data['custom_2'] : $client->custom_2);
-        $client->custom_3 = (!empty($data['custom_3']) ? $data['custom_3'] : $client->custom_3);
-        $client->custom_4 = (!empty($data['custom_4']) ? $data['custom_4'] : $client->custom_4);
-        $client->custom_5 = (!empty($data['custom_5']) ? $data['custom_5'] : $client->custom_5);
-        $client->custom_6 = (!empty($data['custom_6']) ? $data['custom_6'] : $client->custom_6);
-        $client->custom_7 = (!empty($data['custom_7']) ? $data['custom_7'] : $client->custom_7);
-        $client->custom_8 = (!empty($data['custom_8']) ? $data['custom_8'] : $client->custom_8);
-        $client->custom_9 = (!empty($data['custom_9']) ? $data['custom_9'] : $client->custom_9);
-        $client->custom_10 = (!empty($data['custom_10']) ? $data['custom_10'] : $client->custom_10);
-
-        $client->client_group_id = (!empty($data['group_id']) ? $data['group_id'] : $client->client_group_id);
-        $client->company_number = (!empty($data['company_number']) ? $data['company_number'] : $client->company_number);
-        $client->type = (!empty($data['type']) ? $data['type'] : $client->type);
-        $client->lang = (!empty($data['lang']) ? $data['lang'] : $client->lang);
+        foreach ($allowedFields as $field) {
+            $client->{$field} = $data[$field] ?? $client->{$field};
+        }
 
         $client->updated_at = date('Y-m-d H:i:s');
 
@@ -303,9 +279,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'ID required', 'password' => 'Password required', 'password_confirm' => 'Password confirmation required'])]
     public function change_password($data): bool
     {
-        if ($data['password'] != $data['password_confirm']) {
-            throw new InformationException('Passwords do not match');
-        }
+        $this->di['validator']->passwordsMatch($data);
 
         $this->di['validator']->isPasswordStrong($data['password']);
 
@@ -498,7 +472,7 @@ class Admin extends \Api_Abstract
 
         $clients = $this->di['db']->find('Client', 'client_group_id = :group_id', [':group_id' => $data['id']]);
 
-        if ((is_countable($clients) ? count($clients) : 0) > 0) {
+        if (Tools::safeCount($clients) > 0) {
             throw new InformationException('Group has clients assigned. Please reassign them first.');
         }
 

@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: 'Perform Spellcheck'
-        uses: streetsidesoftware/cspell-action@9cd41bb518a24fefdafd9880cbab8f0ceba04d28 # v8
+        uses: streetsidesoftware/cspell-action@de2a73e963e7443969755b648a1008f77033c5b2 # v8
         with:
           incremental_files_only: true
 
@@ -34,7 +34,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: 'PHP Build' 
-        uses: FOSSBilling/.workflows/.github/actions/php-build@14f9ee16814897607dac1886accc76aefcea3378
+        uses: FOSSBilling/.workflows/.github/actions/php-build@76b4af76fb2a1a2b553ec1c2839044984299a271
         with:
           php-version: ${{ matrix.php }}
 
@@ -45,7 +45,7 @@ jobs:
           echo APP_ENV=test >> $GITHUB_ENV
         
       - name: 'PHP Tests (PHPStan and PHPUnit)'
-        uses: FOSSBilling/.workflows/.github/actions/php-test@14f9ee16814897607dac1886accc76aefcea3378
+        uses: FOSSBilling/.workflows/.github/actions/php-test@76b4af76fb2a1a2b553ec1c2839044984299a271
         with:
           php-version: ${{ matrix.php }}
           php-vendor-dir: './src/vendor'
@@ -113,14 +113,31 @@ jobs:
           path: './src/*'
           retention-days: 14
 
+  clear-docker-cache:
+    name: 'Clear Stale Docker Build Cache'
+    permissions:
+      actions: write
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Delete stale Docker layer caches'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --paginate "/repos/${{ github.repository }}/actions/caches" \
+            --jq --arg ref "${{ github.ref_name }}" \
+            '.actions_caches[] | select(.key | startswith("buildkit-ghcache") or startswith($ref + "-linux/")) | .id' \
+            | xargs -r -I{} gh api -X DELETE "/repos/${{ github.repository }}/actions/caches/{}" \
+            || true
+
   deploy-preview-docker:
     name: 'Build and Push Preview to Docker Hub'
     permissions:
       contents: read
       actions: write
-    needs: [ preview-build ]
+    needs: [ preview-build, clear-docker-cache ]
     if: ${{ github.ref == 'refs/heads/main' }}
-    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@14f9ee16814897607dac1886accc76aefcea3378
+    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@76b4af76fb2a1a2b553ec1c2839044984299a271
     secrets:
       dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME }}
       dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}

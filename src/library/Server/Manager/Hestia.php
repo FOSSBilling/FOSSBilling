@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -347,6 +348,7 @@ class Server_Manager_Hestia extends Server_Manager
      */
     private function request($params): mixed
     {
+        $verifyTls = \FOSSBilling\Tools::normalizeBoolean($this->_config['config']['tls_verify'] ?? true, true);
         $host = 'https://' . $this->_config['host'] . ':' . $this->getPort() . '/api/';
 
         // Set return code to yes
@@ -364,8 +366,8 @@ class Server_Manager_Hestia extends Server_Manager
 
         // Send POST query
         $client = $this->getHttpClient()->withOptions([
-            'verify_peer' => false,
-            'verify_host' => false,
+            'verify_peer' => $verifyTls,
+            'verify_host' => $verifyTls,
             'timeout' => 30,
         ]);
 

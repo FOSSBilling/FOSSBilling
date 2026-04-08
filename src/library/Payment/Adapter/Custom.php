@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -101,7 +102,7 @@ class Payment_Adapter_Custom
             $invoiceService->markAsPaid($invoice, true, true);
 
             // Update the transaction status and details
-            $tx->status = 'succeeded';
+            $tx->status = Model_Transaction::STATUS_PROCESSED;
             $tx->amount = $invoiceTotal;
             $tx->note = $gateway->title . ' transaction No: ' . $tx->txn_id;
             $tx->currency = $invoice->currency;

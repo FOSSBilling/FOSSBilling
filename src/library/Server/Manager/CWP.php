@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -380,6 +381,8 @@ class Server_Manager_CWP extends Server_Manager
      */
     private function request(string $func, array $data): mixed
     {
+        $verifyTls = \FOSSBilling\Tools::normalizeBoolean($this->_config['config']['tls_verify'] ?? true, true);
+
         // Add the access hash to the data array
         $data['key'] = $this->_config['accesshash'];
 
@@ -390,10 +393,10 @@ class Server_Manager_CWP extends Server_Manager
         // Construct the URL for the request
         $url = 'https://' . $host . ':' . $port . '/v1/' . $func;
 
-        // Get the HTTP client with options set to ignore SSL verification
+        // Get the HTTP client with TLS verification options from server configuration
         $client = $this->getHttpClient()->withOptions([
-            'verify_peer' => false,
-            'verify_host' => false,
+            'verify_peer' => $verifyTls,
+            'verify_host' => $verifyTls,
         ]);
 
         // Make the request and convert the response to an array

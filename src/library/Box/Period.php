@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -38,7 +39,7 @@ class Box_Period
     private readonly string $unit;
     private readonly int $qty;
 
-    public function __construct($code)
+    public function __construct(string $code)
     {
         if (strlen((string) $code) != 2) {
             throw new FOSSBilling\Exception('Invalid period code. Period definition must be 2 chars length');
