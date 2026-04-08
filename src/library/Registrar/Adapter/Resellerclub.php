@@ -668,8 +668,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         $client = $this->getHttpClient()->withOptions([
             'timeout' => 60,
-            'verify_peer' => false,
-            'verify_host' => false,
         ]);
 
         $callUrl = $this->_getApiUrl() . $url . '.' . $type;

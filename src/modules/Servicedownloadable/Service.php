@@ -14,6 +14,7 @@ namespace Box\Mod\Servicedownloadable;
 
 use FOSSBilling\Environment;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\HeaderUtils;
@@ -408,7 +409,7 @@ class Service implements InjectionAwareInterface
     public function saveProductConfig(\Model_Product $productModel, $data): bool
     {
         $config = json_decode($productModel->config ?? '', true) ?: [];
-        $config['update_orders'] = isset($data['update_orders']) && (bool) $data['update_orders'];
+        $config['update_orders'] = Tools::normalizeBoolean($data['update_orders'] ?? false);
         $productModel->config = json_encode($config);
         $productModel->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($productModel);

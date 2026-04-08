@@ -123,8 +123,6 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
         $client = $this->getHttpClient()->withOptions([
             'timeout' => 60,
-            'verify_peer' => 0,
-            'verify_host' => 0,
         ]);
 
         $callUrl = $this->_getApiUrl();

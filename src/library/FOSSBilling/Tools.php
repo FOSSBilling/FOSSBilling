@@ -226,6 +226,28 @@ class Tools
         return is_countable($value) ? count($value) : 0;
     }
 
+    /**
+     * Normalizes mixed input into a boolean value.
+     */
+    public static function normalizeBoolean(mixed $value, bool $default = false): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return (bool) $value;
+        }
+
+        if (is_string($value)) {
+            $normalized = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+            return $normalized ?? $default;
+        }
+
+        return $default;
+    }
+
     public static function isHTTPS(): bool
     {
         $protocol = $_SERVER['HTTPS'] ?? $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? $_SERVER['REQUEST_SCHEME'] ?? '';
