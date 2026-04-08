@@ -135,9 +135,9 @@ class Validate
     /**
      * Checks that password and password confirmation match.
      *
-     * @param array $data              The data array containing password fields
-     * @param string $passwordKey      The key for the password field (default: 'password')
-     * @param string $confirmKey       The key for the confirmation field (default: 'password_confirm')
+     * @param array  $data        The data array containing password fields
+     * @param string $passwordKey The key for the password field (default: 'password')
+     * @param string $confirmKey  The key for the confirmation field (default: 'password_confirm')
      *
      * @throws InformationException if passwords do not match
      */

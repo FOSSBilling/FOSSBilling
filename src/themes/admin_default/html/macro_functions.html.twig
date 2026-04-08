@@ -88,13 +88,13 @@
     {% set c = guest.currency_get({"code":currency}) %}
     {% set p = (price)|number %}
     {% if c.price_format == 1 %}
-        {% set p = p|number('2', '.', '') %}
+        {% set p = p|number(2, '.', '') %}
     {% elseif c.price_format == 2 %}
-        {% set p = p|number('2', '.', ',') %}
+        {% set p = p|number(2, '.', ',') %}
     {% elseif c.price_format == 3 %}
-        {% set p = p|number('2', ',', '.') %}
+        {% set p = p|number(2, ',', '.') %}
     {% elseif c.price_format == 4 %}
-        {% set p = p|number('0', '', ',') %}
+        {% set p = p|number(0, '', ',') %}
     {% elseif c.price_format == 5 %}
         {% set p = p|number(0, '', '') %}
     {% endif %}
@@ -111,13 +111,13 @@
     {% set p = (price * c.conversion_rate) %}
 
     {% if c.price_format == 1 %}
-        {% set p = p|number('2', '.', '') %}
+        {% set p = p|number(2, '.', '') %}
     {% elseif c.price_format == 2 %}
-        {% set p = p|number('2', '.', ',') %}
+        {% set p = p|number(2, '.', ',') %}
     {% elseif c.price_format == 3 %}
-        {% set p = p|number('2', ',', '.') %}
+        {% set p = p|number(2, ',', '.') %}
     {% elseif c.price_format == 4 %}
-        {% set p = p|number('0', '', ',') %}
+        {% set p = p|number(0, '', ',') %}
     {% elseif c.price_format == 5 %}
         {% set p = p|number(0, '', '') %}
     {% endif %}
