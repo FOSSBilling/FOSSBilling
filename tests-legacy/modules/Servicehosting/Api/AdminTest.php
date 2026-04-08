@@ -414,6 +414,49 @@ final class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
+    public function testServerUpdatePreservesUnknownConfigKeys(): void
+    {
+        $data = [
+            'id' => 1,
+            'tls_verify' => '0',
+        ];
+
+        $model = new \Model_ServiceHostingServer();
+        $model->loadBean(new \DummyBean());
+        $model->config = json_encode([
+            'userprefix' => 'oldprefix',
+            'custom_key' => 'keep-me',
+            'tls_verify' => true,
+        ]);
+
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock->expects($this->once())
+            ->method('updateServer')
+            ->with(
+                $model,
+                $this->callback(function (array $payload): bool {
+                    return isset($payload['config'])
+                        && $payload['config']['custom_key'] === 'keep-me'
+                        && $payload['config']['userprefix'] === 'oldprefix'
+                        && $payload['config']['tls_verify'] === false;
+                })
+            )
+            ->willReturn(true);
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('getExistingModelById')
+            ->willReturn($model);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
+
+        $result = $this->api->server_update($data);
+        $this->assertTrue($result);
+    }
+
     public function testServerTestConnection(): void
     {
         $data['id'] = 1;
