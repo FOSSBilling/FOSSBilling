@@ -1000,6 +1000,13 @@ class Service
         return Version::VERSION;
     }
 
+    public function shouldExposeVersion(): bool
+    {
+        $hideVersionPublic = $this->getParamValue('hide_version_public');
+
+        return $this->di['auth']->isAdminLoggedIn() || !$hideVersionPublic;
+    }
+
     public function getPendingMessages()
     {
         $messages = $this->di['session']->get('pending_messages');
