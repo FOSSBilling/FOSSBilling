@@ -381,7 +381,7 @@ class Server_Manager_CWP extends Server_Manager
      */
     private function request(string $func, array $data): mixed
     {
-        $verifyTls = (bool) ($this->_config['config']['tls_verify'] ?? true);
+        $verifyTls = \FOSSBilling\Tools::normalizeBoolean($this->_config['config']['tls_verify'] ?? true, true);
 
         // Add the access hash to the data array
         $data['key'] = $this->_config['accesshash'];

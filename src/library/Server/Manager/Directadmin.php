@@ -709,7 +709,7 @@ class Server_Manager_Directadmin extends Server_Manager
      */
     private function request(string $command, array $fields = [], bool $post = true, string $asUser = ''): array
     {
-        $verifyTls = (bool) ($this->_config['config']['tls_verify'] ?? true);
+        $verifyTls = \FOSSBilling\Tools::normalizeBoolean($this->_config['config']['tls_verify'] ?? true, true);
 
         // Get the host from the configuration
         $host = $this->_config['host'];

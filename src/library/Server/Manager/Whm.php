@@ -578,7 +578,7 @@ class Server_Manager_Whm extends Server_Manager
      */
     private function request(string $action, array $params = []): mixed
     {
-        $verifyTls = (bool) ($this->_config['config']['tls_verify'] ?? true);
+        $verifyTls = \FOSSBilling\Tools::normalizeBoolean($this->_config['config']['tls_verify'] ?? true, true);
 
         // Create the HTTP client with the necessary options
         $client = $this->getHttpClient()->withOptions([
