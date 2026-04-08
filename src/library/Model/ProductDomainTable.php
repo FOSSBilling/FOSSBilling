@@ -99,7 +99,7 @@ class Model_ProductDomainTable extends Model_ProductTable
         $addon_qty = $addon_sys_period->getQty();
 
         $free_domain_periods = $addon['config']['free_domain_periods'] ?? [];
-        if (\FOSSBilling\Tools::safeCount($free_domain_periods) > 0) {
+        if (FOSSBilling\Tools::safeCount($free_domain_periods) > 0) {
             // if hosting and domain periods are equal, return domain quantity (year)
             if ($addon_period == $period) {
                 if (in_array($addon_period, $free_domain_periods)) {

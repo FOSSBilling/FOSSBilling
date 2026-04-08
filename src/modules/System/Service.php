@@ -76,9 +76,9 @@ class Service
 
     /**
      * @param string $param
-     * @param bool   $default
+     * @param mixed  $default
      */
-    public function getParamValue($param, $default = null)
+    public function getParamValue(string $param, $default = null)
     {
         if (empty($param)) {
             throw new \FOSSBilling\Exception('Parameter key is missing');
@@ -998,6 +998,13 @@ class Service
     public function getVersion(): string
     {
         return Version::VERSION;
+    }
+
+    public function shouldExposeVersion(): bool
+    {
+        $hideVersionPublic = $this->getParamValue('hide_version_public');
+
+        return $this->di['auth']->isAdminLoggedIn() || !$hideVersionPublic;
     }
 
     public function getPendingMessages()
