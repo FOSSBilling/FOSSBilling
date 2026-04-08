@@ -125,7 +125,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh api --paginate "/repos/${{ github.repository }}/actions/caches" \
-            --jq '.actions_caches[] | select(.key | startswith("buildkit-ghcache")) | .id' \
+            --jq --arg ref "${{ github.ref_name }}" \
+            '.actions_caches[] | select(.key | startswith("buildkit-ghcache") or startswith($ref + "-linux/")) | .id' \
             | xargs -r -I{} gh api -X DELETE "/repos/${{ github.repository }}/actions/caches/{}" \
             || true
 
