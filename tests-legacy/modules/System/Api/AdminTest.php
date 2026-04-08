@@ -50,6 +50,21 @@ final class AdminTest extends \BBTestCase
             ->method('updateParams')
             ->willReturn(true);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('system', 'update_params');
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {
+            if ($serviceName == 'Staff') {
+                return $staffServiceMock;
+            }
+
+            return false;
+        });
+        $this->api->setDi($di);
+
         $this->api->setService($serviceMock);
 
         $result = $this->api->update_params($data);
@@ -159,5 +174,79 @@ final class AdminTest extends \BBTestCase
         $result = $this->api->is_allowed($data);
         $this->assertIsBool($result);
         $this->assertTrue($result);
+    }
+
+    public function testRecheckUpdate(): void
+    {
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('system', 'recheck_update');
+
+        $updaterMock = $this->getMockBuilder(\FOSSBilling\Update::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['getLatestVersionInfo'])
+            ->getMock();
+        $updaterMock->expects($this->once())
+            ->method('getLatestVersionInfo')
+            ->with(null, true);
+
+        $di = $this->getDi();
+        $di['updater'] = $updaterMock;
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {
+            if ($serviceName == 'Staff') {
+                return $staffServiceMock;
+            }
+
+            return false;
+        });
+        $this->api->setDi($di);
+
+        $result = $this->api->recheck_update();
+        $this->assertTrue($result);
+    }
+
+    public function testToggleErrorReportingRequiresPermission(): void
+    {
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('system', 'toggle_error_reporting')
+            ->willThrowException(new \FOSSBilling\InformationException('denied'));
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {
+            if ($serviceName == 'Staff') {
+                return $staffServiceMock;
+            }
+
+            return false;
+        });
+        $this->api->setDi($di);
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->api->toggle_error_reporting();
+    }
+
+    public function testGetInterfaceIpsRequiresPermission(): void
+    {
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('system', 'manage_network_interface')
+            ->willThrowException(new \FOSSBilling\InformationException('denied'));
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {
+            if ($serviceName == 'Staff') {
+                return $staffServiceMock;
+            }
+
+            return false;
+        });
+        $this->api->setDi($di);
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->api->get_interface_ips();
     }
 }
