@@ -328,10 +328,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
         $params['apikey'] = $this->config['apikey'];
         $params['password'] = $this->config['password'];
 
-        $client = $this->getHttpClient()->withOptions([
-            'verify_peer' => false,
-            'verify_host' => false,
-        ]);
+        $client = $this->getHttpClient();
 
         try {
             $response = $client->request('POST', $this->_getApiUrl() . $command, [
