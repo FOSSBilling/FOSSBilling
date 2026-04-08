@@ -16,6 +16,8 @@ use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
+    private static array $permissionCache = [];
+
     protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
@@ -26,6 +28,23 @@ class Service implements InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    private function getRequestCacheKey(): string
+    {
+        return (string) spl_object_id($this->di);
+    }
+
+    private function getPermissionsFromCache(int|string $memberId): ?array
+    {
+        $requestCacheKey = $this->getRequestCacheKey();
+        $cacheKey = (string) $memberId;
+
+        if (!isset(self::$permissionCache[$requestCacheKey]) || !array_key_exists($cacheKey, self::$permissionCache[$requestCacheKey])) {
+            return null;
+        }
+
+        return is_array(self::$permissionCache[$requestCacheKey][$cacheKey]) ? self::$permissionCache[$requestCacheKey][$cacheKey] : [];
     }
 
     public function getModulePermissions(): array
@@ -144,11 +163,19 @@ class Service implements InjectionAwareInterface
             ->setParameter('id', $member_id)
             ->executeStatement();
 
+        self::$permissionCache[$this->getRequestCacheKey()][(string) $member_id] = $array;
+
         return true;
     }
 
     public function getPermissions($member_id)
     {
+        $cachedPermissions = $this->getPermissionsFromCache($member_id);
+
+        if (!is_null($cachedPermissions)) {
+            return $cachedPermissions;
+        }
+
         $query = $this->di['dbal']->createQueryBuilder();
         $query
             ->select('permissions')
@@ -158,9 +185,11 @@ class Service implements InjectionAwareInterface
         $result = $query->executeQuery()->fetchOne() ?? '';
 
         $permissions = json_decode($result, true);
-        if (!$permissions) {
-            return [];
+        if (!is_array($permissions)) {
+            $permissions = [];
         }
+
+        self::$permissionCache[$this->getRequestCacheKey()][(string) $member_id] = $permissions;
 
         return $permissions;
     }
