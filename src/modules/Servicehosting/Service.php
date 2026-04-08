@@ -749,8 +749,9 @@ class Service implements InjectionAwareInterface
         $model->password = $data['password'] ?? null;
         $model->accesshash = $data['accesshash'] ?? null;
         $model->port = $data['port'] ?? null;
+        $model->config = isset($data['config']) ? json_encode($data['config']) : null;
         $model->passwordLength = is_numeric($data['passwordLength'] ?? '') ? intval($data['passwordLength']) : null;
-        $model->secure = $data['secure'] ?? 0;
+        $model->secure = $data['secure'] ?? 1;
 
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
