@@ -61,7 +61,6 @@ final class AdminTest extends \BBTestCase
     {
         $data['event'] = 'testEvent';
 
-        $logMock = $this->createMock('\Box_Log');
         $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffServiceMock->expects($this->once())
             ->method('checkPermissionsAndThrowException')
