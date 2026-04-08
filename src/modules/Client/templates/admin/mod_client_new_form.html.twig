@@ -1,4 +1,5 @@
 {% import 'macro_functions.html.twig' as mf %}
+{% if has_permission('client', 'create') %}
 <form method="post" action="{{ 'api/admin/client/create'|link }}" {{ fb_api_form({ redirect: 'client'|alink}) }}>
 	<div class="card">
 		<div class="card-header">
@@ -153,3 +154,4 @@
 		</div>
 	</div>
 </form>
+{% endif %}
