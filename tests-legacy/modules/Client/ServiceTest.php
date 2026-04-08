@@ -19,6 +19,26 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
+    public function testGetModulePermissions(): void
+    {
+        $service = new \Box\Mod\Client\Service();
+
+        $permissions = $service->getModulePermissions();
+
+        $this->assertArrayHasKey('create', $permissions);
+        $this->assertArrayHasKey('edit_profile', $permissions);
+        $this->assertArrayHasKey('impersonate_login', $permissions);
+        $this->assertArrayHasKey('manage_api_keys', $permissions);
+        $this->assertArrayHasKey('change_password', $permissions);
+        $this->assertArrayHasKey('manage_balance', $permissions);
+        $this->assertArrayHasKey('view_login_history', $permissions);
+        $this->assertArrayHasKey('manage_groups', $permissions);
+        $this->assertArrayHasKey('delete', $permissions);
+        $this->assertArrayHasKey('bulk_delete', $permissions);
+        $this->assertArrayHasKey('export', $permissions);
+        $this->assertArrayHasKey('manage_settings', $permissions);
+    }
+
     public function testApproveClientEmailByHash(): void
     {
         $database = $this->createMock('\Box_Database');
