@@ -26,19 +26,15 @@ final class GuestTest extends \BBTestCase
 
     public function testVersionAdmin(): void
     {
-        $authorizationMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
-        $authorizationMock->expects($this->atLeastOnce())
-            ->method('isAdminLoggedIn')
-            ->willReturn(true);
-
-        $di = $this->getDi();
-        $di['auth'] = $authorizationMock;
-
         $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('shouldExposeVersion')
+            ->willReturn(true);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getVersion')
             ->willReturn(\FOSSBilling\Version::VERSION);
 
+        $di = $this->getDi();
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->version();
@@ -49,23 +45,15 @@ final class GuestTest extends \BBTestCase
 
     public function testVersionShowPublicOn(): void
     {
-        $authorizationMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
-        $authorizationMock->expects($this->atLeastOnce())
-            ->method('isAdminLoggedIn')
-            ->willReturn(false);
-
-        $di = $this->getDi();
-        $di['auth'] = $authorizationMock;
         $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('shouldExposeVersion')
+            ->willReturn(true);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getVersion')
             ->willReturn(\FOSSBilling\Version::VERSION);
 
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getParamValue')
-            ->with('hide_version_public')
-            ->willReturn(0);
-
+        $di = $this->getDi();
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->version();
@@ -76,20 +64,12 @@ final class GuestTest extends \BBTestCase
 
     public function testVersionShowPublicOff(): void
     {
-        $authorizationMock = $this->getMockBuilder('\Box_Authorization')->disableOriginalConstructor()->getMock();
-        $authorizationMock->expects($this->atLeastOnce())
-            ->method('isAdminLoggedIn')
+        $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('shouldExposeVersion')
             ->willReturn(false);
 
         $di = $this->getDi();
-        $di['auth'] = $authorizationMock;
-
-        $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getParamValue')
-            ->with('hide_version_public')
-            ->willReturn(1);
-
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
         $result = $this->api->version();
