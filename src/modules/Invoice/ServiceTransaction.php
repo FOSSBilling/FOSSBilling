@@ -14,6 +14,7 @@ namespace Box\Mod\Invoice;
 
 use FOSSBilling\Environment;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Tools;
 
 class ServiceTransaction implements InjectionAwareInterface
 {
@@ -81,7 +82,7 @@ class ServiceTransaction implements InjectionAwareInterface
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionCreate', 'params' => $data]);
 
-        $skip_validation = isset($data['skip_validation']) && (bool) $data['skip_validation'];
+        $skip_validation = Tools::normalizeBoolean($data['skip_validation'] ?? false);
         if (!empty($data['gateway_id'])) {
             try {
                 $this->di['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Gateway was not found');

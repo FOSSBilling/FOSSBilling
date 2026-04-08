@@ -289,6 +289,7 @@ class Admin extends \Api_Abstract
         $existingConfig = json_decode($model->config ?? '', true) ?? [];
 
         $data['config'] = $existingConfig;
+        $data['config']['userprefix'] = $data['userprefix'] ?? ($existingConfig['userprefix'] ?? null);
         $data['config']['tls_verify'] = Tools::normalizeBoolean($data['tls_verify'] ?? ($existingConfig['tls_verify'] ?? true), true);
 
         return (bool) $service->updateServer($model, $data);

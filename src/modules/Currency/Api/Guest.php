@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Box\Mod\Currency\Api;
 
 use Box\Mod\Currency\Entity\Currency;
+use FOSSBilling\Tools;
 
 class Guest extends \Api_Abstract
 {
@@ -76,7 +77,7 @@ class Guest extends \Api_Abstract
 
         $price = $data['price'] ?? 0;
         $convert = $data['convert'] ?? true;
-        $without_currency = (bool) ($data['without_currency'] ?? false);
+        $without_currency = Tools::normalizeBoolean($data['without_currency'] ?? false);
 
         $p = floatval($price);
         if ($convert) {
