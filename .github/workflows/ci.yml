@@ -124,7 +124,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh api "/repos/${{ github.repository }}/actions/caches?per_page=100" \
+          gh api --paginate "/repos/${{ github.repository }}/actions/caches" \
             --jq '.actions_caches[] | select(.key | startswith("buildkit-ghcache")) | .id' \
             | xargs -r -I{} gh api -X DELETE "/repos/${{ github.repository }}/actions/caches/{}" \
             || true
