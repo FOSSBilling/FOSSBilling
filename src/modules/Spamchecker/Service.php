@@ -191,14 +191,19 @@ class Service implements InjectionAwareInterface
     public function isInStopForumSpamDatabase(array $data): bool
     {
         $url = 'https://www.stopforumspam.com/api';
-        $client = HttpClient::create(['bindto' => BIND_TO]);
         $queryParams = array_merge($data, ['f' => 'json']);
-        $response = $client->request(
-            'GET',
-            $url,
-            ['query' => $queryParams]
-        );
-        $file_contents = $response->getContent(false);
+
+        try {
+            $client = HttpClient::create(['bindto' => BIND_TO]);
+            $response = $client->request(
+                'GET',
+                $url,
+                ['query' => $queryParams, 'timeout' => 5]
+            );
+            $file_contents = $response->getContent(false);
+        } catch (\Exception) {
+            return false;
+        }
 
         $json = json_decode($file_contents);
         if (!is_object($json) || isset($json->success) && !$json->success) {

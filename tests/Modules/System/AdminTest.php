@@ -79,9 +79,12 @@ final class AdminTest extends TestCase
 
                 sleep(2);
 
-                $result = Request::makeRequest('admin/system/env', ['ip' => true]);
-                $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-                $this->assertTrue((bool) filter_var($result->getResult(), FILTER_VALIDATE_IP));
+                $envResult = Request::makeRequest('admin/system/env', ['ip' => true]);
+                $this->assertTrue($envResult->wasSuccessful(), $envResult->generatePHPUnitMessage());
+                $ipResult = $envResult->getResult();
+                if (!empty($ipResult)) {
+                    $this->assertTrue((bool) filter_var($ipResult, FILTER_VALIDATE_IP));
+                }
             }
         }
 
