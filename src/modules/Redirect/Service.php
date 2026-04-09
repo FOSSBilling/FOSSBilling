@@ -37,12 +37,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         return [
             'can_always_access' => true,
-            'create_and_edit_redirects' => [
+            'create_and_edit' => [
                 'type' => 'bool',
                 'display_name' => __trans('Create and edit redirects'),
                 'description' => __trans('Allows the staff member to create and edit redirects.'),
             ],
-            'delete_redirects' => [
+            'delete' => [
                 'type' => 'bool',
                 'display_name' => __trans('Delete redirects'),
                 'description' => __trans('Allows the staff member to delete redirects.'),
