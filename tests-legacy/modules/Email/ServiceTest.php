@@ -431,7 +431,7 @@ final class ServiceTest extends \BBTestCase
         $di['crypt'] = $cryptMock;
         $di['em'] = $emMock;
         $di['twig'] = $twig;
-        $di['mod'] = $di->protect(fn () => $modMock);
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
         $di['tools'] = new \FOSSBilling\Tools();
 
@@ -567,7 +567,7 @@ final class ServiceTest extends \BBTestCase
                 'from_email' => '',
             ]);
 
-        $di['mod'] = $di->protect(fn () => $modMock);
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
         $di['db'] = $this->createMock('Box_Database');
         $di['em'] = $emMock;
         $di['twig'] = $twig;
@@ -1125,7 +1125,7 @@ final class ServiceTest extends \BBTestCase
                 return $extension;
             }
         });
-        $di['mod'] = $di->protect(fn () => $modMock);
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
 
         $service->setDi($di);
 

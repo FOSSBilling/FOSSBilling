@@ -436,7 +436,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(1);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn ($name) => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $di['db'] = $dbMock;
         $serviceMock->setDi($di);
 
@@ -455,7 +455,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(null);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn ($name) => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $this->service->setDi($di);
 
         $order = new \Model_ClientOrder();
@@ -508,7 +508,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $serviceMock->setDi($di);
 
         $order = new \Model_ClientOrder();
@@ -527,7 +527,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(null);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn ($name) => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $this->service->setDi($di);
 
         $order = new \Model_ClientOrder();
@@ -584,7 +584,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn([new \Registrar_Domain(), $registrarAdapterMock]);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn ($name) => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $serviceMock->setDi($di);
 
         $order = new \Model_ClientOrder();
@@ -603,7 +603,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(null);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn ($name) => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $this->service->setDi($di);
 
         $order = new \Model_ClientOrder();
@@ -664,7 +664,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(null);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn ($name) => $orderServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $di['db'] = $dbMock;
         $serviceMock->setDi($di);
 
@@ -1240,7 +1240,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn($domains);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn ($name) => $systemServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['db'] = $dbMock;
         $di['logger'] = $di['logger'] = $this->createMock('Box_Log');
         $serviceMock->setDi($di);
@@ -1265,7 +1265,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn([]);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn ($name) => $systemServiceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 

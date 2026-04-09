@@ -182,7 +182,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod'] = $di->protect(fn () => $boxModMock);
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $boxModMock);
         $di['mod_service'] = $di->protect(function ($name) use ($extensionServiceMock) {
             if ($name == 'extension') {
                 return $extensionServiceMock;

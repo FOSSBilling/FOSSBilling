@@ -29,7 +29,7 @@ class Guest extends \Api_Abstract
     public function version()
     {
         $service = $this->getService();
-        
+
         return $service->shouldExposeVersion() ? $service->getVersion() : '';
     }
 
