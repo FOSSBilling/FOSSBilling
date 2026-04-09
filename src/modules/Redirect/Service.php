@@ -33,6 +33,23 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'can_always_access' => true,
+            'create_and_edit_redirects' => [
+                'type' => 'bool',
+                'display_name' => __trans('Create and edit redirects'),
+                'description' => __trans('Allows the staff member to create and edit redirects.'),
+            ],
+            'delete_redirects' => [
+                'type' => 'bool',
+                'display_name' => __trans('Delete redirects'),
+                'description' => __trans('Allows the staff member to delete redirects.'),
+            ],
+        ];
+    }
+
     public function getExtensionMetaRepository(): ExtensionMetaRepository
     {
         if ($this->extensionMetaRepository === null) {
