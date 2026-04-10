@@ -229,6 +229,16 @@
                                            href="{{ settings.footer_link_4_page | link }}">{{ settings.footer_link_4_title }}</a>
                                     {% endif %}
                                 {% endif %}
+                                {% if settings.footer_link_5_enabled %}
+                                    &nbsp;&#x2022;&nbsp;
+                                    {% if 'http://' in settings.footer_link_5_page or  'https://' in settings.footer_link_5_page %}
+                                        <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
+                                           href="{{ settings.footer_link_5_page }}">{{ settings.footer_link_5_title }}</a>
+                                    {% else %}
+                                        <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
+                                           href="{{ settings.footer_link_5_page | link }}">{{ settings.footer_link_5_title }}</a>
+                                    {% endif %}
+                                {% endif %}
                             </div>
                             {{ render_widgets('client.theme.footer.end') }}
                         </div>
