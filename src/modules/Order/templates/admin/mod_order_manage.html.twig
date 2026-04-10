@@ -516,7 +516,7 @@
                         <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
                     </form>
                 {% else %}
-                    <form method="post" action="{{ 'api/admin/order/update_config'|link }}" {{ fb_api_form({ reload: true}) }}>
+                    <form method="post" action="{{ 'order/update_config'|api_url }}" {{ fb_api_form({ reload: true}) }}>
                         {% for key, config in order.config %}
                         <div class="mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ key }}</label>

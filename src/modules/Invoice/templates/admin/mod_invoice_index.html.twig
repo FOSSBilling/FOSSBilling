@@ -427,7 +427,7 @@
 
                 document.getElementById('products-list').appendChild(productDiv);
 
-                fetch(`{{ 'api/admin/product/get'|link }}?id=${productId}`, {
+                fetch(`{{ 'product/get'|api_url(query: { 'id': productId }) }}`, {
                     headers: {
                         'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
                     }
