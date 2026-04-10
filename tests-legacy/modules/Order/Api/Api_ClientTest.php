@@ -220,7 +220,7 @@ final class Api_ClientTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $productServiceMock);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productServiceMock);
         $apiMock->setDi($di);
         $data = [];
 

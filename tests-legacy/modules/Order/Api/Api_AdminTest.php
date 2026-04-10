@@ -67,7 +67,7 @@ final class Api_AdminTest extends BBTestCase
 
         $di = $this->getDi();
         $di['pager'] = $paginatorMock;
-        $di['mod'] = $di->protect(fn () => $modMock);
+        $di['mod'] = $di->protect(fn (): PHPUnit\Framework\MockObject\MockObject => $modMock);
 
         $this->api->setDi($di);
 

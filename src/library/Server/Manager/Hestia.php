@@ -348,7 +348,7 @@ class Server_Manager_Hestia extends Server_Manager
      */
     private function request($params): mixed
     {
-        $verifyTls = \FOSSBilling\Tools::normalizeBoolean($this->_config['config']['tls_verify'] ?? true, true);
+        $verifyTls = FOSSBilling\Tools::normalizeBoolean($this->_config['config']['tls_verify'] ?? true, true);
         $host = 'https://' . $this->_config['host'] . ':' . $this->getPort() . '/api/';
 
         // Set return code to yes
