@@ -653,7 +653,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('renderEmailTplString')
             ->willReturn('rendered');
 
-        $di['mod_service'] = $di->protect(fn () => $systemService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
 
         $adminApi->setDi($di);
 

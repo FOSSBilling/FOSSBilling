@@ -41,11 +41,11 @@ class Box_Period
 
     public function __construct(string $code)
     {
-        if (strlen((string) $code) != 2) {
+        if (strlen($code) != 2) {
             throw new FOSSBilling\Exception('Invalid period code. Period definition must be 2 chars length');
         }
 
-        [$qty, $unit] = str_split((string) $code);
+        [$qty, $unit] = str_split($code);
 
         $units = $this->getUnits();
         $qty = (int) $qty;
