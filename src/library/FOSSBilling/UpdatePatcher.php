@@ -294,6 +294,7 @@ class UpdatePatcher implements InjectionAwareInterface
             50 => 'patch50',
             51 => 'patch51',
             52 => 'patch52',
+            53 => 'patch53',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -822,6 +823,26 @@ class UpdatePatcher implements InjectionAwareInterface
                 'id' => $template['id'],
             ]);
         }
+    }
+
+    private function patch53(): void
+    {
+        $finder = new Finder();
+        $finder->directories()->in(PATH_MODS)->depth('== 1')->name('/^html_(admin|client|email)$/');
+
+        foreach ($finder as $dir) {
+            try {
+                $this->filesystem->remove($dir->getPathname());
+            } catch (IOException $e) {
+                error_log($e->getMessage());
+            }
+        }
+
+        $this->executeFileActions([
+            Path::join(PATH_LIBRARY, 'Box', 'TwigLoader.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'TwigExtensions.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'FOSSBilling', 'TwigExtensions', 'DebugBar.php') => 'unlink',
+        ]);
     }
 
     /**
