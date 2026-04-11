@@ -766,7 +766,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $orderService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderService);
         $di['validator'] = new \FOSSBilling\Validate();
 
         $this->adminApi->setDi($di);
@@ -799,7 +799,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $orderService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderService);
         $di['validator'] = new \FOSSBilling\Validate();
 
         $this->adminApi->setDi($di);
@@ -833,7 +833,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn () => $orderService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderService);
         $di['validator'] = new \FOSSBilling\Validate();
 
         $this->adminApi->setDi($di);

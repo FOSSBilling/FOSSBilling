@@ -434,12 +434,10 @@ final class AdminTest extends \BBTestCase
             ->method('updateServer')
             ->with(
                 $model,
-                $this->callback(function (array $payload): bool {
-                    return isset($payload['config'])
-                        && $payload['config']['custom_key'] === 'keep-me'
-                        && $payload['config']['userprefix'] === 'oldprefix'
-                        && $payload['config']['tls_verify'] === false;
-                })
+                $this->callback(fn (array $payload): bool => isset($payload['config'])
+                    && $payload['config']['custom_key'] === 'keep-me'
+                    && $payload['config']['userprefix'] === 'oldprefix'
+                    && $payload['config']['tls_verify'] === false)
             )
             ->willReturn(true);
 

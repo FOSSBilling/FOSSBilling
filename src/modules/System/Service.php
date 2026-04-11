@@ -89,10 +89,6 @@ class Service
         ];
     }
 
-    /**
-     * @param string $param
-     * @param mixed  $default
-     */
     public function getParamValue(string $param, $default = null)
     {
         if (empty($param)) {

@@ -77,7 +77,7 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <div class="navbar-nav me-auto mb-2 mb-lg-0 w-100 d-flex justify-content-end">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 w-100 d-flex justify-content-end align-items-md-center">
                         {% set languages = guest.extension_languages(true) %}
                         {% if languages|length > 1 %}
                             <li class="nav-item">
@@ -101,11 +101,9 @@
                             </li>
                         {% endif %}
 
-                        {% if settings.top_menu_profile %}
+                        {% if settings.top_menu_profile and not client %}
                             <li class="nav-item d-md-flex">
-                                {% if not client %}
-                                    <a class="nav-link" href="{{ 'login'|link }}">{{ 'Login'|trans }}</a>
-                                {% endif %}
+                                <a class="nav-link" href="{{ 'login'|link }}">{{ 'Login'|trans }}</a>
                             </li>
                         {% endif %}
 
@@ -131,10 +129,12 @@
                             </li>
                         {% endif %}
 
-                        <div class="d-md-none">
-                            {{ include('mobile_menu.html.twig') }}
-                        </div>
-                    </div>
+                        <li class="d-md-none list-unstyled">
+                            <ul class="navbar-nav">
+                                {{ include('mobile_menu.html.twig') }}
+                            </ul>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </nav>
@@ -146,7 +146,7 @@
                 {{ include('partial_menu.html.twig') }}
             </div>
         {% endif %}
-            <div class="col-12 col-md-9" {% if not client and settings.hide_menu %} style="margin-left: auto; margin-right: auto;" {% endif %}>
+            <div class="col-12 col-md-9{% if not client and settings.hide_menu %} mx-auto{% endif %}">
                 <div id="wrapper">
                     <section role="main">
                         {% block content_before %}{% endblock %}
@@ -227,6 +227,16 @@
                                     {% else %}
                                         <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
                                            href="{{ settings.footer_link_4_page | link }}">{{ settings.footer_link_4_title }}</a>
+                                    {% endif %}
+                                {% endif %}
+                                {% if settings.footer_link_5_enabled %}
+                                    &nbsp;&#x2022;&nbsp;
+                                    {% if 'http://' in settings.footer_link_5_page or  'https://' in settings.footer_link_5_page %}
+                                        <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
+                                           href="{{ settings.footer_link_5_page }}">{{ settings.footer_link_5_title }}</a>
+                                    {% else %}
+                                        <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
+                                           href="{{ settings.footer_link_5_page | link }}">{{ settings.footer_link_5_title }}</a>
                                     {% endif %}
                                 {% endif %}
                             </div>
