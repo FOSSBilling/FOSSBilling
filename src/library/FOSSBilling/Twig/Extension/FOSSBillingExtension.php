@@ -21,6 +21,8 @@ use Twig\Environment;
 
 class FOSSBillingExtension
 {
+    private array $cacheBusters = [];
+
     public function __construct(private ?\Pimple\Container $di)
     {
     }
@@ -64,6 +66,27 @@ class FOSSBillingExtension
         }
 
         return ltrim($path, '/\\');
+    }
+
+    private function getCacheBuster(string $path): string
+    {
+        $normalizedPath = $this->normalizeAssetPath($path);
+
+        if (isset($this->cacheBusters[$normalizedPath])) {
+            return $this->cacheBusters[$normalizedPath];
+        }
+
+        $filePath = Path::join(PATH_ROOT, $normalizedPath);
+
+        if (is_file($filePath)) {
+            $buster = hash_file('xxh32', $filePath);
+        } else {
+            $buster = hash('xxh32', $normalizedPath);
+        }
+
+        $this->cacheBusters[$normalizedPath] = $buster;
+
+        return $buster;
     }
 
     #[AsTwigFunction('render_widgets', isSafe: ['html'], needsEnvironment: true)]
@@ -158,7 +181,7 @@ class FOSSBillingExtension
 
         $this->markAssetAsLoaded($path);
 
-        return sprintf('<script src="%s?%s"></script>', $path, \FOSSBilling\Version::VERSION);
+        return sprintf('<script src="%s?%s"></script>', $path, $this->getCacheBuster($path));
     }
 
     #[AsTwigFilter('stylesheet_tag', isSafe: ['html'])]
@@ -170,7 +193,7 @@ class FOSSBillingExtension
 
         $this->markAssetAsLoaded($path);
 
-        return sprintf('<link rel="stylesheet" type="text/css" href="%s?v=%s" media="%s" />', $path, \FOSSBilling\Version::VERSION, $media);
+        return sprintf('<link rel="stylesheet" type="text/css" href="%s?v=%s" media="%s" />', $path, $this->getCacheBuster($path), $media);
     }
 
     #[AsTwigFilter('timeago')]
