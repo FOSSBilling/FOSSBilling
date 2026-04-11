@@ -21,7 +21,7 @@ import { Table, TableToolbar } from '@ckeditor/ckeditor5-table/dist/index.js';
 import { TextTransformation } from '@ckeditor/ckeditor5-typing/dist/index.js';
 
 // Style imports - core styles (required).
-import '@ckeditor/ckeditor5-theme-lark/dist/index.css';
+import '@ckeditor/ckeditor5-ui/dist/index.css';
 import '@ckeditor/ckeditor5-clipboard/dist/index.css';
 import '@ckeditor/ckeditor5-core/dist/index.css';
 import '@ckeditor/ckeditor5-engine/dist/index.css';
@@ -29,7 +29,6 @@ import '@ckeditor/ckeditor5-enter/dist/index.css';
 import '@ckeditor/ckeditor5-paragraph/dist/index.css';
 import '@ckeditor/ckeditor5-select-all/dist/index.css';
 import '@ckeditor/ckeditor5-typing/dist/index.css';
-import '@ckeditor/ckeditor5-ui/dist/index.css';
 import '@ckeditor/ckeditor5-undo/dist/index.css';
 import '@ckeditor/ckeditor5-upload/dist/index.css';
 import '@ckeditor/ckeditor5-utils/dist/index.css';
