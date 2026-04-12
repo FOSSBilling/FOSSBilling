@@ -36,7 +36,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function getModulePermissions(): array
     {
         return [
-            'can_always_access' => true,
             'create_and_edit' => [
                 'type' => 'bool',
                 'display_name' => __trans('Create and edit redirects'),
@@ -47,6 +46,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 'display_name' => __trans('Delete redirects'),
                 'description' => __trans('Allows the staff member to delete redirects.'),
             ],
+            'manage_settings' => [],
         ];
     }
 
