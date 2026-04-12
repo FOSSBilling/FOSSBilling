@@ -397,7 +397,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function twig_markdown_filter(Twig\Environment $env, $value)
     {
-        return $this->di['parse_markdown']($value);
+        return $this->di['parse_markdown']((string) $value);
     }
 
     public function twig_truncate_filter(Twig\Environment $env, $value, $length = 30, $preserve = false, $separator = '...')
