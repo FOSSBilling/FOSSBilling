@@ -206,6 +206,7 @@ final class ServiceTest extends \BBTestCase
         $di['session'] = $sessionMock;
         $di['api_guest'] = $apiGuest;
         $di['api_client'] = new \Model_Client();
+        $di['twig_factory'] = new \FOSSBilling\Twig\TwigFactory($di);
         $this->service->setDi($di);
 
         // Use an invalid Twig template that will cause a syntax error
@@ -235,6 +236,7 @@ final class ServiceTest extends \BBTestCase
         $di['session'] = $sessionMock;
         $di['api_guest'] = $apiGuest;
         $di['api_client'] = new \Model_Client();
+        $di['twig_factory'] = new \FOSSBilling\Twig\TwigFactory($di);
         $this->service->setDi($di);
 
         $string = $this->service->renderTplString('test', true, $vars);
