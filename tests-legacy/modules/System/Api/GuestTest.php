@@ -24,25 +24,6 @@ final class GuestTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
-    public function testVersionAdmin(): void
-    {
-        $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('shouldExposeVersion')
-            ->willReturn(true);
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getVersion')
-            ->willReturn(\FOSSBilling\Version::VERSION);
-
-        $di = $this->getDi();
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
-        $result = $this->api->version();
-
-        $this->assertIsString($result);
-        $this->assertNotEmpty($result);
-    }
-
     public function testVersionShowPublicOn(): void
     {
         $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
@@ -153,14 +134,14 @@ final class GuestTest extends \BBTestCase
     {
         $data = ['code' => 'periodCode'];
 
-        $servuceMock = $this->createMock(\Box\Mod\System\Service::class);
-        $servuceMock->expects($this->atLeastOnce())
+        $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
+        $serviceMock->expects($this->atLeastOnce())
             ->method('getPeriod')
-            ->willReturn('periodTtitleValue');
+            ->willReturn('periodTitleValue');
         $di = $this->getDi();
 
         $this->api->setDi($di);
-        $this->api->setService($servuceMock);
+        $this->api->setService($serviceMock);
 
         $result = $this->api->period_title($data);
         $this->assertIsString($result);
