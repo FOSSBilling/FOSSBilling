@@ -828,15 +828,19 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch53(): void
     {
-        $finder = new Finder();
-        $finder->directories()->in(PATH_MODS)->depth('== 1')->name('/^html_(admin|client|email)$/');
+        try {
+            $finder = new Finder();
+            $finder->directories()->in(PATH_MODS)->depth('== 1')->name('/^html_(admin|client|email)$/');
 
-        foreach ($finder as $dir) {
-            try {
-                $this->filesystem->remove($dir->getPathname());
-            } catch (IOException $e) {
-                error_log($e->getMessage());
+            foreach ($finder as $dir) {
+                try {
+                    $this->filesystem->remove($dir->getPathname());
+                } catch (IOException $e) {
+                    error_log($e->getMessage());
+                }
             }
+        } catch (\Symfony\Component\Finder\Exception\DirectoryNotFoundException) {
+            throw new Exception('The modules directory does not exist. Cannot apply patch 53.');
         }
 
         $this->executeFileActions([

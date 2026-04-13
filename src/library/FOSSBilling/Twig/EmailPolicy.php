@@ -28,7 +28,7 @@ final class EmailPolicy
 
         $filters = [
             // Twig Core - Security
-            'escape', 'e', 'raw',
+            'escape', 'e',
             // Twig Core - Utility
             'default', 'title', 'length', 'date',
             // IntlExtension
