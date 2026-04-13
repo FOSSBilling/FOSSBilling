@@ -34,7 +34,7 @@ class ApiExtension
             $role = 'guest';
         }
 
-        return $this->di['url']->link("api/{$role}/{$action}", $query, $role);
+        return $this->di['url']->link("api/{$role}/{$action}", $query);
     }
 
     #[AsTwigFunction('fb_api', isSafe: ['html'])]

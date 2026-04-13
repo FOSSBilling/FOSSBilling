@@ -509,6 +509,8 @@ class Service
             throw new \FOSSBilling\InformationException('Email template contains disallowed Twig syntax: ' . $e->getMessage());
         } catch (\Twig\Error\SyntaxError $e) {
             throw new \FOSSBilling\InformationException('Email template syntax error: ' . $e->getMessage());
+        } catch (\Twig\Error\Error $e) {
+            throw new \FOSSBilling\InformationException('Email template rendering error: ' . $e->getMessage());
         }
     }
 
