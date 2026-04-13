@@ -205,6 +205,9 @@ class FOSSBillingExtension
         }
 
         $timeAgo = time() - $timestamp;
+        if ($timeAgo < 0) {
+            return '-';
+        }
         $tokens = [
             315_705_600 => __trans('decade'),
             31_570_560 => __trans('year'),
