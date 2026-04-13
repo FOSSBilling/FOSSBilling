@@ -254,7 +254,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return $api_guest->currency_format(['price' => $price, 'code' => $currency, 'convert' => true, 'without_currency' => true]);
     }
 
-    public function twig_money(Twig\Environment $env, $price, $currency = null)
+    public function twig_money(Twig\Environment $env, $price, ?string $currency = null)
     {
         $globals = $env->getGlobals();
         $api_guest = $globals['guest'];
@@ -262,7 +262,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return $api_guest->currency_format(['price' => $price, 'code' => $currency, 'convert' => false]);
     }
 
-    public function twig_money_without_currency(Twig\Environment $env, $price, $currency = null)
+    public function twig_money_without_currency(Twig\Environment $env, $price, ?string $currency = null)
     {
         $globals = $env->getGlobals();
         $api_guest = $globals['guest'];
@@ -464,11 +464,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             return $array;
         }
 
-        if ($arrow instanceof Closure) {
-            uasort($array, $arrow);
-        } else {
-            asort($array);
-        }
+        uasort($array, $arrow);
 
         return $array;
     }
@@ -589,7 +585,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         $tag = $config['tag'] ?? null;
         $content = $config['content'] ?? '';
         $href = $config['href'] ?? null;
-        unset($config['tag'], $config['content']);
+        unset($config['tag'], $config['content'], $config['href']);
 
         $config['type'] = 'link';
         $attr = $this->fb_api($config);
