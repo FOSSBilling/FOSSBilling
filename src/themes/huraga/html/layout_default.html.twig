@@ -206,7 +206,7 @@
                                                href="{{ link_page }}">{{ link_title }}</a>
                                         {% else %}
                                             <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
-                                               href="{{ link_page | link }}">{{ link_title }}</a>
+                                               href="{{ link_page|url }}">{{ link_title }}</a>
                                         {% endif %}
                                         {% set first_link_rendered = true %}
                                     {% endif %}
