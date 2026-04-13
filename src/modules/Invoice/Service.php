@@ -1334,7 +1334,7 @@ class Service implements InjectionAwareInterface
             'invoice' => $invoice,
         ];
 
-        $twigFactory = new \FOSSBilling\Twig\TwigFactory($this->di);
+        $twigFactory = $this->di['twig_factory'];
         $twig = $twigFactory->createBaseEnvironment();
         $loader = new FilesystemLoader(Path::join(__DIR__, 'templates', 'pdf'));
         $twig->setLoader($loader);

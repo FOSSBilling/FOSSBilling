@@ -43,6 +43,7 @@ class TwigFactory
 {
     private \Pimple\Container $di;
     private array $baseConfig;
+    private ?Environment $emailEnvironment = null;
 
     /**
      * TwigFactory constructor.
@@ -130,6 +131,9 @@ class TwigFactory
         // Configure Debugbar and profiling.
         $this->configureDebugging($twig, $debugBar);
 
+        // Set CSRF cookie for browser-facing double-submit pattern.
+        $this->configureCsrf();
+
         return $twig;
     }
 
@@ -166,6 +170,9 @@ class TwigFactory
         // Configure Debugbar and profiling.
         $this->configureDebugging($twig, $debugBar);
 
+        // Set CSRF cookie for browser-facing double-submit pattern.
+        $this->configureCsrf();
+
         return $twig;
     }
 
@@ -175,6 +182,10 @@ class TwigFactory
      */
     public function createEmailEnvironment(): Environment
     {
+        if ($this->emailEnvironment !== null) {
+            return $this->emailEnvironment;
+        }
+
         // Get internationalisation settings from config
         $locale = i18n::getActiveLocale();
         $timezone = Config::getProperty('i18n.timezone', 'UTC');
@@ -243,6 +254,8 @@ class TwigFactory
         ]);
         $twig->addGlobal('FOSSBillingVersion', Version::VERSION);
 
+        $this->emailEnvironment = $twig;
+
         return $twig;
     }
 
@@ -283,25 +296,13 @@ class TwigFactory
      */
     private function configureGlobals(Environment $twig): void
     {
-        // Handle AJAX requests.
         if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
             $_GET['ajax'] = true;
         }
 
-        // CSRF token - generate once per session and set as cookie for Double-Submit pattern.
-        $session = $this->di['session'];
-        $csrfToken = $session->get('csrf_token');
-        if (empty($csrfToken)) {
-            $csrfToken = bin2hex(random_bytes(32));
-            $session->set('csrf_token', $csrfToken);
-        }
-        setcookie('csrf_token', $csrfToken, [
-            'expires' => 0,
-            'path' => '/',
-            'samesite' => 'Strict',
-            'secure' => Tools::isHTTPS(),
-        ]);
+        $csrfToken = $this->getCsrfToken();
 
+        $session = $this->di['session'];
         $redirectUri = $session->get('redirect_uri');
         if (!empty($redirectUri)) {
             $twig->addGlobal('redirect_uri', $redirectUri);
@@ -311,6 +312,33 @@ class TwigFactory
         $twig->addGlobal('request', $_GET);
         $twig->addGlobal('guest', $this->di['api_guest']);
         $twig->addGlobal('FOSSBillingVersion', Version::VERSION);
+    }
+
+    /**
+     * Set the CSRF cookie for the double-submit pattern.
+     * Should only be called in browser-facing contexts (admin/client page loads).
+     */
+    public function configureCsrf(): void
+    {
+        $csrfToken = $this->getCsrfToken();
+        setcookie('csrf_token', $csrfToken, [
+            'expires' => 0,
+            'path' => '/',
+            'samesite' => 'Strict',
+            'secure' => Tools::isHTTPS(),
+        ]);
+    }
+
+    private function getCsrfToken(): string
+    {
+        $session = $this->di['session'];
+        $csrfToken = $session->get('csrf_token');
+        if (empty($csrfToken)) {
+            $csrfToken = bin2hex(random_bytes(32));
+            $session->set('csrf_token', $csrfToken);
+        }
+
+        return $csrfToken;
     }
 
     /**

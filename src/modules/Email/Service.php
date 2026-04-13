@@ -177,9 +177,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $staffService = $this->di['mod_service']('staff');
             $staff = $staffService->getList(['status' => 'active', 'no_cron' => true]);
             $staffMember = $staff['list'][0];
-            // Remove sensitive fields from admin data
-            unset($staffMember['pass'], $staffMember['salt'], $staffMember['api_token']);
-            $vars['staff'] = $staffMember;
+            $vars['staff'] = [
+                'id' => $staffMember['id'],
+                'email' => $staffMember['email'],
+                'name' => $staffMember['name'],
+                'signature' => $staffMember['signature'],
+            ];
         }
 
         // add additional variables to template

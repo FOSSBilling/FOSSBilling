@@ -424,7 +424,7 @@ class Service
 
     public function renderTplString($tpl, $try_render, $vars)
     {
-        $twigFactory = new \FOSSBilling\Twig\TwigFactory($this->di);
+        $twigFactory = $this->di['twig_factory'];
         $twig = $twigFactory->createBaseEnvironment();
         // add client api if _client_id is set
         if (isset($vars['_client_id'])) {
@@ -464,7 +464,7 @@ class Service
     public function createTemplateFromString($tpl, $try_render, $vars)
     {
         try {
-            $twigFactory = new \FOSSBilling\Twig\TwigFactory($this->di);
+            $twigFactory = $this->di['twig_factory'];
             $twig = $twigFactory->createBaseEnvironment();
             $template = $twig->createTemplate($tpl);
 
@@ -494,7 +494,7 @@ class Service
      */
     public function renderEmailTplString(string $tpl, array $vars): string
     {
-        $twigFactory = new \FOSSBilling\Twig\TwigFactory($this->di);
+        $twigFactory = $this->di['twig_factory'];
         $twig = $twigFactory->createEmailEnvironment();
 
         try {

@@ -57,7 +57,7 @@ class Box_AppAdmin extends Box_App
      */
     protected function getTwig(): Twig\Environment
     {
-        $twigFactory = new FOSSBilling\Twig\TwigFactory($this->di);
+        $twigFactory = $this->di['twig_factory'];
 
         return $twigFactory->createAdminEnvironment($this->debugBar);
     }

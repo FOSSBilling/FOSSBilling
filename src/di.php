@@ -707,4 +707,6 @@ $di['table_export_csv'] = $di->protect(function (string $table, string $outputNa
     exit;
 });
 
+$di['twig_factory'] = fn (): FOSSBilling\Twig\TwigFactory => new FOSSBilling\Twig\TwigFactory($di);
+
 return $di;
