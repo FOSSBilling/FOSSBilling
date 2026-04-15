@@ -31,6 +31,8 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
+
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         [$sql, $params] = $this->getService()->getSearchQuery($data);
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
@@ -52,6 +54,8 @@ class Admin extends \Api_Abstract
      */
     public function get_pairs($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
+
         $service = $this->di['mod_service']('client');
 
         return $service->getPairs($data);
@@ -66,10 +70,13 @@ class Admin extends \Api_Abstract
      */
     public function get($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
+
         $service = $this->getService();
         $client = $service->get($data);
+        $includeSensitive = $this->di['mod_service']('Staff')->hasPermission(null, 'client', 'manage_api_keys');
 
-        return $service->toApiArray($client, true, $this->getIdentity(), true);
+        return $service->toApiArray($client, true, $this->getIdentity(), $includeSensitive);
     }
 
     /**

@@ -23,6 +23,11 @@ class Service implements InjectionAwareInterface
     public function getModulePermissions(): array
     {
         return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View client details'),
+                'description' => __trans('Allows the staff member to view client account details and listings.'),
+            ],
             'create' => [
                 'type' => 'bool',
                 'display_name' => __trans('Create clients'),

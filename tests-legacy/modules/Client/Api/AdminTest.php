@@ -49,9 +49,17 @@ final class AdminTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturn($model);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'view');
+
         $di = $this->getDi();
         $di['pager'] = $pagerMock;
         $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+            'staff' => $staffServiceMock,
+        });
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setService($serviceMock);
@@ -67,8 +75,16 @@ final class AdminTest extends \BBTestCase
         $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('getPairs')->willReturn([]);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'view');
+
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+            'client' => $serviceMock,
+            'staff' => $staffServiceMock,
+        });
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -90,8 +106,23 @@ final class AdminTest extends \BBTestCase
             ->with($model, true, null, true)
             ->willReturn([]);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'view');
+        $staffServiceMock->expects($this->once())
+            ->method('hasPermission')
+            ->with(null, 'client', 'manage_api_keys')
+            ->willReturn(true);
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+            'staff' => $staffServiceMock,
+        });
+
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setService($serviceMock);
+        $admin_Client->setDi($di);
 
         $result = $admin_Client->get([]);
         $this->assertIsArray($result);

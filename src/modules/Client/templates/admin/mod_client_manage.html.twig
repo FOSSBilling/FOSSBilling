@@ -444,9 +444,10 @@
                 </form>
                 {% endif %}
                 {% if can_edit_profile %}
-                <hr>
-
-                <h5>{{ 'Custom fields'|trans }}</h5>
+                    {% if can_change_password %}
+                        <hr>
+                    {% endif %}
+                    <h5>{{ 'Custom Fields'|trans }}</h5>
                 <p class="text-muted">{{ 'Use these fields to define custom client details'|trans }}</p>
                 <form method="post" action="{{ 'api/admin/client/update'|link }}" {{ fb_api_form({ message: 'Client Profile Custom Fields Updated'|trans}) }}>
                     {% for i in 1..10 %}

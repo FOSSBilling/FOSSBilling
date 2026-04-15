@@ -16,7 +16,7 @@ use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
-    private static array $permissionCache = [];
+    private array $permissionCache = [];
 
     protected ?\Pimple\Container $di = null;
 
@@ -30,21 +30,15 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    private function getRequestCacheKey(): string
-    {
-        return (string) spl_object_id($this->di);
-    }
-
     private function getPermissionsFromCache(int|string $memberId): ?array
     {
-        $requestCacheKey = $this->getRequestCacheKey();
         $cacheKey = (string) $memberId;
 
-        if (!isset(self::$permissionCache[$requestCacheKey]) || !array_key_exists($cacheKey, self::$permissionCache[$requestCacheKey])) {
+        if (!array_key_exists($cacheKey, $this->permissionCache)) {
             return null;
         }
 
-        return is_array(self::$permissionCache[$requestCacheKey][$cacheKey]) ? self::$permissionCache[$requestCacheKey][$cacheKey] : [];
+        return is_array($this->permissionCache[$cacheKey]) ? $this->permissionCache[$cacheKey] : [];
     }
 
     public function getModulePermissions(): array
@@ -163,7 +157,7 @@ class Service implements InjectionAwareInterface
             ->setParameter('id', $member_id)
             ->executeStatement();
 
-        self::$permissionCache[$this->getRequestCacheKey()][(string) $member_id] = $array;
+        $this->permissionCache[(string) $member_id] = $array;
 
         return true;
     }
@@ -189,7 +183,7 @@ class Service implements InjectionAwareInterface
             $permissions = [];
         }
 
-        self::$permissionCache[$this->getRequestCacheKey()][(string) $member_id] = $permissions;
+        $this->permissionCache[(string) $member_id] = $permissions;
 
         return $permissions;
     }
@@ -228,16 +222,17 @@ class Service implements InjectionAwareInterface
         }
 
         if (!is_null($key)) {
-            // If this passes, the permission key isn't assigned to them and they therefore don't have permission
-            if (!is_array($permissions[$module]) || !array_key_exists($key, $permissions[$module])) {
+            $modulePermissions = $permissions[$module] ?? [];
+
+            if (!is_array($modulePermissions) || !array_key_exists($key, $modulePermissions)) {
                 return false;
             }
 
             if (!is_null($constraint)) {
-                return $permissions[$module][$key] === $constraint;
+                return $modulePermissions[$key] === $constraint;
             }
 
-            return (bool) $permissions[$module][$key];
+            return (bool) $modulePermissions[$key];
         }
 
         return true;
@@ -253,7 +248,9 @@ class Service implements InjectionAwareInterface
     public function checkPermissionsAndThrowException(string $module, ?string $key = null, mixed $constraint = null): void
     {
         if (!$this->hasPermission(null, $module, $key, $constraint)) {
-            throw new \FOSSBilling\InformationException("You need the \"{$module}.{$key}\" permission to perform this action", [], 403);
+            $requiredPermission = is_null($key) ? $module : "{$module}.{$key}";
+
+            throw new \FOSSBilling\InformationException("You need the \"{$requiredPermission}\" permission to perform this action", [], 403);
         }
     }
 
