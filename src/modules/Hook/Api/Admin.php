@@ -25,6 +25,8 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('hook', 'manage_hooks');
+
         $service = $this->getService();
         [$sql, $params] = $service->getSearchQuery($data);
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
@@ -41,6 +43,8 @@ class Admin extends \Api_Abstract
      */
     public function call($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('hook', 'trigger_hooks');
+
         if (!isset($data['event']) || empty($data['event'])) {
             error_log('Invoked event call without providing event name');
 
@@ -70,6 +74,8 @@ class Admin extends \Api_Abstract
      */
     public function batch_connect($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('hook', 'manage_hooks');
+
         $mod = $data['mod'] ?? null;
         $service = $this->getService();
 

@@ -365,7 +365,15 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getAvailableCurrencies')
             ->willReturn($this->availableCurrencies);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('currency', 'create');
+
         $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($name)) {
+            'staff' => $staffServiceMock,
+        });
         $adminApi->setService($service);
         $adminApi->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
@@ -399,7 +407,15 @@ final class Api_AdminTest extends \BBTestCase
             ->method('createCurrency')
             ->willReturn($data['code']);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('currency', 'create');
+
         $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($name)) {
+            'staff' => $staffServiceMock,
+        });
         $adminApi->setService($service);
         $adminApi->setDi($di);
 
@@ -427,7 +443,15 @@ final class Api_AdminTest extends \BBTestCase
             ->method('updateCurrency')
             ->willReturn(true);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('currency', 'edit');
+
         $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($name)) {
+            'staff' => $staffServiceMock,
+        });
         $adminApi->setDi($di);
         $adminApi->setService($service);
 
@@ -475,8 +499,16 @@ final class Api_AdminTest extends \BBTestCase
             ->method('deleteCurrencyByCode')
             ->willReturn(true);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('currency', 'delete');
+
         $di = $this->getDi();
         $di['validator'] = new \FOSSBilling\Validate();
+        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($name)) {
+            'staff' => $staffServiceMock,
+        });
         $adminApi->setDi($di);
         $adminApi->setService($service);
 
@@ -516,7 +548,15 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getCurrencyRepository')
             ->willReturn($repositoryMock);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('currency', 'set_default');
+
         $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($name)) {
+            'staff' => $staffServiceMock,
+        });
         $adminApi->setDi($di);
 
         $adminApi->setService($service);
@@ -552,13 +592,48 @@ final class Api_AdminTest extends \BBTestCase
             ->method('setAsDefault')
             ->willReturn(true);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('currency', 'set_default');
+
         $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($name)) {
+            'staff' => $staffServiceMock,
+        });
         $adminApi->setDi($di);
         $adminApi->setService($service);
 
         $result = $adminApi->set_default($data);
 
         $this->assertIsBool($result);
+        $this->assertTrue($result);
+    }
+
+    public function testUpdateRates(): void
+    {
+        $adminApi = new \Box\Mod\Currency\Api\Admin();
+
+        $service = $this->createMock(\Box\Mod\Currency\Service::class);
+        $service->expects($this->once())
+            ->method('updateCurrencyRates')
+            ->willReturn(true);
+
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('currency', 'update_rates');
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($name)) {
+            'staff' => $staffServiceMock,
+        });
+
+        $adminApi->setDi($di);
+        $adminApi->setService($service);
+
+        $result = $adminApi->update_rates([]);
+
         $this->assertTrue($result);
     }
 }

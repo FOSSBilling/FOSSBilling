@@ -20,6 +20,73 @@ class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View client details'),
+                'description' => __trans('Allows the staff member to view client account details and listings.'),
+            ],
+            'create' => [
+                'type' => 'bool',
+                'display_name' => __trans('Create clients'),
+                'description' => __trans('Allows the staff member to create new client accounts.'),
+            ],
+            'edit_profile' => [
+                'type' => 'bool',
+                'display_name' => __trans('Edit client profiles'),
+                'description' => __trans('Allows the staff member to update client profile details and account settings.'),
+            ],
+            'impersonate_login' => [
+                'type' => 'bool',
+                'display_name' => __trans('Login as client'),
+                'description' => __trans('Allows the staff member to authenticate as any client account.'),
+            ],
+            'manage_api_keys' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage client API keys'),
+                'description' => __trans('Allows the staff member to view and generate API keys for client accounts.'),
+            ],
+            'change_password' => [
+                'type' => 'bool',
+                'display_name' => __trans('Change client passwords'),
+                'description' => __trans('Allows the staff member to set new passwords for client accounts.'),
+            ],
+            'manage_balance' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage client balance'),
+                'description' => __trans('Allows the staff member to add or remove balance entries for client accounts.'),
+            ],
+            'view_login_history' => [
+                'type' => 'bool',
+                'display_name' => __trans('View client login history'),
+                'description' => __trans('Allows the staff member to view client login history and IP addresses.'),
+            ],
+            'manage_groups' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage client groups'),
+                'description' => __trans('Allows the staff member to create, update, and delete client groups.'),
+            ],
+            'delete' => [
+                'type' => 'bool',
+                'display_name' => __trans('Delete clients'),
+                'description' => __trans('Allows the staff member to permanently remove client accounts.'),
+            ],
+            'bulk_delete' => [
+                'type' => 'bool',
+                'display_name' => __trans('Bulk delete clients'),
+                'description' => __trans('Allows the staff member to permanently remove multiple client accounts in a single action.'),
+            ],
+            'export' => [
+                'type' => 'bool',
+                'display_name' => __trans('Export clients'),
+                'description' => __trans('Allows the staff member to export client account data.'),
+            ],
+            'manage_settings' => [],
+        ];
+    }
+
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
@@ -339,7 +406,7 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->findOne('Client', 'email = ? and pass = ? and status = ?', [$email, $password, \Model_Client::ACTIVE]);
     }
 
-    public function toApiArray(\Model_Client $model, $deep = false, $identity = null): array
+    public function toApiArray(\Model_Client $model, $deep = false, $identity = null, bool $includeSensitive = false): array
     {
         $details = [
             'id' => $model->id,
@@ -385,13 +452,16 @@ class Service implements InjectionAwareInterface
 
         if ($identity instanceof \Model_Admin) {
             $details['auth_type'] = $model->auth_type;
-            $details['api_token'] = $model->api_token;
             $details['ip'] = $model->ip;
             $details['status'] = $model->status;
             $details['tax_exempt'] = $model->tax_exempt;
             $details['group'] = ($clientGroup) ? $clientGroup->title : null;
             $details['updated_at'] = $model->updated_at;
             $details['email_approved'] = $model->email_approved;
+
+            if ($includeSensitive) {
+                $details['api_token'] = $model->api_token;
+            }
         }
 
         return $details;

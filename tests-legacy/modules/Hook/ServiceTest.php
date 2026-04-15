@@ -24,6 +24,14 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
+    public function testGetModulePermissions(): void
+    {
+        $permissions = $this->service->getModulePermissions();
+
+        $this->assertArrayHasKey('manage_hooks', $permissions);
+        $this->assertArrayHasKey('trigger_hooks', $permissions);
+    }
+
     public function testGetSearchQuery(): void
     {
         [$sql, $params] = $this->service->getSearchQuery([]);

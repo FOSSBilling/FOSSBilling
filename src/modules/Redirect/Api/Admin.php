@@ -46,6 +46,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['path' => 'Redirect path was not passed', 'target' => 'Redirect target was not passed'])]
     public function create($data): int
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'create_and_edit');
+
         $id = $this->getService()->create(
             trim(htmlspecialchars((string) $data['path'], ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/'),
             trim(htmlspecialchars((string) $data['target'], ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/')
@@ -67,6 +69,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Redirect ID was not passed'])]
     public function update($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'create_and_edit');
+
         $this->getService()->update($this->getService()->get((int) $data['id']), $data);
 
         $this->di['logger']->info('Updated redirect #%s', $data['id']);
@@ -82,6 +86,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Redirect ID was not passed'])]
     public function delete($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'delete');
+
         $this->getService()->delete($this->getService()->get((int) $data['id']));
 
         $this->di['logger']->info('Removed redirect #%s', $data['id']);

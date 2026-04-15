@@ -35,6 +35,20 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $result);
     }
 
+    public function testGetModulePermissions(): void
+    {
+        $service = new \Box\Mod\Currency\Service();
+
+        $permissions = $service->getModulePermissions();
+
+        $this->assertArrayHasKey('create', $permissions);
+        $this->assertArrayHasKey('edit', $permissions);
+        $this->assertArrayHasKey('delete', $permissions);
+        $this->assertArrayHasKey('set_default', $permissions);
+        $this->assertArrayHasKey('update_rates', $permissions);
+        $this->assertArrayHasKey('manage_settings', $permissions);
+    }
+
     public function testGetBaseCurrencyRate(): void
     {
         $service = new \Box\Mod\Currency\Service();
