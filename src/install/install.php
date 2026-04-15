@@ -344,7 +344,7 @@ final class FOSSBilling_Installer
      */
     private function isSubfolder(): bool
     {
-        return substr_count(URL_INSTALL, '/') > 4 ? true : false;
+        return substr_count(URL_INSTALL, '/') > 4;
     }
 
     /**
@@ -352,7 +352,7 @@ final class FOSSBilling_Installer
      */
     public function isAlreadyInstalled(): bool
     {
-        return !$this->isDebug && $this->filesystem->exists(PATH_CONFIG) ? true : false;
+        return !$this->isDebug && $this->filesystem->exists(PATH_CONFIG);
     }
 
     /**

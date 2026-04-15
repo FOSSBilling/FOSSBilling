@@ -728,8 +728,8 @@ class Service implements InjectionAwareInterface
         $config = $this->di['mod_config']('client');
         $customFields = $config['custom_fields'] ?? [];
         foreach ($customFields as $cFieldName => $cField) {
-            $active = isset($cField['active']) && $cField['active'] ? true : false;
-            $required = isset($cField['required']) && $cField['required'] ? true : false;
+            $active = isset($cField['active']) && $cField['active'];
+            $required = isset($cField['required']) && $cField['required'];
             if ($active && $required) {
                 if (!isset($checkArr[$cFieldName]) || empty($checkArr[$cFieldName])) {
                     $name = isset($cField['title']) && !empty($cField['title']) ? $cField['title'] : ucwords(str_replace('_', ' ', $cFieldName));
