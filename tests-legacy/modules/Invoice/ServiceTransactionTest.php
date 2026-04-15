@@ -520,7 +520,9 @@ final class ServiceTransactionTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $payGatewayService);
-        $di['api_system'] = new \Api_Handler(new \Model_Admin());
+        $apiSystem = new \Api_Handler(new \Model_Admin());
+        $apiSystem->setDi($di);
+        $di['api_system'] = $apiSystem;
         $this->service->setDi($di);
 
         $this->service->processTransaction($id);

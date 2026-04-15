@@ -401,7 +401,7 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->findOne('Client', 'email = ? and pass = ? and status = ?', [$email, $password, \Model_Client::ACTIVE]);
     }
 
-    public function toApiArray(\Model_Client $model, $deep = false, $identity = null): array
+    public function toApiArray(\Model_Client $model, $deep = false, $identity = null, bool $includeSensitive = false): array
     {
         $details = [
             'id' => $model->id,
@@ -447,13 +447,16 @@ class Service implements InjectionAwareInterface
 
         if ($identity instanceof \Model_Admin) {
             $details['auth_type'] = $model->auth_type;
-            $details['api_token'] = $model->api_token;
             $details['ip'] = $model->ip;
             $details['status'] = $model->status;
             $details['tax_exempt'] = $model->tax_exempt;
             $details['group'] = ($clientGroup) ? $clientGroup->title : null;
             $details['updated_at'] = $model->updated_at;
             $details['email_approved'] = $model->email_approved;
+
+            if ($includeSensitive) {
+                $details['api_token'] = $model->api_token;
+            }
         }
 
         return $details;

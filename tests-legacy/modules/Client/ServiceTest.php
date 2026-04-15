@@ -787,6 +787,7 @@ final class ServiceTest extends \BBTestCase
     {
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
+        $model->api_token = 'client-token';
         $model->custom_1 = 'custom field';
 
         $clientGroup = new \Model_ClientGroup();
@@ -812,6 +813,11 @@ final class ServiceTest extends \BBTestCase
 
         $result = $serviceMock->toApiArray($model, true, new \Model_Admin());
         $this->assertIsArray($result);
+        $this->assertArrayNotHasKey('api_token', $result);
+
+        $result = $serviceMock->toApiArray($model, true, new \Model_Admin(), true);
+        $this->assertArrayHasKey('api_token', $result);
+        $this->assertSame('client-token', $result['api_token']);
     }
 
     public static function isClientTaxableProvider(): array

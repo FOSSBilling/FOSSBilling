@@ -87,6 +87,7 @@ final class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('get')->willReturn($model);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
+            ->with($model, true, null, true)
             ->willReturn([]);
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();

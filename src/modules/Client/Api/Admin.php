@@ -69,7 +69,7 @@ class Admin extends \Api_Abstract
         $service = $this->getService();
         $client = $service->get($data);
 
-        return $service->toApiArray($client, true, $this->getIdentity());
+        return $service->toApiArray($client, true, $this->getIdentity(), true);
     }
 
     /**
