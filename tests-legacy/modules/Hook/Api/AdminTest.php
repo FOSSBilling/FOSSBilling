@@ -27,6 +27,10 @@ final class AdminTest extends \BBTestCase
     public function testGetList(): void
     {
         $serviceMock = $this->createMock(\Box\Mod\Hook\Service::class);
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('hook', 'manage_hooks');
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSearchQuery')
@@ -42,6 +46,10 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['pager'] = $paginatorMock;
+        $di['mod_service'] = $di->protect(fn (string $name) => match (strtolower($name)) {
+            'staff' => $staffServiceMock,
+            default => throw new \RuntimeException('Unexpected module service request: ' . $name),
+        });
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -53,7 +61,10 @@ final class AdminTest extends \BBTestCase
     {
         $data['event'] = 'testEvent';
 
-        $logMock = $this->createMock('\Box_log');
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('hook', 'trigger_hooks');
 
         $eventManager = $this->createMock('\Box_EventManager');
         $eventManager->expects($this->atLeastOnce())
@@ -63,6 +74,10 @@ final class AdminTest extends \BBTestCase
         $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $eventManager;
+        $di['mod_service'] = $di->protect(fn (string $name) => match (strtolower($name)) {
+            'staff' => $staffServiceMock,
+            default => throw new \RuntimeException('Unexpected module service request: ' . $name),
+        });
 
         $this->api->setDi($di);
         $result = $this->api->call($data);
@@ -73,6 +88,19 @@ final class AdminTest extends \BBTestCase
     {
         $data['event'] = null;
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('hook', 'trigger_hooks');
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (string $name) => match (strtolower($name)) {
+            'staff' => $staffServiceMock,
+            default => throw new \RuntimeException('Unexpected module service request: ' . $name),
+        });
+
+        $this->api->setDi($di);
+
         $result = $this->api->call($data);
         $this->assertIsBool($result);
         $this->assertFalse($result);
@@ -81,12 +109,20 @@ final class AdminTest extends \BBTestCase
     public function testBatchConnect(): void
     {
         $serviceMock = $this->createMock(\Box\Mod\Hook\Service::class);
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('hook', 'manage_hooks');
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('batchConnect')
             ->willReturn(true);
 
         $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (string $name) => match (strtolower($name)) {
+            'staff' => $staffServiceMock,
+            default => throw new \RuntimeException('Unexpected module service request: ' . $name),
+        });
 
         $this->api->setDi($di);
 

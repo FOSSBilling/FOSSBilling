@@ -25,6 +25,10 @@
 {% block content %}
     {% set new_params = admin.extension_config_get({ 'ext': 'mod_system' }) %}
     {% set params = admin.system_get_params %}
+    {% set can_update_params = has_permission('system', 'update_params') %}
+    {% set can_invalidate_cache = has_permission('system', 'invalidate_cache') %}
+    {% set can_toggle_error_reporting = has_permission('system', 'toggle_error_reporting') %}
+    {% set can_manage_network_interface = has_permission('system', 'manage_network_interface') %}
     <div class="card-tabs">
         <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item" role="presentation">
@@ -205,7 +209,7 @@
                             </div>
                         </div>
                         <div class="card-footer text-end">
-                            <button class="btn btn-primary" type="submit">{{ 'Update settings'|trans }}</button>
+                            <button class="btn btn-primary" type="submit"{% if not can_update_params %} disabled aria-disabled="true"{% endif %}>{{ 'Update settings'|trans }}</button>
                         </div>
                     </form>
                 </div>
@@ -227,7 +231,7 @@
                             </div>
                         </div>
                         <div class="card-footer text-end">
-                            <button class="btn btn-primary" type="submit">{{ 'Update settings'|trans }}</button>
+                            <button class="btn btn-primary" type="submit"{% if not can_update_params %} disabled aria-disabled="true"{% endif %}>{{ 'Update settings'|trans }}</button>
                         </div>
                     </form>
                 </div>
@@ -652,6 +656,9 @@ ZW=Zimbabwe
                         <div class="alert alert-info" role="alert" id="external-ip">
                             {{ "Checking external IP..."|trans }}
                         </div>
+                        {% if can_manage_network_interface %}
+                            <form method="post" action="{{ 'api/admin/system/set_interface_ip'|link }}" {{ fb_api_form({ callback: 'onAfterInterfaceSet'}) }}>
+                                <p>{{ 'If your server has multiple network interfaces, you may select the default one for FOSSBilling to use when making requests here.'|trans }}</p>
 
                         <form method="post" action="{{ 'system/set_interface_ip'|api_url }}" {{ fb_api_form({ callback: 'onAfterInterfaceSet'}) }}>
                             <p>{{ 'If your server has multiple network interfaces, you may select the default one for FOSSBilling to use when making requests here.'|trans }}</p>
@@ -662,20 +669,7 @@ ZW=Zimbabwe
                                     <option value="0">{{ 'None (Default PHP Behavior)'|trans }}</option>
                                 </select>
                             </div>
-
-                            <br>
-
-                            <div class="col-12 col-lg-3">
-                                <label for="custom_interface">{{'Enter a custom interface to use:'|trans }}</label>
-                                <input class="form-control mt-1" type="text" name="custom_interface" id="custom_interface">
-                            </div>
-                            <span class="text-muted">
-                                {{ "If the dropdown menu doesn't have the appropriate network interface, please enter the IP address or name (e.g., eth0) of the correct one above."|trans }}
-                            </span>
-                            <br>
-
-                            <input type="submit" class="btn btn-primary mt-1" value="{{ 'Update'|trans }}">
-                        </form>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -686,6 +680,7 @@ ZW=Zimbabwe
 {% block js %}
 <script>
     const bindTo = "{{ constant('BIND_TO') }}";
+    const canManageNetworkInterface = {{ can_manage_network_interface ? 'true' : 'false' }};
 
     function updateExternalIP() {
         const el = document.getElementById('external-ip');
@@ -706,6 +701,10 @@ ZW=Zimbabwe
 
     function loadInterfaceIPs() {
         const select = document.getElementById('interface');
+        if (!select) {
+            return;
+        }
+
         // Show loading state first
         select.innerHTML = `<option disabled selected>{{ "Loading interfaces..."|trans }}</option>`;
 
@@ -734,7 +733,9 @@ ZW=Zimbabwe
         const networkTab = document.querySelector('a[href="#network-interface"]');
         networkTab.addEventListener("shown.bs.tab", function () {
             updateExternalIP();
-            loadInterfaceIPs();
+            if (canManageNetworkInterface) {
+                loadInterfaceIPs();
+            }
         });
     });
 

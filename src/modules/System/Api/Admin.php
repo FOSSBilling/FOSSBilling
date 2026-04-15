@@ -40,6 +40,8 @@ class Admin extends \Api_Abstract
      */
     public function update_params($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'update_params');
+
         return $this->getService()->updateParams($data);
     }
 
@@ -170,6 +172,8 @@ class Admin extends \Api_Abstract
      */
     public function recheck_update(): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'recheck_update');
+
         $updater = $this->di['updater'];
         $updater->getLatestVersionInfo(null, true);
 
@@ -249,6 +253,8 @@ class Admin extends \Api_Abstract
      */
     public function toggle_error_reporting(): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'toggle_error_reporting');
+
         $current = Config::getProperty('debug_and_monitoring.report_errors', false);
         Config::setProperty('debug_and_monitoring.report_errors', !$current);
 
@@ -265,6 +271,8 @@ class Admin extends \Api_Abstract
 
     public function get_interface_ips(): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_network_interface');
+
         return \FOSSBilling\Tools::listHttpInterfaces();
     }
 

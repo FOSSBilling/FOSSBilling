@@ -56,6 +56,11 @@ class Service
                 'display_name' => __trans('Manage company legal'),
                 'description' => __trans('Allows the staff member to update company legal as set under the system module.'),
             ],
+            'update_params' => [
+                'type' => 'bool',
+                'display_name' => __trans('Update system parameters'),
+                'description' => __trans('Allows the staff member to update system parameters through the system API endpoint.'),
+            ],
             'invalidate_cache' => [
                 'type' => 'bool',
                 'display_name' => __trans('Invalidate cache'),
@@ -65,6 +70,16 @@ class Service
                 'type' => 'bool',
                 'display_name' => __trans('Update FOSSBilling'),
                 'description' => __trans('Allows the staff member to update FOSSBilling.'),
+            ],
+            'recheck_update' => [
+                'type' => 'bool',
+                'display_name' => __trans('Recheck for updates'),
+                'description' => __trans('Allows the staff member to clear cached update information and fetch the latest update metadata.'),
+            ],
+            'toggle_error_reporting' => [
+                'type' => 'bool',
+                'display_name' => __trans('Toggle error reporting'),
+                'description' => __trans('Allows the staff member to enable or disable error reporting for this FOSSBilling instance.'),
             ],
             'manage_network_interface' => [
                 'type' => 'bool',

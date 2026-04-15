@@ -3,6 +3,11 @@
 {% import 'macro_functions.html.twig' as mf %}
 
 {% set active_menu = 'client' %}
+{% set can_create_client = has_permission('client', 'create') %}
+{% set can_manage_groups = has_permission('client', 'manage_groups') %}
+{% set can_delete_client = has_permission('client', 'delete') %}
+{% set can_bulk_delete_clients = has_permission('client', 'bulk_delete') and can_delete_client %}
+{% set can_export_clients = has_permission('client', 'export') %}
 
 {% block meta_title %}{{ 'Clients'|trans }}{% endblock %}
 
@@ -172,6 +177,7 @@
         <li class="nav-item" role="presentation">
             <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Clients'|trans }}</a>
         </li>
+        {% if can_create_client %}
         <li class="nav-item" role="presentation">
             <button class="nav-link" href="#tab-new" data-bs-toggle="tab" role="tab">
                 <svg class="icon me-2">
@@ -180,6 +186,8 @@
                 {{ 'New Client'|trans }}
             </button>
         </li>
+        {% endif %}
+        {% if can_manage_groups %}
         <li class="nav-item" role="presentation">
             <button class="nav-link" href="#tab-groups" data-bs-toggle="tab" role="tab">{{ 'Groups'|trans }}</button>
         </li>
@@ -191,6 +199,7 @@
                 {{ 'New Group'|trans }}
             </button>
         </li>
+        {% endif %}
     </ul>
 
     <div class="card">
@@ -201,9 +210,11 @@
                     <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                         <thead>
                             <tr>
+                                {% if can_bulk_delete_clients %}
                                 <th class="w-1 no-sort">
                                     <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
                                 </th>
+                                {% endif %}
                                 <th>{{ 'Name'|trans }}</th>
                                 <th>{{ 'Company'|trans }}</th>
                                 <th>{{ 'Status'|trans }}</th>
@@ -216,9 +227,11 @@
                             {% set clients = admin.client_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
                             {% for client in clients.list %}
                             <tr>
+                                {% if can_bulk_delete_clients %}
                                 <td>
                                     <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ client.id }}">
                                 </td>
+                                {% endif %}
                                 <td>
                                     <div class="d-flex py-1 align-items-center">
                                         <a href='{{ "client/manage/#{client.id}"|url }}'>
@@ -257,17 +270,19 @@
                                             <use xlink:href="#edit" />
                                         </svg>
                                     </a>
+                                    {% if can_delete_client %}
                                     <a class="btn btn-icon"
                                         {{ fb_api_link({href: 'client/delete'|api_url(query: { 'id': client.id }), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                                         <svg class="icon">
                                             <use xlink:href="#delete" />
                                         </svg>
                                     </a>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% else %}
                             <tr>
-                                <td class="text-muted" colspan="7">{{ 'The list is empty'|trans }}</td>
+                                <td class="text-muted" colspan="{{ can_bulk_delete_clients ? 7 : 6 }}">{{ 'The list is empty'|trans }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -276,7 +291,9 @@
 
                 <div class="card-footer d-flex align-items-center justify-content-between">
                     <div>
+                        {% if can_bulk_delete_clients %}
                         {% include 'partial_batch_delete.html.twig' with { 'action': 'client/batch_delete' } %}
+                        {% endif %}
                         {% include 'partial_pagination.html.twig' with { 'list': clients, 'url': 'client' } %}
                     </div>
                     <div>
@@ -286,14 +303,18 @@
                             </svg>
                             {{ 'Export Clients'|trans }}
                         </a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
 
+            {% if can_create_client %}
             <div class="tab-pane fade" id="tab-new" role="tabpanel">
                 {{ include('mod_client_new_form.html.twig') }}
             </div>
+            {% endif %}
 
+            {% if can_manage_groups %}
             <div class="tab-pane fade" id="tab-groups" role="tabpanel">
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <thead>
@@ -344,6 +365,7 @@
                     </form>
                 </div>
             </div>
+            {% endif %}
         </div>
     </div>
 {% endblock %}

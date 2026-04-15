@@ -42,8 +42,17 @@ final class AdminTest extends \BBTestCase
             ->with('old-page', 'new-page')
             ->willReturn(7);
 
+        $staffService = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffService->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('redirect', 'create_and_edit');
+
         $di = $this->getDi();
         $di['logger'] = new \Box_Log();
+        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($name)) {
+            'staff' => $staffService,
+            default => throw new \RuntimeException(sprintf('Unexpected mod service request: %s', $name)),
+        });
 
         $api = new Admin();
         $api->setDi($di);
@@ -70,8 +79,17 @@ final class AdminTest extends \BBTestCase
             ->with($redirect)
             ->willReturn(true);
 
+        $staffService = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffService->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('redirect', 'delete');
+
         $di = $this->getDi();
         $di['logger'] = new \Box_Log();
+        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($name)) {
+            'staff' => $staffService,
+            default => throw new \RuntimeException(sprintf('Unexpected mod service request: %s', $name)),
+        });
 
         $api = new Admin();
         $api->setDi($di);

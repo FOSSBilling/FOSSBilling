@@ -3,6 +3,7 @@
 {% import 'macro_functions.html.twig' as mf %}
 
 {% set active_menu = 'system' %}
+{% set can_edit_currency = has_permission('currency', 'edit') %}
 
 {% block meta_title %}{{ 'Currency Management'|trans }}{% endblock %}
 
@@ -42,5 +43,10 @@
             <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
         </div>
     </form>
+    {% else %}
+    <div class="card-body">
+        <p class="text-muted mb-0">{{ 'You do not have permission to edit currencies.'|trans }}</p>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

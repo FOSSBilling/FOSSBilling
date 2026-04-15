@@ -1,6 +1,7 @@
 {% extends 'layout_default.html.twig' %}
 
 {% set active_menu = 'client' %}
+{% set can_manage_groups = has_permission('client', 'manage_groups') %}
 
 {% block meta_title %}{{ group.title}}{% endblock %}
 
@@ -53,5 +54,10 @@
             </a>
         </div>
     </form>
+    {% else %}
+    <div class="card-body">
+        <p class="text-muted mb-0">{{ 'You do not have permission to manage client groups.'|trans }}</p>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
