@@ -161,7 +161,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn (string $name) => match (strtolower($name)) {
+        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($name)) {
             'staff' => $staffServiceMock,
             default => throw new \RuntimeException('Unexpected module service request: ' . $name),
         });
