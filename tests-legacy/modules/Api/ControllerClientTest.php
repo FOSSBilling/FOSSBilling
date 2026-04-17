@@ -70,7 +70,7 @@ final class ControllerClientTest extends \BBTestCase
     {
         $controller = new Client();
         $di = $this->getDi();
-        $di['is_admin_logged'] = function () {
+        $di['is_admin_logged'] = function (): void {
             throw new \Exception('Not logged in');
         };
 
@@ -104,7 +104,7 @@ final class ControllerClientTest extends \BBTestCase
             ->method('findOne')
             ->willReturn($cronAdmin);
 
-        $staffService = new class($cronAdmin) {
+        $staffService = new readonly class($cronAdmin) {
             public function __construct(private \Model_Admin $cronAdmin)
             {
             }
@@ -117,7 +117,7 @@ final class ControllerClientTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name) => $name === 'staff' ? $staffService : null);
+        $di['mod_service'] = $di->protect(fn ($name): ?object => $name === 'staff' ? $staffService : null);
         $controller->setDi($di);
 
         $this->expectException(InformationException::class);
@@ -134,7 +134,6 @@ final class ControllerClientTest extends \BBTestCase
         $bean->role = $role;
 
         $property = new \ReflectionProperty(\RedBeanPHP\SimpleModel::class, 'bean');
-        $property->setAccessible(true);
         $property->setValue($admin, $bean);
 
         return $admin;
@@ -144,7 +143,6 @@ final class ControllerClientTest extends \BBTestCase
     {
         $reflection = new \ReflectionClass($instance);
         $reflectionMethod = $reflection->getMethod($method);
-        $reflectionMethod->setAccessible(true);
 
         return $reflectionMethod->invokeArgs($instance, $args);
     }
