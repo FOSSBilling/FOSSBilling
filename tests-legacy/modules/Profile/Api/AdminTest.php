@@ -94,7 +94,7 @@ final class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testChangePasswordExceptions(): never
+    public function testChangePasswordThrowsExceptionWhenPasswordMissing(): void
     {
         $di = $this->getDi();
         $di['validator'] = new \FOSSBilling\Validate();
@@ -106,6 +106,15 @@ final class AdminTest extends \BBTestCase
         $this->validateRequiredParams($adminApi, 'change_password', []);
         $adminApi->change_password([]);
         $this->fail('password should be passed');
+    }
+
+    public function testChangePasswordThrowsExceptionWhenConfirmationMissing(): void
+    {
+        $di = $this->getDi();
+        $di['validator'] = new \FOSSBilling\Validate();
+
+        $adminApi = new \Box\Mod\Profile\Api\Admin();
+        $adminApi->setDi($di);
 
         $this->expectException(\Exception::class);
         $this->validateRequiredParams($adminApi, 'change_password', ['password' => 'new_pass']);
