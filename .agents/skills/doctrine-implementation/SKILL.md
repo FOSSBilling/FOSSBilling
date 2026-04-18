@@ -26,11 +26,28 @@ Use this skill for FOSSBilling tasks that add or refactor persistence logic.
 - Put entities in `src/modules/<Module>/Entity/<Entity>.php`.
 - Put repositories in `src/modules/<Module>/Repository/<EntityRepository>.php`.
 - If the task touches pagination, prefer `$di['pager']->paginateDoctrineQuery()` instead of legacy result-set pagination.
+- During RedBean-to-Doctrine migrations, move search query builder methods (for example `getSearchQuery`) from Service classes into repository classes.
+- After moving a search query builder method to a repository, update all call sites to use the repository method directly. Do not keep a passthrough alias in the Service class.
+- For paginated API queries, do not explicitly define `$per_page` or `$page` unless the endpoint needs to override pager defaults.
 - If a module already has Doctrine entities or repositories, continue that pattern instead of creating parallel persistence code.
 - Do not perform core schema mutations ad hoc in Doctrine or API code; route them through `update-patch-creator` so UpdatePatcher logic and install baselines stay aligned.
 - Schema changes are allowed when they are beneficial or necessary and a seamless patch-based migration path is defined.
 - Avoid hybrid new code that writes via RedBean and reads via Doctrine unless you explicitly frame it as a temporary bridge migration.
 - If the task requires core DB structure or seed-content changes, route that part to `update-patch-creator` instead of designing ad-hoc schema mutations here.
+
+Pagination default example:
+
+```php
+public function get_list(array $data): array
+{
+    /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
+    $repo = $this->getService()->getCurrencyRepository();
+
+    $qb = $repo->getSearchQueryBuilder($data);
+
+    return $this->di['pager']->paginateDoctrineQuery($qb);
+}
+```
 
 ## Cross-skill handoff
 
@@ -112,6 +129,8 @@ Be specific about exact file paths and the smallest useful set of methods to add
 - For new persisted features, plan Doctrine entities and repositories first.
 - For migrations, preserve behavior where practical; if schema evolution is beneficial or necessary, define the target model here and delegate patch and baseline implementation to `update-patch-creator`.
 - For paginated endpoints, plan around a Doctrine query and `$di['pager']->paginateDoctrineQuery()`.
+- For paginated API refactors, call `paginateDoctrineQuery($qb)` directly unless there is an explicit need to override default paging behavior.
+- For RedBean-to-Doctrine migrations, place search query builder logic in repositories and update references accordingly instead of leaving compatibility aliases in Service classes.
 - For read-only migrations, prefer moving the read path first if that materially lowers risk.
 
 ### 6. Validate your own plan
