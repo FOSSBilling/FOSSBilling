@@ -28,8 +28,11 @@ Use this skill for FOSSBilling tasks that add or refactor persistence logic.
 - When this happens, fix the test setup (inject/mock `em`) instead of adding runtime guards in production code.
 - Put entities in `src/modules/<Module>/Entity/<Entity>.php`.
 - Put repositories in `src/modules/<Module>/Repository/<EntityRepository>.php`.
+- For entities with `createdAt`/`updatedAt`, prefer Doctrine lifecycle callbacks to set timestamps automatically (`#[ORM\\HasLifecycleCallbacks]` + `#[ORM\\PrePersist]`/`#[ORM\\PreUpdate]`).
 - If the task touches pagination, prefer `$di['pager']->paginateDoctrineQuery()` instead of legacy result-set pagination.
 - During RedBean-to-Doctrine migrations, move search query builder methods (for example `getSearchQuery`) from Service classes into repository classes.
+- Keep `create`, `update`, and `delete` methods in Service classes (business-operation layer).
+- It is fine to move `get`/read/query/search/list methods and other read-oriented persistence helpers into repository classes.
 - After moving a search query builder method to a repository, update all call sites to use the repository method directly. Do not keep a passthrough alias in the Service class.
 - During RedBean-to-Doctrine migrations, do not keep old Model classes for convenience unless the task explicitly requires keeping them.
 - Move repository-appropriate functions (query builders, search helpers, and similar persistence logic) into repositories when this can be done without losing functionality.
@@ -136,9 +139,29 @@ Be specific about exact file paths and the smallest useful set of methods to add
 - For paginated endpoints, plan around a Doctrine query and `$di['pager']->paginateDoctrineQuery()`.
 - For paginated API refactors, call `paginateDoctrineQuery($qb)` directly unless there is an explicit need to override default paging behavior.
 - For RedBean-to-Doctrine migrations, place search query builder logic in repositories and update references accordingly instead of leaving compatibility aliases in Service classes.
+- Keep write operations (`create`, `update`, `delete`) in Service classes; move read/query operations to repositories where appropriate.
+- For Doctrine entities with timestamp fields, include lifecycle callbacks so `createdAt`/`updatedAt` are set automatically on persist/update.
 - For RedBean-to-Doctrine migrations, do not retain legacy Model classes as convenience wrappers unless explicitly requested.
 - Move fitting persistence-related methods to repositories whenever behavior can be preserved.
 - For read-only migrations, prefer moving the read path first if that materially lowers risk.
+
+Timestamp callback example:
+
+```php
+#[ORM\PrePersist]
+public function onPrePersist(): void
+{
+    $now = new \DateTime();
+    $this->createdAt = $now;
+    $this->updatedAt = $now;
+}
+
+#[ORM\PreUpdate]
+public function updateTimestamp(): void
+{
+    $this->updatedAt = new \DateTime();
+}
+```
 
 ### 6. Validate your own plan
 
