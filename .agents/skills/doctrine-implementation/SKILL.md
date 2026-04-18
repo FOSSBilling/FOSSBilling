@@ -15,6 +15,7 @@ Use this skill for FOSSBilling tasks that add or refactor persistence logic.
 ## Default approach
 
 - Use Doctrine for new persistence code.
+- Default to entity-centric persistence: create/update data through Doctrine entities whenever practical.
 - Prefer compatibility-first migrations, but allow core schema evolution when it improves correctness, maintainability, or performance.
 - When schema or seed-content changes are needed, route them through `update-patch-creator` and require a seamless migration path via update patches.
 - Keep the change minimal. Extend existing entities or repositories before inventing new layers.
@@ -23,6 +24,7 @@ Use this skill for FOSSBilling tasks that add or refactor persistence logic.
 
 - Do not add new RedBean-backed persistence for new functionality.
 - Use `$di['em']` for Doctrine entity manager access.
+- Avoid direct SQL-style `insert()` write methods for normal domain writes; prefer creating entity instances and persisting them via the entity manager.
 - Do not add defensive checks like `isset($this->di['em'])`; the entity manager is always available in this context.
 - During Doctrine migrations, expect initial test failures like `Identifier "em" is not defined`; legacy tests often need manual updates to inject a mock entity manager into the DI container.
 - When this happens, fix the test setup (inject/mock `em`) instead of adding runtime guards in production code.
@@ -135,6 +137,7 @@ Be specific about exact file paths and the smallest useful set of methods to add
 ### 5. Apply FOSSBilling-specific rules
 
 - For new persisted features, plan Doctrine entities and repositories first.
+- For create/write flows, prefer `new Entity(...)` + `$di['em']->persist(...)` + flush over direct insert helpers when entity mapping can represent the write.
 - For migrations, preserve behavior where practical; if schema evolution is beneficial or necessary, define the target model here and delegate patch and baseline implementation to `update-patch-creator`.
 - For paginated endpoints, plan around a Doctrine query and `$di['pager']->paginateDoctrineQuery()`.
 - For paginated API refactors, call `paginateDoctrineQuery($qb)` directly unless there is an explicit need to override default paging behavior.
