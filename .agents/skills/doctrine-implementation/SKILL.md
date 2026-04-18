@@ -15,17 +15,22 @@ Use this skill for FOSSBilling tasks that add or refactor persistence logic.
 ## Default approach
 
 - Use Doctrine for new persistence code.
-- Default to entity-centric persistence: create/update data through Doctrine entities whenever practical.
+- Default to entity-centric persistence: create/update/delete through Doctrine entities whenever practical.
 - Prefer compatibility-first migrations, but allow core schema evolution when it improves correctness, maintainability, or performance.
 - When schema or seed-content changes are needed, route them through `update-patch-creator` and require a seamless migration path via update patches.
 - Keep the change minimal. Extend existing entities or repositories before inventing new layers.
+- Service-layer contract: keep business-operation entry points (`create`, `update`, `delete`) in Service classes; use repositories for query/read responsibilities.
+- Write-path contract: Service orchestrates validation, events, and logging; entity manager persists write changes.
+- End-goal contract: migrated module methods should return and consume Doctrine entities/value data, not legacy RedBean `Model_*` types.
 
 ## Gotchas
 
 - Do not add new RedBean-backed persistence for new functionality.
 - Use `$di['em']` for Doctrine entity manager access.
-- Avoid direct SQL-style `insert()` write methods for normal domain writes; prefer creating entity instances and persisting them via the entity manager.
+- Avoid direct SQL-style `insert()`/`update()`/`delete()` write helpers for normal domain writes; prefer creating/updating entities and persisting via the entity manager.
+- DBAL write helpers are allowed only as a temporary bridge when entity mapping is not yet sufficient and behavior must stay compatible. If used, explicitly mark as transitional and keep scope narrow.
 - Do not add defensive checks like `isset($this->di['em'])`; the entity manager is always available in this context.
+- Do not add defensive fallback logic to RedBean when Doctrine entity manager access fails; treat `$di['em']` as always available in this skill's scope.
 - During Doctrine migrations, expect initial test failures like `Identifier "em" is not defined`; legacy tests often need manual updates to inject a mock entity manager into the DI container.
 - When this happens, fix the test setup (inject/mock `em`) instead of adding runtime guards in production code.
 - Put entities in `src/modules/<Module>/Entity/<Entity>.php`.
@@ -33,10 +38,10 @@ Use this skill for FOSSBilling tasks that add or refactor persistence logic.
 - For entities with `createdAt`/`updatedAt`, prefer Doctrine lifecycle callbacks to set timestamps automatically (`#[ORM\\HasLifecycleCallbacks]` + `#[ORM\\PrePersist]`/`#[ORM\\PreUpdate]`).
 - If the task touches pagination, prefer `$di['pager']->paginateDoctrineQuery()` instead of legacy result-set pagination.
 - During RedBean-to-Doctrine migrations, move search query builder methods (for example `getSearchQuery`) from Service classes into repository classes.
-- Keep `create`, `update`, and `delete` methods in Service classes (business-operation layer).
+- Keep `create`, `update`, and `delete` entry points in Service classes (business-operation layer).
 - It is fine to move `get`/read/query/search/list methods and other read-oriented persistence helpers into repository classes.
 - After moving a search query builder method to a repository, update all call sites to use the repository method directly. Do not keep a passthrough alias in the Service class.
-- During RedBean-to-Doctrine migrations, do not keep old Model classes for convenience unless the task explicitly requires keeping them.
+- During RedBean-to-Doctrine migrations, do not keep old Model classes for convenience. The target state is full Doctrine usage for the module's entities.
 - Move repository-appropriate functions (query builders, search helpers, and similar persistence logic) into repositories when this can be done without losing functionality.
 - For paginated API queries, do not explicitly define `$per_page` or `$page` unless the endpoint needs to override pager defaults.
 - If a module already has Doctrine entities or repositories, continue that pattern instead of creating parallel persistence code.
@@ -44,6 +49,27 @@ Use this skill for FOSSBilling tasks that add or refactor persistence logic.
 - Schema changes are allowed when they are beneficial or necessary and a seamless patch-based migration path is defined.
 - Avoid hybrid new code that writes via RedBean and reads via Doctrine unless you explicitly frame it as a temporary bridge migration.
 - If the task requires core DB structure or seed-content changes, route that part to `update-patch-creator` instead of designing ad-hoc schema mutations here.
+
+## Migration phases
+
+- Phase 1 (reads): move query/list/search code to repositories and Doctrine query builders first.
+- Phase 2 (writes): move create/update/delete persistence to entity-manager based flows while preserving service-level behavior, events, and response contracts.
+- Phase 3 (integration): refactor dependent call sites in other modules/services so they consume Doctrine entities from migrated methods.
+- Phase 4 (cleanup): remove remaining RedBean compatibility code and delete obsolete `Model_*` classes for the migrated module entities.
+
+## Cross-module dependency rule
+
+- When a migrated method changes from RedBean models to Doctrine entities, proactively search and refactor dependent code in other modules.
+- Do not stop at local module compilation; update cross-module call sites to the Doctrine contract in the same migration scope whenever feasible.
+- Treat lingering external dependencies on removed model behavior as migration debt to be resolved before considering the migration complete.
+
+## Testing expectations for migrations
+
+- Update legacy tests to inject/mock `$di['em']` and the relevant repositories for migrated paths.
+- In touched tests, assert migrated methods use Doctrine paths (for example, repository method expectations) and no longer rely on fallback RedBean query methods.
+- Keep behavior assertions stable: events fired, response shape unchanged, and exceptions/messages preserved.
+- Run affected module tests at minimum, then nearby regression suites where the service is reused.
+- Add/adjust tests for dependent modules if their integrations consume migrated methods/entities.
 
 Pagination default example:
 
@@ -84,6 +110,7 @@ If any input is missing, inspect the relevant module files and infer the minimum
 Progress:
 - [ ] Inspect the target module structure
 - [ ] Identify existing Doctrine and RedBean usage
+- [ ] Identify cross-module dependencies on migrated methods and model contracts
 - [ ] Decide if schema/seed changes are required and hand off to `update-patch-creator` when needed
 - [ ] Choose the migration mode
 - [ ] Produce the file-level implementation plan
@@ -144,9 +171,32 @@ Be specific about exact file paths and the smallest useful set of methods to add
 - For RedBean-to-Doctrine migrations, place search query builder logic in repositories and update references accordingly instead of leaving compatibility aliases in Service classes.
 - Keep write operations (`create`, `update`, `delete`) in Service classes; move read/query operations to repositories where appropriate.
 - For Doctrine entities with timestamp fields, include lifecycle callbacks so `createdAt`/`updatedAt` are set automatically on persist/update.
-- For RedBean-to-Doctrine migrations, do not retain legacy Model classes as convenience wrappers unless explicitly requested.
+- For RedBean-to-Doctrine migrations, refactor method contracts to Doctrine entities and remove reliance on legacy `Model_*` types.
 - Move fitting persistence-related methods to repositories whenever behavior can be preserved.
 - For read-only migrations, prefer moving the read path first if that materially lowers risk.
+- Refactor dependent modules/services that call migrated methods so they work with Doctrine entities.
+- Remove obsolete RedBean models for migrated module entities once no call sites require them.
+
+Write-flow orchestration example:
+
+```php
+public function createThing(array $data): int
+{
+    $this->di['events_manager']->fire(['event' => 'onBeforeThingCreate', 'params' => $data]); // If the event already exists
+
+    $thing = new Thing();
+    $thing->setName($data['name']);
+
+    $em = $this->di['em'];
+    $em->persist($thing);
+    $em->flush();
+
+    $this->di['events_manager']->fire(['event' => 'onAfterThingCreate', 'params' => ['id' => $thing->getId()]]); // If the event already exists
+    $this->di['logger']->info('Created thing #%s', $thing->getId());
+
+    return (int) $thing->getId();
+}
+```
 
 Timestamp callback example:
 
@@ -172,7 +222,8 @@ Before finalizing, check:
 
 - Does the plan avoid new RedBean usage for new code?
 - Does it reuse existing module structure where available?
-- Are legacy Model classes retained only when explicitly required by the task?
+- Have dependent modules/services been checked and updated for migrated Doctrine method contracts?
+- Are legacy Model classes and RedBean-only paths removed for migrated module entities?
 - Have repository-appropriate methods been moved to repositories without losing behavior?
 - If schema or seed changes are proposed, are they clearly justified as beneficial or necessary and paired with a seamless `update-patch-creator` migration path?
 - If schema or seed changes are not proposed, is that decision justified by the task constraints?
