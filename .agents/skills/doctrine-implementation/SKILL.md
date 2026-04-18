@@ -24,6 +24,8 @@ Use this skill for FOSSBilling tasks that add or refactor persistence logic.
 - Do not add new RedBean-backed persistence for new functionality.
 - Use `$di['em']` for Doctrine entity manager access.
 - Do not add defensive checks like `isset($this->di['em'])`; the entity manager is always available in this context.
+- During Doctrine migrations, expect initial test failures like `Identifier "em" is not defined`; legacy tests often need manual updates to inject a mock entity manager into the DI container.
+- When this happens, fix the test setup (inject/mock `em`) instead of adding runtime guards in production code.
 - Put entities in `src/modules/<Module>/Entity/<Entity>.php`.
 - Put repositories in `src/modules/<Module>/Repository/<EntityRepository>.php`.
 - If the task touches pagination, prefer `$di['pager']->paginateDoctrineQuery()` instead of legacy result-set pagination.
