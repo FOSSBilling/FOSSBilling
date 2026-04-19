@@ -45,11 +45,6 @@ class TwigFactory
     private array $baseConfig;
     private ?Environment $emailEnvironment = null;
 
-    /**
-     * TwigFactory constructor.
-     *
-     * @param \Pimple\Container $di dependency injection container
-     */
     public function __construct(\Pimple\Container $di)
     {
         $this->di = $di;
@@ -119,7 +114,6 @@ class TwigFactory
         $loader = new TwigLoader(AppArea::ADMIN, Path::join(PATH_THEMES, $theme['code']));
         $twig->setLoader($loader);
 
-        // Add admin-specific globals.
         $twig->addGlobal('theme', $theme);
         $twig->addGlobal('current_theme', $theme['code']);
         $twig->addGlobal('app_area', AppArea::ADMIN->value);
@@ -128,7 +122,6 @@ class TwigFactory
             $twig->addGlobal('admin', $this->di['api_admin']);
         }
 
-        // Configure Debugbar and profiling.
         $this->configureDebugging($twig, $debugBar);
 
         // Set CSRF cookie for browser-facing double-submit pattern.
@@ -154,7 +147,6 @@ class TwigFactory
         $loader = new TwigLoader(AppArea::CLIENT, Path::join(PATH_THEMES, $code));
         $twig->setLoader($loader);
 
-        // Add client-specific globals.
         $twig->addGlobal('current_theme', $code);
         $twig->addGlobal('settings', $settings);
         $twig->addGlobal('app_area', AppArea::CLIENT->value);
@@ -167,7 +159,6 @@ class TwigFactory
             $twig->addGlobal('admin', $this->di['api_admin']);
         }
 
-        // Configure Debugbar and profiling.
         $this->configureDebugging($twig, $debugBar);
 
         // Set CSRF cookie for browser-facing double-submit pattern.
@@ -259,11 +250,6 @@ class TwigFactory
         return $twig;
     }
 
-    /**
-     * Configure and register runtime loaders.
-     *
-     * @param Environment $twig twig environment
-     */
     private function configureRuntimeLoaders(Environment $twig): void
     {
         $runtimeLoader = new class($this->di) implements RuntimeLoaderInterface {
@@ -289,11 +275,6 @@ class TwigFactory
         $twig->addRuntimeLoader($runtimeLoader);
     }
 
-    /**
-     * Configure global Twig variables.
-     *
-     * @param Environment $twig twig environment
-     */
     private function configureGlobals(Environment $twig): void
     {
         if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
@@ -341,12 +322,6 @@ class TwigFactory
         return $csrfToken;
     }
 
-    /**
-     * Configure debugging and profiling.
-     *
-     * @param Environment      $twig     twig environment
-     * @param StandardDebugBar $debugBar debugBar instance
-     */
     private function configureDebugging(Environment $twig, StandardDebugBar $debugBar): void
     {
         if (\FOSSBilling\Environment::isDevelopment()) {
