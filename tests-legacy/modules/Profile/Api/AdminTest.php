@@ -94,7 +94,7 @@ final class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testChangePasswordExceptions(): never
+    public function testChangePasswordThrowsExceptionWhenPasswordMissing(): void
     {
         $di = $this->getDi();
         $di['validator'] = new \FOSSBilling\Validate();
@@ -106,6 +106,15 @@ final class AdminTest extends \BBTestCase
         $this->validateRequiredParams($adminApi, 'change_password', []);
         $adminApi->change_password([]);
         $this->fail('password should be passed');
+    }
+
+    public function testChangePasswordThrowsExceptionWhenConfirmationMissing(): void
+    {
+        $di = $this->getDi();
+        $di['validator'] = new \FOSSBilling\Validate();
+
+        $adminApi = new \Box\Mod\Profile\Api\Admin();
+        $adminApi->setDi($di);
 
         $this->expectException(\Exception::class);
         $this->validateRequiredParams($adminApi, 'change_password', ['password' => 'new_pass']);
@@ -161,7 +170,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn (string $name) => match (strtolower($name)) {
+        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($name)) {
             'staff' => $staffServiceMock,
             default => throw new \RuntimeException('Unexpected module service request: ' . $name),
         });

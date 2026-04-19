@@ -46,7 +46,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['pager'] = $paginatorMock;
-        $di['mod_service'] = $di->protect(fn (string $name) => match (strtolower($name)) {
+        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($name)) {
             'staff' => $staffServiceMock,
             default => throw new \RuntimeException('Unexpected module service request: ' . $name),
         });
@@ -74,7 +74,7 @@ final class AdminTest extends \BBTestCase
         $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['events_manager'] = $eventManager;
-        $di['mod_service'] = $di->protect(fn (string $name) => match (strtolower($name)) {
+        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($name)) {
             'staff' => $staffServiceMock,
             default => throw new \RuntimeException('Unexpected module service request: ' . $name),
         });
@@ -94,7 +94,7 @@ final class AdminTest extends \BBTestCase
             ->with('hook', 'trigger_hooks');
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn (string $name) => match (strtolower($name)) {
+        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($name)) {
             'staff' => $staffServiceMock,
             default => throw new \RuntimeException('Unexpected module service request: ' . $name),
         });
@@ -119,7 +119,7 @@ final class AdminTest extends \BBTestCase
             ->willReturn(true);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn (string $name) => match (strtolower($name)) {
+        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($name)) {
             'staff' => $staffServiceMock,
             default => throw new \RuntimeException('Unexpected module service request: ' . $name),
         });
