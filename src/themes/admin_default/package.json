@@ -18,7 +18,7 @@
   "devDependencies": {
     "autoprefixer": "10.5.0",
     "esbuild": "0.28.0",
-    "postcss": "8.5.9",
+    "postcss": "8.5.10",
     "purgecss": "8.0.0",
     "sass": "1.99.0",
     "svg-sprite": "2.0.4"
