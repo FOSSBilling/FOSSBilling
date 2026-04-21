@@ -598,7 +598,7 @@ class Service implements InjectionAwareInterface
         $this->di['db']->store($model);
 
         $profileService = $this->di['mod_service']('profile');
-        $profileService->invalidateSessions('admin', $model->id);
+        $profileService->invalidateSessions('admin', (int) $model->id);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffPasswordChange', 'params' => ['id' => $model->id]]);
 

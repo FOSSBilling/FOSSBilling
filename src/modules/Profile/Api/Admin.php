@@ -132,7 +132,7 @@ class Admin extends \Api_Abstract
     public function destroy_sessions(array $data): bool
     {
         $data['type'] ??= null;
-        $data['id'] ??= null;
+        $data['id'] = ($data['id'] === null) ? null : (int) $data['id'];
 
         return $this->getService()->invalidateSessions($data['type'], $data['id']);
     }
