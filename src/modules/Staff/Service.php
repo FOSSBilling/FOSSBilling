@@ -275,7 +275,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterClientOpenTicket(\Box_Event $event)
+    public static function onAfterClientOpenTicket(\Box_Event $event): void
     {
         $di = $event->getDi();
         $params = $event->getParameters();
@@ -294,7 +294,7 @@ class Service implements InjectionAwareInterface
                 $email['ticket'] = $ticket;
                 $emailService->sendTemplate($email);
 
-                return true;
+                return;
             }
 
             $email = [];
@@ -417,14 +417,14 @@ class Service implements InjectionAwareInterface
         $di = $event->getDi();
 
         try {
-            $supportService = $di['mod_service']('Support');
+            $supportService = $di['mod_service']('support');
             $publicTicket = $di['db']->load('SupportPTicket', $params['id']);
             $ticket = $supportService->publicToApiArray($publicTicket);
             $email = [];
             $email['to_staff'] = true;
             $email['code'] = 'mod_staff_pticket_close';
             $email['ticket'] = $ticket;
-            $emailService = $di['mod_service']('Email');
+            $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
