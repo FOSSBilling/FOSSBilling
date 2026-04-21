@@ -303,7 +303,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function twig_img_tag($path, $alt = null): string
     {
-        $alt = is_null($alt) ? pathinfo((string) $path, PATHINFO_BASENAME) : $alt;
+        $alt ??= pathinfo((string) $path, PATHINFO_BASENAME);
 
         return sprintf('<img src="%s" alt="%s" title="%s"/>', htmlspecialchars((string) $path), htmlspecialchars($alt), htmlspecialchars($alt));
     }
