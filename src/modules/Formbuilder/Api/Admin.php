@@ -98,7 +98,7 @@ class Admin extends \Api_Abstract
 
         $service = $this->getService();
 
-        return $service->getForm($data['id']);
+        return $service->getForm((int) $data['id']);
     }
 
     /**

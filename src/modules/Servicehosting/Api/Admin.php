@@ -135,8 +135,7 @@ class Admin extends \Api_Abstract
     public function server_get_list($data)
     {
         [$sql, $params] = $this->getService()->getServersSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $result = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+        $result = $this->di['pager']->getPaginatedResultSet($sql, $params);
 
         foreach ($result['list'] as $key => $server) {
             $bean = $this->di['db']->dispense('ServiceHostingServer')->unbox();
@@ -159,8 +158,7 @@ class Admin extends \Api_Abstract
     public function account_get_list($data)
     {
         [$sql, $params] = $this->getService()->getAccountsSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $result = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+        $result = $this->di['pager']->getPaginatedResultSet($sql, $params);
         $orderService = $this->di['mod_service']('order');
 
         foreach ($result['list'] as $key => $account) {
@@ -326,8 +324,7 @@ class Admin extends \Api_Abstract
     public function hp_get_list($data)
     {
         [$sql, $params] = $this->getService()->getHpSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params);
         foreach ($pager['list'] as $key => $item) {
             $model = $this->di['db']->getExistingModelById('ServiceHostingHp', $item['id'], 'Post not found');
             $pager['list'][$key] = $this->getService()->toHostingHpApiArray($model, false, $this->getIdentity());

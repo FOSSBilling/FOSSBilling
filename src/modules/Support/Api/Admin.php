@@ -30,8 +30,7 @@ class Admin extends \Api_Abstract
     public function ticket_get_list(array $data): array
     {
         [$sql, $bindings] = $this->getService()->getSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings);
         foreach ($pager['list'] as $key => $ticketArr) {
             $ticket = $this->di['db']->getExistingModelById('SupportTicket', $ticketArr['id'], 'Ticket not found');
             $pager['list'][$key] = $this->getService()->toApiArray($ticket, true, $this->getIdentity());
@@ -203,8 +202,7 @@ class Admin extends \Api_Abstract
     public function public_ticket_get_list(array $data): array
     {
         [$sql, $bindings] = $this->getService()->publicGetSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings);
 
         foreach ($pager['list'] as $key => $ticketArr) {
             $ticket = $this->di['db']->getExistingModelById('SupportPTicket', $ticketArr['id'], 'Ticket not found');
@@ -314,9 +312,8 @@ class Admin extends \Api_Abstract
     public function helpdesk_get_list(array $data): array
     {
         [$sql, $bindings] = $this->getService()->helpdeskGetSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-
-        return $this->di['pager']->getPaginatedResultSet($sql, $bindings, $per_page);
+        
+        return $this->di['pager']->getPaginatedResultSet($sql, $bindings);
     }
 
     /**
@@ -397,8 +394,7 @@ class Admin extends \Api_Abstract
     {
         [$sql, $bindings] = $this->getService()->cannedGetSearchQuery($data);
 
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings);
         foreach ($pager['list'] as $key => $item) {
             $staff = $this->di['db']->getExistingModelById('SupportPr', $item['id'], 'Canned response not found');
             $pager['list'][$key] = $this->getService()->cannedToApiArray($staff);
@@ -459,7 +455,7 @@ class Admin extends \Api_Abstract
     {
         $content = $data['content'] ?? null;
 
-        return $this->getService()->cannedCreate($data['title'], $data['category_id'], $content);
+        return $this->getService()->cannedCreate($data['title'], (int) $data['category_id'], $content);
     }
 
     /**
@@ -656,7 +652,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['kb_article_category_id' => 'Article category ID was not passed', 'title' => 'Article title not passed'])]
     public function kb_article_create(array $data): int
     {
-        $articleCategoryId = $data['kb_article_category_id'];
+        $articleCategoryId = (int) $data['kb_article_category_id'];
         // Sanitize title and content to prevent XSS attacks
         $title = \FOSSBilling\Tools::sanitizeContent($data['title'], false);
         $status = $data['status'] ?? \Model_SupportKbArticle::DRAFT;
@@ -678,15 +674,15 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Article ID was not passed'])]
     public function kb_article_update(array $data): bool
     {
-        $articleCategoryId = $data['kb_article_category_id'] ?? null;
+        $articleCategoryId = isset($data['kb_article_category_id']) ? (int) $data['kb_article_category_id'] : null;
         // Sanitize title and content to prevent XSS attacks
         $title = isset($data['title']) ? \FOSSBilling\Tools::sanitizeContent($data['title'], false) : null;
         $slug = $data['slug'] ?? null;
         $status = $data['status'] ?? null;
         $content = isset($data['content']) ? \FOSSBilling\Tools::sanitizeContent($data['content'], true) : null;
-        $views = $data['views'] ?? null;
+        $views = isset($data['views']) ? (int) $data['views'] : null;
 
-        return $this->getService()->kbUpdateArticle($data['id'], $articleCategoryId, $title, $slug, $status, $content, $views);
+        return $this->getService()->kbUpdateArticle((int) $data['id'], $articleCategoryId, $title, $slug, $status, $content, $views);
     }
 
     /**
@@ -712,8 +708,7 @@ class Admin extends \Api_Abstract
     public function kb_category_get_list(array $data): array
     {
         [$sql, $bindings] = $this->getService()->kbCategoryGetSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings);
 
         foreach ($pager['list'] as $key => $item) {
             $category = $this->di['db']->getExistingModelById('SupportKbArticleCategory', $item['id'], 'KB Article not found');

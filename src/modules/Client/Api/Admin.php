@@ -33,9 +33,8 @@ class Admin extends \Api_Abstract
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
 
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params);
 
         foreach ($pager['list'] as $key => $clientArr) {
             $client = $this->di['db']->getExistingModelById('Client', $clientArr['id'], 'Client not found');
@@ -327,8 +326,7 @@ class Admin extends \Api_Abstract
     {
         $service = $this->di['mod_service']('Client', 'Balance');
         [$q, $params] = $service->getSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($q, $params, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($q, $params);
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [
@@ -411,8 +409,7 @@ class Admin extends \Api_Abstract
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view_login_history');
 
         [$q, $params] = $this->getService()->getHistorySearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($q, $params, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($q, $params);
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [

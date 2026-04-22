@@ -1671,7 +1671,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return isset($config['kb_enable']) && $config['kb_enable'] == 'on';
     }
 
-    public function kbSearchArticles(?string $status = null, ?string $search = null, ?string $cat = null, int $per_page = 100, ?int $page = null): array
+    public function kbSearchArticles(?string $status = null, ?string $search = null, ?string $cat = null): array
     {
         $filter = [];
 
@@ -1698,7 +1698,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $sql .= ' ORDER BY title ASC';
 
-        return $this->di['pager']->getPaginatedResultSet($sql, $filter, $per_page, $page);
+        return $this->di['pager']->getPaginatedResultSet($sql, $filter);
     }
 
     public function kbFindActiveArticleById(int $id): ?\Model_SupportKbArticle

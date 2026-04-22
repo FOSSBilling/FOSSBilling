@@ -437,11 +437,7 @@ class Service implements InjectionAwareInterface
 
         [$query, $params] = $this->getSearchQuery($data);
 
-        $di = $this->getDi();
-        $pager = $di['pager'];
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-
-        return $pager->getPaginatedResultSet($query, $params, $per_page);
+        return $this->di['pager']->getPaginatedResultSet($query, $params);
     }
 
     public function getSearchQuery($data): array
