@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicecustom\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 /**
  * Custom service management.
  */
@@ -20,12 +22,9 @@ class Admin extends \Api_Abstract
     /**
      * Update custom service configuration.
      */
+    #[RequiredParams(['order_id' => 'Order ID is required'])]
     public function update($data): bool
     {
-        if (!isset($data['order_id'])) {
-            throw new \FOSSBilling\Exception('Order ID is required');
-        }
-
         if (isset($data['config']) && is_array($data['config'])) {
             $this->getService()->updateConfig($data['order_id'], $data['config']);
         }

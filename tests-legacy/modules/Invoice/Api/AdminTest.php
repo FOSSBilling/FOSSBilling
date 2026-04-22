@@ -106,6 +106,76 @@ final class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
+    public function testMarkAsPaidCreatesTrustedCustomTransaction(): void
+    {
+        $data = [
+            'id' => 42,
+            'transactionId' => 'manual-txn-1',
+        ];
+
+        $invoice = new \Model_Invoice();
+        $invoice->loadBean(new \DummyBean());
+        $invoice->id = 42;
+        $invoice->gateway_id = 5;
+        $invoice->currency = 'USD';
+
+        $gatewayModel = new \Model_PayGateway();
+        $gatewayModel->loadBean(new \DummyBean());
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->method('getExistingModelById')
+            ->willReturnCallback(function (string $model, int $id) use ($invoice, $gatewayModel) {
+                return match ([$model, $id]) {
+                    ['Invoice', 42] => $invoice,
+                    ['PayGateway', 5] => $gatewayModel,
+                    default => throw new \RuntimeException('Unexpected lookup'),
+                };
+            });
+
+        $payGatewayServiceMock = $this->createMock(\Box\Mod\Invoice\ServicePayGateway::class);
+        $payGatewayServiceMock->expects($this->once())
+            ->method('toApiArray')
+            ->with($gatewayModel, true, $this->isInstanceOf(\Model_Admin::class))
+            ->willReturn([
+                'code' => 'Custom',
+                'enabled' => 1,
+            ]);
+
+        $transactionServiceMock = $this->createMock(\Box\Mod\Invoice\ServiceTransaction::class);
+        $transactionServiceMock->expects($this->once())
+            ->method('create')
+            ->with($this->callback(function (array $payload) use ($invoice): bool {
+                $this->assertSame($invoice->id, $payload['invoice_id']);
+                $this->assertSame($invoice->gateway_id, $payload['gateway_id']);
+                $this->assertSame($invoice->currency, $payload['currency']);
+                $this->assertSame('received', $payload['status']);
+                $this->assertSame('admin', $payload['source']);
+                $this->assertSame('manual-txn-1', $payload['txn_id']);
+
+                return true;
+            }))
+            ->willReturn(99);
+        $transactionServiceMock->expects($this->once())
+            ->method('processTransaction')
+            ->with(99)
+            ->willReturn(true);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function (string $name, string $sub = '') use ($payGatewayServiceMock, $transactionServiceMock) {
+            return match ([$name, $sub]) {
+                ['Invoice', 'PayGateway'] => $payGatewayServiceMock,
+                ['Invoice', 'Transaction'] => $transactionServiceMock,
+                default => throw new \RuntimeException('Unexpected service request'),
+            };
+        });
+
+        $this->api->setDi($di);
+        $this->api->setIdentity(new \Model_Admin());
+
+        $this->assertTrue($this->api->mark_as_paid($data));
+    }
+
     public function testPrepare(): void
     {
         $data = [

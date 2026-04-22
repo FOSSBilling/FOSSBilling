@@ -119,6 +119,7 @@ class ServiceTransaction implements InjectionAwareInterface
         }
 
         $ipn = [
+            'source' => is_string($data['source'] ?? null) ? $data['source'] : null,
             'get' => (isset($data['get']) && is_array($data['get'])) ? $data['get'] : null,
             'post' => (isset($data['post']) && is_array($data['post'])) ? $data['post'] : null,
             'http_raw_post_data' => $data['http_raw_post_data'] ?? null,

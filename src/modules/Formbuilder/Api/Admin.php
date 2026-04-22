@@ -66,17 +66,15 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['type' => 'Form field type is invalid', 'form_id' => 'Form id was not passed'])]
     public function add_field($data)
     {
         $service = $this->getService();
-        if (!isset($data['type']) || !$service->isValidFieldType($data['type'])) {
+        if (!$service->isValidFieldType($data['type'])) {
             throw new \FOSSBilling\Exception('Form field type is invalid', null, 2684);
         }
         if (isset($data['options']) && is_array($data['options']) && !$service->isArrayUnique($data['options'])) {
             throw new \FOSSBilling\InformationException('This input type must have unique values', null, 3658);
-        }
-        if (!isset($data['form_id'])) {
-            throw new \FOSSBilling\InformationException('Form id was not passed', null, 9846);
         }
 
         return $service->addNewField($data);
@@ -247,15 +245,9 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['form_id' => 'Form id was not passed', 'name' => 'Form name was not passed'])]
     public function copy_form($data)
     {
-        if (!isset($data['form_id'])) {
-            throw new \FOSSBilling\InformationException('Form id was not passed', null, 9958);
-        }
-        if (!isset($data['name'])) {
-            throw new \FOSSBilling\InformationException('Form name was not passed', null, 9842);
-        }
-
         $service = $this->getService();
 
         return $service->duplicateForm($data);
@@ -266,19 +258,9 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['form_id' => 'Form id was not passed', 'form_name' => 'Form name was not passed', 'type' => 'Form type was not passed'])]
     public function update_form_settings($data)
     {
-        if (!isset($data['form_id']) || (trim((string) $data['form_id']) == '')) {
-            throw new \FOSSBilling\InformationException('Form id was not passed', null, 1654);
-        }
-        if (!isset($data['form_name'])) {
-            throw new \FOSSBilling\InformationException('Form name was not passed', null, 9241);
-        }
-
-        if (!isset($data['type'])) {
-            throw new \FOSSBilling\InformationException('Form type was not passed', null, 3794);
-        }
-
         if ($data['type'] != 'horizontal' && $data['type'] != 'default') {
             throw new \FOSSBilling\Exception('Field type not supported', null, 3207);
         }

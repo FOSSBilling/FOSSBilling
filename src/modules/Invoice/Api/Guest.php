@@ -56,6 +56,10 @@ class Guest extends \Api_Abstract
         if (!$invoice) {
             throw new \FOSSBilling\Exception('Invoice was not found');
         }
+
+        $service = $this->getService();
+        $service->checkInvoiceAuth($invoice->client_id);
+
         if ($invoice->status == 'paid') {
             throw new \FOSSBilling\InformationException('Paid Invoice cannot be modified');
         }
@@ -63,7 +67,7 @@ class Guest extends \Api_Abstract
         $updateParams = [];
         $updateParams['gateway_id'] = $data['gateway_id'] ?? null;
 
-        return $this->getService()->updateInvoice($invoice, $updateParams);
+        return $service->updateInvoice($invoice, $updateParams);
     }
 
     /**
@@ -94,16 +98,12 @@ class Guest extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams([
+        'hash' => 'Invoice hash not passed. Missing param hash',
+        'gateway_id' => 'Payment method not found. Missing param gateway_id',
+    ])]
     public function payment($data)
     {
-        if (!isset($data['hash'])) {
-            throw new \FOSSBilling\Exception('Invoice hash not passed. Missing param hash', null, 810);
-        }
-
-        if (!isset($data['gateway_id'])) {
-            throw new \FOSSBilling\Exception('Payment method not found. Missing param gateway_id', null, 811);
-        }
-
         return $this->getService()->processInvoice($data);
     }
 

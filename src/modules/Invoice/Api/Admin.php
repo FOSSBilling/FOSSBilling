@@ -87,6 +87,7 @@ class Admin extends \Api_Abstract
                 'gateway_id' => $invoice->gateway_id,
                 'currency' => $invoice->currency,
                 'status' => 'received',
+                'source' => 'admin',
                 'txn_id' => $data['transactionId'],
             ]);
 
