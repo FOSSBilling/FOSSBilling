@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Box\Mod\Formbuilder\Api;
 
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -97,7 +96,15 @@ final class AdminTest extends \BBTestCase
 
     public function testAddFieldMissingType(): void
     {
-        $data = [];
+        $data = ['type' => 'invalid', 'form_id' => 1];
+
+        $serviceMock = $this->getServiceMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('isValidFieldType')
+            ->willReturn(false);
+
+        $this->api->setService($serviceMock);
+
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(2684);
         $this->expectExceptionMessage('Form field type is invalid');
@@ -115,21 +122,6 @@ final class AdminTest extends \BBTestCase
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(3658);
         $this->expectExceptionMessage('This input type must have unique values');
-        $this->api->add_field($data);
-    }
-
-    public function testAddFieldMissingFormId(): void
-    {
-        $data = [
-            'type' => 'text',
-            'options' => ['sameValue'],
-        ];
-
-        $this->api->setService($this->service);
-
-        $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionCode(9846);
-        $this->expectExceptionMessage('Form id was not passed');
         $this->api->add_field($data);
     }
 
@@ -292,6 +284,30 @@ final class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
+    public function testAddFieldRequiredTypeParam(): void
+    {
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('Form field type is invalid');
+
+        $this->validateRequiredParams($this->api, 'add_field', []);
+    }
+
+    public function testAddFieldRequiredFormIdParam(): void
+    {
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('Form id was not passed');
+
+        $this->validateRequiredParams($this->api, 'add_field', ['type' => 'text']);
+    }
+
+    public function testCopyFormRequiredParams(): void
+    {
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('Form id was not passed');
+
+        $this->validateRequiredParams($this->api, 'copy_form', []);
+    }
+
     public function testCopyForm(): void
     {
         $newFormId = 2;
@@ -311,24 +327,12 @@ final class AdminTest extends \BBTestCase
         $this->assertEquals($newFormId, $result);
     }
 
-    public function testCopyFormMissingId(): void
+    public function testUpdateFormSettingsRequiredParams(): void
     {
-        $data = [];
-
-        $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionCode(9958);
+        $this->expectException(\FOSSBilling\InformationException::class);
         $this->expectExceptionMessage('Form id was not passed');
-        $this->api->copy_form($data);
-    }
 
-    public function testCopyFormMissingName(): void
-    {
-        $data = ['form_id' => 1];
-
-        $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionCode(9842);
-        $this->expectExceptionMessage('Form name was not passed');
-        $this->api->copy_form($data);
+        $this->validateRequiredParams($this->api, 'update_form_settings', []);
     }
 
     public function testUpdateFormSettings(): void
@@ -349,28 +353,17 @@ final class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public static function form_settings_data(): array
-    {
-        return [
-            ['form_id', 'Form id was not passed', 1654],
-            ['form_name', 'Form name was not passed', 9241],
-            ['type', 'Form type was not passed', 3794],
-            ['', 'Field type not supported', 3207],
-        ];
-    }
-
-    #[DataProvider('form_settings_data')]
-    public function testUpdateFormSettingsExceptions(string $missingField, string $exceptionMessage, int $exceptionCode): void
+    public function testUpdateFormSettingsInvalidType(): void
     {
         $data = [
             'form_id' => 1,
             'form_name' => 'testForm',
             'type' => 'customType',
         ];
-        unset($data[$missingField]);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage($exceptionMessage);
+        $this->expectExceptionCode(3207);
+        $this->expectExceptionMessage('Field type not supported');
         $this->api->update_form_settings($data);
     }
 }
