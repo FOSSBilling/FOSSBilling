@@ -49,7 +49,7 @@ class Client extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket ID was not passed'])]
     public function ticket_get(array $data): array
     {
-        $ticket = $this->getService()->findOneByClient($this->getIdentity(), $data['id']);
+        $ticket = $this->getService()->findOneByClient($this->getIdentity(), (int) $data['id']);
 
         return $this->getService()->toApiArray($ticket);
     }
@@ -128,7 +128,7 @@ class Client extends \Api_Abstract
     {
         $client = $this->getIdentity();
 
-        $ticket = $this->getService()->findOneByClient($client, $data['id']);
+        $ticket = $this->getService()->findOneByClient($client, (int) $data['id']);
 
         return $this->getService()->closeTicket($ticket, $this->getIdentity());
     }
