@@ -658,13 +658,31 @@ ZW=Zimbabwe
                         </div>
                         {% if can_manage_network_interface %}
                             <form method="post" action="{{ 'system/set_interface_ip'|api_url }}" {{ fb_api_form({ callback: 'onAfterInterfaceSet'}) }}>
-                            <p>{{ 'If your server has multiple network interfaces, you may select the default one for FOSSBilling to use when making requests here.'|trans }}</p>
+                                <p>{{ 'If your server has multiple network interfaces, you may select the default one for FOSSBilling to use when making requests here.'|trans }}</p>
 
-                            <div class="col-12 col-lg-3">
-                                <label for="interface">{{ 'Select the default network interface:'|trans }}</label>
-                                <select class="form-select" name="interface" id="interface">
-                                    <option value="0">{{ 'None (Default PHP Behavior)'|trans }}</option>
-                                </select>
+                                <div class="col-12 col-lg-3">
+                                    <label for="interface">{{ 'Select the default network interface:'|trans }}</label>
+                                    <select class="form-select" name="interface" id="interface">
+                                        <option value="0">{{ 'None (Default PHP Behavior)'|trans }}</option>
+                                    </select>
+                                </div>
+
+                                <br>
+
+                                <div class="col-12 col-lg-3">
+                                    <label for="custom_interface">{{'Enter a custom interface to use:'|trans }}</label>
+                                    <input class="form-control mt-1" type="text" name="custom_interface" id="custom_interface">
+                                </div>
+                                <span class="text-muted">
+                                    {{ "If the dropdown menu doesn't have the appropriate network interface, please enter the IP address or name (e.g., eth0) of the correct one above."|trans }}
+                                </span>
+                                <br>
+
+                                <input type="submit" class="btn btn-primary mt-1" value="{{ 'Update'|trans }}">
+                            </form>
+                        {% else %}
+                            <div class="alert alert-warning" role="alert">
+                                {{ 'You do not have permission to manage the network interface.'|trans }}
                             </div>
                         {% endif %}
                     </div>

@@ -908,6 +908,17 @@ class UpdatePatcher implements InjectionAwareInterface
             $finder->directories()->in(PATH_MODS)->depth('== 1')->name('/^html_(admin|client|email)$/');
 
             foreach ($finder as $dir) {
+                $modulePath = Path::getDirectory($dir->getPathname());
+                $area = substr($dir->getFilename(), 5);
+                $replacementPath = Path::join($modulePath, 'templates', $area);
+
+                // Only remove legacy directories for modules that have already been migrated
+                // to the new templates/<area> layout. This avoids deleting user-installed
+                // modules that still depend on the legacy structure.
+                if (!$this->filesystem->exists($replacementPath)) {
+                    continue;
+                }
+
                 try {
                     $this->filesystem->remove($dir->getPathname());
                 } catch (IOException $e) {
