@@ -105,7 +105,6 @@ final class AdminTest extends \BBTestCase
         $this->expectException(\FOSSBilling\Exception::class);
         $this->validateRequiredParams($adminApi, 'change_password', []);
         $adminApi->change_password([]);
-        $this->fail('password should be passed');
     }
 
     public function testChangePasswordThrowsExceptionWhenConfirmationMissing(): void
@@ -119,7 +118,6 @@ final class AdminTest extends \BBTestCase
         $this->expectException(\Exception::class);
         $this->validateRequiredParams($adminApi, 'change_password', ['password' => 'new_pass']);
         $adminApi->change_password(['password' => 'new_pass']);
-        $this->fail('password confirmation should be passed');
     }
 
     public function testChangePassword(): void

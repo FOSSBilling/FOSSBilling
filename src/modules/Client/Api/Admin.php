@@ -292,7 +292,7 @@ class Admin extends \Api_Abstract
      * Change client password.
      */
     #[RequiredParams(['id' => 'ID required', 'password' => 'Password required', 'password_confirm' => 'Password confirmation required'])]
-    public function change_password($data): bool
+    public function change_password(array $data): bool
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'change_password');
 
@@ -309,7 +309,7 @@ class Admin extends \Api_Abstract
         $this->di['db']->store($client);
 
         $profileService = $this->di['mod_service']('profile');
-        $profileService->invalidateSessions('client', $data['id']);
+        $profileService->invalidateSessions('client', (int) $data['id']);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminClientPasswordChange', 'params' => ['id' => $client->id, 'password' => $data['password']]]);
 

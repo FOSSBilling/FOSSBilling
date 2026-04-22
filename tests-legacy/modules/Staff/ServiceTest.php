@@ -654,10 +654,10 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(function ($name) use ($supportServiceMock, $emailServiceMock) {
-            if ($name == 'Support') {
+            if ($name == 'support') {
                 return $supportServiceMock;
             }
-            if ($name == 'Email') {
+            if ($name == 'email') {
                 return $emailServiceMock;
             }
         });
