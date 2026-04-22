@@ -26,7 +26,7 @@ class Client extends \Api_Abstract
     #[RequiredParams(['order_id' => 'Order ID is required'])]
     public function send_file($data): bool
     {
-        if (!isset($data['order_id'])) {
+        if (empty($data['order_id'])) {
             throw new \FOSSBilling\Exception('Order ID is required');
         }
 
