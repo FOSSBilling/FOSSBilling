@@ -407,6 +407,7 @@ class Admin extends \Api_Abstract
     public function transaction_create($data)
     {
         $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+        $data['source'] ??= 'admin';
 
         return $transactionService->create($data);
     }

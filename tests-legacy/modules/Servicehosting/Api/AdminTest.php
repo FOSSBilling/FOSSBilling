@@ -62,6 +62,9 @@ final class AdminTest extends \BBTestCase
 
     public function testChangePlanRequiresPlanId(): void
     {
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('plan_id is missing');
+
         $this->validateRequiredParams($this->api, 'change_plan', []);
     }
 

@@ -645,6 +645,11 @@ final class AdminTest extends \BBTestCase
         $transactionService = $this->createMock(\Box\Mod\Invoice\ServiceTransaction::class);
         $transactionService->expects($this->atLeastOnce())
             ->method('create')
+            ->with($this->callback(function (array $data): bool {
+                $this->assertSame('admin', $data['source']);
+
+                return true;
+            }))
             ->willReturn($newTransactionId);
 
         $di = $this->getDi();

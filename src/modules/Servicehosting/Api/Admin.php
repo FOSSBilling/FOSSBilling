@@ -27,11 +27,7 @@ class Admin extends \Api_Abstract
     public function change_plan($data): bool
     {
         [$order, $s] = $this->_getService($data);
-        $planId = $data['plan_id'] ?? null;
-        if (null === $planId) {
-            throw new \Box_Exception('plan_id is missing');
-        }
-        $plan = $this->di['db']->getExistingModelById('ServiceHostingHp', $planId, 'Hosting plan not found');
+        $plan = $this->di['db']->getExistingModelById('ServiceHostingHp', $data['plan_id'], 'Hosting plan not found');
 
         $service = $this->getService();
 

@@ -163,18 +163,43 @@ final class GuestTest extends \BBTestCase
     public function testPayment(): void
     {
         $data = [
-            'hash' => '',
-            'gateway_id' => '',
+            'hash' => md5('1'),
+            'gateway_id' => 1,
         ];
         $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('processInvoice')
+            ->with($data)
             ->willReturn([]);
 
         $this->api->setService($serviceMock);
 
         $result = $this->api->payment($data);
         $this->assertIsArray($result);
+    }
+
+    public function testPaymentMissingHashParam(): void
+    {
+        $data = [
+            'gateway_id' => 1,
+        ];
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionCode(810);
+        $this->expectExceptionMessage('Invoice hash not passed. Missing param hash');
+        $this->api->payment($data);
+    }
+
+    public function testPaymentMissingGatewayIdParam(): void
+    {
+        $data = [
+            'hash' => md5('1'),
+        ];
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionCode(811);
+        $this->expectExceptionMessage('Payment method not found. Missing param gateway_id');
+        $this->api->payment($data);
     }
 
     public function testPdf(): void

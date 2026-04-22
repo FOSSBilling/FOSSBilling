@@ -284,14 +284,28 @@ final class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testAddFieldRequiredParams(): void
+    public function testAddFieldRequiredTypeParam(): void
     {
-        $this->validateRequiredParams($this->api, 'add_field', ['form_id', 'name', 'type']);
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('Form field type is invalid');
+
+        $this->validateRequiredParams($this->api, 'add_field', []);
+    }
+
+    public function testAddFieldRequiredFormIdParam(): void
+    {
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('Form id was not passed');
+
+        $this->validateRequiredParams($this->api, 'add_field', ['type' => 'text']);
     }
 
     public function testCopyFormRequiredParams(): void
     {
-        $this->validateRequiredParams($this->api, 'copy_form', ['form_id', 'name']);
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('Form id was not passed');
+
+        $this->validateRequiredParams($this->api, 'copy_form', []);
     }
 
     public function testCopyForm(): void
@@ -315,7 +329,10 @@ final class AdminTest extends \BBTestCase
 
     public function testUpdateFormSettingsRequiredParams(): void
     {
-        $this->validateRequiredParams($this->api, 'update_form_settings', ['form_id', 'form_name', 'type']);
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('Form id was not passed');
+
+        $this->validateRequiredParams($this->api, 'update_form_settings', []);
     }
 
     public function testUpdateFormSettings(): void
