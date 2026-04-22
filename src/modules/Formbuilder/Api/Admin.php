@@ -70,7 +70,7 @@ class Admin extends \Api_Abstract
     public function add_field($data)
     {
         $service = $this->getService();
-        if (!$service->isValidFieldType($data['type'])) {
+        if (!isset($data['type']) || !$service->isValidFieldType($data['type'])) {
             throw new \FOSSBilling\Exception('Form field type is invalid', null, 2684);
         }
         if (isset($data['options']) && is_array($data['options']) && !$service->isArrayUnique($data['options'])) {
@@ -261,7 +261,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['form_id' => 'Form id was not passed', 'form_name' => 'Form name was not passed', 'type' => 'Form type was not passed'])]
     public function update_form_settings($data)
     {
-        if ($data['type'] != 'horizontal' && $data['type'] != 'default') {
+        $type = $data['type'] ?? null;
+        if ($type !== 'horizontal' && $type !== 'default') {
             throw new \FOSSBilling\Exception('Field type not supported', null, 3207);
         }
 

@@ -60,6 +60,11 @@ final class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
+    public function testChangePlanRequiresPlanId(): void
+    {
+        $this->validateRequiredParams($this->api, 'change_plan', []);
+    }
+
     public function testChangeUsername(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];

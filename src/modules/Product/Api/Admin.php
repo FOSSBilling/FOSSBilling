@@ -147,7 +147,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['priority' => 'priority params is missing'])]
     public function update_priority($data)
     {
-        if (!is_array($data['priority'])) {
+        if (!is_array($data['priority'] ?? null)) {
             throw new \FOSSBilling\Exception('priority params is missing');
         }
 

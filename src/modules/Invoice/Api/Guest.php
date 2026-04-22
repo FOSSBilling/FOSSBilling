@@ -98,12 +98,16 @@ class Guest extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    #[RequiredParams([
-        'hash' => 'Invoice hash not passed. Missing param hash',
-        'gateway_id' => 'Payment method not found. Missing param gateway_id',
-    ])]
     public function payment($data)
     {
+        if (empty($data['hash'])) {
+            throw new \FOSSBilling\Exception('Invoice hash not passed. Missing param hash', 810);
+        }
+
+        if (empty($data['gateway_id'])) {
+            throw new \FOSSBilling\Exception('Payment method not found. Missing param gateway_id', 811);
+        }
+
         return $this->getService()->processInvoice($data);
     }
 

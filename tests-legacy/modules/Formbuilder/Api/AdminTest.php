@@ -284,6 +284,16 @@ final class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
+    public function testAddFieldRequiredParams(): void
+    {
+        $this->validateRequiredParams($this->api, 'add_field', ['form_id', 'name', 'type']);
+    }
+
+    public function testCopyFormRequiredParams(): void
+    {
+        $this->validateRequiredParams($this->api, 'copy_form', ['form_id', 'name']);
+    }
+
     public function testCopyForm(): void
     {
         $newFormId = 2;
@@ -301,6 +311,11 @@ final class AdminTest extends \BBTestCase
         $result = $this->api->copy_form($data);
         $this->assertIsInt($result);
         $this->assertEquals($newFormId, $result);
+    }
+
+    public function testUpdateFormSettingsRequiredParams(): void
+    {
+        $this->validateRequiredParams($this->api, 'update_form_settings', ['form_id', 'form_name', 'type']);
     }
 
     public function testUpdateFormSettings(): void
