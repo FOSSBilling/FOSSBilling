@@ -657,10 +657,7 @@ ZW=Zimbabwe
                             {{ "Checking external IP..."|trans }}
                         </div>
                         {% if can_manage_network_interface %}
-                            <form method="post" action="{{ 'api/admin/system/set_interface_ip'|link }}" {{ fb_api_form({ callback: 'onAfterInterfaceSet'}) }}>
-                                <p>{{ 'If your server has multiple network interfaces, you may select the default one for FOSSBilling to use when making requests here.'|trans }}</p>
-
-                        <form method="post" action="{{ 'system/set_interface_ip'|api_url }}" {{ fb_api_form({ callback: 'onAfterInterfaceSet'}) }}>
+                            <form method="post" action="{{ 'system/set_interface_ip'|api_url }}" {{ fb_api_form({ callback: 'onAfterInterfaceSet'}) }}>
                             <p>{{ 'If your server has multiple network interfaces, you may select the default one for FOSSBilling to use when making requests here.'|trans }}</p>
 
                             <div class="col-12 col-lg-3">
