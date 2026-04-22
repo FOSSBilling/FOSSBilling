@@ -39,7 +39,7 @@ class Service
         return true;
     }
 
-    public function searchPages($search = null, $per_page = 100, $page = null)
+    public function searchPages($search = null)
     {
         $filter = [];
         $sql = 'SELECT * FROM custom_pages WHERE 1';
@@ -49,7 +49,7 @@ class Service
         }
         $sql .= ' ORDER BY id DESC';
 
-        return $this->di['pager']->getPaginatedResultSet($sql, $filter, $per_page, $page);
+        return $this->di['pager']->getPaginatedResultSet($sql, $filter);
     }
 
     public function deletePage($id): void

@@ -23,11 +23,11 @@ final class AdminTest extends \BBTestCase
             ->willReturn($queryBuilder);
 
         $pager = $this->getMockBuilder(\FOSSBilling\Pagination::class)
-            ->onlyMethods(['getDefaultPerPage', 'paginateDoctrineQuery'])
+            ->onlyMethods(['paginateDoctrineQuery'])
             ->getMock();
         $pager->expects($this->once())
             ->method('paginateDoctrineQuery')
-            ->with($queryBuilder, 10)
+            ->with($queryBuilder, null, null, 'page', 'per_page')
             ->willReturn(['list' => []]);
 
         $di = $this->getDi();
