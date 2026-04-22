@@ -139,6 +139,20 @@ class FOSSBillingExtension
         return $filesystem->readFile($spritePath);
     }
 
+    #[AsTwigFunction('has_permission')]
+    public function hasPermission(string $module, ?string $permission = null): bool
+    {
+        if (!$this->di['auth']->isAdminLoggedIn()) {
+            return false;
+        }
+
+        try {
+            return $this->di['mod_service']('Staff')->hasPermission($this->di['loggedin_admin'], $module, $permission);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     #[AsTwigFilter('asset_url', isSafe: ['html'], needsEnvironment: true)]
     public function assetUrl(Environment $env, $asset): string
     {

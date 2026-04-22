@@ -316,6 +316,51 @@ final class ServiceTest extends \BBTestCase
         $this->assertStringContainsString('2026-03-02', $result);
     }
 
+    public function testBaseTwigEnvironmentSupportsHasPermissionFunction(): void
+    {
+        $authMock = new class {
+            public function isAdminLoggedIn(): bool
+            {
+                return true;
+            }
+        };
+
+        $staffService = new class {
+            public function hasPermission($admin, string $module, ?string $permission = null): bool
+            {
+                return $admin->id === 42 && $module === 'system' && $permission === 'update_params';
+            }
+        };
+
+        $di = $this->getDi();
+        $di['auth'] = $authMock;
+        $di['api_guest'] = new \stdClass();
+        $di['loggedin_admin'] = (object) ['id' => 42];
+        $di['session'] = $this->mockSession();
+        $di['mod_service'] = $di->protect(fn (string $service) => match ($service) {
+            'Staff' => $staffService,
+            default => throw new \RuntimeException(sprintf('Unexpected mod_service request: %s', $service)),
+        });
+
+        $twig = $this->createBaseTwigEnvironment($di);
+        $result = $twig->createTemplate("{{ has_permission('system', 'update_params') ? 'yes' : 'no' }}")->render([]);
+
+        $this->assertSame('yes', $result);
+    }
+
+    public function testBaseTwigEnvironmentFbApiLinkDoesNotIncludeHrefInPayload(): void
+    {
+        $di = $this->getDi();
+        $di['api_guest'] = new \stdClass();
+        $di['session'] = $this->mockSession();
+
+        $twig = $this->createBaseTwigEnvironment($di);
+        $result = $twig->createTemplate("{{ fb_api_link({ href: '/admin/test', reload: true }) }}")->render([]);
+
+        $this->assertSame('href="/admin/test" data-fb-api=\'{"reload":true,"type":"link"}\'', $result);
+        $this->assertStringNotContainsString('"href"', $result);
+    }
+
     public function testRenderEmailTemplateBlocksSetTag(): void
     {
         $this->expectException(\Twig\Sandbox\SecurityNotAllowedTagError::class);
@@ -473,6 +518,28 @@ final class ServiceTest extends \BBTestCase
         $twig = $twigFactory->createEmailEnvironment();
 
         return $twig->createTemplate($template)->render($vars);
+    }
+
+    private function createBaseTwigEnvironment(\Pimple\Container $di): \Twig\Environment
+    {
+        $reflection = new \ReflectionClass(\FOSSBilling\Twig\TwigFactory::class);
+        $twigFactory = $reflection->newInstanceWithoutConstructor();
+
+        $diProperty = $reflection->getProperty('di');
+        $diProperty->setValue($twigFactory, $di);
+
+        $baseConfigProperty = $reflection->getProperty('baseConfig');
+        $baseConfigProperty->setValue($twigFactory, ['cache' => false]);
+
+        return $twigFactory->createBaseEnvironment();
+    }
+
+    private function mockSession(): \FOSSBilling\Session
+    {
+        $sessionMock = $this->createMock(\FOSSBilling\Session::class);
+        $sessionMock->method('get')->willReturn('test_csrf_token');
+
+        return $sessionMock;
     }
 
     public function testClearCache(): void

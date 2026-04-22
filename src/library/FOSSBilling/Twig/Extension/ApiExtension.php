@@ -74,7 +74,7 @@ class ApiExtension
         $tag = $config['tag'] ?? null;
         $content = $config['content'] ?? '';
         $href = $config['href'] ?? null;
-        unset($config['tag'], $config['content']);
+        unset($config['tag'], $config['content'], $config['href']);
 
         $config['type'] = 'link';
         $attr = $this->fbApi($config);
