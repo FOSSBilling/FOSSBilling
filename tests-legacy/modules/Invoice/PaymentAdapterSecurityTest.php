@@ -5,7 +5,7 @@ declare(strict_types=1);
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
-final class PaymentAdapterSecurityTest extends \BBTestCase
+final class PaymentAdapterSecurityTest extends BBTestCase
 {
     public function testCustomProcessTransactionRejectsPublicIpnSource(): void
     {
@@ -55,12 +55,10 @@ final class PaymentAdapterSecurityTest extends \BBTestCase
 
         $dbMock = $this->createMock(Box_Database::class);
         $dbMock->method('load')
-            ->willReturnCallback(function (string $model, int $id) use ($transaction, $invoice) {
-                return match ([$model, $id]) {
-                    ['Transaction', 1] => $transaction,
-                    ['Invoice', 10] => $invoice,
-                    default => throw new RuntimeException('Unexpected lookup'),
-                };
+            ->willReturnCallback(fn (string $model, int $id) => match ([$model, $id]) {
+                ['Transaction', 1] => $transaction,
+                ['Invoice', 10] => $invoice,
+                default => throw new RuntimeException('Unexpected lookup'),
             });
 
         $loggedInClient = new Model_Client();
