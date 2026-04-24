@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicehosting\Api;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -112,6 +113,8 @@ final class ClientTest extends \BBTestCase
         ];
 
         $clientOrderModel = new \Model_ClientOrder();
+        $clientOrderModel->loadBean(new \DummyBean());
+        $clientOrderModel->status = \Model_ClientOrder::STATUS_ACTIVE;
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
@@ -152,6 +155,55 @@ final class ClientTest extends \BBTestCase
             ->willReturn($clientOrderModel);
 
         $model = null;
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
+        $orderServiceMock->expects($this->atLeastOnce())
+            ->method('getOrderService')
+            ->willReturn($model);
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
+        $di['db'] = $dbMock;
+
+        $this->api->setDi($di);
+
+        $clientModel = new \Model_Client();
+        $clientModel->loadBean(new \DummyBean());
+        $clientModel->id = 1;
+        $this->api->setIdentity($clientModel);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('Order is not activated');
+        $this->api->_getService($data);
+    }
+
+    public static function inactiveOrderStatusProvider(): array
+    {
+        return [
+            [\Model_ClientOrder::STATUS_SUSPENDED],
+            [\Model_ClientOrder::STATUS_CANCELED],
+            [\Model_ClientOrder::STATUS_PENDING_SETUP],
+            [\Model_ClientOrder::STATUS_FAILED_SETUP],
+            [\Model_ClientOrder::STATUS_FAILED_RENEW],
+        ];
+    }
+
+    #[DataProvider('inactiveOrderStatusProvider')]
+    public function testGetServiceInactiveOrderStatusException(string $status): void
+    {
+        $data = [
+            'order_id' => 1,
+        ];
+
+        $clientOrderModel = new \Model_ClientOrder();
+        $clientOrderModel->loadBean(new \DummyBean());
+        $clientOrderModel->status = $status;
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->willReturn($clientOrderModel);
+
+        $model = new \Model_ServiceHosting();
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')

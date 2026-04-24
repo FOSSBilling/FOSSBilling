@@ -63,7 +63,7 @@
         "prinsfrank/standards": "^3.15",
         "psr/log": "^3.0.2",
         "sentry/sentry": "^4.19.1",
-        "stripe/stripe-php": "^19.1.0",
+        "stripe/stripe-php": "^20.0.0",
         "symfony/cache": "^7.4.1",
         "symfony/console": "^7.4.1",
         "symfony/filesystem": "^7.4",
