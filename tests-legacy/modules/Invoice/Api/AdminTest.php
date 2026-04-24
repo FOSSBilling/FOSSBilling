@@ -1013,7 +1013,7 @@ final class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function subscription_get_list(): void
+    public function testSubscriptionGetList(): void
     {
         $subscriptionService = $this->createMock(\Box\Mod\Invoice\ServiceSubscription::class);
         $subscriptionService->expects($this->atLeastOnce())
@@ -1242,7 +1242,7 @@ final class AdminTest extends \BBTestCase
         $this->assertEquals($newTaxId, $result);
     }
 
-    public function tax_get_list(): void
+    public function testTaxGetList(): void
     {
         $taxService = $this->createMock(\Box\Mod\Invoice\ServiceTax::class);
         $taxService->expects($this->atLeastOnce())
