@@ -124,12 +124,10 @@ final class AdminTest extends \BBTestCase
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->method('getExistingModelById')
-            ->willReturnCallback(function (string $model, int $id) use ($invoice, $gatewayModel) {
-                return match ([$model, $id]) {
-                    ['Invoice', 42] => $invoice,
-                    ['PayGateway', 5] => $gatewayModel,
-                    default => throw new \RuntimeException('Unexpected lookup'),
-                };
+            ->willReturnCallback(fn (string $model, int $id) => match ([$model, $id]) {
+                ['Invoice', 42] => $invoice,
+                ['PayGateway', 5] => $gatewayModel,
+                default => throw new \RuntimeException('Unexpected lookup'),
             });
 
         $payGatewayServiceMock = $this->createMock(\Box\Mod\Invoice\ServicePayGateway::class);
@@ -162,12 +160,10 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(function (string $name, string $sub = '') use ($payGatewayServiceMock, $transactionServiceMock) {
-            return match ([$name, $sub]) {
-                ['Invoice', 'PayGateway'] => $payGatewayServiceMock,
-                ['Invoice', 'Transaction'] => $transactionServiceMock,
-                default => throw new \RuntimeException('Unexpected service request'),
-            };
+        $di['mod_service'] = $di->protect(fn (string $name, string $sub = '') => match ([$name, $sub]) {
+            ['Invoice', 'PayGateway'] => $payGatewayServiceMock,
+            ['Invoice', 'Transaction'] => $transactionServiceMock,
+            default => throw new \RuntimeException('Unexpected service request'),
         });
 
         $this->api->setDi($di);

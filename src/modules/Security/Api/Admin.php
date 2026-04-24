@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Box\Mod\Security\Api;
 
-use FOSSBilling\InformationException;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \Api_Abstract
