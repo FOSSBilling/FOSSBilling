@@ -192,4 +192,39 @@ final class GuestTest extends \BBTestCase
         ];
         $guestApi->login($data);
     }
+
+    public function testUpdatePasswordRequiresStrongPassword(): void
+    {
+        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $modMock->expects($this->once())
+            ->method('getConfig')
+            ->willReturn([]);
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->once())
+            ->method('fire');
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->never())
+            ->method('findOne');
+
+        $di = $this->getDi();
+        $di['events_manager'] = $eventMock;
+        $di['db'] = $dbMock;
+        $di['validator'] = new \FOSSBilling\Validate();
+
+        $guestApi = new \Box\Mod\Staff\Api\Guest();
+        $guestApi->setMod($modMock);
+        $guestApi->setDi($di);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('Minimum password length is 8 characters.');
+        $guestApi->update_password([
+            'code' => 'hashedString',
+            'password' => 'weak',
+            'password_confirm' => 'weak',
+        ]);
+    }
 }
