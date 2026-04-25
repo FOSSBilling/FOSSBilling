@@ -1480,6 +1480,14 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('checkIfTaskAlreadyExists')
             ->willReturn(true);
 
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+
+        $orderServiceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
+            ->onlyMethods(['findForClientById'])->getMock();
+        $orderServiceMock->expects($this->atLeastOnce())->method('findForClientById')
+            ->willReturn($order);
+
         $helpdesk = new \Model_SupportHelpdesk();
         $helpdesk->loadBean(new \DummyBean());
 
@@ -1488,8 +1496,8 @@ final class ServiceTest extends \BBTestCase
 
         $data = [
             'rel_id' => 1,
-            'rel_type' => 'Type',
-            'rel_task' => 'Task',
+            'rel_type' => \Model_SupportTicket::REL_TYPE_ORDER,
+            'rel_task' => \Model_SupportTicket::REL_TASK_CANCEL,
             'rel_new_value' => 'New value',
         ];
 
@@ -1501,6 +1509,10 @@ final class ServiceTest extends \BBTestCase
         $client->id = 1;
 
         $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (string $serviceName) => match ($serviceName) {
+            'order' => $orderServiceMock,
+            default => null,
+        });
 
         $serviceMock->setDi($di);
 
