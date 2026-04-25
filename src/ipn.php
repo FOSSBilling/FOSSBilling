@@ -20,6 +20,14 @@ $di['translate']();
 $filesystem = new Filesystem();
 
 $invoiceID = $_POST['invoice_id'] ?? $_GET['invoice_id'] ?? null;
+if ($invoiceID !== null) {
+    $invoiceID = filter_var($invoiceID, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+    if ($invoiceID === false) {
+        http_response_code(400);
+        echo json_encode(['error' => ['message' => 'Invalid invoice ID']]);
+        exit;
+    }
+}
 
 $gatewayID = $_POST['gateway_id'] ?? $_GET['gateway_id'] ?? null;
 
@@ -33,9 +41,9 @@ if ($gatewayID !== null) {
 }
 
 $ipn = [
-    'skip_validation' => true,
     'invoice_id' => $invoiceID,
     'gateway_id' => $gatewayID,
+    'source' => 'ipn',
     'get' => $_GET,
     'post' => $_POST,
     'server' => $_SERVER,

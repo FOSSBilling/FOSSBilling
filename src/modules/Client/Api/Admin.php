@@ -263,6 +263,8 @@ class Admin extends \Api_Abstract
             $client->phone = Tools::validatePhoneNumber($phone);
         }
 
+        $previousStatus = $client->status;
+
         $allowedFields = [
             'email', 'first_name', 'last_name', 'aid', 'gender', 'birthday',
             'company', 'company_vat', 'address_1', 'address_2', 'document_type',
@@ -277,9 +279,19 @@ class Admin extends \Api_Abstract
             $client->{$field} = $data[$field] ?? $client->{$field};
         }
 
+        if ($client->status !== \Model_Client::ACTIVE) {
+            $client->api_token = null;
+        }
+
         $client->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($client);
+
+        if ($client->status !== \Model_Client::ACTIVE && $previousStatus === \Model_Client::ACTIVE) {
+            $profileService = $this->di['mod_service']('profile');
+            $profileService->invalidateSessions('client', (int) $client->id);
+        }
+
         $this->di['events_manager']->fire(['event' => 'onAfterAdminClientUpdate', 'params' => ['id' => $client->id]]);
 
         $this->di['logger']->info('Updated client #%s profile', $client->id);

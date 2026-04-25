@@ -12,6 +12,7 @@ declare(strict_types=1);
 class Payment_Adapter_Custom
 {
     protected ?Pimple\Container $di = null;
+    private const string TRUSTED_SOURCE = 'admin';
 
     public function __construct(private $config)
     {
@@ -82,6 +83,10 @@ class Payment_Adapter_Custom
      */
     public function processTransaction(Api_Handler $api_admin, int $id, array $data, int $gateway_id)
     {
+        if (!$this->isIpnValid($data)) {
+            throw new Payment_Exception('Custom payment gateway callbacks must be confirmed by an administrator.');
+        }
+
         try {
             // Get the transaction and invoice associated with the transaction
             $tx = $this->di['db']->getExistingModelById('Transaction', $id);
@@ -113,5 +118,10 @@ class Payment_Adapter_Custom
         } catch (Exception) {
             return false;
         }
+    }
+
+    public function isIpnValid(array $data): bool
+    {
+        return ($data['source'] ?? null) === self::TRUSTED_SOURCE;
     }
 }

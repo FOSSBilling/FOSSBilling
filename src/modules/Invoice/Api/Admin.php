@@ -86,6 +86,7 @@ class Admin extends \Api_Abstract
                 'gateway_id' => $invoice->gateway_id,
                 'currency' => $invoice->currency,
                 'status' => 'received',
+                'source' => 'admin',
                 'txn_id' => $data['transactionId'],
             ]);
 
@@ -405,6 +406,7 @@ class Admin extends \Api_Abstract
     public function transaction_create($data)
     {
         $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+        $data['source'] ??= 'admin';
 
         return $transactionService->create($data);
     }
@@ -870,7 +872,7 @@ class Admin extends \Api_Abstract
     {
         $taxService = $this->di['mod_service']('Invoice', 'Tax');
         [$sql, $params] = $taxService->getSearchQuery($data);
-        
+
         return $this->di['pager']->getPaginatedResultSet($sql, $params);
     }
 

@@ -23,12 +23,9 @@ class Admin extends \Api_Abstract
     /**
      * Change hosting account plan.
      */
+    #[RequiredParams(['plan_id' => 'plan_id is missing'])]
     public function change_plan($data): bool
     {
-        if (!isset($data['plan_id'])) {
-            throw new \FOSSBilling\Exception('plan_id is missing');
-        }
-
         [$order, $s] = $this->_getService($data);
         $plan = $this->di['db']->getExistingModelById('ServiceHostingHp', $data['plan_id'], 'Hosting plan not found');
 

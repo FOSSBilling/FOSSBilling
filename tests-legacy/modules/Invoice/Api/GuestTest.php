@@ -121,6 +121,8 @@ final class GuestTest extends \BBTestCase
 
     public function testUpdateInvoiceIsPaid(): void
     {
+        $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
+
         $dbMock = $this->createMock('\Box_Database');
         $model = new \Model_Invoice();
         $model->loadBean(new \DummyBean());
@@ -133,6 +135,7 @@ final class GuestTest extends \BBTestCase
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
+        $this->api->setService($serviceMock);
         $this->api->setIdentity(new \Model_Admin());
 
         $data['hash'] = md5('1');
@@ -160,12 +163,13 @@ final class GuestTest extends \BBTestCase
     public function testPayment(): void
     {
         $data = [
-            'hash' => '',
-            'gateway_id' => '',
+            'hash' => md5('1'),
+            'gateway_id' => 1,
         ];
         $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('processInvoice')
+            ->with($data)
             ->willReturn([]);
 
         $this->api->setService($serviceMock);
@@ -177,7 +181,7 @@ final class GuestTest extends \BBTestCase
     public function testPaymentMissingHashParam(): void
     {
         $data = [
-            'gateway_id' => '',
+            'gateway_id' => 1,
         ];
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -189,7 +193,7 @@ final class GuestTest extends \BBTestCase
     public function testPaymentMissingGatewayIdParam(): void
     {
         $data = [
-            'hash' => '',
+            'hash' => md5('1'),
         ];
 
         $this->expectException(\FOSSBilling\Exception::class);

@@ -540,13 +540,23 @@ class Service implements InjectionAwareInterface
             $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
         }
 
+        $previousStatus = $model->status;
+
         $model->email = $data['email'] ?? $model->email;
         $model->admin_group_id = $data['admin_group_id'] ?? $model->admin_group_id;
         $model->name = $data['name'] ?? $model->name;
         $model->status = $data['status'] ?? $model->status;
+        if ($model->status === \Model_Admin::STATUS_INACTIVE) {
+            $model->api_token = null;
+        }
         $model->signature = $data['signature'] ?? $model->signature;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
+
+        if ($model->status !== \Model_Admin::STATUS_ACTIVE && $previousStatus === \Model_Admin::STATUS_ACTIVE) {
+            $profileService = $this->di['mod_service']('profile');
+            $profileService->invalidateSessions('admin', (int) $model->id);
+        }
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffUpdate', 'params' => ['id' => $model->id]]);
 

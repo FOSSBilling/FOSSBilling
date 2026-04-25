@@ -123,7 +123,7 @@ class Client extends \Api_Abstract
         }
 
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof \Model_ServiceDomain) {
+        if (!$s instanceof \Model_ServiceDomain || $order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 

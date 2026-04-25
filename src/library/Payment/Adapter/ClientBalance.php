@@ -98,6 +98,17 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
         }
 
         $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
+        if (!$invoiceModel instanceof Model_Invoice) {
+            throw new Payment_Exception('Invoice not found');
+        }
+
+        if ((int) $invoiceModel->client_id !== (int) $this->di['loggedin_client']->id) {
+            throw new Payment_Exception('You are not authorized to pay this invoice with client balance.');
+        }
+
+        if ((int) ($invoiceModel->gateway_id ?? 0) !== (int) $gateway_id) {
+            throw new Payment_Exception('Invoice is not configured to use this payment gateway.');
+        }
 
         $invoiceService = $this->di['mod_service']('Invoice');
         if ($invoiceService->isInvoiceTypeDeposit($invoiceModel)) {
@@ -120,10 +131,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
 
     public function isIpnValid($data): bool
     {
-        /*
-         * @TODO do we need validation here? -_-
-         */
-        return true;
+        return $this->di['auth']->isClientLoggedIn();
     }
 
     public function getServiceUrl($invoice_id = 0)

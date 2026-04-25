@@ -153,7 +153,7 @@ class Guest extends \Api_Abstract
         $this->di['events_manager']->fire(['event' => 'onBeforeGuestPasswordResetRequest', 'params' => $data]);
 
         // Fetch the client by email
-        $c = $this->di['db']->findOne('Client', 'email = ?', [$data['email']]);
+        $c = $this->di['db']->findOne('Client', 'email = ? AND status = ?', [$data['email'], \Model_Client::ACTIVE]);
         if (!$c instanceof \Model_Client) {
             return true;
         }
@@ -205,6 +205,7 @@ class Guest extends \Api_Abstract
         $this->di['events_manager']->fire(['event' => 'onBeforeClientProfilePasswordReset', 'params' => $data['hash']]);
 
         $this->di['validator']->passwordsMatch($data);
+        $this->di['validator']->isPasswordStrong($data['password']);
 
         $reset = $this->di['db']->findOne('ClientPasswordReset', 'hash = ?', [$data['hash']]);
         if (!$reset instanceof \Model_ClientPasswordReset) {
