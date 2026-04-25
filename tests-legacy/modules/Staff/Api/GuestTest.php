@@ -150,6 +150,11 @@ final class GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
+    protected function validateRequiredParams(object $api, string $method, array $data): void
+    {
+        $api->$method($data);
+    }
+
     public function testLoginCheckIpException(): void
     {
         $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)
