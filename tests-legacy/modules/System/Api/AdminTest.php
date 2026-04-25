@@ -16,14 +16,6 @@ final class AdminTest extends \BBTestCase
         $this->api = new Admin();
     }
 
-    public function testGetDi(): void
-    {
-        $di = $this->getDi();
-        $this->api->setDi($di);
-        $getDi = $this->api->getDi();
-        $this->assertEquals($di, $getDi);
-    }
-
     public function testGetParams(): void
     {
         $data = [
@@ -108,25 +100,6 @@ final class AdminTest extends \BBTestCase
         $result = $this->api->template_exists($data);
         $this->assertIsBool($result);
         $this->assertTrue($result);
-    }
-
-    public function testStringRender(): void
-    {
-        $data = [
-            '_tpl' => 'default',
-        ];
-
-        $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('renderTplString')
-            ->willReturn('returnStringType');
-        $di = $this->getDi();
-
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
-
-        $result = $this->api->string_render($data);
-        $this->assertIsString($result);
     }
 
     public function testEnv(): void

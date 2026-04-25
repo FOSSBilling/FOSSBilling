@@ -19,14 +19,6 @@ final class AdminTest extends \BBTestCase
         $this->api = new Admin();
     }
 
-    public function testGetDi(): void
-    {
-        $di = $this->getDi();
-        $this->api->setDi($di);
-
-        $this->assertEquals($di, $this->api->getDi());
-    }
-
     public function testUpdateStoresNormalizedFilter(): void
     {
         $model = (new MassmailerMessage())

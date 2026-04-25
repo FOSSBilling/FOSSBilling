@@ -44,6 +44,7 @@ class TwigFactory
     private \Pimple\Container $di;
     private array $baseConfig;
     private ?Environment $emailEnvironment = null;
+    private ?Environment $adapterEnvironment = null;
 
     public function __construct(\Pimple\Container $di)
     {
@@ -246,6 +247,73 @@ class TwigFactory
         $twig->addGlobal('FOSSBillingVersion', Version::VERSION);
 
         $this->emailEnvironment = $twig;
+
+        return $twig;
+    }
+
+    public function createAdapterEnvironment(): Environment
+    {
+        if ($this->adapterEnvironment !== null) {
+            return $this->adapterEnvironment;
+        }
+
+        $locale = i18n::getActiveLocale();
+        $timezone = Config::getProperty('i18n.timezone', 'UTC');
+        $dateFormat = strtoupper(Config::getProperty('i18n.date_format', 'MEDIUM'));
+        $timeFormat = strtoupper(Config::getProperty('i18n.time_format', 'SHORT'));
+        $dateTimePattern = Config::getProperty('i18n.datetime_pattern');
+
+        $loader = new ArrayLoader();
+        $twig = new Environment($loader, $this->baseConfig);
+
+        $twig->getExtension(CoreExtension::class)->setNumberFormat(2, '.', '');
+        $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
+
+        $twig->addExtension(new StringLoaderExtension());
+
+        $dateFormatter = new \IntlDateFormatter(
+            $locale,
+            constant("\IntlDateFormatter::$dateFormat"),
+            constant("\IntlDateFormatter::$timeFormat"),
+            $timezone,
+            null,
+            $dateTimePattern
+        );
+        $twig->addExtension(new IntlExtension($dateFormatter));
+
+        $twig->addExtension(new AttributeExtension(FOSSBillingExtension::class));
+        $twig->addExtension(new AttributeExtension(LegacyExtension::class));
+
+        $runtimeLoader = new class($this->di) implements RuntimeLoaderInterface {
+            private \Pimple\Container $di;
+
+            public function __construct(\Pimple\Container $di)
+            {
+                $this->di = $di;
+            }
+
+            public function load($class)
+            {
+                return match ($class) {
+                    FOSSBillingExtension::class => new FOSSBillingExtension($this->di),
+                    LegacyExtension::class => new LegacyExtension($this->di),
+                    default => null,
+                };
+            }
+        };
+        $twig->addRuntimeLoader($runtimeLoader);
+
+        $policy = AdapterPolicy::create();
+        $sandbox = new SandboxExtension($policy, true);
+        $twig->addExtension($sandbox);
+
+        $apiGuest = $this->di['api_guest'];
+        $twig->addGlobal('guest', [
+            'system_company' => $apiGuest->system_company(),
+        ]);
+        $twig->addGlobal('FOSSBillingVersion', Version::VERSION);
+
+        $this->adapterEnvironment = $twig;
 
         return $twig;
     }

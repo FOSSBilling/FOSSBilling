@@ -39,7 +39,7 @@ class Api_Abstract implements InjectionAwareInterface
         $this->di = $di;
     }
 
-    public function getDi(): ?Pimple\Container
+    protected function getDi(): ?Pimple\Container
     {
         return $this->di;
     }

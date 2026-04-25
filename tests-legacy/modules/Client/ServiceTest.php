@@ -10,15 +10,6 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class ServiceTest extends \BBTestCase
 {
-    public function testGetDi(): void
-    {
-        $di = $this->getDi();
-        $service = new \Box\Mod\Client\Service();
-        $service->setDi($di);
-        $getDi = $service->getDi();
-        $this->assertEquals($di, $getDi);
-    }
-
     public function testGetModulePermissions(): void
     {
         $service = new \Box\Mod\Client\Service();

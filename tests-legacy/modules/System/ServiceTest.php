@@ -184,63 +184,71 @@ final class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testRenderStringTemplateException(): void
+    public function testRenderAdapterTplString(): void
     {
-        $vars = [
-            '_client_id' => 1,
-        ];
-
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->willReturn(new \Model_Client());
-
-        $sessionMock = $this->createMock(\FOSSBilling\Session::class);
-        $sessionMock->method('get')->willReturn('test_csrf_token');
-
-        $guestModel = new \Model_Guest();
-        $apiGuest = new \Api_Handler($guestModel);
+        $apiGuest = new class {
+            public function system_company(): array
+            {
+                return ['name' => 'FOSSBilling'];
+            }
+        };
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
-        $di['session'] = $sessionMock;
         $di['api_guest'] = $apiGuest;
-        $di['api_client'] = new \Model_Client();
-        $di['twig_factory'] = new \FOSSBilling\Twig\TwigFactory($di);
+
+        $reflection = new \ReflectionClass(\FOSSBilling\Twig\TwigFactory::class);
+        $twigFactory = $reflection->newInstanceWithoutConstructor();
+
+        $diProperty = $reflection->getProperty('di');
+        $diProperty->setValue($twigFactory, $di);
+
+        $baseConfigProperty = $reflection->getProperty('baseConfig');
+        $baseConfigProperty->setValue($twigFactory, ['cache' => false]);
+
+        $di['twig_factory'] = $twigFactory;
         $this->service->setDi($di);
 
-        // Use an invalid Twig template that will cause a syntax error
-        $this->expectException(\FOSSBilling\InformationException::class);
-        $this->service->renderTplString('{% invalid syntax %}', false, $vars);
+        $vars = ['invoice' => ['id' => 1, 'total' => 100]];
+        $result = $this->service->renderAdapterTplString('Invoice #{{ invoice.id }} - {{ invoice.total }}', $vars);
+        $this->assertEquals('Invoice #1 - 100', $result);
     }
 
-    public function testRenderStringTemplate(): void
+    public function testRenderAdapterTplStringSandboxViolation(): void
     {
-        $vars = [
-            '_client_id' => 1,
-        ];
-
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->willReturn(new \Model_Client());
-
-        $sessionMock = $this->createMock(\FOSSBilling\Session::class);
-        $sessionMock->method('get')->willReturn('test_csrf_token');
-
-        $guestModel = new \Model_Guest();
-        $apiGuest = new \Api_Handler($guestModel);
+        $apiGuest = new class {
+            public function system_company(): array
+            {
+                return ['name' => 'FOSSBilling'];
+            }
+        };
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
-        $di['session'] = $sessionMock;
         $di['api_guest'] = $apiGuest;
-        $di['api_client'] = new \Model_Client();
-        $di['twig_factory'] = new \FOSSBilling\Twig\TwigFactory($di);
+
+        $reflection = new \ReflectionClass(\FOSSBilling\Twig\TwigFactory::class);
+        $twigFactory = $reflection->newInstanceWithoutConstructor();
+
+        $diProperty = $reflection->getProperty('di');
+        $diProperty->setValue($twigFactory, $di);
+
+        $baseConfigProperty = $reflection->getProperty('baseConfig');
+        $baseConfigProperty->setValue($twigFactory, ['cache' => false]);
+
+        $di['twig_factory'] = $twigFactory;
+        $di['logger'] = new class {
+            public function setChannel(string $channel): self
+            {
+                return $this;
+            }
+
+            public function warning(string $message, array $context = []): void
+            {
+            }
+        };
         $this->service->setDi($di);
 
-        $string = $this->service->renderTplString('test', true, $vars);
-        $this->assertEquals($string, 'test');
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->service->renderAdapterTplString('{{ range(1, 5) }}', []);
     }
 
     public function testRenderEmailTemplateSupportsPeriodTitleInSandbox(): void

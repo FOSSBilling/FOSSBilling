@@ -9,15 +9,6 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class AdminTest extends \BBTestCase
 {
-    public function testGetDi(): void
-    {
-        $di = $this->getDi();
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
-        $getDi = $admin_Client->getDi();
-        $this->assertEquals($di, $getDi);
-    }
-
     public function testGetList(): void
     {
         $simpleResultArr = [

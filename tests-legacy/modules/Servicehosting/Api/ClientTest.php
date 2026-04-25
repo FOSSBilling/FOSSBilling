@@ -17,14 +17,6 @@ final class ClientTest extends \BBTestCase
         $this->api = new Client();
     }
 
-    public function testGetDi(): void
-    {
-        $di = $this->getDi();
-        $this->api->setDi($di);
-        $getDi = $this->api->getDi();
-        $this->assertEquals($di, $getDi);
-    }
-
     public function testChangeUsername(): void
     {
         $getServiceReturnValue = [new \Model_ClientOrder(), new \Model_ServiceHosting()];

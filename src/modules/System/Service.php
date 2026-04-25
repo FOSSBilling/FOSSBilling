@@ -437,62 +437,25 @@ class Service
         return false;
     }
 
-    public function renderTplString($tpl, $try_render, $vars)
+    public function renderAdapterTplString(string $tpl, array $vars): string
     {
         $twigFactory = $this->di['twig_factory'];
-        $twig = $twigFactory->createBaseEnvironment();
-        // add client api if _client_id is set
-        if (isset($vars['_client_id'])) {
-            $identity = $this->di['db']->load('Client', $vars['_client_id']);
-            if ($identity instanceof \Model_Client) {
-                try {
-                    $twig->addGlobal('client', $this->di['api_client']);
-                } catch (\Exception $e) {
-                    error_log("api_client could not be added to template: {$e->getMessage()}.");
-                }
-            }
-        } else {
-            // attempt adding admin api to twig
-            try {
-                if ($this->di['auth']->isAdminLoggedIn()) {
-                    $twig->addGlobal('admin', $this->di['api_admin']);
-                }
-            } catch (\Exception) {
-                // skip if admin is not logged in
-            }
-        }
-        if (is_null($tpl)) {
-            return $this->createTemplateFromString('No template was provided, please contact the site administrator', $try_render, $vars);
-        }
+        $twig = $twigFactory->createAdapterEnvironment();
 
         try {
-            $template = $twig->load($tpl);
-            $parsed = $template->render($vars);
-        } catch (\Exception) {
-            // $twig->load throws error when $tpl is string
-            $parsed = $this->createTemplateFromString($tpl, $try_render, $vars);
-        }
-
-        return $parsed;
-    }
-
-    public function createTemplateFromString($tpl, $try_render, $vars)
-    {
-        try {
-            $twigFactory = $this->di['twig_factory'];
-            $twig = $twigFactory->createBaseEnvironment();
             $template = $twig->createTemplate($tpl);
 
             return $template->render($vars);
-        } catch (\Exception $e) {
-            if (!$try_render) {
-                $errorMsg = 'Template rendering failed: ' . $e->getMessage();
+        } catch (\Twig\Sandbox\SecurityError $e) {
+            $this->di['logger']->setChannel('security')->warning('Payment adapter template sandbox violation', [
+                'error' => $e->getMessage(),
+            ]);
 
-                throw new \FOSSBilling\InformationException($errorMsg, null, $e->getCode());
-            }
-
-            // Return the original template string instead
-            return $tpl;
+            throw new \FOSSBilling\InformationException('Payment adapter template contains disallowed Twig syntax: ' . $e->getMessage());
+        } catch (\Twig\Error\SyntaxError $e) {
+            throw new \FOSSBilling\InformationException('Payment adapter template syntax error: ' . $e->getMessage());
+        } catch (\Twig\Error\Error $e) {
+            throw new \FOSSBilling\InformationException('Payment adapter template rendering error: ' . $e->getMessage());
         }
     }
 

@@ -21,14 +21,6 @@ final class Api_ClientTest extends \BBTestCase
         $this->api = new \Box\Mod\Order\Api\Client();
     }
 
-    public function testGetDi(): void
-    {
-        $di = $this->getDi();
-        $this->api->setDi($di);
-        $getDi = $this->api->getDi();
-        $this->assertEquals($di, $getDi);
-    }
-
     public function testGetList(): void
     {
         $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)

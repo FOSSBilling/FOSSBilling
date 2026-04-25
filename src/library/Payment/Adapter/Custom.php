@@ -61,14 +61,13 @@ class Payment_Adapter_Custom
         $invoiceService = $this->di['mod_service']('Invoice');
         $invoice = $invoiceService->toApiArray($invoiceModel, true);
 
+        $tpl = $subscription ? ($this->config['recurrent'] ?? '"Custom" payment adapter is not fully configured.') : ($this->config['single'] ?? '"Custom" payment adapter is not fully configured.');
         $vars = [
-            '_client_id' => $invoice['client']['id'],
             'invoice' => $invoice,
-            '_tpl' => $subscription ? ($this->config['recurrent'] ?? '"Custom" payment adapter is not fully configured.') : ($this->config['single'] ?? '"Custom" payment adapter is not fully configured.'),
         ];
         $systemService = $this->di['mod_service']('System');
 
-        return $systemService->renderTplString($vars['_tpl'], true, $vars);
+        return $systemService->renderAdapterTplString($tpl, $vars);
     }
 
     /**

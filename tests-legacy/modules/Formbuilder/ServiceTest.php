@@ -19,14 +19,6 @@ final class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
-    public function testGetDi(): void
-    {
-        $di = $this->createDi($this->createDbalConnection());
-        $this->service->setDi($di);
-
-        $this->assertEquals($di, $this->service->getDi());
-    }
-
     public function testGetFormFieldsTypes(): void
     {
         $expected = [

@@ -16,14 +16,6 @@ final class AdminTest extends \BBTestCase
         $this->api = new Admin();
     }
 
-    public function testGetDi(): void
-    {
-        $di = $this->getDi();
-        $this->api->setDi($di);
-        $getDi = $this->api->getDi();
-        $this->assertEquals($di, $getDi);
-    }
-
     public function testChangePlan(): void
     {
         $data = [

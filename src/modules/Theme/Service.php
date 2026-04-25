@@ -209,15 +209,19 @@ class Service implements InjectionAwareInterface
         $finder = new Finder();
         $finder->files()->in($assets)->name(['*.css.html.twig', '*.js.html.twig']);
 
+        if (!count($finder)) {
+            return true;
+        }
+
+        $twigFactory = $this->di['twig_factory'];
+
         foreach ($finder as $file) {
             $settings = $this->getThemeSettings($theme, $preset);
             $realFile = Path::join($file->getPath(), Path::getFilenameWithoutExtension($file->getRelativePathname(), '.html.twig'));
 
-            $vars = [];
-            $vars['settings'] = $settings;
-            $vars['_tpl'] = $file->getContents();
-            $systemService = $this->di['mod_service']('system');
-            $data = $systemService->renderTplString($vars['_tpl'], false, $vars);
+            $twig = $twigFactory->createBaseEnvironment();
+            $template = $twig->createTemplate($file->getContents());
+            $data = $template->render(['settings' => $settings]);
 
             $this->filesystem->dumpFile($realFile, $data);
         }

@@ -16,14 +16,6 @@ final class ServicePayGatewayTest extends \BBTestCase
         $this->service = new ServicePayGateway();
     }
 
-    public function testGetDi(): void
-    {
-        $di = $this->getDi();
-        $this->service->setDi($di);
-        $getDi = $this->service->getDi();
-        $this->assertEquals($di, $getDi);
-    }
-
     public function testGetSearchQuery(): void
     {
         $di = $this->getDi();

@@ -513,8 +513,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function resend(\Model_ActivityClientEmail $email): bool
     {
-        $di = $this->getDi();
-        $extensionService = $di['mod_service']('extension');
+        $extensionService = $this->di['mod_service']('extension');
         if ($extensionService->isExtensionActive('mod', 'demo')) {
             return false;
         }
