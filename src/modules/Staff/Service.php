@@ -544,6 +544,9 @@ class Service implements InjectionAwareInterface
         $model->admin_group_id = $data['admin_group_id'] ?? $model->admin_group_id;
         $model->name = $data['name'] ?? $model->name;
         $model->status = $data['status'] ?? $model->status;
+        if ($model->status === \Model_Admin::STATUS_INACTIVE) {
+            $model->api_token = null;
+        }
         $model->signature = $data['signature'] ?? $model->signature;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);

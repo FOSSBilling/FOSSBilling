@@ -277,6 +277,10 @@ class Admin extends \Api_Abstract
             $client->{$field} = $data[$field] ?? $client->{$field};
         }
 
+        if ($client->status !== \Model_Client::ACTIVE) {
+            $client->api_token = null;
+        }
+
         $client->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($client);
