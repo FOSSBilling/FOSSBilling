@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Extension\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 /**
  * Extensions.
  */
@@ -53,11 +55,9 @@ class Guest extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['ext' => 'Parameter ext is missing'])]
     public function settings($data): array
     {
-        if (!isset($data['ext'])) {
-            throw new \FOSSBilling\Exception('Parameter ext is missing');
-        }
         $service = $this->getService();
         $config = $service->getConfig($data['ext']);
 

@@ -252,11 +252,12 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['config' => 'Order config not passed'])]
     public function update_config($data)
     {
         $order = $this->_getOrder($data);
 
-        if (!isset($data['config']) || !is_array($data['config'])) {
+        if (!is_array($data['config'])) {
             throw new \FOSSBilling\Exception('Order config not passed');
         }
 

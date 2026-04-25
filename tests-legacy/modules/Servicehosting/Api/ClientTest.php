@@ -4,23 +4,24 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicehosting\Api;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
 final class ClientTest extends \BBTestCase
 {
-    protected ?Client $api;
+    protected ?Client $clientApi;
 
     public function setUp(): void
     {
-        $this->api = new Client();
+        $this->clientApi = new Client();
     }
 
     public function testGetDi(): void
     {
         $di = $this->getDi();
-        $this->api->setDi($di);
-        $getDi = $this->api->getDi();
+        $this->clientApi->setDi($di);
+        $getDi = $this->clientApi->getDi();
         $this->assertEquals($di, $getDi);
     }
 
@@ -100,8 +101,8 @@ final class ClientTest extends \BBTestCase
             ->method('getHpPairs')
             ->willReturn([]);
 
-        $this->api->setService($serviceMock);
-        $result = $this->api->hp_get_pairs([]);
+        $this->clientApi->setService($serviceMock);
+        $result = $this->clientApi->hp_get_pairs([]);
         $this->assertIsArray($result);
     }
 
@@ -112,7 +113,9 @@ final class ClientTest extends \BBTestCase
         ];
 
         $clientOrderModel = new \Model_ClientOrder();
-        $dbMock = $this->createMock('\Box_Database');
+        $clientOrderModel->loadBean(new \DummyBean());
+        $clientOrderModel->status = \Model_ClientOrder::STATUS_ACTIVE;
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($clientOrderModel);
@@ -127,13 +130,13 @@ final class ClientTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $di['db'] = $dbMock;
 
-        $this->api->setDi($di);
+        $this->clientApi->setDi($di);
 
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
         $clientModel->id = 1;
-        $this->api->setIdentity($clientModel);
-        $result = $this->api->_getService($data);
+        $this->clientApi->setIdentity($clientModel);
+        $result = $this->clientApi->_getService($data);
         $this->assertIsArray($result);
         $this->assertInstanceOf('\Model_ClientOrder', $result[0]);
         $this->assertInstanceOf('\Model_ServiceHosting', $result[1]);
@@ -161,16 +164,65 @@ final class ClientTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $di['db'] = $dbMock;
 
-        $this->api->setDi($di);
+        $this->clientApi->setDi($di);
 
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
         $clientModel->id = 1;
-        $this->api->setIdentity($clientModel);
+        $this->clientApi->setIdentity($clientModel);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Order is not activated');
-        $this->api->_getService($data);
+        $this->clientApi->_getService($data);
+    }
+
+    public static function inactiveOrderStatusProvider(): array
+    {
+        return [
+            [\Model_ClientOrder::STATUS_SUSPENDED],
+            [\Model_ClientOrder::STATUS_CANCELED],
+            [\Model_ClientOrder::STATUS_PENDING_SETUP],
+            [\Model_ClientOrder::STATUS_FAILED_SETUP],
+            [\Model_ClientOrder::STATUS_FAILED_RENEW],
+        ];
+    }
+
+    #[DataProvider('inactiveOrderStatusProvider')]
+    public function testGetServiceInactiveOrderStatusException(string $status): void
+    {
+        $data = [
+            'order_id' => 1,
+        ];
+
+        $clientOrderModel = new \Model_ClientOrder();
+        $clientOrderModel->loadBean(new \DummyBean());
+        $clientOrderModel->status = $status;
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->willReturn($clientOrderModel);
+
+        $model = new \Model_ServiceHosting();
+        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
+        $orderServiceMock->expects($this->atLeastOnce())
+            ->method('getOrderService')
+            ->willReturn($model);
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
+        $di['db'] = $dbMock;
+
+        $this->clientApi->setDi($di);
+
+        $clientModel = new \Model_Client();
+        $clientModel->loadBean(new \DummyBean());
+        $clientModel->id = 1;
+        $this->clientApi->setIdentity($clientModel);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('Order is not activated');
+        $this->clientApi->_getService($data);
     }
 
     public function testGetServiceOrderNotFound(): void
@@ -188,16 +240,16 @@ final class ClientTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
 
-        $this->api->setDi($di);
+        $this->clientApi->setDi($di);
 
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
         $clientModel->id = 1;
-        $this->api->setIdentity($clientModel);
+        $this->clientApi->setIdentity($clientModel);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Order not found');
-        $this->api->_getService($data);
+        $this->clientApi->_getService($data);
     }
 
     public function testGetServiceMissingOrderId(): void
@@ -206,6 +258,6 @@ final class ClientTest extends \BBTestCase
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Order ID is required');
-        $this->api->_getService($data);
+        $this->clientApi->_getService($data);
     }
 }
