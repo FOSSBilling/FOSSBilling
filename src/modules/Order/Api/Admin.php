@@ -289,7 +289,7 @@ class Admin extends \Api_Abstract
         $data['client_order_id'] = $order->id;
 
         [$sql, $bindings] = $this->getService()->getOrderStatusSearchQuery($data);
-        
+
         return $this->di['pager']->getPaginatedResultSet($sql, $bindings);
     }
 

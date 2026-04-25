@@ -870,7 +870,7 @@ class Admin extends \Api_Abstract
     {
         $taxService = $this->di['mod_service']('Invoice', 'Tax');
         [$sql, $params] = $taxService->getSearchQuery($data);
-        
+
         return $this->di['pager']->getPaginatedResultSet($sql, $params);
     }
 

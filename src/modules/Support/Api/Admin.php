@@ -312,7 +312,7 @@ class Admin extends \Api_Abstract
     public function helpdesk_get_list(array $data): array
     {
         [$sql, $bindings] = $this->getService()->helpdeskGetSearchQuery($data);
-        
+
         return $this->di['pager']->getPaginatedResultSet($sql, $bindings);
     }
 
