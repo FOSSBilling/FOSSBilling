@@ -20,12 +20,36 @@ class Box_Authorization
 
     public function isClientLoggedIn(): bool
     {
-        return (bool) $this->session->get('client_id');
+        $clientId = $this->session->get('client_id');
+        if (!$clientId) {
+            return false;
+        }
+
+        $client = $this->di['db']->load('Client', $clientId);
+        if (!$client || $client->status !== \Model_Client::ACTIVE) {
+            $this->session->delete('client_id');
+
+            return false;
+        }
+
+        return true;
     }
 
     public function isAdminLoggedIn(): bool
     {
-        return (bool) $this->session->get('admin');
+        $admin = $this->session->get('admin');
+        if (!$admin) {
+            return false;
+        }
+
+        $adminModel = $this->di['db']->load('Admin', $admin['id']);
+        if (!$adminModel || $adminModel->status !== \Model_Admin::STATUS_ACTIVE) {
+            $this->session->delete('admin');
+
+            return false;
+        }
+
+        return true;
     }
 
     public function authorizeUser(?object $user, string $plainTextPassword): ?object
