@@ -277,6 +277,8 @@ final class FOSSBilling_Installer
      */
     private function connectDatabase(): void
     {
+        $databaseName = $this->quoteMysqlIdentifier((string) $this->session->get('database_name'));
+
         // Open the connection
         $this->pdo = new PDO('mysql:host=' . $this->session->get('database_hostname') . ';' . $this->session->get('database_port'),
             $this->session->get('database_username'),
@@ -298,13 +300,22 @@ final class FOSSBilling_Installer
 
         // Attempt to create the database.
         try {
-            $this->pdo->exec('CREATE DATABASE `' . $this->session->get('database_name') . '` CHARACTER SET utf8 COLLATE utf8_general_ci;');
+            $this->pdo->exec('CREATE DATABASE ' . $databaseName . ' CHARACTER SET utf8 COLLATE utf8_general_ci;');
         } catch (PDOException) {
             // Silently fail if the database already exists.
         }
 
         // Select the database as default for future queries
-        $this->pdo->query('USE `' . $this->session->get('database_name') . '`;');
+        $this->pdo->query('USE ' . $databaseName . ';');
+    }
+
+    private function quoteMysqlIdentifier(string $identifier): string
+    {
+        if ($identifier === '' || str_contains($identifier, "\0")) {
+            throw new InvalidArgumentException('The database name is invalid.');
+        }
+
+        return '`' . str_replace('`', '``', $identifier) . '`';
     }
 
     /**
