@@ -430,7 +430,8 @@
         "quicktime",
         "spreadsheetml",
         "wordprocessingml",
-        "srclink"
+        "srclink",
+        "striptags"
     ],
     "ignorePaths": [
         "tests-legacy/**",
