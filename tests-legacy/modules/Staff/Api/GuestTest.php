@@ -89,9 +89,6 @@ final class GuestTest extends \BBTestCase
         $this->api->create($data);
     }
 
-    /**
-     * @expectedException \FOSSBilling\Exception
-     */
     public function testLoginWithoutEmail(): void
     {
         $guestApi = new \Box\Mod\Staff\Api\Guest();
@@ -105,9 +102,6 @@ final class GuestTest extends \BBTestCase
         $guestApi->login([]);
     }
 
-    /**
-     * @expectedException \FOSSBilling\Exception
-     */
     public function testLoginWithoutPassword(): void
     {
         $guestApi = new \Box\Mod\Staff\Api\Guest();

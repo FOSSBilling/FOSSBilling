@@ -16,6 +16,14 @@ final class AdminTest extends \BBTestCase
         $this->api = new Admin();
     }
 
+    private function createPaginationMock(): \PHPUnit\Framework\MockObject\MockObject
+    {
+        return $this->getMockBuilder(\FOSSBilling\Pagination::class)
+            ->onlyMethods(['getPaginatedResultSet'])
+            ->disableOriginalConstructor()
+            ->getMock();
+    }
+
     public function testGetDi(): void
     {
         $di = $this->getDi();
@@ -32,10 +40,7 @@ final class AdminTest extends \BBTestCase
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
 
-        $paginatorMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
-        ->onlyMethods(['getPaginatedResultSet'])
-        ->disableOriginalConstructor()
-        ->getMock();
+        $paginatorMock = $this->createPaginationMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
@@ -723,10 +728,7 @@ final class AdminTest extends \BBTestCase
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
 
-        $paginatorMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
-        ->onlyMethods(['getPaginatedResultSet'])
-        ->disableOriginalConstructor()
-        ->getMock();
+        $paginatorMock = $this->createPaginationMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
@@ -827,10 +829,7 @@ final class AdminTest extends \BBTestCase
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
 
-        $paginatorMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
-        ->onlyMethods(['getPaginatedResultSet'])
-        ->disableOriginalConstructor()
-        ->getMock();
+        $paginatorMock = $this->createPaginationMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
@@ -1020,10 +1019,7 @@ final class AdminTest extends \BBTestCase
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
 
-        $paginatorMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
-        ->onlyMethods(['getPaginatedResultSet'])
-        ->disableOriginalConstructor()
-        ->getMock();
+        $paginatorMock = $this->createPaginationMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
             ->willReturn([]);
@@ -1042,7 +1038,7 @@ final class AdminTest extends \BBTestCase
         $data = [
             'client_id' => 1,
             'gateway_id' => 1,
-            'currency' => 'EU',
+            'currency' => 'EUR',
         ];
         $newSubscriptionId = 1;
         $subscriptionService = $this->createMock(\Box\Mod\Invoice\ServiceSubscription::class);
@@ -1056,7 +1052,7 @@ final class AdminTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
-        $client->currency = 'EU';
+        $client->currency = 'EUR';
 
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -1078,7 +1074,7 @@ final class AdminTest extends \BBTestCase
         $data = [
             'client_id' => 1,
             'gateway_id' => 1,
-            'currency' => 'EU',
+            'currency' => 'EUR',
         ];
 
         $dbMock = $this->createMock('\Box_Database');
@@ -1087,6 +1083,7 @@ final class AdminTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
+        $client->currency = 'USD';
 
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -1249,10 +1246,7 @@ final class AdminTest extends \BBTestCase
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
 
-        $paginatorMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
-        ->onlyMethods(['getPaginatedResultSet'])
-        ->disableOriginalConstructor()
-        ->getMock();
+        $paginatorMock = $this->createPaginationMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
             ->willReturn([]);
