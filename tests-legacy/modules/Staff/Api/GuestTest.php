@@ -221,4 +221,16 @@ final class GuestTest extends \BBTestCase
             'password_confirm' => 'weak',
         ]);
     }
+    private function validateRequiredParams(object $api, string $method, array $params): void
+    {
+        try {
+            $api->{$method}($params);
+        } catch (\FOSSBilling\Exception $e) {
+            $this->assertStringContainsString('Parameter', $e->getMessage());
+            $this->assertStringContainsString('is required', $e->getMessage());
+            return;
+        }
+
+        $this->fail(sprintf('Expected %s::%s to throw %s for missing required params.', $api::class, $method, \FOSSBilling\Exception::class));
+    }
 }
