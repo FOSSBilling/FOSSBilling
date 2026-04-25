@@ -153,7 +153,7 @@ class Guest extends \Api_Abstract
         $this->di['events_manager']->fire(['event' => 'onBeforeGuestPasswordResetRequest', 'params' => $data]);
 
         // Fetch the client by email
-        $c = $this->di['db']->findOne('Client', 'email = ?', [$data['email']]);
+        $c = $this->di['db']->findOne('Client', 'email = ? AND status = ?', [$data['email'], \Model_Client::ACTIVE]);
         if (!$c instanceof \Model_Client) {
             return true;
         }

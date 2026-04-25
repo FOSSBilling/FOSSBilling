@@ -138,7 +138,7 @@ class Guest extends \Api_Abstract
         $validator = $this->di['validator'];
         $validator->checkRequiredParamsForArray($required, $data);
         $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
-        $c = $this->di['db']->findOne('Admin', 'email = ?', [$data['email']]);
+        $c = $this->di['db']->findOne('Admin', 'email = ? AND status = ?', [$data['email'], \Model_Admin::STATUS_ACTIVE]);
 
         if (!$c instanceof \Model_Admin) {
             return true;
