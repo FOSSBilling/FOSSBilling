@@ -282,11 +282,19 @@ class Admin extends \Api_Abstract
         $config = Config::getConfig();
 
         if (isset($data['interface'])) {
-            $config['interface_ip'] = $data['interface'];
+            $interface = $data['interface'];
+            if ($interface !== '0' && !filter_var($interface, FILTER_VALIDATE_IP)) {
+                throw new \FOSSBilling\Exception('Invalid interface IP address');
+            }
+            $config['interface_ip'] = $interface;
         }
 
         if (isset($data['custom_interface'])) {
-            $config['custom_interface_ip'] = $data['custom_interface'];
+            $custom = $data['custom_interface'];
+            if ($custom !== '' && !filter_var($custom, FILTER_VALIDATE_IP) && !preg_match('/^[a-zA-Z0-9._-]{1,255}$/', $custom)) {
+                throw new \FOSSBilling\Exception('Invalid custom interface. Must be a valid IP address or hostname.');
+            }
+            $config['custom_interface_ip'] = $custom;
         }
 
         Config::setConfig($config);

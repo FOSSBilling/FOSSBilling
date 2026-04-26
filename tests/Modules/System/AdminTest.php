@@ -89,40 +89,36 @@ final class AdminTest extends TestCase
         Request::makeRequest('admin/system/set_interface_ip', ['interface' => '0']);
     }
 
-    public function testInterfaceIsIgnoredWhenNotValid(): void
+    public function testInvalidInterfaceIsRejected(): void
     {
-        // Set the network interface to one that's invalid
         $result = Request::makeRequest('admin/system/set_interface_ip', ['interface' => '12345']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertTrue($result->getResult());
-
-        // Now we validate that the system is discarding it for not being one of the local interface IPs, ensuring that outbound communication still works
-        if ($this->ipLookupWorking()) {
-            sleep(2);
-            $result = Request::makeRequest('admin/system/env', ['ip' => true]);
-            $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-            $this->assertTrue((bool) filter_var($result->getResult(), FILTER_VALIDATE_IP));
-        }
+        $this->assertFalse($result->wasSuccessful(), 'An invalid interface IP was accepted when it should have been rejected');
     }
 
-    public function testCustomInterface(): void
+    public function testInvalidCustomInterfaceIsRejected(): void
     {
-        // Validate that we can set the custom network interface without errors
         $result = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => '12345']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertTrue($result->getResult());
+        $this->assertFalse($result->wasSuccessful(), 'An invalid custom interface was accepted when it should have been rejected');
+    }
 
-        // And since we don't (can't) perform any checks against the custom interface, it should now be in use despite not being valid and as a result the system will be unable to get its IP address
-        if ($this->ipLookupWorking()) {
-            sleep(2);
-            $result = Request::makeRequest('admin/system/env', ['ip' => true]);
-            $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-            $this->assertEmpty($result->getResult());
-        }
+    public function testMaliciousInterfaceIsRejected(): void
+    {
+        $result = Request::makeRequest('admin/system/set_interface_ip', ['interface' => "x\"; echo 'pwned'; //"]);
+        $this->assertFalse($result->wasSuccessful(), 'A malicious interface value was accepted when it should have been rejected');
+    }
 
-        // Finally reset everything to ensure networking will continue to function
-        $result = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => '', 'interface' => '0']);
+    public function testMaliciousCustomInterfaceIsRejected(): void
+    {
+        $result = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => "x\"; passthru('id'); //"]);
+        $this->assertFalse($result->wasSuccessful(), 'A malicious custom interface value was accepted when it should have been rejected');
+    }
+
+    public function testCustomInterfaceAcceptsValidHostname(): void
+    {
+        $result = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => 'eth0']);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertTrue($result->getResult());
+
+        // Reset to default
+        Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => '', 'interface' => '0']);
     }
 }
