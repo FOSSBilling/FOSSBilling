@@ -3,6 +3,14 @@
 {% import 'macro_functions.html.twig' as mf %}
 
 {% set active_menu = 'client' %}
+{% set can_impersonate_client = has_permission('client', 'impersonate_login') %}
+{% set can_delete_client = has_permission('client', 'delete') %}
+{% set can_edit_profile = has_permission('client', 'edit_profile') %}
+{% set can_change_password = has_permission('client', 'change_password') %}
+{% set can_manage_balance = has_permission('client', 'manage_balance') %}
+{% set can_manage_api_keys = has_permission('client', 'manage_api_keys') %}
+{% set can_view_client_login_history = has_permission('client', 'view_login_history') %}
+{% set has_profile_edit_actions = can_edit_profile or can_change_password %}
 
 {% block meta_title %}{{ client.first_name }} {{ client.last_name }}{% endblock %}
 
@@ -25,9 +33,11 @@
         <li class="nav-item" role="presentation">
             <a class="nav-link active" href="#tab-info" data-bs-toggle="tab" role="tab">{{ 'Profile'|trans }}</a>
         </li>
+        {% if has_profile_edit_actions %}
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-profile" data-bs-toggle="tab" role="tab">{{ 'Edit'|trans }}</a>
         </li>
+        {% endif %}
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-orders" data-bs-toggle="tab" role="tab">{{ 'Orders'|trans }}</a>
         </li>
@@ -37,12 +47,16 @@
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-support" data-bs-toggle="tab" role="tab">{{ 'Tickets'|trans }}</a>
         </li>
+        {% if can_manage_balance %}
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-balance" data-bs-toggle="tab" role="tab">{{ 'Payments'|trans }}</a>
         </li>
+        {% endif %}
+        {% if can_view_client_login_history %}
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-history" data-bs-toggle="tab" role="tab">{{ 'Logins'|trans }}</a>
         </li>
+        {% endif %}
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-emails" data-bs-toggle="tab" role="tab">{{ 'Emails'|trans }}</a>
         </li>
@@ -109,7 +123,11 @@
                                 <svg class="icon">
                                     <use xlink:href="#support" />
                                 </svg>
-                                <a href="#tab-profile" data-bs-toggle="tab" role="button">{{ client.notes }}</a>
+                                {% if has_profile_edit_actions %}
+                                    <a href="#tab-profile" data-bs-toggle="tab" role="button">{{ client.notes }}</a>
+                                {% else %}
+                                    {{ client.notes }}
+                                {% endif %}
                             </td>
                         </tr>
                         {% endif %}
@@ -117,10 +135,12 @@
                             <td class="text-end">IP:</td>
                             <td>{%if client.ip %}{{ client.ip|iplookup }}{% else %}{{ 'Unknown'|trans }}{% endif %}</td>
                         </tr>
+                        {% if can_manage_api_keys %}
                         <tr>
                             <td class="text-end">{{ 'API Key'|trans }}:</td>
                             <td>{{ client.api_token|default('-') }}</td>
                         </tr>
+                        {% endif %}
                         <tr>
                             <td class="text-end">{{ 'Address'|trans }}:</td>
                             <td>
@@ -137,12 +157,15 @@
             </div>
 
             <div class="card-footer text-center">
+                {% if can_impersonate_client %}
                 <a href="{{ 'client/login'|alink }}/{{ client.id }}" class="btn btn-primary" target="_blank">
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#login" />
                     </svg>
                     <span>{{ 'Login to client area'|trans }}</span>
                 </a>
+                {% endif %}
+                {% if can_delete_client %}
                 <a class="btn btn-danger"
                     {{ fb_api_link({href: 'api/admin/client/delete'|link({id: client.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'client'|alink}) }}>
                     <svg class="icon" width="24" height="24">
@@ -150,11 +173,14 @@
                     </svg>
                     <span>{{ 'Delete'|trans }}</span>
                 </a>
+                {% endif %}
             </div>
         </div>
 
+        {% if has_profile_edit_actions %}
         <div class="tab-pane fade" id="tab-profile" role="tabpanel">
             <div class="card-body">
+                {% if can_edit_profile %}
                 <h5>{{ 'Client profile details'|trans }}</h5>
                 <form method="post" action="{{ 'api/admin/client/update'|link }}" {{ fb_api_form({ message: 'Client Profile Updated'|trans}) }}>
                     <div class="mb-3 row">
@@ -394,7 +420,9 @@
                     <button class="btn btn-primary w-100" type="submit">{{ 'Update profile'|trans }}</button>
                 </form>
                 <hr>
+                {% endif %}
 
+                {% if can_change_password %}
                 <h5>{{ 'Change password'|trans }}</h5>
                 <form method="post" action="{{ 'api/admin/client/change_password'|link }}" {{ fb_api_form({ message: 'Password Changed'|trans}) }}>
                     <div class="form-group mb-3 row">
@@ -414,9 +442,12 @@
                     <input type="hidden" name="id" value="{{ client.id }}">
                     <button class="btn btn-primary w-100" type="submit">{{ 'Change password'|trans }}</button>
                 </form>
-                <hr>
-
-                <h5>{{ 'Custom fields'|trans }}</h5>
+                {% endif %}
+                {% if can_edit_profile %}
+                    {% if can_change_password %}
+                        <hr>
+                    {% endif %}
+                    <h5>{{ 'Custom Fields'|trans }}</h5>
                 <p class="text-muted">{{ 'Use these fields to define custom client details'|trans }}</p>
                 <form method="post" action="{{ 'api/admin/client/update'|link }}" {{ fb_api_form({ message: 'Client Profile Custom Fields Updated'|trans}) }}>
                     {% for i in 1..10 %}
@@ -432,8 +463,10 @@
                     <input type="hidden" name="id" value="{{ client.id }}">
                     <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
                 </form>
+                {% endif %}
             </div>
         </div>
+        {% endif %}
 
         <div class="tab-pane fade" id="tab-orders" role="tabpanel">
             <div class="card-body">
@@ -453,7 +486,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% set orders = admin.order_get_list({ 'per_page': '20', 'client_id': client.id }) %}
+                        {% set orders = admin.order_get_list({ 'per_page': 20, 'client_id': client.id }) %}
                         {% for order in orders.list %}
                         <tr>
                             <td>{{ order.id }}</td>
@@ -522,7 +555,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% set invoices = admin.invoice_get_list({ 'per_page': '100', 'client_id': client.id }) %}
+                        {% set invoices = admin.invoice_get_list({ 'per_page': 100, 'client_id': client.id }) %}
                         {% for invoice in invoices.list %}
                         <tr>
                             <td>
@@ -590,7 +623,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% set tickets = admin.support_ticket_get_list({ 'per_page': '20', 'client_id': client.id, 'deep': 0, 'include_first': 0 }) %}
+                        {% set tickets = admin.support_ticket_get_list({ 'per_page': 20, 'client_id': client.id, 'deep': 0, 'include_first': 0 }) %}
                         {% for ticket in tickets.list %}
                         <tr>
                             <td>{{ ticket.id }}</td>
@@ -637,6 +670,7 @@
             </div>
         </div>
 
+        {% if can_manage_balance %}
         <div class="tab-pane fade" id="tab-balance" role="tabpanel" aria-labelledby="balance-tab">
             <div class="card-body">
                 <h5>{{ 'Client payments history'|trans }}</h5>
@@ -709,7 +743,9 @@
                 </form>
             </div>
         </div>
+        {% endif %}
 
+        {% if can_view_client_login_history %}
         <div class="tab-pane fade" id="tab-history" role="tabpanel" aria-labelledby="history-tab">
             <div class="card-body">
                 <h5>{{ 'Login history'|trans }}</h5>
@@ -742,6 +778,7 @@
                 </table>
             </div>
         </div>
+        {% endif %}
 
         <div class="tab-pane fade" id="tab-emails" role="tabpanel" aria-labelledby="emails-tab">
             <div class="card-body">
@@ -760,7 +797,7 @@
                     </thead>
 
                     <tbody>
-                        {% set emails = admin.email_email_get_list({ 'per_page': '20', 'client_id': client.id }) %}
+                        {% set emails = admin.email_email_get_list({ 'per_page': 20, 'client_id': client.id }) %}
                         {% for i, email in emails.list %}
                         <tr>
                             <td>{{ email.subject }}</td>

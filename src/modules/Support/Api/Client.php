@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -116,7 +117,7 @@ class Client extends \Api_Abstract
 
         $result = $this->getService()->ticketReply($ticket, $client, $data['content']);
 
-        return ($result > 0) ? true : false;
+        return $result > 0;
     }
 
     /**

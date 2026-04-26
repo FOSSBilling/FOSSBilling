@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -486,7 +487,7 @@ $di['set_return_uri'] = function () use ($di): void {
 /*
  * Creates a new API object based on the specified role and returns it.
  *
- * @param string $role The role to create the API object for. Can be 'guest', 'client', 'admin', or 'system'.
+ * @param string $role The role to create the API object for. Can be 'guest', 'client', or 'admin'.
  *
  * @return \Api_Handler The new API object that was just created.
  *
@@ -497,7 +498,6 @@ $di['api'] = $di->protect(function ($role) use ($di) {
         'guest' => new Model_Guest(),
         'client' => $di['loggedin_client'],
         'admin' => $di['loggedin_admin'],
-        'system' => $di['mod_service']('staff')->getCronAdmin(),
         default => throw new Exception('Unrecognized Handler type: ' . $role),
     };
 
@@ -552,9 +552,15 @@ $di['api_admin'] = fn () => $di['api']('admin');
  *
  * @param void
  *
- * @return \Api_Handler
+ * @return \Api_Handler Internal-only system API handler used for cron/background processing.
  */
-$di['api_system'] = fn () => $di['api']('system');
+$di['api_system'] = function () use ($di) {
+    $identity = $di['mod_service']('staff')->getCronAdmin();
+    $api = new Api_Handler($identity);
+    $api->setDi($di);
+
+    return $api;
+};
 
 $di['tools'] = function () use ($di) {
     $service = new FOSSBilling\Tools();

@@ -241,13 +241,28 @@
                         <label class="form-label col-3 col-form-label">{{ 'Use secure connection'|trans }}:</label>
                         <div class="col">
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioSecureYes" type="radio" name="secure" value="1">
+                                <input class="form-check-input" id="radioSecureYes" type="radio" name="secure" value="1" checked>
                                 <label class="form-check-label" for="radioSecureYes">{{ 'Yes'|trans }}</label>
                             </div>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioSecureNo" type="radio" name="secure" value="0" checked>
+                                <input class="form-check-input" id="radioSecureNo" type="radio" name="secure" value="0">
                                 <label class="form-check-label" for="radioSecureNo">{{ 'No'|trans }}</label>
                             </div>
+                            <span class="text-muted">{{ 'Controls whether HTTPS or HTTP is used for API requests.'|trans }}</span>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Verify TLS certificate'|trans }}:</label>
+                        <div class="col">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioTlsVerifyCreateYes" type="radio" name="tls_verify" value="1" checked>
+                                <label class="form-check-label" for="radioTlsVerifyCreateYes">{{ 'Yes'|trans }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" id="radioTlsVerifyCreateNo" type="radio" name="tls_verify" value="0">
+                                <label class="form-check-label" for="radioTlsVerifyCreateNo">{{ 'No'|trans }}</label>
+                            </div>
+                            <span class="text-muted">{{ 'Recommended: keep enabled unless your server uses a self-signed or otherwise invalid certificate.'|trans }}</span>
                         </div>
                     </div>
                     <input type="submit" value="{{ 'Add server'|trans }}" class="btn btn-primary">

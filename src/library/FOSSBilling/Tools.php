@@ -76,47 +76,28 @@ class Tools
 
         $charSetLength = strlen($charSet);
 
-        // Loop flow-control
-        $valid = false;
-        $iterations = 0;
+        // Ensure minimum length for all required character types
+        $minRequiredLength = $includeSpecial ? 4 : 3;
+        if ($length < $minRequiredLength) {
+            throw new InformationException('Password length must be at least ' . $minRequiredLength . ' characters to meet complexity requirements');
+        }
 
-        // Password requirements validation
-        $hasLowercase = false;
-        $hasUppercase = false;
-        $hasNumber = false;
-        $hasSpecial = false;
-
+        // Deterministically build password with one from each required category, then fill the rest
         $password = '';
-        while (!$valid && $iterations < 100) {
-            // Add a random character to the password from the provided list of acceptable.
-            $character = substr($charSet, random_int(0, $charSetLength - 1), 1);
-            $password .= $character;
-
-            // Handle validations
-            $hasLowercase = $hasLowercase || str_contains($characters, $character);
-            $hasUppercase = $hasUppercase || str_contains(strtoupper($characters), $character);
-            $hasNumber = $hasNumber || str_contains($numbers, $character);
-            $hasSpecial = !$includeSpecial || $hasSpecial || str_contains($specialCharacters, $character);
-
-            // Once we reach the required length, check if the password is valid
-            if (strlen($password) === $length) {
-                $valid = $hasLowercase && $hasUppercase && $hasNumber && $hasSpecial;
-                if (!$valid) {
-                    ++$iterations;
-                    $password = '';
-                    $hasLowercase = false;
-                    $hasUppercase = false;
-                    $hasNumber = false;
-                    $hasSpecial = false;
-                }
-            }
+        $password .= $characters[random_int(0, strlen($characters) - 1)];
+        $password .= strtoupper($characters)[random_int(0, strlen($characters) - 1)];
+        $password .= $numbers[random_int(0, strlen($numbers) - 1)];
+        if ($includeSpecial) {
+            $password .= $specialCharacters[random_int(0, strlen($specialCharacters) - 1)];
         }
 
-        if ($valid) {
-            return $password;
+        // Fill remaining length with random characters from the full set
+        for ($i = strlen($password); $i < $length; ++$i) {
+            $password .= $charSet[random_int(0, $charSetLength - 1)];
         }
 
-        throw new InformationException('We were unable to generate a password with the required parameters');
+        // Shuffle to avoid predictable positions for required characters
+        return str_shuffle($password);
     }
 
     public function slug($str): string
@@ -192,7 +173,7 @@ class Tools
             return [];
         }
 
-        $count = is_countable($ids) ? count($ids) : 0;
+        $count = self::safeCount($ids);
         $slots = $count ? implode(',', array_fill(0, $count, '?')) : ''; // same as RedBean genSlots() method
 
         $rows = $this->di['db']->getAll('SELECT id, title FROM ' . $table . ' WHERE id in (' . $slots . ')', $ids);
@@ -235,6 +216,36 @@ class Tools
         }
 
         return $email;
+    }
+
+    /**
+     * Safely count a value that may or may not be countable.
+     */
+    public static function safeCount(mixed $value): int
+    {
+        return is_countable($value) ? count($value) : 0;
+    }
+
+    /**
+     * Normalizes mixed input into a boolean value.
+     */
+    public static function normalizeBoolean(mixed $value, bool $default = false): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return (bool) $value;
+        }
+
+        if (is_string($value)) {
+            $normalized = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+            return $normalized ?? $default;
+        }
+
+        return $default;
     }
 
     public static function isHTTPS(): bool

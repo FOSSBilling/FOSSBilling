@@ -16,6 +16,14 @@ final class AdminTest extends \BBTestCase
         $this->api = new Admin();
     }
 
+    private function createPaginationMock(): \PHPUnit\Framework\MockObject\MockObject
+    {
+        return $this->getMockBuilder(\FOSSBilling\Pagination::class)
+            ->onlyMethods(['getPaginatedResultSet'])
+            ->disableOriginalConstructor()
+            ->getMock();
+    }
+
     public function testGetDi(): void
     {
         $di = $this->getDi();
@@ -32,10 +40,7 @@ final class AdminTest extends \BBTestCase
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
 
-        $paginatorMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
-        ->onlyMethods(['getPaginatedResultSet'])
-        ->disableOriginalConstructor()
-        ->getMock();
+        $paginatorMock = $this->createPaginationMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
@@ -104,6 +109,72 @@ final class AdminTest extends \BBTestCase
 
         $result = $this->api->mark_as_paid($data);
         $this->assertTrue($result);
+    }
+
+    public function testMarkAsPaidCreatesTrustedCustomTransaction(): void
+    {
+        $data = [
+            'id' => 42,
+            'transactionId' => 'manual-txn-1',
+        ];
+
+        $invoice = new \Model_Invoice();
+        $invoice->loadBean(new \DummyBean());
+        $invoice->id = 42;
+        $invoice->gateway_id = 5;
+        $invoice->currency = 'USD';
+
+        $gatewayModel = new \Model_PayGateway();
+        $gatewayModel->loadBean(new \DummyBean());
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->method('getExistingModelById')
+            ->willReturnCallback(fn (string $model, int $id) => match ([$model, $id]) {
+                ['Invoice', 42] => $invoice,
+                ['PayGateway', 5] => $gatewayModel,
+                default => throw new \RuntimeException('Unexpected lookup'),
+            });
+
+        $payGatewayServiceMock = $this->createMock(\Box\Mod\Invoice\ServicePayGateway::class);
+        $payGatewayServiceMock->expects($this->once())
+            ->method('toApiArray')
+            ->with($gatewayModel, true, $this->isInstanceOf(\Model_Admin::class))
+            ->willReturn([
+                'code' => 'Custom',
+                'enabled' => 1,
+            ]);
+
+        $transactionServiceMock = $this->createMock(\Box\Mod\Invoice\ServiceTransaction::class);
+        $transactionServiceMock->expects($this->once())
+            ->method('create')
+            ->with($this->callback(function (array $payload) use ($invoice): bool {
+                $this->assertSame($invoice->id, $payload['invoice_id']);
+                $this->assertSame($invoice->gateway_id, $payload['gateway_id']);
+                $this->assertSame($invoice->currency, $payload['currency']);
+                $this->assertSame('received', $payload['status']);
+                $this->assertSame('admin', $payload['source']);
+                $this->assertSame('manual-txn-1', $payload['txn_id']);
+
+                return true;
+            }))
+            ->willReturn(99);
+        $transactionServiceMock->expects($this->once())
+            ->method('processTransaction')
+            ->with(99)
+            ->willReturn(true);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (string $name, string $sub = '') => match ([$name, $sub]) {
+            ['Invoice', 'PayGateway'] => $payGatewayServiceMock,
+            ['Invoice', 'Transaction'] => $transactionServiceMock,
+            default => throw new \RuntimeException('Unexpected service request'),
+        });
+
+        $this->api->setDi($di);
+        $this->api->setIdentity(new \Model_Admin());
+
+        $this->assertTrue($this->api->mark_as_paid($data));
     }
 
     public function testPrepare(): void
@@ -575,6 +646,11 @@ final class AdminTest extends \BBTestCase
         $transactionService = $this->createMock(\Box\Mod\Invoice\ServiceTransaction::class);
         $transactionService->expects($this->atLeastOnce())
             ->method('create')
+            ->with($this->callback(function (array $data): bool {
+                $this->assertSame('admin', $data['source']);
+
+                return true;
+            }))
             ->willReturn($newTransactionId);
 
         $di = $this->getDi();
@@ -652,10 +728,7 @@ final class AdminTest extends \BBTestCase
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
 
-        $paginatorMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
-        ->onlyMethods(['getPaginatedResultSet'])
-        ->disableOriginalConstructor()
-        ->getMock();
+        $paginatorMock = $this->createPaginationMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
@@ -756,10 +829,7 @@ final class AdminTest extends \BBTestCase
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
 
-        $paginatorMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
-        ->onlyMethods(['getPaginatedResultSet'])
-        ->disableOriginalConstructor()
-        ->getMock();
+        $paginatorMock = $this->createPaginationMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
             ->willReturn(['list' => []]);
@@ -942,17 +1012,14 @@ final class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function subscription_get_list(): void
+    public function testSubscriptionGetList(): void
     {
         $subscriptionService = $this->createMock(\Box\Mod\Invoice\ServiceSubscription::class);
         $subscriptionService->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
 
-        $paginatorMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
-        ->onlyMethods(['getPaginatedResultSet'])
-        ->disableOriginalConstructor()
-        ->getMock();
+        $paginatorMock = $this->createPaginationMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
             ->willReturn([]);
@@ -971,7 +1038,7 @@ final class AdminTest extends \BBTestCase
         $data = [
             'client_id' => 1,
             'gateway_id' => 1,
-            'currency' => 'EU',
+            'currency' => 'EUR',
         ];
         $newSubscriptionId = 1;
         $subscriptionService = $this->createMock(\Box\Mod\Invoice\ServiceSubscription::class);
@@ -985,7 +1052,7 @@ final class AdminTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
-        $client->currency = 'EU';
+        $client->currency = 'EUR';
 
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -1007,7 +1074,7 @@ final class AdminTest extends \BBTestCase
         $data = [
             'client_id' => 1,
             'gateway_id' => 1,
-            'currency' => 'EU',
+            'currency' => 'EUR',
         ];
 
         $dbMock = $this->createMock('\Box_Database');
@@ -1016,6 +1083,7 @@ final class AdminTest extends \BBTestCase
         $model->loadBean(new \DummyBean());
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
+        $client->currency = 'USD';
 
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -1171,17 +1239,14 @@ final class AdminTest extends \BBTestCase
         $this->assertEquals($newTaxId, $result);
     }
 
-    public function tax_get_list(): void
+    public function testTaxGetList(): void
     {
         $taxService = $this->createMock(\Box\Mod\Invoice\ServiceTax::class);
         $taxService->expects($this->atLeastOnce())
             ->method('getSearchQuery')
             ->willReturn(['SqlString', []]);
 
-        $paginatorMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
-        ->onlyMethods(['getPaginatedResultSet'])
-        ->disableOriginalConstructor()
-        ->getMock();
+        $paginatorMock = $this->createPaginationMock();
         $paginatorMock->expects($this->atLeastOnce())
             ->method('getPaginatedResultSet')
             ->willReturn([]);

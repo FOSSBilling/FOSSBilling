@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -11,6 +12,8 @@
 
 namespace Box\Mod\Servicecustom\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 /**
  * Custom service management.
  */
@@ -19,6 +22,7 @@ class Admin extends \Api_Abstract
     /**
      * Update custom service configuration.
      */
+    #[RequiredParams(['order_id' => 'Order ID is required'])]
     public function update($data): bool
     {
         if (!isset($data['order_id'])) {

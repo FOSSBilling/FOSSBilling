@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -11,6 +12,7 @@
 class Payment_Adapter_Custom
 {
     protected ?Pimple\Container $di = null;
+    private const string TRUSTED_SOURCE = 'admin';
 
     public function __construct(private $config)
     {
@@ -81,6 +83,10 @@ class Payment_Adapter_Custom
      */
     public function processTransaction(Api_Handler $api_admin, int $id, array $data, int $gateway_id)
     {
+        if (!$this->isIpnValid($data)) {
+            throw new Payment_Exception('Custom payment gateway callbacks must be confirmed by an administrator.');
+        }
+
         try {
             // Get the transaction and invoice associated with the transaction
             $tx = $this->di['db']->getExistingModelById('Transaction', $id);
@@ -101,7 +107,7 @@ class Payment_Adapter_Custom
             $invoiceService->markAsPaid($invoice, true, true);
 
             // Update the transaction status and details
-            $tx->status = 'succeeded';
+            $tx->status = Model_Transaction::STATUS_PROCESSED;
             $tx->amount = $invoiceTotal;
             $tx->note = $gateway->title . ' transaction No: ' . $tx->txn_id;
             $tx->currency = $invoice->currency;
@@ -112,5 +118,10 @@ class Payment_Adapter_Custom
         } catch (Exception) {
             return false;
         }
+    }
+
+    public function isIpnValid(array $data): bool
+    {
+        return ($data['source'] ?? null) === self::TRUSTED_SOURCE;
     }
 }

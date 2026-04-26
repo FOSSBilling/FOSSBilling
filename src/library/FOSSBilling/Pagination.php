@@ -43,6 +43,45 @@ class Pagination implements InjectionAwareInterface
     }
 
     /**
+     * Resolve and validate page/perPage values from arguments or request.
+     *
+     * @return array{0: int, 1: int} [page, perPage]
+     */
+    private function resolvePagination(?int $perPage, ?int $page, string $pageParam, string $perPageParam): array
+    {
+        $request = $this->di['request'];
+
+        $page ??= filter_var($request->query->get($pageParam), FILTER_VALIDATE_INT, ['options' => ['default' => 1]]);
+        $perPage ??= filter_var($request->query->get($perPageParam), FILTER_VALIDATE_INT, ['options' => ['default' => $this->getDefaultPerPage()]]);
+
+        if ($page < 1) {
+            throw new InformationException("Page number ($pageParam) must be a positive integer.");
+        }
+        if ($perPage < 1) {
+            throw new InformationException("The number of items per page ($perPageParam) must be a positive integer.");
+        }
+        if ($perPage > self::MAX_PER_PAGE) {
+            throw new InformationException("The number of items per page ($perPageParam) is too large. Please specify a smaller number.");
+        }
+
+        return [(int) $page, (int) $perPage];
+    }
+
+    /**
+     * Build the standard paginated response array.
+     */
+    private function buildPaginatedResponse(int $page, int $perPage, int $total, array $list): array
+    {
+        return [
+            'pages' => $total > 0 ? (int) ceil($total / $perPage) : 0,
+            'page' => $page,
+            'per_page' => $perPage,
+            'total' => $total,
+            'list' => $list,
+        ];
+    }
+
+    /**
      * Paginate results from a Doctrine QueryBuilder.
      *
      * Applies pagination to a Doctrine QueryBuilder and returns metadata and normalized entities.
@@ -67,22 +106,10 @@ class Pagination implements InjectionAwareInterface
      */
     public function paginateDoctrineQuery(QueryBuilder $qb, ?int $perPage = null, ?int $page = null, string $pageParam = 'page', string $perPageParam = 'per_page'): array
     {
-        $request = $this->di['request'];
+        [$page, $perPage] = $this->resolvePagination($perPage, $page, $pageParam, $perPageParam);
+
         $serializer = new Serializer([new ObjectNormalizer()]);
         $paginator = new DoctrinePaginator($qb, true);
-
-        $page ??= filter_var($request->query->get($pageParam), FILTER_VALIDATE_INT, ['options' => ['default' => 1]]);
-        $perPage ??= filter_var($request->query->get($perPageParam), FILTER_VALIDATE_INT, ['options' => ['default' => $this->getDefaultPerPage()]]);
-
-        if ($page < 1) {
-            throw new InformationException("Page number ($pageParam) must be a positive integer.");
-        }
-        if ($perPage < 1) {
-            throw new InformationException("The number of items per page ($perPageParam) must be a positive integer.");
-        }
-        if ($perPage > self::MAX_PER_PAGE) {
-            throw new InformationException("The number of items per page ($perPageParam) is too large. Please specify a smaller number.");
-        }
 
         $offset = ($page - 1) * $perPage;
         $qb->setFirstResult($offset)
@@ -95,18 +122,11 @@ class Pagination implements InjectionAwareInterface
             if ($entity instanceof ApiArrayInterface) {
                 $list[] = $entity->toApiArray();
             } else {
-                // fallback: use serializer to normalize entity
                 $list[] = $serializer->normalize($entity);
             }
         }
 
-        return [
-            'pages' => $total > 0 ? (int) ceil($total / $perPage) : 0,
-            'page' => $page,
-            'per_page' => $perPage,
-            'total' => $total,
-            'list' => $list,
-        ];
+        return $this->buildPaginatedResponse($page, $perPage, $total, $list);
     }
 
     /**
@@ -131,27 +151,13 @@ class Pagination implements InjectionAwareInterface
      */
     public function getPaginatedResultSet(string $query, array $params = [], ?int $perPage = null, ?int $page = null, string $pageParam = 'page', string $perPageParam = 'per_page'): array
     {
-        $request = $this->di['request'];
-
-        $page ??= filter_var($request->query->get($pageParam), FILTER_VALIDATE_INT, ['options' => ['default' => 1]]);
-        $perPage ??= filter_var($request->query->get($perPageParam), FILTER_VALIDATE_INT, ['options' => ['default' => $this->getDefaultPerPage()]]);
-
-        if ($page < 1) {
-            throw new InformationException("Page number ($pageParam) must be a positive integer.");
-        }
-        if ($perPage < 1) {
-            throw new InformationException("The number of items per page ($perPageParam) must be a positive integer.");
-        }
-        if ($perPage > self::MAX_PER_PAGE) {
-            throw new InformationException("The number of items per page ($perPageParam) is too large. Please specify a smaller number.");
-        }
+        [$page, $perPage] = $this->resolvePagination($perPage, $page, $pageParam, $perPageParam);
 
         $offset = ($page - 1) * $perPage;
 
         $paginatedQuery = $query . sprintf(' LIMIT %u, %u', $offset, $perPage);
         $result = $this->di['db']->getAll($paginatedQuery, $params);
 
-        // Attempt to construct count query more reliably
         $fromPos = stripos($query, 'FROM');
         if ($fromPos === false) {
             throw new InformationException('Invalid SQL query. Missing FROM clause.');
@@ -161,12 +167,6 @@ class Pagination implements InjectionAwareInterface
         $countQuery = 'SELECT COUNT(1) FROM (' . $query . ') AS sub';
         $total = (int) $this->di['db']->getCell($countQuery, $params);
 
-        return [
-            'pages' => $total > 0 ? (int) ceil($total / $perPage) : 0,
-            'page' => $page,
-            'per_page' => $perPage,
-            'total' => $total,
-            'list' => $result,
-        ];
+        return $this->buildPaginatedResponse($page, $perPage, $total, $result);
     }
 }

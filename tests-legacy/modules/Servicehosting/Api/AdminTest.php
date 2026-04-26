@@ -60,19 +60,12 @@ final class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testChangePlanMissingPlanId(): void
+    public function testChangePlanRequiresPlanId(): void
     {
-        $data = [];
-
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-
-        $di = $this->getDi();
-        $di['validator'] = $validatorMock;
-        $this->api->setDi($di);
-
-        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\InformationException::class);
         $this->expectExceptionMessage('plan_id is missing');
-        $this->api->change_plan($data);
+
+        $this->validateRequiredParams($this->api, 'change_plan', []);
     }
 
     public function testChangeUsername(): void
@@ -411,6 +404,47 @@ final class AdminTest extends \BBTestCase
 
         $result = $this->api->server_update($data);
         $this->assertIsBool($result);
+        $this->assertTrue($result);
+    }
+
+    public function testServerUpdatePreservesUnknownConfigKeys(): void
+    {
+        $data = [
+            'id' => 1,
+            'tls_verify' => '0',
+        ];
+
+        $model = new \Model_ServiceHostingServer();
+        $model->loadBean(new \DummyBean());
+        $model->config = json_encode([
+            'userprefix' => 'oldprefix',
+            'custom_key' => 'keep-me',
+            'tls_verify' => true,
+        ]);
+
+        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
+        $serviceMock->expects($this->once())
+            ->method('updateServer')
+            ->with(
+                $model,
+                $this->callback(fn (array $payload): bool => isset($payload['config'])
+                    && $payload['config']['custom_key'] === 'keep-me'
+                    && $payload['config']['userprefix'] === 'oldprefix'
+                    && $payload['config']['tls_verify'] === false)
+            )
+            ->willReturn(true);
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('getExistingModelById')
+            ->willReturn($model);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
+
+        $result = $this->api->server_update($data);
         $this->assertTrue($result);
     }
 

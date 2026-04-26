@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -14,6 +15,7 @@ namespace Box\Mod\Servicehosting;
 use FOSSBilling\Exception;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -92,7 +94,7 @@ class Service implements InjectionAwareInterface
         $model->sld = $c['sld'];
         $model->tld = $c['tld'];
         $model->ip = $server->ip;
-        $model->reseller = $c['reseller'] ?? false;
+        $model->reseller = Tools::normalizeBoolean($c['reseller'] ?? false);
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
@@ -478,7 +480,7 @@ class Service implements InjectionAwareInterface
             ->setClient($server_client)
             ->setPackage($package)
             ->setUsername($model->username)
-            ->setReseller($model->reseller)
+            ->setReseller(Tools::normalizeBoolean($model->reseller))
             ->setDomain($model->sld . $model->tld)
             ->setPassword($model->pass)
             ->setNs1($server->ns1)
@@ -748,8 +750,9 @@ class Service implements InjectionAwareInterface
         $model->password = $data['password'] ?? null;
         $model->accesshash = $data['accesshash'] ?? null;
         $model->port = $data['port'] ?? null;
+        $model->config = isset($data['config']) ? json_encode($data['config']) : null;
         $model->passwordLength = is_numeric($data['passwordLength'] ?? '') ? intval($data['passwordLength']) : null;
-        $model->secure = $data['secure'] ?? 0;
+        $model->secure = $data['secure'] ?? 1;
 
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');

@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -135,6 +136,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return [
             new TwigFunction('render_widgets', $this->twig_render_widgets(...), ['needs_environment' => true, 'is_safe' => ['html']]),
             new TwigFunction('svg_sprite', $this->twig_svg_sprite(...), ['needs_environment' => true, 'is_safe' => ['html']]),
+            new TwigFunction('has_permission', $this->has_permission(...)),
 
             // FOSSBilling API functions
             new TwigFunction('fb_api', $this->fb_api(...), ['is_safe' => ['html']]),
@@ -190,6 +192,19 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         }
 
         return $output;
+    }
+
+    public function has_permission(string $module, ?string $permission = null): bool
+    {
+        if (!$this->di['auth']->isAdminLoggedIn()) {
+            return false;
+        }
+
+        try {
+            return $this->di['mod_service']('Staff')->hasPermission($this->di['loggedin_admin'], $module, $permission);
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     public function twig_ipcountryname_filter($value)
@@ -253,7 +268,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return $api_guest->currency_format(['price' => $price, 'code' => $currency, 'convert' => true, 'without_currency' => true]);
     }
 
-    public function twig_money(Twig\Environment $env, $price, $currency = null)
+    public function twig_money(Twig\Environment $env, $price, ?string $currency = null)
     {
         $globals = $env->getGlobals();
         $api_guest = $globals['guest'];
@@ -261,7 +276,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return $api_guest->currency_format(['price' => $price, 'code' => $currency, 'convert' => false]);
     }
 
-    public function twig_money_without_currency(Twig\Environment $env, $price, $currency = null)
+    public function twig_money_without_currency(Twig\Environment $env, $price, ?string $currency = null)
     {
         $globals = $env->getGlobals();
         $api_guest = $globals['guest'];
@@ -288,7 +303,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function twig_img_tag($path, $alt = null): string
     {
-        $alt = is_null($alt) ? pathinfo((string) $path, PATHINFO_BASENAME) : $alt;
+        $alt ??= pathinfo((string) $path, PATHINFO_BASENAME);
 
         return sprintf('<img src="%s" alt="%s" title="%s"/>', htmlspecialchars((string) $path), htmlspecialchars($alt), htmlspecialchars($alt));
     }
@@ -339,7 +354,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             $number = '0';
         }
 
-        return number_format(floatval($number), $decimals, $dec_point, $thousands_sep);
+        return number_format(floatval($number), intval($decimals), (string) $dec_point, (string) $thousands_sep);
     }
 
     public function twig_daysleft_filter($iso8601): int
@@ -382,7 +397,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function twig_markdown_filter(Twig\Environment $env, $value)
     {
-        return $this->di['parse_markdown']($value);
+        return $this->di['parse_markdown']((string) $value);
     }
 
     public function twig_truncate_filter(Twig\Environment $env, $value, $length = 30, $preserve = false, $separator = '...')
@@ -463,11 +478,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             return $array;
         }
 
-        if ($arrow instanceof Closure) {
-            uasort($array, $arrow);
-        } else {
-            asort($array);
-        }
+        uasort($array, $arrow);
 
         return $array;
     }
@@ -588,7 +599,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         $tag = $config['tag'] ?? null;
         $content = $config['content'] ?? '';
         $href = $config['href'] ?? null;
-        unset($config['tag'], $config['content']);
+        unset($config['tag'], $config['content'], $config['href']);
 
         $config['type'] = 'link';
         $attr = $this->fb_api($config);

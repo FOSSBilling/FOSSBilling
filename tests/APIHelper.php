@@ -10,7 +10,7 @@ use Symfony\Component\Filesystem\Path;
 class Request
 {
     /**
-     * Handles making a response to the FOSSBilling server.
+     * Handles making a request to the FOSSBilling server.
      *
      * @param string      $endpoint the API endpoint to call (Example: `guest/system/company`)
      * @param string      $method   set to POST to have cURL make a POST request to the server
@@ -66,10 +66,13 @@ class Response
 
     public function __construct(private readonly int $code, private readonly string $rawResponse)
     {
-        $this->decodedResponse = json_decode($this->rawResponse, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \RuntimeException('Invalid JSON response: ' . json_last_error_msg());
+        $decoded = json_decode($this->rawResponse, true);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+            $preview = strlen($this->rawResponse) > 500 ? substr($this->rawResponse, 0, 500) . '...' : $this->rawResponse;
+
+            throw new \RuntimeException('Invalid JSON response: ' . json_last_error_msg() . ' (HTTP ' . $this->code . '). Response: ' . $preview);
         }
+        $this->decodedResponse = $decoded;
     }
 
     public function getHttpCode(): int
@@ -89,7 +92,9 @@ class Response
 
     public function wasSuccessful(): bool
     {
-        return $this->decodedResponse && !$this->decodedResponse['error'];
+        return !empty($this->decodedResponse)
+            && array_key_exists('error', $this->decodedResponse)
+            && empty($this->decodedResponse['error']);
     }
 
     public function getErrorMessage(): string

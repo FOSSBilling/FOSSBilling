@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -119,9 +120,7 @@ class Admin extends \Api_Abstract
     ])]
     public function change_password($data)
     {
-        if ($data['password'] != $data['password_confirm']) {
-            throw new \FOSSBilling\InformationException('Passwords do not match');
-        }
+        $this->di['validator']->passwordsMatch($data);
 
         $this->di['validator']->isPasswordStrong($data['password']);
 

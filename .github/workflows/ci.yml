@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: 'Perform Spellcheck'
-        uses: streetsidesoftware/cspell-action@9cd41bb518a24fefdafd9880cbab8f0ceba04d28 # v8
+        uses: streetsidesoftware/cspell-action@de2a73e963e7443969755b648a1008f77033c5b2 # v8
         with:
           incremental_files_only: true
 
@@ -34,7 +34,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: 'PHP Build' 
-        uses: FOSSBilling/.workflows/.github/actions/php-build@14f9ee16814897607dac1886accc76aefcea3378
+        uses: FOSSBilling/.workflows/.github/actions/php-build@3273310677c9a62cdb61aa6f8f0d3ec4993b1a8e
         with:
           php-version: ${{ matrix.php }}
 
@@ -45,7 +45,7 @@ jobs:
           echo APP_ENV=test >> $GITHUB_ENV
         
       - name: 'PHP Tests (PHPStan and PHPUnit)'
-        uses: FOSSBilling/.workflows/.github/actions/php-test@14f9ee16814897607dac1886accc76aefcea3378
+        uses: FOSSBilling/.workflows/.github/actions/php-test@3273310677c9a62cdb61aa6f8f0d3ec4993b1a8e
         with:
           php-version: ${{ matrix.php }}
           php-vendor-dir: './src/vendor'
@@ -106,7 +106,7 @@ jobs:
           SOURCE_DIR: './dist'
     
       - name: 'Upload Downloadable Preview to GitHub'
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           if-no-files-found: 'error'
           name: 'FOSSBilling Preview'
@@ -120,7 +120,7 @@ jobs:
       actions: write
     needs: [ preview-build ]
     if: ${{ github.ref == 'refs/heads/main' }}
-    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@14f9ee16814897607dac1886accc76aefcea3378
+    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@3273310677c9a62cdb61aa6f8f0d3ec4993b1a8e
     secrets:
       dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME }}
       dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}

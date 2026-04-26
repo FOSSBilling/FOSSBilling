@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -1060,7 +1061,7 @@ class Service implements InjectionAwareInterface
         $orderService = $this->di['mod_service']('Order');
         $orders = $orderService->getSoonExpiringActiveOrders();
 
-        if ((is_countable($orders) ? count($orders) : 0) == 0) {
+        if (\FOSSBilling\Tools::safeCount($orders) == 0) {
             return true;
         }
 
@@ -1223,6 +1224,8 @@ class Service implements InjectionAwareInterface
         if (!$invoice instanceof \Model_Invoice) {
             throw new \FOSSBilling\Exception('Invoice not found', null, 812);
         }
+
+        $this->checkInvoiceAuth($invoice->client_id);
 
         $gtw = $this->di['db']->load('PayGateway', $data['gateway_id']);
         if (!$gtw instanceof \Model_PayGateway) {
@@ -1443,7 +1446,7 @@ class Service implements InjectionAwareInterface
                 ->setTax($item['tax'])
                 ->setQuantity($item['quantity']);
             $items[] = $pi;
-            if (is_null($first_title) && (is_countable($proforma['lines']) ? count($proforma['lines']) : 0) == 1) {
+            if (is_null($first_title) && \FOSSBilling\Tools::safeCount($proforma['lines']) == 1) {
                 $first_title = $item['title'];
             }
         }

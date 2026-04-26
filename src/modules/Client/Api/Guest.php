@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -62,9 +63,7 @@ class Guest extends \Api_Abstract
             throw new \FOSSBilling\InformationException('New registrations are temporary disabled');
         }
 
-        if ($data['password'] != $data['password_confirm']) {
-            throw new \FOSSBilling\InformationException('Passwords do not match.');
-        }
+        $this->di['validator']->passwordsMatch($data);
 
         $this->getService()->checkExtraRequiredFields($data);
         $this->getService()->checkCustomFields($data);
@@ -205,9 +204,8 @@ class Guest extends \Api_Abstract
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeClientProfilePasswordReset', 'params' => $data['hash']]);
 
-        if ($data['password'] != $data['password_confirm']) {
-            throw new \FOSSBilling\InformationException('Passwords do not match');
-        }
+        $this->di['validator']->passwordsMatch($data);
+        $this->di['validator']->isPasswordStrong($data['password']);
 
         $reset = $this->di['db']->findOne('ClientPasswordReset', 'hash = ?', [$data['hash']]);
         if (!$reset instanceof \Model_ClientPasswordReset) {

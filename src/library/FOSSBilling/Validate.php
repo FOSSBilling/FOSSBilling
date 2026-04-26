@@ -132,33 +132,48 @@ class Validate
         return $validTlds[$tld] ?? false;
     }
 
-    public function isPasswordStrong($pwd): bool
+    /**
+     * Checks that password and password confirmation match.
+     *
+     * @param array  $data        The data array containing password fields
+     * @param string $passwordKey The key for the password field (default: 'password')
+     * @param string $confirmKey  The key for the confirmation field (default: 'password_confirm')
+     *
+     * @throws InformationException if passwords do not match
+     */
+    public function passwordsMatch(array $data, string $passwordKey = 'password', string $confirmKey = 'password_confirm'): void
     {
-        if (strlen((string) $pwd) < 8) {
+        if (($data[$passwordKey] ?? '') !== ($data[$confirmKey] ?? '')) {
+            throw new InformationException('Passwords do not match.');
+        }
+    }
+
+    public function isPasswordStrong(?string $pwd): bool
+    {
+        if (empty($pwd)) {
+            throw new InformationException('Password is required.');
+        }
+
+        if (strlen($pwd) < 8) {
             throw new InformationException('Minimum password length is 8 characters.');
         }
 
-        if (strlen((string) $pwd) > 256) {
+        if (strlen($pwd) > 256) {
             throw new InformationException('Maximum password length is 256 characters.');
         }
 
-        if (!preg_match('#[0-9]+#', (string) $pwd)) {
+        if (!preg_match('#[0-9]+#', $pwd)) {
             throw new InformationException('Password must include at least one number.');
         }
 
-        if (!preg_match('#[a-z]+#', (string) $pwd)) {
+        if (!preg_match('#[a-z]+#', $pwd)) {
             throw new InformationException('Password must include at least one lowercase letter.');
         }
 
-        if (!preg_match('#[A-Z]+#', (string) $pwd)) {
+        if (!preg_match('#[A-Z]+#', $pwd)) {
             throw new InformationException('Password must include at least one uppercase letter.');
         }
 
-        /*
-        if( !preg_match("#\W+#", $pwd) ) {
-            $msg = "Password must include at least one symbol!";
-        }
-        */
         return true;
     }
 

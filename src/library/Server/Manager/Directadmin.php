@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -339,7 +340,7 @@ class Server_Manager_Directadmin extends Server_Manager
                 'bandwidth' => $package->getBandwidth(), // Bandwidth quota in MB
                 'catchall' => $package->getCustomValue('catchall') ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to enable and customize a catch-all email (*@domain.com).
                 'cgi' => $package->getCustomValue('cgi') ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to run cgi scripts in their cgi-bin.
-                'cron' => $package->getCustomValue('cron') ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to creat cronjobs.
+                'cron' => $package->getCustomValue('cron') ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to create cronjobs.
                 'dnscontrol' => $package->getCustomValue('dnscontrol') ? 'ON' : 'OFF', // ON or OFF. If ON, the User will be able to modify his/her dns records.
                 'domainptr' => $package->getMaxParkedDomains(), // Domain pointer quota
                 'ftp' => $package->getMaxFtp(), // FTP account quota
@@ -622,7 +623,7 @@ class Server_Manager_Directadmin extends Server_Manager
             'bandwidth' => $package->getBandwidth(), // Bandwidth quota in MB
             'catchall' => $package->getHasCatchAll() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to enable and customize a catch-all email (*@domain.com).
             'cgi' => $package->getHasCgi() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to run cgi scripts in their cgi-bin.
-            'cron' => $package->getHasCron() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to creat cronjobs.
+            'cron' => $package->getHasCron() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to create cronjobs.
             'dnscontrol' => 'ON', // ON or OFF. If ON, the User will be able to modify his/her dns records.
             'domainptr' => $package->getMaxParkedDomains(), // Domain pointer quota
             'ftp' => $package->getMaxFtp(), // FTP account quota
@@ -638,7 +639,7 @@ class Server_Manager_Directadmin extends Server_Manager
             'quota' => $package->getQuota(), // Disk space quota in MB
             'spam' => $package->getHasSpamFilter() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to run scan email with SpamAssassin.
             'ssh' => $package->getHasShell() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have an ssh account.
-            'ssl' => $package->getHasSll() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to access their websites through secure https://.
+            'ssl' => $package->getHasSsl() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to access their websites through secure https://.
             'sysinfo' => 'ON', // ON or OFF. If ON, the User will have access to a page that shows the system information.
             'user' => $account->getUsername(),
             'vdomains' => $package->getMaxDomains(), // Domain quota
@@ -708,6 +709,8 @@ class Server_Manager_Directadmin extends Server_Manager
      */
     private function request(string $command, array $fields = [], bool $post = true, string $asUser = ''): array
     {
+        $verifyTls = FOSSBilling\Tools::normalizeBoolean($this->_config['config']['tls_verify'] ?? true, true);
+
         // Get the host from the configuration
         $host = $this->_config['host'];
 
@@ -727,8 +730,8 @@ class Server_Manager_Directadmin extends Server_Manager
         $httpClient = $this->getHttpClient()->withOptions([
             'auth_basic' => [$username, $this->_config['password']],
             'timeout' => 60,
-            'verify_host' => false,
-            'verify_peer' => false,
+            'verify_host' => $verifyTls,
+            'verify_peer' => $verifyTls,
         ]);
 
         // Construct the URL for the request
@@ -808,7 +811,7 @@ class Server_Manager_Directadmin extends Server_Manager
         parse_str($data, $response);
 
         // Log the parsed response data for debugging purposes
-        $this->getLog()->debug('Parsed Response: ' . print_r($response, 1));
+        $this->getLog()->debug('Parsed Response: ' . print_r($response, true));
 
         // Return the parsed response data
         return $response;

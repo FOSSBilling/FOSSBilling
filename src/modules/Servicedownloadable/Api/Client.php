@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -11,6 +12,8 @@
 
 namespace Box\Mod\Servicedownloadable\Api;
 
+use FOSSBilling\Validation\Api\RequiredParams;
+
 /**
  * Downloadable service management.
  */
@@ -20,11 +23,13 @@ class Client extends \Api_Abstract
      * Use GET to call this method. Sends file attached to order.
      * Sends file as attachment.
      */
+    #[RequiredParams(['order_id' => 'Order ID is required'])]
     public function send_file($data): bool
     {
-        if (!isset($data['order_id'])) {
+        if (empty($data['order_id'])) {
             throw new \FOSSBilling\Exception('Order ID is required');
         }
+
         $identity = $this->getIdentity();
         $order = $this->di['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', [':id' => $data['order_id'], ':client_id' => $identity->id]);
         if (!$order instanceof \Model_ClientOrder) {

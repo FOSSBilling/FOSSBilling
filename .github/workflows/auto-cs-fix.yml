@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: PHP Build
-        uses: FOSSBilling/.workflows/.github/actions/php-build@14f9ee16814897607dac1886accc76aefcea3378
+        uses: FOSSBilling/.workflows/.github/actions/php-build@76b4af76fb2a1a2b553ec1c2839044984299a271
         with:
           php-version: 8.3
 
@@ -30,14 +30,14 @@ jobs:
           mkdir cache/rector
 
       - name: Restore Rector Cache
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
           path: ./cache/rector
           key: ${{ env.MONTH }}-rector
           restore-keys: ${{ env.MONTH }}-rector
           
       - name: Restore CS-Fixer Cache
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
           path: .php-cs-fixer.cache
           key: ${{ env.MONTH }}-csfixer
@@ -50,7 +50,7 @@ jobs:
         run: php src/vendor/bin/php-cs-fixer fix
         
       - name: Create a Pull Request
-        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
         with:
           title: Apply PHP Code Styling & Quality Changes
           commit-message: Apply PHP Code Styling & Quality Changes

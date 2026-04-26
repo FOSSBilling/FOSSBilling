@@ -24,6 +24,14 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
+    public function testGetModulePermissions(): void
+    {
+        $permissions = $this->service->getModulePermissions();
+
+        $this->assertArrayHasKey('manage_hooks', $permissions);
+        $this->assertArrayHasKey('trigger_hooks', $permissions);
+    }
+
     public function testGetSearchQuery(): void
     {
         [$sql, $params] = $this->service->getSearchQuery([]);
@@ -182,7 +190,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod'] = $di->protect(fn () => $boxModMock);
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $boxModMock);
         $di['mod_service'] = $di->protect(function ($name) use ($extensionServiceMock) {
             if ($name == 'extension') {
                 return $extensionServiceMock;

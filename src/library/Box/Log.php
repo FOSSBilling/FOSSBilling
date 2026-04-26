@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -89,7 +90,7 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
         $priority = strtoupper((string) $method);
         $params = $this->maskParams($params);
         if (($priority = array_search($priority, $this->_priorities)) !== false) {
-            switch (is_countable($params) ? count($params) : 0) {
+            switch (FOSSBilling\Tools::safeCount($params)) {
                 case 0:
                     throw new FOSSBilling\Exception('Missing log message');
                 case 1:

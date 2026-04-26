@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -55,6 +56,11 @@ class Service
                 'display_name' => __trans('Manage company legal'),
                 'description' => __trans('Allows the staff member to update company legal as set under the system module.'),
             ],
+            'update_params' => [
+                'type' => 'bool',
+                'display_name' => __trans('Update system parameters'),
+                'description' => __trans('Allows the staff member to update system parameters through the system API endpoint.'),
+            ],
             'invalidate_cache' => [
                 'type' => 'bool',
                 'display_name' => __trans('Invalidate cache'),
@@ -65,6 +71,16 @@ class Service
                 'display_name' => __trans('Update FOSSBilling'),
                 'description' => __trans('Allows the staff member to update FOSSBilling.'),
             ],
+            'recheck_update' => [
+                'type' => 'bool',
+                'display_name' => __trans('Recheck for updates'),
+                'description' => __trans('Allows the staff member to clear cached update information and fetch the latest update metadata.'),
+            ],
+            'toggle_error_reporting' => [
+                'type' => 'bool',
+                'display_name' => __trans('Toggle error reporting'),
+                'description' => __trans('Allows the staff member to enable or disable error reporting for this FOSSBilling instance.'),
+            ],
             'manage_network_interface' => [
                 'type' => 'bool',
                 'display_name' => __trans('Manage the network interface'),
@@ -73,11 +89,7 @@ class Service
         ];
     }
 
-    /**
-     * @param string $param
-     * @param bool   $default
-     */
-    public function getParamValue($param, $default = null)
+    public function getParamValue(string $param, $default = null)
     {
         if (empty($param)) {
             throw new \FOSSBilling\Exception('Parameter key is missing');
@@ -997,6 +1009,13 @@ class Service
     public function getVersion(): string
     {
         return Version::VERSION;
+    }
+
+    public function shouldExposeVersion(): bool
+    {
+        $hideVersionPublic = $this->getParamValue('hide_version_public');
+
+        return $this->di['auth']->isAdminLoggedIn() || !$hideVersionPublic;
     }
 
     public function getPendingMessages()

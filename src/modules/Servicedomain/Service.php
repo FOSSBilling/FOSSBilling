@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -1031,7 +1032,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function registrarRm(\Model_TldRegistrar $model): bool
     {
         $domains = $this->di['db']->find('ServiceDomain', 'tld_registrar_id = :registrar_id', [':registrar_id' => $model->id]);
-        $count = is_countable($domains) ? count($domains) : 0;
+        $count = \FOSSBilling\Tools::safeCount($domains);
 
         if ($count > 0) {
             throw new \FOSSBilling\InformationException('Registrar is used by :count: domains', [':count:' => $count], 707);

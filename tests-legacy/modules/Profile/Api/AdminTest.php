@@ -94,7 +94,7 @@ final class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testChangePasswordExceptions(): never
+    public function testChangePasswordThrowsExceptionWhenPasswordMissing(): void
     {
         $di = $this->getDi();
         $di['validator'] = new \FOSSBilling\Validate();
@@ -105,12 +105,19 @@ final class AdminTest extends \BBTestCase
         $this->expectException(\FOSSBilling\Exception::class);
         $this->validateRequiredParams($adminApi, 'change_password', []);
         $adminApi->change_password([]);
-        $this->fail('password should be passed');
+    }
+
+    public function testChangePasswordThrowsExceptionWhenConfirmationMissing(): void
+    {
+        $di = $this->getDi();
+        $di['validator'] = new \FOSSBilling\Validate();
+
+        $adminApi = new \Box\Mod\Profile\Api\Admin();
+        $adminApi->setDi($di);
 
         $this->expectException(\Exception::class);
         $this->validateRequiredParams($adminApi, 'change_password', ['password' => 'new_pass']);
         $adminApi->change_password(['password' => 'new_pass']);
-        $this->fail('password confirmation should be passed');
     }
 
     public function testChangePassword(): void
@@ -135,5 +142,42 @@ final class AdminTest extends \BBTestCase
         $adminApi->setService($serviceMock);
         $result = $adminApi->change_password(['current_password' => 'oldpw', 'new_password' => '84asasd221AS', 'confirm_password' => '84asasd221AS']);
         $this->assertTrue($result);
+    }
+
+    public function testApiKeyResetChecksClientPermission(): void
+    {
+        $client = new \Model_Client();
+        $client->loadBean(new \DummyBean());
+
+        $profileServiceMock = $this->createMock(\Box\Mod\Profile\Service::class);
+        $profileServiceMock->expects($this->once())
+            ->method('resetApiKey')
+            ->with($client)
+            ->willReturn('new-api-key');
+
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'manage_api_keys');
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('getExistingModelById')
+            ->with('Client', 1)
+            ->willReturn($client);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($name)) {
+            'staff' => $staffServiceMock,
+            default => throw new \RuntimeException('Unexpected module service request: ' . $name),
+        });
+
+        $adminApi = new \Box\Mod\Profile\Api\Admin();
+        $adminApi->setDi($di);
+        $adminApi->setService($profileServiceMock);
+
+        $result = $adminApi->api_key_reset(['id' => 1]);
+        $this->assertSame('new-api-key', $result);
     }
 }

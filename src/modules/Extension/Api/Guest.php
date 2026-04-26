@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -10,6 +11,8 @@
  */
 
 namespace Box\Mod\Extension\Api;
+
+use FOSSBilling\Validation\Api\RequiredParams;
 
 /**
  * Extensions.
@@ -52,11 +55,9 @@ class Guest extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['ext' => 'Parameter ext is missing'])]
     public function settings($data): array
     {
-        if (!isset($data['ext'])) {
-            throw new \FOSSBilling\Exception('Parameter ext is missing');
-        }
         $service = $this->getService();
         $config = $service->getConfig($data['ext']);
 

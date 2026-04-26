@@ -13,6 +13,8 @@ declare(strict_types=1);
 namespace Box\Mod\Currency\Api;
 
 use Box\Mod\Currency\Entity\Currency;
+use FOSSBilling\Tools;
+use FOSSBilling\Validation\Api\RequiredParams;
 
 class Guest extends \Api_Abstract
 {
@@ -51,12 +53,9 @@ class Guest extends \Api_Abstract
     /**
      * Gets the ISO defaults for a given currency code.
      */
+    #[RequiredParams(['code' => 'Currency code not provided'])]
     public function get_currency_defaults(array $data): array
     {
-        if (!isset($data['code'])) {
-            throw new \FOSSBilling\InformationException('Currency code not provided');
-        }
-
         return $this->getService()->getCurrencyDefaults($data['code']);
     }
 
@@ -75,8 +74,8 @@ class Guest extends \Api_Abstract
         $c = $this->get($data);
 
         $price = $data['price'] ?? 0;
-        $convert = $data['convert'] ?? true;
-        $without_currency = (bool) ($data['without_currency'] ?? false);
+        $convert = Tools::normalizeBoolean($data['convert'] ?? true, true);
+        $without_currency = Tools::normalizeBoolean($data['without_currency'] ?? false);
 
         $p = floatval($price);
         if ($convert) {

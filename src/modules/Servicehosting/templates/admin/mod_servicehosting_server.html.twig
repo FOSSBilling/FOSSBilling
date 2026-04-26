@@ -21,6 +21,7 @@
 {% endblock %}
 
 {% block content %}
+{% set tlsVerify = server.config.tls_verify is defined ? server.config.tls_verify : true %}
 <div class="card">
     <div class="card-body">
         <h3>{{ 'Server Management'|trans }}</h3>
@@ -102,6 +103,21 @@
                         <input class="form-check-input" id="radioSecureConnectionNo" type="radio" name="secure" value="0"{% if not server.secure %} checked{% endif %}>
                         <label class="form-check-label" for="radioSecureConnectionNo">{{ 'No'|trans }}</label>
                     </div>
+                    <span class="text-muted">{{ 'Controls whether HTTPS or HTTP is used for API requests.'|trans }}</span>
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Verify TLS certificate'|trans }}:</label>
+                <div class="col">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" id="radioTlsVerifyYes" type="radio" name="tls_verify" value="1"{% if tlsVerify %} checked{% endif %}>
+                        <label class="form-check-label" for="radioTlsVerifyYes">{{ 'Yes'|trans }}</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" id="radioTlsVerifyNo" type="radio" name="tls_verify" value="0"{% if not tlsVerify %} checked{% endif %}>
+                        <label class="form-check-label" for="radioTlsVerifyNo">{{ 'No'|trans }}</label>
+                    </div>
+                    <span class="text-muted">{{ 'Recommended: keep enabled unless your server uses a self-signed or otherwise invalid certificate.'|trans }}</span>
                 </div>
             </div>
 

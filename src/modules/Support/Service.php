@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -798,7 +799,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $id = $model->id;
 
         $tickets = $this->di['db']->find('SupportTicket', 'support_helpdesk_id = :support_helpdesk_id', [':support_helpdesk_id' => $model->id]);
-        if ((is_countable($tickets) ? count($tickets) : 0) > 0) {
+        if (\FOSSBilling\Tools::safeCount($tickets) > 0) {
             throw new InformationException('Cannot remove helpdesk which has tickets');
         }
         $this->di['db']->trash($model);

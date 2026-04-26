@@ -1,6 +1,7 @@
 {% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
 
 {% import 'macro_functions.html.twig' as mf %}
+{% set can_view_client_login_history = has_permission('client', 'view_login_history') %}
 
 {% block meta_title %}{{ 'Clients Login History'|trans }}{% endblock %}
 
@@ -12,6 +13,7 @@
         <h5>{{ 'Client login history'|trans }}</h5>
     </div>
 
+    {% if can_view_client_login_history %}
     {{ include('partial_search.html.twig') }}
     <table class="table card-table table-vcenter table-striped text-nowrap">
         <thead>
@@ -53,5 +55,10 @@
     <div class="card-footer d-flex align-items-center justify-content-between">
         {{ include('partial_pagination.html.twig', { 'list': history, 'url': 'client/logins' }) }}
     </div>
+    {% else %}
+    <div class="card-body">
+        <p class="text-muted mb-0">{{ 'You do not have permission to view client login history.'|trans }}</p>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

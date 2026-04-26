@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -295,8 +296,6 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         }
 
         $client = $this->getHttpClient()->withOptions([
-            'verify_peer' => false,
-            'verify_host' => false,
             'timeout' => 600,
         ]);
         $response = $client->request('POST', $url, [
@@ -350,7 +349,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ];
 
         $rows = $this->di['db']->getAll($sql, $bindings);
-        if ((is_countable($rows) ? count($rows) : 0) > 1) {
+        if (FOSSBilling\Tools::safeCount($rows) > 1) {
             return true;
         }
 

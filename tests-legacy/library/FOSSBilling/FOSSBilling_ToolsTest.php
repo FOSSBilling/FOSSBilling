@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use PHPUnit\Framework\Attributes\Group;
+
 #[Group('Core')]
 final class FOSSBilling_ToolsTest extends PHPUnit\Framework\TestCase
 {
@@ -76,5 +78,19 @@ final class FOSSBilling_ToolsTest extends PHPUnit\Framework\TestCase
         $input = '<img src="x" onerror="alert(1)">';
         $result = FOSSBilling\Tools::sanitizeContent($input, true);
         $this->assertStringNotContainsString('onerror', $result);
+    }
+
+    public function testNormalizeBooleanHandlesBooleanStringValues(): void
+    {
+        $this->assertTrue(FOSSBilling\Tools::normalizeBoolean('true'));
+        $this->assertFalse(FOSSBilling\Tools::normalizeBoolean('false'));
+        $this->assertTrue(FOSSBilling\Tools::normalizeBoolean('1'));
+        $this->assertFalse(FOSSBilling\Tools::normalizeBoolean('0'));
+    }
+
+    public function testNormalizeBooleanRespectsDefaultForUnknownString(): void
+    {
+        $this->assertTrue(FOSSBilling\Tools::normalizeBoolean('maybe', true));
+        $this->assertFalse(FOSSBilling\Tools::normalizeBoolean('maybe'));
     }
 }

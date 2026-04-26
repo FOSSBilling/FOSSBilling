@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -13,6 +14,7 @@ namespace Box\Mod\Invoice;
 
 use FOSSBilling\Environment;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Tools;
 
 class ServiceTransaction implements InjectionAwareInterface
 {
@@ -80,7 +82,7 @@ class ServiceTransaction implements InjectionAwareInterface
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionCreate', 'params' => $data]);
 
-        $skip_validation = isset($data['skip_validation']) && (bool) $data['skip_validation'];
+        $skip_validation = Tools::normalizeBoolean($data['skip_validation'] ?? false);
         if (!empty($data['gateway_id'])) {
             try {
                 $this->di['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Gateway was not found');
@@ -117,6 +119,7 @@ class ServiceTransaction implements InjectionAwareInterface
         }
 
         $ipn = [
+            'source' => is_string($data['source'] ?? null) ? $data['source'] : null,
             'get' => (isset($data['get']) && is_array($data['get'])) ? $data['get'] : null,
             'post' => (isset($data['post']) && is_array($data['post'])) ? $data['post'] : null,
             'http_raw_post_data' => $data['http_raw_post_data'] ?? null,

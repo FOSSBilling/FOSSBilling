@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -11,6 +12,7 @@
 
 namespace Box\Mod\Extension\Api;
 
+use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \Api_Abstract
@@ -86,8 +88,8 @@ class Admin extends \Api_Abstract
      */
     public function languages(array $data): array
     {
-        $data['disabled'] ??= false;
-        $data['details'] ??= true;
+        $data['disabled'] = Tools::normalizeBoolean($data['disabled'] ?? false);
+        $data['details'] = Tools::normalizeBoolean($data['details'] ?? true, true);
 
         return \FOSSBilling\i18n::getLocales($data['details'], $data['disabled']);
     }

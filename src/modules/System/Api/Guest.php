@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -27,15 +28,9 @@ class Guest extends \Api_Abstract
      */
     public function version()
     {
-        $hideVersionGuest = $this->getService()->getParamValue('hide_version_public');
+        $service = $this->getService();
 
-        // Only provide the FOSSBilling version if configured to do so or if the request is being made by an administrator.
-        if ($this->di['auth']->isAdminLoggedIn() || !$hideVersionGuest) {
-            return $this->getService()->getVersion();
-        }
-
-        // return an empty string
-        return '';
+        return $service->shouldExposeVersion() ? $service->getVersion() : '';
     }
 
     /**
@@ -164,11 +159,11 @@ class Guest extends \Api_Abstract
     {
         $midrange = 7;
         $page_param = $data['page_param'] ?? 'page';
-        $current_page = $data[$page_param];
-        $limit = $data['per_page'];
-        $itemsCount = $data['total'];
+        $current_page = (int) ($data[$page_param] ?? 1);
+        $limit = (int) ($data['per_page'] ?? 20);
+        $itemsCount = (int) ($data['total'] ?? 0);
 
-        $p = new \Box_Paginator($itemsCount, $current_page, $limit, $midrange);
+        $p = new \FOSSBilling\Paginator($itemsCount, $current_page, $limit, $midrange);
 
         return $p->toArray();
     }

@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -143,9 +144,10 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['priority' => 'priority params is missing'])]
     public function update_priority($data)
     {
-        if (!isset($data['priority']) || !is_array($data['priority'])) {
+        if (!is_array($data['priority'] ?? null)) {
             throw new \FOSSBilling\Exception('priority params is missing');
         }
 

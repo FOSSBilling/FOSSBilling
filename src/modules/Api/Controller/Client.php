@@ -45,8 +45,9 @@ class Client implements InjectionAwareInterface
 
     public function register(\Box_App &$app): void
     {
-        $app->post('/api/:role/:class/:method', 'post_method', ['role', 'class', 'method'], static::class);
-        $app->get('/api/:role/:class/:method', 'get_method', ['role', 'class', 'method'], static::class);
+        $allowedRouteRoles = $this->registerAllowedRouteRoles();
+        $app->post('/api/:role/:class/:method', 'post_method', $allowedRouteRoles, static::class);
+        $app->get('/api/:role/:class/:method', 'get_method', $allowedRouteRoles, static::class);
 
         // all other requests are error requests
         $app->get('/api/:page', 'show_error', ['page' => '(.?)+'], static::class);
@@ -187,24 +188,12 @@ class Client implements InjectionAwareInterface
         $this->checkHttpReferer();
         $this->isRoleAllowed($role);
 
-        $hasTokenAuthCredentials = in_array($role, ['client', 'admin'], true) && $this->hasTokenAuthCredentials();
-        $hasValidSession = false;
-
-        try {
-            $this->isRoleLoggedIn($role);
-            $hasValidSession = true;
-        } catch (\Exception) {
-        }
-
-        if ($hasTokenAuthCredentials) {
-            // Token auth via the Authorization header is not vulnerable to CSRF (browsers cannot send
-            // Authorization headers cross-origin automatically), so skip CSRF and perform token login.
-            $this->_tryTokenLogin();
-        } elseif (!$hasValidSession) {
-            $this->_tryTokenLogin();
-        } elseif ($role == 'client' || $role == 'admin') {
-            // Authenticated browser session for privileged roles must pass CSRF checks.
-            $this->_checkCSRFToken();
+        if ($role !== 'guest') {
+            if ($this->shouldUseTokenLogin($role)) {
+                $this->_tryTokenLogin($role);
+            } else {
+                $this->requireSessionAuth($role);
+            }
         }
 
         $api = $this->di['api']($role);
@@ -236,11 +225,14 @@ class Client implements InjectionAwareInterface
 
     private function getAuth(): array
     {
-        if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
-            $auth_params = explode(':', base64_decode(substr((string) $_SERVER['HTTP_AUTHORIZATION'], 6)));
-            $_SERVER['PHP_AUTH_USER'] = $auth_params[0];
-            unset($auth_params[0]);
-            $_SERVER['PHP_AUTH_PW'] = implode('', $auth_params);
+        if (!isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['HTTP_AUTHORIZATION'])) {
+            $parsedAuth = $this->tryParseBasicAuthHeader();
+            if ($parsedAuth === null) {
+                throw new \FOSSBilling\InformationException('Authentication Failed', null, 201);
+            }
+
+            $_SERVER['PHP_AUTH_USER'] = $parsedAuth['username'];
+            $_SERVER['PHP_AUTH_PW'] = $parsedAuth['password'];
         }
 
         if (!isset($_SERVER['PHP_AUTH_USER'])) {
@@ -258,11 +250,14 @@ class Client implements InjectionAwareInterface
         return [$_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']];
     }
 
-    protected function _tryTokenLogin(): void
+    protected function _tryTokenLogin(string $routeRole): void
     {
         [$username, $password] = $this->getAuth();
+        if ($username !== $routeRole) {
+            throw new \FOSSBilling\InformationException('Authentication Failed', null, 203);
+        }
 
-        switch ($username) {
+        switch ($routeRole) {
             case 'client':
                 $model = $this->di['db']->findOne('Client', 'api_token = ?', [$password]);
                 if (!$model instanceof \Model_Client) {
@@ -277,6 +272,12 @@ class Client implements InjectionAwareInterface
                 if (!$model instanceof \Model_Admin) {
                     throw new \FOSSBilling\InformationException('Authentication Failed', null, 205);
                 }
+
+                $cronAdmin = $this->di['mod_service']('staff')->getCronAdmin();
+                if ($cronAdmin instanceof \Model_Admin && (int) $model->id === (int) $cronAdmin->id) {
+                    throw new \FOSSBilling\InformationException('Authentication Failed', null, 205);
+                }
+
                 $sessionAdminArray = [
                     'id' => $model->id,
                     'email' => $model->email,
@@ -287,21 +288,96 @@ class Client implements InjectionAwareInterface
 
                 break;
 
-            case 'guest': // do not allow at the moment
             default:
                 throw new \FOSSBilling\InformationException('Authentication Failed', null, 203);
         }
     }
 
-    protected function hasTokenAuthCredentials(): bool
+    private function registerAllowedRouteRoles(): array
     {
-        try {
-            [$username, $password] = $this->getAuth();
-        } catch (\Exception) {
+        return [
+            'role' => 'guest|client|admin',
+            'class' => '[a-zA-Z0-9_]+',
+            'method' => '[a-zA-Z0-9_]+',
+        ];
+    }
+
+    protected function shouldUseTokenLogin(string $routeRole): bool
+    {
+        if (!in_array($routeRole, ['client', 'admin'], true)) {
             return false;
         }
 
-        return in_array($username, ['client', 'admin'], true) && $password !== '';
+        $username = $this->getProvidedBasicAuthUsername();
+        if ($username === null) {
+            return false;
+        }
+
+        if ($username !== $routeRole) {
+            throw new \FOSSBilling\InformationException('Authentication Failed', null, 203);
+        }
+
+        return true;
+    }
+
+    private function getProvidedBasicAuthUsername(): ?string
+    {
+        if (isset($_SERVER['PHP_AUTH_USER']) && in_array($_SERVER['PHP_AUTH_USER'], ['client', 'admin'], true)) {
+            return (string) $_SERVER['PHP_AUTH_USER'];
+        }
+
+        $parsedAuth = $this->tryParseBasicAuthHeader();
+        if ($parsedAuth === null) {
+            return null;
+        }
+
+        $username = $parsedAuth['username'];
+        if (!in_array($username, ['client', 'admin'], true)) {
+            return null;
+        }
+
+        return $username;
+    }
+
+    /**
+     * @return array{username: string, password: string}|null
+     */
+    private function tryParseBasicAuthHeader(): ?array
+    {
+        if (!isset($_SERVER['HTTP_AUTHORIZATION'])) {
+            return null;
+        }
+
+        $authorization = trim((string) $_SERVER['HTTP_AUTHORIZATION']);
+        if (stripos($authorization, 'Basic ') !== 0) {
+            return null;
+        }
+
+        $decoded = base64_decode(substr($authorization, 6), true);
+        if ($decoded === false || !str_contains($decoded, ':')) {
+            return null;
+        }
+
+        [$username, $password] = explode(':', $decoded, 2);
+
+        return [
+            'username' => $username,
+            'password' => $password,
+        ];
+    }
+
+    private function requireSessionAuth(string $role): void
+    {
+        try {
+            $this->isRoleLoggedIn($role);
+            if ($role === 'client' || $role === 'admin') {
+                $this->_checkCSRFToken();
+            }
+        } catch (\FOSSBilling\InformationException $exception) {
+            throw $exception;
+        } catch (\Exception) {
+            throw new \FOSSBilling\InformationException('Authentication Failed', null, 201);
+        }
     }
 
     /**
@@ -312,8 +388,8 @@ class Client implements InjectionAwareInterface
     private function isRoleAllowed($role): bool
     {
         $allowed = ['guest', 'client', 'admin'];
-        if (!in_array($role, $allowed)) {
-            new \FOSSBilling\Exception('Unknown API call :call', [':call' => ''], 701);
+        if (!in_array($role, $allowed, true)) {
+            throw new \FOSSBilling\Exception('Unknown API call :call', [':call' => (string) $role], 701);
         }
 
         return true;
@@ -331,7 +407,9 @@ class Client implements InjectionAwareInterface
         header('Cache-Control: no-cache, must-revalidate');
         header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
         header('Content-type: application/json; charset=utf-8');
-        header('X-FOSSBilling-Version: ' . \FOSSBilling\Version::VERSION);
+        if ($this->di['mod_service']('system')->shouldExposeVersion()) {
+            header('X-FOSSBilling-Version: ' . \FOSSBilling\Version::VERSION);
+        }
         header('X-RateLimit-Span: ' . $this->_api_config['rate_span']);
         header('X-RateLimit-Limit: ' . $this->_api_config['rate_limit']);
         header('X-RateLimit-Remaining: ' . $this->_requests_left);
@@ -339,10 +417,12 @@ class Client implements InjectionAwareInterface
             error_log("{$e->getMessage()} {$e->getCode()}.");
             $code = $e->getCode() ?: 9999;
             $result = ['result' => null, 'error' => ['message' => $e->getMessage(), 'code' => $code]];
-            $authFailed = [201, 202, 206, 204, 205, 203, 403, 1004, 1002];
+            $authFailed = [201, 202, 206, 204, 205, 203, 1004, 1002];
 
             if (in_array($code, $authFailed)) {
                 header('HTTP/1.1 401 Unauthorized');
+            } elseif ($code == 403) {
+                header('HTTP/1.1 403 Forbidden');
             } elseif ($code == 701 || $code == 879) {
                 header('HTTP/1.1 400 Bad Request');
             }

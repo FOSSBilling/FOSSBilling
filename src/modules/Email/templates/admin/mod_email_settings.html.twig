@@ -237,7 +237,7 @@
                                         <span class="text-capitalize">{{ queuedEmail.status }}</span>
                                     </td>
                                     <td>
-                                        {{ queuedEmail.tries }} / {{ params.cancel_after|default('5') }}
+                                        {{ queuedEmail.tries }} / {{ params.cancel_after|default(5) }}
                                     </td>
                                     <td>
                                         {{ queuedEmail.created_at|format_date }}
@@ -295,15 +295,15 @@
                                 <div class="col-md-6">
                                     <div class="mb-2">
                                         <small class="form-hint">{{ 'Send emails per cron run (0 = unlimited)'|trans }}</small>
-                                        <input class="form-control" type="text" name="queue_once" placeholder="0" value="{{ params.queue_once|default('0') }}">
+                                        <input class="form-control" type="text" name="queue_once" placeholder="0" value="{{ params.queue_once|default(0) }}">
                                     </div>
                                     <div class="mb-2">
                                         <small class="form-hint">{{ 'Max email sending time in minutes (0 = unlimited, default 5 min.)'|trans }}</small>
-                                        <input class="form-control" type="text" name="time_limit" placeholder="5" value="{{ params.time_limit|default('5') }}">
+                                        <input class="form-control" type="text" name="time_limit" placeholder="5" value="{{ params.time_limit|default(5) }}">
                                     </div>
                                     <div class="mb-2">
                                         <small class="form-hint">{{ 'Cancel sending email after unsuccessful tries (0 = do not cancel)'|trans }}</small>
-                                        <input class="form-control" type="text" name="cancel_after" placeholder="5" value="{{ params.cancel_after|default('5') }}">
+                                        <input class="form-control" type="text" name="cancel_after" placeholder="5" value="{{ params.cancel_after|default(5) }}">
                                     </div>
                                 </div>
                             </div>

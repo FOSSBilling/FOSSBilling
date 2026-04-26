@@ -421,7 +421,7 @@
 
                 {% if order.form_id and guest.extension_is_on({ 'mod': 'formbuilder' }) %}
                     {% set form = guest.formbuilder_get({ "id": order.form_id }) %}
-                    {% set form_field_names = form.fields|map(f => f.name)|list %}
+                    {% set form_field_names = form.fields|map(f => f.name) %}
                     <form method="post" action="{{ 'api/admin/order/update_config'|link }}" {{ fb_api_form({ reload: true}) }}>
                         <input type="hidden" name="id" value="{{ order.id }}"/>
 
@@ -717,7 +717,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% set tickets = admin.support_ticket_get_list({ 'per_page': '20', 'order_id': order.id, 'deep': 0, 'include_first': 0 }) %}
+                    {% set tickets = admin.support_ticket_get_list({ 'per_page': 20, 'order_id': order.id, 'deep': 0, 'include_first': 0 }) %}
                     {% for ticket in tickets.list %}
                     <tr>
                         <td>{{ ticket.id }}</td>

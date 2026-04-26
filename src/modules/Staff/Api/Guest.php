@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -28,7 +29,7 @@ class Guest extends \Api_Abstract
      */
     public function create($data): bool
     {
-        $allow = (!is_countable($this->di['db']->findOne('Admin', '1=1')) || count($this->di['db']->findOne('Admin', '1=1')) == 0);
+        $allow = !\FOSSBilling\Tools::safeCount($this->di['db']->findOne('Admin', '1=1'));
         if (!$allow) {
             throw new \FOSSBilling\InformationException('Administrator account already exists', null, 55);
         }
@@ -96,10 +97,8 @@ class Guest extends \Api_Abstract
 
         $validator = $this->di['validator'];
         $validator->checkRequiredParamsForArray($required, $data);
-
-        if ($data['password'] != $data['password_confirm']) {
-            throw new \FOSSBilling\InformationException('Passwords do not match');
-        }
+        $validator->passwordsMatch($data);
+        $validator->isPasswordStrong($data['password']);
 
         $reset = $this->di['db']->findOne('AdminPasswordReset', 'hash = ?', [$data['code']]);
         if (!$reset instanceof \Model_AdminPasswordReset) {
