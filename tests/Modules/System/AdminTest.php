@@ -138,6 +138,7 @@ final class AdminTest extends TestCase
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
 
         // Reset to default
-        Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => '', 'interface' => '0']);
+        $resetResult = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => '', 'interface' => '0']);
+        $this->assertTrue($resetResult->wasSuccessful(), $resetResult->generatePHPUnitMessage());
     }
 }
