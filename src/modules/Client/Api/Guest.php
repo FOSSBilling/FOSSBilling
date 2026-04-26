@@ -217,6 +217,9 @@ class Guest extends \Api_Abstract
         }
 
         $c = $this->di['db']->getExistingModelById('Client', $reset->client_id, 'Client not found');
+        if ($c->status !== \Model_Client::ACTIVE) {
+            throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
+        }
         $c->pass = $this->di['password']->hashIt($data['password']);
         $this->di['db']->store($c);
 

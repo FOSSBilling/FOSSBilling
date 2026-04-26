@@ -110,6 +110,9 @@ class Guest extends \Api_Abstract
         }
 
         $c = $this->di['db']->getExistingModelById('Admin', $reset->admin_id, 'User not found');
+        if ($c->status !== \Model_Admin::STATUS_ACTIVE) {
+            throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
+        }
         $c->pass = $this->di['password']->hashIt($data['password']);
         $this->di['db']->store($c);
 
