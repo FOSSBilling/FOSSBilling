@@ -288,16 +288,33 @@ class Tools
     }
 
     /**
+     * Validates an interface value for HTTP client binding.
+     * Accepts IP addresses and hostname/interface names like "eth0".
+     */
+    public static function isValidHttpInterface(string $interface): bool
+    {
+        if (filter_var($interface, FILTER_VALIDATE_IP) !== false) {
+            return true;
+        }
+
+        if (ctype_digit($interface)) {
+            return false;
+        }
+
+        return preg_match('/^[a-zA-Z0-9._-]*[a-zA-Z._-][a-zA-Z0-9._-]*$/', $interface) === 1;
+    }
+
+    /**
      * Returns the currently configured default network interface.
-     * If a custom interface IP address is entered, no validation is performed.
-     * However, if we are using an interface IP address that was selected from a given list, we will validate that the IP address is still in the list of known IP address interfaces.
+     * If a custom interface IP address, hostname, or interface name is entered, it is validated before being used.
+     * If we are using an interface IP address that was selected from a given list, we will validate that the IP address is still in the list of known IP address interfaces.
      *
      * @return string|int either the IP address of the interface to use (string) or 0 if there's none set / the set one is invalid
      */
     public static function getDefaultInterface(): string|int
     {
         $customInterface = Config::getProperty('custom_interface_ip', '');
-        if (!empty($customInterface)) {
+        if (!empty($customInterface) && self::isValidHttpInterface($customInterface)) {
             return $customInterface;
         }
 

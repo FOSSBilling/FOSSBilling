@@ -9,7 +9,7 @@
         <ol>
             <li>Delete your database tables or recreate your database.</li>
             <li>Delete <strong>config.php</strong>.</li>
-            <li>Refresh this page and you will see the installer.</p>
+            <li>Refresh this page and you will see the installer.</li>
         </ol>
     {% else %}
         <p>Thank you for choosing FOSSBilling! Our installer will have you up and running in just a few more minutes. <br>Simply follow each step below and soon you'll have FOSSBilling installed.</p>
@@ -79,7 +79,7 @@
                         </tr>
                     {% endfor %}
                     {% for ext, info in compatibility.suggested_extensions %}
-                        {% if not loaded %}
+                        {% if not info.loaded %}
                             <tr>
                                 <td>PHP extension: <strong>{{ ext }}</strong></td>
                                 <td class="{{ info.loaded ? 'green' : 'orange'}}">{{ info.loaded ? 'OK' : 'WARN'}}</td>
@@ -92,7 +92,7 @@
                             <tr>
                                 <td>{{ file }}</td>
                                 <td class="red">FAIL</td>
-                                <td>Permissions are incorrect, preventing FOSSBilling from writing to this file name. <a href="https://fossbilling.org/docs/troubleshooting#permission-issues" target="_blank">(Troubleshootng)</a></td>
+                                <td>Permissions are incorrect, preventing FOSSBilling from writing to this file name. <a href="https://fossbilling.org/docs/troubleshooting#permission-issues" target="_blank">(Troubleshooting)</a></td>
                             </tr>
                         {% endif %}
                     {% endfor %}
@@ -101,7 +101,7 @@
                             <tr>
                                 <td>{{ folder }}</td>
                                 <td class="red">FAIL</td>
-                                <td>Please make sure that directory exists and is writable. <a href="https://fossbilling.org/docs/troubleshooting#permission-issues" target="_blank">(Troubleshootng)</a></td>
+                                <td>Please make sure that directory exists and is writable. <a href="https://fossbilling.org/docs/troubleshooting#permission-issues" target="_blank">(Troubleshooting)</a></td>
                             </tr>
                         {% endif %}
                     {% endfor %}
@@ -144,6 +144,7 @@
                     <p>Create your administrator login details below.</p>
     
                     <fieldset>
+                        {% set minLength = 8 %}
                         <label for="admin_name">Name <span class="red">*</span></label>
                         <input type="text" id="admin_name" name="admin_name" value="{{ request.admin_name|default(admin_name) }}" placeholder="Display name of your account." required>
     
@@ -151,12 +152,21 @@
                         <input type="email" id="admin_email" name="admin_email" value="{{ request.admin_email|default(admin_email) }}" placeholder="you@yourdomain.com" required>
     
                         <label for="admin_password">Password <span class="red">*</span></label>
-                        <input type="password" id="admin_password" name="admin_password" value="{{ request.admin_password|default(admin_password) }}" placeholder="Use a strong, secure password." required minlength="8">
+                        <input type="password" id="admin_password" name="admin_password" value="{{ request.admin_password|default(admin_password) }}" placeholder="Use a strong, secure password." required minlength="{{ minLength }}">
+                        <small>
+                            Password must:
+                            <ul>
+                                <li>Be at least {{ minLength }} characters long</li>
+                                <li>Contain at least one number</li>
+                                <li>Contain at least one lowercase letter</li>
+                                <li>Contain at least one uppercase letter</li>
+                            </ul>
+                        </small>
                     </fieldset>
                 </details>
 
                 <details id="step-5">
-                    <summary>Step 5 Configure the default currency</summary>
+                    <summary>Step 5) Configure the default currency</summary>
 
                     <p>Configure your default currency and price format.</p>
     

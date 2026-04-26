@@ -33,8 +33,7 @@ class Client extends \Api_Abstract
         $data['client_id'] = $identity->id;
 
         [$sql, $bindings] = $this->getService()->getSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
         foreach ($pager['list'] as $key => $ticketArr) {
             $ticket = $this->di['db']->getExistingModelById('SupportTicket', $ticketArr['id'], 'Ticket not found');
             $pager['list'][$key] = $this->getService()->toApiArray($ticket, true, $this->getIdentity());
@@ -49,7 +48,7 @@ class Client extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket ID was not passed'])]
     public function ticket_get(array $data): array
     {
-        $ticket = $this->getService()->findOneByClient($this->getIdentity(), $data['id']);
+        $ticket = $this->getService()->findOneByClient($this->getIdentity(), (int) $data['id']);
 
         return $this->getService()->toApiArray($ticket);
     }
@@ -128,7 +127,7 @@ class Client extends \Api_Abstract
     {
         $client = $this->getIdentity();
 
-        $ticket = $this->getService()->findOneByClient($client, $data['id']);
+        $ticket = $this->getService()->findOneByClient($client, (int) $data['id']);
 
         return $this->getService()->closeTicket($ticket, $this->getIdentity());
     }

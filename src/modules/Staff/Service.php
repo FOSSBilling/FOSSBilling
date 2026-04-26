@@ -126,7 +126,7 @@ class Service implements InjectionAwareInterface
 
     public function getPairs(array $data = [])
     {
-        $limit = $data['per_page'] ?? 30;
+        $limit = (int) ($data['per_page'] ?? 30);
 
         $sql = 'SELECT id, name FROM admin WHERE 1';
         $params = [];
@@ -437,11 +437,7 @@ class Service implements InjectionAwareInterface
 
         [$query, $params] = $this->getSearchQuery($data);
 
-        $di = $this->getDi();
-        $pager = $di['pager'];
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-
-        return $pager->getPaginatedResultSet($query, $params, $per_page);
+        return $this->di['pager']->getPaginatedResultSet($query, $params);
     }
 
     public function getSearchQuery($data): array
@@ -544,13 +540,23 @@ class Service implements InjectionAwareInterface
             $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
         }
 
+        $previousStatus = $model->status;
+
         $model->email = $data['email'] ?? $model->email;
         $model->admin_group_id = $data['admin_group_id'] ?? $model->admin_group_id;
         $model->name = $data['name'] ?? $model->name;
         $model->status = $data['status'] ?? $model->status;
+        if ($model->status === \Model_Admin::STATUS_INACTIVE) {
+            $model->api_token = null;
+        }
         $model->signature = $data['signature'] ?? $model->signature;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
+
+        if ($model->status !== \Model_Admin::STATUS_ACTIVE && $previousStatus === \Model_Admin::STATUS_ACTIVE) {
+            $profileService = $this->di['mod_service']('profile');
+            $profileService->invalidateSessions('admin', (int) $model->id);
+        }
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffUpdate', 'params' => ['id' => $model->id]]);
 

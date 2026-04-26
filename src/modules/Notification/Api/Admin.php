@@ -32,10 +32,9 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         $queryBuilder = $this->getService()->getSearchQueryBuilder($data);
 
-        return $this->di['pager']->paginateDoctrineQuery($queryBuilder, $per_page);
+        return $this->di['pager']->paginateDoctrineQuery($queryBuilder, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
     }
 
     /**

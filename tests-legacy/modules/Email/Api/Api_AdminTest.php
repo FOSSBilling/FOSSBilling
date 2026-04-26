@@ -297,16 +297,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getTemplateList')
             ->willReturn($willReturn);
 
-        $pager = $this->getMockBuilder(\FOSSBilling\Pagination::class)
-            ->onlyMethods(['getDefaultPerPage'])
-            ->disableOriginalConstructor()
-            ->getMock();
-        $pager->expects($this->atLeastOnce())
-            ->method('getDefaultPerPage')
-            ->willReturn(100);
-
         $di = $this->getDi();
-        $di['pager'] = $pager;
 
         $adminApi->setDi($di);
         $adminApi->setService($emailService);

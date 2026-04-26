@@ -1470,6 +1470,86 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $randId);
     }
 
+    public function testTicketCreateForClientUpgradeAllowsNumericUpgradeIdsStoredAsIntegers(): void
+    {
+        $randId = 1;
+        $ticket = new \Model_SupportTicket();
+        $ticket->loadBean(new \DummyBean());
+
+        $currentProduct = new \Model_Product();
+        $currentProduct->loadBean(new \DummyBean());
+        $currentProduct->title = 'Starter';
+        $currentProduct->upgrades = '[2]';
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()
+            ->onlyMethods(['getExistingModelById', 'dispense', 'store'])->getMock();
+        $dbMock->expects($this->once())
+            ->method('getExistingModelById')
+            ->with('Product', 1)
+            ->willReturn($currentProduct);
+        $dbMock->expects($this->once())
+            ->method('dispense')
+            ->with('SupportTicket')
+            ->willReturn($ticket);
+        $dbMock->expects($this->once())
+            ->method('store')
+            ->with($ticket)
+            ->willReturn($randId);
+
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+        $order->product_id = 1;
+
+        $orderServiceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
+            ->onlyMethods(['findForClientById'])->getMock();
+        $orderServiceMock->expects($this->once())
+            ->method('findForClientById')
+            ->willReturn($order);
+
+        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)
+            ->disableOriginalConstructor()->onlyMethods(['getConfig'])->getMock();
+        $modMock->expects($this->once())->method('getConfig')->willReturn([]);
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->exactly(2))->method('fire');
+
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
+            ->onlyMethods(['checkIfTaskAlreadyExists', 'messageCreateForTicket'])->getMock();
+        $serviceMock->expects($this->once())->method('checkIfTaskAlreadyExists')->willReturn(false);
+        $serviceMock->expects($this->once())->method('messageCreateForTicket')->willReturn(1);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['events_manager'] = $eventMock;
+        $di['logger'] = $this->createMock('Box_Log');
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
+        $di['mod_service'] = $di->protect(fn (string $serviceName) => match ($serviceName) {
+            'order' => $orderServiceMock,
+            default => null,
+        });
+        $serviceMock->setDi($di);
+
+        $helpdesk = new \Model_SupportHelpdesk();
+        $helpdesk->loadBean(new \DummyBean());
+        $helpdesk->id = 1;
+
+        $client = new \Model_Client();
+        $client->loadBean(new \DummyBean());
+        $client->id = 1;
+
+        $data = [
+            'subject' => 'Upgrade request',
+            'content' => 'Please upgrade my plan.',
+            'rel_id' => 10,
+            'rel_type' => \Model_SupportTicket::REL_TYPE_ORDER,
+            'rel_task' => \Model_SupportTicket::REL_TASK_UPGRADE,
+            'rel_new_value' => '2',
+        ];
+
+        $result = $serviceMock->ticketCreateForClient($client, $helpdesk, $data);
+        $this->assertSame($randId, $result);
+    }
+
     public function testTicketCreateForClientTaskAlreadyExistsException(): void
     {
         $message = new \Model_SupportTicketMessage();
@@ -1480,6 +1560,14 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('checkIfTaskAlreadyExists')
             ->willReturn(true);
 
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+
+        $orderServiceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
+            ->onlyMethods(['findForClientById'])->getMock();
+        $orderServiceMock->expects($this->atLeastOnce())->method('findForClientById')
+            ->willReturn($order);
+
         $helpdesk = new \Model_SupportHelpdesk();
         $helpdesk->loadBean(new \DummyBean());
 
@@ -1488,8 +1576,8 @@ final class ServiceTest extends \BBTestCase
 
         $data = [
             'rel_id' => 1,
-            'rel_type' => 'Type',
-            'rel_task' => 'Task',
+            'rel_type' => \Model_SupportTicket::REL_TYPE_ORDER,
+            'rel_task' => \Model_SupportTicket::REL_TASK_CANCEL,
             'rel_new_value' => 'New value',
         ];
 
@@ -1501,6 +1589,10 @@ final class ServiceTest extends \BBTestCase
         $client->id = 1;
 
         $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (string $serviceName) => match ($serviceName) {
+            'order' => $orderServiceMock,
+            default => null,
+        });
 
         $serviceMock->setDi($di);
 

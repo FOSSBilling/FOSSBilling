@@ -196,10 +196,7 @@ const Tools = {
         }
         obj[plainKey].push(value);
       } else if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        if (!Array.isArray(obj[key])) {
-          obj[key] = [obj[key]];
-        }
-        obj[key].push(value);
+        obj[key] = value;
       } else {
         obj[key] = value;
       }

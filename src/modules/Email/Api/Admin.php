@@ -30,9 +30,8 @@ class Admin extends \Api_Abstract
     {
         $this->checkEmailPermission('view_email_history');
 
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
 
         foreach ($pager['list'] as $key => $item) {
             if (!is_array($item)) {
@@ -156,8 +155,7 @@ class Admin extends \Api_Abstract
     {
         $this->checkEmailPermission('view_templates');
 
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->getService()->getTemplateList(array_merge($data, ['per_page' => $per_page]));
+        $pager = $this->getService()->getTemplateList($data);
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [
@@ -415,9 +413,8 @@ class Admin extends \Api_Abstract
     {
         $this->checkEmailPermission('view_email_history');
 
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         [$sql, $params] = $this->getService()->queueGetSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [

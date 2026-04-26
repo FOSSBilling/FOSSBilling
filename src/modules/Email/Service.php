@@ -810,9 +810,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function getTemplateList(array $data = []): array
     {
         $qb = $this->getTemplateRepository()->getSearchQueryBuilder($data);
-        $page = isset($data['page']) ? (int) $data['page'] : null;
-        $perPage = isset($data['per_page']) ? (int) $data['per_page'] : null;
-        $result = $this->di['pager']->paginateDoctrineQuery($qb, $page, $perPage);
+
+        $result = $this->di['pager']->paginateDoctrineQuery($qb, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
 
         $list = [];
         foreach ($result['list'] as $templateRow) {
