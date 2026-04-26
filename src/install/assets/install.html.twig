@@ -153,17 +153,16 @@
     
                         <label for="admin_password">Password <span class="red">*</span></label>
                         <input type="password" id="admin_password" name="admin_password" value="{{ request.admin_password|default(admin_password) }}" placeholder="Use a strong, secure password." required minlength="{{ minLength }}">
-                        <div class="form-help">
-                        <p>Password must:</p>
+                        <small>
+                            Password must:
                             <ul>
                                 <li>Be at least {{ minLength }} characters long</li>
                                 <li>Contain at least one number</li>
                                 <li>Contain at least one lowercase letter</li>
                                 <li>Contain at least one uppercase letter</li>
                             </ul>
-                        </div>  
+                        </small>
                     </fieldset>
-              
                 </details>
 
                 <details id="step-5">
