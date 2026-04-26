@@ -84,7 +84,7 @@
                         {% if order.notes %}
                             <tr>
                                 <td><label>{{ 'Order notes'|trans }}</label></td>
-                                <td>{{ order.notes|markdown_to_html }}</td>
+                                <td>{{ (order.notes ?? '')|markdown_to_html }}</td>
                             </tr>
                         {% endif %}
 

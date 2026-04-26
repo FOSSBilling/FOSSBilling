@@ -184,7 +184,7 @@
 
                         {% if invoice.text_1 %}
                             <div class="well mt-3">
-                                {{ invoice.text_1|markdown_to_html }}
+                                {{ (invoice.text_1 ?? '')|markdown_to_html }}
                             </div>
                         {% endif %}
 
@@ -243,7 +243,7 @@
 
                         {% if invoice.text_2 %}
                             <div class="well mt-3">
-                                {{ invoice.text_2|markdown_to_html }}
+                                {{ (invoice.text_2 ?? '')|markdown_to_html }}
                             </div>
                         {% endif %}
                     </div>

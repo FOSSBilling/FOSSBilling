@@ -156,7 +156,7 @@
                 <span class="ms-auto text-muted">{{ message.created_at|format_datetime }}</span>
             </div>
             <div class="card-body">
-                {{ message.content|markdown_to_html }}
+                {{ (message.content ?? '')|markdown_to_html }}
             </div>
         </div>
     {% endfor %}

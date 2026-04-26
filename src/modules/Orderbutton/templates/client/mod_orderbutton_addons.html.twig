@@ -12,7 +12,7 @@
         <label>
           <h6><strong>{{ addon.title }}</strong></h6>
         </label>
-        {{ addon.description|markdown_to_html }}
+        {{ (addon.description ?? '')|markdown_to_html }}
       </td>
 
       <td>

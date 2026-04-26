@@ -115,7 +115,7 @@
                     {% if invoice.notes %}
                     <tr>
                         <td class="text-end">{{ 'Notes'|trans }}:</td>
-                        <td>{{ invoice.notes|markdown_to_html }}</td>
+                        <td>{{ (invoice.notes ?? '')|markdown_to_html }}</td>
                     </tr>
                     {% endif %}
                 </tbody>

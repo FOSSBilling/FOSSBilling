@@ -275,7 +275,7 @@
             <span class="ms-auto text-muted">{{ message.created_at|format_datetime }}</span>
         </div>
         <div class="card-body" style="display:{{ loop.last or loop.index + 1 == ticket.messages|length ? 'block' : 'none' }};">
-            {{ message.content|markdown_to_html }}
+            {{ (message.content ?? '')|markdown_to_html }}
         </div>
     </div>
     {% endfor %}

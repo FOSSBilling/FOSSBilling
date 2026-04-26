@@ -150,7 +150,7 @@
             {% if invoice.text_1 %}
                 <div class="card mt-3">
                     <div class="card-body">
-                        {{ invoice.text_1|markdown_to_html }}
+                        {{ (invoice.text_1 ?? '')|markdown_to_html }}
                     </div>
                 </div>
             {% endif %}
@@ -207,7 +207,7 @@
             {% if invoice.text_2 %}
                 <div class="card mt-3">
                     <div class="card-body">
-                        {{ invoice.text_2|markdown_to_html }}
+                        {{ (invoice.text_2 ?? '')|markdown_to_html }}
                     </div>
                 </div>
             {% endif %}

@@ -29,7 +29,7 @@
                 </div>
                 <div class="card-body">
                     {% if company is defined and company %}
-                        {{ company.privacy_policy|markdown_to_html }}
+                        {{ (company.privacy_policy ?? '')|markdown_to_html }}
                     {% endif %}
                 </div>
             </div>
