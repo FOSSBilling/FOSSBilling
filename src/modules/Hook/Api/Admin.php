@@ -30,7 +30,7 @@ class Admin extends \Api_Abstract
         $service = $this->getService();
         [$sql, $params] = $service->getSearchQuery($data);
 
-        return $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null);
+        return $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
     }
 
     /**

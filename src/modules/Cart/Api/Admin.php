@@ -27,7 +27,7 @@ class Admin extends \Api_Abstract
     public function get_list($data)
     {
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
 
         foreach ($pager['list'] as $key => $cartArr) {
             $cart = $this->di['db']->getExistingModelById('Cart', $cartArr['id'], 'Cart not found');

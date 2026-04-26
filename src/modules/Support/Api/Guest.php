@@ -149,7 +149,7 @@ class Guest extends \Api_Abstract
         $data['article_status'] = \Model_SupportKbArticle::ACTIVE;
         [$query, $bindings] = $this->getService()->kbCategoryGetSearchQuery($data);
 
-        $pager = $this->di['pager']->getPaginatedResultSet($query, $bindings, isset($data['per_page']) ? (int) $data['per_page'] : null);
+        $pager = $this->di['pager']->getPaginatedResultSet($query, $bindings, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
 
         $q = $data['q'] ?? null;
 
