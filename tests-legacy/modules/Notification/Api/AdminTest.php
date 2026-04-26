@@ -27,7 +27,7 @@ final class AdminTest extends \BBTestCase
             ->getMock();
         $pager->expects($this->once())
             ->method('paginateDoctrineQuery')
-            ->with($queryBuilder, null, null, 'page', 'per_page')
+            ->with($queryBuilder)
             ->willReturn(['list' => []]);
 
         $di = $this->getDi();
