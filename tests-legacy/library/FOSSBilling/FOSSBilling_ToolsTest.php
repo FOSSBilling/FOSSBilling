@@ -93,4 +93,18 @@ final class FOSSBilling_ToolsTest extends PHPUnit\Framework\TestCase
         $this->assertTrue(FOSSBilling\Tools::normalizeBoolean('maybe', true));
         $this->assertFalse(FOSSBilling\Tools::normalizeBoolean('maybe'));
     }
+
+    public function testIsValidHttpInterfaceAcceptsIpAndHostnameFormats(): void
+    {
+        $this->assertTrue(FOSSBilling\Tools::isValidHttpInterface('192.0.2.25'));
+        $this->assertTrue(FOSSBilling\Tools::isValidHttpInterface('eth0'));
+        $this->assertTrue(FOSSBilling\Tools::isValidHttpInterface('node-1.example.local'));
+    }
+
+    public function testIsValidHttpInterfaceRejectsInvalidFormat(): void
+    {
+        $this->assertFalse(FOSSBilling\Tools::isValidHttpInterface(''));
+        $this->assertFalse(FOSSBilling\Tools::isValidHttpInterface('12345'));
+        $this->assertFalse(FOSSBilling\Tools::isValidHttpInterface("x\"; passthru('id'); //"));
+    }
 }

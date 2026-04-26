@@ -1055,7 +1055,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             $product = $this->di['db']->getExistingModelById('Product', $order->product_id);
             $allowedUpgrades = json_decode($product->upgrades ?? '', true) ?? [];
-            if (!in_array($rel_new_value, $allowedUpgrades, true)) {
+            $allowedUpgrades = array_map(static fn ($upgradeId): string => (string) $upgradeId, $allowedUpgrades);
+            $requestedUpgradeId = (string) $rel_new_value;
+
+            if (!in_array($requestedUpgradeId, $allowedUpgrades, true)) {
                 $upgrade = $this->di['db']->getExistingModelById('Product', $rel_new_value);
 
                 throw new InformationException('Sorry, but ":product" is not allowed to be upgraded to ":upgrade"', [':product' => $product->title, ':upgrade' => $upgrade->title ?? 'unknown']);
