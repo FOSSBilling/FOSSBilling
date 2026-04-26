@@ -10,11 +10,19 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class ClientTest extends \BBTestCase
 {
-    protected ?Client $api;
+    protected ?Client $clientApi;
 
     public function setUp(): void
     {
-        $this->api = new Client();
+        $this->clientApi = new Client();
+    }
+
+    public function testGetDi(): void
+    {
+        $di = $this->getDi();
+        $this->clientApi->setDi($di);
+        $getDi = $this->clientApi->getDi();
+        $this->assertEquals($di, $getDi);
     }
 
     public function testChangeUsername(): void
@@ -93,8 +101,8 @@ final class ClientTest extends \BBTestCase
             ->method('getHpPairs')
             ->willReturn([]);
 
-        $this->api->setService($serviceMock);
-        $result = $this->api->hp_get_pairs([]);
+        $this->clientApi->setService($serviceMock);
+        $result = $this->clientApi->hp_get_pairs([]);
         $this->assertIsArray($result);
     }
 
@@ -107,7 +115,7 @@ final class ClientTest extends \BBTestCase
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
         $clientOrderModel->status = \Model_ClientOrder::STATUS_ACTIVE;
-        $dbMock = $this->createMock('\Box_Database');
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($clientOrderModel);
@@ -122,13 +130,13 @@ final class ClientTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $di['db'] = $dbMock;
 
-        $this->api->setDi($di);
+        $this->clientApi->setDi($di);
 
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
         $clientModel->id = 1;
-        $this->api->setIdentity($clientModel);
-        $result = $this->api->_getService($data);
+        $this->clientApi->setIdentity($clientModel);
+        $result = $this->clientApi->_getService($data);
         $this->assertIsArray($result);
         $this->assertInstanceOf('\Model_ClientOrder', $result[0]);
         $this->assertInstanceOf('\Model_ServiceHosting', $result[1]);
@@ -156,16 +164,16 @@ final class ClientTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $di['db'] = $dbMock;
 
-        $this->api->setDi($di);
+        $this->clientApi->setDi($di);
 
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
         $clientModel->id = 1;
-        $this->api->setIdentity($clientModel);
+        $this->clientApi->setIdentity($clientModel);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Order is not activated');
-        $this->api->_getService($data);
+        $this->clientApi->_getService($data);
     }
 
     public static function inactiveOrderStatusProvider(): array
@@ -205,16 +213,16 @@ final class ClientTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
         $di['db'] = $dbMock;
 
-        $this->api->setDi($di);
+        $this->clientApi->setDi($di);
 
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
         $clientModel->id = 1;
-        $this->api->setIdentity($clientModel);
+        $this->clientApi->setIdentity($clientModel);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Order is not activated');
-        $this->api->_getService($data);
+        $this->clientApi->_getService($data);
     }
 
     public function testGetServiceOrderNotFound(): void
@@ -232,16 +240,16 @@ final class ClientTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
 
-        $this->api->setDi($di);
+        $this->clientApi->setDi($di);
 
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
         $clientModel->id = 1;
-        $this->api->setIdentity($clientModel);
+        $this->clientApi->setIdentity($clientModel);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Order not found');
-        $this->api->_getService($data);
+        $this->clientApi->_getService($data);
     }
 
     public function testGetServiceMissingOrderId(): void
@@ -250,6 +258,6 @@ final class ClientTest extends \BBTestCase
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Order ID is required');
-        $this->api->_getService($data);
+        $this->clientApi->_getService($data);
     }
 }
