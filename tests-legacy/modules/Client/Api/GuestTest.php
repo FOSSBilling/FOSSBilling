@@ -210,6 +210,7 @@ final class GuestTest extends \BBTestCase
 
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
+        $modelClient->status = \Model_Client::ACTIVE;
 
         $modelPasswordReset = new \Model_ClientPasswordReset();
         $modelPasswordReset->loadBean(new \DummyBean());
@@ -287,6 +288,7 @@ final class GuestTest extends \BBTestCase
 
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
+        $modelClient->status = \Model_Client::ACTIVE;
 
         $modelPasswordReset = new \Model_ClientPasswordReset();
         $modelPasswordReset->loadBean(new \DummyBean());
@@ -328,6 +330,54 @@ final class GuestTest extends \BBTestCase
 
         $result = $client->update_password($data);
         $this->assertTrue($result);
+    }
+
+    public function testUpdatePasswordRejectsInactiveClient(): void
+    {
+        $data = [
+            'hash' => 'hashedString',
+            'password' => 'NewPassword1',
+            'password_confirm' => 'NewPassword1',
+        ];
+
+        $inactiveClient = new \Model_Client();
+        $inactiveClient->loadBean(new \DummyBean());
+        $inactiveClient->status = \Model_Client::SUSPENDED;
+
+        $modelPasswordReset = new \Model_ClientPasswordReset();
+        $modelPasswordReset->loadBean(new \DummyBean());
+        $modelPasswordReset->created_at = date('Y-m-d H:i:s', time() - 300);
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('findOne')->willReturn($modelPasswordReset);
+        $dbMock->expects($this->once())
+            ->method('getExistingModelById')->willReturn($inactiveClient);
+        $dbMock->expects($this->never())
+            ->method('store');
+        $dbMock->expects($this->never())
+            ->method('trash');
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->once())
+            ->method('fire');
+
+        $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
+        $passwordMock->expects($this->never())
+            ->method('hashIt');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['events_manager'] = $eventMock;
+        $di['password'] = $passwordMock;
+        $di['validator'] = new \FOSSBilling\Validate();
+
+        $client = new Guest();
+        $client->setDi($di);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('The link has expired or you have already reset your password.');
+        $client->update_password($data);
     }
 
     public function testUpdatePasswordResetNotFound(): void

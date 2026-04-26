@@ -132,7 +132,7 @@ class Config
         $output = '<?php' . PHP_EOL . 'return [';
         foreach ($array as $key => $value) {
             // Extra spacing between each "primary" key for slightly improved readability
-            $output .= PHP_EOL . "    '" . $key . "'" . self::recursivelyIdentAndFormat($value);
+            $output .= PHP_EOL . '    ' . var_export($key, true) . self::recursivelyIdentAndFormat($value);
         }
 
         return $output . '];';
@@ -149,21 +149,9 @@ class Config
             throw new Exception('Too many iterations were performed while formatting the config file');
         }
 
-        // Handle strings (Outputs `=> 'strict',`)
-        if (is_string($value)) {
-            return " => '{$value}'," . PHP_EOL;
-        }
-
-        // Handle numbers (Outputs `=> 7200,`)
-        if (is_numeric($value)) {
-            return " => {$value}," . PHP_EOL;
-        }
-
-        // Handle bools (Outputs `=> true,`)
-        if (is_bool($value)) {
-            $boolAsWord = $value ? 'true' : 'false';
-
-            return " => {$boolAsWord}," . PHP_EOL;
+        // Handle scalars
+        if (!is_array($value)) {
+            return ' => ' . var_export($value, true) . ',' . PHP_EOL;
         }
 
         // Generate an indentation equal to 4 spaces per level of recursion
@@ -173,13 +161,15 @@ class Config
         // Handle arrays. Loop through each one & indent
         $result = ' => [' . PHP_EOL;
         foreach ($value as $key => $value) {
+            $formattedKey = var_export($key, true);
+
             // Special case for empty arrays to ensure they are printed on a single line
             if (is_array($value) && !$value) {
-                $result .= $additionalIndent . "'" . $key . "'=> []," . PHP_EOL;
+                $result .= $additionalIndent . $formattedKey . ' => [],' . PHP_EOL;
 
                 continue;
             }
-            $result .= $additionalIndent . "'" . $key . "'" . self::recursivelyIdentAndFormat($value, $level + 1);
+            $result .= $additionalIndent . $formattedKey . self::recursivelyIdentAndFormat($value, $level + 1);
         }
 
         return $result . ($indent . '],' . PHP_EOL);

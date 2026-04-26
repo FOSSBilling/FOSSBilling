@@ -33,9 +33,8 @@ class Admin extends \Api_Abstract
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
 
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
 
         foreach ($pager['list'] as $key => $clientArr) {
             $client = $this->di['db']->getExistingModelById('Client', $clientArr['id'], 'Client not found');
@@ -264,6 +263,8 @@ class Admin extends \Api_Abstract
             $client->phone = Tools::validatePhoneNumber($phone);
         }
 
+        $previousStatus = $client->status;
+
         $allowedFields = [
             'email', 'first_name', 'last_name', 'aid', 'gender', 'birthday',
             'company', 'company_vat', 'address_1', 'address_2', 'document_type',
@@ -278,9 +279,19 @@ class Admin extends \Api_Abstract
             $client->{$field} = $data[$field] ?? $client->{$field};
         }
 
+        if ($client->status !== \Model_Client::ACTIVE) {
+            $client->api_token = null;
+        }
+
         $client->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($client);
+
+        if ($client->status !== \Model_Client::ACTIVE && $previousStatus === \Model_Client::ACTIVE) {
+            $profileService = $this->di['mod_service']('profile');
+            $profileService->invalidateSessions('client', (int) $client->id);
+        }
+
         $this->di['events_manager']->fire(['event' => 'onAfterAdminClientUpdate', 'params' => ['id' => $client->id]]);
 
         $this->di['logger']->info('Updated client #%s profile', $client->id);
@@ -327,8 +338,7 @@ class Admin extends \Api_Abstract
     {
         $service = $this->di['mod_service']('Client', 'Balance');
         [$q, $params] = $service->getSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($q, $params, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($q, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [
@@ -411,8 +421,7 @@ class Admin extends \Api_Abstract
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view_login_history');
 
         [$q, $params] = $this->getService()->getHistorySearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($q, $params, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($q, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [
