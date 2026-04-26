@@ -1025,7 +1025,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         SupportTicketValidator::validateTicketCreation($data);
 
         if (isset($data['rel_id'])) {
-            if (!is_numeric($data['rel_id'])) {
+            if (filter_var($data['rel_id'], FILTER_VALIDATE_INT) === false) {
                 throw new \FOSSBilling\Exception('rel_id must be a valid integer, received: :value', [':value' => $data['rel_id']]);
             }
             $rel_id = (int) $data['rel_id'];
