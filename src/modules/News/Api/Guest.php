@@ -57,7 +57,7 @@ class Guest extends \Api_Abstract
 
         $post = null;
         if ($id) {
-            $post = $repo->findOneActiveById($id);
+            $post = $repo->findOneActiveById((int) $id);
         } elseif ($slug) {
             $post = $repo->findOneActiveBySlug($slug);
         }

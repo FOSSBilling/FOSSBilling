@@ -157,15 +157,7 @@ final class Api_GuestTest extends \BBTestCase
             ->willReturn($willReturn);
         $guestApi->setService($supportService);
 
-        $pagerMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
-        ->onlyMethods(['getDefaultPerPage'])
-        ->disableOriginalConstructor()
-        ->getMock();
-        $pagerMock->expects($this->atLeastOnce())
-            ->method('getDefaultPerPage')
-            ->willReturn(100);
         $di = $this->getDi();
-        $di['pager'] = $pagerMock;
 
         $guestApi->setDi($di);
         $result = $guestApi->kb_article_get_list([]);

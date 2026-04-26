@@ -153,7 +153,7 @@ class Guest extends \Api_Abstract
         $this->di['events_manager']->fire(['event' => 'onBeforeGuestPasswordResetRequest', 'params' => $data]);
 
         // Fetch the client by email
-        $c = $this->di['db']->findOne('Client', 'email = ?', [$data['email']]);
+        $c = $this->di['db']->findOne('Client', 'email = ? AND status = ?', [$data['email'], \Model_Client::ACTIVE]);
         if (!$c instanceof \Model_Client) {
             return true;
         }
@@ -217,6 +217,9 @@ class Guest extends \Api_Abstract
         }
 
         $c = $this->di['db']->getExistingModelById('Client', $reset->client_id, 'Client not found');
+        if ($c->status !== \Model_Client::ACTIVE) {
+            throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
+        }
         $c->pass = $this->di['password']->hashIt($data['password']);
         $this->di['db']->store($c);
 

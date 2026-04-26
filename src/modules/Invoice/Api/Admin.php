@@ -30,8 +30,7 @@ class Admin extends \Api_Abstract
     {
         $service = $this->getService();
         [$sql, $params] = $service->getSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
         foreach ($pager['list'] as $key => $item) {
             $invoice = $this->di['db']->getExistingModelById('Invoice', $item['id'], 'Invoice not found');
             $pager['list'][$key] = $this->getService()->toApiArray($invoice, true, $this->getIdentity());
@@ -453,8 +452,7 @@ class Admin extends \Api_Abstract
     {
         $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
         [$sql, $params] = $transactionService->getSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
         foreach ($pager['list'] as $key => $item) {
             $transaction = $this->di['db']->getExistingModelById('Transaction', $item['id'], 'Transaction not found');
             $pager['list'][$key] = $transactionService->toApiArray($transaction);
@@ -556,8 +554,7 @@ class Admin extends \Api_Abstract
         $gatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
         [$sql, $params] = $gatewayService->getSearchQuery($data);
 
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
         foreach ($pager['list'] as $key => $item) {
             $gateway = $this->di['db']->getExistingModelById('PayGateway', $item['id'], 'Gateway not found');
             $pager['list'][$key] = $gatewayService->toApiArray($gateway, false, $this->getIdentity());
@@ -684,8 +681,7 @@ class Admin extends \Api_Abstract
     {
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
         [$sql, $params] = $subscriptionService->getSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
 
         if (isset($pager['list']) && is_array($pager['list'])) {
             foreach ($pager['list'] as $key => $item) {
@@ -876,9 +872,8 @@ class Admin extends \Api_Abstract
     {
         $taxService = $this->di['mod_service']('Invoice', 'Tax');
         [$sql, $params] = $taxService->getSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
 
-        return $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+        return $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
     }
 
     /**

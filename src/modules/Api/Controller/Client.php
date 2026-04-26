@@ -259,7 +259,7 @@ class Client implements InjectionAwareInterface
 
         switch ($routeRole) {
             case 'client':
-                $model = $this->di['db']->findOne('Client', 'api_token = ?', [$password]);
+                $model = $this->di['db']->findOne('Client', 'api_token = ? AND status = ?', [$password, \Model_Client::ACTIVE]);
                 if (!$model instanceof \Model_Client) {
                     throw new \FOSSBilling\InformationException('Authentication Failed', null, 204);
                 }
@@ -268,7 +268,7 @@ class Client implements InjectionAwareInterface
                 break;
 
             case 'admin':
-                $model = $this->di['db']->findOne('Admin', 'api_token = ?', [$password]);
+                $model = $this->di['db']->findOne('Admin', 'api_token = ? AND status = ?', [$password, \Model_Admin::STATUS_ACTIVE]);
                 if (!$model instanceof \Model_Admin) {
                     throw new \FOSSBilling\InformationException('Authentication Failed', null, 205);
                 }

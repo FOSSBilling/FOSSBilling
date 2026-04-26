@@ -33,8 +33,7 @@ class Guest extends \Api_Abstract
         }
 
         [$sql, $params] = $this->getService()->getProductSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
         foreach ($pager['list'] as $key => $item) {
             $model = $this->di['db']->getExistingModelById('Product', $item['id'], 'Post not found');
             $pager['list'][$key] = $this->getService()->toApiArray($model, false, $this->getIdentity());
@@ -75,7 +74,7 @@ class Guest extends \Api_Abstract
 
         $service = $this->getService();
         if ($id) {
-            $model = $service->findOneActiveById($id);
+            $model = $service->findOneActiveById((int) $id);
         } else {
             $model = $service->findOneActiveBySlug($slug);
         }
@@ -97,8 +96,7 @@ class Guest extends \Api_Abstract
         $data['status'] = 'enabled';
         $service = $this->getService();
         [$sql, $params] = $service->getProductCategorySearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
         foreach ($pager['list'] as $key => $item) {
             $category = $this->di['db']->getExistingModelById('ProductCategory', $item['id'], 'Product category not found');
             $pager['list'][$key] = $this->getService()->toProductCategoryApiArray($category, true, $this->getIdentity());
