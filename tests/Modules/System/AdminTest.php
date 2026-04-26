@@ -105,7 +105,8 @@ final class AdminTest extends TestCase
         }
 
         // Finally, set it back to the default interface
-        Request::makeRequest('admin/system/set_interface_ip', ['interface' => '0']);
+        $cleanupResult = Request::makeRequest('admin/system/set_interface_ip', ['interface' => '0']);
+        $this->assertTrue($cleanupResult->wasSuccessful(), $cleanupResult->generatePHPUnitMessage());
     }
 
     public function testInvalidInterfaceIsRejected(): void
