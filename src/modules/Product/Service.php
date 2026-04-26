@@ -223,43 +223,43 @@ class Service implements InjectionAwareInterface
                 if (isset($pricing['recurrent']['1W'])) {
                     $productPayment->w_setup_price = $pricing['recurrent']['1W']['setup'];
                     $productPayment->w_price = $pricing['recurrent']['1W']['price'];
-                    $productPayment->w_enabled = $pricing['recurrent']['1W']['enabled'];
+                    $productPayment->w_enabled = $pricing['recurrent']['1W']['enabled'] ?? 0;
                 }
 
                 if (isset($pricing['recurrent']['1M'])) {
                     $productPayment->m_setup_price = $pricing['recurrent']['1M']['setup'];
                     $productPayment->m_price = $pricing['recurrent']['1M']['price'];
-                    $productPayment->m_enabled = $pricing['recurrent']['1M']['enabled'];
+                    $productPayment->m_enabled = $pricing['recurrent']['1M']['enabled'] ?? 0;
                 }
 
                 if (isset($pricing['recurrent']['3M'])) {
                     $productPayment->q_setup_price = $pricing['recurrent']['3M']['setup'];
                     $productPayment->q_price = $pricing['recurrent']['3M']['price'];
-                    $productPayment->q_enabled = $pricing['recurrent']['3M']['enabled'];
+                    $productPayment->q_enabled = $pricing['recurrent']['3M']['enabled'] ?? 0;
                 }
 
                 if (isset($pricing['recurrent']['6M'])) {
                     $productPayment->b_setup_price = $pricing['recurrent']['6M']['setup'];
                     $productPayment->b_price = $pricing['recurrent']['6M']['price'];
-                    $productPayment->b_enabled = $pricing['recurrent']['6M']['enabled'];
+                    $productPayment->b_enabled = $pricing['recurrent']['6M']['enabled'] ?? 0;
                 }
 
                 if (isset($pricing['recurrent']['1Y'])) {
                     $productPayment->a_setup_price = $pricing['recurrent']['1Y']['setup'];
                     $productPayment->a_price = $pricing['recurrent']['1Y']['price'];
-                    $productPayment->a_enabled = $pricing['recurrent']['1Y']['enabled'];
+                    $productPayment->a_enabled = $pricing['recurrent']['1Y']['enabled'] ?? 0;
                 }
 
                 if (isset($pricing['recurrent']['2Y'])) {
                     $productPayment->bia_setup_price = $pricing['recurrent']['2Y']['setup'];
                     $productPayment->bia_price = $pricing['recurrent']['2Y']['price'];
-                    $productPayment->bia_enabled = $pricing['recurrent']['2Y']['enabled'];
+                    $productPayment->bia_enabled = $pricing['recurrent']['2Y']['enabled'] ?? 0;
                 }
 
                 if (isset($pricing['recurrent']['3Y'])) {
                     $productPayment->tria_setup_price = $pricing['recurrent']['3Y']['setup'];
                     $productPayment->tria_price = $pricing['recurrent']['3Y']['price'];
-                    $productPayment->tria_enabled = $pricing['recurrent']['3Y']['enabled'];
+                    $productPayment->tria_enabled = $pricing['recurrent']['3Y']['enabled'] ?? 0;
                 }
             }
 
