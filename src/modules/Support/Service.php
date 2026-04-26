@@ -1023,7 +1023,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function ticketCreateForClient(\Model_Client $client, \Model_SupportHelpdesk $helpdesk, array $data): int
     {
         SupportTicketValidator::validateTicketCreation($data);
-        $rel_id = $data['rel_id'] ?? null;
+
+        if (isset($data['rel_id'])) {
+            if (!is_numeric($data['rel_id'])) {
+                throw new \FOSSBilling\Exception('rel_id must be a valid integer.');
+            }
+            $rel_id = (int) $data['rel_id'];
+        } else {
+            $rel_id = null;
+        }
+
         $rel_type = $data['rel_type'] ?? null;
 
         $rel_task = $data['rel_task'] ?? null;
