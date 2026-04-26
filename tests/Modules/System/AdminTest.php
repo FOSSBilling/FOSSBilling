@@ -19,6 +19,10 @@ final class AdminTest extends TestCase
             curl_setopt($ch, CURLOPT_FAILONERROR, true);
             curl_setopt($ch, CURLOPT_URL, $service);
             $ip = curl_exec($ch);
+            if ($ip === false) {
+                curl_close($ch);
+                continue;
+            }
             $isValidIp = filter_var($ip, FILTER_VALIDATE_IP) !== false;
             curl_close($ch);
             if ($isValidIp) {
