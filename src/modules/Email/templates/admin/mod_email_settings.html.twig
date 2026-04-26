@@ -20,33 +20,49 @@
 {% endblock %}
 
 {% set active_menu = 'system' %}
+{% set can_view_templates = has_permission('email', 'view_templates') %}
+{% set can_manage_templates = has_permission('email', 'manage_templates') %}
+{% set can_view_email_history = has_permission('email', 'view_email_history') %}
+{% set can_send_emails = has_permission('email', 'send_emails') %}
+{% set can_manage_settings = has_permission('email', 'manage_settings') %}
+{% set active_tab = can_view_templates ? 'templates' : (can_manage_templates ? 'new' : (can_view_email_history ? 'queue' : 'email')) %}
 {% block content %}
     {% set params = admin.extension_config_get({ 'ext': 'mod_email' }) %}
     <div class="card-tabs">
 
         <ul class="nav nav-tabs" role="tablist">
+            {% if can_view_templates %}
             <li class="nav-item" role="presentation">
-                <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Email Templates'|trans }}</a>
+                <a class="nav-link{% if active_tab == 'templates' %} active{% endif %}" href="#tab-index" data-bs-toggle="tab">{{ 'Email Templates'|trans }}</a>
             </li>
+            {% endif %}
+            {% if can_manage_templates %}
             <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
+                <a class="nav-link{% if active_tab == 'new' %} active{% endif %}" href="#tab-new" data-bs-toggle="tab">
                     <svg class="icon me-2">
                         <use xlink:href="#plus" />
                     </svg>
                     {{ 'New Template'|trans }}
                 </a>
             </li>
+            {% endif %}
+            {% if can_view_email_history %}
             <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#tab-queue" data-bs-toggle="tab">{{ 'Email Queue'|trans }}</a>
+                <a class="nav-link{% if active_tab == 'queue' %} active{% endif %}" href="#tab-queue" data-bs-toggle="tab">{{ 'Email Queue'|trans }}</a>
             </li>
+            {% endif %}
+            {% if can_manage_settings %}
             <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#tab-email" data-bs-toggle="tab">{{ 'Email Settings'|trans }}</a>
+                <a class="nav-link{% if active_tab == 'email' %} active{% endif %}" href="#tab-email" data-bs-toggle="tab">{{ 'Email Settings'|trans }}</a>
             </li>
+            {% endif %}
         </ul>
         <div class="card">
             <div class="tab-content">
-                <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+                {% if can_view_templates %}
+                <div class="tab-pane fade{% if active_tab == 'templates' %} show active{% endif %}" id="tab-index" role="tabpanel">
 
+                    {% if can_manage_templates %}
                     <div class="card-footer text-center">
                         <a class="btn btn-primary" href="{{ 'api/admin/email/batch_template_generate'|link }}" {{ fb_api_link({ reload: true}) }}>
                             <svg class="icon icon-tabler" width="24" height="24">
@@ -67,6 +83,7 @@
                             <span>{{ 'Disable All'|trans }}</span>
                         </a>
                     </div>
+                    {% endif %}
                     {{ include('partial_search.html.twig') }}
                     <div class="table-responsive">
                         <table class="table card-table table-vcenter table-striped text-nowrap sortable">
@@ -119,12 +136,12 @@
                                     </td>
                                     <td>
                                         <a class="btn btn-icon" href="{{ '/email/template'|alink }}/{{ template.id }}"
-                                           data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
+                                           data-bs-toggle="tooltip" data-bs-title="{{ (can_manage_templates ? 'Edit' : 'View')|trans }}">
                                             <svg class="icon">
-                                                <use xlink:href="#edit" />
+                                                <use xlink:href="{{ can_manage_templates ? '#edit' : '#eye' }}" />
                                             </svg>
                                         </a>
-                                        {% if template.is_custom or not template.has_default %}
+                                        {% if can_manage_templates and (template.is_custom or not template.has_default) %}
                                             <a class="btn btn-icon"
                                                 data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
                                                 {{ fb_api_link({href: 'api/admin/email/template_delete'|link({id: template.id}), modal: {type: 'danger', title: 'Are you sure?'|trans, content: 'This action will delete the email template'|trans, button: 'Delete'|trans}, reload: true}) }}>
@@ -144,8 +161,10 @@
                         </table>
                     </div>
                 </div>
+                {% endif %}
 
-                <div class="tab-pane fade" id="tab-new" role="tabpanel">
+                {% if can_manage_templates %}
+                <div class="tab-pane fade{% if active_tab == 'new' %} show active{% endif %}" id="tab-new" role="tabpanel">
                     <form method="post" action="{{ 'api/admin/email/template_create'|link }}" {{ fb_api_form({ reload: true}) }}>
                         <div class="card-body">
                             <h3 class="card-title">{{ 'Where Can I Use a New Email Template?'|trans }}</h3>
@@ -194,8 +213,10 @@
                         </div>
                     </form>
                 </div>
+                {% endif %}
 
-                <div class="tab-pane fade show" id="tab-queue" role="tabpanel">
+                {% if can_view_email_history %}
+                <div class="tab-pane fade{% if active_tab == 'queue' %} show active{% endif %}" id="tab-queue" role="tabpanel">
                     {{ include('partial_search.html.twig') }}
                     <div class="ms-1 mt-1 mb-1">
                         <p>{{ 'FOSSBilling queues emails to have them be sent via cron in the background. Here you may find the list of queued emails and how many times the system has tried to send them.'|trans }}</p>
@@ -265,8 +286,10 @@
                         </table>
                     </div>
                 </div>
+                {% endif %}
 
-                <div class="tab-pane fade" id="tab-email" role="tabpanel">
+                {% if can_manage_settings %}
+                <div class="tab-pane fade{% if active_tab == 'email' %} show active{% endif %}" id="tab-email" role="tabpanel">
                     <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" {{ fb_api_form({ message: 'Email Settings Updated'|trans}) }}>
                         <div class="card-body">
                             <h3 class="card-title">{{ 'Configure Email Options'|trans }}</h3>
@@ -395,17 +418,28 @@
                         </div>
 
                         <input type="hidden" name="ext" value="mod_email">
-                        <div class="card-footer d-flex justify-content-between">
+                        <div class="card-footer{% if can_send_emails %} d-flex justify-content-between{% else %} text-end{% endif %}">
+                            {% if can_send_emails %}
                             <button class="btn btn-secondary" id="emailTest">
                                 <svg class="icon">
                                     <use xlink:href="#wifi" />
                                 </svg>
                                 {{ 'Send a Test Email to Yourself'|trans }}
                             </button>
+                            {% endif %}
                             <input type="submit" value="{{ 'Update Email Settings'|trans }}" class="btn btn-primary">
                         </div>
                     </form>
                 </div>
+                {% endif %}
+
+                {% if not can_view_templates and not can_manage_templates and not can_view_email_history and not can_manage_settings %}
+                    <div class="card-body">
+                        <div class="alert alert-warning mb-0" role="alert">
+                            {{ 'You do not have permission to manage email settings.'|trans }}
+                        </div>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -415,17 +449,20 @@
 {{ include('partial_email_preview.html.twig') }}
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        document.getElementById('emailTest').addEventListener('click', function(event) {
-            API.admin.post('email/send_test', {},
-                () => {
-                    FOSSBilling.message("{{ 'Email was successfully sent'|trans }}");
-                },
-                (result) => {
-                    FOSSBilling.message(result.message, 'error');
-                });
+        const emailTestButton = document.getElementById('emailTest');
+        if (emailTestButton) {
+            emailTestButton.addEventListener('click', function(event) {
+                API.admin.post('email/send_test', {},
+                    () => {
+                        FOSSBilling.message("{{ 'Email was successfully sent'|trans }}");
+                    },
+                    (result) => {
+                        FOSSBilling.message(result.message, 'error');
+                    });
 
-            event.preventDefault();
-        });
+                event.preventDefault();
+            });
+        }
 
         const mailerInputs = document.querySelectorAll('#mailer input');
 

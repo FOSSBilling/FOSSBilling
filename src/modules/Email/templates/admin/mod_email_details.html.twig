@@ -1,6 +1,8 @@
 {% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
 
 {% set active_menu = 'activity' %}
+{% set can_send_emails = has_permission('email', 'send_emails') %}
+{% set can_delete_email_history = has_permission('email', 'delete_email_history') %}
 
 {% block meta_title %}{{ email.subject }}{% endblock %}
 
@@ -54,6 +56,7 @@
             </svg>
             <span class="d-block text-secondary">{{ 'Preview'|trans }}</span>
         </button>
+        {% if can_send_emails %}
         <a class="btn btn-primary"
             {{ fb_api_link({href: 'api/admin/email/email_resend'|link({id: email.id}), message: 'Email Resent'|trans}) }}>
             <svg class="icon icon-tabler" width="24" height="24">
@@ -61,6 +64,8 @@
             </svg>
             <span class="d-block text-secondary">{{ 'Resend'|trans }}</span>
         </a>
+        {% endif %}
+        {% if can_delete_email_history %}
         <a class="btn btn btn-primary"
             {{ fb_api_link({href: 'api/admin/email/email_delete'|link({id: email.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'email/history'|alink}) }}>
             <svg class="icon icon-tabler" width="24" height="24">
@@ -68,6 +73,7 @@
             </svg>
             <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
         </a>
+        {% endif %}
     </div>
 
     <div class="card-body">

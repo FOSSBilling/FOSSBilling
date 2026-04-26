@@ -28,6 +28,8 @@ class Admin extends \Api_Abstract
      */
     public function email_get_list($data)
     {
+        $this->checkEmailPermission('view_email_history');
+
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         [$sql, $params] = $this->getService()->getSearchQuery($data);
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
@@ -59,6 +61,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function email_get($data)
     {
+        $this->checkEmailPermission('view_email_history');
+
         $service = $this->getService();
         $model = $service->getEmailById($data['id']);
 
@@ -82,6 +86,8 @@ class Admin extends \Api_Abstract
     ])]
     public function send($data = [])
     {
+        $this->checkEmailPermission('send_emails');
+
         $client_id = $data['client_id'] ?? null;
         $emailService = $this->getService();
 
@@ -106,6 +112,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function email_resend($data)
     {
+        $this->checkEmailPermission('send_emails');
+
         $model = $this->di['db']->findOne('ActivityClientEmail', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_ActivityClientEmail) {
@@ -123,6 +131,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function email_delete($data): bool
     {
+        $this->checkEmailPermission('delete_email_history');
+
         $model = $this->di['db']->findOne('ActivityClientEmail', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_ActivityClientEmail) {
@@ -144,6 +154,8 @@ class Admin extends \Api_Abstract
      */
     public function template_get_list($data)
     {
+        $this->checkEmailPermission('view_templates');
+
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         $pager = $this->getService()->getTemplateList(array_merge($data, ['per_page' => $per_page]));
 
@@ -174,6 +186,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function template_get($data)
     {
+        $this->checkEmailPermission('view_templates');
+
         $model = $this->getService()->getTemplate((int) $data['id']);
 
         return $this->getService()->templateToApiArray($model, true);
@@ -187,6 +201,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function template_delete($data): bool
     {
+        $this->checkEmailPermission('manage_templates');
+
         $service = $this->getService();
         $template = $service->getTemplate((int) $data['id']);
         if (!$template->isCustom() && $service->hasDefaultTemplate($template->getActionCode())) {
@@ -217,6 +233,8 @@ class Admin extends \Api_Abstract
     ])]
     public function template_create($data)
     {
+        $this->checkEmailPermission('manage_templates');
+
         $enabled = $data['enabled'] ?? 0;
         $category = $data['category'] ?? null;
 
@@ -235,6 +253,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function template_update($data)
     {
+        $this->checkEmailPermission('manage_templates');
+
         $enabled = $data['enabled'] ?? null;
         $category = $data['category'] ?? null;
         $subject = $data['subject'] ?? null;
@@ -253,6 +273,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Email template code was not passed'])]
     public function template_reset($data)
     {
+        $this->checkEmailPermission('manage_templates');
+
         return $this->getService()->resetTemplateByCode($data['code']);
     }
 
@@ -265,7 +287,10 @@ class Admin extends \Api_Abstract
      */
     public function template_render($data)
     {
-        $t = $this->template_get($data);
+        $this->checkEmailPermission('manage_templates');
+
+        $model = $this->getService()->getTemplate((int) $data['id']);
+        $t = $this->getService()->templateToApiArray($model, true);
         $vars = $t['vars'];
         $vars['_tpl'] = $data['_tpl'] ?? $t['content'];
         $systemService = $this->di['mod_service']('System');
@@ -280,6 +305,8 @@ class Admin extends \Api_Abstract
      */
     public function batch_template_generate()
     {
+        $this->checkEmailPermission('manage_templates');
+
         return $this->getService()->templateBatchGenerate();
     }
 
@@ -290,6 +317,8 @@ class Admin extends \Api_Abstract
      */
     public function batch_template_disable($data)
     {
+        $this->checkEmailPermission('manage_templates');
+
         return $this->getService()->templateBatchDisable();
     }
 
@@ -300,6 +329,8 @@ class Admin extends \Api_Abstract
      */
     public function batch_template_enable($data)
     {
+        $this->checkEmailPermission('manage_templates');
+
         return $this->getService()->templateBatchEnable();
     }
 
@@ -308,6 +339,8 @@ class Admin extends \Api_Abstract
      */
     public function send_test(array $data): bool
     {
+        $this->checkEmailPermission('send_emails');
+
         $currentUser = $this->di['loggedin_admin'] ?? null;
 
         $email = [
@@ -324,6 +357,8 @@ class Admin extends \Api_Abstract
 
     public function batch_sendmail()
     {
+        $this->checkEmailPermission('send_emails');
+
         $di = $this->getDi();
         $extensionService = $di['mod_service']('extension');
         if ($extensionService->isExtensionActive('mod', 'demo')) {
@@ -352,6 +387,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Template code not passed'])]
     public function template_send($data)
     {
+        $this->checkEmailPermission('send_emails');
+
         if (!isset($data['to']) && !isset($data['to_staff']) && !isset($data['to_client'])) {
             throw new \FOSSBilling\InformationException('Receiver is not defined. Define to or to_client or to_staff parameter');
         }
@@ -365,6 +402,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete($data): bool
     {
+        $this->checkEmailPermission('delete_email_history');
+
         foreach ($data['ids'] as $id) {
             $this->email_delete(['id' => $id]);
         }
@@ -374,6 +413,8 @@ class Admin extends \Api_Abstract
 
     public function get_queue(array $data)
     {
+        $this->checkEmailPermission('view_email_history');
+
         $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         [$sql, $params] = $this->getService()->queueGetSearchQuery($data);
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
@@ -393,5 +434,14 @@ class Admin extends \Api_Abstract
         }
 
         return $pager;
+    }
+
+    private function checkEmailPermission(string $permission): void
+    {
+        $staffService = $this->di['mod_service']('Staff');
+
+        if (!$staffService->hasPermission($this->getIdentity(), 'email', $permission)) {
+            throw new \FOSSBilling\InformationException("You need the \"email.{$permission}\" permission to perform this action", [], 403);
+        }
     }
 }
