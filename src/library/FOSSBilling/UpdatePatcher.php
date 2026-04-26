@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use Doctrine\DBAL\ParameterType;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -294,6 +295,7 @@ class UpdatePatcher implements InjectionAwareInterface
             50 => 'patch50',
             51 => 'patch51',
             52 => 'patch52',
+            53 => 'patch53',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -821,6 +823,79 @@ class UpdatePatcher implements InjectionAwareInterface
                 'content' => $content,
                 'id' => $template['id'],
             ]);
+        }
+    }
+
+    private function patch53(): void
+    {
+        $dbal = $this->di['dbal'];
+        $tools = $this->di['tools'];
+        $now = date('Y-m-d H:i:s');
+
+        $dbal->beginTransaction();
+
+        try {
+            $batchSize = 1000;
+            $adminUpdateStmt = $dbal->prepare('UPDATE admin SET api_token = :api_token, updated_at = :updated_at WHERE id = :id');
+            $clientUpdateStmt = $dbal->prepare('UPDATE client SET api_token = :api_token, updated_at = :updated_at WHERE id = :id');
+
+            $lastAdminId = 0;
+            do {
+                $adminIds = $dbal->createQueryBuilder()
+                    ->select('id')
+                    ->from('admin')
+                    ->where('id > :lastId')
+                    ->orderBy('id', 'ASC')
+                    ->setMaxResults($batchSize)
+                    ->setParameter('lastId', $lastAdminId)
+                    ->executeQuery()
+                    ->fetchFirstColumn();
+
+                foreach ($adminIds as $adminId) {
+                    $adminUpdateStmt->bindValue('api_token', $tools->generatePassword(32));
+                    $adminUpdateStmt->bindValue('updated_at', $now);
+                    $adminUpdateStmt->bindValue('id', (int) $adminId, ParameterType::INTEGER);
+                    $adminUpdateStmt->executeStatement();
+                }
+
+                if (!empty($adminIds)) {
+                    $lastAdminId = (int) end($adminIds);
+                }
+            } while (!empty($adminIds));
+
+            $lastClientId = 0;
+            do {
+                $clientIds = $dbal->createQueryBuilder()
+                    ->select('id')
+                    ->from('client')
+                    ->where('id > :lastId')
+                    ->orderBy('id', 'ASC')
+                    ->setMaxResults($batchSize)
+                    ->setParameter('lastId', $lastClientId)
+                    ->executeQuery()
+                    ->fetchFirstColumn();
+
+                foreach ($clientIds as $clientId) {
+                    $clientUpdateStmt->bindValue('api_token', $tools->generatePassword(32));
+                    $clientUpdateStmt->bindValue('updated_at', $now);
+                    $clientUpdateStmt->bindValue('id', (int) $clientId, ParameterType::INTEGER);
+                    $clientUpdateStmt->executeStatement();
+                }
+
+                if (!empty($clientIds)) {
+                    $lastClientId = (int) end($clientIds);
+                }
+            } while (!empty($clientIds));
+
+            $dbal->createQueryBuilder()
+                ->delete('session')
+                ->executeStatement();
+
+            $dbal->commit();
+        } catch (\Throwable $e) {
+            $dbal->rollBack();
+
+            throw $e;
         }
     }
 

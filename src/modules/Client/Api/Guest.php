@@ -205,6 +205,7 @@ class Guest extends \Api_Abstract
         $this->di['events_manager']->fire(['event' => 'onBeforeClientProfilePasswordReset', 'params' => $data['hash']]);
 
         $this->di['validator']->passwordsMatch($data);
+        $this->di['validator']->isPasswordStrong($data['password']);
 
         $reset = $this->di['db']->findOne('ClientPasswordReset', 'hash = ?', [$data['hash']]);
         if (!$reset instanceof \Model_ClientPasswordReset) {

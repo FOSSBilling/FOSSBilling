@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\Request;
 final class TestableClient extends Client
 {
     public bool $hasValidSession = false;
-    public bool $hasTokenAuthCredentials = false;
+    public bool $shouldUseTokenLogin = false;
     public bool $shouldFailCsrf = false;
     public array $calls = [];
     public mixed $renderedData = null;
@@ -35,15 +35,15 @@ final class TestableClient extends Client
     }
 
     #[\Override]
-    protected function _tryTokenLogin(): void
+    protected function _tryTokenLogin(string $routeRole): void
     {
         $this->calls[] = 'token';
     }
 
     #[\Override]
-    protected function hasTokenAuthCredentials(): bool
+    protected function shouldUseTokenLogin(string $routeRole): bool
     {
-        return $this->hasTokenAuthCredentials;
+        return $this->shouldUseTokenLogin;
     }
 
     #[\Override]
@@ -97,7 +97,7 @@ final class ClientTest extends \BBTestCase
     {
         $controller = $this->createController();
         $controller->hasValidSession = false;
-        $controller->hasTokenAuthCredentials = true;
+        $controller->shouldUseTokenLogin = true;
 
         $this->invokeApiCall($controller, 'client', 'test', 'testMethod', []);
 
@@ -110,7 +110,7 @@ final class ClientTest extends \BBTestCase
     {
         $controller = $this->createController();
         $controller->hasValidSession = true;
-        $controller->hasTokenAuthCredentials = true;
+        $controller->shouldUseTokenLogin = true;
         $controller->shouldFailCsrf = true;
 
         $this->invokeApiCall($controller, 'admin', 'test', 'testMethod', []);
@@ -136,7 +136,7 @@ final class ClientTest extends \BBTestCase
     {
         $controller = $this->createController();
         $controller->hasValidSession = true;
-        $controller->hasTokenAuthCredentials = true;
+        $controller->shouldUseTokenLogin = true;
 
         $this->invokeApiCall($controller, 'guest', 'test', 'testMethod', []);
 

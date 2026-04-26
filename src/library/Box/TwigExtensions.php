@@ -136,6 +136,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         return [
             new TwigFunction('render_widgets', $this->twig_render_widgets(...), ['needs_environment' => true, 'is_safe' => ['html']]),
             new TwigFunction('svg_sprite', $this->twig_svg_sprite(...), ['needs_environment' => true, 'is_safe' => ['html']]),
+            new TwigFunction('has_permission', $this->has_permission(...)),
 
             // FOSSBilling API functions
             new TwigFunction('fb_api', $this->fb_api(...), ['is_safe' => ['html']]),
@@ -191,6 +192,19 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         }
 
         return $output;
+    }
+
+    public function has_permission(string $module, ?string $permission = null): bool
+    {
+        if (!$this->di['auth']->isAdminLoggedIn()) {
+            return false;
+        }
+
+        try {
+            return $this->di['mod_service']('Staff')->hasPermission($this->di['loggedin_admin'], $module, $permission);
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     public function twig_ipcountryname_filter($value)
@@ -289,7 +303,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
 
     public function twig_img_tag($path, $alt = null): string
     {
-        $alt = is_null($alt) ? pathinfo((string) $path, PATHINFO_BASENAME) : $alt;
+        $alt ??= pathinfo((string) $path, PATHINFO_BASENAME);
 
         return sprintf('<img src="%s" alt="%s" title="%s"/>', htmlspecialchars((string) $path), htmlspecialchars($alt), htmlspecialchars($alt));
     }

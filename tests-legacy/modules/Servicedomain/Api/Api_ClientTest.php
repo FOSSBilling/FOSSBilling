@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Box\Tests\Mod\Servicedomain\Api;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -194,9 +195,13 @@ final class Api_ClientTest extends \BBTestCase
         $this->clientApi->setService($serviceMock);
 
         $orderService = $this->getMockBuilder(\Box\Mod\Order\Service::class)->onlyMethods(['getOrderService', 'findForClientById'])->getMock();
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+        $order->status = \Model_ClientOrder::STATUS_ACTIVE;
+
         $orderService->expects($this->atLeastOnce())
             ->method('findForClientById')
-            ->willReturn(new \Model_ClientOrder());
+            ->willReturn($order);
         $orderService->expects($this->atLeastOnce())
             ->method('getOrderService')
             ->willReturn(new \Model_ServiceDomain());
@@ -307,5 +312,51 @@ final class Api_ClientTest extends \BBTestCase
         $result = $this->clientApi->lock($data);
 
         $this->assertTrue($result);
+    }
+
+    public static function inactiveOrderStatusProvider(): array
+    {
+        return [
+            [\Model_ClientOrder::STATUS_SUSPENDED],
+            [\Model_ClientOrder::STATUS_CANCELED],
+            [\Model_ClientOrder::STATUS_PENDING_SETUP],
+            [\Model_ClientOrder::STATUS_FAILED_SETUP],
+            [\Model_ClientOrder::STATUS_FAILED_RENEW],
+        ];
+    }
+
+    #[DataProvider('inactiveOrderStatusProvider')]
+    public function testGetServiceInactiveOrderStatusException(string $status): void
+    {
+        $serviceMock = $this->createMock(\Box\Mod\Servicedomain\Service::class);
+        $serviceMock->expects($this->never())->method('lock')
+            ->willReturn(true);
+
+        $this->clientApi->setService($serviceMock);
+
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+        $order->status = $status;
+
+        $orderService = $this->getMockBuilder(\Box\Mod\Order\Service::class)->onlyMethods(['getOrderService', 'findForClientById'])->getMock();
+        $orderService->expects($this->atLeastOnce())
+            ->method('findForClientById')
+            ->willReturn($order);
+        $orderService->expects($this->atLeastOnce())
+            ->method('getOrderService')
+            ->willReturn(new \Model_ServiceDomain());
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderService);
+        $this->clientApi->setDi($di);
+
+        $this->clientApi->setIdentity(new \Model_Client());
+
+        $data = [
+            'order_id' => 1,
+        ];
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->clientApi->lock($data);
     }
 }

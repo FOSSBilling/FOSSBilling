@@ -117,7 +117,7 @@ class Client extends \Api_Abstract
 
         $result = $this->getService()->ticketReply($ticket, $client, $data['content']);
 
-        return ($result > 0) ? true : false;
+        return $result > 0;
     }
 
     /**

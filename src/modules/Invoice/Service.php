@@ -1225,6 +1225,8 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Invoice not found', null, 812);
         }
 
+        $this->checkInvoiceAuth($invoice->client_id);
+
         $gtw = $this->di['db']->load('PayGateway', $data['gateway_id']);
         if (!$gtw instanceof \Model_PayGateway) {
             throw new \FOSSBilling\Exception('Payment method not found', null, 813);

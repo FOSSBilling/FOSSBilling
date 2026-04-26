@@ -19,6 +19,26 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($di, $getDi);
     }
 
+    public function testGetModulePermissions(): void
+    {
+        $service = new \Box\Mod\Client\Service();
+
+        $permissions = $service->getModulePermissions();
+
+        $this->assertArrayHasKey('create', $permissions);
+        $this->assertArrayHasKey('edit_profile', $permissions);
+        $this->assertArrayHasKey('impersonate_login', $permissions);
+        $this->assertArrayHasKey('manage_api_keys', $permissions);
+        $this->assertArrayHasKey('change_password', $permissions);
+        $this->assertArrayHasKey('manage_balance', $permissions);
+        $this->assertArrayHasKey('view_login_history', $permissions);
+        $this->assertArrayHasKey('manage_groups', $permissions);
+        $this->assertArrayHasKey('delete', $permissions);
+        $this->assertArrayHasKey('bulk_delete', $permissions);
+        $this->assertArrayHasKey('export', $permissions);
+        $this->assertArrayHasKey('manage_settings', $permissions);
+    }
+
     public function testApproveClientEmailByHash(): void
     {
         $database = $this->createMock('\Box_Database');
@@ -767,6 +787,7 @@ final class ServiceTest extends \BBTestCase
     {
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
+        $model->api_token = 'client-token';
         $model->custom_1 = 'custom field';
 
         $clientGroup = new \Model_ClientGroup();
@@ -792,6 +813,11 @@ final class ServiceTest extends \BBTestCase
 
         $result = $serviceMock->toApiArray($model, true, new \Model_Admin());
         $this->assertIsArray($result);
+        $this->assertArrayNotHasKey('api_token', $result);
+
+        $result = $serviceMock->toApiArray($model, true, new \Model_Admin(), true);
+        $this->assertArrayHasKey('api_token', $result);
+        $this->assertSame('client-token', $result['api_token']);
     }
 
     public static function isClientTaxableProvider(): array

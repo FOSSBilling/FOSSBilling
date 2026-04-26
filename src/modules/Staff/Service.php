@@ -16,6 +16,8 @@ use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
+    private array $permissionCache = [];
+
     protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
@@ -26,6 +28,17 @@ class Service implements InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    private function getPermissionsFromCache(int|string $memberId): ?array
+    {
+        $cacheKey = (string) $memberId;
+
+        if (!array_key_exists($cacheKey, $this->permissionCache)) {
+            return null;
+        }
+
+        return is_array($this->permissionCache[$cacheKey]) ? $this->permissionCache[$cacheKey] : [];
     }
 
     public function getModulePermissions(): array
@@ -144,11 +157,19 @@ class Service implements InjectionAwareInterface
             ->setParameter('id', $member_id)
             ->executeStatement();
 
+        $this->permissionCache[(string) $member_id] = $array;
+
         return true;
     }
 
     public function getPermissions($member_id)
     {
+        $cachedPermissions = $this->getPermissionsFromCache($member_id);
+
+        if (!is_null($cachedPermissions)) {
+            return $cachedPermissions;
+        }
+
         $query = $this->di['dbal']->createQueryBuilder();
         $query
             ->select('permissions')
@@ -158,9 +179,11 @@ class Service implements InjectionAwareInterface
         $result = $query->executeQuery()->fetchOne() ?? '';
 
         $permissions = json_decode($result, true);
-        if (!$permissions) {
-            return [];
+        if (!is_array($permissions)) {
+            $permissions = [];
         }
+
+        $this->permissionCache[(string) $member_id] = $permissions;
 
         return $permissions;
     }
@@ -189,11 +212,7 @@ class Service implements InjectionAwareInterface
         $modulePermissions = $extensionService->getSpecificModulePermissions($module);
         $permissions = $this->getPermissions($member->id);
 
-        if ($modulePermissions['hide_permissions'] ?? false) {
-            $canAlwaysAccess = true;
-        } else {
-            $canAlwaysAccess = $modulePermissions['can_always_access'] ?? false;
-        }
+        $canAlwaysAccess = $modulePermissions['can_always_access'] ?? false;
 
         if (!$canAlwaysAccess) {
             // They have no permissions or don't have any access to that module
@@ -203,16 +222,17 @@ class Service implements InjectionAwareInterface
         }
 
         if (!is_null($key)) {
-            // If this passes, the permission key isn't assigned to them and they therefore don't have permission
-            if (!is_array($permissions[$module]) || !array_key_exists($key, $permissions[$module])) {
+            $modulePermissions = $permissions[$module] ?? [];
+
+            if (!is_array($modulePermissions) || !array_key_exists($key, $modulePermissions)) {
                 return false;
             }
 
             if (!is_null($constraint)) {
-                return $permissions[$module][$key] === $constraint;
+                return $modulePermissions[$key] === $constraint;
             }
 
-            return (bool) $permissions[$module][$key];
+            return (bool) $modulePermissions[$key];
         }
 
         return true;
@@ -228,7 +248,9 @@ class Service implements InjectionAwareInterface
     public function checkPermissionsAndThrowException(string $module, ?string $key = null, mixed $constraint = null): void
     {
         if (!$this->hasPermission(null, $module, $key, $constraint)) {
-            throw new \FOSSBilling\InformationException('You do not have permission to perform this action', [], 403);
+            $requiredPermission = is_null($key) ? $module : "{$module}.{$key}";
+
+            throw new \FOSSBilling\InformationException("You need the \"{$requiredPermission}\" permission to perform this action", [], 403);
         }
     }
 
@@ -253,7 +275,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterClientOpenTicket(\Box_Event $event)
+    public static function onAfterClientOpenTicket(\Box_Event $event): void
     {
         $di = $event->getDi();
         $params = $event->getParameters();
@@ -272,7 +294,7 @@ class Service implements InjectionAwareInterface
                 $email['ticket'] = $ticket;
                 $emailService->sendTemplate($email);
 
-                return true;
+                return;
             }
 
             $email = [];
@@ -395,14 +417,14 @@ class Service implements InjectionAwareInterface
         $di = $event->getDi();
 
         try {
-            $supportService = $di['mod_service']('Support');
+            $supportService = $di['mod_service']('support');
             $publicTicket = $di['db']->load('SupportPTicket', $params['id']);
             $ticket = $supportService->publicToApiArray($publicTicket);
             $email = [];
             $email['to_staff'] = true;
             $email['code'] = 'mod_staff_pticket_close';
             $email['ticket'] = $ticket;
-            $emailService = $di['mod_service']('Email');
+            $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
@@ -576,7 +598,7 @@ class Service implements InjectionAwareInterface
         $this->di['db']->store($model);
 
         $profileService = $this->di['mod_service']('profile');
-        $profileService->invalidateSessions('admin', $model->id);
+        $profileService->invalidateSessions('admin', (int) $model->id);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffPasswordChange', 'params' => ['id' => $model->id]]);
 

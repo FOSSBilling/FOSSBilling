@@ -60,19 +60,12 @@ final class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testChangePlanMissingPlanId(): void
+    public function testChangePlanRequiresPlanId(): void
     {
-        $data = [];
-
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-
-        $di = $this->getDi();
-        $di['validator'] = $validatorMock;
-        $this->api->setDi($di);
-
-        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\InformationException::class);
         $this->expectExceptionMessage('plan_id is missing');
-        $this->api->change_plan($data);
+
+        $this->validateRequiredParams($this->api, 'change_plan', []);
     }
 
     public function testChangeUsername(): void

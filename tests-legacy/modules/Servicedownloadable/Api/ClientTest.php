@@ -33,6 +33,14 @@ final class ClientTest extends \BBTestCase
         $this->api->send_file($data);
     }
 
+    public function testSendFileRequiredParamsValidation(): void
+    {
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('Order ID is required');
+
+        $this->validateRequiredParams($this->api, 'send_file', []);
+    }
+
     public function testSendFileOrderNotFound(): void
     {
         $data = [

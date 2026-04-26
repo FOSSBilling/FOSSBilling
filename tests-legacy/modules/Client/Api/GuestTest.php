@@ -287,8 +287,8 @@ final class GuestTest extends \BBTestCase
     {
         $data = [
             'hash' => 'hashedString',
-            'password' => 'newPassword',
-            'password_confirm' => 'newPassword',
+            'password' => 'NewPassword1',
+            'password_confirm' => 'NewPassword1',
         ];
 
         // Mocks for dependent services and classes
@@ -343,8 +343,8 @@ final class GuestTest extends \BBTestCase
     {
         $data = [
             'hash' => 'hashedString',
-            'password' => 'newPassword',
-            'password_confirm' => 'newPassword',
+            'password' => 'NewPassword1',
+            'password_confirm' => 'NewPassword1',
         ];
 
         // Mock for the database service
@@ -368,6 +368,35 @@ final class GuestTest extends \BBTestCase
         // Expect a FOSSBilling\Exception to be thrown with a specific message
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('The link has expired or you have already reset your password.');
+        $client->update_password($data);
+    }
+
+    public function testUpdatePasswordRequiresStrongPassword(): void
+    {
+        $data = [
+            'hash' => 'hashedString',
+            'password' => 'weak',
+            'password_confirm' => 'weak',
+        ];
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->once())
+            ->method('fire');
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->never())
+            ->method('findOne');
+
+        $di = $this->getDi();
+        $di['events_manager'] = $eventMock;
+        $di['db'] = $dbMock;
+        $di['validator'] = new \FOSSBilling\Validate();
+
+        $client = new Guest();
+        $client->setDi($di);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('Minimum password length is 8 characters.');
         $client->update_password($data);
     }
 

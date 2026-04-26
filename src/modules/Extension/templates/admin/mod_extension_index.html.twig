@@ -1,6 +1,7 @@
 {% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
 
 {% import 'macro_functions.html.twig' as mf %}
+{% set can_manage_hooks = has_permission('hook', 'manage_hooks') %}
 
 {% block meta_title %}{{ 'Extensions'|trans }}{% endblock %}
 
@@ -18,9 +19,11 @@
             <li class="nav-item" role="presentation">
                 <a class="nav-link" href="#tab-about" data-bs-toggle="tab">{{ 'Information'|trans }}</a>
             </li>
+            {% if can_manage_hooks %}
             <li class="nav-item" role="presentation">
                 <a class="nav-link" href="#tab-hooks" data-bs-toggle="tab">{{ 'Hooks'|trans }}</a>
             </li>
+            {% endif %}
         </ul>
 
         <div class="card">
@@ -166,6 +169,7 @@
                     </div>
                 </div>
 
+                {% if can_manage_hooks %}
                 <div class="tab-pane fade" id="tab-hooks" role="tabpanel">
                     <div class="table-responsive">
                         <table class="table card-table table-vcenter table-striped text-nowrap">
@@ -190,6 +194,7 @@
                         </table>
                     </div>
                 </div>
+                {% endif %}
             </div>
         </div>
     </div>

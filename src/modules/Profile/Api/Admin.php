@@ -132,7 +132,7 @@ class Admin extends \Api_Abstract
     public function destroy_sessions(array $data): bool
     {
         $data['type'] ??= null;
-        $data['id'] ??= null;
+        $data['id'] = ($data['id'] === null) ? null : (int) $data['id'];
 
         return $this->getService()->invalidateSessions($data['type'], $data['id']);
     }
@@ -145,6 +145,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Client ID was not passed'])]
     public function api_key_reset($data): string
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_api_keys');
+
         $client = $this->di['db']->getExistingModelById('Client', $data['id']);
 
         return $this->getService()->resetApiKey($client);
