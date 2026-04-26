@@ -19,6 +19,10 @@ final class AdminTest extends TestCase
             curl_setopt($ch, CURLOPT_FAILONERROR, true);
             curl_setopt($ch, CURLOPT_URL, $service);
             $ip = curl_exec($ch);
+            if ($ip === false) {
+                curl_close($ch);
+                continue;
+            }
             $isValidIp = filter_var($ip, FILTER_VALIDATE_IP) !== false;
             curl_close($ch);
             if ($isValidIp) {
@@ -57,7 +61,9 @@ final class AdminTest extends TestCase
     public function testErrorReportingToggle(): void
     {
         // Get the starting value
-        $before = Request::makeRequest('admin/system/error_reporting_enabled')->getResult();
+        $beforeResult = Request::makeRequest('admin/system/error_reporting_enabled');
+        $this->assertTrue($beforeResult->wasSuccessful(), $beforeResult->generatePHPUnitMessage());
+        $before = $beforeResult->getResult();
         $this->assertIsBool($before);
 
         // Toggle the option
@@ -66,9 +72,11 @@ final class AdminTest extends TestCase
         $this->assertTrue($result->getResult());
 
         // Check that it was correctly switched
-        $after = Request::makeRequest('admin/system/error_reporting_enabled')->getResult();
+        $afterResponse = Request::makeRequest('admin/system/error_reporting_enabled');
+        $this->assertTrue($afterResponse->wasSuccessful(), $afterResponse->generatePHPUnitMessage());
+        $after = $afterResponse->getResult();
         $this->assertIsBool($after);
-        $this->assertNotEquals($before, $after);
+        $this->assertNotSame($before, $after);
 
         // Ensure we don't leave error reporting on (it shouldn't report anyways, but this is best practice)
         if ($after) {
@@ -108,7 +116,8 @@ final class AdminTest extends TestCase
         }
 
         // Finally, set it back to the default interface
-        Request::makeRequest('admin/system/set_interface_ip', ['interface' => '0']);
+        $cleanupResult = Request::makeRequest('admin/system/set_interface_ip', ['interface' => '0']);
+        $this->assertTrue($cleanupResult->wasSuccessful(), $cleanupResult->generatePHPUnitMessage());
     }
 
     public function testInvalidInterfaceIsRejected(): void
@@ -141,6 +150,7 @@ final class AdminTest extends TestCase
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
 
         // Reset to default
-        Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => '', 'interface' => '0']);
+        $resetResult = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => '', 'interface' => '0']);
+        $this->assertTrue($resetResult->wasSuccessful(), $resetResult->generatePHPUnitMessage());
     }
 }
