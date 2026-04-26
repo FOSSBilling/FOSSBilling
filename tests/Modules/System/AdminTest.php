@@ -61,7 +61,9 @@ final class AdminTest extends TestCase
     public function testErrorReportingToggle(): void
     {
         // Get the starting value
-        $before = Request::makeRequest('admin/system/error_reporting_enabled')->getResult();
+        $beforeResult = Request::makeRequest('admin/system/error_reporting_enabled');
+        $this->assertTrue($beforeResult->wasSuccessful(), $beforeResult->generatePHPUnitMessage());
+        $before = $beforeResult->getResult();
         $this->assertIsBool($before);
 
         // Toggle the option
@@ -70,7 +72,9 @@ final class AdminTest extends TestCase
         $this->assertTrue($result->getResult());
 
         // Check that it was correctly switched
-        $after = Request::makeRequest('admin/system/error_reporting_enabled')->getResult();
+        $afterResponse = Request::makeRequest('admin/system/error_reporting_enabled');
+        $this->assertTrue($afterResponse->wasSuccessful(), $afterResponse->generatePHPUnitMessage());
+        $after = $afterResponse->getResult();
         $this->assertIsBool($after);
         $this->assertNotSame($before, $after);
 
