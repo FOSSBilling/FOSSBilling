@@ -131,8 +131,22 @@ final class AdminTest extends TestCase
 
     public function testMaliciousInterfaceIsRejected(): void
     {
-        $result = Request::makeRequest('admin/system/set_interface_ip', ['interface' => "x\"; echo 'pwned'; //"]);
-        $this->assertFalse($result->wasSuccessful(), 'A malicious interface value was accepted when it should have been rejected');
+        $payloads = [
+            "x\"; echo 'pwned'; //",
+            'eth0|id',
+            'eth0`id`',
+            'eth0$(id)',
+            'eth0 && whoami',
+            'eth0 > /tmp/pwned',
+        ];
+
+        foreach ($payloads as $payload) {
+            $result = Request::makeRequest('admin/system/set_interface_ip', ['interface' => $payload]);
+            $this->assertFalse(
+                $result->wasSuccessful(),
+                "A malicious interface value was accepted when it should have been rejected: {$payload}"
+            );
+        }
     }
 
     public function testMaliciousCustomInterfaceIsRejected(): void
