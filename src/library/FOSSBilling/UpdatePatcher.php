@@ -298,6 +298,7 @@ class UpdatePatcher implements InjectionAwareInterface
             53 => 'patch53',
             54 => 'patch54',
             55 => 'patch55',
+            56 => 'patch56',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1025,6 +1026,36 @@ class UpdatePatcher implements InjectionAwareInterface
                     'id' => $template['id'],
                 ]
             );
+        }
+    }
+
+    private function patch56(): void
+    {
+        $gateways = $this->di['dbal']->executeQuery(
+            "SELECT id, config FROM pay_gateway WHERE gateway = 'Custom'"
+        )->fetchAllAssociative();
+
+        foreach ($gateways as $gateway) {
+            $config = json_decode($gateway['config'] ?? '', true);
+            if (!is_array($config)) {
+                continue;
+            }
+
+            $fields = ['single', 'recurrent'];
+            $needsSave = false;
+            foreach ($fields as $field) {
+                if (isset($config[$field]) && is_string($config[$field]) && preg_match('/\b(function|include|import|extends|range|max|min|dump|system|guest\.|admin\.|client\.)\b/i', $config[$field])) {
+                    $needsSave = true;
+
+                    break;
+                }
+            }
+
+            if ($needsSave) {
+                $this->di['logger']->setChannel('update')->warning('Custom payment adapter template may contain unsupported Twig syntax. Please review and update gateway ID {id}.', [
+                    'id' => $gateway['id'],
+                ]);
+            }
         }
     }
 

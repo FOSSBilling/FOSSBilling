@@ -29,7 +29,7 @@ class Payment_Adapter_Custom
             'can_load_in_iframe' => true,
             'supports_one_time_payments' => true,
             'supports_subscriptions' => true,
-            'description' => 'Custom payment gateway allows you to give instructions how can your client pay invoice. All system, client, order and invoice details can be printed. HTML and JavaScript code is supported.',
+            'description' => 'Custom payment gateway allows you to give instructions how can your client pay invoice. All system, client, order and invoice details can be printed. HTML code is supported.',
             'logo' => [
                 'logo' => 'custom.png',
                 'height' => '50px',

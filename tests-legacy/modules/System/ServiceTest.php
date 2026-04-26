@@ -251,6 +251,127 @@ final class ServiceTest extends \BBTestCase
         $this->service->renderAdapterTplString('{{ range(1, 5) }}', []);
     }
 
+    public function testRenderAdapterTplStringBlocksMethodCalls(): void
+    {
+        $object = new class {
+            public function dangerousMethod(): string
+            {
+                return 'pwned';
+            }
+        };
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->renderAdapterTemplate('{{ obj.dangerousMethod() }}', ['obj' => $object]);
+    }
+
+    public function testRenderAdapterTplStringBlocksPropertyAccess(): void
+    {
+        $object = new class {
+            public string $secret = 'leaked';
+        };
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->renderAdapterTemplate('{{ obj.secret }}', ['obj' => $object]);
+    }
+
+    public function testRenderAdapterTplStringBlocksIncludeTag(): void
+    {
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->renderAdapterTemplate("{% include 'some_file.html' %}");
+    }
+
+    public function testRenderAdapterTplStringBlocksImportTag(): void
+    {
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->renderAdapterTemplate("{% import 'macros.html' as macros %}");
+    }
+
+    public function testRenderAdapterTplStringBlocksExtendsTag(): void
+    {
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->renderAdapterTemplate("{% extends 'base.html' %}");
+    }
+
+    public function testRenderAdapterTplStringStripsScriptTags(): void
+    {
+        $result = $this->renderAdapterTemplate('<p>Hello</p><script>alert(1)</script><b>World</b>');
+        $this->assertSame('<p>Hello</p><b>World</b>', $result);
+    }
+
+    public function testRenderAdapterTplStringStripsSelfClosingScriptTags(): void
+    {
+        $result = $this->renderAdapterTemplate('<p>Hello</p><script src="evil.js"/><b>World</b>');
+        $this->assertSame('<p>Hello</p><b>World</b>', $result);
+    }
+
+    public function testRenderAdapterTplStringStripsEventHandlers(): void
+    {
+        $result = $this->renderAdapterTemplate('<div onclick="steal()" onerror="x()">text</div>');
+        $this->assertSame('<div>text</div>', $result);
+    }
+
+    public function testRenderAdapterTplStringStripsSingleQuotedEventHandlers(): void
+    {
+        $result = $this->renderAdapterTemplate("<div onmouseover='alert(1)'>text</div>");
+        $this->assertSame('<div>text</div>', $result);
+    }
+
+    public function testRenderAdapterTplStringAllowsHtmlFormatting(): void
+    {
+        $html = '<h1>Pay to:</h1><b>Bank XYZ</b><br><i>Account: 12345</i><table><tr><td>Row</td></tr></table>';
+        $result = $this->renderAdapterTemplate($html);
+        $this->assertSame($html, $result);
+    }
+
+    public function testRenderAdapterTplStringAllowedFiltersWork(): void
+    {
+        $result = $this->renderAdapterTemplate('{{ 3.14159|number_format(2) }}');
+        $this->assertSame('3.14', $result);
+    }
+
+    public function testRenderAdapterTplStringDateFilterWorks(): void
+    {
+        $result = $this->renderAdapterTemplate('{{ "2026-03-02"|date("Y-m-d") }}');
+        $this->assertStringContainsString('2026-03-02', $result);
+    }
+
+    public function testRenderAdapterTplStringTransFilterWorks(): void
+    {
+        $result = $this->renderAdapterTemplate("{{ 'Hello'|trans }}");
+        $this->assertSame('Hello', $result);
+    }
+
+    public function testSanitizeAdapterOutputStripsScriptTags(): void
+    {
+        $result = $this->service->sanitizeAdapterOutput('<p>Safe</p><script>alert(1)</script>');
+        $this->assertSame('<p>Safe</p>', $result);
+    }
+
+    public function testSanitizeAdapterOutputStripsScriptWithAttributes(): void
+    {
+        $result = $this->service->sanitizeAdapterOutput('<script type="text/javascript" src="evil.js">alert(1)</script>');
+        $this->assertSame('', $result);
+    }
+
+    public function testSanitizeAdapterOutputStripsEventHandlers(): void
+    {
+        $result = $this->service->sanitizeAdapterOutput('<img src="x.png" onerror="alert(1)">');
+        $this->assertSame('<img src="x.png">', $result);
+    }
+
+    public function testSanitizeAdapterOutputPreservesSafeHtml(): void
+    {
+        $html = '<h1>Title</h1><p>Text <b>bold</b></p><a href="https://example.com">link</a>';
+        $result = $this->service->sanitizeAdapterOutput($html);
+        $this->assertSame($html, $result);
+    }
+
+    public function testSanitizeAdapterOutputHandlesEmptyString(): void
+    {
+        $result = $this->service->sanitizeAdapterOutput('');
+        $this->assertSame('', $result);
+    }
+
     public function testRenderEmailTemplateSupportsPeriodTitleInSandbox(): void
     {
         $apiGuest = new class {
@@ -526,6 +647,46 @@ final class ServiceTest extends \BBTestCase
         $twig = $twigFactory->createEmailEnvironment();
 
         return $twig->createTemplate($template)->render($vars);
+    }
+
+    private function renderAdapterTemplate(string $template, array $vars = []): string
+    {
+        $apiGuest = new class {
+            public function system_company(): array
+            {
+                return ['name' => 'Test'];
+            }
+        };
+
+        $di = $this->getDi();
+        $di['api_guest'] = $apiGuest;
+
+        if (!isset($di['logger'])) {
+            $di['logger'] = new class {
+                public function setChannel(string $channel): self
+                {
+                    return $this;
+                }
+
+                public function warning(string $message, array $context = []): void
+                {
+                }
+            };
+        }
+
+        $reflection = new \ReflectionClass(\FOSSBilling\Twig\TwigFactory::class);
+        $twigFactory = $reflection->newInstanceWithoutConstructor();
+
+        $diProperty = $reflection->getProperty('di');
+        $diProperty->setValue($twigFactory, $di);
+
+        $baseConfigProperty = $reflection->getProperty('baseConfig');
+        $baseConfigProperty->setValue($twigFactory, ['cache' => false]);
+
+        $di['twig_factory'] = $twigFactory;
+        $this->service->setDi($di);
+
+        return $this->service->renderAdapterTplString($template, $vars);
     }
 
     private function createBaseTwigEnvironment(\Pimple\Container $di): \Twig\Environment

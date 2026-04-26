@@ -444,8 +444,7 @@ class Service
 
         try {
             $template = $twig->createTemplate($tpl);
-
-            return $template->render($vars);
+            $rendered = $template->render($vars);
         } catch (\Twig\Sandbox\SecurityError $e) {
             $this->di['logger']->setChannel('security')->warning('Payment adapter template sandbox violation', [
                 'error' => $e->getMessage(),
@@ -457,6 +456,17 @@ class Service
         } catch (\Twig\Error\Error $e) {
             throw new \FOSSBilling\InformationException('Payment adapter template rendering error: ' . $e->getMessage());
         }
+
+        return $this->sanitizeAdapterOutput($rendered);
+    }
+
+    public function sanitizeAdapterOutput(string $html): string
+    {
+        $html = preg_replace('#<script\b[^>]*>.*?</script>#is', '', $html);
+        $html = preg_replace('#<script\b[^>]*/?>#is', '', $html);
+        $html = preg_replace('#\s+\bon\w+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]*)#i', '', $html);
+
+        return $html;
     }
 
     /**
