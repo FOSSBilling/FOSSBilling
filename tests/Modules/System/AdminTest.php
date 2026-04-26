@@ -70,7 +70,9 @@ final class AdminTest extends TestCase
         $this->assertTrue($result->getResult());
 
         // Check that it was correctly switched
-        $after = Request::makeRequest('admin/system/error_reporting_enabled')->getResult();
+        $afterResponse = Request::makeRequest('admin/system/error_reporting_enabled');
+        $this->assertTrue($afterResponse->wasSuccessful(), $afterResponse->generatePHPUnitMessage());
+        $after = $afterResponse->getResult();
         $this->assertIsBool($after);
         $this->assertNotSame($before, $after);
 
