@@ -42,8 +42,8 @@ class Service
     public function searchPages(array $data = [])
     {
         $filter = [];
-        $search ??= $data['search'] ?? null;
-        
+        $search = $data['search'] ?? null;
+
         $sql = 'SELECT * FROM custom_pages WHERE 1';
         if ($search) {
             $sql .= ' AND (title LIKE :q OR content LIKE :q)';
