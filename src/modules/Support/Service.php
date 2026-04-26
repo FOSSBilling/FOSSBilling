@@ -1026,7 +1026,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         if (isset($data['rel_id'])) {
             if (!is_numeric($data['rel_id'])) {
-                throw new \FOSSBilling\Exception('rel_id must be a valid integer.');
+                throw new \FOSSBilling\Exception('rel_id must be a valid integer, received: :value', [':value' => $data['rel_id']]);
             }
             $rel_id = (int) $data['rel_id'];
         } else {
