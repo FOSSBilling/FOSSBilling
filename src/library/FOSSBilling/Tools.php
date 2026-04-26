@@ -293,8 +293,15 @@ class Tools
      */
     public static function isValidHttpInterface(string $interface): bool
     {
-        return (bool) filter_var($interface, FILTER_VALIDATE_IP)
-            || preg_match('/^[a-zA-Z0-9._-]*[a-zA-Z._-][a-zA-Z0-9._-]*$/', $interface) === 1;
+        if (filter_var($interface, FILTER_VALIDATE_IP) !== false) {
+            return true;
+        }
+
+        if (ctype_digit($interface)) {
+            return false;
+        }
+
+        return preg_match('/^[a-zA-Z0-9._-]*[a-zA-Z._-][a-zA-Z0-9._-]*$/', $interface) === 1;
     }
 
     /**
