@@ -32,7 +32,7 @@ class Admin extends \Api_Abstract
         // Repository method returns a QueryBuilder with filters applied
         $qb = $repo->getSearchQueryBuilder($data);
 
-        return $this->di['pager']->paginateDoctrineQuery($qb);
+        return $this->di['pager']->paginateDoctrineQuery($qb, data: $data);
     }
 
     /**

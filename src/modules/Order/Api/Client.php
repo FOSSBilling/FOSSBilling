@@ -27,12 +27,14 @@ class Client extends \Api_Abstract
     {
         $identity = $this->getIdentity();
         $data['client_id'] = $identity->id;
+        
         if (isset($data['expiring'])) {
             [$query, $bindings] = $this->getService()->getSoonExpiringActiveOrdersQuery($data);
         } else {
             [$query, $bindings] = $this->getService()->getSearchQuery($data);
         }
-        $pager = $this->di['pager']->getPaginatedResultSet($query, $bindings, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
+
+        $pager = $this->di['pager']->getPaginatedResultSet($query, $bindings, data: $data);
 
         foreach ($pager['list'] as $key => $item) {
             $order = $this->di['db']->getExistingModelById('ClientOrder', $item['id'], 'Client order not found');

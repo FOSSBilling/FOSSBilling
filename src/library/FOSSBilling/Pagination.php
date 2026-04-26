@@ -43,13 +43,16 @@ class Pagination implements InjectionAwareInterface
     }
 
     /**
-     * Resolve and validate page/perPage values from arguments or request.
+     * Resolve and validate page/perPage values from arguments, API data, or request.
      *
      * @return array{0: int, 1: int} [page, perPage]
      */
-    private function resolvePagination(?int $perPage, ?int $page, string $pageParam, string $perPageParam): array
+    private function resolvePagination(?int $perPage, ?int $page, string $pageParam, string $perPageParam, array $data = []): array
     {
         $request = $this->di['request'];
+
+        $page ??= isset($data[$pageParam]) ? (int) $data[$pageParam] : null;
+        $perPage ??= isset($data[$perPageParam]) ? (int) $data[$perPageParam] : null;
 
         $page ??= filter_var($request->query->get($pageParam), FILTER_VALIDATE_INT, ['options' => ['default' => 1]]);
         $perPage ??= filter_var($request->query->get($perPageParam), FILTER_VALIDATE_INT, ['options' => ['default' => $this->getDefaultPerPage()]]);
@@ -90,9 +93,10 @@ class Pagination implements InjectionAwareInterface
      *
      * @param QueryBuilder $qb           the Doctrine QueryBuilder instance to paginate
      * @param int|null     $perPage      Optional number of items per page. (defaults to 100)
-     * @param int|null     $page         Optional current page number. (grabbed from query parameters by default)
+     * @param int|null     $page         Optional current page number. (grabbed from data/request by default)
      * @param string       $pageParam    query parameter key for the page number (default: "page")
      * @param string       $perPageParam query parameter key for the per-page count (default: "per_page")
+     * @param array        $data         Optional API data array to resolve pagination values from
      *
      * @return array{
      *     pages: int,      // Total number of pages
@@ -104,9 +108,9 @@ class Pagination implements InjectionAwareInterface
      *
      * @throws InformationException if the page or per-page value is invalid
      */
-    public function paginateDoctrineQuery(QueryBuilder $qb, ?int $perPage = null, ?int $page = null, string $pageParam = 'page', string $perPageParam = 'per_page'): array
+    public function paginateDoctrineQuery(QueryBuilder $qb, ?int $perPage = null, ?int $page = null, string $pageParam = 'page', string $perPageParam = 'per_page', array $data = []): array
     {
-        [$page, $perPage] = $this->resolvePagination($perPage, $page, $pageParam, $perPageParam);
+        [$page, $perPage] = $this->resolvePagination($perPage, $page, $pageParam, $perPageParam, $data);
 
         $serializer = new Serializer([new ObjectNormalizer()]);
         $paginator = new DoctrinePaginator($qb, true);
@@ -135,9 +139,10 @@ class Pagination implements InjectionAwareInterface
      * @param string   $query        the base SQL query without LIMIT
      * @param array    $params       the values to bind to the query
      * @param int|null $perPage      Optional number of items per page. (defaults to 100)
-     * @param int|null $page         Optional current page number. (grabbed from query parameters by default)
+     * @param int|null $page         Optional current page number. (grabbed from data/request by default)
      * @param string   $pageParam    query parameter key for the page number (default: "page")
      * @param string   $perPageParam query parameter key for the per-page count (default: "per_page")
+     * @param array    $data         Optional API data array to resolve pagination values from
      *
      * @return array{
      *     pages: int,      // Total number of pages
@@ -149,9 +154,9 @@ class Pagination implements InjectionAwareInterface
      *
      * @throws InformationException if the page/per-page value or the SQL query is invalid
      */
-    public function getPaginatedResultSet(string $query, array $params = [], ?int $perPage = null, ?int $page = null, string $pageParam = 'page', string $perPageParam = 'per_page'): array
+    public function getPaginatedResultSet(string $query, array $params = [], ?int $perPage = null, ?int $page = null, string $pageParam = 'page', string $perPageParam = 'per_page', array $data = []): array
     {
-        [$page, $perPage] = $this->resolvePagination($perPage, $page, $pageParam, $perPageParam);
+        [$page, $perPage] = $this->resolvePagination($perPage, $page, $pageParam, $perPageParam, $data);
 
         $offset = ($page - 1) * $perPage;
 

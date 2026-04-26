@@ -97,12 +97,16 @@ class Paginator
 
     public function getStartingPoint(): int
     {
-        return reset($this->getRange());
+        $range = $this->getRange();
+
+        return $range[0];
     }
 
     public function getEndingPoint(): int
     {
-        return end($this->getRange());
+        $range = $this->getRange();
+
+        return $range[array_key_last($range)];
     }
 
     /**

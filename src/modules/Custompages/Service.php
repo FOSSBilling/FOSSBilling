@@ -39,9 +39,11 @@ class Service
         return true;
     }
 
-    public function searchPages($search = null)
+    public function searchPages(array $data = [])
     {
         $filter = [];
+        $search ??= $data['search'] ?? null;
+        
         $sql = 'SELECT * FROM custom_pages WHERE 1';
         if ($search) {
             $sql .= ' AND (title LIKE :q OR content LIKE :q)';
@@ -49,7 +51,7 @@ class Service
         }
         $sql .= ' ORDER BY id DESC';
 
-        return $this->di['pager']->getPaginatedResultSet($sql, $filter);
+        return $this->di['pager']->getPaginatedResultSet($sql, $filter, data: $data);
     }
 
     public function deletePage($id): void

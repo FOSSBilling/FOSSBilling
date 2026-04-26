@@ -29,7 +29,7 @@ class Admin extends \Api_Abstract
     {
         $data['min_priority'] ??= 6;
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, data: $data);
 
         foreach ($pager['list'] as $key => $item) {
             if (isset($item['staff_id'])) {

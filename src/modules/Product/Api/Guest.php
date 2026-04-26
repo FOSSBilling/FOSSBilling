@@ -33,7 +33,8 @@ class Guest extends \Api_Abstract
         }
 
         [$sql, $params] = $this->getService()->getProductSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, data: $data);
+        
         foreach ($pager['list'] as $key => $item) {
             $model = $this->di['db']->getExistingModelById('Product', $item['id'], 'Post not found');
             $pager['list'][$key] = $this->getService()->toApiArray($model, false, $this->getIdentity());
@@ -95,8 +96,10 @@ class Guest extends \Api_Abstract
     {
         $data['status'] = 'enabled';
         $service = $this->getService();
+        
         [$sql, $params] = $service->getProductCategorySearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, data: $data);
+        
         foreach ($pager['list'] as $key => $item) {
             $category = $this->di['db']->getExistingModelById('ProductCategory', $item['id'], 'Product category not found');
             $pager['list'][$key] = $this->getService()->toProductCategoryApiArray($category, true, $this->getIdentity());

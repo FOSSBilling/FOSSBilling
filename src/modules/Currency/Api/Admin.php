@@ -31,7 +31,7 @@ class Admin extends \Api_Abstract
 
         $qb = $repo->getSearchQueryBuilder($data);
 
-        return $this->di['pager']->paginateDoctrineQuery($qb);
+        return $this->di['pager']->paginateDoctrineQuery($qb, data: $data);
     }
 
     /**

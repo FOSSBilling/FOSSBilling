@@ -26,7 +26,7 @@ class Admin extends \Api_Abstract
     public function get_list(array $data): array
     {
         $qb = $this->getService()->getSearchQueryBuilder($data);
-        $pager = $this->di['pager']->paginateDoctrineQuery($qb, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
+        $pager = $this->di['pager']->paginateDoctrineQuery($qb, data: $data);
 
         foreach ($pager['list'] as $key => $item) {
             $item['filter'] = $this->getService()->normalizeFilter($item['filter'] ?? null);

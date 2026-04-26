@@ -102,9 +102,8 @@ class Guest extends \Api_Abstract
     {
         $search = $data['search'] ?? null;
         $cat = $data['kb_article_category_id'] ?? null;
-        $per_page = isset($data['per_page']) ? (int) $data['per_page'] : 100;
 
-        $pager = $this->getService()->kbSearchArticles('active', $search, $cat, $per_page);
+        $pager = $this->getService()->kbSearchArticles('active', $search, $cat, data: $data);
 
         foreach ($pager['list'] as $key => $item) {
             $article = $this->di['db']->getExistingModelById('SupportKbArticle', $item['id'], 'KB Article not found');
@@ -149,7 +148,7 @@ class Guest extends \Api_Abstract
         $data['article_status'] = \Model_SupportKbArticle::ACTIVE;
         [$query, $bindings] = $this->getService()->kbCategoryGetSearchQuery($data);
 
-        $pager = $this->di['pager']->getPaginatedResultSet($query, $bindings, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
+        $pager = $this->di['pager']->getPaginatedResultSet($query, $bindings, data: $data);
 
         $q = $data['q'] ?? null;
 
