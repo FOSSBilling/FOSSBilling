@@ -68,7 +68,7 @@ final class AdminTest extends TestCase
         // Check that it was correctly switched
         $after = Request::makeRequest('admin/system/error_reporting_enabled')->getResult();
         $this->assertIsBool($after);
-        $this->assertNotEquals($before, $after);
+        $this->assertNotSame($before, $after);
 
         // Ensure we don't leave error reporting on (it shouldn't report anyways, but this is best practice)
         if ($after) {
