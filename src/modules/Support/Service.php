@@ -1053,6 +1053,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 throw new \FOSSBilling\Exception('You must provide both an order ID and a new product ID in order to request an upgrade.');
             }
 
+            if (filter_var($rel_new_value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false) {
+                throw new \FOSSBilling\Exception('rel_new_value must be a valid positive integer product ID, received: :value', [':value' => $rel_new_value]);
+            }
+
             $product = $this->di['db']->getExistingModelById('Product', $order->product_id);
             $allowedUpgrades = json_decode($product->upgrades ?? '', true) ?? [];
             $allowedUpgrades = array_map(static fn ($upgradeId): string => (string) $upgradeId, $allowedUpgrades);
