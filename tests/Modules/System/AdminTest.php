@@ -19,7 +19,9 @@ final class AdminTest extends TestCase
             curl_setopt($ch, CURLOPT_FAILONERROR, true);
             curl_setopt($ch, CURLOPT_URL, $service);
             $ip = curl_exec($ch);
-            if (filter_var($ip, FILTER_VALIDATE_IP)) {
+            $isValidIp = filter_var($ip, FILTER_VALIDATE_IP) !== false;
+            curl_close($ch);
+            if ($isValidIp) {
                 return true;
             }
         }
@@ -66,7 +68,7 @@ final class AdminTest extends TestCase
         // Check that it was correctly switched
         $after = Request::makeRequest('admin/system/error_reporting_enabled')->getResult();
         $this->assertIsBool($after);
-        $this->assertNotEquals($after, $before);
+        $this->assertNotEquals($before, $after);
 
         // Ensure we don't leave error reporting on (it shouldn't report anyways, but this is best practice)
         if ($after) {
