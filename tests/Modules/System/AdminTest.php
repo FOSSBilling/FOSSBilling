@@ -97,7 +97,7 @@ final class AdminTest extends TestCase
 
     public function testInvalidCustomInterfaceIsRejected(): void
     {
-        $result = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => '12345']);
+        $result = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => '!@#$%']);
         $this->assertFalse($result->wasSuccessful(), 'An invalid custom interface was accepted when it should have been rejected');
     }
 

@@ -291,7 +291,7 @@ class Admin extends \Api_Abstract
 
         if (isset($data['custom_interface'])) {
             $custom = $data['custom_interface'];
-            if ($custom !== '' && !filter_var($custom, FILTER_VALIDATE_IP) && !preg_match('/^[a-zA-Z0-9._-]{1,255}$/', $custom)) {
+            if ($custom !== '' && !filter_var($custom, FILTER_VALIDATE_IP) && !preg_match('/^[a-zA-Z0-9._-]*[a-zA-Z._-][a-zA-Z0-9._-]*$/', $custom)) {
                 throw new \FOSSBilling\Exception('Invalid custom interface. Must be a valid IP address or hostname.');
             }
             $config['custom_interface_ip'] = $custom;
