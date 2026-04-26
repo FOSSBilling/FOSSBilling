@@ -6001,16 +6001,16 @@
         },
         {
             "name": "symfony/polyfill-php85",
-            "version": "v1.36.0",
+            "version": "v1.37.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-php85.git",
-                "reference": "2c408a6bb0313e6001a83628dc5506100474254e"
+                "reference": "fcfa4973a9917cef23f2e38774da74a2b7d115ee"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/polyfill-php85/zipball/2c408a6bb0313e6001a83628dc5506100474254e",
-                "reference": "2c408a6bb0313e6001a83628dc5506100474254e",
+                "url": "https://api.github.com/repos/symfony/polyfill-php85/zipball/fcfa4973a9917cef23f2e38774da74a2b7d115ee",
+                "reference": "fcfa4973a9917cef23f2e38774da74a2b7d115ee",
                 "shasum": ""
             },
             "require": {
@@ -6057,7 +6057,7 @@
                 "shim"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-php85/tree/v1.36.0"
+                "source": "https://github.com/symfony/polyfill-php85/tree/v1.37.0"
             },
             "funding": [
                 {
@@ -6077,7 +6077,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-04-10T16:50:15+00:00"
+            "time": "2026-04-26T13:10:57+00:00"
         },
         {
             "name": "symfony/polyfill-uuid",
