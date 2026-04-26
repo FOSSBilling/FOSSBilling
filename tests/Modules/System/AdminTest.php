@@ -104,11 +104,18 @@ final class AdminTest extends TestCase
                 $testResult = Request::makeRequest('admin/system/set_interface_ip', ['interface' => $ip]);
                 $this->assertTrue($testResult->wasSuccessful(), $testResult->generatePHPUnitMessage());
 
-                sleep(2);
+                $isReady = false;
+                for ($attempt = 0; $attempt < 10; $attempt++) {
+                    $result = Request::makeRequest('admin/system/env', ['ip' => true]);
+                    if ($result->wasSuccessful() && (bool) filter_var($result->getResult(), FILTER_VALIDATE_IP)) {
+                        $isReady = true;
+                        break;
+                    }
 
-                $result = Request::makeRequest('admin/system/env', ['ip' => true]);
-                $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-                $this->assertTrue((bool) filter_var($result->getResult(), FILTER_VALIDATE_IP));
+                    usleep(200000); // 200ms
+                }
+
+                $this->assertTrue($isReady, 'Timed out waiting for interface IP to become active');
             }
         }
 
