@@ -34,7 +34,7 @@ class Admin extends \Api_Abstract
     {
         $queryBuilder = $this->getService()->getSearchQueryBuilder($data);
 
-        return $this->di['pager']->paginateDoctrineQuery($queryBuilder);
+        return $this->di['pager']->paginateDoctrineQuery($queryBuilder, isset($data['per_page']) ? (int) $data['per_page'] : null);
     }
 
     /**

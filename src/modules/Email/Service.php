@@ -787,7 +787,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $qb = $this->getTemplateRepository()->getSearchQueryBuilder($data);
 
-        $result = $this->di['pager']->paginateDoctrineQuery($qb);
+        $result = $this->di['pager']->paginateDoctrineQuery($qb, isset($data['per_page']) ? (int) $data['per_page'] : null);
 
         $list = [];
         foreach ($result['list'] as $templateRow) {

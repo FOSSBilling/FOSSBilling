@@ -48,7 +48,7 @@ class Admin extends \Api_Abstract
         $data['hide_addons'] = (isset($orderConfig['show_addons']) && $orderConfig['show_addons']) ? 0 : 1;
         [$sql, $params] = $this->getService()->getSearchQuery($data);
         $paginator = $this->di['pager'];
-        $resultSet = $paginator->getPaginatedResultSet($sql, $params);
+        $resultSet = $paginator->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null);
 
         foreach ($resultSet['list'] as $key => $result) {
             $orderObj = $this->di['db']->getExistingModelById('ClientOrder', $result['id'], 'Order not found');
@@ -291,7 +291,7 @@ class Admin extends \Api_Abstract
 
         [$sql, $bindings] = $this->getService()->getOrderStatusSearchQuery($data);
 
-        return $this->di['pager']->getPaginatedResultSet($sql, $bindings);
+        return $this->di['pager']->getPaginatedResultSet($sql, $bindings, isset($data['per_page']) ? (int) $data['per_page'] : null);
     }
 
     /**
