@@ -8,9 +8,9 @@ class SupportTicketValidator
 {
     public static function validateTicketCreation(array $data): void
     {
-        $rel_type = $data['rel_type'] ?? null;
-        $rel_task = $data['rel_task'] ?? null;
-        $rel_status = $data['rel_status'] ?? null;
+        $rel_type = isset($data['rel_type']) ? (string) $data['rel_type'] : null;
+        $rel_task = isset($data['rel_task']) ? (string) $data['rel_task'] : null;
+        $rel_status = isset($data['rel_status']) ? (string) $data['rel_status'] : null;
 
         self::validateRelType($rel_type);
         self::validateRelTask($rel_task);
