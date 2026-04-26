@@ -7,14 +7,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'servicehosting'|alink }}">{{ 'Hosting Plans and Servers'|trans }}</a>
+            <a href="{{ 'servicehosting'|url }}">{{ 'Hosting Plans and Servers'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ hp.name }}</li>
     </ol>
@@ -26,7 +26,7 @@
         <h3>{{ 'Manage Hosting Plan'|trans }}</h3>
     </div>
     <div class="card-body">
-        <form method="post" action="{{ 'api/admin/servicehosting/hp_update'|link }}" {{ fb_api_form({message: 'Hosting Plan Updated'|trans}) }}>
+        <form method="post" action="{{ 'servicehosting/hp_update'|api_url }}" {{ fb_api_form({message: 'Hosting Plan Updated'|trans}) }}>
             <div class="mb-3">
                 <label class="form-label" for="plan-name">{{ 'Name'|trans }}:</label>
                 <input class="form-control" id="plan-name" type="text" name="name" value="{{ hp.name }}" required placeholder="{{ 'Unique name to identify this hosting plan'|trans }}">
@@ -87,7 +87,7 @@
         <h3>{{ 'Hosting Plan Additional Parameters'|trans }}</h3>
         <p class="text-muted">{{ 'Depending on server manager used to setup hosting account you may require provide additional parameters. List of parameters server managers requires you can find on extensions page.'|trans }}</p>
 
-        <form method="post" action="{{ 'api/admin/servicehosting/hp_update'|link }}" {{ fb_api_form({reload: true}) }}>
+        <form method="post" action="{{ 'servicehosting/hp_update'|api_url }}" {{ fb_api_form({reload: true}) }}>
             <div class="mb-3 row g-2">
                 <div class="col">
                     <label class="form-label">{{ 'Parameter name'|trans }}:</label>

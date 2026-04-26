@@ -51,7 +51,7 @@
                         document.getElementById('checkout').remove();
                         bootstrap.Collapse.getOrCreateInstance(paymentHtmlEl).show();
                     } else {
-                        const link = '{{ "invoice/banklink"|link }}' + '/' + result.invoice_hash + '/' + result.gateway_id;
+                        const link = '{{ "invoice/banklink"|url }}' + '/' + result.invoice_hash + '/' + result.gateway_id;
                         document.getElementById('payment-html-inner').innerHTML = '<a href="' + link + '" target="_parent" id="redirect-to-gateway">Redirect to payment gateway</a>';
                         bootstrap.Collapse.getOrCreateInstance(checkoutEl).hide();
                         document.getElementById('checkout-inner').remove();
@@ -60,7 +60,7 @@
                     }
                 });
         } else {
-            window.top.location.href = ('{{ "order/service/manage"|link }}' + '/' + result.order_id);
+            window.top.location.href = ('{{ "order/service/manage"|url }}' + '/' + result.order_id);
         }
     }
 

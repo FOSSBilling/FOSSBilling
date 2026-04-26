@@ -11,7 +11,7 @@
 
 {% block body_class %}support-ticket{% endblock %}
 {% block breadcrumb %}
-    <li class="breadcrumb-item"><a href="{{ 'support' | link }}">{{ 'Support tickets'|trans }}</a></li>
+    <li class="breadcrumb-item"><a href="{{ 'support'|url }}">{{ 'Support tickets'|trans }}</a></li>
     <li class="breadcrumb-item active" aria-current="page">{{ ticket.subject }}</li>
 {% endblock %}
 
@@ -47,7 +47,7 @@
                         <tr>
                             <td>{{ 'Status'|trans }}</td>
                             <td>
-                                <div class="badge {% if ticket.status=='open' %}text-bg-success{% elseif ticket.status == 'on_hold' %}text-bg-warning{% else %}text-bg-danger{% endif %}">{{ mf.status_name(ticket.status) }}</div>
+                                {{ mf.status_badge(ticket.status, 'ticket') }}
                             </td>
                         </tr>
 
@@ -60,7 +60,7 @@
                             <tr>
                                 <td>{{ 'Related to'|trans }}</td>
                                 <td>
-                                    <a href="{{ 'order/service/manage'|link }}/{{ ticket.rel_id }}">{{ 'Service #'|trans }} {{ ticket.rel_id }}</a>
+                                    <a href='{{ "order/service/manage/#{ticket.rel_id}"|url }}'>{{ 'Service #'|trans }} {{ ticket.rel_id }}</a>
                                 </td>
                             </tr>
                         {% endif %}
@@ -76,7 +76,7 @@
                         <div class="card {% if message.admin_id %}border-primary{% endif %}">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <div class="d-flex align-items-center gap-2">
-                                    <div class="db-avatar img-thumbnail d-none d-md-block" data-avatar-seed="{{ message.author.email|hash('xxh128') }}" data-avatar-size="40" style="width: 40px; height: 40px;"></div>
+                                    {{ mf.avatar(message.author.email, 40, 'db-avatar img-thumbnail d-none d-md-block') }}
                                     <div class="d-flex flex-column">
                                         <span class="text-muted">
                                             {{ message.author.name }}
@@ -111,7 +111,7 @@
                                 <div class="row">
                                     <div class="col-md-12">
                                         <article class="markdown-body bg-transparent text-reset" id="message-{{ message.id }}">
-                                            {{ message.content|markdown }}
+                                            {{ (message.content ?? '')|markdown_to_html }}
                                         </article>
                                     </div>
                                 </div>

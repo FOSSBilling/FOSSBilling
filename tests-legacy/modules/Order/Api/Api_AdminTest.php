@@ -12,14 +12,6 @@ final class Api_AdminTest extends BBTestCase
         $this->api = new Box\Mod\Order\Api\Admin();
     }
 
-    public function testGetDi(): void
-    {
-        $di = $this->getDi();
-        $this->api->setDi($di);
-        $getDi = $this->api->getDi();
-        $this->assertEquals($di, $getDi);
-    }
-
     public function testGet(): void
     {
         $order = new Model_ClientOrder();

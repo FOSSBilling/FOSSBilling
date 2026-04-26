@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Box\Mod\System;
 
 use PHPUnit\Framework\Attributes\Group;
-use Twig\Environment;
 
 #[Group('Core')]
 final class ServiceTest extends \BBTestCase
@@ -185,61 +184,531 @@ final class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testRenderStringTemplateException(): void
+    public function testRenderAdapterTplString(): void
     {
-        $vars = [
-            '_client_id' => 1,
-        ];
-
-        $twigMock = $this->getMockBuilder(Environment::class)->disableOriginalConstructor()->getMock();
-        $twigMock->expects($this->atLeastOnce())
-            ->method('addGlobal');
-        $twigMock->method('createTemplate')
-            ->will($this->throwException(new \Error('Error')));
-
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->willReturn(new \Model_Client());
+        $apiGuest = new class {
+            public function system_company(): array
+            {
+                return ['name' => 'FOSSBilling'];
+            }
+        };
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
-        $di['twig'] = $twigMock;
-        $di['api_client'] = new \Model_Client();
+        $di['api_guest'] = $apiGuest;
+
+        $reflection = new \ReflectionClass(\FOSSBilling\Twig\TwigFactory::class);
+        $twigFactory = $reflection->newInstanceWithoutConstructor();
+
+        $diProperty = $reflection->getProperty('di');
+        $diProperty->setValue($twigFactory, $di);
+
+        $baseConfigProperty = $reflection->getProperty('baseConfig');
+        $baseConfigProperty->setValue($twigFactory, ['cache' => false]);
+
+        $di['twig_factory'] = $twigFactory;
         $this->service->setDi($di);
 
-        $this->expectException(\Error::class);
-        $this->service->renderString('test', false, $vars);
+        $vars = ['invoice' => ['id' => 1, 'total' => 100]];
+        $result = $this->service->renderAdapterTplString('Invoice #{{ invoice.id }} - {{ invoice.total }}', $vars);
+        $this->assertEquals('Invoice #1 - 100', $result);
     }
 
-    public function testRenderStringTemplate(): void
+    public function testRenderAdapterTplStringSandboxViolation(): void
     {
-        $vars = [
-            '_client_id' => 1,
-        ];
-
-        $twigMock = $this->getMockBuilder(Environment::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $twigMock->expects($this->atLeastOnce())
-            ->method('addGlobal');
-        $twigMock->method('render')
-            ->willReturn('');
-
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->willReturn(new \Model_Client());
+        $apiGuest = new class {
+            public function system_company(): array
+            {
+                return ['name' => 'FOSSBilling'];
+            }
+        };
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
-        $di['twig'] = $twigMock;
-        $di['api_client'] = new \Model_Client();
+        $di['api_guest'] = $apiGuest;
+
+        $reflection = new \ReflectionClass(\FOSSBilling\Twig\TwigFactory::class);
+        $twigFactory = $reflection->newInstanceWithoutConstructor();
+
+        $diProperty = $reflection->getProperty('di');
+        $diProperty->setValue($twigFactory, $di);
+
+        $baseConfigProperty = $reflection->getProperty('baseConfig');
+        $baseConfigProperty->setValue($twigFactory, ['cache' => false]);
+
+        $di['twig_factory'] = $twigFactory;
+        $di['logger'] = new class {
+            public function setChannel(string $channel): self
+            {
+                return $this;
+            }
+
+            public function warning(string $message, array $context = []): void
+            {
+            }
+        };
         $this->service->setDi($di);
 
-        $string = $this->service->renderString('test', true, $vars);
-        $this->assertEquals($string, 'test');
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->service->renderAdapterTplString('{{ range(1, 5) }}', []);
+    }
+
+    public function testRenderAdapterTplStringBlocksMethodCalls(): void
+    {
+        $object = new class {
+            public function dangerousMethod(): string
+            {
+                return 'pwned';
+            }
+        };
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->renderAdapterTemplate('{{ obj.dangerousMethod() }}', ['obj' => $object]);
+    }
+
+    public function testRenderAdapterTplStringBlocksPropertyAccess(): void
+    {
+        $object = new class {
+            public string $secret = 'leaked';
+        };
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->renderAdapterTemplate('{{ obj.secret }}', ['obj' => $object]);
+    }
+
+    public function testRenderAdapterTplStringBlocksIncludeTag(): void
+    {
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->renderAdapterTemplate("{% include 'some_file.html' %}");
+    }
+
+    public function testRenderAdapterTplStringBlocksImportTag(): void
+    {
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->renderAdapterTemplate("{% import 'macros.html' as macros %}");
+    }
+
+    public function testRenderAdapterTplStringBlocksExtendsTag(): void
+    {
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->renderAdapterTemplate("{% extends 'base.html' %}");
+    }
+
+    public function testRenderAdapterTplStringStripsScriptTags(): void
+    {
+        $result = $this->renderAdapterTemplate('<p>Hello</p><script>alert(1)</script><b>World</b>');
+        $this->assertSame('<p>Hello</p><b>World</b>', $result);
+    }
+
+    public function testRenderAdapterTplStringStripsSelfClosingScriptTags(): void
+    {
+        $result = $this->renderAdapterTemplate('<p>Hello</p><script src="evil.js"/><b>World</b>');
+        $this->assertSame('<p>Hello</p><b>World</b>', $result);
+    }
+
+    public function testRenderAdapterTplStringStripsEventHandlers(): void
+    {
+        $result = $this->renderAdapterTemplate('<div onclick="steal()" onerror="x()">text</div>');
+        $this->assertSame('<div>text</div>', $result);
+    }
+
+    public function testRenderAdapterTplStringStripsSingleQuotedEventHandlers(): void
+    {
+        $result = $this->renderAdapterTemplate("<div onmouseover='alert(1)'>text</div>");
+        $this->assertSame('<div>text</div>', $result);
+    }
+
+    public function testRenderAdapterTplStringAllowsHtmlFormatting(): void
+    {
+        $html = '<h1>Pay to:</h1><b>Bank XYZ</b><br><i>Account: 12345</i><table><tr><td>Row</td></tr></table>';
+        $result = $this->renderAdapterTemplate($html);
+        $this->assertSame($html, $result);
+    }
+
+    public function testRenderAdapterTplStringAllowedFiltersWork(): void
+    {
+        $result = $this->renderAdapterTemplate('{{ 3.14159|number_format(2) }}');
+        $this->assertSame('3.14', $result);
+    }
+
+    public function testRenderAdapterTplStringDateFilterWorks(): void
+    {
+        $result = $this->renderAdapterTemplate('{{ "2026-03-02"|date("Y-m-d") }}');
+        $this->assertStringContainsString('2026-03-02', $result);
+    }
+
+    public function testRenderAdapterTplStringTransFilterWorks(): void
+    {
+        $result = $this->renderAdapterTemplate("{{ 'Hello'|trans }}");
+        $this->assertSame('Hello', $result);
+    }
+
+    public function testSanitizeAdapterOutputStripsScriptTags(): void
+    {
+        $result = $this->service->sanitizeAdapterOutput('<p>Safe</p><script>alert(1)</script>');
+        $this->assertSame('<p>Safe</p>', $result);
+    }
+
+    public function testSanitizeAdapterOutputStripsScriptWithAttributes(): void
+    {
+        $result = $this->service->sanitizeAdapterOutput('<script type="text/javascript" src="evil.js">alert(1)</script>');
+        $this->assertSame('', $result);
+    }
+
+    public function testSanitizeAdapterOutputStripsEventHandlers(): void
+    {
+        $result = $this->service->sanitizeAdapterOutput('<img src="x.png" onerror="alert(1)">');
+        $this->assertSame('<img src="x.png">', $result);
+    }
+
+    public function testSanitizeAdapterOutputPreservesSafeHtml(): void
+    {
+        $html = '<h1>Title</h1><p>Text <b>bold</b></p><a href="https://example.com">link</a>';
+        $result = $this->service->sanitizeAdapterOutput($html);
+        $this->assertSame($html, $result);
+    }
+
+    public function testSanitizeAdapterOutputHandlesEmptyString(): void
+    {
+        $result = $this->service->sanitizeAdapterOutput('');
+        $this->assertSame('', $result);
+    }
+
+    public function testRenderEmailTemplateSupportsPeriodTitleInSandbox(): void
+    {
+        $apiGuest = new class {
+            public function system_company(): array
+            {
+                return ['name' => 'FOSSBilling'];
+            }
+
+            public function system_period_title(array $data): string
+            {
+                return match ($data['code'] ?? null) {
+                    '1M' => 'Every month',
+                    default => 'Unknown period',
+                };
+            }
+        };
+
+        $di = $this->getDi();
+        $di['api_guest'] = $apiGuest;
+
+        $reflection = new \ReflectionClass(\FOSSBilling\Twig\TwigFactory::class);
+        $twigFactory = $reflection->newInstanceWithoutConstructor();
+
+        $diProperty = $reflection->getProperty('di');
+        $diProperty->setValue($twigFactory, $di);
+
+        $baseConfigProperty = $reflection->getProperty('baseConfig');
+        $baseConfigProperty->setValue($twigFactory, ['cache' => false]);
+
+        $twig = $twigFactory->createEmailEnvironment();
+        $result = $twig->createTemplate('{{ "1M"|period_title }}')->render([]);
+
+        $this->assertSame('Every month', $result);
+    }
+
+    public function testRenderEmailTemplateSupportsMarkdownAndDateInSandbox(): void
+    {
+        $apiGuest = new class {
+            public function system_company(): array
+            {
+                return ['name' => 'FOSSBilling'];
+            }
+        };
+        $themeService = new class {
+            public function getDefaultMarkdownAttributes(): array
+            {
+                return [];
+            }
+        };
+
+        $di = $this->getDi();
+        $di['api_guest'] = $apiGuest;
+        $di['mod_service'] = $di->protect(fn (string $service) => match ($service) {
+            'theme' => $themeService,
+            default => throw new \RuntimeException(sprintf('Unexpected mod_service request: %s', $service)),
+        });
+
+        $reflection = new \ReflectionClass(\FOSSBilling\Twig\TwigFactory::class);
+        $twigFactory = $reflection->newInstanceWithoutConstructor();
+
+        $diProperty = $reflection->getProperty('di');
+        $diProperty->setValue($twigFactory, $di);
+
+        $baseConfigProperty = $reflection->getProperty('baseConfig');
+        $baseConfigProperty->setValue($twigFactory, ['cache' => false]);
+
+        $twig = $twigFactory->createEmailEnvironment();
+        $result = $twig->createTemplate('{% apply markdown_to_html %}**Bolded**{% endapply %} {{ "2026-03-02"|date("Y-m-d") }}')->render([]);
+
+        $this->assertStringContainsString('<strong>Bolded</strong>', $result);
+        $this->assertStringContainsString('2026-03-02', $result);
+    }
+
+    public function testBaseTwigEnvironmentSupportsHasPermissionFunction(): void
+    {
+        $authMock = new class {
+            public function isAdminLoggedIn(): bool
+            {
+                return true;
+            }
+        };
+
+        $staffService = new class {
+            public function hasPermission($admin, string $module, ?string $permission = null): bool
+            {
+                return $admin->id === 42 && $module === 'system' && $permission === 'update_params';
+            }
+        };
+
+        $di = $this->getDi();
+        $di['auth'] = $authMock;
+        $di['api_guest'] = new \stdClass();
+        $di['loggedin_admin'] = (object) ['id' => 42];
+        $di['session'] = $this->mockSession();
+        $di['mod_service'] = $di->protect(fn (string $service) => match ($service) {
+            'Staff' => $staffService,
+            default => throw new \RuntimeException(sprintf('Unexpected mod_service request: %s', $service)),
+        });
+
+        $twig = $this->createBaseTwigEnvironment($di);
+        $result = $twig->createTemplate("{{ has_permission('system', 'update_params') ? 'yes' : 'no' }}")->render([]);
+
+        $this->assertSame('yes', $result);
+    }
+
+    public function testBaseTwigEnvironmentFbApiLinkDoesNotIncludeHrefInPayload(): void
+    {
+        $di = $this->getDi();
+        $di['api_guest'] = new \stdClass();
+        $di['session'] = $this->mockSession();
+
+        $twig = $this->createBaseTwigEnvironment($di);
+        $result = $twig->createTemplate("{{ fb_api_link({ href: '/admin/test', reload: true }) }}")->render([]);
+
+        $this->assertSame('href="/admin/test" data-fb-api=\'{"reload":true,"type":"link"}\'', $result);
+        $this->assertStringNotContainsString('"href"', $result);
+    }
+
+    public function testRenderEmailTemplateBlocksSetTag(): void
+    {
+        $this->expectException(\Twig\Sandbox\SecurityNotAllowedTagError::class);
+        $this->expectExceptionMessage('Tag "set" is not allowed');
+
+        $this->renderEmailTemplateWithSandbox("{% set x = 'malicious' %}{{ x }}");
+    }
+
+    public function testRenderEmailTemplateBlocksFunctionCalls(): void
+    {
+        $this->expectException(\Twig\Sandbox\SecurityNotAllowedFunctionError::class);
+        $this->expectExceptionMessage('Function "max" is not allowed');
+
+        $this->renderEmailTemplateWithSandbox('{{ max(1, 2, 3) }}');
+    }
+
+    public function testRenderEmailTemplateBlocksMethodCalls(): void
+    {
+        $this->expectException(\Twig\Sandbox\SecurityNotAllowedMethodError::class);
+        $this->expectExceptionMessage('is not allowed');
+
+        $object = new class {
+            public function dangerousMethod(): string
+            {
+                return 'pwned';
+            }
+        };
+        $this->renderEmailTemplateWithSandbox('{{ obj.dangerousMethod() }}', ['obj' => $object]);
+    }
+
+    public function testRenderEmailTemplateGuestGlobalIsRestricted(): void
+    {
+        $apiGuest = new class {
+            public function system_company(): array
+            {
+                return ['name' => 'Test Company'];
+            }
+
+            public function system_params(): array
+            {
+                return ['secret' => 'value'];
+            }
+        };
+
+        $di = $this->getDi();
+        $di['api_guest'] = $apiGuest;
+
+        $result = $this->renderEmailTemplateWithSandbox('{{ guest.system_company.name }}', [], $di);
+        $this->assertSame('Test Company', $result);
+    }
+
+    public function testRenderEmailTemplateBlocksIncludeTag(): void
+    {
+        $this->expectException(\Twig\Sandbox\SecurityNotAllowedTagError::class);
+        $this->expectExceptionMessage('Tag "include" is not allowed');
+
+        $this->renderEmailTemplateWithSandbox("{% include 'some_file.html' %}");
+    }
+
+    public function testRenderEmailTemplateBlocksImportTag(): void
+    {
+        $this->expectException(\Twig\Sandbox\SecurityNotAllowedTagError::class);
+        $this->expectExceptionMessage('Tag "import" is not allowed');
+
+        $this->renderEmailTemplateWithSandbox("{% import 'macros.html' as macros %}");
+    }
+
+    public function testRenderEmailTemplateBlocksExtendsTag(): void
+    {
+        // Extends is blocked by the ArrayLoader not having the template,
+        // but the sandbox would also block it if it got that far
+        $this->expectException(\Twig\Error\LoaderError::class);
+
+        $this->renderEmailTemplateWithSandbox("{% extends 'base.html' %}");
+    }
+
+    public function testRenderEmailTemplateUrlFilterWithClientAreaNamedArgument(): void
+    {
+        $apiGuest = new class {
+            public function system_company(): array
+            {
+                return ['name' => 'Test'];
+            }
+        };
+
+        $urlMock = $this->createMock(\Box_Url::class);
+        $urlMock->method('link')
+            ->willReturn('http://example.com/login?email=test%40example.com');
+
+        $di = $this->getDi();
+        $di['api_guest'] = $apiGuest;
+        $di['url'] = $urlMock;
+
+        $result = $this->renderEmailTemplateWithSandbox(
+            "{{ 'login'|url(query: { 'email': 'test@example.com' }, area: 'client') }}",
+            [],
+            $di
+        );
+
+        $this->assertSame('http://example.com/login?email=test%40example.com', $result);
+    }
+
+    public function testRenderEmailTemplateUrlFilterWithAdminAreaNamedArgument(): void
+    {
+        $apiGuest = new class {
+            public function system_company(): array
+            {
+                return ['name' => 'Test'];
+            }
+        };
+
+        $urlMock = $this->createMock(\Box_Url::class);
+        $urlMock->expects($this->once())
+            ->method('adminLink')
+            ->with('staff/login', ['email' => 'staff@example.com'])
+            ->willReturn('http://example.com/admin/staff/login?email=staff%40example.com');
+
+        $di = $this->getDi();
+        $di['api_guest'] = $apiGuest;
+        $di['url'] = $urlMock;
+
+        $result = $this->renderEmailTemplateWithSandbox(
+            "{{ 'staff/login'|url(query: { 'email': 'staff@example.com' }, area: 'admin') }}",
+            [],
+            $di
+        );
+
+        $this->assertSame('http://example.com/admin/staff/login?email=staff%40example.com', $result);
+    }
+
+    private function renderEmailTemplateWithSandbox(string $template, array $vars = [], ?\Pimple\Container $di = null): string
+    {
+        $di ??= $this->getDi();
+        if (!isset($di['api_guest'])) {
+            $di['api_guest'] = new class {
+                public function system_company(): array
+                {
+                    return ['name' => 'Test'];
+                }
+            };
+        }
+        if (!isset($di['logger'])) {
+            $di['logger'] = $this->createMock(\Box_Log::class);
+        }
+
+        $reflection = new \ReflectionClass(\FOSSBilling\Twig\TwigFactory::class);
+        $twigFactory = $reflection->newInstanceWithoutConstructor();
+
+        $diProperty = $reflection->getProperty('di');
+        $diProperty->setValue($twigFactory, $di);
+
+        $baseConfigProperty = $reflection->getProperty('baseConfig');
+        $baseConfigProperty->setValue($twigFactory, ['cache' => false]);
+
+        $twig = $twigFactory->createEmailEnvironment();
+
+        return $twig->createTemplate($template)->render($vars);
+    }
+
+    private function renderAdapterTemplate(string $template, array $vars = []): string
+    {
+        $apiGuest = new class {
+            public function system_company(): array
+            {
+                return ['name' => 'Test'];
+            }
+        };
+
+        $di = $this->getDi();
+        $di['api_guest'] = $apiGuest;
+
+        if (!isset($di['logger'])) {
+            $di['logger'] = new class {
+                public function setChannel(string $channel): self
+                {
+                    return $this;
+                }
+
+                public function warning(string $message, array $context = []): void
+                {
+                }
+            };
+        }
+
+        $reflection = new \ReflectionClass(\FOSSBilling\Twig\TwigFactory::class);
+        $twigFactory = $reflection->newInstanceWithoutConstructor();
+
+        $diProperty = $reflection->getProperty('di');
+        $diProperty->setValue($twigFactory, $di);
+
+        $baseConfigProperty = $reflection->getProperty('baseConfig');
+        $baseConfigProperty->setValue($twigFactory, ['cache' => false]);
+
+        $di['twig_factory'] = $twigFactory;
+        $this->service->setDi($di);
+
+        return $this->service->renderAdapterTplString($template, $vars);
+    }
+
+    private function createBaseTwigEnvironment(\Pimple\Container $di): \Twig\Environment
+    {
+        $reflection = new \ReflectionClass(\FOSSBilling\Twig\TwigFactory::class);
+        $twigFactory = $reflection->newInstanceWithoutConstructor();
+
+        $diProperty = $reflection->getProperty('di');
+        $diProperty->setValue($twigFactory, $di);
+
+        $baseConfigProperty = $reflection->getProperty('baseConfig');
+        $baseConfigProperty->setValue($twigFactory, ['cache' => false]);
+
+        return $twigFactory->createBaseEnvironment();
+    }
+
+    private function mockSession(): \FOSSBilling\Session
+    {
+        $sessionMock = $this->createMock(\FOSSBilling\Session::class);
+        $sessionMock->method('get')->willReturn('test_csrf_token');
+
+        return $sessionMock;
     }
 
     public function testClearCache(): void

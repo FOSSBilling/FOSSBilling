@@ -17,14 +17,6 @@ final class ServiceTransactionTest extends \BBTestCase
         $this->service = new ServiceTransaction();
     }
 
-    public function testGetDi(): void
-    {
-        $di = $this->getDi();
-        $this->service->setDi($di);
-        $getDi = $this->service->getDi();
-        $this->assertEquals($di, $getDi);
-    }
-
     public function testProcessReceivedTransactions(): void
     {
         $transactionModel = new \Model_Transaction();

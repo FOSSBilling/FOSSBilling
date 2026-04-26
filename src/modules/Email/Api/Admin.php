@@ -268,7 +268,7 @@ class Admin extends \Api_Abstract
         $vars['_tpl'] = $data['_tpl'] ?? $t['content'];
         $systemService = $this->di['mod_service']('System');
 
-        return $systemService->renderString($vars['_tpl'], false, $vars);
+        return $systemService->renderEmailTplString($vars['_tpl'], $vars);
     }
 
     /**
@@ -322,8 +322,7 @@ class Admin extends \Api_Abstract
 
     public function batch_sendmail()
     {
-        $di = $this->getDi();
-        $extensionService = $di['mod_service']('extension');
+        $extensionService = $this->di['mod_service']('extension');
         if ($extensionService->isExtensionActive('mod', 'demo')) {
             return false;
         }

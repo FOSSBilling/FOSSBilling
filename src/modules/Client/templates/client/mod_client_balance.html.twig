@@ -18,7 +18,7 @@
                             <h1 class="mb-1">{{ 'Wallet'|trans }}</h1>
                             <span class="small text-muted">{{ 'Here you can manage and track your account balance.'|trans }}</span>
                         </div>
-                        <form method="post" class="form-inline d-flex gap-2 justify-content-end" action="{{ 'api/client/invoice/funds_invoice'|link }}" {{ fb_api_form({callback: 'onAfterInvoiceCreated'}) }}>
+                        <form method="post" class="form-inline d-flex gap-2 justify-content-end" action="{{ 'invoice/funds_invoice'|api_url }}" {{ fb_api_form({callback: 'onAfterInvoiceCreated'}) }}>
                             <input id="appendedPrependedInput" class="form-control w-50" type="text" name="amount" placeholder="0" required="required">
                             <button class="btn btn-primary" type="submit">{{ 'Add fund'|trans }}</button>
                         </form>
@@ -39,7 +39,7 @@
                             <tr>
                                 <td>{{ tx.description }}</td>
                                 <td>{{ tx.created_at|format_date }}</td>
-                                <td>{{ tx.amount|money(tx.currency) }}</td>
+                                <td>{{ tx.amount|format_currency(tx.currency) }}</td>
                             </tr>
                         {% else %}
                             <tr>
@@ -50,7 +50,7 @@
                         <tfoot>
                         <tr>
                             <td colspan="2">{{ 'Total'|trans }}</td>
-                            <td><strong>{{ profile.balance | money(profile.currency) }}</strong></td>
+                            <td><strong>{{ profile.balance|format_currency(profile.currency) }}</strong></td>
                         </tr>
                         </tfoot>
                     </table>
@@ -64,7 +64,7 @@
 {% block js %}
 <script>
     function onAfterInvoiceCreated(hash) {
-        window.location = '{{ "invoice"|link }}/' + hash;
+        window.location = '{{ "invoice"|url }}/' + hash;
     }
 </script>
 {% endblock %}

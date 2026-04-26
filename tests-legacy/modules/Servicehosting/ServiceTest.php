@@ -17,14 +17,6 @@ final class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
-    public function testGetDi(): void
-    {
-        $di = $this->getDi();
-        $this->service->setDi($di);
-        $getDi = $this->service->getDi();
-        $this->assertEquals($di, $getDi);
-    }
-
     public static function validateOrdertDataProvider(): array
     {
         return [

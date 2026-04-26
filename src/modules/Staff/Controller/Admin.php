@@ -57,16 +57,11 @@ class Admin implements InjectionAwareInterface
 
     public function get_login(\Box_App $app)
     {
-        // check if at least one admin exists.
-        // if not show admin create form
-        $service = $this->di['mod_service']('staff');
-        $count = $service->getAdminsCount();
-        $create = ($count == 0);
         if ($this->di['auth']->isAdminLoggedIn()) {
             return $app->redirect('');
         }
 
-        return $app->render('mod_staff_login', ['create_admin' => $create]);
+        return $app->render('mod_staff_login');
     }
 
     public function get_profile(\Box_App $app): string

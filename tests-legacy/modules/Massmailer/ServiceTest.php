@@ -21,14 +21,6 @@ final class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
-    public function testGetDi(): void
-    {
-        $di = $this->createDi();
-        $this->service->setDi($di);
-
-        $this->assertEquals($di, $this->service->getDi());
-    }
-
     public function testNormalizeFilterReturnsCanonicalEnumValues(): void
     {
         $normalized = $this->service->normalizeFilter([

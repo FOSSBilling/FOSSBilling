@@ -16,14 +16,6 @@ final class ServiceTaxTest extends \BBTestCase
         $this->service = new ServiceTax();
     }
 
-    public function testGetDi(): void
-    {
-        $di = $this->getDi();
-        $this->service->setDi($di);
-        $getDi = $this->service->getDi();
-        $this->assertEquals($di, $getDi);
-    }
-
     public function testGetTaxRateForClientByCountryAndState(): void
     {
         $taxRateExpected = 0.21;

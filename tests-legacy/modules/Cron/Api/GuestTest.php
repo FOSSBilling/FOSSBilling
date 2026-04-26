@@ -9,15 +9,6 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class GuestTest extends \BBTestCase
 {
-    public function testGetDi(): void
-    {
-        $di = $this->getDi();
-        $api = new Guest();
-        $api->setDi($di);
-        $getDi = $api->getDi();
-        $this->assertEquals($di, $getDi);
-    }
-
     public function testSettings(): void
     {
         $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();

@@ -19,7 +19,7 @@
 
             <script>
                 setTimeout(function() {
-                    window.location = "{{ ('/invoice/' ~ invoice.hash)|link }}";
+                    window.location = '{{ "invoice/#{invoice.hash}"|url }}';
                 }, 1 * 60 * 1000);
             </script>
         </div>

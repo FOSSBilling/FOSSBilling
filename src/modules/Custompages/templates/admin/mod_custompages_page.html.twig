@@ -16,7 +16,7 @@
         </svg>
     </li>
     <li class="breadcrumb-item">
-        <a href="{{ 'custompages'|alink }}">{{ 'Custom Pages'|trans }}</a>
+        <a href="{{ 'custompages'|url }}">{{ 'Custom Pages'|trans }}</a>
     </li>
     <li class="breadcrumb-item active" aria-current="page">{{ page.title }}</li>
 </ul>
@@ -26,7 +26,7 @@
     {% if page.id > 0 %}
 
 <div class="card">
-    <form method="post" action="{{ 'api/admin/custompages/update'|link }}" {{ fb_api_form({message: 'Custom Page Updated'|trans}) }}>
+    <form method="post" action="{{ 'custompages/update'|api_url }}" {{ fb_api_form({message: 'Custom Page Updated'|trans}) }}>
         <div class="card-body mt-2">
             <input type="hidden" name="id" value="{{ page.id }}">
             <div class="mb-3 row">
@@ -56,7 +56,7 @@
             <div class="mb-3 row">
                 <label class="col-md-3 col-form-label">{{ 'Content'|trans }}</label>
                 <div class="col">
-                    <textarea class="bb-textarea" name="content" cols="5" rows="5" required="required" placeholder="{{ 'Enter page content here.'|trans }}">{{ page.content }}</textarea>
+                    <textarea class="editor-textarea" name="content" cols="5" rows="5" required="required" placeholder="{{ 'Enter page content here.'|trans }}">{{ page.content }}</textarea>
                 </div>
             </div>
         </div>
@@ -67,9 +67,9 @@
 </div>
 {% else %}
 <script>
-    window.location.href = "{{ 'custompages'|alink }}"
+    window.location.href = "{{ 'custompages'|url }}"
 </script>
 {% endif %}
 {% endblock %}
 
-{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}
+{% block head %}{{ mf.wysiwyg('.editor-textarea') }}{% endblock %}
