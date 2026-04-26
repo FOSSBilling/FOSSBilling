@@ -29,10 +29,27 @@ final class AdminTest extends TestCase
 
     public function testClearCache(): void
     {
+        // Read a stable value first so we can verify behavior before/after clearing cache
+        $beforeFirst = Request::makeRequest('admin/system/error_reporting_enabled');
+        $this->assertTrue($beforeFirst->wasSuccessful(), $beforeFirst->generatePHPUnitMessage());
+        $this->assertIsBool($beforeFirst->getResult());
+
+        // Read again to establish deterministic pre-clear behavior
+        $beforeSecond = Request::makeRequest('admin/system/error_reporting_enabled');
+        $this->assertTrue($beforeSecond->wasSuccessful(), $beforeSecond->generatePHPUnitMessage());
+        $this->assertIsBool($beforeSecond->getResult());
+        $this->assertSame($beforeFirst->getResult(), $beforeSecond->getResult());
+
         // Clear the cache
         $result = Request::makeRequest('admin/system/clear_cache');
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
         $this->assertIsBool($result->getResult());
+
+        // Verify post-condition: system value remains valid and unchanged after cache clear
+        $after = Request::makeRequest('admin/system/error_reporting_enabled');
+        $this->assertTrue($after->wasSuccessful(), $after->generatePHPUnitMessage());
+        $this->assertIsBool($after->getResult());
+        $this->assertSame($beforeSecond->getResult(), $after->getResult());
     }
 
     public function testErrorReportingToggle(): void
@@ -75,7 +92,7 @@ final class AdminTest extends TestCase
         if ($this->ipLookupWorking()) {
             foreach ($result->getResult() as $ip) {
                 $testResult = Request::makeRequest('admin/system/set_interface_ip', ['interface' => $ip]);
-                $this->assertTrue($testResult->wasSuccessful(), $result->generatePHPUnitMessage());
+                $this->assertTrue($testResult->wasSuccessful(), $testResult->generatePHPUnitMessage());
 
                 sleep(2);
 

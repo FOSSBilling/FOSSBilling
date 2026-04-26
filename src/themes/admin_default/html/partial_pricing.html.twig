@@ -37,7 +37,7 @@
                 <input type="text" class="form-control price bill_price" name="pricing[once][price]" value="{{ product.pricing.once.price }}">
             </td>
             <td>
-                <input type="text" class="form-control total price" readonly="readonly" disabled="disabled">
+                <input type="text" class="form-control total price" readonly="readonly" disabled>
             </td>
             <td></td>
         </tr>
@@ -62,7 +62,7 @@
                 <input class="form-control price bill_price" type="text" name="pricing[recurrent][1W][price]" value="{{ product.pricing.recurrent['1W'].price }}">
             </td>
             <td>
-                <input class="form-control total price" type="text" readonly="readonly" disabled>
+                <input class="form-control total price" type="text" readonly="readonly" disabled="disabled">
             </td>
             <td>
                 <input class="form-check-input" type="checkbox" name="pricing[recurrent][1W][enabled]" value="1"{% if (product.pricing.type == 'recurrent') and (product.pricing.recurrent['1W'].enabled) %} checked{% endif %}>
@@ -77,7 +77,7 @@
                 <input type="text" class="form-control price bill_price" name="pricing[recurrent][1M][price]" value="{{ product.pricing.recurrent['1M'].price }}">
             </td>
             <td>
-                <input type="text" class="form-control total price" readonly="readonly" disabled="disabled">
+                <input type="text" class="form-control total price" readonly="readonly" disabled>
             </td>
             <td>
                 <input class="form-check-input" type="checkbox" name="pricing[recurrent][1M][enabled]" value="1"{% if (product.pricing.type == 'recurrent') and (product.pricing.recurrent['1M'].enabled) %} checked{% endif %}>
@@ -111,7 +111,7 @@
                 <input type="text" class="form-control price bill_price" name="pricing[recurrent][6M][price]" value="{{ product.pricing.recurrent['6M'].price }}">
             </td>
             <td>
-                <input type="text" class="form-control total price" readonly="readonly" disabled>
+                <input type="text" class="form-control total price" readonly="readonly" disabled="disabled">
             </td>
             <td>
                 <input class="form-check-input" type="checkbox" name="pricing[recurrent][6M][enabled]" value="1"{% if (product.pricing.type == 'recurrent') and (product.pricing.recurrent['6M'].enabled) %} checked{% endif %}>
@@ -126,7 +126,7 @@
                 <input type="text" class="form-control price bill_price" name="pricing[recurrent][1Y][price]" value="{{ product.pricing.recurrent['1Y'].price }}">
             </td>
             <td>
-                <input type="text" class="form-control total price" readonly="readonly" disabled>
+                <input type="text" class="form-control total price" readonly="readonly" disabled="disabled">
             </td>
             <td>
                 <input class="form-check-input" type="checkbox" name="pricing[recurrent][1Y][enabled]" value="1"{% if (product.pricing.type == 'recurrent') and (product.pricing.recurrent['1Y'].enabled) %} checked{% endif %}>
@@ -214,7 +214,7 @@
         p = parseFloat(p);
         s = parseFloat(s);
 
-        var num = new Number(p + s);
+        const num = p + s;
 
         if (!isNaN(num))
             return num.toFixed(2);
