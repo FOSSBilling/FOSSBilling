@@ -1022,30 +1022,47 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function ticketCreateForClient(\Model_Client $client, \Model_SupportHelpdesk $helpdesk, array $data): int
     {
-        // @todo validate task params
-        $rel_id = $data['rel_id'] ?? null;
+        SupportTicketValidator::validateTicketCreation($data);
+
+        if (isset($data['rel_id'])) {
+            if (filter_var($data['rel_id'], FILTER_VALIDATE_INT) === false) {
+                throw new \FOSSBilling\Exception('rel_id must be a valid integer, received: :value', [':value' => $data['rel_id']]);
+            }
+            $rel_id = (int) $data['rel_id'];
+        } else {
+            $rel_id = null;
+        }
+
         $rel_type = $data['rel_type'] ?? null;
 
         $rel_task = $data['rel_task'] ?? null;
         $rel_new_value = $data['rel_new_value'] ?? null;
         $rel_status = isset($data['rel_task']) ? \Model_SupportTicket::REL_STATUS_PENDING : \Model_SupportTicket::REL_STATUS_COMPLETE;
 
-        if ($rel_task == 'upgrade') {
-            if (!is_null($rel_id) && $rel_type == \Model_SupportTicket::REL_TYPE_ORDER) {
-                $orderService = $this->di['mod_service']('order');
-                $o = $orderService->findForClientById($client, $rel_id);
-                if (!$o instanceof \Model_ClientOrder) {
-                    throw new \FOSSBilling\Exception('Order ID does not exist');
-                }
+        $order = null;
+        if ($rel_id !== null && $rel_type === \Model_SupportTicket::REL_TYPE_ORDER) {
+            $orderService = $this->di['mod_service']('order');
+            $order = $orderService->findForClientById($client, $rel_id);
+            if (!$order instanceof \Model_ClientOrder) {
+                throw new \FOSSBilling\Exception('You do not have permission to reference this order.');
             }
+        }
 
-            if (!isset($o) || empty($rel_new_value)) {
+        if ($rel_task === \Model_SupportTicket::REL_TASK_UPGRADE) {
+            if (!$order instanceof \Model_ClientOrder) {
                 throw new \FOSSBilling\Exception('You must provide both an order ID and a new product ID in order to request an upgrade.');
             }
 
-            $product = $this->di['db']->getExistingModelById('Product', $o->product_id);
-            $allowedUpgrades = json_decode($product->upgrades ?? '');
-            if (!in_array($rel_new_value, $allowedUpgrades)) {
+            if (filter_var($rel_new_value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false) {
+                throw new \FOSSBilling\Exception('rel_new_value must be a valid positive integer product ID, received: :value', [':value' => $rel_new_value]);
+            }
+
+            $product = $this->di['db']->getExistingModelById('Product', $order->product_id);
+            $allowedUpgrades = json_decode($product->upgrades ?? '', true) ?? [];
+            $allowedUpgrades = array_map(static fn ($upgradeId): string => (string) $upgradeId, $allowedUpgrades);
+            $requestedUpgradeId = (string) $rel_new_value;
+
+            if (!in_array($requestedUpgradeId, $allowedUpgrades, true)) {
                 $upgrade = $this->di['db']->getExistingModelById('Product', $rel_new_value);
 
                 throw new InformationException('Sorry, but ":product" is not allowed to be upgraded to ":upgrade"', [':product' => $product->title, ':upgrade' => $upgrade->title ?? 'unknown']);
@@ -1671,7 +1688,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return isset($config['kb_enable']) && $config['kb_enable'] == 'on';
     }
 
-    public function kbSearchArticles(?string $status = null, ?string $search = null, ?string $cat = null, int $per_page = 100, ?int $page = null): array
+    public function kbSearchArticles(?string $status = null, ?string $search = null, ?string $cat = null, int $per_page = 100): array
     {
         $filter = [];
 
@@ -1698,7 +1715,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $sql .= ' ORDER BY title ASC';
 
-        return $this->di['pager']->getPaginatedResultSet($sql, $filter, $per_page, $page);
+        return $this->di['pager']->getPaginatedResultSet($sql, $filter, $per_page);
     }
 
     public function kbFindActiveArticleById(int $id): ?\Model_SupportKbArticle

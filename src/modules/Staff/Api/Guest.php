@@ -110,6 +110,9 @@ class Guest extends \Api_Abstract
         }
 
         $c = $this->di['db']->getExistingModelById('Admin', $reset->admin_id, 'User not found');
+        if ($c->status !== \Model_Admin::STATUS_ACTIVE) {
+            throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
+        }
         $c->pass = $this->di['password']->hashIt($data['password']);
         $this->di['db']->store($c);
 
@@ -138,7 +141,7 @@ class Guest extends \Api_Abstract
         $validator = $this->di['validator'];
         $validator->checkRequiredParamsForArray($required, $data);
         $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
-        $c = $this->di['db']->findOne('Admin', 'email = ?', [$data['email']]);
+        $c = $this->di['db']->findOne('Admin', 'email = ? AND status = ?', [$data['email'], \Model_Admin::STATUS_ACTIVE]);
 
         if (!$c instanceof \Model_Admin) {
             return true;

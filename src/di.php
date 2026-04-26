@@ -413,7 +413,12 @@ $di['loggedin_client'] = function () use ($di) {
     $client_id = $di['session']->get('client_id');
 
     try {
-        return $di['db']->getExistingModelById('Client', $client_id);
+        $client = $di['db']->getExistingModelById('Client', $client_id);
+        if ($client->status !== \Model_Client::ACTIVE) {
+            throw new Exception('Client account is not active');
+        }
+
+        return $client;
     } catch (Exception) {
         // Either the account was deleted or the session is invalid. Either way, remove the ID from the session so the system doesn't consider someone logged in
         $di['session']->delete('client_id');
@@ -450,7 +455,12 @@ $di['loggedin_admin'] = function () use ($di) {
     $admin = $di['session']->get('admin');
 
     try {
-        return $di['db']->getExistingModelById('Admin', $admin['id']);
+        $model = $di['db']->getExistingModelById('Admin', $admin['id']);
+        if ($model->status !== \Model_Admin::STATUS_ACTIVE) {
+            throw new Exception('Admin account is not active');
+        }
+
+        return $model;
     } catch (Exception) {
         // Either the account was deleted or the session is invalid. Either way, remove the ID from the session so the system doesn't consider someone logged in
         $di['session']->delete('admin');

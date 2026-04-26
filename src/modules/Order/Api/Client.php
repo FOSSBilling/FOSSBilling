@@ -32,8 +32,7 @@ class Client extends \Api_Abstract
         } else {
             [$query, $bindings] = $this->getService()->getSearchQuery($data);
         }
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($query, $bindings, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($query, $bindings, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
 
         foreach ($pager['list'] as $key => $item) {
             $order = $this->di['db']->getExistingModelById('ClientOrder', $item['id'], 'Client order not found');

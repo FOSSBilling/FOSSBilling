@@ -152,11 +152,12 @@ class i18n
     public static function toggleLocale(string $locale): bool
     {
         $filesystem = new Filesystem();
-        $basePath = Path::join(PATH_LANGS, $locale);
-        if (!$filesystem->exists($basePath)) {
+        $availableLocales = array_merge(self::getLocaleList(), self::getLocaleList(true));
+        if (!in_array($locale, $availableLocales, true)) {
             throw new InformationException('Unable to enable / disable the locale as it is not present in the locale folder.');
         }
 
+        $basePath = Path::join(PATH_LANGS, $locale);
         $disablePath = Path::join($basePath, '.disabled');
 
         // Reverse the status of the locale

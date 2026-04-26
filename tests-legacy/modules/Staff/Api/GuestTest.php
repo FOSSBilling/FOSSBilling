@@ -221,4 +221,120 @@ final class GuestTest extends \BBTestCase
             'password_confirm' => 'weak',
         ]);
     }
+
+    public function testPasswordResetUsesActiveStatusFilter(): void
+    {
+        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $modMock->expects($this->once())
+            ->method('getConfig')
+            ->willReturn([]);
+
+        $admin = new \Model_Admin();
+        $admin->loadBean(new \DummyBean());
+        $admin->id = 7;
+        $admin->email = 'staff@example.com';
+
+        $reset = new \Model_AdminPasswordReset();
+        $reset->loadBean(new \DummyBean());
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('findOne')
+            ->with('Admin', 'email = ? AND status = ?', ['staff@example.com', \Model_Admin::STATUS_ACTIVE])
+            ->willReturn($admin);
+        $dbMock->expects($this->once())
+            ->method('dispense')
+            ->with('AdminPasswordReset')
+            ->willReturn($reset);
+        $dbMock->expects($this->once())
+            ->method('store')
+            ->with($reset);
+
+        $emailServiceMock = $this->createMock(\Box\Mod\Email\Service::class);
+        $emailServiceMock->expects($this->once())
+            ->method('sendTemplate');
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->once())
+            ->method('fire');
+
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
+        $toolsMock->expects($this->once())
+            ->method('validateAndSanitizeEmail')
+            ->with('staff@example.com')
+            ->willReturn('staff@example.com');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['events_manager'] = $eventMock;
+        $di['validator'] = new \FOSSBilling\Validate();
+        $di['tools'] = $toolsMock;
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $emailServiceMock);
+        $di['logger'] = $this->createMock('\Box_Log');
+
+        $guestApi = new \Box\Mod\Staff\Api\Guest();
+        $guestApi->setDi($di);
+        $guestApi->setMod($modMock);
+        $guestApi->passwordreset(['email' => 'staff@example.com']);
+    }
+
+    public function testUpdatePasswordRejectsInactiveAdmin(): void
+    {
+        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $modMock->expects($this->once())
+            ->method('getConfig')
+            ->willReturn([]);
+
+        $reset = new \Model_AdminPasswordReset();
+        $reset->loadBean(new \DummyBean());
+        $reset->created_at = date('Y-m-d H:i:s', time() - 300);
+
+        $inactiveAdmin = new \Model_Admin();
+        $inactiveAdmin->loadBean(new \DummyBean());
+        $inactiveAdmin->status = \Model_Admin::STATUS_INACTIVE;
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('findOne')
+            ->with('AdminPasswordReset', 'hash = ?', ['hashedString'])
+            ->willReturn($reset);
+        $dbMock->expects($this->once())
+            ->method('getExistingModelById')
+            ->with('Admin', $reset->admin_id, 'User not found')
+            ->willReturn($inactiveAdmin);
+        $dbMock->expects($this->never())
+            ->method('store');
+        $dbMock->expects($this->never())
+            ->method('trash');
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->once())
+            ->method('fire');
+
+        $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
+        $passwordMock->expects($this->never())
+            ->method('hashIt');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['events_manager'] = $eventMock;
+        $di['validator'] = new \FOSSBilling\Validate();
+        $di['password'] = $passwordMock;
+
+        $guestApi = new \Box\Mod\Staff\Api\Guest();
+        $guestApi->setDi($di);
+        $guestApi->setMod($modMock);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('The link has expired or you have already confirmed the password reset.');
+        $guestApi->update_password([
+            'code' => 'hashedString',
+            'password' => 'StrongPass123',
+            'password_confirm' => 'StrongPass123',
+        ]);
+    }
 }
