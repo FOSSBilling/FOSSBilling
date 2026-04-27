@@ -51,8 +51,8 @@ class Pagination implements InjectionAwareInterface
     {
         $request = $this->di['request'];
 
-        $page ??= isset($data[$pageParam]) ? (int) $data[$pageParam] : null;
-        $perPage ??= isset($data[$perPageParam]) ? (int) $data[$perPageParam] : null;
+        $page ??= isset($data[$pageParam]) ? filter_var($data[$pageParam], FILTER_VALIDATE_INT, ['flags' => FILTER_NULL_ON_FAILURE]) : null;
+        $perPage ??= isset($data[$perPageParam]) ? filter_var($data[$perPageParam], FILTER_VALIDATE_INT, ['flags' => FILTER_NULL_ON_FAILURE]) : null;
 
         $page ??= filter_var($request->query->get($pageParam), FILTER_VALIDATE_INT, ['options' => ['default' => 1]]);
         $perPage ??= filter_var($request->query->get($perPageParam), FILTER_VALIDATE_INT, ['options' => ['default' => $this->getDefaultPerPage()]]);
