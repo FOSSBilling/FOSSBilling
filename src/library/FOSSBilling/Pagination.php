@@ -118,13 +118,12 @@ class Pagination implements InjectionAwareInterface
     {
         $offset = ($pagination->page - 1) * $pagination->perPage;
 
-        $paginatedQuery = $query . sprintf(' LIMIT %u, %u', $offset, $pagination->perPage);
-        $result = $this->di['db']->getAll($paginatedQuery, $params);
-
-        $fromPos = stripos($query, 'FROM');
-        if ($fromPos === false) {
+        if (stripos($query, 'FROM') === false) {
             throw new InformationException('Invalid SQL query. Missing FROM clause.');
         }
+
+        $paginatedQuery = $query . sprintf(' LIMIT %u, %u', $offset, $pagination->perPage);
+        $result = $this->di['db']->getAll($paginatedQuery, $params);
 
         $query = rtrim($query, " ;\n\r\t");
         $countQuery = 'SELECT COUNT(1) FROM (' . $query . ') AS sub';
