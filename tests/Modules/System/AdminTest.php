@@ -17,6 +17,8 @@ final class AdminTest extends TestCase
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($ch, CURLOPT_TIMEOUT, 2);
             curl_setopt($ch, CURLOPT_FAILONERROR, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
             curl_setopt($ch, CURLOPT_URL, $service);
             $ip = curl_exec($ch);
             if ($ip === false) {
@@ -104,11 +106,18 @@ final class AdminTest extends TestCase
                 $testResult = Request::makeRequest('admin/system/set_interface_ip', ['interface' => $ip]);
                 $this->assertTrue($testResult->wasSuccessful(), $testResult->generatePHPUnitMessage());
 
-                sleep(2);
+                $isReady = false;
+                for ($attempt = 0; $attempt < 10; $attempt++) {
+                    $result = Request::makeRequest('admin/system/env', ['ip' => true]);
+                    if ($result->wasSuccessful() && (bool) filter_var($result->getResult(), FILTER_VALIDATE_IP)) {
+                        $isReady = true;
+                        break;
+                    }
 
-                $result = Request::makeRequest('admin/system/env', ['ip' => true]);
-                $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-                $this->assertTrue((bool) filter_var($result->getResult(), FILTER_VALIDATE_IP));
+                    usleep(200000); // 200ms
+                }
+
+                $this->assertTrue($isReady, 'Timed out waiting for interface IP to become active');
             }
         }
 
@@ -131,8 +140,22 @@ final class AdminTest extends TestCase
 
     public function testMaliciousInterfaceIsRejected(): void
     {
-        $result = Request::makeRequest('admin/system/set_interface_ip', ['interface' => "x\"; echo 'pwned'; //"]);
-        $this->assertFalse($result->wasSuccessful(), 'A malicious interface value was accepted when it should have been rejected');
+        $payloads = [
+            "x\"; echo 'pwned'; //",
+            'eth0|id',
+            'eth0`id`',
+            'eth0$(id)',
+            'eth0 && whoami',
+            'eth0 > /tmp/pwned',
+        ];
+
+        foreach ($payloads as $payload) {
+            $result = Request::makeRequest('admin/system/set_interface_ip', ['interface' => $payload]);
+            $this->assertFalse(
+                $result->wasSuccessful(),
+                "A malicious interface value was accepted when it should have been rejected: {$payload}"
+            );
+        }
     }
 
     public function testMaliciousCustomInterfaceIsRejected(): void
