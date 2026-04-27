@@ -29,7 +29,7 @@ class Admin extends \Api_Abstract
     public function email_get_list($data)
     {
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, data: $data);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, \FOSSBilling\PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             if (!is_array($item)) {
@@ -373,7 +373,7 @@ class Admin extends \Api_Abstract
     public function get_queue(array $data)
     {
         [$sql, $params] = $this->getService()->queueGetSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, data: $data);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, \FOSSBilling\PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [

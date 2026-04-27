@@ -30,7 +30,7 @@ class Admin extends \Api_Abstract
         $service = $this->getService();
         [$sql, $params] = $service->getSearchQuery($data);
 
-        return $this->di['pager']->getPaginatedResultSet($sql, $params, data: $data);
+        return $this->di['pager']->getPaginatedResultSet($sql, $params, \FOSSBilling\PaginationOptions::fromArray($data));
     }
 
     /**

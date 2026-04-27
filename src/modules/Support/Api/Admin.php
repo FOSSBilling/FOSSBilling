@@ -30,7 +30,7 @@ class Admin extends \Api_Abstract
     public function ticket_get_list(array $data): array
     {
         [$sql, $bindings] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, data: $data);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, \FOSSBilling\PaginationOptions::fromArray($data));
         
         foreach ($pager['list'] as $key => $ticketArr) {
             $ticket = $this->di['db']->getExistingModelById('SupportTicket', $ticketArr['id'], 'Ticket not found');
@@ -203,7 +203,7 @@ class Admin extends \Api_Abstract
     public function public_ticket_get_list(array $data): array
     {
         [$sql, $bindings] = $this->getService()->publicGetSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, data: $data);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, \FOSSBilling\PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $ticketArr) {
             $ticket = $this->di['db']->getExistingModelById('SupportPTicket', $ticketArr['id'], 'Ticket not found');
@@ -314,7 +314,7 @@ class Admin extends \Api_Abstract
     {
         [$sql, $bindings] = $this->getService()->helpdeskGetSearchQuery($data);
 
-        return $this->di['pager']->getPaginatedResultSet($sql, $bindings, data: $data);
+        return $this->di['pager']->getPaginatedResultSet($sql, $bindings, \FOSSBilling\PaginationOptions::fromArray($data));
     }
 
     /**
@@ -394,7 +394,7 @@ class Admin extends \Api_Abstract
     public function canned_get_list(array $data): array
     {
         [$sql, $bindings] = $this->getService()->cannedGetSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, data: $data);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, \FOSSBilling\PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $staff = $this->di['db']->getExistingModelById('SupportPr', $item['id'], 'Canned response not found');
@@ -619,7 +619,7 @@ class Admin extends \Api_Abstract
         $search = $data['search'] ?? null;
         $cat = $data['cat'] ?? null;
 
-        $pager = $this->getService()->kbSearchArticles($status, $search, $cat, data: $data);
+        $pager = $this->getService()->kbSearchArticles($status, $search, $cat, \FOSSBilling\PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $article = $this->di['db']->getExistingModelById('SupportKbArticle', $item['id'], 'KB Article not found');
@@ -709,7 +709,7 @@ class Admin extends \Api_Abstract
     public function kb_category_get_list(array $data): array
     {
         [$sql, $bindings] = $this->getService()->kbCategoryGetSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, data: $data);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, \FOSSBilling\PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $category = $this->di['db']->getExistingModelById('SupportKbArticleCategory', $item['id'], 'KB Article not found');

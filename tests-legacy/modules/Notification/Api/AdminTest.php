@@ -27,7 +27,10 @@ final class AdminTest extends \BBTestCase
             ->getMock();
         $pager->expects($this->once())
             ->method('paginateDoctrineQuery')
-            ->with($queryBuilder)
+            ->with(
+                $queryBuilder,
+                $this->callback(fn ($pagination): bool => $pagination instanceof \FOSSBilling\PaginationOptions && $pagination->perPage === 10)
+            )
             ->willReturn(['list' => []]);
 
         $di = $this->getDi();

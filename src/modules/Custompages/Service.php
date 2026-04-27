@@ -51,7 +51,7 @@ class Service
         }
         $sql .= ' ORDER BY id DESC';
 
-        return $this->di['pager']->getPaginatedResultSet($sql, $filter, data: $data);
+        return $this->di['pager']->getPaginatedResultSet($sql, $filter, \FOSSBilling\PaginationOptions::fromArray($data));
     }
 
     public function deletePage($id): void

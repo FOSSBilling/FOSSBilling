@@ -33,7 +33,7 @@ class Guest extends \Api_Abstract
         }
 
         [$sql, $params] = $this->getService()->getProductSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, data: $data);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, \FOSSBilling\PaginationOptions::fromArray($data));
         
         foreach ($pager['list'] as $key => $item) {
             $model = $this->di['db']->getExistingModelById('Product', $item['id'], 'Post not found');
@@ -98,7 +98,7 @@ class Guest extends \Api_Abstract
         $service = $this->getService();
         
         [$sql, $params] = $service->getProductCategorySearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, data: $data);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, \FOSSBilling\PaginationOptions::fromArray($data));
         
         foreach ($pager['list'] as $key => $item) {
             $category = $this->di['db']->getExistingModelById('ProductCategory', $item['id'], 'Product category not found');

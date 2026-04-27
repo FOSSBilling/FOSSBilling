@@ -33,7 +33,7 @@ class Guest extends \Api_Abstract
         // Repository method returns a QueryBuilder with filters applied
         $qb = $repo->getSearchQueryBuilder($data);
 
-        return $this->di['pager']->paginateDoctrineQuery($qb, data: $data);
+        return $this->di['pager']->paginateDoctrineQuery($qb, \FOSSBilling\PaginationOptions::fromArray($data));
     }
 
     /**

@@ -132,7 +132,7 @@ class Admin extends \Api_Abstract
     public function server_get_list($data)
     {
         [$sql, $params] = $this->getService()->getServersSearchQuery($data);
-        $result = $this->di['pager']->getPaginatedResultSet($sql, $params, data: $data);
+        $result = $this->di['pager']->getPaginatedResultSet($sql, $params, \FOSSBilling\PaginationOptions::fromArray($data));
 
         foreach ($result['list'] as $key => $server) {
             $bean = $this->di['db']->dispense('ServiceHostingServer')->unbox();
@@ -155,7 +155,7 @@ class Admin extends \Api_Abstract
     public function account_get_list($data)
     {
         [$sql, $params] = $this->getService()->getAccountsSearchQuery($data);
-        $result = $this->di['pager']->getPaginatedResultSet($sql, $params, data: $data);
+        $result = $this->di['pager']->getPaginatedResultSet($sql, $params, \FOSSBilling\PaginationOptions::fromArray($data));
         $orderService = $this->di['mod_service']('order');
 
         foreach ($result['list'] as $key => $account) {
@@ -321,7 +321,7 @@ class Admin extends \Api_Abstract
     public function hp_get_list($data)
     {
         [$sql, $params] = $this->getService()->getHpSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, data: $data);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, \FOSSBilling\PaginationOptions::fromArray($data));
         
         foreach ($pager['list'] as $key => $item) {
             $model = $this->di['db']->getExistingModelById('ServiceHostingHp', $item['id'], 'Post not found');

@@ -33,7 +33,7 @@ class Client extends \Api_Abstract
         $data['client_id'] = $identity->id;
 
         [$sql, $bindings] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, data: $data);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, \FOSSBilling\PaginationOptions::fromArray($data));
         
         foreach ($pager['list'] as $key => $ticketArr) {
             $ticket = $this->di['db']->getExistingModelById('SupportTicket', $ticketArr['id'], 'Ticket not found');

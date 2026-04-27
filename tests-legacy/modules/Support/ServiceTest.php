@@ -2622,7 +2622,7 @@ final class ServiceTest extends \BBTestCase
         $di['pager'] = $pager;
         $service->setDi($di);
 
-        $result = $service->kbSearchArticles('active', 'keyword', 'category');
+        $result = $service->kbSearchArticles('active', 'keyword', 'category', \FOSSBilling\PaginationOptions::fromArray([]));
         $this->assertIsArray($result);
 
         $this->assertArrayHasKey('list', $result);

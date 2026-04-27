@@ -34,7 +34,7 @@ class Admin extends \Api_Abstract
     {
         $queryBuilder = $this->getService()->getSearchQueryBuilder($data);
 
-        return $this->di['pager']->paginateDoctrineQuery($queryBuilder, data: $data);
+        return $this->di['pager']->paginateDoctrineQuery($queryBuilder, \FOSSBilling\PaginationOptions::fromArray($data));
     }
 
     /**

@@ -34,7 +34,7 @@ class Admin extends \Api_Abstract
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
 
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, data: $data);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, \FOSSBilling\PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $clientArr) {
             $client = $this->di['db']->getExistingModelById('Client', $clientArr['id'], 'Client not found');
@@ -338,7 +338,7 @@ class Admin extends \Api_Abstract
     {
         $service = $this->di['mod_service']('Client', 'Balance');
         [$q, $params] = $service->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($q, $params, data: $data);
+        $pager = $this->di['pager']->getPaginatedResultSet($q, $params, \FOSSBilling\PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [
@@ -421,7 +421,7 @@ class Admin extends \Api_Abstract
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view_login_history');
 
         [$q, $params] = $this->getService()->getHistorySearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($q, $params, data: $data);
+        $pager = $this->di['pager']->getPaginatedResultSet($q, $params, \FOSSBilling\PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [

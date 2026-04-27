@@ -138,7 +138,7 @@ class Admin extends \Api_Abstract
     public function tld_get_list($data)
     {
         [$sql, $params] = $this->getService()->tldGetSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, data: $data);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, \FOSSBilling\PaginationOptions::fromArray($data));
         
         foreach ($pager['list'] as $key => $tldArr) {
             $tld = $this->di['db']->getExistingModelById('Tld', $tldArr['id'], sprintf('Tld #%s not found', $tldArr['id']));
@@ -268,7 +268,7 @@ class Admin extends \Api_Abstract
     public function registrar_get_list($data)
     {
         [$sql, $params] = $this->getService()->registrarGetSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, data: $data);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, \FOSSBilling\PaginationOptions::fromArray($data));
 
         $registrars = $this->di['db']->find('TldRegistrar', 'ORDER By name ASC');
 
