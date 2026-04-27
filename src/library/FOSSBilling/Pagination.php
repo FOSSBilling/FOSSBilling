@@ -32,14 +32,6 @@ class Pagination implements InjectionAwareInterface
     }
 
     /**
-     * Get the system-wide default number of results per page.
-     */
-    public function getDefaultPerPage(): int
-    {
-        return PaginationOptions::DEFAULT_PER_PAGE;
-    }
-
-    /**
      * Build the standard paginated response array.
      */
     private function buildPaginatedResponse(int $page, int $perPage, int $total, array $list): array
