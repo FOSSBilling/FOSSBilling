@@ -13,6 +13,9 @@ namespace FOSSBilling;
 
 final readonly class PaginationOptions
 {
+    public const MAX_PER_PAGE = 500;
+    public const DEFAULT_PER_PAGE = 100;
+
     /**
      * @param int    $page         current page number, starting from 1
      * @param int    $perPage      number of items to return per page
@@ -23,7 +26,7 @@ final readonly class PaginationOptions
      */
     public function __construct(
         public int $page = 1,
-        public int $perPage = Pagination::DEFAULT_PER_PAGE,
+        public int $perPage = self::DEFAULT_PER_PAGE,
         public string $pageParam = 'page',
         public string $perPageParam = 'per_page',
     ) {
@@ -33,7 +36,7 @@ final readonly class PaginationOptions
         if ($this->perPage < 1) {
             throw new InformationException("The number of items per page ($this->perPageParam) must be a positive integer.");
         }
-        if ($this->perPage > Pagination::MAX_PER_PAGE) {
+        if ($this->perPage > self::MAX_PER_PAGE) {
             throw new InformationException("The number of items per page ($this->perPageParam) is too large. Please specify a smaller number.");
         }
     }
@@ -53,7 +56,7 @@ final readonly class PaginationOptions
     {
         return new self(
             page: self::resolveInteger($data, $pageParam, 1),
-            perPage: self::resolveInteger($data, $perPageParam, Pagination::DEFAULT_PER_PAGE),
+            perPage: self::resolveInteger($data, $perPageParam, self::DEFAULT_PER_PAGE),
             pageParam: $pageParam,
             perPageParam: $perPageParam,
         );

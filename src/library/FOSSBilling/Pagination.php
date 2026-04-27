@@ -21,9 +21,6 @@ class Pagination implements InjectionAwareInterface
 {
     private ?\Pimple\Container $di = null;
 
-    public const MAX_PER_PAGE = PHP_INT_MAX; // If we ever want to enforce a limit
-    public const DEFAULT_PER_PAGE = 100;
-
     public function setDi(?\Pimple\Container $di): void
     {
         $this->di = $di;
@@ -39,7 +36,7 @@ class Pagination implements InjectionAwareInterface
      */
     public function getDefaultPerPage(): int
     {
-        return self::DEFAULT_PER_PAGE;
+        return PaginationOptions::DEFAULT_PER_PAGE;
     }
 
     /**
