@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Custompages;
 
+use FOSSBilling\PaginationOptions;
+
 class Service
 {
     protected ?\Pimple\Container $di = null;
@@ -51,7 +53,7 @@ class Service
         }
         $sql .= ' ORDER BY id DESC';
 
-        return $this->di['pager']->getPaginatedResultSet($sql, $filter, \FOSSBilling\PaginationOptions::fromArray($data));
+        return $this->di['pager']->getPaginatedResultSet($sql, $filter, PaginationOptions::fromArray($data));
     }
 
     public function deletePage($id): void

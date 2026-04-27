@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Email\Api;
 
+use FOSSBilling\PaginationOptions;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -31,7 +32,7 @@ class Client extends \Api_Abstract
         $client = $this->getIdentity();
         $data['client_id'] = $client->id;
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, \FOSSBilling\PaginationOptions::fromArray($data));
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [

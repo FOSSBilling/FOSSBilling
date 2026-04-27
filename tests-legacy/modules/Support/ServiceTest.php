@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Box\Tests\Mod\Support;
 
+use FOSSBilling\PaginationOptions;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use Symfony\Component\HttpFoundation\Request;
@@ -2622,7 +2623,7 @@ final class ServiceTest extends \BBTestCase
         $di['pager'] = $pager;
         $service->setDi($di);
 
-        $result = $service->kbSearchArticles('active', 'keyword', 'category', \FOSSBilling\PaginationOptions::fromArray([]));
+        $result = $service->kbSearchArticles('active', 'keyword', 'category', PaginationOptions::fromArray([]));
         $this->assertIsArray($result);
 
         $this->assertArrayHasKey('list', $result);

@@ -16,6 +16,7 @@ use Box\Mod\Email\Entity\EmailTemplate;
 use Box\Mod\Email\Repository\EmailTemplateRepository;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
+use FOSSBilling\PaginationOptions;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -787,7 +788,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $qb = $this->getTemplateRepository()->getSearchQueryBuilder($data);
 
-        $result = $this->di['pager']->paginateDoctrineQuery($qb, \FOSSBilling\PaginationOptions::fromArray($data));
+        $result = $this->di['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
 
         $list = [];
         foreach ($result['list'] as $templateRow) {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Box\Mod\Notification\Api;
 
 use Box\Mod\Extension\Entity\ExtensionMeta;
+use FOSSBilling\PaginationOptions;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -29,7 +30,7 @@ final class AdminTest extends \BBTestCase
             ->method('paginateDoctrineQuery')
             ->with(
                 $queryBuilder,
-                $this->callback(fn ($pagination): bool => $pagination instanceof \FOSSBilling\PaginationOptions && $pagination->perPage === 10)
+                $this->callback(fn ($pagination): bool => $pagination instanceof PaginationOptions && $pagination->perPage === 10)
             )
             ->willReturn(['list' => []]);
 

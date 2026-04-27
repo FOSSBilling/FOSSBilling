@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Api;
 
+use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Client extends \Api_Abstract
@@ -31,7 +32,7 @@ class Client extends \Api_Abstract
         $data['approved'] = true;
         
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, \FOSSBilling\PaginationOptions::fromArray($data));
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
         
         foreach ($pager['list'] as $key => $item) {
             $invoice = $this->di['db']->getExistingModelById('Invoice', $item['id'], 'Invoice not found');
@@ -154,7 +155,7 @@ class Client extends \Api_Abstract
         $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
         [$sql, $params] = $transactionService->getSearchQuery($data);
 
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, \FOSSBilling\PaginationOptions::fromArray($data));
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
         
         foreach ($pager['list'] as $key => $item) {
             $transaction = $this->di['db']->getExistingModelById('Transaction', $item['id'], 'Transaction not found');

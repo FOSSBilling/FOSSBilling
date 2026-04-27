@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Staff\Api;
 
+use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \Api_Abstract
@@ -30,7 +31,7 @@ class Admin extends \Api_Abstract
         $data['no_cron'] = true;
         
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, \FOSSBilling\PaginationOptions::fromArray($data));
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
         
         foreach ($pager['list'] as $key => $item) {
             $staff = $this->di['db']->getExistingModelById('Admin', $item['id'] ?? 0, 'Admin is not found');
@@ -200,7 +201,7 @@ class Admin extends \Api_Abstract
     public function group_get_list($data)
     {
         [$sql, $params] = $this->getService()->getAdminGroupSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, \FOSSBilling\PaginationOptions::fromArray($data));
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
         
         foreach ($pager['list'] as $key => $item) {
             $model = $this->di['db']->getExistingModelById('AdminGroup', $item['id'], 'Post not found');
@@ -278,7 +279,7 @@ class Admin extends \Api_Abstract
     public function login_history_get_list($data)
     {
         [$sql, $params] = $this->getService()->getActivityAdminHistorySearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, \FOSSBilling\PaginationOptions::fromArray($data));
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
         
         foreach ($pager['list'] as $key => $item) {
             $activity = $this->di['db']->getExistingModelById('ActivityAdminHistory', $item['id'] ?? 0, sprintf('Staff activity item #%s not found', $item['id'] ?? 'unknown'));

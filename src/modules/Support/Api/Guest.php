@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Support\Api;
 
+use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Guest extends \Api_Abstract
@@ -103,7 +104,7 @@ class Guest extends \Api_Abstract
         $search = $data['search'] ?? null;
         $cat = $data['kb_article_category_id'] ?? null;
 
-        $pager = $this->getService()->kbSearchArticles('active', $search, $cat, \FOSSBilling\PaginationOptions::fromArray($data));
+        $pager = $this->getService()->kbSearchArticles('active', $search, $cat, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $article = $this->di['db']->getExistingModelById('SupportKbArticle', $item['id'], 'KB Article not found');
@@ -148,7 +149,7 @@ class Guest extends \Api_Abstract
         $data['article_status'] = \Model_SupportKbArticle::ACTIVE;
         [$query, $bindings] = $this->getService()->kbCategoryGetSearchQuery($data);
 
-        $pager = $this->di['pager']->getPaginatedResultSet($query, $bindings, \FOSSBilling\PaginationOptions::fromArray($data));
+        $pager = $this->di['pager']->getPaginatedResultSet($query, $bindings, PaginationOptions::fromArray($data));
 
         $q = $data['q'] ?? null;
 

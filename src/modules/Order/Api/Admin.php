@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Order\Api;
 
+use FOSSBilling\PaginationOptions;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -48,7 +49,7 @@ class Admin extends \Api_Abstract
         $data['hide_addons'] = (isset($orderConfig['show_addons']) && $orderConfig['show_addons']) ? 0 : 1;
         
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $resultSet = $this->di['pager']->getPaginatedResultSet($sql, $params, \FOSSBilling\PaginationOptions::fromArray($data));
+        $resultSet = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($resultSet['list'] as $key => $result) {
             $orderObj = $this->di['db']->getExistingModelById('ClientOrder', $result['id'], 'Order not found');
@@ -291,7 +292,7 @@ class Admin extends \Api_Abstract
 
         [$sql, $bindings] = $this->getService()->getOrderStatusSearchQuery($data);
 
-        return $this->di['pager']->getPaginatedResultSet($sql, $bindings, \FOSSBilling\PaginationOptions::fromArray($data));
+        return $this->di['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
     }
 
     /**

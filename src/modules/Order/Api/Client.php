@@ -16,6 +16,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Order\Api;
 
+use FOSSBilling\PaginationOptions;
+
 class Client extends \Api_Abstract
 {
     /**
@@ -34,7 +36,7 @@ class Client extends \Api_Abstract
             [$query, $bindings] = $this->getService()->getSearchQuery($data);
         }
 
-        $pager = $this->di['pager']->getPaginatedResultSet($query, $bindings, \FOSSBilling\PaginationOptions::fromArray($data));
+        $pager = $this->di['pager']->getPaginatedResultSet($query, $bindings, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $order = $this->di['db']->getExistingModelById('ClientOrder', $item['id'], 'Client order not found');

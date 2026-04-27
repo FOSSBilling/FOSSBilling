@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Box\Mod\Currency\Api;
 
 use Box\Mod\Currency\Entity\Currency;
+use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \Api_Abstract
@@ -31,7 +32,7 @@ class Admin extends \Api_Abstract
 
         $qb = $repo->getSearchQueryBuilder($data);
 
-        return $this->di['pager']->paginateDoctrineQuery($qb, \FOSSBilling\PaginationOptions::fromArray($data));
+        return $this->di['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
     }
 
     /**

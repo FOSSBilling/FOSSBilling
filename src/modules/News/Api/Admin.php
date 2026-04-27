@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Box\Mod\News\Api;
 
 use Box\Mod\News\Entity\Post;
+use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \Api_Abstract
@@ -32,7 +33,7 @@ class Admin extends \Api_Abstract
         // Repository method returns a QueryBuilder with filters applied
         $qb = $repo->getSearchQueryBuilder($data);
 
-        return $this->di['pager']->paginateDoctrineQuery($qb, \FOSSBilling\PaginationOptions::fromArray($data));
+        return $this->di['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
     }
 
     /**

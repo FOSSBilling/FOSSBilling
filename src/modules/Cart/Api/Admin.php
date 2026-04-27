@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Cart\Api;
 
+use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 /**
@@ -27,7 +28,7 @@ class Admin extends \Api_Abstract
     public function get_list($data)
     {
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, \FOSSBilling\PaginationOptions::fromArray($data));
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $cartArr) {
             $cart = $this->di['db']->getExistingModelById('Cart', $cartArr['id'], 'Cart not found');
