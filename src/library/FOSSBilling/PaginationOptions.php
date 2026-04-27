@@ -31,13 +31,13 @@ final readonly class PaginationOptions
         public string $perPageParam = 'per_page',
     ) {
         if ($this->page < 1) {
-            throw new InformationException("Page number ($this->pageParam) must be a positive integer.");
+            throw new InformationException("Page number ({$this->pageParam}) must be a positive integer.");
         }
         if ($this->perPage < 1) {
-            throw new InformationException("The number of items per page ($this->perPageParam) must be a positive integer.");
+            throw new InformationException("The number of items per page ({$this->perPageParam}) must be a positive integer.");
         }
         if ($this->perPage > self::MAX_PER_PAGE) {
-            throw new InformationException("The number of items per page ($this->perPageParam) is too large. Please specify a smaller number.");
+            throw new InformationException("The number of items per page ({$this->perPageParam}) is too large. Please specify a smaller number.");
         }
     }
 

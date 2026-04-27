@@ -102,4 +102,12 @@ final class FOSSBilling_PaginationTest extends BBTestCase
         $pagination = $this->createPagination($db);
         $pagination->getPaginatedResultSet('SELECT * FROM example', [], PaginationOptions::fromArray(['page' => 0, 'per_page' => 25]));
     }
+
+    public function testPerPageAboveMaximumThrowsInformationException(): void
+    {
+        $this->expectException(InformationException::class);
+        $this->expectExceptionMessage('The number of items per page (per_page) is too large. Please specify a smaller number.');
+
+        PaginationOptions::fromArray(['per_page' => PaginationOptions::MAX_PER_PAGE + 1]);
+    }
 }
