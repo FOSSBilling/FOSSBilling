@@ -148,19 +148,23 @@ class Box_App
             return;
         }
 
-        if ($this->isAuthSensitivePath()) {
+        $logPrefix = $this->mod === 'api' ? 'api:' : 'page:';
+
+        $authPattern = $this->getAuthSensitivePattern();
+        if ($authPattern !== null) {
             $rateSpan = $apiConfig['rate_span_login'] ?? 60;
             $rateLimit = $apiConfig['rate_limit_login'] ?? 20;
+            $checkPrefix = 'page:' . $authPattern;
         } else {
             $rateSpan = $apiConfig['rate_span'] ?? 3600;
             $rateLimit = $apiConfig['rate_limit'] ?? 1000;
+            $checkPrefix = $logPrefix;
         }
 
         $service = $this->di['mod_service']('api');
-        $requestPrefix = $this->mod === 'api' ? 'api:' : 'page:';
-        $service->logRequest($requestPrefix . $this->url);
+        $service->logRequest($logPrefix . $this->url);
 
-        if ($service->isRateLimited($ip, $rateLimit, $rateSpan, $requestPrefix)) {
+        if ($service->isRateLimited($ip, $rateLimit, $rateSpan, $checkPrefix)) {
             $throttleDelay = $apiConfig['throttle_delay'] ?? 2;
             sleep((int) $throttleDelay);
 
@@ -179,7 +183,7 @@ class Box_App
         }
     }
 
-    protected function isAuthSensitivePath(): bool
+    protected function getAuthSensitivePattern(): ?string
     {
         $uri = '/' . ltrim($this->uri, '/');
 
@@ -192,11 +196,16 @@ class Box_App
 
         foreach ($authSensitivePatterns as $pattern) {
             if (str_starts_with($uri, $pattern)) {
-                return true;
+                return $pattern;
             }
         }
 
-        return false;
+        return null;
+    }
+
+    protected function isAuthSensitivePath(): bool
+    {
+        return $this->getAuthSensitivePattern() !== null;
     }
 
     /**

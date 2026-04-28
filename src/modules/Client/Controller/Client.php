@@ -85,8 +85,9 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         $apiConfig = \FOSSBilling\Config::getProperty('api', []);
         $loginSpan = $apiConfig['rate_span_login'] ?? 60;
         $loginLimit = $apiConfig['rate_limit_login'] ?? 20;
+        $requestPrefix = 'page:/client/reset-password-confirm';
 
-        if ($apiService->isRateLimited($ip, $loginLimit, $loginSpan)) {
+        if ($apiService->isRateLimited($ip, $loginLimit, $loginSpan, $requestPrefix)) {
             usleep(random_int(50000, 100000));
             $app->redirect('/');
         }

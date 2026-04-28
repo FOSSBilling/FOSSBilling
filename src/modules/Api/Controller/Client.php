@@ -424,9 +424,11 @@ class Client implements InjectionAwareInterface
         if ($this->di['mod_service']('system')->shouldExposeVersion()) {
             header('X-FOSSBilling-Version: ' . \FOSSBilling\Version::VERSION);
         }
-        header('X-RateLimit-Span: ' . $this->_rate_span);
-        header('X-RateLimit-Limit: ' . $this->_rate_limit);
-        header('X-RateLimit-Remaining: ' . max(0, $this->_requests_left ?? 0));
+        if ($this->_requests_left !== null) {
+            header('X-RateLimit-Span: ' . $this->_rate_span);
+            header('X-RateLimit-Limit: ' . $this->_rate_limit);
+            header('X-RateLimit-Remaining: ' . max(0, $this->_requests_left));
+        }
         if ($e instanceof \Exception) {
             error_log("{$e->getMessage()} {$e->getCode()}.");
             $code = $e->getCode() ?: 9999;
