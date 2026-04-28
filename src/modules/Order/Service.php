@@ -1086,13 +1086,6 @@ class Service implements InjectionAwareInterface
             throw $e;
         }
 
-        // do not extend renewal date if this is first paid invoice
-        $invoiceService = $this->di['mod_service']('invoice');
-        $paidInvoices = $invoiceService->findPaidInvoicesForOrder($order);
-        if (count($paidInvoices) <= 1) {
-            return;
-        }
-
         // set automatic order expiration
         if (!empty($order->period)) {
             $from_time = ($order->expires_at === null) ? time() : strtotime($order->expires_at); // from expiration date
