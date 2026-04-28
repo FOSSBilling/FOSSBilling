@@ -186,48 +186,12 @@ class ServiceSubscription implements InjectionAwareInterface
 
     public function isSubscribable($invoice_id): bool
     {
-        $query = 'SELECT COUNT(id) as cc
-            FROM invoice_item
-            WHERE invoice_id = :id
-            GROUP BY invoice_id
-           ';
-        $count = $this->di['db']->getCell($query, ['id' => $invoice_id]);
-        if ($count > 1) {
-            return false;
-        }
-
-        // check if first invoice line has denied period
-        $query = 'SELECT id, period
-            FROM invoice_item
-            WHERE invoice_id = :id
-            LIMIT 1
-           ';
-        $list = $this->di['db']->getAll($query, [':id' => $invoice_id]);
-
-        if (
-            isset($list[0])
-            && isset($list[0]['period'])
-            && !empty($list[0]['period'])
-        ) {
-            return true;
-        }
-
-        return false;
+        return $this->getSubscriptionPeriodByInvoiceId((int) $invoice_id) !== null;
     }
 
     public function getSubscriptionPeriod(\Model_Invoice $invoice)
     {
-        if (!$this->isSubscribable($invoice->id)) {
-            return null;
-        }
-
-        $query = 'SELECT period
-            FROM invoice_item
-            WHERE invoice_id = :id
-            LIMIT 1
-           ';
-
-        return $this->di['db']->getCell($query, ['id' => $invoice->id]);
+        return $this->getSubscriptionPeriodByInvoiceId((int) $invoice->id);
     }
 
     public function unsubscribe(\Model_Subscription $model): void
@@ -235,5 +199,43 @@ class ServiceSubscription implements InjectionAwareInterface
         $model->status = 'canceled';
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
+    }
+
+    private function getSubscriptionPeriodByInvoiceId(int $invoiceId): ?string
+    {
+        $query = 'SELECT period, price, quantity
+            FROM invoice_item
+            WHERE invoice_id = :id
+            ORDER BY id ASC';
+        $items = $this->di['db']->getAll($query, [':id' => $invoiceId]);
+
+        if (empty($items)) {
+            return null;
+        }
+
+        $subscriptionPeriod = null;
+        foreach ($items as $item) {
+            $lineTotal = (float) ($item['price'] ?? 0) * (float) ($item['quantity'] ?? 0);
+            $period = $item['period'] ?? null;
+
+            if ($lineTotal <= 0) {
+                continue;
+            }
+
+            if (empty($period)) {
+                return null;
+            }
+
+            if ($subscriptionPeriod === null) {
+                $subscriptionPeriod = $period;
+                continue;
+            }
+
+            if ($subscriptionPeriod !== $period) {
+                return null;
+            }
+        }
+
+        return $subscriptionPeriod;
     }
 }

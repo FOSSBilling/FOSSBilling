@@ -231,8 +231,10 @@ final class ServiceSubscriptionTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('getCell')
-            ->willReturn(['']);
+            ->method('getAll')
+            ->willReturn([
+                ['period' => '', 'price' => 10, 'quantity' => 1],
+            ]);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -249,15 +251,10 @@ final class ServiceSubscriptionTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
         $dbMock->expects($this->atLeastOnce())
-            ->method('getCell')
-            ->willReturn(null);
-
-        $getAllResults = [
-            0 => ['period' => '1W'],
-        ];
-        $dbMock->expects($this->atLeastOnce())
             ->method('getAll')
-            ->willReturn($getAllResults);
+            ->willReturn([
+                ['period' => '1W', 'price' => 10, 'quantity' => 1],
+            ]);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -269,30 +266,61 @@ final class ServiceSubscriptionTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testGetSubscriptionPeriod(): void
+    public function testIsSubscribableWithRecurringAddonLines(): void
     {
-        $serviceMock = $this->getMockBuilder(ServiceSubscription::class)
-            ->onlyMethods(['isSubscribable'])
+        $dbMock = $this->getMockBuilder('\Box_Database')
             ->getMock();
-
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('isSubscribable')
-            ->willReturn(true);
-
-        $period = '1W';
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getCell')
-            ->willReturn($period);
+        $dbMock->expects($this->once())
+            ->method('getAll')
+            ->willReturn([
+                ['period' => '1M', 'price' => 10, 'quantity' => 1],
+                ['period' => '1M', 'price' => 2, 'quantity' => 1],
+            ]);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $serviceMock->setDi($di);
+        $this->service->setDi($di);
+
+        $this->assertTrue($this->service->isSubscribable(2));
+    }
+
+    public function testIsSubscribableRejectsMixedRecurringAndOneTimeLines(): void
+    {
+        $dbMock = $this->getMockBuilder('\Box_Database')
+            ->getMock();
+        $dbMock->expects($this->once())
+            ->method('getAll')
+            ->willReturn([
+                ['period' => '1M', 'price' => 10, 'quantity' => 1],
+                ['period' => '', 'price' => 5, 'quantity' => 1],
+            ]);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $this->assertFalse($this->service->isSubscribable(2));
+    }
+
+    public function testGetSubscriptionPeriod(): void
+    {        
+        $period = '1W';
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getAll')
+            ->willReturn([
+                ['period' => $period, 'price' => 10, 'quantity' => 1],
+                ['period' => '', 'price' => -2, 'quantity' => 1],
+            ]);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
 
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
 
-        $result = $serviceMock->getSubscriptionPeriod($invoiceModel);
+        $result = $this->service->getSubscriptionPeriod($invoiceModel);
         $this->assertIsString($result);
         $this->assertEquals($period, $result);
     }
