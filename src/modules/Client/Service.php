@@ -83,7 +83,11 @@ class Service implements InjectionAwareInterface
                 'display_name' => __trans('Export clients'),
                 'description' => __trans('Allows the staff member to export client account data.'),
             ],
-            'manage_settings' => [],
+            'manage_settings' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage client settings'),
+                'description' => __trans('Allows the staff member to manage client module settings and configuration.'),
+            ],
         ];
     }
 
@@ -217,7 +221,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($date_to) {
-            $where[] = 'UNIX_TIMESTAMP(c.created_at) <= :date_from';
+            $where[] = 'UNIX_TIMESTAMP(c.created_at) <= :date_to';
             $params[':date_to'] = strtotime((string) $date_to);
         }
 
@@ -228,10 +232,10 @@ class Service implements InjectionAwareInterface
                 $params[':cid'] = $search;
                 $params[':caid'] = $search;
             } else {
-                $where[] = "(c.company LIKE :s_company OR c.first_name LIKE :s_first_time OR c.last_name LIKE :s_last_name OR c.email LIKE :s_email OR CONCAT(c.first_name,  ' ', c.last_name ) LIKE  :full_name)";
+                $where[] = "(c.company LIKE :s_company OR c.first_name LIKE :s_first_name OR c.last_name LIKE :s_last_name OR c.email LIKE :s_email OR CONCAT(c.first_name,  ' ', c.last_name ) LIKE  :full_name)";
                 $search = '%' . $search . '%';
                 $params[':s_company'] = $search;
-                $params[':s_first_time'] = $search;
+                $params[':s_first_name'] = $search;
                 $params[':s_last_name'] = $search;
                 $params[':s_email'] = $search;
                 $params[':full_name'] = $search;
@@ -657,7 +661,6 @@ class Service implements InjectionAwareInterface
         $table = $this->di['table']('ActivityClientHistory');
         $table->rmByClient($model);
 
-        $service->rmByClient($model);
         $service = $this->di['mod_service']('Email');
         $service->rmByClient($model);
         $service = $this->di['mod_service']('Activity');

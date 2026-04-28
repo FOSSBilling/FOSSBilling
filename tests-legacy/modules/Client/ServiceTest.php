@@ -253,7 +253,7 @@ final class ServiceTest extends \BBTestCase
             ],
             [
                 ['date_to' => '2012-12-11'],
-                'UNIX_TIMESTAMP(c.created_at) <= :date_from',
+                'UNIX_TIMESTAMP(c.created_at) <= :date_to',
                 [':date_to' => '2012-12-11'],
             ],
             [
@@ -263,9 +263,9 @@ final class ServiceTest extends \BBTestCase
             ],
             [
                 ['search' => 'Keyword'],
-                "c.company LIKE :s_company OR c.first_name LIKE :s_first_time OR c.last_name LIKE :s_last_name OR c.email LIKE :s_email OR CONCAT(c.first_name,  ' ', c.last_name ) LIKE  :full_name",
+                "c.company LIKE :s_company OR c.first_name LIKE :s_first_name OR c.last_name LIKE :s_last_name OR c.email LIKE :s_email OR CONCAT(c.first_name,  ' ', c.last_name ) LIKE  :full_name",
                 [':s_company' => 'Keyword',
-                    ':s_first_time' => 'Keyword',
+                    ':s_first_name' => 'Keyword',
                     ':s_last_name' => 'Keyword',
                     ':s_email' => 'Keyword',
                     ':full_name' => 'Keyword',

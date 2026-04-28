@@ -30,7 +30,12 @@ final class AdminTest extends \BBTestCase
             ->method('paginateDoctrineQuery')
             ->with(
                 $queryBuilder,
-                $this->callback(fn ($pagination): bool => $pagination instanceof PaginationOptions && $pagination->perPage === 10)
+                $this->callback(function ($pagination): bool {
+                    $this->assertInstanceOf(PaginationOptions::class, $pagination);
+                    $this->assertSame(10, $pagination->perPage);
+
+                    return true;
+                })
             )
             ->willReturn(['list' => []]);
 
