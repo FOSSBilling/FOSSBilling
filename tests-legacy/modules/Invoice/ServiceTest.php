@@ -327,13 +327,14 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $serviceMock) {
-            $serviceName = strtolower((string) $serviceName);
             if ($serviceName === 'invoice') {
                 return $serviceMock;
             }
             if ($serviceName === 'email') {
                 return $emailService;
             }
+
+            throw new \RuntimeException('Unexpected service request: ' . $serviceName);
         });
         $di['db'] = $dbMock;
 
@@ -343,6 +344,50 @@ final class ServiceTest extends \BBTestCase
             ->willReturn($di);
 
         $this->service->onAfterAdminInvoiceReminderSent($eventMock);
+    }
+
+    public function testOnAfterAdminInvoiceApprove(): void
+    {
+        $params = [
+            'id' => 1,
+            'total' => 10,
+            'client' => [
+                'id' => 2,
+            ],
+        ];
+
+        $eventMock = $this->getMockBuilder('\Box_Event')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $eventMock->expects($this->atLeastOnce())
+            ->method('getParameters')
+            ->willReturn($params);
+
+        $emailService = $this->createMock(\Box\Mod\Email\Service::class);
+        $emailService->expects($this->once())
+            ->method('sendTemplate')
+            ->with([
+                'to_client' => 2,
+                'code' => 'mod_invoice_created',
+                'invoice' => $params,
+            ]);
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService) {
+            if ($serviceName === 'email') {
+                return $emailService;
+            }
+
+            throw new \RuntimeException('Unexpected service request: ' . $serviceName);
+        });
+
+        $this->service->setDi($di);
+        $eventMock->expects($this->atLeastOnce())
+            ->method('getDi')
+            ->willReturn($di);
+
+        $result = $this->service->onAfterAdminInvoiceApprove($eventMock);
+        $this->assertTrue($result);
     }
 
     public function testOnAfterAdminCronRun(): void

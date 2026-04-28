@@ -365,6 +365,19 @@ class Service implements InjectionAwareInterface
         $params = $event->getParameters();
         $di = $event->getDi();
 
+        try {
+            if (($params['total'] ?? 0) > 0 && isset($params['client']['id'])) {
+                $email = [];
+                $email['to_client'] = $params['client']['id'];
+                $email['code'] = 'mod_invoice_created';
+                $email['invoice'] = $params;
+                $emailService = $di['mod_service']('email');
+                $emailService->sendTemplate($email);
+            }
+        } catch (\Exception $exc) {
+            error_log($exc->getMessage());
+        }
+
         return true;
     }
 
@@ -381,7 +394,7 @@ class Service implements InjectionAwareInterface
             $email['to_client'] = $invoiceModel->client_id;
             $email['code'] = 'mod_invoice_payment_reminder';
             $email['invoice'] = $invoice;
-            $emailService = $di['mod_service']('Email');
+            $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
