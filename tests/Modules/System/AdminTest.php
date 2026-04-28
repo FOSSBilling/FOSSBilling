@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 final class AdminTest extends TestCase
 {
-    private function ipLookupWorking(): bool
+    private function isIpLookupAvailable(): bool
     {
         $serverAddr = $_SERVER['SERVER_ADDR'] ?? null;
         if (is_string($serverAddr) && filter_var($serverAddr, FILTER_VALIDATE_IP) !== false) {
@@ -91,7 +91,7 @@ final class AdminTest extends TestCase
         }
 
         // Only test each found interface if ipify.org is functioning
-        if ($this->ipLookupWorking()) {
+        if ($this->isIpLookupAvailable()) {
             foreach ($result->getResult() as $ip) {
                 $testResult = Request::makeRequest('admin/system/set_interface_ip', ['interface' => $ip]);
                 $this->assertTrue($testResult->wasSuccessful(), $testResult->generatePHPUnitMessage());
