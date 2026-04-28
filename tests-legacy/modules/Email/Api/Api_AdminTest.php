@@ -12,6 +12,33 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class Api_AdminTest extends \BBTestCase
 {
+    protected function getDi(): \Pimple\Container
+    {
+        $di = parent::getDi();
+        $this->setModService($di);
+
+        return $di;
+    }
+
+    private function setModService(\Pimple\Container $di, array $services = []): void
+    {
+        $staffService = $this->getMockBuilder(\Box\Mod\Staff\Service::class)
+            ->onlyMethods(['checkPermissionsAndThrowException'])
+            ->getMock();
+        $staffService->method('checkPermissionsAndThrowException');
+
+        $services['staff'] ??= $staffService;
+
+        $normalizedServices = [];
+        foreach ($services as $module => $service) {
+            $normalizedServices[strtolower((string) $module)] = $service;
+        }
+
+        $di['mod_service'] = $di->protect(static function (string $module) use ($normalizedServices): object {
+            return $normalizedServices[strtolower($module)] ?? throw new \InvalidArgumentException("Unexpected module service requested: {$module}");
+        });
+    }
+
     private function createEmMock(?object $repositoryMock = null): object
     {
         if ($repositoryMock === null) {
@@ -529,6 +556,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('templateBatchGenerate')
             ->willReturn(true);
 
+        $adminApi->setDi($this->getDi());
         $adminApi->setService($emailService);
 
         $result = $adminApi->batch_template_generate();
@@ -543,6 +571,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('templateBatchDisable')
             ->willReturn(true);
 
+        $adminApi->setDi($this->getDi());
         $adminApi->setService($emailService);
 
         $result = $adminApi->batch_template_disable([]);
@@ -557,6 +586,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('templateBatchEnable')
             ->willReturn(true);
 
+        $adminApi->setDi($this->getDi());
         $adminApi->setService($emailService);
 
         $result = $adminApi->batch_template_enable([]);
@@ -571,6 +601,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('sendTemplate')
             ->willReturn(true);
 
+        $adminApi->setDi($this->getDi());
         $adminApi->setService($emailService);
 
         $result = $adminApi->send_test([]);
@@ -592,7 +623,7 @@ final class Api_AdminTest extends \BBTestCase
             ->willReturn($isExtensionActiveReturn);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $extension);
+        $this->setModService($di, ['extension' => $extension]);
 
         $adminApi->setService($emailService);
         $adminApi->setDi($di);
@@ -628,9 +659,15 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTemplateRender(): void
     {
-        $adminApi = $this->getMockBuilder(\Box\Mod\Email\Api\Admin::class)->onlyMethods(['template_get'])->getMock();
-        $adminApi->expects($this->atLeastOnce())
-            ->method('template_get')
+        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $template = $this->createTemplateEntity('code');
+
+        $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['getTemplate', 'templateToApiArray'])->getMock();
+        $emailService->expects($this->atLeastOnce())
+            ->method('getTemplate')
+            ->willReturn($template);
+        $emailService->expects($this->atLeastOnce())
+            ->method('templateToApiArray')
             ->willReturn(['vars' => [], 'content' => 'content']);
 
         $loader = new \Twig\Loader\ArrayLoader();
@@ -644,9 +681,10 @@ final class Api_AdminTest extends \BBTestCase
             ->method('renderString')
             ->willReturn('rendered');
 
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
+        $this->setModService($di, ['system' => $systemService]);
 
         $adminApi->setDi($di);
+        $adminApi->setService($emailService);
 
         $result = $adminApi->template_render(['id' => 5]);
         $this->assertEquals($result, 'rendered');

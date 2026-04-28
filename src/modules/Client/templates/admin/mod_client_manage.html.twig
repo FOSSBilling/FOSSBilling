@@ -10,6 +10,7 @@
 {% set can_manage_balance = has_permission('client', 'manage_balance') %}
 {% set can_manage_api_keys = has_permission('client', 'manage_api_keys') %}
 {% set can_view_client_login_history = has_permission('client', 'view_login_history') %}
+{% set can_view_email_history = has_permission('email', 'view_email_history') %}
 {% set has_profile_edit_actions = can_edit_profile or can_change_password %}
 
 {% block meta_title %}{{ client.first_name }} {{ client.last_name }}{% endblock %}
@@ -57,9 +58,11 @@
             <a class="nav-link" href="#tab-history" data-bs-toggle="tab" role="tab">{{ 'Logins'|trans }}</a>
         </li>
         {% endif %}
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#tab-emails" data-bs-toggle="tab" role="tab">{{ 'Emails'|trans }}</a>
-        </li>
+        {% if can_view_email_history %}
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#tab-emails" data-bs-toggle="tab" role="tab">{{ 'Emails'|trans }}</a>
+            </li>
+        {% endif %}
         <li class="nav-item" role="presentation">
             <a class="nav-link" href="#tab-transactions" data-bs-toggle="tab" role="tab">{{ 'Transactions'|trans }}</a>
         </li>
@@ -780,6 +783,7 @@
         </div>
         {% endif %}
 
+        {% if can_view_email_history %}
         <div class="tab-pane fade" id="tab-emails" role="tabpanel" aria-labelledby="emails-tab">
             <div class="card-body">
                 <h3>{{ 'Emails Sent to Client'|trans }}</h3>
@@ -829,6 +833,7 @@
             </div>
             {{ include('partial_pagination.html.twig', { 'list': emails }) }}
         </div>
+        {% endif %}
 
         <div class="tab-pane fade" id="tab-transactions" role="tabpanel" aria-labelledby="transactions-tab">
             <div class="card-body">
