@@ -322,7 +322,7 @@ class Client implements InjectionAwareInterface
 
     private function getProvidedBasicAuthUsername(): ?string
     {
-        if (isset($_SERVER['PHP_AUTH_USER']) && in_array($_SERVER['PHP_AUTH_USER'], ['client', 'admin'], true)) {
+        if (isset($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']) && in_array($_SERVER['PHP_AUTH_USER'], ['client', 'admin'], true)) {
             return (string) $_SERVER['PHP_AUTH_USER'];
         }
 
