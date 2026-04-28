@@ -86,9 +86,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function pruneRequests(int $maxAgeSeconds = 7200): int
     {
-        $sql = 'DELETE FROM api_request WHERE UNIX_TIMESTAMP() - :age > UNIX_TIMESTAMP(created_at)';
+        $cutoff = date('Y-m-d H:i:s', time() - $maxAgeSeconds);
+        $sql = 'DELETE FROM api_request WHERE created_at < :cutoff';
 
-        return (int) $this->di['db']->exec($sql, ['age' => $maxAgeSeconds]);
+        return (int) $this->di['db']->exec($sql, ['cutoff' => $cutoff]);
     }
 
     public static function onBeforeAdminCronRun(\Box_Event $event): void
