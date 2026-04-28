@@ -73,6 +73,22 @@ class Model_ProductTable implements FOSSBilling\InjectionAwareInterface
     }
 
     /**
+     * Resolved pricing for the initial order line in default currency.
+     *
+     * @return array{price: float, quantity: int, setup_price: float}
+     */
+    public function getOrderLineConfig(Model_Product $product, ?array $config = null): array
+    {
+        $quantity = max(1, (int) ($config['quantity'] ?? 1));
+
+        return [
+            'price' => (float) $this->getProductPrice($product, $config),
+            'quantity' => $quantity,
+            'setup_price' => (float) $this->getProductSetupPrice($product, $config),
+        ];
+    }
+
+    /**
      * Price for one unit.
      *
      * @return float

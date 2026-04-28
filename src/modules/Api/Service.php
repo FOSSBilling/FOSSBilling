@@ -33,10 +33,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    /**
-     * @return int - 1
-     */
-    public function logRequest()
+    public function logRequest(?string $path = null): int
     {
         $request = $this->di['request'];
         $sql = '
@@ -45,17 +42,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         ';
         $values = [
             'ip' => $request->getClientIp(),
-            'request' => $_SERVER['REQUEST_URI'] ?? null,
+            'request' => $path ?? $_SERVER['REQUEST_URI'] ?? null,
         ];
 
-        return $this->di['db']->exec($sql, $values);
+        return (int) $this->di['db']->exec($sql, $values);
     }
 
-    /**
-     * @param int|string  $since - timestamp or string date
-     * @param string|null $ip
-     */
-    public function getRequestCount($since, $ip = null, $isLoginMethod = false): int
+    public function getRequestCount($since, $ip = null, ?string $requestPrefix = null): int
     {
         if (!is_numeric($since)) {
             $since = strtotime($since);
@@ -64,25 +57,50 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $values = [
             'since' => $sinceIso,
         ];
-        if ($isLoginMethod) {
-            $sql = '
-        SELECT COUNT(id) as cclogin
-        FROM api_request
-        WHERE created_at > :since
-        ';
-        } else {
-            $sql = '
-        SELECT COUNT(id) as cc
-        FROM api_request
-        WHERE created_at > :since
-        ';
-        }
+        $sql = 'SELECT COUNT(id) FROM api_request WHERE created_at > :since';
 
         if ($ip != null) {
             $sql .= ' AND ip = :ip';
             $values['ip'] = $ip;
         }
 
+        if ($requestPrefix !== null) {
+            $sql .= ' AND request LIKE :request_prefix';
+            $values['request_prefix'] = $requestPrefix . '%';
+        }
+
         return (int) $this->di['db']->getCell($sql, $values);
+    }
+
+    public function isRateLimited(string $ip, int $maxAttempts, int $timeSpanSeconds, ?string $requestPrefix = null): bool
+    {
+        return $this->getRequestCount(time() - $timeSpanSeconds, $ip, $requestPrefix) >= $maxAttempts;
+    }
+
+    public function getRemainingRequests(string $ip, int $maxAttempts, int $timeSpanSeconds, ?string $requestPrefix = null): int
+    {
+        $count = $this->getRequestCount(time() - $timeSpanSeconds, $ip, $requestPrefix);
+
+        return max(0, $maxAttempts - $count);
+    }
+
+    public function pruneRequests(int $maxAgeSeconds = 7200): int
+    {
+        $cutoff = date('Y-m-d H:i:s', time() - $maxAgeSeconds);
+        $sql = 'DELETE FROM api_request WHERE created_at < :cutoff';
+
+        return (int) $this->di['db']->exec($sql, ['cutoff' => $cutoff]);
+    }
+
+    public static function onBeforeAdminCronRun(\Box_Event $event): void
+    {
+        $di = $event->getDi();
+
+        try {
+            $service = $di['mod_service']('api');
+            $service->pruneRequests();
+        } catch (\Exception $e) {
+            error_log($e->getMessage());
+        }
     }
 }

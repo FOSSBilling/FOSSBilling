@@ -146,7 +146,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             // return by reference
             $data['period'] = $years . 'Y';
-            $data['quantity'] = $years;
         }
     }
 

@@ -159,7 +159,8 @@ CREATE TABLE `api_request` (
   `ip` varchar(45) DEFAULT NULL,
   `request` text,
   `created_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `api_request_ip_created` (`ip`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

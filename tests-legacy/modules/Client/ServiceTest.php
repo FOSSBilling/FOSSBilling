@@ -1176,4 +1176,77 @@ final class ServiceTest extends \BBTestCase
         $result = $service->checkCustomFields($data);
         $this->assertNull($result);
     }
+
+    public function testGuestCreateClientStripsAdminOnlyFields(): void
+    {
+        $clientModel = new \Model_Client();
+        $clientModel->loadBean(new \DummyBean());
+        $clientModel->id = 1;
+
+        $data = [
+            'email' => 'test@example.com',
+            'first_name' => 'John',
+            'password' => 'StrongPassword123!',
+            'group_id' => '2',
+            'auth_type' => 'oauth',
+            'aid' => 'foreign-id',
+            'notes' => 'admin notes',
+            'created_at' => '2020-01-01 00:00:00',
+            'currency' => 'USD',
+            'lang' => 'en',
+            'custom_1' => 'value',
+        ];
+
+        $requestMock = $this->createMock(\Symfony\Component\HttpFoundation\Request::class);
+        $requestMock->method('getClientIp')->willReturn('127.0.0.1');
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('dispense')
+            ->willReturn($clientModel);
+        $capturedData = null;
+        $dbMock->expects($this->once())
+            ->method('store')
+            ->willReturnCallback(function ($client) use (&$capturedData) {
+                $capturedData = $client;
+
+                return 1;
+            });
+
+        $eventManagerMock = $this->createMock('\Box_EventManager');
+        $eventManagerMock->expects($this->exactly(2))
+            ->method('fire');
+
+        $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
+        $passwordMock->method('hashIt')->willReturn('hashed');
+
+        $modMock = $this->getMockBuilder(\FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
+        $modMock->method('getConfig')->willReturn([]);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['events_manager'] = $eventManagerMock;
+        $di['logger'] = new \Box_Log();
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
+        $di['password'] = $passwordMock;
+        $di['request'] = $requestMock;
+
+        $service = new \Box\Mod\Client\Service();
+        $service->setDi($di);
+
+        $service->guestCreateClient($data);
+
+        $this->assertSame('test@example.com', $clientModel->email);
+        $this->assertSame('John', $clientModel->first_name);
+        $this->assertSame('value', $clientModel->custom_1);
+        $this->assertNull($clientModel->client_group_id);
+        $this->assertNull($clientModel->auth_type);
+        $this->assertNull($clientModel->aid);
+        $this->assertNull($clientModel->notes);
+        $this->assertNull($clientModel->currency);
+        $this->assertNull($clientModel->lang);
+        $this->assertSame('127.0.0.1', $clientModel->ip);
+        $this->assertSame(\Model_Client::ACTIVE, $clientModel->status);
+        $this->assertStringNotContainsString('2020', $clientModel->created_at);
+    }
 }

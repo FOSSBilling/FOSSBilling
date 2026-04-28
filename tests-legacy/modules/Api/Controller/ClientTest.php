@@ -145,14 +145,22 @@ final class ClientTest extends \BBTestCase
         $this->assertSame([], $controller->calls);
     }
 
-    private function createController(): TestableClient
+    public function testRateLimitExceededReturns429(): void
+    {
+        $controller = $this->createController(rateLimited: true);
+        $controller->hasValidSession = false;
+
+        $this->expectException(InformationException::class);
+        $this->expectExceptionCode(429);
+
+        $this->invokeApiCall($controller, 'guest', 'test', 'testMethod', []);
+    }
+
+    private function createController(bool $rateLimited = false): TestableClient
     {
         $service = $this->createMock(\Box\Mod\Api\Service::class);
-        $service->expects($this->once())
-            ->method('logRequest');
-        $service->expects($this->once())
-            ->method('getRequestCount')
-            ->willReturn(0);
+        $service->method('getRemainingRequests')
+            ->willReturn($rateLimited ? 0 : 100);
 
         $request = $this->createMock(Request::class);
         $request->expects($this->atLeastOnce())

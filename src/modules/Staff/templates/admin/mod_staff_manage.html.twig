@@ -144,7 +144,7 @@
 
 							{% set prms = admin.staff_permissions_get({ 'id': staff.id }) %}
 							<form method="post" action="admin/staff/permissions_update" {{ fb_api_form({message: 'Permissions Updated'|trans}) }}>
-								<input type="hidden" name="permissions[default]" value="">
+								<input type="hidden" name="permissions[default][all]" id="permissions-default-all" value="{% if prms.default.all %}1{% endif %}">
 
 								{% for modName, mod in mods|filter(mod => mod.permissions.hide_permissions is not true) %}
 									<div class="row">
@@ -248,6 +248,24 @@
                 element.checked = check;
             }
         });
+
+        const wildcardInput = document.getElementById('permissions-default-all');
+        if (wildcardInput) {
+            wildcardInput.value = check ? '1' : '';
+        }
     }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const wildcardInput = document.getElementById('permissions-default-all');
+        if (!wildcardInput) {
+            return;
+        }
+
+        document.querySelectorAll('.permission-box, .permission-select').forEach((element) => {
+            element.addEventListener('change', function () {
+                wildcardInput.value = '';
+            });
+        });
+    });
 </script>
 {% endblock %}

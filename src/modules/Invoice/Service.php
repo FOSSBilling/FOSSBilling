@@ -365,6 +365,22 @@ class Service implements InjectionAwareInterface
         $params = $event->getParameters();
         $di = $event->getDi();
 
+        try {
+            if (($params['total'] ?? 0) > 0
+                && ($params['status'] ?? null) !== \Model_Invoice::STATUS_PAID
+                && isset($params['client']['id'])
+            ) {
+                $email = [];
+                $email['to_client'] = $params['client']['id'];
+                $email['code'] = 'mod_invoice_created';
+                $email['invoice'] = $params;
+                $emailService = $di['mod_service']('email');
+                $emailService->sendTemplate($email);
+            }
+        } catch (\Exception $exc) {
+            error_log($exc->getMessage());
+        }
+
         return true;
     }
 
@@ -381,7 +397,7 @@ class Service implements InjectionAwareInterface
             $email['to_client'] = $invoiceModel->client_id;
             $email['code'] = 'mod_invoice_payment_reminder';
             $email['invoice'] = $invoice;
-            $emailService = $di['mod_service']('Email');
+            $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
@@ -644,11 +660,11 @@ class Service implements InjectionAwareInterface
         $invoice->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($invoice);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceApprove', 'params' => $this->toApiArray($invoice)]);
-
         if (isset($data['use_credits']) && $data['use_credits']) {
             $this->tryPayWithCredits($invoice);
         }
+
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceApprove', 'params' => $this->toApiArray($invoice)]);
 
         $this->di['logger']->info("Approved invoice {$invoice->id}.");
 
@@ -1040,9 +1056,40 @@ class Service implements InjectionAwareInterface
         $this->setInvoiceDefaults($proforma);
 
         $price = $order->price;
+        $line = [
+            'price' => $order->price,
+            'quantity' => $order->quantity,
+        ];
+
+        if (in_array($order->status, [
+            \Model_ClientOrder::STATUS_ACTIVE,
+            \Model_ClientOrder::STATUS_FAILED_RENEW,
+            \Model_ClientOrder::STATUS_SUSPENDED,
+        ], true)) {
+            $product = $this->di['db']->getExistingModelById('Product', $order->product_id, 'Product not found');
+            $product->setDi($this->di);
+            $repo = $product->getTable();
+            $config = json_decode($order->config ?? '', true) ?? [];
+
+            if (method_exists($repo, 'getRenewalLineConfig')) {
+                $currencyService = $this->di['mod_service']('Currency');
+                $currencyRepository = $currencyService->getCurrencyRepository();
+                $rate = $currencyRepository->getRateByCode($order->currency);
+                if ($rate === null) {
+                    throw new \FOSSBilling\Exception("Currency rate for '{$order->currency}' is not configured");
+                }
+
+                $renewalLine = $repo->getRenewalLineConfig($product, $config);
+                $price = $renewalLine['price'] * $rate;
+                $line = [
+                    'price' => $price,
+                    'quantity' => $renewalLine['quantity'],
+                ];
+            }
+        }
 
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
-        $invoiceItemService->generateFromOrder($proforma, $order, \Model_InvoiceItem::TASK_RENEW, $price);
+        $invoiceItemService->generateFromOrder($proforma, $order, \Model_InvoiceItem::TASK_RENEW, $price, $line);
 
         // invoice due date
         if ($due_days > 0) {

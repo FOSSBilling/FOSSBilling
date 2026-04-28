@@ -1012,15 +1012,16 @@ class Service implements InjectionAwareInterface
             }
         }
 
+        $product->setDi($this->di);
         $repo = $product->getTable();
-        $price = $repo->getProductPrice($product, $config);
+        $line = $repo->getOrderLineConfig($product, $config);
+        $price = $line['price'] * $line['quantity'];
 
         if ($price == 0) {
             return 0;
         }
 
         $discount = 0;
-        $quantity = 1;
 
         switch ($promo->type) {
             case \Model_Promo::ABSOLUTE:
@@ -1029,11 +1030,7 @@ class Service implements InjectionAwareInterface
                 break;
 
             case \Model_Promo::PERCENTAGE:
-                if (isset($config['quantity']) && is_numeric($config['quantity'])) {
-                    $quantity = $config['quantity'];
-                }
-
-                $discount += round($price * $quantity * $promo->value / 100, 2);
+                $discount += round($price * $promo->value / 100, 2);
 
                 break;
 
@@ -1042,6 +1039,39 @@ class Service implements InjectionAwareInterface
         }
 
         return $discount;
+    }
+
+    public function getRenewalProductDiscount(\Model_Product $product, \Model_Promo $promo, ?array $config = null): float
+    {
+        if (!$this->isPromoLinkedToProduct($promo, $product)) {
+            return 0;
+        }
+
+        if (isset($config['period'])) {
+            $periods = $this->getPeriods($promo);
+            if (!empty($periods) && !in_array($config['period'], $periods)) {
+                return 0;
+            }
+        }
+
+        $product->setDi($this->di);
+        $repo = $product->getTable();
+        if (!method_exists($repo, 'getRenewalLineConfig')) {
+            return $this->getProductDiscount($product, $promo, $config);
+        }
+
+        $line = $repo->getRenewalLineConfig($product, $config);
+        $price = $line['price'] * $line['quantity'];
+
+        if ($price == 0) {
+            return 0;
+        }
+
+        return match ($promo->type) {
+            \Model_Promo::ABSOLUTE => (float) $promo->value,
+            \Model_Promo::PERCENTAGE => round($price * $promo->value / 100, 2),
+            default => 0,
+        };
     }
 
     public function isPromoLinkedToTld(\Model_Promo $promo, \Model_Tld $tld): bool

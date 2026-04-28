@@ -25,7 +25,6 @@ class Guest extends \Api_Abstract
      *
      * @optional bool $auto_login - Auto login client after signup
      * @optional string $last_name - last name
-     * @optional string $aid - Alternative id. Usually used by import tools.
      * @optional string $gender - Gender - values: male|female|nonbinary|other
      * @optional string $country - Country
      * @optional string $city - city
@@ -42,7 +41,6 @@ class Guest extends \Api_Abstract
      * @optional string $phone_cc - Phone country code
      * @optional string $document_type - Related document type, ie: passport, driving license
      * @optional string $document_nr - Related document number, ie: passport number: LC45698122
-     * @optional string $notes - Notes about client. Visible for admin only
      * @optional string $custom_1 - Custom field 1
      * @optional string $custom_2 - Custom field 2
      * @optional string $custom_3 - Custom field 3
