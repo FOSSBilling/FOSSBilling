@@ -44,8 +44,13 @@ class Client implements \FOSSBilling\InjectionAwareInterface
 
     public function get_client_confirmation(\Box_App $app, $hash): never
     {
+        $startTime = hrtime(true);
         $service = $this->di['mod_service']('client');
         $service->approveClientEmailByHash($hash);
+        $elapsed = (hrtime(true) - $startTime) / 1_000_000;
+        if ($elapsed < 50) {
+            usleep(random_int((int) (50_000 - $elapsed * 1000), 100_000));
+        }
         $systemService = $this->di['mod_service']('System');
         $systemService->setPendingMessage(__trans('Email address was confirmed'));
         $app->redirect('/');
@@ -75,11 +80,28 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         ];
         $template = 'mod_client_set_new_password';
 
-        // Call password_reset_valid function and if true, then render the template, otherwise redirect to the index page
+        $apiService = $this->di['mod_service']('api');
+        $ip = $this->di['request']->getClientIp();
+        $apiConfig = \FOSSBilling\Config::getProperty('api', []);
+        $loginSpan = $apiConfig['rate_span_login'] ?? 60;
+        $loginLimit = $apiConfig['rate_limit_login'] ?? 20;
+
+        if ($apiService->isRateLimited($ip, $loginLimit, $loginSpan)) {
+            usleep(random_int(50000, 100000));
+            $app->redirect('/');
+        }
+
+        $startTime = hrtime(true);
         $result = $service->password_reset_valid($data);
         if ($result !== false) {
             return $app->render($template);
         }
+
+        $elapsed = (hrtime(true) - $startTime) / 1_000_000;
+        if ($elapsed < 50) {
+            usleep(random_int((int) (50_000 - $elapsed * 1000), 100_000));
+        }
+
         $app->redirect('/');
     }
 }

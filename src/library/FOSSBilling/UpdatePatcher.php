@@ -296,6 +296,7 @@ class UpdatePatcher implements InjectionAwareInterface
             51 => 'patch51',
             52 => 'patch52',
             53 => 'patch53',
+            54 => 'patch54',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -897,6 +898,23 @@ class UpdatePatcher implements InjectionAwareInterface
 
             throw $e;
         }
+    }
+
+    private function patch54(): void
+    {
+        $schemaManager = $this->di['dbal']->createSchemaManager();
+        $indexes = array_map(static fn ($index) => $index->getName(), $schemaManager->listTableIndexes('api_request'));
+
+        if (!in_array('api_request_ip_created', $indexes, true)) {
+            $this->executeSql('ALTER TABLE `api_request` ADD INDEX `api_request_ip_created` (`ip`, `created_at`);');
+        }
+
+        $fileActions = [
+            Path::join(PATH_LIBRARY, 'Model', 'ClientPasswordResetTable.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ApiRequestTable.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ApiRequest.php') => 'unlink',
+        ];
+        $this->executeFileActions($fileActions);
     }
 
     /**
