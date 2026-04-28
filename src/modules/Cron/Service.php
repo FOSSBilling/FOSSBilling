@@ -69,11 +69,6 @@ class Service
         $count = $this->clearOldSessions() ?? 0;
         $this->di['logger']->setChannel('cron')->info("Cleared {$count} outdated sessions from the database.");
 
-        // Prune old rate limit request logs
-        $apiService = $this->di['mod_service']('api');
-        $pruned = $apiService->pruneRequests();
-        $this->di['logger']->setChannel('cron')->info("Pruned {$pruned} old rate limit entries.");
-
         $this->di['events_manager']->fire(['event' => 'onAfterAdminCronRun']);
         $this->di['logger']->setChannel('cron')->info('Finished executing cron jobs.');
 
