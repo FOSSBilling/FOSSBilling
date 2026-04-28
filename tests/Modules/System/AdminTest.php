@@ -11,29 +11,18 @@ final class AdminTest extends TestCase
 {
     private function ipLookupWorking(): bool
     {
-        $services = ['https://api64.ipify.org', 'https://ifconfig.io/ip', 'https://ip.hestiacp.com/'];
-        foreach ($services as $service) {
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 2);
-            curl_setopt($ch, CURLOPT_FAILONERROR, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-            curl_setopt($ch, CURLOPT_URL, $service);
-            $ip = curl_exec($ch);
-            if ($ip === false) {
-                curl_close($ch);
-
-                continue;
-            }
-            $isValidIp = filter_var($ip, FILTER_VALIDATE_IP) !== false;
-            curl_close($ch);
-            if ($isValidIp) {
-                return true;
-            }
+        $serverAddr = $_SERVER['SERVER_ADDR'] ?? null;
+        if (is_string($serverAddr) && filter_var($serverAddr, FILTER_VALIDATE_IP) !== false) {
+            return true;
         }
 
-        return false;
+        $hostname = gethostname();
+        if ($hostname === false || $hostname === '') {
+            return false;
+        }
+
+        $resolved = gethostbyname($hostname);
+        return is_string($resolved) && filter_var($resolved, FILTER_VALIDATE_IP) !== false;
     }
 
     public function testClearCache(): void
@@ -149,6 +138,12 @@ final class AdminTest extends TestCase
             'eth0$(id)',
             'eth0 && whoami',
             'eth0 > /tmp/pwned',
+            '../etc/passwd',
+            '..\\..\\windows\\system32\\drivers\\etc\\hosts',
+            "eth0\0evil",
+            str_repeat('a', 1024),
+            "eth0\nwhoami",
+            " eth0 ",
         ];
 
         foreach ($payloads as $payload) {

@@ -24,7 +24,7 @@ use Symfony\Component\Filesystem\Filesystem;
 class Client implements InjectionAwareInterface
 {
     private int|float|null $_requests_left = null;
-    private $_api_config;
+    private $apiConfig;
     private readonly Filesystem $filesystem;
     protected ?\Pimple\Container $di = null;
 
@@ -77,9 +77,15 @@ class Client implements InjectionAwareInterface
         $p = $_POST;
 
         // adding support for raw post input with json string
-        $input = $this->filesystem->readFile('php://input');
+        $input = file_get_contents('php://input');
         if (empty($p) && !empty($input)) {
-            $p = @json_decode($input, true);
+            $p = json_decode($input, true);
+            if (JSON_ERROR_NONE !== json_last_error()) {
+                $exc = new \FOSSBilling\Exception('Malformed JSON input: :error', [':error' => json_last_error_msg()], 400);
+                $this->renderJson(null, $exc);
+
+                return null;
+            }
         }
 
         $call = $class . '_' . $method;
@@ -105,14 +111,15 @@ class Client implements InjectionAwareInterface
 
     private function _loadConfig(): void
     {
-        if (is_null($this->_api_config)) {
-            $this->_api_config = Config::getProperty('api', []);
+        if (is_null($this->apiConfig)) {
+            $this->apiConfig = Config::getProperty('api', []);
         }
     }
 
     private function checkRateLimit($method = null): bool
     {
-        if (in_array($this->_getIp(), $this->_api_config['rate_limit_whitelist'])) {
+        $rateLimitWhitelist = $this->apiConfig['rate_limit_whitelist'] ?? [];
+        if (in_array($this->_getIp(), $rateLimitWhitelist)) {
             return true;
         }
 
@@ -120,21 +127,21 @@ class Client implements InjectionAwareInterface
 
         if ($method == 'staff_login' || $method == 'client_login') {
             $isLoginMethod = true;
-            $rate_span = $this->_api_config['rate_span_login'];
-            $rate_limit = $this->_api_config['rate_limit_login'];
+            $rate_span = $this->apiConfig['rate_span_login'];
+            $rate_limit = $this->apiConfig['rate_limit_login'];
 
             // 25 to 250ms delay to help prevent email enumeration.
             usleep(random_int(25000, 250000));
         } else {
-            $rate_span = $this->_api_config['rate_span'];
-            $rate_limit = $this->_api_config['rate_limit'];
+            $rate_span = $this->apiConfig['rate_span'];
+            $rate_limit = $this->apiConfig['rate_limit'];
         }
 
         $service = $this->di['mod_service']('api');
         $requests = $service->getRequestCount(time() - $rate_span, $this->_getIp(), $isLoginMethod);
         $this->_requests_left = $rate_limit - $requests;
         if ($this->_requests_left <= 0) {
-            sleep($this->_api_config['throttle_delay']);
+            sleep($this->apiConfig['throttle_delay']);
         }
 
         return true;
@@ -143,7 +150,7 @@ class Client implements InjectionAwareInterface
     private function checkHttpReferer(): bool
     {
         // snake oil: check request is from the same domain as FOSSBilling is installed if present
-        $check_referer_header = isset($this->_api_config['require_referrer_header']) && (bool) $this->_api_config['require_referrer_header'];
+        $check_referer_header = isset($this->apiConfig['require_referrer_header']) && (bool) $this->apiConfig['require_referrer_header'];
         if ($check_referer_header) {
             $url = strtolower(SYSTEM_URL);
             $referer = isset($_SERVER['HTTP_REFERER']) ? strtolower((string) $_SERVER['HTTP_REFERER']) : null;
@@ -157,7 +164,7 @@ class Client implements InjectionAwareInterface
 
     private function checkAllowedIps(): bool
     {
-        $ips = $this->_api_config['allowed_ips'];
+        $ips = $this->apiConfig['allowed_ips'];
         if (!empty($ips) && !in_array($this->_getIp(), $ips)) {
             throw new \FOSSBilling\InformationException('Unauthorized IP', null, 1002);
         }
@@ -168,10 +175,10 @@ class Client implements InjectionAwareInterface
     protected function isRoleLoggedIn($role): bool
     {
         if ($role == 'client') {
-            $this->di['is_client_logged'];
+            return (bool) ($this->di['is_client_logged'] ?? false);
         }
         if ($role == 'admin') {
-            $this->di['is_admin_logged'];
+            return (bool) ($this->di['is_admin_logged'] ?? false);
         }
 
         return true;
@@ -410,8 +417,8 @@ class Client implements InjectionAwareInterface
         if ($this->di['mod_service']('system')->shouldExposeVersion()) {
             header('X-FOSSBilling-Version: ' . \FOSSBilling\Version::VERSION);
         }
-        header('X-RateLimit-Span: ' . $this->_api_config['rate_span']);
-        header('X-RateLimit-Limit: ' . $this->_api_config['rate_limit']);
+        header('X-RateLimit-Span: ' . $this->apiConfig['rate_span']);
+        header('X-RateLimit-Limit: ' . $this->apiConfig['rate_limit']);
         header('X-RateLimit-Remaining: ' . $this->_requests_left);
         if ($e instanceof \Exception) {
             error_log("{$e->getMessage()} {$e->getCode()}.");
@@ -446,7 +453,7 @@ class Client implements InjectionAwareInterface
     public function _checkCSRFToken()
     {
         $this->_loadConfig();
-        $csrfPrevention = $this->_api_config['CSRFPrevention'] ?? true;
+        $csrfPrevention = $this->apiConfig['CSRFPrevention'] ?? true;
         if (!$csrfPrevention || Environment::isCLI()) {
             return true;
         }
