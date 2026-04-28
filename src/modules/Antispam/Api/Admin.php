@@ -73,6 +73,7 @@ class Admin extends \Api_Abstract
 
         $config['block_ips'] = true;
         $config['blocked_ips'] = $blocked_ips_string;
+        $config['ext'] = 'mod_antispam';
         $this->di['mod_service']('extension')->setConfig($config);
 
         return ['result' => true, 'ip' => $ip];
@@ -101,6 +102,7 @@ class Admin extends \Api_Abstract
 
         $config['block_ips'] = !empty($blocked_ips);
         $config['blocked_ips'] = $blocked_ips_string;
+        $config['ext'] = 'mod_antispam';
         $this->di['mod_service']('extension')->setConfig($config);
 
         return ['result' => true, 'ip' => $ip];
