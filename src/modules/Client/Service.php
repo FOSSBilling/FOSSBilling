@@ -663,8 +663,10 @@ class Service implements InjectionAwareInterface
         $service = $this->di['mod_service']('Activity');
         $service->rmByClient($model);
 
-        $table = $this->di['table']('ClientPasswordReset');
-        $table->rmByClient($model);
+        $resetRecords = $this->di['db']->find('ClientPasswordReset', 'client_id = ?', [$model->id]);
+        foreach ($resetRecords as $resetRecord) {
+            $this->di['db']->trash($resetRecord);
+        }
 
         $query = $this->di['dbal']->createQueryBuilder();
         $query
