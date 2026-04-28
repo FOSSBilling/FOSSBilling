@@ -115,12 +115,6 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $qty = $data['quantity'] ?? 1;
-        // check stock
-        if (!$this->isStockAvailable($product, $qty)) {
-            throw new \FOSSBilling\InformationException('This item is currently out of stock');
-        }
-
         $addons = $data['addons'] ?? [];
         unset($data['id']);
         unset($data['addons']);
@@ -163,6 +157,20 @@ class Service implements InjectionAwareInterface
                 } else {
                     error_log('Addon not found by id ' . $id);
                 }
+            }
+        }
+
+        $pendingQuantities = [];
+        foreach ($list as $cartItem) {
+            /** @var \Model_Product $cartProduct */
+            $cartProduct = $cartItem['product'];
+            $requestedQty = $this->getRequestedQuantity($cartItem['config']);
+            $cartProductId = (int) $cartProduct->id;
+            $pendingQuantities[$cartProductId] = ($pendingQuantities[$cartProductId] ?? 0) + $requestedQty;
+
+            $reservedQty = $this->getReservedQuantityInCart($cart, $cartProductId);
+            if (!$this->isStockAvailable($cartProduct, $reservedQty + $pendingQuantities[$cartProductId])) {
+                throw new \FOSSBilling\InformationException('This item is currently out of stock');
             }
         }
 
@@ -234,6 +242,26 @@ class Service implements InjectionAwareInterface
         $this->di['db']->store($item);
 
         return true;
+    }
+
+    protected function getReservedQuantityInCart(\Model_Cart $cart, int $productId): int
+    {
+        $reservedQty = 0;
+        foreach ($this->getCartProducts($cart) as $cartProduct) {
+            if ((int) $cartProduct->product_id !== $productId) {
+                continue;
+            }
+
+            $config = $this->getItemConfig($cartProduct);
+            $reservedQty += $this->getRequestedQuantity($config);
+        }
+
+        return $reservedQty;
+    }
+
+    protected function getRequestedQuantity(array $config): int
+    {
+        return max(1, (int) ($config['quantity'] ?? 1));
     }
 
     public function removeProduct(\Model_Cart $cart, $id, $removeAddons = true): bool
@@ -556,6 +584,7 @@ class Service implements InjectionAwareInterface
         $orders = [];
         $invoice_items = [];
         $master_order = null;
+        $requestedProductQuantities = [];
         $i = 0;
 
         foreach ($this->getCartProducts($cart) as $p) {
@@ -564,6 +593,12 @@ class Service implements InjectionAwareInterface
             $product = $this->di['db']->getExistingModelById('Product', $item['product_id']);
             if (is_null($product) || $product->status !== 'enabled') {
                 throw new \FOSSBilling\InformationException('Unable to complete order. One or more of the selected products are invalid.');
+            }
+
+            $requestedQty = $this->getRequestedQuantity($item);
+            $requestedProductQuantities[$product->id] = ($requestedProductQuantities[$product->id] ?? 0) + $requestedQty;
+            if (!$this->isStockAvailable($product, $requestedProductQuantities[$product->id])) {
+                throw new \FOSSBilling\InformationException('Unable to complete order. One or more selected products are out of stock.');
             }
 
             /*

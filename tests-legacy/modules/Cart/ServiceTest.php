@@ -897,7 +897,13 @@ final class ServiceTest extends \BBTestCase
             ->method('isStockAvailable')
             ->willReturn(false);
 
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('find')
+            ->willReturn([]);
+
         $di = $this->getDi();
+        $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
 
@@ -907,6 +913,58 @@ final class ServiceTest extends \BBTestCase
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('This item is currently out of stock');
         $serviceMock->addItem($cartModel, $productModel, $data);
+    }
+
+    public function testAddItemRejectsCumulativeStockOverflow(): void
+    {
+        $cartModel = new \Model_Cart();
+        $cartModel->loadBean(new \DummyBean());
+        $cartModel->id = 10;
+
+        $productModel = new \Model_Product();
+        $productModel->loadBean(new \DummyBean());
+        $productModel->id = 7;
+        $productModel->type = 'hosting';
+        $productModel->stock_control = true;
+        $productModel->quantity_in_stock = 1;
+
+        $existingCartProduct = new \Model_CartProduct();
+        $existingCartProduct->loadBean(new \DummyBean());
+        $existingCartProduct->product_id = 7;
+        $existingCartProduct->config = json_encode(['quantity' => 1]);
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->atLeastOnce())
+            ->method('fire');
+
+        $serviceHostingServiceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)->getMock();
+
+        $dbMock = $this->createMock('Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('find')
+            ->with('CartProduct')
+            ->willReturn([$existingCartProduct]);
+        $dbMock->expects($this->never())
+            ->method('store');
+
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
+            ->onlyMethods(['isRecurrentPricing'])
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('isRecurrentPricing')
+            ->willReturn(false);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['events_manager'] = $eventMock;
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
+
+        $serviceMock->setDi($di);
+        $productModel->setDi($di);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('This item is currently out of stock');
+        $serviceMock->addItem($cartModel, $productModel, ['quantity' => 1]);
     }
 
     public function testAddItemmTypeHosting(): void
@@ -948,7 +1006,13 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('addProduct');
 
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('find')
+            ->willReturn([]);
+
         $di = $this->getDi();
+        $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
         $di['logger'] = new \Box_Log();
@@ -998,6 +1062,9 @@ final class ServiceTest extends \BBTestCase
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
+            ->method('find')
+            ->willReturn([]);
+        $dbMock->expects($this->atLeastOnce())
             ->method('load')
             ->willReturn($productModel);
 
@@ -1044,6 +1111,9 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(true);
 
         $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('find')
+            ->willReturn([]);
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')
             ->willReturn([]);

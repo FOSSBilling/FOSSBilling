@@ -1780,6 +1780,7 @@ final class ServiceTest extends \BBTestCase
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
         $productModel->stock_control = 1;
+        $productModel->quantity_in_stock = 5;
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -1792,6 +1793,27 @@ final class ServiceTest extends \BBTestCase
 
         $result = $this->service->stockSale($productModel, 2);
         $this->assertTrue($result);
+    }
+
+    public function testStockSaleThrowsWhenQuantityWouldGoNegative(): void
+    {
+        $productModel = new \Model_Product();
+        $productModel->loadBean(new \DummyBean());
+        $productModel->id = 1;
+        $productModel->stock_control = 1;
+        $productModel->quantity_in_stock = 1;
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->never())
+            ->method('store');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('Product 1 is out of stock.');
+        $this->service->stockSale($productModel, 2);
     }
 
     public function testUpdateOrder(): void
