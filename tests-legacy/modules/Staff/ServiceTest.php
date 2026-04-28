@@ -237,6 +237,37 @@ final class ServiceTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
+    public function testHasPermissionRoleStaffWithWildcardPermissionsForNewModule(): void
+    {
+        $member = new \Model_Admin();
+        $member->loadBean(new \DummyBean());
+        $member->role = 'staff';
+
+        $serviceMock = $this->getMockBuilder(Service::class)
+            ->onlyMethods(['getPermissions'])
+            ->getMock();
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getPermissions')
+            ->willReturn([
+                'default' => ['all' => 1],
+                'extension' => ['access' => 1, 'manage_extensions' => 1],
+            ]);
+
+        $extensionServiceMock = $this->getMockBuilder(\Box\Mod\Extension\Service::class)->onlyMethods(['getSpecificModulePermissions'])->getMock();
+        $extensionServiceMock->expects($this->atLeastOnce())
+            ->method('getSpecificModulePermissions')
+            ->willReturn(['manage_settings' => ['type' => 'bool']]);
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $extensionServiceMock);
+
+        $serviceMock->setDi($di);
+
+        $this->assertTrue($serviceMock->hasPermission($member, 'massmailer'));
+        $this->assertTrue($serviceMock->hasPermission($member, 'massmailer', 'manage_settings'));
+    }
+
     public function testOnAfterClientReplyTicket(): void
     {
         $eventMock = $this->getMockBuilder('\Box_Event')
