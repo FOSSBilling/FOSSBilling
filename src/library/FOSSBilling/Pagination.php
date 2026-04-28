@@ -21,9 +21,6 @@ class Pagination implements InjectionAwareInterface
 {
     private ?\Pimple\Container $di = null;
 
-    public const MAX_PER_PAGE = PHP_INT_MAX; // If we ever want to enforce a limit
-    public const DEFAULT_PER_PAGE = 100;
-
     public function setDi(?\Pimple\Container $di): void
     {
         $this->di = $di;
@@ -32,39 +29,6 @@ class Pagination implements InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
-    }
-
-    /**
-     * Get the system-wide default number of results per page.
-     */
-    public function getDefaultPerPage(): int
-    {
-        return self::DEFAULT_PER_PAGE;
-    }
-
-    /**
-     * Resolve and validate page/perPage values from arguments or request.
-     *
-     * @return array{0: int, 1: int} [page, perPage]
-     */
-    private function resolvePagination(?int $perPage, ?int $page, string $pageParam, string $perPageParam): array
-    {
-        $request = $this->di['request'];
-
-        $page ??= filter_var($request->query->get($pageParam), FILTER_VALIDATE_INT, ['options' => ['default' => 1]]);
-        $perPage ??= filter_var($request->query->get($perPageParam), FILTER_VALIDATE_INT, ['options' => ['default' => $this->getDefaultPerPage()]]);
-
-        if ($page < 1) {
-            throw new InformationException("Page number ($pageParam) must be a positive integer.");
-        }
-        if ($perPage < 1) {
-            throw new InformationException("The number of items per page ($perPageParam) must be a positive integer.");
-        }
-        if ($perPage > self::MAX_PER_PAGE) {
-            throw new InformationException("The number of items per page ($perPageParam) is too large. Please specify a smaller number.");
-        }
-
-        return [(int) $page, (int) $perPage];
     }
 
     /**
@@ -88,11 +52,8 @@ class Pagination implements InjectionAwareInterface
      * Entities implementing `ApiArrayInterface` will use `toApiArray()`, others will be normalized
      * using Symfony's ObjectNormalizer.
      *
-     * @param QueryBuilder $qb           the Doctrine QueryBuilder instance to paginate
-     * @param int|null     $perPage      Optional number of items per page. (defaults to 100)
-     * @param int|null     $page         Optional current page number. (grabbed from query parameters by default)
-     * @param string       $pageParam    query parameter key for the page number (default: "page")
-     * @param string       $perPageParam query parameter key for the per-page count (default: "per_page")
+     * @param QueryBuilder      $qb         the Doctrine QueryBuilder instance to paginate
+     * @param PaginationOptions $pagination pagination options
      *
      * @return array{
      *     pages: int,      // Total number of pages
@@ -101,19 +62,15 @@ class Pagination implements InjectionAwareInterface
      *     total: int,      // Total number of items
      *     list: array      // List of paginated items as arrays
      * }
-     *
-     * @throws InformationException if the page or per-page value is invalid
      */
-    public function paginateDoctrineQuery(QueryBuilder $qb, ?int $perPage = null, ?int $page = null, string $pageParam = 'page', string $perPageParam = 'per_page'): array
+    public function paginateDoctrineQuery(QueryBuilder $qb, PaginationOptions $pagination): array
     {
-        [$page, $perPage] = $this->resolvePagination($perPage, $page, $pageParam, $perPageParam);
-
         $serializer = new Serializer([new ObjectNormalizer()]);
         $paginator = new DoctrinePaginator($qb, true);
 
-        $offset = ($page - 1) * $perPage;
+        $offset = ($pagination->page - 1) * $pagination->perPage;
         $qb->setFirstResult($offset)
-           ->setMaxResults($perPage);
+           ->setMaxResults($pagination->perPage);
 
         $total = count($paginator);
 
@@ -126,18 +83,15 @@ class Pagination implements InjectionAwareInterface
             }
         }
 
-        return $this->buildPaginatedResponse($page, $perPage, $total, $list);
+        return $this->buildPaginatedResponse($pagination->page, $pagination->perPage, $total, $list);
     }
 
     /**
      * Paginate a SQL query using a simple LIMIT clause and a secondary count query.
      *
-     * @param string   $query        the base SQL query without LIMIT
-     * @param array    $params       the values to bind to the query
-     * @param int|null $perPage      Optional number of items per page. (defaults to 100)
-     * @param int|null $page         Optional current page number. (grabbed from query parameters by default)
-     * @param string   $pageParam    query parameter key for the page number (default: "page")
-     * @param string   $perPageParam query parameter key for the per-page count (default: "per_page")
+     * @param string            $query      the base SQL query without LIMIT
+     * @param array             $params     the values to bind to the query
+     * @param PaginationOptions $pagination pagination options
      *
      * @return array{
      *     pages: int,      // Total number of pages
@@ -147,26 +101,23 @@ class Pagination implements InjectionAwareInterface
      *     list: array      // List of paginated items as arrays
      * }
      *
-     * @throws InformationException if the page/per-page value or the SQL query is invalid
+     * @throws InformationException if the SQL query is invalid
      */
-    public function getPaginatedResultSet(string $query, array $params = [], ?int $perPage = null, ?int $page = null, string $pageParam = 'page', string $perPageParam = 'per_page'): array
+    public function getPaginatedResultSet(string $query, array $params, PaginationOptions $pagination): array
     {
-        [$page, $perPage] = $this->resolvePagination($perPage, $page, $pageParam, $perPageParam);
+        $offset = ($pagination->page - 1) * $pagination->perPage;
 
-        $offset = ($page - 1) * $perPage;
-
-        $paginatedQuery = $query . sprintf(' LIMIT %u, %u', $offset, $perPage);
-        $result = $this->di['db']->getAll($paginatedQuery, $params);
-
-        $fromPos = stripos($query, 'FROM');
-        if ($fromPos === false) {
+        if (stripos($query, 'FROM') === false) {
             throw new InformationException('Invalid SQL query. Missing FROM clause.');
         }
+
+        $paginatedQuery = $query . sprintf(' LIMIT %u, %u', $offset, $pagination->perPage);
+        $result = $this->di['db']->getAll($paginatedQuery, $params);
 
         $query = rtrim($query, " ;\n\r\t");
         $countQuery = 'SELECT COUNT(1) FROM (' . $query . ') AS sub';
         $total = (int) $this->di['db']->getCell($countQuery, $params);
 
-        return $this->buildPaginatedResponse($page, $perPage, $total, $result);
+        return $this->buildPaginatedResponse($pagination->page, $pagination->perPage, $total, $result);
     }
 }

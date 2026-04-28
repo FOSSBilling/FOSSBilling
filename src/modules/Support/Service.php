@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Box\Mod\Support;
 
 use FOSSBilling\InformationException;
+use FOSSBilling\PaginationOptions;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
@@ -1688,7 +1689,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return isset($config['kb_enable']) && $config['kb_enable'] == 'on';
     }
 
-    public function kbSearchArticles(?string $status = null, ?string $search = null, ?string $cat = null, int $per_page = 100): array
+    public function kbSearchArticles(?string $status, ?string $search, ?string $cat, PaginationOptions $pagination): array
     {
         $filter = [];
 
@@ -1715,7 +1716,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $sql .= ' ORDER BY title ASC';
 
-        return $this->di['pager']->getPaginatedResultSet($sql, $filter, $per_page);
+        return $this->di['pager']->getPaginatedResultSet($sql, $filter, $pagination);
     }
 
     public function kbFindActiveArticleById(int $id): ?\Model_SupportKbArticle

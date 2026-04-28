@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicehosting\Api;
 
+use FOSSBilling\PaginationOptions;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -132,7 +133,7 @@ class Admin extends \Api_Abstract
     public function server_get_list($data)
     {
         [$sql, $params] = $this->getService()->getServersSearchQuery($data);
-        $result = $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
+        $result = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($result['list'] as $key => $server) {
             $bean = $this->di['db']->dispense('ServiceHostingServer')->unbox();
@@ -155,7 +156,7 @@ class Admin extends \Api_Abstract
     public function account_get_list($data)
     {
         [$sql, $params] = $this->getService()->getAccountsSearchQuery($data);
-        $result = $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
+        $result = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
         $orderService = $this->di['mod_service']('order');
 
         foreach ($result['list'] as $key => $account) {
@@ -321,7 +322,8 @@ class Admin extends \Api_Abstract
     public function hp_get_list($data)
     {
         [$sql, $params] = $this->getService()->getHpSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        
         foreach ($pager['list'] as $key => $item) {
             $model = $this->di['db']->getExistingModelById('ServiceHostingHp', $item['id'], 'Post not found');
             $pager['list'][$key] = $this->getService()->toHostingHpApiArray($model, false, $this->getIdentity());
