@@ -635,12 +635,29 @@ class Service implements InjectionAwareInterface
         $event_params['ip'] = $this->di['request']->getClientIp();
         $this->di['events_manager']->fire(['event' => 'onBeforeClientSignUp', 'params' => $event_params]);
 
-        $data['ip'] = $this->di['request']->getClientIp();
-        $data['status'] = \Model_Client::ACTIVE;
-        $client = $this->createClient($data);
+        $allowedFields = [
+            'email', 'first_name', 'last_name', 'password',
+            'phone', 'phone_cc', 'gender', 'birthday',
+            'company', 'company_vat', 'company_number', 'type',
+            'address_1', 'address_2', 'city', 'state', 'postcode', 'country',
+            'document_type', 'document_nr',
+            'custom_1', 'custom_2', 'custom_3', 'custom_4', 'custom_5',
+            'custom_6', 'custom_7', 'custom_8', 'custom_9', 'custom_10',
+        ];
+
+        $safeData = [
+            'ip' => $this->di['request']->getClientIp(),
+            'status' => \Model_Client::ACTIVE,
+        ];
+        foreach ($allowedFields as $field) {
+            if (array_key_exists($field, $data)) {
+                $safeData[$field] = $data[$field];
+            }
+        }
+
+        $client = $this->createClient($safeData);
 
         $event_params['id'] = $client->id;
-
         $this->di['events_manager']->fire(['event' => 'onAfterClientSignUp', 'params' => $event_params]);
         $this->di['logger']->info('Client #%s signed up', $client->id);
 
