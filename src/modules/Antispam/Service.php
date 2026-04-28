@@ -59,6 +59,20 @@ class Service implements InjectionAwareInterface
         $antispamService->isTemp($event);
     }
 
+    public static function onBeforeClientProfileUpdate(\Box_Event $event): void
+    {
+        $di = $event->getDi();
+        $antispamService = $di['mod_service']('Antispam');
+        $antispamService->isBlockedIp($event);
+    }
+
+    public static function onBeforeAdminClientUpdate(\Box_Event $event): void
+    {
+        $di = $event->getDi();
+        $antispamService = $di['mod_service']('Antispam');
+        $antispamService->isBlockedIp($event);
+    }
+
     public static function onBeforeClientUpdate(\Box_Event $event): void
     {
         $di = $event->getDi();

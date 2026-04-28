@@ -30,4 +30,17 @@ class Guest extends \Api_Abstract
             'hcaptcha_site_key' => $config['hcaptcha_site_key'] ?? null,
         ];
     }
+
+    /**
+     * Returns honeypot configuration info.
+     */
+    public function honeypot($data): array
+    {
+        $config = $this->di['mod_config']('Antispam');
+
+        return [
+            'enabled' => $config['honeypot_enabled'] ?? true,
+            'field' => $config['honeypot_field'] ?? 'honeypot_field',
+        ];
+    }
 }

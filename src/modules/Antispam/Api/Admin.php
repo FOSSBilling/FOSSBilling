@@ -81,10 +81,7 @@ class Admin extends \Api_Abstract
 
     public function unblock_ip($data): array
     {
-        $ip = $data['ip'] ?? null;
-        if (empty($ip)) {
-            throw new \FOSSBilling\InformationException('IP address is required');
-        }
+        $ip = $this->normalizeIp($data['ip'] ?? null);
 
         $config = $this->di['mod_config']('Antispam');
         $blocked_ips = isset($config['blocked_ips']) && !empty($config['blocked_ips'])
@@ -92,7 +89,7 @@ class Admin extends \Api_Abstract
             : [];
         $blocked_ips = array_map(trim(...), $blocked_ips);
 
-        $key = array_search($ip, $blocked_ips);
+        $key = array_search($ip, $blocked_ips, true);
         if ($key === false) {
             throw new \FOSSBilling\InformationException(':ip is not currently blocked.', [':ip' => $ip]);
         }

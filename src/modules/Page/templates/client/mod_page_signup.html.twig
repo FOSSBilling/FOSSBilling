@@ -154,11 +154,16 @@ name="{{ field_name }}" value="{{ request.(field_name) }}"
 {% endif %}
 {% endfor %}
 
-{% set honeypot_field = 'honeypot_field' %}
+{% if guest.extension_is_on({"mod":"antispam"}) %}
+{% set honeypot = guest.antispam_honeypot %}
+{% if honeypot.enabled %}
+{% set honeypot_field = honeypot.field %}
 <div class="mb-3" style="position: absolute; left: -9999px;">
 <label class="form-label" for="{{ honeypot_field }}">{{ honeypot_field }}</label>
 <input class="form-control" id="{{ honeypot_field }}" type="text" name="{{ honeypot_field }}" value="" tabindex="-1" autocomplete="off"/>
 </div>
+{% endif %}
+{% endif %}
 
 <div class="mb-3">
 <label class="form-label" for="reg-password">{{ 'Password'|trans }}</label>
