@@ -66,7 +66,7 @@
         </a>
         {% endif %}
         {% if can_delete_email_history %}
-        <a class="btn btn btn-primary"
+        <a class="btn btn-primary"
             {{ fb_api_link({href: 'api/admin/email/email_delete'|link({id: email.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'email/history'|alink}) }}>
             <svg class="icon icon-tabler" width="24" height="24">
                 <use xlink:href="#delete" />
