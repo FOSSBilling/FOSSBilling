@@ -756,10 +756,11 @@ final class ServiceTest extends \BBTestCase
     {
         $promo = new \Model_Promo();
         $promo->loadBean(new \DummyBean());
+        $promo->id = 1;
 
         $dbMock = $this->createMock('Box_Database');
         $dbMock->expects($this->atLeastOnce())
-            ->method('store')
+            ->method('exec')
             ->willReturn(1);
 
         $di = $this->getDi();
@@ -769,6 +770,25 @@ final class ServiceTest extends \BBTestCase
         $result = $this->service->usePromo($promo);
 
         $this->assertNull($result);
+    }
+
+    public function testUsePromoLimitReached(): void
+    {
+        $promo = new \Model_Promo();
+        $promo->loadBean(new \DummyBean());
+        $promo->id = 1;
+
+        $dbMock = $this->createMock('Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('exec')
+            ->willReturn(0);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->service->usePromo($promo);
     }
 
     public function testFindActivePromoByCode(): void

@@ -756,9 +756,13 @@ class Service implements InjectionAwareInterface
 
     public function usePromo(\Model_Promo $promo): void
     {
-        ++$promo->used;
-        $promo->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($promo);
+        $affectedRows = $this->di['db']->exec(
+            'UPDATE promo SET used = used + 1, updated_at = ? WHERE id = ? AND (maxuses = 0 OR maxuses IS NULL OR maxuses > used)',
+            [date('Y-m-d H:i:s'), $promo->id]
+        );
+        if ($affectedRows === 0) {
+            throw new \FOSSBilling\InformationException('This promo code has reached its maximum number of uses.');
+        }
     }
 
     public function findActivePromoByCode($code)
