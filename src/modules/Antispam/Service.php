@@ -1,0 +1,345 @@
+<?php
+
+declare(strict_types=1);
+/**
+ * Copyright 2022-2025 FOSSBilling
+ * Copyright 2011-2021 BoxBilling, Inc.
+ * SPDX-License-Identifier: Apache-2.0.
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ */
+
+namespace Box\Mod\Antispam;
+
+use EmailChecker\Adapter;
+use EmailChecker\Utilities;
+use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
+use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Contracts\Cache\ItemInterface;
+
+class Service implements InjectionAwareInterface
+{
+    protected ?\Pimple\Container $di = null;
+    private readonly Filesystem $filesystem;
+
+    public function __construct()
+    {
+        $this->filesystem = new Filesystem();
+    }
+
+    public function setDi(\Pimple\Container $di): void
+    {
+        $this->di = $di;
+    }
+
+    public function getDi(): ?\Pimple\Container
+    {
+        return $this->di;
+    }
+
+    public static function onBeforeClientSignUp(\Box_Event $event): void
+    {
+        $di = $event->getDi();
+        $antispamService = $di['mod_service']('Antispam');
+        $antispamService->isBlockedIp($event);
+        $antispamService->isSpam($event);
+        $antispamService->isTemp($event);
+        $antispamService->checkHoneypot($event);
+    }
+
+    public static function onBeforeGuestPublicTicketOpen(\Box_Event $event): void
+    {
+        $di = $event->getDi();
+        $antispamService = $di['mod_service']('Antispam');
+        $antispamService->isBlockedIp($event);
+        $antispamService->isSpam($event);
+        $antispamService->isTemp($event);
+    }
+
+    public static function onBeforeClientUpdate(\Box_Event $event): void
+    {
+        $di = $event->getDi();
+        $antispamService = $di['mod_service']('Antispam');
+        $antispamService->isBlockedIp($event);
+    }
+
+    public function install(): bool
+    {
+        $this->registerEvents();
+        $this->setDefaultConfig();
+
+        return true;
+    }
+
+    public function uninstall(): bool
+    {
+        $this->unregisterEvents();
+
+        return true;
+    }
+
+    private function registerEvents(): void
+    {
+        $eventsManager = $this->di['events_manager'];
+        $eventsManager->register(['onBeforeClientSignUp', 'onBeforeGuestPublicTicketOpen', 'onBeforeClientUpdate'], 'Box\Mod\Antispam\Service');
+    }
+
+    private function unregisterEvents(): void
+    {
+        $eventsManager = $this->di['events_manager'];
+        $eventsManager->unregister(['onBeforeClientSignUp', 'onBeforeGuestPublicTicketOpen', 'onBeforeClientUpdate'], 'Box\Mod\Antispam\Service');
+    }
+
+    private function setDefaultConfig(): void
+    {
+        $config = [
+            'check_temp_emails' => true,
+            'honeypot_enabled' => true,
+            'honeypot_field' => 'honeypot_field',
+        ];
+        $this->di['mod_service']('extension')->setConfig('mod_antispam', $config);
+    }
+
+    public function isBlockedIp($event): void
+    {
+        $di = $event->getDi();
+        $config = $di['mod_config']('Antispam');
+        if (isset($config['block_ips']) && $config['block_ips'] && isset($config['blocked_ips'])) {
+            $blocked_ips = explode(PHP_EOL, $config['blocked_ips']);
+            $blocked_ips = array_map(trim(...), $blocked_ips);
+            if (in_array($di['request']->getClientIp(), $blocked_ips)) {
+                throw new \FOSSBilling\InformationException('Your IP address (:ip) is blocked. Please contact our support to lift your block.', [':ip' => $di['request']->getClientIp()], 403);
+            }
+        }
+    }
+
+    public function isSpam(\Box_Event $event): void
+    {
+        $di = $event->getDi();
+        $params = $event->getParameters();
+        $data = [
+            'ip' => $params['ip'] ?? null,
+            'email' => $params['email'] ?? null,
+            'recaptcha_challenge_field' => $params['recaptcha_challenge_field'] ?? null,
+            'recaptcha_response_field' => $params['recaptcha_response_field'] ?? null,
+        ];
+
+        $config = $di['mod_config']('Antispam');
+
+        if (isset($config['captcha_enabled']) && $config['captcha_enabled']) {
+            $provider = $config['captcha_provider'] ?? 'recaptcha_v2';
+
+            if ($provider === 'recaptcha_v2') {
+                if (!isset($config['captcha_recaptcha_privatekey']) || $config['captcha_recaptcha_privatekey'] == '') {
+                    throw new \FOSSBilling\InformationException("To use reCAPTCHA you must get an API key from <a href='https://www.google.com/recaptcha/admin/create'>here</a>");
+                }
+
+                if (!isset($params['g-recaptcha-response']) || $params['g-recaptcha-response'] == '') {
+                    throw new \FOSSBilling\InformationException('You have to complete the CAPTCHA to continue');
+                }
+
+                $client = HttpClient::create(['bindto' => BIND_TO]);
+                $response = $client->request('POST', 'https://google.com/recaptcha/api/siteverify', [
+                    'body' => [
+                        'secret' => $config['captcha_recaptcha_privatekey'],
+                        'response' => $params['g-recaptcha-response'],
+                        'remoteip' => $di['request']->getClientIp(),
+                    ],
+                ]);
+                $content = $response->toArray();
+
+                if (!isset($content['success']) || $content['success'] !== true) {
+                    throw new \FOSSBilling\InformationException('reCAPTCHA verification failed.');
+                }
+            } elseif ($provider === 'turnstile') {
+                if (empty($config['turnstile_secret_key'])) {
+                    throw new \FOSSBilling\InformationException('Cloudflare Turnstile secret key is not configured.');
+                }
+
+                $turnstile_response = $params['cf-turnstile-response'] ?? null;
+                if (empty($turnstile_response)) {
+                    throw new \FOSSBilling\InformationException('Please complete the CAPTCHA verification.');
+                }
+
+                $client = HttpClient::create(['bindto' => BIND_TO]);
+                $response = $client->request('POST', 'https://challenges.cloudflare.com/turnstile/v0/siteverify', [
+                    'body' => [
+                        'secret' => $config['turnstile_secret_key'],
+                        'response' => $turnstile_response,
+                        'remoteip' => $di['request']->getClientIp(),
+                    ],
+                ]);
+                $content = $response->toArray();
+
+                if (!isset($content['success']) || $content['success'] !== true) {
+                    throw new \FOSSBilling\InformationException('CAPTCHA verification failed. Please try again.');
+                }
+            } elseif ($provider === 'hcaptcha') {
+                if (empty($config['hcaptcha_secret_key'])) {
+                    throw new \FOSSBilling\InformationException('hCaptcha secret key is not configured.');
+                }
+
+                $hcaptcha_response = $params['h-captcha-response'] ?? null;
+                if (empty($hcaptcha_response)) {
+                    throw new \FOSSBilling\InformationException('Please complete the CAPTCHA verification.');
+                }
+
+                $client = HttpClient::create(['bindto' => BIND_TO]);
+                $response = $client->request('POST', 'https://hcaptcha.com/siteverify', [
+                    'body' => [
+                        'secret' => $config['hcaptcha_secret_key'],
+                        'response' => $hcaptcha_response,
+                        'remoteip' => $di['request']->getClientIp(),
+                    ],
+                ]);
+                $content = $response->toArray();
+
+                if (!isset($content['success']) || $content['success'] !== true) {
+                    throw new \FOSSBilling\InformationException('CAPTCHA verification failed. Please try again.');
+                }
+            }
+        }
+
+        if (isset($config['sfs']) && $config['sfs']) {
+            $antispamService = $di['mod_service']('Antispam');
+            $antispamService->isInStopForumSpamDatabase($data);
+        }
+    }
+
+    public function isTemp(\Box_Event $event): void
+    {
+        $di = $event->getDi();
+        $config = $di['mod_config']('Antispam');
+
+        $check = $config['check_temp_emails'] ?? false;
+        if ($check) {
+            $antispamService = $di['mod_service']('Antispam');
+            $params = $event->getParameters();
+            $email = $params['email'] ?? '';
+
+            $antispamService->isATempEmail($email, true);
+        }
+    }
+
+    public function checkHoneypot(\Box_Event $event): void
+    {
+        $di = $event->getDi();
+        $config = $di['mod_config']('Antispam');
+
+        $enabled = $config['honeypot_enabled'] ?? false;
+        if ($enabled) {
+            $params = $event->getParameters();
+            $honeypotField = $config['honeypot_field'] ?? 'honeypot_field';
+
+            if (!empty($params[$honeypotField])) {
+                throw new \FOSSBilling\InformationException('Registration failed.');
+            }
+        }
+    }
+
+    /**
+     * Pass params:
+     * ip
+     * email
+     * username
+     */
+    public function isInStopForumSpamDatabase(array $data): bool
+    {
+        $url = 'https://www.stopforumspam.com/api';
+        $client = HttpClient::create(['bindto' => BIND_TO]);
+        $queryParams = array_merge($data, ['f' => 'json']);
+        $response = $client->request(
+            'GET',
+            $url,
+            ['query' => $queryParams]
+        );
+        $file_contents = $response->getContent(false);
+
+        $json = json_decode($file_contents);
+        if (!is_object($json) || isset($json->success) && !$json->success) {
+            return false;
+        }
+
+        if (isset($json->username->appears) && $json->username->appears) {
+            throw new \FOSSBilling\InformationException('Your username is blacklisted in the Stop Forum Spam database');
+        }
+        if (isset($json->email->appears) && $json->email->appears) {
+            throw new \FOSSBilling\InformationException('Your e-mail is blacklisted in the Stop Forum Spam database');
+        }
+        if (isset($json->ip->appears) && $json->ip->appears) {
+            throw new \FOSSBilling\InformationException('Your IP address is blacklisted in the Stop Forum Spam database');
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks if a provided email address is using a disposable email service.
+     *
+     * @param string $email the email address to check
+     * @param bool   $throw (optional) Configures if you want the function to throw an exception. Defaults to true.
+     *
+     * @return bool true if the email address is disposable, false if it isn't
+     */
+    public function isATempEmail(string $email, bool $throw = true): bool
+    {
+        /*
+         * The EmailChecker package utilizes PHP's email verification which does not correctly validate international email addresses.
+         * We are already using a proper validation package that does validate these as it should, so below is actually a workaround for the limitation.
+         * @see https://github.com/MattKetmo/EmailChecker/issues/92
+         *
+         * Without this workaround, FOSSBilling would be unable to accept international email addresses when disposable email checking is enabled.
+         */
+        $adapter = new Adapter\ArrayAdapter($this->getTempMailDomainDB());
+
+        try {
+            [$local, $domain] = Utilities::parseEmailAddress($email);
+        } catch (\Exception) {
+            // Just to be on the safe side, assume the email is valid if there was an error.
+            return false;
+        }
+        $invalid = $adapter->isThrowawayDomain($domain);
+        if ($invalid && $throw) {
+            throw new \FOSSBilling\InformationException('Disposable email addresses are not allowed');
+        }
+
+        return $invalid;
+    }
+
+    /**
+     * Fetches the most recent list of disposable email addresses, parses them to remove blanks or invalid domains, and then returns it as an array.
+     * The database is from here: https://github.com/7c/fakefilter
+     * Results are cached for 1 week unless there's an error at which point the list will be retried in a half hour.
+     */
+    private function getTempMailDomainDB(): array
+    {
+        return $this->di['cache']->get('tempMailDB', function (ItemInterface $item) {
+            $item->expiresAfter(86400); // The list is updated once every 24 hours, so we will cache it for that long
+
+            $client = HttpClient::create(['bindto' => BIND_TO]);
+            $response = $client->request('GET', 'https://raw.githubusercontent.com/7c/fakefilter/main/txt/data.txt');
+            $dbPath = Path::join(PATH_CACHE, 'tempEmailDB.txt');
+
+            if ($response->getStatusCode() === 200) {
+                $this->filesystem->dumpFile($dbPath, $response->getContent());
+            } else {
+                $item->expiresAfter(3600);
+
+                return [];
+            }
+
+            @$database = file($dbPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            $this->filesystem->remove($dbPath);
+            if (!$database) {
+                $item->expiresAfter(3600);
+
+                return [];
+            }
+
+            return array_filter($database, fn ($domain): bool => !str_starts_with($domain, '#') && filter_var($domain, FILTER_VALIDATE_DOMAIN));
+        });
+    }
+}

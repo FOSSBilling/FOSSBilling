@@ -64,7 +64,7 @@ class SentryHelper
         'servicedownloadable',
         'servicehosting',
         'servicelicense',
-        'spamchecker',
+        'antispam',
         'staff',
         'stats',
         'support',
