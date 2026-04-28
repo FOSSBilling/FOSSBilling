@@ -72,7 +72,13 @@
                         </div>
                     {% endif %}
                 {% elseif field.type == "textarea" %}
-                    <textarea class="form-control" rows="5" name="{{ field.name }}" id="{{ field.name }}">{{ field.default_value }}</textarea>
+                    {% set textarea_width = field.options.width|default(null) %}
+                    {% set textarea_height = field.options.height|default(null) %}
+                    <textarea class="form-control" name="{{ field.name }}" id="{{ field.name }}"
+                        {% if textarea_width or textarea_height %}
+                            style="{% if textarea_width %}width: min(100%, {{ textarea_width }}px);{% endif %}{% if textarea_height %}height: {{ textarea_height }}px; min-height: {{ textarea_height }}px;{% endif %}"
+                        {% endif %}
+                    >{{ field.default_value }}</textarea>
                 {% endif %}
             </div>
             <div class="col">

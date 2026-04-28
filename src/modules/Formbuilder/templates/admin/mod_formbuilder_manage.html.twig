@@ -77,9 +77,14 @@
                                 {% endfor %}
 
                             {% elseif field.type == "textarea" %}
-                                <textarea class="form-control" rows="5"
+                                {% set textarea_width = field.options.width|default(null) %}
+                                {% set textarea_height = field.options.height|default(null) %}
+                                <textarea class="form-control"
                                           name="config[{{ field.name }}]"
                                           id="{{ field.name }}"
+                                          {% if textarea_width or textarea_height %}
+                                              style="{% if textarea_width %}width: min(100%, {{ textarea_width }}px);{% endif %}{% if textarea_height %}height: {{ textarea_height }}px; min-height: {{ textarea_height }}px;{% endif %}"
+                                          {% endif %}
                                           {% if field.required==1 %}required="required"{% endif %}
                                     {% if field.readonly==1 %}readonly="readonly"{% endif %}>{{ order.config.(field.name) }}</textarea>
                             {% endif %}
