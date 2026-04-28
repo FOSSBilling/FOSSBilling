@@ -12,6 +12,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class Api_AdminTest extends \BBTestCase
 {
+    #[\Override]
     protected function getDi(): \Pimple\Container
     {
         $di = parent::getDi();
@@ -34,9 +35,7 @@ final class Api_AdminTest extends \BBTestCase
             $normalizedServices[strtolower((string) $module)] = $service;
         }
 
-        $di['mod_service'] = $di->protect(static function (string $module) use ($normalizedServices): object {
-            return $normalizedServices[strtolower($module)] ?? throw new \InvalidArgumentException("Unexpected module service requested: {$module}");
-        });
+        $di['mod_service'] = $di->protect(static fn (string $module): object => $normalizedServices[strtolower($module)] ?? throw new \InvalidArgumentException("Unexpected module service requested: {$module}"));
     }
 
     private function createEmMock(?object $repositoryMock = null): object

@@ -29,7 +29,7 @@ class Client extends \Api_Abstract
     {
         $identity = $this->getIdentity();
         $data['client_id'] = $identity->id;
-        
+
         if (isset($data['expiring'])) {
             [$query, $bindings] = $this->getService()->getSoonExpiringActiveOrdersQuery($data);
         } else {

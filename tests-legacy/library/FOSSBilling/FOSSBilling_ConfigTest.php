@@ -16,7 +16,6 @@ final class FOSSBilling_ConfigTest extends PHPUnit\Framework\TestCase
 
         $reflection = new ReflectionClass(FOSSBilling\Config::class);
         $method = $reflection->getMethod('prettyPrintArrayToPHP');
-        $method->setAccessible(true);
 
         $rendered = $method->invoke(null, $config);
         $filePath = tempnam(sys_get_temp_dir(), 'fossbilling_config_test_');
