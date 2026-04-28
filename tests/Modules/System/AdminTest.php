@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 final class AdminTest extends TestCase
 {
-    private function ipLookupWorking(): bool
+    private function isIpLookupAvailable(): bool
     {
         $serverAddr = $_SERVER['SERVER_ADDR'] ?? null;
         if (is_string($serverAddr) && filter_var($serverAddr, FILTER_VALIDATE_IP) !== false) {
