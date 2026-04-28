@@ -67,10 +67,13 @@
 
 {% macro recaptcha() %}
 
-    {% if guest.extension_is_on({"mod":"spamchecker"}) %}
+{% if guest.extension_is_on({"mod":"antispam"}) %}
 
-        {% set config = guest.spamchecker_recaptcha %}
-        {% if config.enabled %}
+{% set config = guest.antispam_recaptcha %}
+{% elseif guest.extension_is_on({"mod":"spamchecker"}) %}
+{% set config = guest.spamchecker_recaptcha %}
+{% endif %}
+{% if config is defined and config.enabled %}
             {% set provider = config.captcha_provider|default('recaptcha_v2') %}
             {% if provider == 'turnstile' %}
                 {% if config.turnstile_site_key %}
@@ -96,7 +99,6 @@
                 {% endif %}
             {% endif %}
         {% endif %}
-    {% endif %}
 {% endmacro %}
 
 {% macro wysiwyg(selector) %}
