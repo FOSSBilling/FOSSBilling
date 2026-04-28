@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Box\Mod\Staff;
 
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\PaginationOptions;
 
 class Service implements InjectionAwareInterface
 {
@@ -437,7 +438,7 @@ class Service implements InjectionAwareInterface
 
         [$query, $params] = $this->getSearchQuery($data);
 
-        return $this->di['pager']->getPaginatedResultSet($query, $params);
+        return $this->di['pager']->getPaginatedResultSet($query, $params, PaginationOptions::fromArray($data));
     }
 
     public function getSearchQuery($data): array

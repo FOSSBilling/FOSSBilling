@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Box\Mod\News\Api;
 
 use Box\Mod\News\Entity\Post;
+use FOSSBilling\PaginationOptions;
 
 class Guest extends \Api_Abstract
 {
@@ -33,7 +34,7 @@ class Guest extends \Api_Abstract
         // Repository method returns a QueryBuilder with filters applied
         $qb = $repo->getSearchQueryBuilder($data);
 
-        return $this->di['pager']->paginateDoctrineQuery($qb);
+        return $this->di['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
     }
 
     /**

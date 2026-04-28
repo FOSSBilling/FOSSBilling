@@ -402,6 +402,8 @@
         "evenodd",
         "Retryable",
         "FAILONERROR",
+        "VERIFYPEER",
+        "VERIFYHOST",
         "releasenotes",
         "Prins",
         "iplookup",
