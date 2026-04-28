@@ -91,7 +91,7 @@ final class AdminTest extends TestCase
         }
 
         // Only test each found interface if ipify.org is functioning
-        if ($this->ipLookupWorking()) {
+        if ($this->isIpLookupAvailable()) {
             foreach ($result->getResult() as $ip) {
                 $testResult = Request::makeRequest('admin/system/set_interface_ip', ['interface' => $ip]);
                 $this->assertTrue($testResult->wasSuccessful(), $testResult->generatePHPUnitMessage());
