@@ -23,6 +23,7 @@ final class AdminTest extends TestCase
             $ip = curl_exec($ch);
             if ($ip === false) {
                 curl_close($ch);
+
                 continue;
             }
             $isValidIp = filter_var($ip, FILTER_VALIDATE_IP) !== false;
@@ -107,10 +108,11 @@ final class AdminTest extends TestCase
                 $this->assertTrue($testResult->wasSuccessful(), $testResult->generatePHPUnitMessage());
 
                 $isReady = false;
-                for ($attempt = 0; $attempt < 10; $attempt++) {
+                for ($attempt = 0; $attempt < 10; ++$attempt) {
                     $result = Request::makeRequest('admin/system/env', ['ip' => true]);
                     if ($result->wasSuccessful() && (bool) filter_var($result->getResult(), FILTER_VALIDATE_IP)) {
                         $isReady = true;
+
                         break;
                     }
 

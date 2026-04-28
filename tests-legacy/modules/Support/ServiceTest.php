@@ -1524,7 +1524,7 @@ final class ServiceTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
         $di['logger'] = $this->createMock('Box_Log');
         $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
-        $di['mod_service'] = $di->protect(fn (string $serviceName) => match ($serviceName) {
+        $di['mod_service'] = $di->protect(fn (string $serviceName): ?\PHPUnit\Framework\MockObject\MockObject => match ($serviceName) {
             'order' => $orderServiceMock,
             default => null,
         });
@@ -1590,7 +1590,7 @@ final class ServiceTest extends \BBTestCase
         $client->id = 1;
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn (string $serviceName) => match ($serviceName) {
+        $di['mod_service'] = $di->protect(fn (string $serviceName): ?\PHPUnit\Framework\MockObject\MockObject => match ($serviceName) {
             'order' => $orderServiceMock,
             default => null,
         });

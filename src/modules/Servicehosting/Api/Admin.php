@@ -323,7 +323,7 @@ class Admin extends \Api_Abstract
     {
         [$sql, $params] = $this->getService()->getHpSearchQuery($data);
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
-        
+
         foreach ($pager['list'] as $key => $item) {
             $model = $this->di['db']->getExistingModelById('ServiceHostingHp', $item['id'], 'Post not found');
             $pager['list'][$key] = $this->getService()->toHostingHpApiArray($model, false, $this->getIdentity());

@@ -13,8 +13,8 @@ namespace FOSSBilling;
 
 final readonly class PaginationOptions
 {
-    public const MAX_PER_PAGE = 500;
-    public const DEFAULT_PER_PAGE = 100;
+    public const int MAX_PER_PAGE = 500;
+    public const int DEFAULT_PER_PAGE = 100;
 
     /**
      * @param int    $page         current page number, starting from 1

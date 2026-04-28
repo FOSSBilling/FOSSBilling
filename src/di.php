@@ -414,7 +414,7 @@ $di['loggedin_client'] = function () use ($di) {
 
     try {
         $client = $di['db']->getExistingModelById('Client', $client_id);
-        if ($client->status !== \Model_Client::ACTIVE) {
+        if ($client->status !== Model_Client::ACTIVE) {
             throw new Exception('Client account is not active');
         }
 
@@ -456,7 +456,7 @@ $di['loggedin_admin'] = function () use ($di) {
 
     try {
         $model = $di['db']->getExistingModelById('Admin', $admin['id']);
-        if ($model->status !== \Model_Admin::STATUS_ACTIVE) {
+        if ($model->status !== Model_Admin::STATUS_ACTIVE) {
             throw new Exception('Admin account is not active');
         }
 

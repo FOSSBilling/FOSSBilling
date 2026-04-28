@@ -55,7 +55,7 @@ final class PaymentAdapterSecurityTest extends BBTestCase
 
         $dbMock = $this->createMock(Box_Database::class);
         $dbMock->method('load')
-            ->willReturnCallback(fn (string $model, int $id) => match ([$model, $id]) {
+            ->willReturnCallback(fn (string $model, int $id): Model_Transaction|\Model_Invoice => match ([$model, $id]) {
                 ['Transaction', 1] => $transaction,
                 ['Invoice', 10] => $invoice,
                 default => throw new RuntimeException('Unexpected lookup'),

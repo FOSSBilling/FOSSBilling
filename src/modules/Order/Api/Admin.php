@@ -47,7 +47,7 @@ class Admin extends \Api_Abstract
     {
         $orderConfig = $this->di['mod']('order')->getConfig();
         $data['hide_addons'] = (isset($orderConfig['show_addons']) && $orderConfig['show_addons']) ? 0 : 1;
-        
+
         [$sql, $params] = $this->getService()->getSearchQuery($data);
         $resultSet = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
