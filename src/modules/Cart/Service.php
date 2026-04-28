@@ -740,6 +740,7 @@ class Service implements InjectionAwareInterface
     protected function getRelatedItemsDiscount(\Model_Cart $cart, \Model_CartProduct $model)
     {
         $product = $this->di['db']->load('Product', $model->product_id);
+        $product->setDi($this->di);
         $repo = $product->getTable();
         $config = $this->getItemConfig($model);
 
@@ -761,6 +762,7 @@ class Service implements InjectionAwareInterface
     private function getItemTitle(\Model_CartProduct $model)
     {
         $product = $this->di['db']->load('Product', $model->product_id);
+        $product->setDi($this->di);
         $config = $this->getItemConfig($model);
         $service = $product->getService();
         if (method_exists($service, 'getCartProductTitle')) {
@@ -773,6 +775,7 @@ class Service implements InjectionAwareInterface
     protected function getItemPromoDiscount(\Model_CartProduct $model, \Model_Promo $promo)
     {
         $product = $this->di['db']->load('Product', $model->product_id);
+        $product->setDi($this->di);
         $repo = $this->di['mod_service']('product');
         $config = $this->getItemConfig($model);
 
@@ -787,11 +790,13 @@ class Service implements InjectionAwareInterface
     public function cartProductToApiArray(\Model_CartProduct $model): array
     {
         $product = $this->di['db']->load('Product', $model->product_id);
+        $product->setDi($this->di);
         $repo = $product->getTable();
         $config = $this->getItemConfig($model);
-        $setup = $repo->getProductSetupPrice($product, $config);
-        $price = $repo->getProductPrice($product, $config);
-        $qty = $config['quantity'] ?? 1;
+        $line = $repo->getOrderLineConfig($product, $config);
+        $setup = $line['setup_price'];
+        $price = $line['price'];
+        $qty = $line['quantity'];
 
         [$discount_price, $discount_setup] = $this->getProductDiscount($model, $setup);
 

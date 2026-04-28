@@ -692,7 +692,6 @@ class Service implements InjectionAwareInterface
         $order->group_master = ($parent_order) ? 0 : 1;
         $order->title = $generatedOrderTitle ?? $data['title'] ?? $product->title;
         $order->currency = $currency->getCode();
-        $order->quantity = $qty;
         $order->service_type = $product->type;
         $order->unit = $product->unit;
         $order->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
@@ -704,15 +703,24 @@ class Service implements InjectionAwareInterface
             $order->period = $bp->getCode();
         }
 
+        $line = null;
+        if (!isset($data['price']) || $product->type === \Model_Product::DOMAIN) {
+            $product->setDi($this->di);
+            $repo = $product->getTable();
+            $line = $repo->getOrderLineConfig($product, $config);
+            $order->quantity = $line['quantity'];
+        } else {
+            $order->quantity = $qty;
+        }
+
         if (isset($data['price'])) {
             $order->price = $data['price'];
         } else {
-            $repo = $product->getTable();
             $rate = $currencyRepository->getRateByCode($currency->getCode());
             if ($rate === null) {
                 throw new \FOSSBilling\Exception("Currency rate for '{$currency->getCode()}' is not configured");
             }
-            $order->price = $repo->getProductPrice($product, $config) * $rate;
+            $order->price = $line['price'] * $rate;
         }
 
         $order->notes = $data['notes'] ?? $order->notes;

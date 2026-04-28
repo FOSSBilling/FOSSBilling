@@ -1040,9 +1040,40 @@ class Service implements InjectionAwareInterface
         $this->setInvoiceDefaults($proforma);
 
         $price = $order->price;
+        $line = [
+            'price' => $order->price,
+            'quantity' => $order->quantity,
+        ];
+
+        if (in_array($order->status, [
+            \Model_ClientOrder::STATUS_ACTIVE,
+            \Model_ClientOrder::STATUS_FAILED_RENEW,
+            \Model_ClientOrder::STATUS_SUSPENDED,
+        ], true)) {
+            $product = $this->di['db']->getExistingModelById('Product', $order->product_id, 'Product not found');
+            $product->setDi($this->di);
+            $repo = $product->getTable();
+            $config = json_decode($order->config ?? '', true) ?? [];
+
+            if (method_exists($repo, 'getRenewalLineConfig')) {
+                $currencyService = $this->di['mod_service']('Currency');
+                $currencyRepository = $currencyService->getCurrencyRepository();
+                $rate = $currencyRepository->getRateByCode($order->currency);
+                if ($rate === null) {
+                    throw new \FOSSBilling\Exception("Currency rate for '{$order->currency}' is not configured");
+                }
+
+                $renewalLine = $repo->getRenewalLineConfig($product, $config);
+                $price = $renewalLine['price'] * $rate;
+                $line = [
+                    'price' => $price,
+                    'quantity' => $renewalLine['quantity'],
+                ];
+            }
+        }
 
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
-        $invoiceItemService->generateFromOrder($proforma, $order, \Model_InvoiceItem::TASK_RENEW, $price);
+        $invoiceItemService->generateFromOrder($proforma, $order, \Model_InvoiceItem::TASK_RENEW, $price, $line);
 
         // invoice due date
         if ($due_days > 0) {
