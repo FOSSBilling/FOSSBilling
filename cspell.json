@@ -89,6 +89,8 @@
     "autorespond",
     "Antispam",
     "recaptcha",
+    "spamchecker",
+    "Spamchecker",
         "noborder",
         "opengraph",
         "precomposed",
