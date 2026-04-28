@@ -707,7 +707,8 @@ class Service implements InjectionAwareInterface
         if (!isset($data['price']) || $product->type === \Model_Product::DOMAIN) {
             $product->setDi($this->di);
             $repo = $product->getTable();
-            $line = $repo->getOrderLineConfig($product, $config);
+            $configForLine = array_merge($config, ['quantity' => $qty]);
+            $line = $repo->getOrderLineConfig($product, $configForLine);
             $order->quantity = $line['quantity'];
         } else {
             $order->quantity = $qty;
