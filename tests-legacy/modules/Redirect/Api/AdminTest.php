@@ -34,12 +34,12 @@ final class AdminTest extends \BBTestCase
         $this->assertSame(['id' => 3, 'path' => 'old-page', 'target' => 'new-page'], $result);
     }
 
-    public function testCreateSanitizesBeforeDelegating(): void
+    public function testCreateDelegatesToService(): void
     {
         $service = $this->createMock(\Box\Mod\Redirect\Service::class);
         $service->expects($this->once())
             ->method('create')
-            ->with('old-page', 'new-page')
+            ->with('/old-page/', '/new-page/')
             ->willReturn(7);
 
         $staffService = $this->createMock(\Box\Mod\Staff\Service::class);
