@@ -121,7 +121,7 @@ class Admin implements InjectionAwareInterface
         $loginSpan = $apiConfig['rate_span_login'] ?? 60;
         $loginLimit = $apiConfig['rate_limit_login'] ?? 20;
 
-        if ($apiService->isRateLimited($ip, $loginLimit, $loginSpan)) {
+        if ($apiService->isRateLimited($ip, $loginLimit, $loginSpan, 'page:/staff/email/')) {
             usleep(random_int(50000, 100000));
 
             return $app->render('mod_staff_password_reset');
