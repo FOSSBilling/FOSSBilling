@@ -73,8 +73,6 @@ class Admin extends \Api_Abstract
      * Email send.
      *
      * @optional int $client_id - log this message to client history
-     *
-     * @return bool
      */
     #[RequiredParams([
         'to' => 'Receiver email is required',
@@ -433,5 +431,4 @@ class Admin extends \Api_Abstract
 
         return $pager;
     }
-
 }

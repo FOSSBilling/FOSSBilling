@@ -30,10 +30,10 @@ class Client extends \Api_Abstract
     {
         $data['client_id'] = $this->getIdentity()->id;
         $data['approved'] = true;
-        
+
         [$sql, $params] = $this->getService()->getSearchQuery($data);
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
-        
+
         foreach ($pager['list'] as $key => $item) {
             $invoice = $this->di['db']->getExistingModelById('Invoice', $item['id'], 'Invoice not found');
             $pager['list'][$key] = $this->getService()->toApiArray($invoice);
@@ -156,7 +156,7 @@ class Client extends \Api_Abstract
         [$sql, $params] = $transactionService->getSearchQuery($data);
 
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
-        
+
         foreach ($pager['list'] as $key => $item) {
             $transaction = $this->di['db']->getExistingModelById('Transaction', $item['id'], 'Transaction not found');
             $pager['list'][$key] = $transactionService->toApiArray($transaction);

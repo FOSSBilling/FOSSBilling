@@ -140,7 +140,7 @@ class Admin extends \Api_Abstract
     {
         [$sql, $params] = $this->getService()->tldGetSearchQuery($data);
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
-        
+
         foreach ($pager['list'] as $key => $tldArr) {
             $tld = $this->di['db']->getExistingModelById('Tld', $tldArr['id'], sprintf('Tld #%s not found', $tldArr['id']));
             $pager['list'][$key] = $this->getService()->tldToApiArray($tld);

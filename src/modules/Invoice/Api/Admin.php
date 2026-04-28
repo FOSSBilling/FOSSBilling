@@ -455,7 +455,7 @@ class Admin extends \Api_Abstract
         [$sql, $params] = $transactionService->getSearchQuery($data);
 
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
-        
+
         foreach ($pager['list'] as $key => $item) {
             $transaction = $this->di['db']->getExistingModelById('Transaction', $item['id'], 'Transaction not found');
             $pager['list'][$key] = $transactionService->toApiArray($transaction);
@@ -684,7 +684,7 @@ class Admin extends \Api_Abstract
     public function subscription_get_list($data)
     {
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
-        
+
         [$sql, $params] = $subscriptionService->getSearchQuery($data);
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 

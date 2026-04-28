@@ -274,7 +274,7 @@ class Admin extends \Api_Abstract
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_network_interface');
 
-        return \FOSSBilling\Tools::listHttpInterfaces();
+        return Tools::listHttpInterfaces();
     }
 
     public function set_interface_ip($data): bool

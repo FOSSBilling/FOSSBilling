@@ -29,10 +29,10 @@ class Admin extends \Api_Abstract
     public function get_list($data)
     {
         $data['no_cron'] = true;
-        
+
         [$sql, $params] = $this->getService()->getSearchQuery($data);
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
-        
+
         foreach ($pager['list'] as $key => $item) {
             $staff = $this->di['db']->getExistingModelById('Admin', $item['id'] ?? 0, 'Admin is not found');
             $pager['list'][$key] = $this->getService()->toModel_AdminApiArray($staff);
@@ -202,7 +202,7 @@ class Admin extends \Api_Abstract
     {
         [$sql, $params] = $this->getService()->getAdminGroupSearchQuery($data);
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
-        
+
         foreach ($pager['list'] as $key => $item) {
             $model = $this->di['db']->getExistingModelById('AdminGroup', $item['id'], 'Post not found');
             $pager['list'][$key] = $this->getService()->toAdminGroupApiArray($model, false, $this->getIdentity());
@@ -280,7 +280,7 @@ class Admin extends \Api_Abstract
     {
         [$sql, $params] = $this->getService()->getActivityAdminHistorySearchQuery($data);
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
-        
+
         foreach ($pager['list'] as $key => $item) {
             $activity = $this->di['db']->getExistingModelById('ActivityAdminHistory', $item['id'] ?? 0, sprintf('Staff activity item #%s not found', $item['id'] ?? 'unknown'));
             if ($activity) {
