@@ -138,8 +138,14 @@ class Client implements InjectionAwareInterface
             ? ($this->apiConfig['rate_limit_login'] ?? 20)
             : ($this->apiConfig['rate_limit'] ?? 1000);
 
+        $requestPrefix = match ($method) {
+            'staff_login' => 'api:/api/guest/staff/login',
+            'client_login' => 'api:/api/guest/client/login',
+            default => 'api:',
+        };
+
         $service = $this->di['mod_service']('api');
-        $this->_requests_left = $service->getRemainingRequests($this->_getIp(), $rate_limit, $rate_span);
+        $this->_requests_left = $service->getRemainingRequests($this->_getIp(), $rate_limit, $rate_span, $requestPrefix);
         $this->_rate_span = $rate_span;
         $this->_rate_limit = $rate_limit;
 

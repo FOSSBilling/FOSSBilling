@@ -366,7 +366,10 @@ class Service implements InjectionAwareInterface
         $di = $event->getDi();
 
         try {
-            if (($params['total'] ?? 0) > 0 && isset($params['client']['id'])) {
+            if (($params['total'] ?? 0) > 0
+                && ($params['status'] ?? null) !== \Model_Invoice::STATUS_PAID
+                && isset($params['client']['id'])
+            ) {
                 $email = [];
                 $email['to_client'] = $params['client']['id'];
                 $email['code'] = 'mod_invoice_created';
@@ -657,11 +660,11 @@ class Service implements InjectionAwareInterface
         $invoice->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($invoice);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceApprove', 'params' => $this->toApiArray($invoice)]);
-
         if (isset($data['use_credits']) && $data['use_credits']) {
             $this->tryPayWithCredits($invoice);
         }
+
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceApprove', 'params' => $this->toApiArray($invoice)]);
 
         $this->di['logger']->info("Approved invoice {$invoice->id}.");
 

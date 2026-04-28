@@ -309,6 +309,15 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                 $productService = $this->di['mod_service']('Product');
                 $config = json_decode($order->config ?? '', true) ?? [];
                 $promo_discount = $productService->getRenewalProductDiscount($product, $promo, $config);
+
+                $currencyService = $this->di['mod_service']('Currency');
+                $currencyRepository = $currencyService->getCurrencyRepository();
+                $rate = $currencyRepository->getRateByCode($order->currency);
+                if ($rate === null) {
+                    throw new \FOSSBilling\Exception("Currency conversion rate cannot be determined for code {$order->currency}");
+                }
+
+                $promo_discount *= $rate;
             }
 
             if ($promo_discount > $order_total) {

@@ -48,7 +48,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return (int) $this->di['db']->exec($sql, $values);
     }
 
-    public function getRequestCount($since, $ip = null): int
+    public function getRequestCount($since, $ip = null, ?string $requestPrefix = null): int
     {
         if (!is_numeric($since)) {
             $since = strtotime($since);
@@ -64,17 +64,22 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $values['ip'] = $ip;
         }
 
+        if ($requestPrefix !== null) {
+            $sql .= ' AND request LIKE :request_prefix';
+            $values['request_prefix'] = $requestPrefix . '%';
+        }
+
         return (int) $this->di['db']->getCell($sql, $values);
     }
 
-    public function isRateLimited(string $ip, int $maxAttempts, int $timeSpanSeconds): bool
+    public function isRateLimited(string $ip, int $maxAttempts, int $timeSpanSeconds, ?string $requestPrefix = null): bool
     {
-        return $this->getRequestCount(time() - $timeSpanSeconds, $ip) >= $maxAttempts;
+        return $this->getRequestCount(time() - $timeSpanSeconds, $ip, $requestPrefix) >= $maxAttempts;
     }
 
-    public function getRemainingRequests(string $ip, int $maxAttempts, int $timeSpanSeconds): int
+    public function getRemainingRequests(string $ip, int $maxAttempts, int $timeSpanSeconds, ?string $requestPrefix = null): int
     {
-        $count = $this->getRequestCount(time() - $timeSpanSeconds, $ip);
+        $count = $this->getRequestCount(time() - $timeSpanSeconds, $ip, $requestPrefix);
 
         return max(0, $maxAttempts - $count);
     }

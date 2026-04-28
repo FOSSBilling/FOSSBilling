@@ -390,6 +390,46 @@ final class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
+    public function testOnAfterAdminInvoiceApproveSkipsPaidInvoices(): void
+    {
+        $params = [
+            'id' => 1,
+            'total' => 10,
+            'status' => \Model_Invoice::STATUS_PAID,
+            'client' => [
+                'id' => 2,
+            ],
+        ];
+
+        $eventMock = $this->getMockBuilder('\Box_Event')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $eventMock->expects($this->atLeastOnce())
+            ->method('getParameters')
+            ->willReturn($params);
+
+        $emailService = $this->createMock(\Box\Mod\Email\Service::class);
+        $emailService->expects($this->never())
+            ->method('sendTemplate');
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService) {
+            if ($serviceName === 'email') {
+                return $emailService;
+            }
+
+            throw new \RuntimeException('Unexpected service request: ' . $serviceName);
+        });
+
+        $this->service->setDi($di);
+        $eventMock->expects($this->atLeastOnce())
+            ->method('getDi')
+            ->willReturn($di);
+
+        $result = $this->service->onAfterAdminInvoiceApprove($eventMock);
+        $this->assertTrue($result);
+    }
+
     public function testOnAfterAdminCronRun(): void
     {
         $eventMock = $this->getMockBuilder('\Box_Event')
@@ -731,25 +771,38 @@ final class ServiceTest extends \BBTestCase
 
     public function testApproveInvoice(): void
     {
-        $serviceMock = $this->getMockBuilder(Service::class)
-            ->onlyMethods(['tryPayWithCredits', 'toApiArray'])
-            ->getMock();
-
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('tryPayWithCredits');
-
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('toApiArray')
-            ->willReturn(['id' => 1]);
-
         $data['use_credits'] = true;
 
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
+        $invoiceModel->status = \Model_Invoice::STATUS_UNPAID;
 
+        $serviceMock = $this->getMockBuilder(Service::class)
+            ->onlyMethods(['tryPayWithCredits', 'toApiArray'])
+            ->getMock();
+
+        $serviceMock->expects($this->once())
+            ->method('tryPayWithCredits')
+            ->willReturnCallback(function () use ($invoiceModel): void {
+                $invoiceModel->status = \Model_Invoice::STATUS_PAID;
+            });
+
+        $serviceMock->expects($this->exactly(2))
+            ->method('toApiArray')
+            ->willReturnCallback(function () use ($invoiceModel): array {
+                return [
+                    'id' => 1,
+                    'status' => $invoiceModel->status,
+                ];
+            });
+
+        $events = [];
         $eventManagerMock = $this->createMock('\Box_EventManager');
-        $eventManagerMock->expects($this->atLeastOnce())
-            ->method('fire');
+        $eventManagerMock->expects($this->exactly(2))
+            ->method('fire')
+            ->willReturnCallback(function (array $event) use (&$events): void {
+                $events[] = $event;
+            });
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -764,6 +817,9 @@ final class ServiceTest extends \BBTestCase
 
         $result = $serviceMock->approveInvoice($invoiceModel, $data);
         $this->assertTrue($result);
+        $this->assertSame('onBeforeAdminInvoiceApprove', $events[0]['event']);
+        $this->assertSame('onAfterAdminInvoiceApprove', $events[1]['event']);
+        $this->assertSame(\Model_Invoice::STATUS_PAID, $events[1]['params']['status']);
     }
 
     public function testGetTotalWithTax(): void

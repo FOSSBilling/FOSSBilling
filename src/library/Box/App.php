@@ -157,9 +157,10 @@ class Box_App
         }
 
         $service = $this->di['mod_service']('api');
-        $service->logRequest($this->url);
+        $requestPrefix = $this->mod === 'api' ? 'api:' : 'page:';
+        $service->logRequest($requestPrefix . $this->url);
 
-        if ($service->isRateLimited($ip, $rateLimit, $rateSpan)) {
+        if ($service->isRateLimited($ip, $rateLimit, $rateSpan, $requestPrefix)) {
             $throttleDelay = $apiConfig['throttle_delay'] ?? 2;
             sleep((int) $throttleDelay);
 
