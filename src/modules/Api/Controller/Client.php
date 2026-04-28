@@ -24,7 +24,7 @@ use Symfony\Component\Filesystem\Filesystem;
 class Client implements InjectionAwareInterface
 {
     private int|float|null $_requests_left = null;
-    private $apiConfig;
+    private ?array $apiConfig = null;
     private readonly Filesystem $filesystem;
     protected ?\Pimple\Container $di = null;
 
