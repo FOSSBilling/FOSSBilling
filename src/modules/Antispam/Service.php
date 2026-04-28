@@ -66,43 +66,6 @@ class Service implements InjectionAwareInterface
         $antispamService->isBlockedIp($event);
     }
 
-    public function install(): bool
-    {
-        $this->registerEvents();
-        $this->setDefaultConfig();
-
-        return true;
-    }
-
-    public function uninstall(): bool
-    {
-        $this->unregisterEvents();
-
-        return true;
-    }
-
-    private function registerEvents(): void
-    {
-        $eventsManager = $this->di['events_manager'];
-        $eventsManager->register(['onBeforeClientSignUp', 'onBeforeGuestPublicTicketOpen', 'onBeforeClientUpdate'], 'Box\Mod\Antispam\Service');
-    }
-
-    private function unregisterEvents(): void
-    {
-        $eventsManager = $this->di['events_manager'];
-        $eventsManager->unregister(['onBeforeClientSignUp', 'onBeforeGuestPublicTicketOpen', 'onBeforeClientUpdate'], 'Box\Mod\Antispam\Service');
-    }
-
-    private function setDefaultConfig(): void
-    {
-        $config = [
-            'check_temp_emails' => true,
-            'honeypot_enabled' => true,
-            'honeypot_field' => 'honeypot_field',
-        ];
-        $this->di['mod_service']('extension')->setConfig('mod_antispam', $config);
-    }
-
     public function isBlockedIp($event): void
     {
         $di = $event->getDi();
@@ -214,7 +177,7 @@ class Service implements InjectionAwareInterface
         $di = $event->getDi();
         $config = $di['mod_config']('Antispam');
 
-        $check = $config['check_temp_emails'] ?? false;
+        $check = $config['check_temp_emails'] ?? true;
         if ($check) {
             $antispamService = $di['mod_service']('Antispam');
             $params = $event->getParameters();
@@ -229,7 +192,7 @@ class Service implements InjectionAwareInterface
         $di = $event->getDi();
         $config = $di['mod_config']('Antispam');
 
-        $enabled = $config['honeypot_enabled'] ?? false;
+        $enabled = $config['honeypot_enabled'] ?? true;
         if ($enabled) {
             $params = $event->getParameters();
             $honeypotField = $config['honeypot_field'] ?? 'honeypot_field';

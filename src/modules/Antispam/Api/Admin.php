@@ -71,10 +71,9 @@ class Admin extends \Api_Abstract
         $blocked_ips[] = $ip;
         $blocked_ips_string = implode(PHP_EOL, $blocked_ips);
 
-        $this->di['mod_service']('extension')->setConfig('mod_antispam', [
-            'block_ips' => true,
-            'blocked_ips' => $blocked_ips_string,
-        ]);
+        $config['block_ips'] = true;
+        $config['blocked_ips'] = $blocked_ips_string;
+        $this->di['mod_service']('extension')->setConfig($config);
 
         return ['result' => true, 'ip' => $ip];
     }
@@ -100,10 +99,9 @@ class Admin extends \Api_Abstract
         unset($blocked_ips[$key]);
         $blocked_ips_string = implode(PHP_EOL, $blocked_ips);
 
-        $this->di['mod_service']('extension')->setConfig('mod_antispam', [
-            'block_ips' => !empty($blocked_ips),
-            'blocked_ips' => $blocked_ips_string,
-        ]);
+        $config['block_ips'] = !empty($blocked_ips);
+        $config['blocked_ips'] = $blocked_ips_string;
+        $this->di['mod_service']('extension')->setConfig($config);
 
         return ['result' => true, 'ip' => $ip];
     }
