@@ -19,22 +19,16 @@ namespace Box\Mod\Cron\Api;
 class Admin extends \Api_Abstract
 {
     /**
-     * Returns cron job information. When it was last executed, where cron job
-     * file is located.
+     * Returns cron job information including when it was last executed and where the cron script is located.
      *
      * @return array
      */
-    public function info($data)
+    public function info()
     {
         return $this->getService()->getCronInfo();
     }
 
-    /**
-     * Run cron.
-     *
-     * @return bool
-     */
-    public function run($data)
+    public function run(): bool
     {
         return $this->getService()->runCrons();
     }
