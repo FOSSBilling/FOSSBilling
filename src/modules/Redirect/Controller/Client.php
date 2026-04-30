@@ -51,8 +51,27 @@ class Client implements \FOSSBilling\InjectionAwareInterface
     {
         $service = $this->di['mod_service']('redirect');
         $target = $service->getRedirectByPath($app->uri);
-        header('HTTP/1.1 301 Moved Permanently');
-        header('Location: ' . $target);
+
+        if ($target === null || !$this->isTargetAllowed($target)) {
+            http_response_code(404);
+            exit;
+        }
+
+        header('Location: ' . $target, true, 301);
         exit;
+    }
+
+    private function isTargetAllowed(string $target): bool
+    {
+        if (trim($target) === '' || strpbrk($target, "\r\n") !== false) {
+            return false;
+        }
+
+        $scheme = parse_url($target, PHP_URL_SCHEME);
+        if (is_string($scheme) && !in_array(strtolower($scheme), ['http', 'https'], true)) {
+            return false;
+        }
+
+        return true;
     }
 }

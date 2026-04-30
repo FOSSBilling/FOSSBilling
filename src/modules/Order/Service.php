@@ -692,7 +692,6 @@ class Service implements InjectionAwareInterface
         $order->group_master = ($parent_order) ? 0 : 1;
         $order->title = $generatedOrderTitle ?? $data['title'] ?? $product->title;
         $order->currency = $currency->getCode();
-        $order->quantity = $qty;
         $order->service_type = $product->type;
         $order->unit = $product->unit;
         $order->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
@@ -704,15 +703,24 @@ class Service implements InjectionAwareInterface
             $order->period = $bp->getCode();
         }
 
+        $line = null;
+        if (!isset($data['price']) || $product->type === \Model_Product::DOMAIN) {
+            $product->setDi($this->di);
+            $repo = $product->getTable();
+            $line = $repo->getOrderLineConfig($product, array_merge($config, ['quantity' => $qty]));
+            $order->quantity = $line['quantity'];
+        } else {
+            $order->quantity = $qty;
+        }
+
         if (isset($data['price'])) {
             $order->price = $data['price'];
         } else {
-            $repo = $product->getTable();
             $rate = $currencyRepository->getRateByCode($currency->getCode());
             if ($rate === null) {
                 throw new \FOSSBilling\Exception("Currency rate for '{$currency->getCode()}' is not configured");
             }
-            $order->price = $repo->getProductPrice($product, $config) * $rate;
+            $order->price = $line['price'] * $rate;
         }
 
         $order->notes = $data['notes'] ?? $order->notes;
@@ -941,6 +949,9 @@ class Service implements InjectionAwareInterface
     public function stockSale(\Model_Product $product, $qty): bool
     {
         if ($product->stock_control) {
+            if ($product->quantity_in_stock < $qty) {
+                throw new InformationException('Product :id is out of stock.', [':id' => $product->id], 831);
+            }
             $product->quantity_in_stock -= $qty;
             $product->updated_at = date('Y-m-d H:i:s');
             $this->di['db']->store($product);
@@ -1073,13 +1084,6 @@ class Service implements InjectionAwareInterface
             $this->saveStatusChange($order, $e->getMessage());
 
             throw $e;
-        }
-
-        // do not extend renewal date if this is first paid invoice
-        $invoiceService = $this->di['mod_service']('invoice');
-        $paidInvoices = $invoiceService->findPaidInvoicesForOrder($order);
-        if (count($paidInvoices) <= 1) {
-            return;
         }
 
         // set automatic order expiration

@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Notification\Api;
 
+use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \Api_Abstract
@@ -34,7 +35,7 @@ class Admin extends \Api_Abstract
     {
         $queryBuilder = $this->getService()->getSearchQueryBuilder($data);
 
-        return $this->di['pager']->paginateDoctrineQuery($queryBuilder, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
+        return $this->di['pager']->paginateDoctrineQuery($queryBuilder, PaginationOptions::fromArray($data));
     }
 
     /**

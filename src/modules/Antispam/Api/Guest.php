@@ -1,0 +1,46 @@
+<?php
+
+declare(strict_types=1);
+/**
+ * Copyright 2022-2025 FOSSBilling
+ * Copyright 2011-2021 BoxBilling, Inc.
+ * SPDX-License-Identifier: Apache-2.0.
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ */
+
+namespace Box\Mod\Antispam\Api;
+
+class Guest extends \Api_Abstract
+{
+    /**
+     * Returns recaptcha configuration info.
+     */
+    public function recaptcha($data): array
+    {
+        $config = $this->di['mod_config']('Antispam');
+
+        return [
+            'publickey' => $config['captcha_recaptcha_publickey'] ?? null,
+            'enabled' => $config['captcha_enabled'] ?? false,
+            'version' => $config['captcha_version'] ?? null,
+            'captcha_provider' => $config['captcha_provider'] ?? 'recaptcha_v2',
+            'turnstile_site_key' => $config['turnstile_site_key'] ?? null,
+            'hcaptcha_site_key' => $config['hcaptcha_site_key'] ?? null,
+        ];
+    }
+
+    /**
+     * Returns honeypot configuration info.
+     */
+    public function honeypot($data): array
+    {
+        $config = $this->di['mod_config']('Antispam');
+
+        return [
+            'enabled' => $config['honeypot_enabled'] ?? true,
+            'field' => $config['honeypot_field'] ?? 'honeypot_field',
+        ];
+    }
+}

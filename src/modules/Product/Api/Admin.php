@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Product\Api;
 
+use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \Api_Abstract
@@ -30,7 +31,8 @@ class Admin extends \Api_Abstract
         $service = $this->getService();
 
         [$sql, $params] = $service->getProductSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+
         foreach ($pager['list'] as $key => $item) {
             $model = $this->di['db']->getExistingModelById('Product', $item['id'], 'Post not found');
             $pager['list'][$key] = $this->getService()->toApiArray($model, false, $this->getIdentity());
@@ -375,8 +377,10 @@ class Admin extends \Api_Abstract
     public function promo_get_list($data)
     {
         $service = $this->getService();
+
         [$sql, $params] = $service->getPromoSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+
         foreach ($pager['list'] as $key => $item) {
             $model = $this->di['db']->getExistingModelById('Promo', $item['id'], 'Promo not found');
             $pager['list'][$key] = $this->getService()->toPromoApiArray($model);

@@ -89,7 +89,7 @@ class Paginator
 
         if ($endRange > $numPages) {
             $endRange = $numPages;
-            $startRange = max(1, $endRange - $numPages + 1);
+            $startRange = max(1, $endRange - $this->midRange + 1);
         }
 
         return range($startRange, $endRange);
@@ -97,12 +97,16 @@ class Paginator
 
     public function getStartingPoint(): int
     {
-        return reset($this->getRange());
+        $range = $this->getRange();
+
+        return $range[0];
     }
 
     public function getEndingPoint(): int
     {
-        return end($this->getRange());
+        $range = $this->getRange();
+
+        return $range[array_key_last($range)];
     }
 
     /**

@@ -172,10 +172,10 @@ return [
         'rate_limit' => 1000,
 
         /**
-         * Note about rate-limiting login attempts:
-         * When the limit is reached, a default delay of 2 seconds is added to the request.
-         * This makes brute-forcing a password useless while not outright blocking legitimate traffic.
-         * When calculating, ensure the rate-limited traffic can still make enough requests to stay rate limited
+         * Note about rate-limiting:
+         * Rate limiting applies to all requests (API routes and page routes).
+         * When the limit is reached, the request is rejected with HTTP 429 (Too Many Requests).
+         * Auth-sensitive endpoints (password reset, email confirmation) use the stricter login-tier limits.
          * Ex: One request every 2 seconds is more than 20 times in 1 minute, so the IP will remain throttled.
          */
         'throttle_delay' => 2,

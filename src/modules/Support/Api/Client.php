@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Support\Api;
 
+use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Client extends \Api_Abstract
@@ -33,7 +34,8 @@ class Client extends \Api_Abstract
         $data['client_id'] = $identity->id;
 
         [$sql, $bindings] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
+
         foreach ($pager['list'] as $key => $ticketArr) {
             $ticket = $this->di['db']->getExistingModelById('SupportTicket', $ticketArr['id'], 'Ticket not found');
             $pager['list'][$key] = $this->getService()->toApiArray($ticket, true, $this->getIdentity());

@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Email\Api;
 
+use FOSSBilling\PaginationOptions;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -28,8 +29,10 @@ class Admin extends \Api_Abstract
      */
     public function email_get_list($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'view_email_history');
+
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             if (!is_array($item)) {
@@ -58,6 +61,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function email_get($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'view_email_history');
+
         $service = $this->getService();
         $model = $service->getEmailById($data['id']);
 
@@ -68,19 +73,19 @@ class Admin extends \Api_Abstract
      * Email send.
      *
      * @optional int $client_id - log this message to client history
-     *
-     * @return bool
      */
     #[RequiredParams([
         'to' => 'Receiver email is required',
         'to_name' => 'Receiver name is required',
-        'from' => 'Sender name is required',
-        'from_name' => 'Sender email is required',
+        'from' => 'Sender email is required',
+        'from_name' => 'Sender name is required',
         'subject' => 'Email subject is required',
         'content' => 'Email content is required',
     ])]
-    public function send($data = [])
+    public function send(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'send_emails');
+
         $client_id = $data['client_id'] ?? null;
         $emailService = $this->getService();
 
@@ -105,6 +110,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function email_resend($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'send_emails');
+
         $model = $this->di['db']->findOne('ActivityClientEmail', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_ActivityClientEmail) {
@@ -122,6 +129,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function email_delete($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'delete_email_history');
+
         $model = $this->di['db']->findOne('ActivityClientEmail', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_ActivityClientEmail) {
@@ -143,6 +152,8 @@ class Admin extends \Api_Abstract
      */
     public function template_get_list($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'view_templates');
+
         $pager = $this->getService()->getTemplateList($data);
 
         foreach ($pager['list'] as $key => $item) {
@@ -172,6 +183,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function template_get($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'view_templates');
+
         $model = $this->getService()->getTemplate((int) $data['id']);
 
         return $this->getService()->templateToApiArray($model, true);
@@ -185,6 +198,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function template_delete($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'manage_templates');
+
         $service = $this->getService();
         $template = $service->getTemplate((int) $data['id']);
         if (!$template->isCustom() && $service->hasDefaultTemplate($template->getActionCode())) {
@@ -215,6 +230,8 @@ class Admin extends \Api_Abstract
     ])]
     public function template_create($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'manage_templates');
+
         $enabled = $data['enabled'] ?? 0;
         $category = $data['category'] ?? null;
 
@@ -233,6 +250,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function template_update($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'manage_templates');
+
         $enabled = $data['enabled'] ?? null;
         $category = $data['category'] ?? null;
         $subject = $data['subject'] ?? null;
@@ -251,6 +270,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Email template code was not passed'])]
     public function template_reset($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'manage_templates');
+
         return $this->getService()->resetTemplateByCode($data['code']);
     }
 
@@ -263,7 +284,10 @@ class Admin extends \Api_Abstract
      */
     public function template_render($data)
     {
-        $t = $this->template_get($data);
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'manage_templates');
+
+        $model = $this->getService()->getTemplate((int) $data['id']);
+        $t = $this->getService()->templateToApiArray($model, true);
         $vars = $t['vars'];
         $vars['_tpl'] = $data['_tpl'] ?? $t['content'];
         $systemService = $this->di['mod_service']('System');
@@ -278,6 +302,8 @@ class Admin extends \Api_Abstract
      */
     public function batch_template_generate()
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'manage_templates');
+
         return $this->getService()->templateBatchGenerate();
     }
 
@@ -288,6 +314,8 @@ class Admin extends \Api_Abstract
      */
     public function batch_template_disable($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'manage_templates');
+
         return $this->getService()->templateBatchDisable();
     }
 
@@ -298,6 +326,8 @@ class Admin extends \Api_Abstract
      */
     public function batch_template_enable($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'manage_templates');
+
         return $this->getService()->templateBatchEnable();
     }
 
@@ -306,6 +336,8 @@ class Admin extends \Api_Abstract
      */
     public function send_test(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'send_emails');
+
         $currentUser = $this->di['loggedin_admin'] ?? null;
 
         $email = [
@@ -322,6 +354,8 @@ class Admin extends \Api_Abstract
 
     public function batch_sendmail()
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'send_emails');
+
         $extensionService = $this->di['mod_service']('extension');
         if ($extensionService->isExtensionActive('mod', 'demo')) {
             return false;
@@ -349,6 +383,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Template code not passed'])]
     public function template_send($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'send_emails');
+
         if (!isset($data['to']) && !isset($data['to_staff']) && !isset($data['to_client'])) {
             throw new \FOSSBilling\InformationException('Receiver is not defined. Define to or to_client or to_staff parameter');
         }
@@ -362,6 +398,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'delete_email_history');
+
         foreach ($data['ids'] as $id) {
             $this->email_delete(['id' => $id]);
         }
@@ -371,8 +409,10 @@ class Admin extends \Api_Abstract
 
     public function get_queue(array $data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'view_email_history');
+
         [$sql, $params] = $this->getService()->queueGetSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [

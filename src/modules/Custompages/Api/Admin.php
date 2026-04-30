@@ -23,8 +23,7 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
-        $search = $data['search'] ?? null;
-        $pager = $this->getService()->searchPages($search);
+        $pager = $this->getService()->searchPages($data);
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = $item;

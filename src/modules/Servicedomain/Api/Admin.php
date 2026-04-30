@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedomain\Api;
 
+use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 /**
@@ -138,7 +139,8 @@ class Admin extends \Api_Abstract
     public function tld_get_list($data)
     {
         [$sql, $params] = $this->getService()->tldGetSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+
         foreach ($pager['list'] as $key => $tldArr) {
             $tld = $this->di['db']->getExistingModelById('Tld', $tldArr['id'], sprintf('Tld #%s not found', $tldArr['id']));
             $pager['list'][$key] = $this->getService()->tldToApiArray($tld);
@@ -267,7 +269,7 @@ class Admin extends \Api_Abstract
     public function registrar_get_list($data)
     {
         [$sql, $params] = $this->getService()->registrarGetSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         $registrars = $this->di['db']->find('TldRegistrar', 'ORDER By name ASC');
 

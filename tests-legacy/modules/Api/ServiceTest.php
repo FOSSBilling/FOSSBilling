@@ -37,4 +37,30 @@ final class ServiceTest extends \BBTestCase
         $this->assertIsInt($result);
         $this->assertEquals($requestNumber, $result);
     }
+
+    public function testGetRequestCountFiltersByRequestPrefix(): void
+    {
+        $since = 674_690_401;
+        $ip = '1.2.3.4';
+        $requestPrefix = 'api:/api/guest/client/login';
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('getCell')
+            ->with(
+                $this->stringContains('request LIKE :request_prefix'),
+                $this->callback(fn (array $values): bool => $values['ip'] === $ip
+                    && $values['request_prefix'] === $requestPrefix . '%'
+                    && isset($values['since']))
+            )
+            ->willReturn(3);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+
+        $this->service->setDi($di);
+        $result = $this->service->getRequestCount($since, $ip, $requestPrefix);
+
+        $this->assertSame(3, $result);
+    }
 }

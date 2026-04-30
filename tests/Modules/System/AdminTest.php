@@ -9,28 +9,64 @@ use PHPUnit\Framework\TestCase;
 
 final class AdminTest extends TestCase
 {
-    private function ipLookupWorking(): bool
+    private function invokeIsIpLookupAvailable(): bool
     {
-        $services = ['https://api64.ipify.org', 'https://ifconfig.io/ip', 'https://ip.hestiacp.com/'];
-        foreach ($services as $service) {
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 2);
-            curl_setopt($ch, CURLOPT_FAILONERROR, true);
-            curl_setopt($ch, CURLOPT_URL, $service);
-            $ip = curl_exec($ch);
-            if ($ip === false) {
-                curl_close($ch);
-                continue;
-            }
-            $isValidIp = filter_var($ip, FILTER_VALIDATE_IP) !== false;
-            curl_close($ch);
-            if ($isValidIp) {
-                return true;
+        $method = new \ReflectionMethod(self::class, 'isIpLookupAvailable');
+        $method->setAccessible(true);
+
+        /** @var bool $result */
+        $result = $method->invoke($this);
+
+        return $result;
+    }
+
+    public function testIsIpLookupAvailableReturnsTrueWhenServerAddrIsValidIp(): void
+    {
+        $previous = $_SERVER['SERVER_ADDR'] ?? null;
+        $_SERVER['SERVER_ADDR'] = '127.0.0.1';
+
+        try {
+            $this->assertTrue($this->invokeIsIpLookupAvailable());
+        } finally {
+            if ($previous === null) {
+                unset($_SERVER['SERVER_ADDR']);
+            } else {
+                $_SERVER['SERVER_ADDR'] = $previous;
             }
         }
+    }
 
-        return false;
+    public function testIsIpLookupAvailableFallsBackWhenServerAddrIsInvalid(): void
+    {
+        $previous = $_SERVER['SERVER_ADDR'] ?? null;
+        $_SERVER['SERVER_ADDR'] = 'not-an-ip';
+
+        try {
+            $this->assertIsBool($this->invokeIsIpLookupAvailable());
+        } finally {
+            if ($previous === null) {
+                unset($_SERVER['SERVER_ADDR']);
+            } else {
+                $_SERVER['SERVER_ADDR'] = $previous;
+            }
+        }
+    }
+
+    private function isIpLookupAvailable(): bool
+    {
+        $serverAddr = $_SERVER['SERVER_ADDR'] ?? null;
+        if (is_string($serverAddr) && filter_var($serverAddr, FILTER_VALIDATE_IP) !== false) {
+            return true;
+        }
+
+        $hostname = gethostname();
+        if ($hostname === false || $hostname === '') {
+            return false;
+        }
+
+        $resolved = gethostbyname($hostname);
+
+        return is_string($resolved) && filter_var($resolved, FILTER_VALIDATE_IP) !== false;
     }
 
     public function testClearCache(): void
@@ -99,19 +135,24 @@ final class AdminTest extends TestCase
         }
 
         // Only test each found interface if ipify.org is functioning
-        if ($this->ipLookupWorking()) {
+        if ($this->isIpLookupAvailable()) {
             foreach ($result->getResult() as $ip) {
                 $testResult = Request::makeRequest('admin/system/set_interface_ip', ['interface' => $ip]);
                 $this->assertTrue($testResult->wasSuccessful(), $testResult->generatePHPUnitMessage());
 
-                sleep(2);
+                $isReady = false;
+                for ($attempt = 0; $attempt < 10; ++$attempt) {
+                    $result = Request::makeRequest('admin/system/env', ['ip' => true]);
+                    if ($result->wasSuccessful() && (bool) filter_var($result->getResult(), FILTER_VALIDATE_IP)) {
+                        $isReady = true;
 
-                $envResult = Request::makeRequest('admin/system/env', ['ip' => true]);
-                $this->assertTrue($envResult->wasSuccessful(), $envResult->generatePHPUnitMessage());
-                $ipResult = $envResult->getResult();
-                if (!empty($ipResult)) {
-                    $this->assertTrue((bool) filter_var($ipResult, FILTER_VALIDATE_IP));
+                        break;
+                    }
+
+                    usleep(200000); // 200ms
                 }
+
+                $this->assertTrue($isReady, 'Timed out waiting for interface IP to become active');
             }
         }
 
@@ -132,10 +173,32 @@ final class AdminTest extends TestCase
         $this->assertFalse($result->wasSuccessful(), 'An invalid custom interface was accepted when it should have been rejected');
     }
 
-    public function testMaliciousInterfaceIsRejected(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('maliciousInterfacePayloadProvider')]
+    public function testMaliciousInterfaceIsRejected(string $payload): void
     {
-        $result = Request::makeRequest('admin/system/set_interface_ip', ['interface' => "x\"; echo 'pwned'; //"]);
-        $this->assertFalse($result->wasSuccessful(), 'A malicious interface value was accepted when it should have been rejected');
+        $result = Request::makeRequest('admin/system/set_interface_ip', ['interface' => $payload]);
+        $this->assertFalse(
+            $result->wasSuccessful(),
+            "A malicious interface value was accepted when it should have been rejected: {$payload}"
+        );
+    }
+
+    public static function maliciousInterfacePayloadProvider(): array
+    {
+        return [
+            'quote-escape' => ["x\"; echo 'pwned'; //"],
+            'pipe-command' => ['eth0|id'],
+            'backticks' => ['eth0`id`'],
+            'sub-shell' => ['eth0$(id)'],
+            'and-command' => ['eth0 && whoami'],
+            'redirect' => ['eth0 > /tmp/pwned'],
+            'path-traversal-unix' => ['../etc/passwd'],
+            'path-traversal-windows' => ['..\\..\\windows\\system32\\drivers\\etc\\hosts'],
+            'null-byte' => ["eth0\0evil"],
+            'long-string' => [str_repeat('a', 1024)],
+            'newline-injection' => ["eth0\nwhoami"],
+            'leading-trailing-space' => [' eth0 '],
+        ];
     }
 
     public function testMaliciousCustomInterfaceIsRejected(): void

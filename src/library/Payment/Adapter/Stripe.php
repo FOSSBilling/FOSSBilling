@@ -191,6 +191,21 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                     ? $this->di['db']->getExistingModelById('Client', $invoice->client_id)
                     : $this->getClientFromTransaction($tx, $charge);
 
+                if ($invoice) {
+                    $expected = $invoiceService->getTotalWithTax($invoice);
+
+                    try {
+                        $invoiceService->validatePaymentAmount($tx->amount, $expected);
+                    } catch (FOSSBilling\Exception $e) {
+                        $tx->status = Model_Transaction::STATUS_ERROR;
+                        $tx->error = $e->getMessage();
+                        $tx->updated_at = date('Y-m-d H:i:s');
+                        $this->di['db']->store($tx);
+
+                        throw $e;
+                    }
+                }
+
                 $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
 
                 if ($tx->invoice_id && $invoice && !$invoiceService->isInvoiceTypeDeposit($invoice)) {

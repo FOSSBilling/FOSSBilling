@@ -17,6 +17,55 @@ class Model_ProductDomainTable extends Model_ProductTable
         return 'year';
     }
 
+    private function getRegistrationYears(array $config): int
+    {
+        if (isset($config['period']) && is_string($config['period']) && $config['period'] !== '') {
+            $period = $this->di['period']($config['period']);
+
+            return max(1, $period->getQty());
+        }
+
+        return max(1, (int) ($config['register_years'] ?? $config['quantity'] ?? 1));
+    }
+
+    private function getTldModel(array $config): Model_Tld
+    {
+        $rtable = $this->di['mod_service']('servicedomain', 'Tld');
+        $tld = '';
+
+        if (!isset($config['action'])) {
+            throw new FOSSBilling\Exception('Could not determine domain price. Domain action is missing', null, 498);
+        }
+
+        if ($config['action'] == 'register') {
+            $tld = $config['register_tld'];
+        }
+
+        if ($config['action'] == 'transfer') {
+            $tld = $config['transfer_tld'];
+        }
+
+        $tld = $rtable->findOneByTld($tld);
+        if (!$tld instanceof Model_Tld) {
+            throw new FOSSBilling\Exception('Unknown TLD. Could not determine registration price');
+        }
+
+        return $tld;
+    }
+
+    private function getRegistrationTotal(Model_Tld $tld, int $years): float
+    {
+        if ($years <= 0) {
+            return 0.0;
+        }
+
+        if ($years <= 1) {
+            return (float) $tld->price_registration;
+        }
+
+        return (float) $tld->price_registration + (($years - 1) * (float) $tld->price_renew);
+    }
+
     protected function getStartingFromPrice(Model_Product $model)
     {
         $p = [];
@@ -56,8 +105,9 @@ class Model_ProductDomainTable extends Model_ProductTable
             ) {
                 if ($this->_hasFreePeriod($addon)) {
                     $factor = $this->discountFactor($addon, $config['period']);
+                    $tld = $this->getTldModel($config);
 
-                    return $factor * $this->getProductPrice($product, $config);
+                    return $this->getRegistrationTotal($tld, $factor);
                 }
 
                 return 0;
@@ -219,32 +269,64 @@ class Model_ProductDomainTable extends Model_ProductTable
         return $pricing;
     }
 
+    /**
+     * @return array{price: float, quantity: int, setup_price: float}
+     */
     #[Override]
-    public function getProductPrice(Model_Product $product, ?array $config = null)
+    public function getOrderLineConfig(Model_Product $product, ?array $config = null): array
     {
-        $rtable = $this->di['mod_service']('servicedomain', 'Tld');
-        $tld = '';
-
         if (!isset($config['action'])) {
             throw new FOSSBilling\Exception('Could not determine domain price. Domain action is missing', null, 498);
         }
 
         if ($config['action'] == 'owndomain') {
+            return [
+                'price' => 0.0,
+                'quantity' => 1,
+                'setup_price' => 0.0,
+            ];
+        }
+
+        $tld = $this->getTldModel($config);
+
+        if ($config['action'] == 'register') {
+            return [
+                'price' => $this->getRegistrationTotal($tld, $this->getRegistrationYears($config)),
+                'quantity' => 1,
+                'setup_price' => 0.0,
+            ];
+        }
+
+        return [
+            'price' => (float) $tld->price_transfer,
+            'quantity' => 1,
+            'setup_price' => 0.0,
+        ];
+    }
+
+    /**
+     * Resolved pricing for renewal lines in default currency.
+     *
+     * @return array{price: float, quantity: int}
+     */
+    public function getRenewalLineConfig(Model_Product $product, ?array $config = null): array
+    {
+        $tld = $this->getTldModel($config ?? []);
+
+        return [
+            'price' => (float) $tld->price_renew,
+            'quantity' => $this->getRegistrationYears($config ?? []),
+        ];
+    }
+
+    #[Override]
+    public function getProductPrice(Model_Product $product, ?array $config = null)
+    {
+        if (($config['action'] ?? null) == 'owndomain') {
             return 0;
         }
 
-        if ($config['action'] == 'register') {
-            $tld = $config['register_tld'];
-        }
-
-        if ($config['action'] == 'transfer') {
-            $tld = $config['transfer_tld'];
-        }
-
-        $tld = $rtable->findOneByTld($tld);
-        if (!$tld instanceof Model_Tld) {
-            throw new FOSSBilling\Exception('Unknown TLD. Could not determine registration price');
-        }
+        $tld = $this->getTldModel($config ?? []);
 
         if ($config['action'] == 'register') {
             return $tld->price_registration;

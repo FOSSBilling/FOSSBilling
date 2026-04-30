@@ -409,4 +409,121 @@ final class ServiceInvoiceItemTest extends \BBTestCase
         $result = $this->service->getAllNotExecutePaidItems();
         $this->assertIsArray($result);
     }
+
+    public function testGenerateFromOrderConvertsRecurringDomainPromoDiscountToOrderCurrency(): void
+    {
+        $serviceMock = $this->getMockBuilder(ServiceInvoiceItem::class)
+            ->onlyMethods(['addNew'])
+            ->getMock();
+
+        $proforma = new \Model_Invoice();
+        $proforma->loadBean(new \DummyBean());
+        $proforma->id = 10;
+
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+        $order->id = 20;
+        $order->client_id = 30;
+        $order->product_id = 40;
+        $order->promo_id = 50;
+        $order->currency = 'EUR';
+        $order->quantity = 1;
+        $order->unit = 'service';
+        $order->period = '1Y';
+        $order->title = 'example.com';
+        $order->promo_recurring = true;
+        $order->discount = 1;
+        $order->config = json_encode(['period' => '1Y']);
+
+        $client = new \Model_Client();
+        $client->loadBean(new \DummyBean());
+
+        $product = new \Model_Product();
+        $product->loadBean(new \DummyBean());
+        $product->type = \Model_ProductTable::DOMAIN;
+
+        $promo = new \Model_Promo();
+        $promo->loadBean(new \DummyBean());
+        $promo->code = 'PROMO';
+        $promo->type = \Model_Promo::ABSOLUTE;
+        $promo->value = 5.0;
+
+        $invoiceItem = new \Model_InvoiceItem();
+        $invoiceItem->loadBean(new \DummyBean());
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('dispense')
+            ->with('InvoiceItem')
+            ->willReturn($invoiceItem);
+        $dbMock->expects($this->exactly(2))
+            ->method('store');
+        $dbMock->expects($this->once())
+            ->method('load')
+            ->with('Client', $order->client_id)
+            ->willReturn($client);
+        $dbMock->expects($this->exactly(2))
+            ->method('getExistingModelById')
+            ->willReturnOnConsecutiveCalls($product, $promo);
+        $dbMock->expects($this->once())
+            ->method('findOne')
+            ->with('Promo', 'id = ?', [$order->promo_id])
+            ->willReturn($promo);
+
+        $orderService = $this->createMock(\Box\Mod\Order\Service::class);
+        $orderService->expects($this->once())
+            ->method('setUnpaidInvoice')
+            ->with($order, $proforma);
+
+        $clientService = $this->createMock(\Box\Mod\Client\Service::class);
+        $clientService->expects($this->once())
+            ->method('isClientTaxable')
+            ->with($client)
+            ->willReturn(false);
+
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('getRenewalProductDiscount')
+            ->with($product, $promo, ['period' => '1Y'])
+            ->willReturn(5.0);
+
+        $currencyRepository = $this->createMock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+        $currencyRepository->expects($this->once())
+            ->method('getRateByCode')
+            ->with('EUR')
+            ->willReturn(2.0);
+
+        $currencyService = $this->createMock(\Box\Mod\Currency\Service::class);
+        $currencyService->expects($this->once())
+            ->method('getCurrencyRepository')
+            ->willReturn($currencyRepository);
+
+        $serviceMock->expects($this->once())
+            ->method('addNew')
+            ->with(
+                $proforma,
+                $this->callback(fn (array $discountLine): bool => $discountLine['price'] === -10.0
+                    && $discountLine['quantity'] === 1
+                    && $discountLine['rel_id'] === $order->id)
+            );
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['api_guest'] = new class {
+            public function currency_format(array $data): string
+            {
+                return $data['code'] . ' ' . $data['price'];
+            }
+        };
+        $di['mod_service'] = $di->protect(fn (string $serviceName) => match ($serviceName) {
+            'Order' => $orderService,
+            'client' => $clientService,
+            'Product' => $productService,
+            'Currency' => $currencyService,
+            default => throw new \RuntimeException('Unexpected service request: ' . $serviceName),
+        });
+
+        $serviceMock->setDi($di);
+        $serviceMock->generateFromOrder($proforma, $order, \Model_InvoiceItem::TASK_RENEW, 20.0, ['quantity' => 1]);
+    }
 }

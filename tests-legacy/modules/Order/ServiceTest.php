@@ -1772,6 +1772,7 @@ final class ServiceTest extends \BBTestCase
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
         $productModel->stock_control = 1;
+        $productModel->quantity_in_stock = 5;
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -1784,6 +1785,27 @@ final class ServiceTest extends \BBTestCase
 
         $result = $this->service->stockSale($productModel, 2);
         $this->assertTrue($result);
+    }
+
+    public function testStockSaleThrowsWhenQuantityWouldGoNegative(): void
+    {
+        $productModel = new \Model_Product();
+        $productModel->loadBean(new \DummyBean());
+        $productModel->id = 1;
+        $productModel->stock_control = 1;
+        $productModel->quantity_in_stock = 1;
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->never())
+            ->method('store');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('Product 1 is out of stock.');
+        $this->service->stockSale($productModel, 2);
     }
 
     public function testUpdateOrder(): void
@@ -1874,23 +1896,76 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
         $clientOrderModel->period = '1Y';
+        $clientOrderModel->expires_at = '2026-01-01 00:00:00';
 
+        $expectedExpiration = strtotime('2027-01-01 00:00:00');
         $periodMock = $this->getMockBuilder('\Box_Period')->disableOriginalConstructor()->getMock();
+        $periodMock->expects($this->atLeastOnce())
+            ->method('getExpirationTime')
+            ->with(strtotime('2026-01-01 00:00:00'))
+            ->willReturn($expectedExpiration);
 
         $dbMock = $this->createMock('Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store');
 
-        $invoiceServiceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
-        $invoiceServiceMock->expects($this->atLeastOnce())
-            ->method('findPaidInvoicesForOrder');
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('saveStatusChange')
+            ->with($clientOrderModel, 'Order renewed');
 
         $di = $this->getDi();
         $di['mod_config'] = $di->protect(fn ($name): array => []);
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $invoiceServiceMock);
         $di['period'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $periodMock);
         $di['db'] = $dbMock;
 
         $serviceMock->setDi($di);
         $serviceMock->renewFromOrder($clientOrderModel);
+
+        $this->assertEquals('2027-01-01 00:00:00', $clientOrderModel->expires_at);
+        $this->assertEquals(\Model_ClientOrder::STATUS_ACTIVE, $clientOrderModel->status);
+    }
+
+    public function testRenewFromOrderExtendsFreeFirstTermOnFirstPaidRenewal(): void
+    {
+        $clientOrderModel = new \Model_ClientOrder();
+        $clientOrderModel->loadBean(new \DummyBean());
+        $clientOrderModel->period = '1Y';
+        $clientOrderModel->status = \Model_ClientOrder::STATUS_ACTIVE;
+        $clientOrderModel->activated_at = '2025-01-01 00:00:00';
+        $clientOrderModel->expires_at = '2026-01-01 00:00:00';
+
+        $serviceMock = $this->getMockBuilder(Service::class)
+            ->onlyMethods(['_callOnService', 'saveStatusChange'])
+            ->getMock();
+        $serviceMock->expects($this->once())
+            ->method('_callOnService')
+            ->with($this->identicalTo($clientOrderModel), \Model_ClientOrder::ACTION_RENEW);
+
+        $expectedExpiration = strtotime('2027-01-01 00:00:00');
+        $periodMock = $this->getMockBuilder('\Box_Period')->disableOriginalConstructor()->getMock();
+        $periodMock->expects($this->once())
+            ->method('getExpirationTime')
+            ->with(strtotime('2026-01-01 00:00:00'))
+            ->willReturn($expectedExpiration);
+
+        $dbMock = $this->createMock('Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store');
+
+        $serviceMock->expects($this->once())
+            ->method('saveStatusChange')
+            ->with($clientOrderModel, 'Order renewed');
+
+        $di = $this->getDi();
+        $di['mod_config'] = $di->protect(fn ($name): array => []);
+        $di['period'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $periodMock);
+        $di['db'] = $dbMock;
+
+        $serviceMock->setDi($di);
+        $serviceMock->renewFromOrder($clientOrderModel);
+
+        $this->assertEquals('2027-01-01 00:00:00', $clientOrderModel->expires_at);
+        $this->assertEquals(\Model_ClientOrder::STATUS_ACTIVE, $clientOrderModel->status);
     }
 
     public function testSuspendFromOrderExceptionNotActiveOrder(): void

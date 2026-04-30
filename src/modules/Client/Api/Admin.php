@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace Box\Mod\Client\Api;
 
 use FOSSBilling\InformationException;
+use FOSSBilling\PaginationOptions;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -34,7 +35,7 @@ class Admin extends \Api_Abstract
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
 
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $clientArr) {
             $client = $this->di['db']->getExistingModelById('Client', $clientArr['id'], 'Client not found');
@@ -338,7 +339,7 @@ class Admin extends \Api_Abstract
     {
         $service = $this->di['mod_service']('Client', 'Balance');
         [$q, $params] = $service->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($q, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
+        $pager = $this->di['pager']->getPaginatedResultSet($q, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [
@@ -421,7 +422,7 @@ class Admin extends \Api_Abstract
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view_login_history');
 
         [$q, $params] = $this->getService()->getHistorySearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($q, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
+        $pager = $this->di['pager']->getPaginatedResultSet($q, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [

@@ -299,6 +299,8 @@ class UpdatePatcher implements InjectionAwareInterface
             54 => 'patch54',
             55 => 'patch55',
             56 => 'patch56',
+            57 => 'patch57',
+            58 => 'patch58',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -904,6 +906,67 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch54(): void
     {
+        $schemaManager = $this->di['dbal']->createSchemaManager();
+        $indexes = array_map(static fn ($index) => $index->getName(), $schemaManager->listTableIndexes('api_request'));
+
+        if (!in_array('api_request_ip_created', $indexes, true)) {
+            $this->executeSql('ALTER TABLE `api_request` ADD INDEX `api_request_ip_created` (`ip`, `created_at`);');
+        }
+
+        $fileActions = [
+            Path::join(PATH_LIBRARY, 'Model', 'ClientPasswordResetTable.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ApiRequestTable.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ApiRequest.php') => 'unlink',
+        ];
+        $this->executeFileActions($fileActions);
+    }
+
+    private function patch55(): void
+    {
+        // Migrate Spamchecker module to Anti-Spam module
+        // @see https://github.com/FOSSBilling/FOSSBilling/pull/2700
+
+        try {
+            $extService = $this->di['mod_service']('extension');
+
+            $oldConfig = $extService->getConfig('mod_spamchecker');
+            $spamcheckerSettings = array_diff_key($oldConfig, ['ext' => true]);
+            if (!empty($spamcheckerSettings)) {
+                $existingAntispamConfig = $extService->getConfig('mod_antispam');
+                $existingAntispamSettings = array_diff_key($existingAntispamConfig, ['ext' => true]);
+                $newConfig = array_merge($spamcheckerSettings, $existingAntispamSettings);
+                $newConfig['ext'] = 'mod_antispam';
+                $newConfig['honeypot_enabled'] ??= true;
+                $newConfig['honeypot_field'] ??= 'honeypot_field';
+                $extService->setConfig($newConfig);
+            }
+
+            $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_hook' AND rel_type = 'mod' AND rel_id = 'spamchecker' AND meta_key = 'listener'");
+
+            $hookService = $this->di['mod_service']('hook');
+            $hookService->batchConnect('antispam');
+
+            $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_spamchecker' AND meta_key = 'config'");
+
+            $spamcheckerExt = $extService->findExtension('mod', 'spamchecker');
+            if ($spamcheckerExt instanceof \Model_Extension) {
+                $extService->uninstall($spamcheckerExt);
+            }
+
+            $this->di['cache']->delete('config_mod_spamchecker');
+            $this->di['cache']->delete('config_mod_antispam');
+        } catch (\Exception $e) {
+            error_log('Spamchecker to Anti-Spam migration error: ' . $e->getMessage());
+        }
+
+        $fileActions = [
+            Path::join(PATH_MODS, 'Spamchecker') => 'unlink',
+        ];
+        $this->executeFileActions($fileActions);
+    }
+
+    private function patch56(): void
+    {
         try {
             $finder = new Finder();
             $finder->directories()->in(PATH_MODS)->depth('== 1')->name('/^html_(admin|client|email)$/');
@@ -913,9 +976,6 @@ class UpdatePatcher implements InjectionAwareInterface
                 $area = substr($dir->getFilename(), 5);
                 $replacementPath = Path::join($modulePath, 'templates', $area);
 
-                // Only remove legacy directories for modules that have already been migrated
-                // to the new templates/<area> layout. This avoids deleting user-installed
-                // modules that still depend on the legacy structure.
                 if (!$this->filesystem->exists($replacementPath)) {
                     continue;
                 }
@@ -927,7 +987,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 }
             }
         } catch (\Symfony\Component\Finder\Exception\DirectoryNotFoundException) {
-            throw new Exception('The modules directory does not exist. Cannot apply patch 54.');
+            throw new Exception('The modules directory does not exist. Cannot apply patch 56.');
         }
 
         $this->executeFileActions([
@@ -937,7 +997,7 @@ class UpdatePatcher implements InjectionAwareInterface
         ]);
     }
 
-    private function patch55(): void
+    private function patch57(): void
     {
         $legacyHashes = [
             'mod_client_confirm' => ['7473f9235472556c07fbb28ca81cd32d5ba059251520938a113322cf9d63e9cf', 'f16aa27ac0c8c504aee96f76177aae7f57c3165d9207b1a4367c1d60da7b44b5'],
@@ -1029,7 +1089,7 @@ class UpdatePatcher implements InjectionAwareInterface
         }
     }
 
-    private function patch56(): void
+    private function patch58(): void
     {
         $gateways = $this->di['dbal']->executeQuery(
             "SELECT id, config FROM pay_gateway WHERE gateway = 'Custom'"

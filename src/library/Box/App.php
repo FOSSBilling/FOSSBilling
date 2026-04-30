@@ -131,7 +131,81 @@ class Box_App
         $this->checkPermission();
         $timeCollector->stopMeasure('checkperm');
 
+        $timeCollector->startMeasure('rateLimit', 'Checking rate limit');
+        $this->enforceRateLimit();
+        $timeCollector->stopMeasure('rateLimit');
+
         return $this->processRequest();
+    }
+
+    protected function enforceRateLimit(): void
+    {
+        $apiConfig = Config::getProperty('api', []);
+        $whitelist = $apiConfig['rate_limit_whitelist'] ?? [];
+        $ip = $this->di['request']->getClientIp();
+
+        if (in_array($ip, $whitelist, true)) {
+            return;
+        }
+
+        $logPrefix = $this->mod === 'api' ? 'api:' : 'page:';
+
+        $authPattern = $this->getAuthSensitivePattern();
+        if ($authPattern !== null) {
+            $rateSpan = $apiConfig['rate_span_login'] ?? 60;
+            $rateLimit = $apiConfig['rate_limit_login'] ?? 20;
+            $checkPrefix = 'page:' . $authPattern;
+        } else {
+            $rateSpan = $apiConfig['rate_span'] ?? 3600;
+            $rateLimit = $apiConfig['rate_limit'] ?? 1000;
+            $checkPrefix = $logPrefix;
+        }
+
+        $service = $this->di['mod_service']('api');
+        $service->logRequest($logPrefix . $this->url);
+
+        if ($service->isRateLimited($ip, $rateLimit, $rateSpan, $checkPrefix)) {
+            $throttleDelay = $apiConfig['throttle_delay'] ?? 2;
+            sleep((int) $throttleDelay);
+
+            if ($this->mod === 'api') {
+                $exc = new FOSSBilling\InformationException('Rate limit exceeded. Please try again later.', null, 429);
+                $apiController = new Box\Mod\Api\Controller\Client();
+                $apiController->setDi($this->di);
+                $apiController->renderJson(null, $exc);
+            } else {
+                http_response_code(429);
+                echo $this->render('error', [
+                    'exception' => new FOSSBilling\InformationException('Rate limit exceeded. Please try again later.', null, 429),
+                ]);
+            }
+            exit;
+        }
+    }
+
+    protected function getAuthSensitivePattern(): ?string
+    {
+        $uri = '/' . ltrim((string) $this->uri, '/');
+
+        $authSensitivePatterns = [
+            '/client/reset-password-confirm/',
+            '/reset-password-confirm/',
+            '/client/confirm-email/',
+            '/staff/email/',
+        ];
+
+        foreach ($authSensitivePatterns as $pattern) {
+            if (str_starts_with($uri, $pattern)) {
+                return $pattern;
+            }
+        }
+
+        return null;
+    }
+
+    protected function isAuthSensitivePath(): bool
+    {
+        return $this->getAuthSensitivePattern() !== null;
     }
 
     /**

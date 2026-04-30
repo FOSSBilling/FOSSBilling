@@ -26,7 +26,7 @@ class Box_Authorization
         }
 
         $client = $this->di['db']->load('Client', $clientId);
-        if (!$client || $client->status !== \Model_Client::ACTIVE) {
+        if (!$client || $client->status !== Model_Client::ACTIVE) {
             $this->session->delete('client_id');
 
             return false;
@@ -43,7 +43,7 @@ class Box_Authorization
         }
 
         $adminModel = $this->di['db']->load('Admin', $admin['id']);
-        if (!$adminModel || $adminModel->status !== \Model_Admin::STATUS_ACTIVE) {
+        if (!$adminModel || $adminModel->status !== Model_Admin::STATUS_ACTIVE) {
             $this->session->delete('admin');
 
             return false;

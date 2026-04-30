@@ -16,6 +16,7 @@ use Box\Mod\Email\Entity\EmailTemplate;
 use Box\Mod\Email\Repository\EmailTemplateRepository;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
+use FOSSBilling\PaginationOptions;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -57,7 +58,31 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function getModulePermissions(): array
     {
         return [
-            'can_always_access' => true,
+            'view_email_history' => [
+                'type' => 'bool',
+                'display_name' => __trans('View email history'),
+                'description' => __trans('Allows the staff member to view sent emails and queued email messages.'),
+            ],
+            'delete_email_history' => [
+                'type' => 'bool',
+                'display_name' => __trans('Delete email history'),
+                'description' => __trans('Allows the staff member to delete sent email log entries.'),
+            ],
+            'send_emails' => [
+                'type' => 'bool',
+                'display_name' => __trans('Send emails'),
+                'description' => __trans('Allows the staff member to send, resend, and process queued emails.'),
+            ],
+            'view_templates' => [
+                'type' => 'bool',
+                'display_name' => __trans('View email templates'),
+                'description' => __trans('Allows the staff member to view email templates and template details.'),
+            ],
+            'manage_templates' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage email templates'),
+                'description' => __trans('Allows the staff member to create, update, delete, reset, and regenerate email templates.'),
+            ],
             'manage_settings' => [],
         ];
     }
@@ -799,7 +824,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $qb = $this->getTemplateRepository()->getSearchQueryBuilder($data);
 
-        $result = $this->di['pager']->paginateDoctrineQuery($qb, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
+        $result = $this->di['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
 
         $list = [];
         foreach ($result['list'] as $templateRow) {

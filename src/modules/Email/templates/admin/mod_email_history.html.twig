@@ -5,12 +5,20 @@
 {% block meta_title %}{{ 'Email History'|trans }}{% endblock %}
 
 {% set active_menu = 'activity' %}
+{% set can_manage_settings = has_permission('email', 'manage_settings') %}
+{% set can_view_email_history = has_permission('email', 'view_email_history') %}
+{% set can_delete_email_history = has_permission('email', 'delete_email_history') %}
 
 {% block content %}
     {% set config = admin.extension_config_get({ 'ext': 'mod_email' }) %}
     {% if config.log_enabled is not defined or config.log_enabled != 1 %}
         <div class="alert alert-primary alert-dismissible fade show mb-3" role="alert">
-            <strong>{{ 'Information'|trans }}:</strong> {{ 'Email logging is not enabled. If you want to log sent mails to database, enable it in'|trans }}<a href="{{ 'extension/settings/email'|url }}">{{ 'Email Settings.'|trans }}</a>
+            <strong>{{ 'Information'|trans }}:</strong> {{ 'Email logging is not enabled. If you want to log sent mails to database, enable it in'|trans }}
+            {% if can_manage_settings %}
+                <a href="{{ 'extension/settings/email'|url }}">{{ 'Email Settings.'|trans }}</a>
+            {% else %}
+                {{ 'Email Settings.'|trans }}
+            {% endif %}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ 'Close'|trans }}"></button>
         </div>
     {% endif %}
@@ -20,13 +28,16 @@
         <h3>{{ 'Email History'|trans }}</h3>
     </div>
 
+    {% if can_view_email_history %}
     {{ include('partial_search.html.twig') }}
     <table class="table card-table table-vcenter table-striped text-nowrap">
         <thead>
             <tr>
+                {% if can_delete_email_history %}
                 <th class="w-1">
                     <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
                 </th>
+                {% endif %}
                 <th>{{ 'To'|trans }}</th>
                 <th>{{ 'From'|trans }}</th>
                 <th>{{ 'Subject'|trans }}</th>
@@ -38,9 +49,11 @@
         {% set emails = admin.email_email_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
         {% for i, email in emails.list %}
         <tr>
+            {% if can_delete_email_history %}
             <td>
                 <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ email.id }}">
             </td>
+            {% endif %}
             <td>{{ email.recipients }}</td>
             <td>{{ email.sender }}</td>
             <td>
@@ -61,26 +74,37 @@
                         <use xlink:href="#edit" />
                     </svg>
                 </a>
+                {% if can_delete_email_history %}
                 <a class="btn btn-icon" href="{{ 'email/email_delete'|api_url(query: { 'id': email.id }) }}"
                     {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'email/history'|url}) }}>
                     <svg class="icon">
                         <use xlink:href="#delete" />
                     </svg>
                 </a>
+                {% endif %}
             </td>
         </tr>
         {% else %}
             <tr>
-                <td class="text-muted" colspan="7">{{ 'The list is empty'|trans }}</td>
+                <td class="text-muted" colspan="{{ can_delete_email_history ? 6 : 5 }}">{{ 'The list is empty'|trans }}</td>
             </tr>
         {% endfor %}
         </tbody>
     </table>
 
     <div class="card-footer d-flex align-items-center justify-content-between">
-        {% include "partial_batch_delete.html.twig" with { 'action': 'email/batch_delete' } %}
+        {% if can_delete_email_history %}
+            {% include "partial_batch_delete.html.twig" with { 'action': 'email/batch_delete' } %}
+        {% endif %}
         {% include "partial_pagination.html.twig" with { 'list': emails, 'url': 'email/history' } %}
     </div>
+    {% else %}
+        <div class="card-body">
+            <div class="alert alert-warning mb-0" role="alert">
+                {{ 'You do not have permission to view email history.'|trans }}
+            </div>
+        </div>
+    {% endif %}
 </div>
 {% endblock %}
 

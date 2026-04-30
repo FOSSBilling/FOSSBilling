@@ -49,8 +49,8 @@ class Admin extends \Api_Abstract
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'create_and_edit');
 
         $id = $this->getService()->create(
-            trim(htmlspecialchars((string) $data['path'], ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/'),
-            trim(htmlspecialchars((string) $data['target'], ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/')
+            (string) $data['path'],
+            (string) $data['target']
         );
 
         $this->di['logger']->info('Created new redirect #%s', $id);

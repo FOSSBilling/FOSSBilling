@@ -109,19 +109,35 @@ class Admin implements InjectionAwareInterface
     {
         $data = [];
         $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
+
+        $apiService = $this->di['mod_service']('api');
+        $ip = $this->di['request']->getClientIp();
+        $apiConfig = \FOSSBilling\Config::getProperty('api', []);
+        $loginSpan = $apiConfig['rate_span_login'] ?? 60;
+        $loginLimit = $apiConfig['rate_limit_login'] ?? 20;
+
+        if ($apiService->isRateLimited($ip, $loginLimit, $loginSpan, 'page:/staff/email/')) {
+            usleep(random_int(50000, 100000));
+
+            return $app->render('mod_staff_password_reset');
+        }
+
         $mod = $this->di['mod']('staff');
         $config = $mod->getConfig();
         if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {
-            throw new \FOSSBilling\InformationException('Password reset has been disabled');
+            return $app->render('mod_staff_password_reset');
         }
-        // send confirmation email
         $service = $this->di['mod_service']('staff');
         $reset = $this->di['db']->findOne('AdminPasswordReset', 'hash = ?', [$hash]);
         if (!$reset instanceof \Model_AdminPasswordReset) {
-            throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
+            usleep(random_int(50000, 100000));
+
+            return $app->render('mod_staff_password_reset');
         }
         if (strtotime($reset->created_at) - time() + 900 < 0) {
-            throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
+            usleep(random_int(50000, 100000));
+
+            return $app->render('mod_staff_password_reset');
         }
         $admin = $this->di['db']->getExistingModelById('Admin', $reset->admin_id, 'User not found');
         $data['hash'] = $reset->hash;

@@ -55,6 +55,29 @@ final class ControllerClientTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
+    public function testShouldUseTokenLoginReturnsFalseWhenOnlyUsernameSet(): void
+    {
+        $controller = new Client();
+
+        $_SERVER['PHP_AUTH_USER'] = 'client';
+
+        $result = $this->invokePrivate($controller, 'shouldUseTokenLogin', ['client']);
+
+        $this->assertFalse($result);
+    }
+
+    public function testShouldUseTokenLoginReturnsTrueWhenBothUsernameAndPasswordSet(): void
+    {
+        $controller = new Client();
+
+        $_SERVER['PHP_AUTH_USER'] = 'client';
+        $_SERVER['PHP_AUTH_PW'] = 'some-token';
+
+        $result = $this->invokePrivate($controller, 'shouldUseTokenLogin', ['client']);
+
+        $this->assertTrue($result);
+    }
+
     public function testShouldUseTokenLoginRejectsRouteRoleMismatch(): void
     {
         $controller = new Client();

@@ -16,6 +16,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Client\Api;
 
+use FOSSBilling\PaginationOptions;
+
 class Client extends \Api_Abstract
 {
     /**
@@ -29,7 +31,7 @@ class Client extends \Api_Abstract
         $data['client_id'] = $this->identity->id;
 
         [$q, $params] = $service->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($q, $params, isset($data['per_page']) ? (int) $data['per_page'] : null, isset($data['page']) ? (int) $data['page'] : null);
+        $pager = $this->di['pager']->getPaginatedResultSet($q, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $balance = $this->di['db']->getExistingModelById('ClientBalance', $item['id'], 'Balance not found');
