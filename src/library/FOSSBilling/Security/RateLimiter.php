@@ -1,6 +1,13 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * Copyright 2022-2025 FOSSBilling
+ * SPDX-License-Identifier: Apache-2.0.
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ */
 
 namespace FOSSBilling\Security;
 
@@ -40,6 +47,9 @@ class RateLimiter implements InjectionAwareInterface
                 'client_password_reset_email' => ['policy' => 'fixed_window', 'limit' => 3, 'interval' => '1 hour'],
                 'staff_password_reset_ip' => ['policy' => 'fixed_window', 'limit' => 5, 'interval' => '1 hour'],
                 'staff_password_reset_email' => ['policy' => 'fixed_window', 'limit' => 3, 'interval' => '1 hour'],
+                'client_signup' => ['policy' => 'fixed_window', 'limit' => 5, 'interval' => '1 hour'],
+                'guest_ticket_create' => ['policy' => 'fixed_window', 'limit' => 3, 'interval' => '1 hour'],
+                'order_generation_ip' => ['policy' => 'fixed_window', 'limit' => 15, 'interval' => '1 hour'],
             ],
         ];
     }

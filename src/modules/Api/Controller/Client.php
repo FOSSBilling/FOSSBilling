@@ -112,8 +112,6 @@ class Client implements InjectionAwareInterface
     private function checkRateLimit(string $role, ?string $method = null): bool
     {
         if ($method == 'staff_login' || $method == 'client_login') {
-            // 25 to 250ms delay to help prevent email enumeration.
-            usleep(random_int(25000, 250000));
             $policy = 'api_login';
         } else {
             $policy = $role === 'guest' ? 'api_guest' : 'api_authenticated';

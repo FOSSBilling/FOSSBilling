@@ -105,36 +105,41 @@ class Guest extends \Api_Abstract
     #[RequiredParams(['email' => 'Email required', 'password' => 'Password required'])]
     public function login($data)
     {
-        $this->di['tools']->validateAndSanitizeEmail($data['email'], true, false);
+        $startedAt = microtime(true);
+        try {
+            $this->di['tools']->validateAndSanitizeEmail($data['email'], true, false);
 
-        $event_params = $data;
-        $event_params['ip'] = $this->ip;
-        $this->di['events_manager']->fire(['event' => 'onBeforeClientLogin', 'params' => $event_params]);
+            $event_params = $data;
+            $event_params['ip'] = $this->ip;
+            $this->di['events_manager']->fire(['event' => 'onBeforeClientLogin', 'params' => $event_params]);
 
-        $service = $this->getService();
-        $client = $service->authorizeClient($data['email'], $data['password']);
+            $service = $this->getService();
+            $client = $service->authorizeClient($data['email'], $data['password']);
 
-        if (!$client instanceof \Model_Client) {
-            $this->di['events_manager']->fire(['event' => 'onEventClientLoginFailed', 'params' => $event_params]);
+            if (!$client instanceof \Model_Client) {
+                $this->di['events_manager']->fire(['event' => 'onEventClientLoginFailed', 'params' => $event_params]);
 
-            throw new \FOSSBilling\InformationException('Please check your login details.', [], 401);
+                throw new \FOSSBilling\InformationException('Please check your login details.', [], 401);
+            }
+
+            $this->di['events_manager']->fire(['event' => 'onAfterClientLogin', 'params' => ['id' => $client->id, 'ip' => $this->ip]]);
+
+            $oldSession = $this->di['session']->getId();
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                session_regenerate_id(true);
+            }
+            $result = $service->toSessionArray($client);
+            $this->di['session']->set('client_id', $client->id);
+
+            $this->di['logger']->info('Client #%s logged in', $client->id);
+            $this->di['session']->delete('redirect_uri');
+
+            $this->di['mod_service']('cart')->transferFromOtherSession($oldSession);
+
+            return $result;
+        } finally {
+            \FOSSBilling\Security\RandomizedTimeFloor::apply($startedAt);
         }
-
-        $this->di['events_manager']->fire(['event' => 'onAfterClientLogin', 'params' => ['id' => $client->id, 'ip' => $this->ip]]);
-
-        $oldSession = $this->di['session']->getId();
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_regenerate_id(true);
-        }
-        $result = $service->toSessionArray($client);
-        $this->di['session']->set('client_id', $client->id);
-
-        $this->di['logger']->info('Client #%s logged in', $client->id);
-        $this->di['session']->delete('redirect_uri');
-
-        $this->di['mod_service']('cart')->transferFromOtherSession($oldSession);
-
-        return $result;
     }
 
     /**
@@ -222,67 +227,59 @@ class Guest extends \Api_Abstract
 
             return true;
         } finally {
-            $this->applyPasswordResetTimingFloor($startedAt);
-        }
-    }
-
-    private function applyPasswordResetTimingFloor(float $startedAt): void
-    {
-        if (\FOSSBilling\Environment::isCLI()) {
-            return;
-        }
-
-        $minimumMs = random_int(500, 900);
-        $elapsedMs = (microtime(true) - $startedAt) * 1000;
-        if ($elapsedMs < $minimumMs) {
-            usleep((int) (($minimumMs - $elapsedMs) * 1000));
+            \FOSSBilling\Security\RandomizedTimeFloor::apply($startedAt);
         }
     }
 
     #[RequiredParams(['hash' => 'No Hash provided', 'password' => 'Password required', 'password_confirm' => 'Password confirmation required'])]
     public function update_password($data): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeClientProfilePasswordReset', 'params' => $data['hash']]);
+        $startedAt = microtime(true);
+        try {
+            $this->di['events_manager']->fire(['event' => 'onBeforeClientProfilePasswordReset', 'params' => $data['hash']]);
 
-        $this->di['validator']->passwordsMatch($data);
-        $this->di['validator']->isPasswordStrong($data['password']);
+            $this->di['validator']->passwordsMatch($data);
+            $this->di['validator']->isPasswordStrong($data['password']);
 
-        $reset = $this->di['db']->findOne('ClientPasswordReset', 'hash = ?', [$data['hash']]);
-        if (!$reset instanceof \Model_ClientPasswordReset) {
-            $this->di['logger']->setChannel('security')->info('Client password reset confirmation failed from IP %s: reset token not found', $this->getIp());
+            $reset = $this->di['db']->findOne('ClientPasswordReset', 'hash = ?', [$data['hash']]);
+            if (!$reset instanceof \Model_ClientPasswordReset) {
+                $this->di['logger']->setChannel('security')->info('Client password reset confirmation failed from IP %s: reset token not found', $this->getIp());
 
-            throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
+                throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
+            }
+
+            if (strtotime($reset->created_at) - time() + 900 < 0) {
+                $this->di['logger']->setChannel('security')->info('Client password reset confirmation failed for client #%s from IP %s: reset token expired', $reset->client_id, $this->getIp());
+
+                throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
+            }
+
+            $c = $this->di['db']->getExistingModelById('Client', $reset->client_id, 'Client not found');
+            if ($c->status !== \Model_Client::ACTIVE) {
+                $this->di['logger']->setChannel('security')->info('Client password reset confirmation failed for client #%s from IP %s: account status %s', $c->id, $this->getIp(), $c->status);
+
+                throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
+            }
+
+            $c->pass = $this->di['password']->hashIt($data['password']);
+            $this->di['db']->store($c);
+
+            $this->di['logger']->setChannel('security')->info('Client password reset completed for client #%s from IP %s', $c->id, $this->getIp());
+
+            // send email
+            $email = [];
+            $email['to_client'] = $c->id;
+            $email['code'] = 'mod_client_password_reset_information';
+            $emailService = $this->di['mod_service']('email');
+            $emailService->sendTemplate($email);
+
+            $this->di['db']->trash($reset);
+            $this->di['events_manager']->fire(['event' => 'onAfterClientProfilePasswordReset', 'params' => ['id' => $c->id]]);
+
+            return true;
+        } finally {
+            \FOSSBilling\Security\RandomizedTimeFloor::apply($startedAt);
         }
-
-        if (strtotime($reset->created_at) - time() + 900 < 0) {
-            $this->di['logger']->setChannel('security')->info('Client password reset confirmation failed for client #%s from IP %s: reset token expired', $reset->client_id, $this->getIp());
-
-            throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
-        }
-
-        $c = $this->di['db']->getExistingModelById('Client', $reset->client_id, 'Client not found');
-        if ($c->status !== \Model_Client::ACTIVE) {
-            $this->di['logger']->setChannel('security')->info('Client password reset confirmation failed for client #%s from IP %s: account status %s', $c->id, $this->getIp(), $c->status);
-
-            throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
-        }
-
-        $c->pass = $this->di['password']->hashIt($data['password']);
-        $this->di['db']->store($c);
-
-        $this->di['logger']->setChannel('security')->info('Client password reset completed for client #%s from IP %s', $c->id, $this->getIp());
-
-        // send email
-        $email = [];
-        $email['to_client'] = $c->id;
-        $email['code'] = 'mod_client_password_reset_information';
-        $emailService = $this->di['mod_service']('email');
-        $emailService->sendTemplate($email);
-
-        $this->di['db']->trash($reset);
-        $this->di['events_manager']->fire(['event' => 'onAfterClientProfilePasswordReset', 'params' => ['id' => $c->id]]);
-
-        return true;
     }
 
     /**
