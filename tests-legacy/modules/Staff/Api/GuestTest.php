@@ -373,7 +373,7 @@ final class GuestTest extends \BBTestCase
         return new class {
             public function consume(string $policy, string $subject): \FOSSBilling\Security\RateLimitResult
             {
-                return new \FOSSBilling\Security\RateLimitResult($policy, true, false, 10, 9);
+                return new \FOSSBilling\Security\RateLimitResult($policy, false, 10, 9);
             }
         };
     }
@@ -387,7 +387,7 @@ final class GuestTest extends \BBTestCase
             {
                 ++$this->consumeCount;
 
-                return new \FOSSBilling\Security\RateLimitResult($policy, true, true, 10, 0);
+                return new \FOSSBilling\Security\RateLimitResult($policy, true, 10, 0);
             }
         };
     }

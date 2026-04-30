@@ -155,7 +155,7 @@ final class ClientTest extends \BBTestCase
         $rateLimiter = new class {
             public function consume(string $policy, string $subject): \FOSSBilling\Security\RateLimitResult
             {
-                return new \FOSSBilling\Security\RateLimitResult($policy, true, false, 100, 99);
+                return new \FOSSBilling\Security\RateLimitResult($policy, false, 100, 99);
             }
         };
 

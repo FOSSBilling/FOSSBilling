@@ -49,12 +49,16 @@ class RateLimiter implements InjectionAwareInterface
         $config = $this->getConfig();
         $policy = $config['policies'][$policyName] ?? null;
 
-        if (($config['enabled'] ?? true) === false || !is_array($policy)) {
-            return new RateLimitResult($policyName, true, false, null, null, null, RateLimitResult::REASON_DISABLED);
+        if (($config['enabled'] ?? true) === false) {
+            return new RateLimitResult($policyName, false, null, null, null, RateLimitResult::REASON_DISABLED);
+        }
+
+        if (!is_array($policy)) {
+            throw new \FOSSBilling\Exception('Rate limiter policy :policy is not defined or invalid', [':policy' => $policyName]);
         }
 
         if ($this->isWhitelisted($subject, $config['whitelist_ips'] ?? [])) {
-            return new RateLimitResult($policyName, true, false, null, null, null, RateLimitResult::REASON_WHITELISTED);
+            return new RateLimitResult($policyName, false, null, null, null, RateLimitResult::REASON_WHITELISTED);
         }
 
         $factory = $this->getFactory($policyName, $policy);
@@ -63,7 +67,6 @@ class RateLimiter implements InjectionAwareInterface
 
         return new RateLimitResult(
             $policyName,
-            !$limited,
             $limited,
             $limit->getLimit(),
             $limit->getRemainingTokens(),
@@ -122,6 +125,6 @@ class RateLimiter implements InjectionAwareInterface
 
     private function isWhitelisted(string $subject, array $whitelist): bool
     {
-        return filter_var($subject, FILTER_VALIDATE_IP) && in_array($subject, $whitelist, true);
+        return \Symfony\Component\HttpFoundation\IpUtils::checkIp($subject, $whitelist);
     }
 }

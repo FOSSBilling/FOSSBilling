@@ -120,7 +120,7 @@ class Client implements InjectionAwareInterface
         }
 
         $rateLimitResult = $this->di['rate_limiter']->consume($policy, (string) $this->_getIp());
-        if (!$rateLimitResult->isAccepted()) {
+        if ($rateLimitResult->isLimited()) {
             throw new \FOSSBilling\InformationException('Rate limit exceeded. Please try again later.', null, 429);
         }
 
@@ -392,7 +392,7 @@ class Client implements InjectionAwareInterface
         header('Cache-Control: no-cache, must-revalidate');
         header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
         header('Content-type: application/json; charset=utf-8');
-         
+        
         if ($e instanceof \Exception) {
             error_log("{$e->getMessage()} {$e->getCode()}.");
             $code = $e->getCode() ?: 9999;

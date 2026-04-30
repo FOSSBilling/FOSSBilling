@@ -15,7 +15,6 @@ class RateLimitResult
 
     public function __construct(
         private readonly string $policy,
-        private readonly bool $accepted,
         private readonly bool $limited,
         private readonly ?int $limit,
         private readonly ?int $remaining,
@@ -28,11 +27,6 @@ class RateLimitResult
     public function getPolicy(): string
     {
         return $this->policy;
-    }
-
-    public function isAccepted(): bool
-    {
-        return $this->accepted;
     }
 
     public function isLimited(): bool
