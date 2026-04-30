@@ -12,6 +12,7 @@ final class TestableClient extends Client
 {
     public bool $hasValidSession = false;
     public bool $shouldUseTokenLogin = false;
+    public bool $shouldFailTokenLogin = false;
     public bool $shouldFailCsrf = false;
     public array $calls = [];
     public mixed $renderedData = null;
@@ -38,6 +39,10 @@ final class TestableClient extends Client
     protected function _tryTokenLogin(string $routeRole): void
     {
         $this->calls[] = 'token';
+
+        if ($this->shouldFailTokenLogin) {
+            throw new InformationException('Authentication Failed', null, 204);
+        }
     }
 
     #[\Override]
@@ -67,6 +72,7 @@ final class ClientTest extends \BBTestCase
     private ?array $postBackup = [];
     private ?array $cookieBackup = [];
     private ?\Pimple\Container $di = null;
+    private ?\ArrayObject $rateLimitCalls = null;
 
     protected function setUp(): void
     {
@@ -120,16 +126,54 @@ final class ClientTest extends \BBTestCase
         $this->assertSame(['token'], $controller->calls);
     }
 
+    public function testTokenAuthenticationFailureConsumesPreAuthRateLimit(): void
+    {
+        $controller = $this->createController();
+        $controller->shouldUseTokenLogin = true;
+        $controller->shouldFailTokenLogin = true;
+
+        try {
+            $this->invokeApiCall($controller, 'client', 'test', 'testMethod', []);
+            self::fail('Expected token authentication to fail');
+        } catch (InformationException $exception) {
+            $this->assertSame(204, $exception->getCode());
+        }
+
+        $this->assertSame([['api_authenticated', '127.0.0.1', 1]], $this->rateLimitCalls?->getArrayCopy());
+        $this->assertSame(['token'], $controller->calls);
+    }
+
+    public function testMissingSessionConsumesPreAuthRateLimit(): void
+    {
+        $controller = $this->createController();
+        $controller->hasValidSession = false;
+
+        try {
+            $this->invokeApiCall($controller, 'client', 'test', 'testMethod', []);
+            self::fail('Expected session authentication to fail');
+        } catch (InformationException $exception) {
+            $this->assertSame(201, $exception->getCode());
+        }
+
+        $this->assertSame([['api_authenticated', '127.0.0.1', 1]], $this->rateLimitCalls?->getArrayCopy());
+        $this->assertSame([], $controller->calls);
+    }
+
     public function testSessionAuthenticatedRequestStillRequiresCsrfToken(): void
     {
         $controller = $this->createController();
         $controller->hasValidSession = true;
         $controller->shouldFailCsrf = true;
 
-        $this->expectException(InformationException::class);
-        $this->expectExceptionCode(403);
+        try {
+            $this->invokeApiCall($controller, 'client', 'test', 'testMethod', []);
+            self::fail('Expected CSRF authentication to fail');
+        } catch (InformationException $exception) {
+            $this->assertSame(403, $exception->getCode());
+        }
 
-        $this->invokeApiCall($controller, 'client', 'test', 'testMethod', []);
+        $this->assertSame([['api_authenticated', '127.0.0.1', 1]], $this->rateLimitCalls?->getArrayCopy());
+        $this->assertSame(['csrf'], $controller->calls);
     }
 
     public function testGuestRequestIgnoresTokenAuthCredentials(): void
@@ -151,9 +195,17 @@ final class ClientTest extends \BBTestCase
         $request->method('getClientIp')
             ->willReturn('127.0.0.1');
 
-        $rateLimiter = new class {
+        $this->rateLimitCalls = new \ArrayObject();
+
+        $rateLimiter = new class($this->rateLimitCalls) {
+            public function __construct(private \ArrayObject $calls)
+            {
+            }
+
             public function consume(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
             {
+                $this->calls[] = [$policy, $subject, $tokens];
+
                 return new \FOSSBilling\Security\RateLimitResult($policy, false, 100, 99);
             }
 

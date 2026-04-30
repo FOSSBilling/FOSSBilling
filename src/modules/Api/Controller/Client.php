@@ -115,18 +115,18 @@ class Client implements InjectionAwareInterface
         }
     }
 
-    private function checkRateLimit(string $role, ?string $method = null): bool
+    private function checkRateLimit(string $role, ?string $method = null, bool $useAuthenticatedSubject = true): bool
     {
         $subject = (string) $this->_getIp();
 
-        if ($method == 'staff_login' || $method == 'client_login') {
+        if ($method === 'staff_login' || $method === 'client_login') {
             $policy = 'api_login';
         } else {
             $policy = $role === 'guest' ? 'api_guest' : 'api_authenticated';
 
-            if ($role === 'client' && $this->di['session']->get('client_id')) {
+            if ($useAuthenticatedSubject && $role === 'client' && $this->di['session']->get('client_id')) {
                 $subject = 'client:' . $this->di['session']->get('client_id');
-            } elseif ($role === 'admin' && $this->di['session']->get('admin')) {
+            } elseif ($useAuthenticatedSubject && $role === 'admin' && $this->di['session']->get('admin')) {
                 $admin = $this->di['session']->get('admin');
                 $subject = 'admin:' . ($admin['id'] ?? '');
             }
@@ -135,6 +135,11 @@ class Client implements InjectionAwareInterface
         $this->di['rate_limiter']->consumeOrThrow($policy, $subject);
 
         return true;
+    }
+
+    private function checkPreAuthRateLimit(string $role, ?string $method = null): bool
+    {
+        return $this->checkRateLimit($role, $method, false);
     }
 
     private function checkHttpReferer(): bool
@@ -165,10 +170,10 @@ class Client implements InjectionAwareInterface
     protected function isRoleLoggedIn($role): bool
     {
         if ($role == 'client') {
-            $this->di['is_client_logged'];
+            return (bool) ($this->di['is_client_logged'] ?? false);
         }
         if ($role == 'admin') {
-            $this->di['is_admin_logged'];
+            return (bool) ($this->di['is_admin_logged'] ?? false);
         }
 
         return true;
@@ -183,6 +188,8 @@ class Client implements InjectionAwareInterface
         $this->isRoleAllowed($role);
 
         if ($role !== 'guest') {
+            $this->checkPreAuthRateLimit($role, $method);
+
             if ($this->shouldUseTokenLogin($role)) {
                 $this->_tryTokenLogin($role);
             } else {
@@ -318,7 +325,7 @@ class Client implements InjectionAwareInterface
 
     private function getProvidedBasicAuthUsername(): ?string
     {
-        if (isset($_SERVER['PHP_AUTH_USER']) && in_array($_SERVER['PHP_AUTH_USER'], ['client', 'admin'], true)) {
+        if (isset($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']) && in_array($_SERVER['PHP_AUTH_USER'], ['client', 'admin'], true)) {
             return (string) $_SERVER['PHP_AUTH_USER'];
         }
 
@@ -393,7 +400,6 @@ class Client implements InjectionAwareInterface
 
     public function renderJson($data = null, ?\Exception $e = null): void
     {
-        // do not emit response if headers already sent
         if (headers_sent()) {
             return;
         }
@@ -403,7 +409,7 @@ class Client implements InjectionAwareInterface
         header('Cache-Control: no-cache, must-revalidate');
         header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
         header('Content-type: application/json; charset=utf-8');
-        
+
         if ($e instanceof \Exception) {
             error_log("{$e->getMessage()} {$e->getCode()}.");
             $code = $e->getCode() ?: 9999;
