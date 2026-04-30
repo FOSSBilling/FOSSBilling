@@ -50,6 +50,18 @@ class RateLimiter implements InjectionAwareInterface
                 'client_signup' => ['policy' => 'fixed_window', 'limit' => 5, 'interval' => '1 hour'],
                 'guest_ticket_create' => ['policy' => 'fixed_window', 'limit' => 3, 'interval' => '1 hour'],
                 'order_generation_ip' => ['policy' => 'fixed_window', 'limit' => 15, 'interval' => '1 hour'],
+                'domain_lookup_ip' => ['policy' => 'fixed_window', 'limit' => 60, 'interval' => '1 hour'],
+                'invoice_payment_ip' => ['policy' => 'fixed_window', 'limit' => 10, 'interval' => '1 hour'],
+                'invoice_payment_hash' => ['policy' => 'fixed_window', 'limit' => 10, 'interval' => '1 hour'],
+                'invoice_pdf_ip' => ['policy' => 'fixed_window', 'limit' => 10, 'interval' => '1 hour'],
+                'invoice_pdf_hash' => ['policy' => 'fixed_window', 'limit' => 10, 'interval' => '1 hour'],
+                'cart_promo_apply_ip' => ['policy' => 'fixed_window', 'limit' => 10, 'interval' => '1 hour'],
+                'client_email_verification_resend_ip' => ['policy' => 'fixed_window', 'limit' => 30, 'interval' => '1 hour'],
+                'client_email_verification_resend_account' => ['policy' => 'fixed_window', 'limit' => 3, 'interval' => '1 hour'],
+                'client_email_resend_ip' => ['policy' => 'fixed_window', 'limit' => 30, 'interval' => '1 hour'],
+                'client_email_resend_account' => ['policy' => 'fixed_window', 'limit' => 5, 'interval' => '1 hour'],
+                'profile_password_change_ip' => ['policy' => 'fixed_window', 'limit' => 30, 'interval' => '1 hour'],
+                'profile_password_change_account' => ['policy' => 'fixed_window', 'limit' => 5, 'interval' => '1 hour'],
             ],
         ];
     }

@@ -89,6 +89,7 @@ final class ClientTest extends \BBTestCase
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
         $di['password'] = new \FOSSBilling\PasswordManager();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
 
         $model = new \Model_Client();
         $model->loadBean(new \DummyBean());
@@ -141,5 +142,15 @@ final class ClientTest extends \BBTestCase
 
         $result = $this->clientApi->logout();
         $this->assertTrue($result);
+    }
+
+    private function getAllowedRateLimiter(): object
+    {
+        return new class {
+            public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
+            {
+                return new \FOSSBilling\Security\RateLimitResult($policy, false, 10, 9);
+            }
+        };
     }
 }
