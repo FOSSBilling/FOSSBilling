@@ -82,7 +82,8 @@ class RateLimiter implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Rate limiter policy :policy is not defined or invalid', [':policy' => $policyName]);
         }
 
-        if ($this->isWhitelisted($subject, $config['whitelist_ips'] ?? [])) {
+        $whitelistSubject = (string) $this->di['request']->getClientIp() ?: $subject;
+        if ($this->isWhitelisted($whitelistSubject)) {
             return new RateLimitResult($policyName, false, null, null, null, RateLimitResult::REASON_WHITELISTED);
         }
 
@@ -158,8 +159,10 @@ class RateLimiter implements InjectionAwareInterface
         return (string) (Config::getProperty('info.salt') ?? Config::getProperty('info.instance_id') ?? 'fossbilling-rate-limiter');
     }
 
-    private function isWhitelisted(string $subject, array $whitelist): bool
+    private function isWhitelisted(string $subject): bool
     {
+        $whitelist = $this->getConfig()['whitelist_ips'] ?? [];
+        
         return \Symfony\Component\HttpFoundation\IpUtils::checkIp($subject, $whitelist);
     }
 }

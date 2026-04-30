@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
+use Symfony\Component\HttpFoundation\Request;
 
 final class FOSSBilling_RateLimiterTest extends BBTestCase
 {
@@ -80,6 +81,34 @@ final class FOSSBilling_RateLimiterTest extends BBTestCase
         $limiter->setDi($di);
 
         $result = $limiter->consume('api_guest', '10.0.0.5');
+
+        $this->assertFalse($result->isLimited());
+        $this->assertTrue($result->isBypassed());
+        $this->assertSame(FOSSBilling\Security\RateLimitResult::REASON_WHITELISTED, $result->getReason());
+    }
+
+    public function testWhitelistUsesRequestIpForAuthenticatedSubjects(): void
+    {
+        $request = $this->createMock(Request::class);
+        $request->method('getClientIp')
+            ->willReturn('10.0.0.5');
+
+        $di = new Pimple\Container();
+        $di['rate_limit_cache'] = new ArrayAdapter();
+        $di['request'] = $request;
+
+        $limiter = new class extends FOSSBilling\Security\RateLimiter {
+            protected function getConfig(): array
+            {
+                $config = self::getDefaultConfig();
+                $config['whitelist_ips'] = ['10.0.0.0/8'];
+
+                return $config;
+            }
+        };
+        $limiter->setDi($di);
+
+        $result = $limiter->consume('api_authenticated', 'client:123');
 
         $this->assertFalse($result->isLimited());
         $this->assertTrue($result->isBypassed());
