@@ -60,7 +60,7 @@ class Admin extends \Api_Abstract
 
         $config = $this->di['mod_config']('Antispam');
         $blocked_ips = isset($config['blocked_ips']) && !empty($config['blocked_ips'])
-            ? explode(PHP_EOL, $config['blocked_ips'])
+            ? explode(PHP_EOL, (string) $config['blocked_ips'])
             : [];
         $blocked_ips = array_map(trim(...), $blocked_ips);
 
@@ -85,7 +85,7 @@ class Admin extends \Api_Abstract
 
         $config = $this->di['mod_config']('Antispam');
         $blocked_ips = isset($config['blocked_ips']) && !empty($config['blocked_ips'])
-            ? explode(PHP_EOL, $config['blocked_ips'])
+            ? explode(PHP_EOL, (string) $config['blocked_ips'])
             : [];
         $blocked_ips = array_map(trim(...), $blocked_ips);
 
@@ -109,7 +109,7 @@ class Admin extends \Api_Abstract
     {
         $config = $this->di['mod_config']('Antispam');
         $blocked_ips = isset($config['blocked_ips']) && !empty($config['blocked_ips'])
-            ? explode(PHP_EOL, $config['blocked_ips'])
+            ? explode(PHP_EOL, (string) $config['blocked_ips'])
             : [];
 
         return [

@@ -51,7 +51,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function getRequestCount($since, $ip = null, ?string $requestPrefix = null): int
     {
         if (!is_numeric($since)) {
-            $since = strtotime($since);
+            $since = strtotime((string) $since);
         }
         $sinceIso = date('Y-m-d H:i:s', $since);
         $values = [

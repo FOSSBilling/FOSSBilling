@@ -303,7 +303,7 @@ final class ServiceSubscriptionTest extends \BBTestCase
     }
 
     public function testGetSubscriptionPeriod(): void
-    {        
+    {
         $period = '1W';
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())

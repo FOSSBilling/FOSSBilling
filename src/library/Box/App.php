@@ -185,7 +185,7 @@ class Box_App
 
     protected function getAuthSensitivePattern(): ?string
     {
-        $uri = '/' . ltrim($this->uri, '/');
+        $uri = '/' . ltrim((string) $this->uri, '/');
 
         $authSensitivePatterns = [
             '/client/reset-password-confirm/',

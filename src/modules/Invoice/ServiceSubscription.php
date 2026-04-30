@@ -189,7 +189,7 @@ class ServiceSubscription implements InjectionAwareInterface
         return $this->getSubscriptionPeriodByInvoiceId((int) $invoice_id) !== null;
     }
 
-    public function getSubscriptionPeriod(\Model_Invoice $invoice)
+    public function getSubscriptionPeriod(\Model_Invoice $invoice): ?string
     {
         return $this->getSubscriptionPeriodByInvoiceId((int) $invoice->id);
     }
@@ -228,6 +228,7 @@ class ServiceSubscription implements InjectionAwareInterface
 
             if ($subscriptionPeriod === null) {
                 $subscriptionPeriod = $period;
+
                 continue;
             }
 

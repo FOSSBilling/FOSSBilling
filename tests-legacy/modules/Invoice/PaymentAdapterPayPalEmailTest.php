@@ -57,7 +57,7 @@ final class PaymentAdapterPayPalEmailTest extends BBTestCase
         });
         $adapter->setDi($di);
 
-        $apiAdmin = new class() {
+        $apiAdmin = new class {
             public array $updates = [];
             public array $funds = [];
             public array $paid = [];

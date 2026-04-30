@@ -57,11 +57,9 @@ final class ServiceTest extends \BBTestCase
             ->method('getCell')
             ->with(
                 $this->stringContains('request LIKE :request_prefix'),
-                $this->callback(function (array $values) use ($ip, $requestPrefix): bool {
-                    return $values['ip'] === $ip
-                        && $values['request_prefix'] === $requestPrefix . '%'
-                        && isset($values['since']);
-                })
+                $this->callback(fn (array $values): bool => $values['ip'] === $ip
+                    && $values['request_prefix'] === $requestPrefix . '%'
+                    && isset($values['since']))
             )
             ->willReturn(3);
 
