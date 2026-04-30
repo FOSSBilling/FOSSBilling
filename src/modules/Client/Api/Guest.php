@@ -25,6 +25,7 @@ class Guest extends \Api_Abstract
      *
      * @optional bool $auto_login - Auto login client after signup
      * @optional string $last_name - last name
+     * @optional string $aid - Alternative id. Usually used by import tools.
      * @optional string $gender - Gender - values: male|female|nonbinary|other
      * @optional string $country - Country
      * @optional string $city - city
@@ -41,6 +42,7 @@ class Guest extends \Api_Abstract
      * @optional string $phone_cc - Phone country code
      * @optional string $document_type - Related document type, ie: passport, driving license
      * @optional string $document_nr - Related document number, ie: passport number: LC45698122
+     * @optional string $notes - Notes about client. Visible for admin only
      * @optional string $custom_1 - Custom field 1
      * @optional string $custom_2 - Custom field 2
      * @optional string $custom_3 - Custom field 3
@@ -143,58 +145,84 @@ class Guest extends \Api_Abstract
     #[RequiredParams(['email' => 'Email required'])]
     public function reset_password($data): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetClient']);
+        $startedAt = microtime(true);
+        try {
+            $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetClient']);
 
-        // Sanitize email
-        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+            // Sanitize email
+            $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeGuestPasswordResetRequest', 'params' => $data]);
+            $this->di['events_manager']->fire(['event' => 'onBeforeGuestPasswordResetRequest', 'params' => $data]);
 
-        // Fetch the client by email
-        $c = $this->di['db']->findOne('Client', 'email = ? AND status = ?', [$data['email'], \Model_Client::ACTIVE]);
-        if (!$c instanceof \Model_Client) {
-            return true;
-        }
+            // Fetch the client by email
+            $c = $this->di['db']->findOne('Client', 'email = ?', [$data['email']]);
+            if (!$c instanceof \Model_Client) {
+                $this->di['logger']->setChannel('security')->info('Client password reset requested for unknown email %s from IP %s', $data['email'], $this->getIp());
 
-        // Check if a password reset request exists
-        $reset = $this->di['db']->findOne('ClientPasswordReset', 'client_id = ?', [$c->id]);
+                return true;
+            }
 
-        // If no recent reset request exists, create a new one
-        if (!$reset instanceof \Model_ClientPasswordReset) {
-            $hash = hash('sha256', random_bytes(32));
-            $reset = $this->di['db']->dispense('ClientPasswordReset');
-            $reset->client_id = $c->id;
-            $reset->ip = $this->ip;
-            $reset->hash = $hash;
-            $reset->created_at = date('Y-m-d H:i:s');
+            if ($c->status !== \Model_Client::ACTIVE) {
+                $this->di['logger']->setChannel('security')->info('Client password reset requested for ineligible client #%s from IP %s: email %s, account status %s', $c->id, $this->getIp(), $data['email'], $c->status);
+
+                return true;
+            }
+
+            // Check if a password reset request exists
+            $reset = $this->di['db']->findOne('ClientPasswordReset', 'client_id = ?', [$c->id]);
+
+            // If no recent reset request exists, create a new one
+            if (!$reset instanceof \Model_ClientPasswordReset) {
+                $hash = hash('sha256', random_bytes(32));
+                $reset = $this->di['db']->dispense('ClientPasswordReset');
+                $reset->client_id = $c->id;
+                $reset->ip = $this->ip;
+                $reset->hash = $hash;
+                $reset->created_at = date('Y-m-d H:i:s');
+                $reset->updated_at = date('Y-m-d H:i:s');
+                $this->di['db']->store($reset);
+            }
+
+            // prepare reset email
+            $email = [
+                'to_client' => $c->id,
+                'code' => 'mod_client_password_reset_request',
+                'hash' => $reset->hash,
+                'send_now' => true,
+            ];
+
+            $emailService = $this->di['mod_service']('email');
+
+            // Send the email if the reset request has the same created_at and updated_at or if at least 1 full minute has passed since the last request.
+            if ($reset->created_at == $reset->updated_at) {
+                $emailService->sendTemplate($email);
+            } elseif (strtotime((string) $reset->updated_at) - time() + 60 < 0) {
+                $emailService->sendTemplate($email);
+            }
+
+            // update the client password reset time
             $reset->updated_at = date('Y-m-d H:i:s');
             $this->di['db']->store($reset);
+
+            $this->di['logger']->setChannel('security')->info('Client password reset email queued for client #%s from IP %s: email %s', $c->id, $this->getIp(), $data['email']);
+
+            return true;
+        } finally {
+            $this->applyPasswordResetTimingFloor($startedAt);
+        }
+    }
+
+    private function applyPasswordResetTimingFloor(float $startedAt): void
+    {
+        if (\FOSSBilling\Environment::isCLI()) {
+            return;
         }
 
-        // prepare reset email
-        $email = [
-            'to_client' => $c->id,
-            'code' => 'mod_client_password_reset_request',
-            'hash' => $reset->hash,
-            'send_now' => true,
-        ];
-
-        $emailService = $this->di['mod_service']('email');
-
-        // Send the email if the reset request has the same created_at and updated_at or if at least 1 full minute has passed since the last request.
-        if ($reset->created_at == $reset->updated_at) {
-            $emailService->sendTemplate($email);
-        } elseif (strtotime((string) $reset->updated_at) - time() + 60 < 0) {
-            $emailService->sendTemplate($email);
+        $minimumMs = random_int(500, 900);
+        $elapsedMs = (microtime(true) - $startedAt) * 1000;
+        if ($elapsedMs < $minimumMs) {
+            usleep((int) (($minimumMs - $elapsedMs) * 1000));
         }
-
-        // update the client password reset time
-        $reset->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($reset);
-
-        $this->di['logger']->info('Client requested password reset. Sent to email %s', $c->email);
-
-        return true;
     }
 
     #[RequiredParams(['hash' => 'No Hash provided', 'password' => 'Password required', 'password_confirm' => 'Password confirmation required'])]
@@ -207,21 +235,28 @@ class Guest extends \Api_Abstract
 
         $reset = $this->di['db']->findOne('ClientPasswordReset', 'hash = ?', [$data['hash']]);
         if (!$reset instanceof \Model_ClientPasswordReset) {
+            $this->di['logger']->setChannel('security')->info('Client password reset confirmation failed from IP %s: reset token not found', $this->getIp());
+
             throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
         }
 
         if (strtotime($reset->created_at) - time() + 900 < 0) {
+            $this->di['logger']->setChannel('security')->info('Client password reset confirmation failed for client #%s from IP %s: reset token expired', $reset->client_id, $this->getIp());
+
             throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
         }
 
         $c = $this->di['db']->getExistingModelById('Client', $reset->client_id, 'Client not found');
         if ($c->status !== \Model_Client::ACTIVE) {
+            $this->di['logger']->setChannel('security')->info('Client password reset confirmation failed for client #%s from IP %s: account status %s', $c->id, $this->getIp(), $c->status);
+
             throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
         }
+
         $c->pass = $this->di['password']->hashIt($data['password']);
         $this->di['db']->store($c);
 
-        $this->di['logger']->info('Client requested password reset. Sent to email %s', $c->email);
+        $this->di['logger']->setChannel('security')->info('Client password reset completed for client #%s from IP %s', $c->id, $this->getIp());
 
         // send email
         $email = [];

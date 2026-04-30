@@ -101,8 +101,9 @@ final class GuestTest extends \BBTestCase
         $di['validator'] = $validatorMock;
 
         $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail')->willReturn($data['email']);
         $di['tools'] = $toolsMock;
+        $di['logger'] = new \Box_Log();
 
         $client = new Guest();
         $client->setDi($di);
@@ -273,8 +274,9 @@ final class GuestTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
 
         $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail')->willReturn($data['email']);
         $di['tools'] = $toolsMock;
+        $di['logger'] = new \Box_Log();
 
         $client = new Guest();
         $client->setDi($di);
@@ -341,7 +343,43 @@ final class GuestTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testUpdatePasswordRejectsInactiveClient(): void
+    public function testResetPasswordInactiveClientIsIgnored(): void
+    {
+        $data['email'] = 'john@example.com';
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->atLeastOnce())->method('fire');
+
+        $modelClient = new \Model_Client();
+        $modelClient->loadBean(new \DummyBean());
+        $modelClient->id = 1;
+        $modelClient->status = \Model_Client::SUSPENDED;
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('findOne')
+            ->with('Client', 'email = ?', [$data['email']])
+            ->willReturn($modelClient);
+        $dbMock->expects($this->never())->method('dispense');
+
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
+        $toolsMock->expects($this->once())
+            ->method('validateAndSanitizeEmail')->willReturn($data['email']);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['events_manager'] = $eventMock;
+        $di['tools'] = $toolsMock;
+        $di['logger'] = new \Box_Log();
+
+        $client = new Guest();
+        $client->setDi($di);
+
+        $result = $client->reset_password($data);
+        $this->assertTrue($result);
+    }
+
+    public function testUpdatePasswordInactiveClientIsRejected(): void
     {
         $data = [
             'hash' => 'hashedString',
@@ -349,9 +387,9 @@ final class GuestTest extends \BBTestCase
             'password_confirm' => 'NewPassword1',
         ];
 
-        $inactiveClient = new \Model_Client();
-        $inactiveClient->loadBean(new \DummyBean());
-        $inactiveClient->status = \Model_Client::SUSPENDED;
+        $modelClient = new \Model_Client();
+        $modelClient->loadBean(new \DummyBean());
+        $modelClient->status = \Model_Client::SUSPENDED;
 
         $modelPasswordReset = new \Model_ClientPasswordReset();
         $modelPasswordReset->loadBean(new \DummyBean());
@@ -361,11 +399,9 @@ final class GuestTest extends \BBTestCase
         $dbMock->expects($this->once())
             ->method('findOne')->willReturn($modelPasswordReset);
         $dbMock->expects($this->once())
-            ->method('getExistingModelById')->willReturn($inactiveClient);
-        $dbMock->expects($this->never())
-            ->method('store');
-        $dbMock->expects($this->never())
-            ->method('trash');
+            ->method('getExistingModelById')->willReturn($modelClient);
+        $dbMock->expects($this->never())->method('store');
+        $dbMock->expects($this->never())->method('trash');
 
         $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->once())
@@ -379,12 +415,12 @@ final class GuestTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
         $di['password'] = $passwordMock;
-        $di['validator'] = new \FOSSBilling\Validate();
+        $di['logger'] = new \Box_Log();
 
         $client = new Guest();
         $client->setDi($di);
 
-        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\InformationException::class);
         $this->expectExceptionMessage('The link has expired or you have already reset your password.');
         $client->update_password($data);
     }
@@ -411,6 +447,7 @@ final class GuestTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
+        $di['logger'] = new \Box_Log();
 
         $client = new Guest();
         $client->setDi($di);
