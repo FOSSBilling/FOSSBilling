@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Client\Controller;
 
+use FOSSBilling\Security\RandomizedTimeFloor;
+
 class Client implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
@@ -44,13 +46,11 @@ class Client implements \FOSSBilling\InjectionAwareInterface
 
     public function get_client_confirmation(\Box_App $app, $hash): never
     {
-        $startTime = hrtime(true);
+        $startedAt = microtime(true);
         $service = $this->di['mod_service']('client');
         $service->approveClientEmailByHash($hash);
-        $elapsed = (hrtime(true) - $startTime) / 1_000_000;
-        if ($elapsed < 50) {
-            usleep(random_int((int) (50_000 - $elapsed * 1000), 100_000));
-        }
+        RandomizedTimeFloor::apply($startedAt);
+
         $systemService = $this->di['mod_service']('System');
         $systemService->setPendingMessage(__trans('Email address was confirmed'));
         $app->redirect('/');
@@ -78,18 +78,14 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         $data = [
             'hash' => $hash,
         ];
-        $template = 'mod_client_set_new_password';
 
-        $startTime = hrtime(true);
+        $startedAt = microtime(true);
         $result = $service->password_reset_valid($data);
         if ($result !== false) {
-            return $app->render($template);
+            return $app->render('mod_client_set_new_password');
         }
 
-        $elapsed = (hrtime(true) - $startTime) / 1_000_000;
-        if ($elapsed < 50) {
-            usleep(random_int((int) (50_000 - $elapsed * 1000), 100_000));
-        }
+        RandomizedTimeFloor::apply($startedAt);
 
         $app->redirect('/');
     }

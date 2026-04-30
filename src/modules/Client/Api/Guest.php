@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Client\Api;
 
+use FOSSBilling\Security\RandomizedTimeFloor;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Guest extends \Api_Abstract
@@ -144,7 +145,7 @@ class Guest extends \Api_Abstract
 
             return $result;
         } finally {
-            \FOSSBilling\Security\RandomizedTimeFloor::apply($startedAt);
+            RandomizedTimeFloor::apply($startedAt);
         }
     }
 
@@ -235,7 +236,7 @@ class Guest extends \Api_Abstract
 
             return true;
         } finally {
-            \FOSSBilling\Security\RandomizedTimeFloor::apply($startedAt);
+            RandomizedTimeFloor::apply($startedAt);
         }
     }
 
@@ -297,7 +298,7 @@ class Guest extends \Api_Abstract
 
             return true;
         } finally {
-            \FOSSBilling\Security\RandomizedTimeFloor::apply($startedAt);
+            RandomizedTimeFloor::apply($startedAt);
         }
     }
 

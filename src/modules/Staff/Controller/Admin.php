@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Box\Mod\Staff\Controller;
 
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Security\RandomizedTimeFloor;
 
 class Admin implements InjectionAwareInterface
 {
@@ -120,15 +121,15 @@ class Admin implements InjectionAwareInterface
         if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {
             return $app->render('mod_staff_password_reset');
         }
-        $service = $this->di['mod_service']('staff');
+        $startedAt = microtime(true);
         $reset = $this->di['db']->findOne('AdminPasswordReset', 'hash = ?', [$hash]);
         if (!$reset instanceof \Model_AdminPasswordReset) {
-            usleep(random_int(50000, 100000));
+            RandomizedTimeFloor::apply($startedAt);
 
             return $app->render('mod_staff_password_reset');
         }
         if (strtotime($reset->created_at) - time() + 900 < 0) {
-            usleep(random_int(50000, 100000));
+            RandomizedTimeFloor::apply($startedAt);
 
             return $app->render('mod_staff_password_reset');
         }
