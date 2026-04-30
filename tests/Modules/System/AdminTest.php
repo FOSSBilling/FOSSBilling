@@ -189,7 +189,7 @@ final class AdminTest extends TestCase
             'quote-escape' => ["x\"; echo 'pwned'; //"],
             'pipe-command' => ['eth0|id'],
             'backticks' => ['eth0`id`'],
-            'subshell' => ['eth0$(id)'],
+            'sub-shell' => ['eth0$(id)'],
             'and-command' => ['eth0 && whoami'],
             'redirect' => ['eth0 > /tmp/pwned'],
             'path-traversal-unix' => ['../etc/passwd'],
