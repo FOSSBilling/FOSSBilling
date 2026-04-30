@@ -510,11 +510,9 @@ final class ServiceInvoiceItemTest extends \BBTestCase
             ->method('addNew')
             ->with(
                 $proforma,
-                $this->callback(function (array $discountLine) use ($order): bool {
-                    return $discountLine['price'] === -10.0
-                        && $discountLine['quantity'] === 1
-                        && $discountLine['rel_id'] === $order->id;
-                })
+                $this->callback(fn (array $discountLine): bool => $discountLine['price'] === -10.0
+                    && $discountLine['quantity'] === 1
+                    && $discountLine['rel_id'] === $order->id)
             );
 
         $di = $this->getDi();
@@ -525,14 +523,12 @@ final class ServiceInvoiceItemTest extends \BBTestCase
                 return $data['code'] . ' ' . $data['price'];
             }
         };
-        $di['mod_service'] = $di->protect(function (string $serviceName) use ($orderService, $clientService, $productService, $currencyService) {
-            return match ($serviceName) {
-                'Order' => $orderService,
-                'client' => $clientService,
-                'Product' => $productService,
-                'Currency' => $currencyService,
-                default => throw new \RuntimeException('Unexpected service request: ' . $serviceName),
-            };
+        $di['mod_service'] = $di->protect(fn (string $serviceName) => match ($serviceName) {
+            'Order' => $orderService,
+            'client' => $clientService,
+            'Product' => $productService,
+            'Currency' => $currencyService,
+            default => throw new \RuntimeException('Unexpected service request: ' . $serviceName),
         });
 
         $serviceMock->setDi($di);

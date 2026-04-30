@@ -78,7 +78,13 @@ class Client implements InjectionAwareInterface
         // adding support for raw post input with json string
         $input = $this->filesystem->readFile('php://input');
         if (empty($p) && !empty($input)) {
-            $p = @json_decode($input, true);
+            $p = json_decode($input, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $exc = new \FOSSBilling\Exception('Malformed JSON input: :error', [':error' => json_last_error_msg()], 400);
+                $this->renderJson(null, $exc);
+
+                return null;
+            }
         }
 
         $call = $class . '_' . $method;

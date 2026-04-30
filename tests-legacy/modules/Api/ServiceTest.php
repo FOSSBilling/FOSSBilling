@@ -23,5 +23,4 @@ final class ServiceTest extends \BBTestCase
         $getDi = $this->service->getDi();
         $this->assertEquals($di, $getDi);
     }
-
 }

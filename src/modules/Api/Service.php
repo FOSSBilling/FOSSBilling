@@ -32,5 +32,4 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'hide_permissions' => true,
         ];
     }
-
 }
