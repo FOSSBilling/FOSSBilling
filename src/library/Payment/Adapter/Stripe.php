@@ -193,6 +193,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
                 if ($invoice) {
                     $expected = $invoiceService->getTotalWithTax($invoice);
+
                     try {
                         $invoiceService->validatePaymentAmount($tx->amount, $expected);
                     } catch (FOSSBilling\Exception $e) {

@@ -41,7 +41,7 @@ final class PaymentAdapterPayPalEmailTest extends BBTestCase
             ->with($renewalInvoice, ['use_credits' => false]);
         $invoiceService->expects($this->once())
             ->method('getTotalWithTax')
-            ->with($originalInvoice)
+            ->with($renewalInvoice)
             ->willReturn(14.99);
 
         $dbMock = $this->createMock(Box_Database::class);

@@ -2011,12 +2011,12 @@ final class ServiceTest extends \BBTestCase
     public static function dataForValidatePaymentAmount(): array
     {
         return [
-            'exact match passes'           => [10.00, 10.00, false],
-            'overpayment passes'           => [10.05, 10.00, false],
-            'within epsilon passes'        => [9.995, 10.00, false],
-            'exactly at epsilon passes'    => [9.99, 10.00, false],
-            'one cent under fails'         => [9.98, 10.00, true],
-            'large underpayment fails'     => [5.00, 10.00, true],
+            'exact match passes' => [10.00, 10.00, false],
+            'overpayment passes' => [10.05, 10.00, false],
+            'within epsilon passes' => [9.995, 10.00, false],
+            'exactly at epsilon passes' => [9.99, 10.00, false],
+            'one cent under fails' => [9.98, 10.00, true],
+            'large underpayment fails' => [5.00, 10.00, true],
         ];
     }
 
@@ -2028,5 +2028,6 @@ final class ServiceTest extends \BBTestCase
         }
 
         $this->service->validatePaymentAmount($received, $expected);
+        $this->assertTrue(true);
     }
 }
