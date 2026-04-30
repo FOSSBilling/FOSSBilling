@@ -82,7 +82,7 @@ class Client implements InjectionAwareInterface
         $input = file_get_contents('php://input');
         if (empty($p) && !empty($input)) {
             $p = json_decode($input, true);
-            if (JSON_ERROR_NONE !== json_last_error()) {
+            if (json_last_error() !== JSON_ERROR_NONE) {
                 $exc = new \FOSSBilling\Exception('Malformed JSON input: :error', [':error' => json_last_error_msg()], 400);
                 $this->renderJson(null, $exc);
 

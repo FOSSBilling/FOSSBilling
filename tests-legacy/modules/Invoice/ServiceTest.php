@@ -789,12 +789,10 @@ final class ServiceTest extends \BBTestCase
 
         $serviceMock->expects($this->exactly(2))
             ->method('toApiArray')
-            ->willReturnCallback(function () use ($invoiceModel): array {
-                return [
-                    'id' => 1,
-                    'status' => $invoiceModel->status,
-                ];
-            });
+            ->willReturnCallback(fn (): array => [
+                'id' => 1,
+                'status' => $invoiceModel->status,
+            ]);
 
         $events = [];
         $eventManagerMock = $this->createMock('\Box_EventManager');

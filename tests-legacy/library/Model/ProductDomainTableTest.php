@@ -23,7 +23,7 @@ final class ProductDomainTableTest extends BBTestCase
         $tld->price_renew = 20;
         $tld->price_transfer = 15;
 
-        $tldService = $this->getMockBuilder(\Box\Mod\Servicedomain\ServiceTld::class)
+        $tldService = $this->getMockBuilder(Box\Mod\Servicedomain\ServiceTld::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['findOneByTld'])
             ->getMock();
@@ -34,7 +34,7 @@ final class ProductDomainTableTest extends BBTestCase
 
         $di = $this->getDi();
         $di['period'] = $di->protect(fn (string $period): Box_Period => new Box_Period($period));
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $tldService);
+        $di['mod_service'] = $di->protect(fn (): PHPUnit\Framework\MockObject\MockObject => $tldService);
         $this->table->setDi($di);
 
         $product = new Model_Product();
@@ -67,7 +67,7 @@ final class ProductDomainTableTest extends BBTestCase
         $tld->price_renew = 20;
         $tld->price_transfer = 15;
 
-        $tldService = $this->getMockBuilder(\Box\Mod\Servicedomain\ServiceTld::class)
+        $tldService = $this->getMockBuilder(Box\Mod\Servicedomain\ServiceTld::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['findOneByTld'])
             ->getMock();
@@ -78,7 +78,7 @@ final class ProductDomainTableTest extends BBTestCase
 
         $di = $this->getDi();
         $di['period'] = $di->protect(fn (string $period): Box_Period => new Box_Period($period));
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $tldService);
+        $di['mod_service'] = $di->protect(fn (): PHPUnit\Framework\MockObject\MockObject => $tldService);
         $this->table->setDi($di);
 
         $product = new Model_Product();

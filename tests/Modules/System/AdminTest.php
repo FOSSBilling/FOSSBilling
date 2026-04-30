@@ -22,6 +22,7 @@ final class AdminTest extends TestCase
         }
 
         $resolved = gethostbyname($hostname);
+
         return is_string($resolved) && filter_var($resolved, FILTER_VALIDATE_IP) !== false;
     }
 
@@ -143,7 +144,7 @@ final class AdminTest extends TestCase
             "eth0\0evil",
             str_repeat('a', 1024),
             "eth0\nwhoami",
-            " eth0 ",
+            ' eth0 ',
         ];
 
         foreach ($payloads as $payload) {
