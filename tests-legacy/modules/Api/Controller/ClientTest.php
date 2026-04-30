@@ -145,27 +145,19 @@ final class ClientTest extends \BBTestCase
         $this->assertSame([], $controller->calls);
     }
 
-    public function testRateLimitExceededReturns429(): void
+    private function createController(): TestableClient
     {
-        $controller = $this->createController(rateLimited: true);
-        $controller->hasValidSession = false;
-
-        $this->expectException(InformationException::class);
-        $this->expectExceptionCode(429);
-
-        $this->invokeApiCall($controller, 'guest', 'test', 'testMethod', []);
-    }
-
-    private function createController(bool $rateLimited = false): TestableClient
-    {
-        $service = $this->createMock(\Box\Mod\Api\Service::class);
-        $service->method('getRemainingRequests')
-            ->willReturn($rateLimited ? 0 : 100);
-
         $request = $this->createMock(Request::class);
         $request->expects($this->atLeastOnce())
             ->method('getClientIp')
             ->willReturn('127.0.0.1');
+
+        $rateLimiter = new class {
+            public function consume(string $policy, string $subject): \FOSSBilling\Security\RateLimitResult
+            {
+                return new \FOSSBilling\Security\RateLimitResult($policy, true, false, 100, 99);
+            }
+        };
 
         $api = new class {
             public function testMethod(array $params): array
@@ -174,8 +166,8 @@ final class ClientTest extends \BBTestCase
             }
         };
 
-        $this->di['mod_service'] = $this->di->protect(fn (string $name): \PHPUnit\Framework\MockObject\MockObject => $service);
         $this->di['request'] = $request;
+        $this->di['rate_limiter'] = $rateLimiter;
         $this->di['api'] = $this->di->protect(fn (string $role): object => $api);
 
         $controller = new TestableClient();

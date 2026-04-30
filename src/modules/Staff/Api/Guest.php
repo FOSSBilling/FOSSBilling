@@ -151,6 +151,20 @@ class Guest extends \Api_Abstract
             $validator = $this->di['validator'];
             $validator->checkRequiredParamsForArray($required, $data);
             $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+            $ipLimit = $this->di['rate_limiter']->consume('staff_password_reset_ip', (string) $this->getIp());
+            if ($ipLimit->isLimited()) {
+                $this->di['logger']->setChannel('security')->info('Staff password reset rate limited from IP %s: email %s', $this->getIp(), $data['email']);
+
+                return true;
+            }
+
+            $emailLimit = $this->di['rate_limiter']->consume('staff_password_reset_email', (string) $data['email']);
+            if ($emailLimit->isLimited()) {
+                $this->di['logger']->setChannel('security')->info('Staff password reset rate limited for email %s from IP %s', $data['email'], $this->getIp());
+
+                return true;
+            }
+
             $c = $this->di['db']->findOne('Admin', 'email = ?', [$data['email']]);
 
             if (!$c instanceof \Model_Admin) {

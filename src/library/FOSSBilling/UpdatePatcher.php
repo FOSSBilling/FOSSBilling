@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace FOSSBilling;
 
 use Doctrine\DBAL\ParameterType;
+use FOSSBilling\Security\RateLimiter;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -76,11 +77,16 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['i18n']['time_format'] ??= 'short';
         $newConfig['db']['driver'] ??= 'pdo_mysql';
         $newConfig['db']['port'] ??= '3306';
-        $newConfig['api']['throttle_delay'] ??= 2;
-        $newConfig['api']['rate_span_login'] ??= 60;
-        $newConfig['api']['rate_limit_login'] ??= 20;
+        unset(
+            $newConfig['api']['rate_span'],
+            $newConfig['api']['rate_limit'],
+            $newConfig['api']['throttle_delay'],
+            $newConfig['api']['rate_span_login'],
+            $newConfig['api']['rate_limit_login'],
+            $newConfig['api']['rate_limit_whitelist'],
+        );
         $newConfig['api']['CSRFPrevention'] ??= true;
-        $newConfig['api']['rate_limit_whitelist'] ??= [];
+        $newConfig['rate_limiter'] = array_replace_recursive(RateLimiter::getDefaultConfig(), $newConfig['rate_limiter'] ?? []);
         $newConfig['debug_and_monitoring'] ??= [];
         $newConfig['debug_and_monitoring']['debug'] ??= $newConfig['debug'] ?? false;
         $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'] ?? true;

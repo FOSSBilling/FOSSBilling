@@ -165,38 +165,34 @@ return [
         // Empty array will allow all IPs to access the API
         'allowed_ips' => [],
 
-        // Time span for limit in seconds
-        'rate_span' => 60 * 60,
-
-        // How many requests allowed per time span
-        'rate_limit' => 1000,
-
-        /**
-         * Note about rate-limiting:
-         * Rate limiting applies to all requests (API routes and page routes).
-         * When the limit is reached, the request is rejected with HTTP 429 (Too Many Requests).
-         * Auth-sensitive endpoints (password reset, email confirmation) use the stricter login-tier limits.
-         * Ex: One request every 2 seconds is more than 20 times in 1 minute, so the IP will remain throttled.
-         */
-        'throttle_delay' => 2,
-
-        // Time span login for limit in seconds
-        'rate_span_login' => 60,
-
-        // How many login requests allowed per time span
-        'rate_limit_login' => 20,
-
         /*
         * This enables the usage of a token to protect the system from CSRF attacks.
         * Disabling this is highly discouraged and opens your instance to a known vulnerability.
         * This option is only here for backwards compatibility.
         */
         'CSRFPrevention' => true,
+    ],
+
+    'rate_limiter' => [
+        'enabled' => true,
 
         /**
          * Any IP address within this list will not be put through the rate-limiter system.
          * This is useful if you have an application with a static IP address that needs to make frequent API requests to FOSSBilling.
          */
-        'rate_limit_whitelist' => [],
+        'whitelist_ips' => [],
+
+        'policies' => [
+            'api_guest' => ['policy' => 'token_bucket', 'limit' => 100, 'interval' => '60 seconds'],
+            'api_authenticated' => ['policy' => 'token_bucket', 'limit' => 1000, 'interval' => '1 hour'],
+            'api_login' => ['policy' => 'fixed_window', 'limit' => 10, 'interval' => '1 hour'],
+            'client_signup' => ['policy' => 'fixed_window', 'limit' => 5, 'interval' => '1 hour'],
+            'order_generation_ip' => ['policy' => 'fixed_window', 'limit' => 15, 'interval' => '1 hour'],
+            'client_password_reset_ip' => ['policy' => 'fixed_window', 'limit' => 10, 'interval' => '1 hour'],
+            'client_password_reset_email' => ['policy' => 'fixed_window', 'limit' => 3, 'interval' => '1 hour'],
+            'staff_password_reset_ip' => ['policy' => 'fixed_window', 'limit' => 5, 'interval' => '1 hour'],
+            'staff_password_reset_email' => ['policy' => 'fixed_window', 'limit' => 3, 'interval' => '1 hour'],
+            'guest_ticket_create' => ['policy' => 'fixed_window', 'limit' => 3, 'interval' => '1 hour'],
+        ],
     ],
 ];

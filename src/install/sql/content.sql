@@ -46,12 +46,6 @@ VALUES
 /*!40000 ALTER TABLE `admin_group` ENABLE KEYS */;
 UNLOCK TABLES;
 
-
-# Dump of table api_request
-# ------------------------------------------------------------
-
-
-
 # Dump of table cart
 # ------------------------------------------------------------
 

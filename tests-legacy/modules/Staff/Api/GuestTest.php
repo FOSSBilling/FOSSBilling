@@ -260,6 +260,7 @@ final class GuestTest extends \BBTestCase
         $di['validator'] = new \FOSSBilling\Validate();
         $di['tools'] = $toolsMock;
         $di['logger'] = new \Box_Log();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
 
         $guestApi = new \Box\Mod\Staff\Api\Guest();
         $guestApi->setMod($modMock);
@@ -324,5 +325,70 @@ final class GuestTest extends \BBTestCase
             'password' => 'NewPassword1',
             'password_confirm' => 'NewPassword1',
         ]);
+    }
+
+    public function testPasswordResetRateLimitedRequestIsIgnored(): void
+    {
+        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $modMock->expects($this->once())
+            ->method('getConfig')
+            ->willReturn([]);
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->once())
+            ->method('fire');
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->never())
+            ->method('findOne');
+        $dbMock->expects($this->never())
+            ->method('dispense');
+
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
+        $toolsMock->expects($this->once())
+            ->method('validateAndSanitizeEmail')
+            ->willReturn('email@domain.com');
+
+        $di = $this->getDi();
+        $di['events_manager'] = $eventMock;
+        $di['db'] = $dbMock;
+        $di['validator'] = new \FOSSBilling\Validate();
+        $di['tools'] = $toolsMock;
+        $di['logger'] = new \Box_Log();
+        $rateLimiter = $this->getLimitedRateLimiter();
+        $di['rate_limiter'] = $rateLimiter;
+
+        $guestApi = new \Box\Mod\Staff\Api\Guest();
+        $guestApi->setMod($modMock);
+        $guestApi->setDi($di);
+
+        $this->assertTrue($guestApi->passwordreset(['email' => 'email@domain.com']));
+        $this->assertSame(1, $rateLimiter->consumeCount);
+    }
+
+    private function getAllowedRateLimiter(): object
+    {
+        return new class {
+            public function consume(string $policy, string $subject): \FOSSBilling\Security\RateLimitResult
+            {
+                return new \FOSSBilling\Security\RateLimitResult($policy, true, false, 10, 9);
+            }
+        };
+    }
+
+    private function getLimitedRateLimiter(): object
+    {
+        return new class {
+            public int $consumeCount = 0;
+
+            public function consume(string $policy, string $subject): \FOSSBilling\Security\RateLimitResult
+            {
+                ++$this->consumeCount;
+
+                return new \FOSSBilling\Security\RateLimitResult($policy, true, true, 10, 0);
+            }
+        };
     }
 }

@@ -149,22 +149,6 @@ CREATE TABLE `admin_password_reset` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `api_request`
---
-
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `api_request` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `ip` varchar(45) DEFAULT NULL,
-  `request` text,
-  `created_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `api_request_ip_created` (`ip`, `created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `cart`
 --
 

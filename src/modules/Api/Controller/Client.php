@@ -23,7 +23,6 @@ use Symfony\Component\Filesystem\Filesystem;
 
 class Client implements InjectionAwareInterface
 {
-    private int|float|null $_requests_left = null;
     private $_api_config;
     private readonly Filesystem $filesystem;
     protected ?\Pimple\Container $di = null;
@@ -110,31 +109,19 @@ class Client implements InjectionAwareInterface
         }
     }
 
-    private function checkRateLimit($method = null): bool
+    private function checkRateLimit(string $role, ?string $method = null): bool
     {
-        if (in_array($this->_getIp(), $this->_api_config['rate_limit_whitelist'])) {
-            return true;
-        }
-
-        $isLoginMethod = false;
-
         if ($method == 'staff_login' || $method == 'client_login') {
-            $isLoginMethod = true;
-            $rate_span = $this->_api_config['rate_span_login'];
-            $rate_limit = $this->_api_config['rate_limit_login'];
-
             // 25 to 250ms delay to help prevent email enumeration.
             usleep(random_int(25000, 250000));
+            $policy = 'api_login';
         } else {
-            $rate_span = $this->_api_config['rate_span'];
-            $rate_limit = $this->_api_config['rate_limit'];
+            $policy = $role === 'guest' ? 'api_guest' : 'api_authenticated';
         }
 
-        $service = $this->di['mod_service']('api');
-        $requests = $service->getRequestCount(time() - $rate_span, $this->_getIp(), $isLoginMethod);
-        $this->_requests_left = $rate_limit - $requests;
-        if ($this->_requests_left <= 0) {
-            sleep($this->_api_config['throttle_delay']);
+        $rateLimitResult = $this->di['rate_limiter']->consume($policy, (string) $this->_getIp());
+        if (!$rateLimitResult->isAccepted()) {
+            throw new \FOSSBilling\InformationException('Rate limit exceeded. Please try again later.', null, 429);
         }
 
         return true;
@@ -182,9 +169,7 @@ class Client implements InjectionAwareInterface
         $this->_loadConfig();
         $this->checkAllowedIps();
 
-        $service = $this->di['mod_service']('api');
-        $service->logRequest();
-        $this->checkRateLimit($method);
+        $this->checkRateLimit($role, $method);
         $this->checkHttpReferer();
         $this->isRoleAllowed($role);
 
@@ -407,12 +392,7 @@ class Client implements InjectionAwareInterface
         header('Cache-Control: no-cache, must-revalidate');
         header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
         header('Content-type: application/json; charset=utf-8');
-        if ($this->di['mod_service']('system')->shouldExposeVersion()) {
-            header('X-FOSSBilling-Version: ' . \FOSSBilling\Version::VERSION);
-        }
-        header('X-RateLimit-Span: ' . $this->_api_config['rate_span']);
-        header('X-RateLimit-Limit: ' . $this->_api_config['rate_limit']);
-        header('X-RateLimit-Remaining: ' . $this->_requests_left);
+         
         if ($e instanceof \Exception) {
             error_log("{$e->getMessage()} {$e->getCode()}.");
             $code = $e->getCode() ?: 9999;
@@ -423,6 +403,8 @@ class Client implements InjectionAwareInterface
                 header('HTTP/1.1 401 Unauthorized');
             } elseif ($code == 403) {
                 header('HTTP/1.1 403 Forbidden');
+            } elseif ($code == 429) {
+                header('HTTP/1.1 429 Too Many Requests');
             } elseif ($code == 701 || $code == 879) {
                 header('HTTP/1.1 400 Bad Request');
             }

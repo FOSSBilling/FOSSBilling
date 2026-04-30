@@ -152,6 +152,20 @@ class Guest extends \Api_Abstract
             // Sanitize email
             $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
 
+            $ipLimit = $this->di['rate_limiter']->consume('client_password_reset_ip', (string) $this->getIp());
+            if ($ipLimit->isLimited()) {
+                $this->di['logger']->setChannel('security')->info('Client password reset rate limited from IP %s: email %s', $this->getIp(), $data['email']);
+
+                return true;
+            }
+
+            $emailLimit = $this->di['rate_limiter']->consume('client_password_reset_email', (string) $data['email']);
+            if ($emailLimit->isLimited()) {
+                $this->di['logger']->setChannel('security')->info('Client password reset rate limited for email %s from IP %s', $data['email'], $this->getIp());
+
+                return true;
+            }
+
             $this->di['events_manager']->fire(['event' => 'onBeforeGuestPasswordResetRequest', 'params' => $data]);
 
             // Fetch the client by email
