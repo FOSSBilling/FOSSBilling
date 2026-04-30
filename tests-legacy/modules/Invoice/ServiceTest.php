@@ -2028,9 +2028,5 @@ final class ServiceTest extends \BBTestCase
         }
 
         $this->service->validatePaymentAmount($received, $expected);
-
-        if (!$expectException) {
-            $this->assertTrue(true); // no exception means pass
-        }
     }
 }
