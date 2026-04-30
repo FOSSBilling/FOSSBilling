@@ -58,6 +58,7 @@ final class GuestTest extends \BBTestCase
         $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
         $di['validator'] = $validatorMock;
         $di['tools'] = $toolsMock;
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
 
         $client = new Guest();
         $client->setDi($di);
@@ -104,6 +105,7 @@ final class GuestTest extends \BBTestCase
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail')->willReturn($data['email']);
         $di['tools'] = $toolsMock;
         $di['logger'] = new \Box_Log();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
 
         $client = new Guest();
         $client->setDi($di);
@@ -129,6 +131,7 @@ final class GuestTest extends \BBTestCase
         $client = new Guest();
         $di = $this->getDi();
         $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
         $client->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -151,6 +154,7 @@ final class GuestTest extends \BBTestCase
         $client = new Guest();
         $di = $this->getDi();
         $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
         $client->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);

@@ -111,13 +111,22 @@ class Client implements InjectionAwareInterface
 
     private function checkRateLimit(string $role, ?string $method = null): bool
     {
+        $subject = (string) $this->_getIp();
+
         if ($method == 'staff_login' || $method == 'client_login') {
             $policy = 'api_login';
         } else {
             $policy = $role === 'guest' ? 'api_guest' : 'api_authenticated';
+
+            if ($role === 'client' && $this->di['session']->get('client_id')) {
+                $subject = 'client:' . $this->di['session']->get('client_id');
+            } elseif ($role === 'admin' && $this->di['session']->get('admin')) {
+                $admin = $this->di['session']->get('admin');
+                $subject = 'admin:' . ($admin['id'] ?? '');
+            }
         }
 
-        $rateLimitResult = $this->di['rate_limiter']->consume($policy, (string) $this->_getIp());
+        $rateLimitResult = $this->di['rate_limiter']->consume($policy, $subject);
         if ($rateLimitResult->isLimited()) {
             throw new \FOSSBilling\InformationException('Rate limit exceeded. Please try again later.', null, 429);
         }
@@ -167,7 +176,6 @@ class Client implements InjectionAwareInterface
         $this->_loadConfig();
         $this->checkAllowedIps();
 
-        $this->checkRateLimit($role, $method);
         $this->checkHttpReferer();
         $this->isRoleAllowed($role);
 
@@ -178,6 +186,8 @@ class Client implements InjectionAwareInterface
                 $this->requireSessionAuth($role);
             }
         }
+
+        $this->checkRateLimit($role, $method);
 
         $api = $this->di['api']($role);
         unset($params['CSRFToken']);

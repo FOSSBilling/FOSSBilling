@@ -24,6 +24,11 @@ class Client extends \Api_Abstract
      */
     public function checkout($data)
     {
+        $rateLimitResult = $this->di['rate_limiter']->consume('order_generation_ip', (string) $this->getIp());
+        if ($rateLimitResult->isLimited()) {
+            throw new \FOSSBilling\InformationException('Rate limit exceeded. Please try again later.', null, 429);
+        }
+
         $gateway_id = $data['gateway_id'] ?? null;
         $cart = $this->getService()->getSessionCart();
         $client = $this->getIdentity();
