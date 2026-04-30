@@ -78,6 +78,7 @@ class Service implements InjectionAwareInterface
     {
         $di = $event->getDi();
         $params = $event->getParameters();
+        $params = is_array($params) ? $params : [];
         $data = [
             'ip' => $params['ip'] ?? null,
             'email' => $params['email'] ?? null,
@@ -87,82 +88,93 @@ class Service implements InjectionAwareInterface
 
         $config = $di['mod_config']('Spamchecker');
 
-        if (isset($config['captcha_enabled']) && $config['captcha_enabled']) {
-            $provider = $config['captcha_provider'] ?? 'recaptcha_v2';
+        $this->checkCaptcha($params);
 
-            if ($provider === 'recaptcha_v2') {
-                if (!isset($config['captcha_recaptcha_privatekey']) || $config['captcha_recaptcha_privatekey'] == '') {
-                    throw new \FOSSBilling\InformationException("To use reCAPTCHA you must get an API key from <a href='https://www.google.com/recaptcha/admin/create'>here</a>");
-                }
-
-                if (!isset($params['g-recaptcha-response']) || $params['g-recaptcha-response'] == '') {
-                    throw new \FOSSBilling\InformationException('You have to complete the CAPTCHA to continue');
-                }
-
-                $client = HttpClient::create(['bindto' => BIND_TO]);
-                $response = $client->request('POST', 'https://google.com/recaptcha/api/siteverify', [
-                    'body' => [
-                        'secret' => $config['captcha_recaptcha_privatekey'],
-                        'response' => $params['g-recaptcha-response'],
-                        'remoteip' => $di['request']->getClientIp(),
-                    ],
-                ]);
-                $content = $response->toArray();
-
-                if (!isset($content['success']) || $content['success'] !== true) {
-                    throw new \FOSSBilling\InformationException('reCAPTCHA verification failed.');
-                }
-            } elseif ($provider === 'turnstile') {
-                if (empty($config['turnstile_secret_key'])) {
-                    throw new \FOSSBilling\InformationException('Cloudflare Turnstile secret key is not configured.');
-                }
-
-                $turnstile_response = $params['cf-turnstile-response'] ?? null;
-                if (empty($turnstile_response)) {
-                    throw new \FOSSBilling\InformationException('Please complete the CAPTCHA verification.');
-                }
-
-                $client = HttpClient::create(['bindto' => BIND_TO]);
-                $response = $client->request('POST', 'https://challenges.cloudflare.com/turnstile/v0/siteverify', [
-                    'body' => [
-                        'secret' => $config['turnstile_secret_key'],
-                        'response' => $turnstile_response,
-                        'remoteip' => $di['request']->getClientIp(),
-                    ],
-                ]);
-                $content = $response->toArray();
-
-                if (!isset($content['success']) || $content['success'] !== true) {
-                    throw new \FOSSBilling\InformationException('CAPTCHA verification failed. Please try again.');
-                }
-            } elseif ($provider === 'hcaptcha') {
-                if (empty($config['hcaptcha_secret_key'])) {
-                    throw new \FOSSBilling\InformationException('hCaptcha secret key is not configured.');
-                }
-
-                $hcaptcha_response = $params['h-captcha-response'] ?? null;
-                if (empty($hcaptcha_response)) {
-                    throw new \FOSSBilling\InformationException('Please complete the CAPTCHA verification.');
-                }
-
-                $client = HttpClient::create(['bindto' => BIND_TO]);
-                $response = $client->request('POST', 'https://hcaptcha.com/siteverify', [
-                    'body' => [
-                        'secret' => $config['hcaptcha_secret_key'],
-                        'response' => $hcaptcha_response,
-                        'remoteip' => $di['request']->getClientIp(),
-                    ],
-                ]);
-                $content = $response->toArray();
-
-                if (!isset($content['success']) || $content['success'] !== true) {
-                    throw new \FOSSBilling\InformationException('CAPTCHA verification failed. Please try again.');
-                }
-            }
-        }
         if (isset($config['sfs']) && $config['sfs']) {
             $spamCheckerService = $di['mod_service']('Spamchecker');
             $spamCheckerService->isInStopForumSpamDatabase($data);
+        }
+    }
+
+    public function checkCaptcha(array $params): void
+    {
+        $di = $this->di;
+        $config = $di['mod_config']('Spamchecker');
+
+        if (empty($config['captcha_enabled'])) {
+            return;
+        }
+
+        $provider = $config['captcha_provider'] ?? 'recaptcha_v2';
+
+        if ($provider === 'recaptcha_v2') {
+            if (!isset($config['captcha_recaptcha_privatekey']) || $config['captcha_recaptcha_privatekey'] == '') {
+                throw new \FOSSBilling\InformationException("To use reCAPTCHA you must get an API key from <a href='https://www.google.com/recaptcha/admin/create'>here</a>");
+            }
+
+            if (!isset($params['g-recaptcha-response']) || $params['g-recaptcha-response'] == '') {
+                throw new \FOSSBilling\InformationException('You have to complete the CAPTCHA to continue');
+            }
+
+            $client = HttpClient::create(['bindto' => BIND_TO]);
+            $response = $client->request('POST', 'https://google.com/recaptcha/api/siteverify', [
+                'body' => [
+                    'secret' => $config['captcha_recaptcha_privatekey'],
+                    'response' => $params['g-recaptcha-response'],
+                    'remoteip' => $di['request']->getClientIp(),
+                ],
+            ]);
+            $content = $response->toArray();
+
+            if (!isset($content['success']) || $content['success'] !== true) {
+                throw new \FOSSBilling\InformationException('reCAPTCHA verification failed.');
+            }
+        } elseif ($provider === 'turnstile') {
+            if (empty($config['turnstile_secret_key'])) {
+                throw new \FOSSBilling\InformationException('Cloudflare Turnstile secret key is not configured.');
+            }
+
+            $turnstile_response = $params['cf-turnstile-response'] ?? null;
+            if (empty($turnstile_response)) {
+                throw new \FOSSBilling\InformationException('Please complete the CAPTCHA verification.');
+            }
+
+            $client = HttpClient::create(['bindto' => BIND_TO]);
+            $response = $client->request('POST', 'https://challenges.cloudflare.com/turnstile/v0/siteverify', [
+                'body' => [
+                    'secret' => $config['turnstile_secret_key'],
+                    'response' => $turnstile_response,
+                    'remoteip' => $di['request']->getClientIp(),
+                ],
+            ]);
+            $content = $response->toArray();
+
+            if (!isset($content['success']) || $content['success'] !== true) {
+                throw new \FOSSBilling\InformationException('CAPTCHA verification failed. Please try again.');
+            }
+        } elseif ($provider === 'hcaptcha') {
+            if (empty($config['hcaptcha_secret_key'])) {
+                throw new \FOSSBilling\InformationException('hCaptcha secret key is not configured.');
+            }
+
+            $hcaptcha_response = $params['h-captcha-response'] ?? null;
+            if (empty($hcaptcha_response)) {
+                throw new \FOSSBilling\InformationException('Please complete the CAPTCHA verification.');
+            }
+
+            $client = HttpClient::create(['bindto' => BIND_TO]);
+            $response = $client->request('POST', 'https://hcaptcha.com/siteverify', [
+                'body' => [
+                    'secret' => $config['hcaptcha_secret_key'],
+                    'response' => $hcaptcha_response,
+                    'remoteip' => $di['request']->getClientIp(),
+                ],
+            ]);
+            $content = $response->toArray();
+
+            if (!isset($content['success']) || $content['success'] !== true) {
+                throw new \FOSSBilling\InformationException('CAPTCHA verification failed. Please try again.');
+            }
         }
     }
 

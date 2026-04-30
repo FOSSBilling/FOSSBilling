@@ -111,6 +111,7 @@ class Guest extends \Api_Abstract
     public function login($data)
     {
         $startedAt = microtime(true);
+
         try {
             $this->di['tools']->validateAndSanitizeEmail($data['email'], true, false);
 
@@ -156,11 +157,13 @@ class Guest extends \Api_Abstract
     public function reset_password($data): bool
     {
         $startedAt = microtime(true);
+
         try {
             $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetClient']);
 
             // Sanitize email
             $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+            $this->checkPasswordResetCaptcha($data);
 
             $ipLimit = $this->di['rate_limiter']->consume('client_password_reset_ip', (string) $this->getIp());
             if ($ipLimit->isLimited()) {
@@ -236,10 +239,21 @@ class Guest extends \Api_Abstract
         }
     }
 
+    private function checkPasswordResetCaptcha(array $data): void
+    {
+        $extensionService = $this->di['mod_service']('extension');
+        if (!$extensionService->isExtensionActive('mod', 'spamchecker')) {
+            return;
+        }
+
+        $this->di['mod_service']('Spamchecker')->checkCaptcha($data);
+    }
+
     #[RequiredParams(['hash' => 'No Hash provided', 'password' => 'Password required', 'password_confirm' => 'Password confirmation required'])]
     public function update_password($data): bool
     {
         $startedAt = microtime(true);
+
         try {
             $this->di['events_manager']->fire(['event' => 'onBeforeClientProfilePasswordReset', 'params' => $data['hash']]);
 

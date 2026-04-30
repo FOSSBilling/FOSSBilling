@@ -64,6 +64,7 @@ class Guest extends \Api_Abstract
     public function login($data)
     {
         $startedAt = microtime(true);
+
         try {
             $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email'], true, false);
 
@@ -90,6 +91,7 @@ class Guest extends \Api_Abstract
     public function update_password($data): void
     {
         $startedAt = microtime(true);
+
         try {
             $config = $this->getMod()->getConfig();
             if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {
@@ -148,7 +150,6 @@ class Guest extends \Api_Abstract
         }
     }
 
-
     public function passwordreset(array $data): bool
     {
         $config = $this->getMod()->getConfig();
@@ -157,6 +158,7 @@ class Guest extends \Api_Abstract
         }
 
         $startedAt = microtime(true);
+
         try {
             $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
             $required = [
@@ -165,6 +167,8 @@ class Guest extends \Api_Abstract
             $validator = $this->di['validator'];
             $validator->checkRequiredParamsForArray($required, $data);
             $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+            $this->checkPasswordResetCaptcha($data);
+
             $ipLimit = $this->di['rate_limiter']->consume('staff_password_reset_ip', (string) $this->getIp());
             if ($ipLimit->isLimited()) {
                 $this->di['logger']->setChannel('security')->info('Staff password reset rate limited from IP %s: email %s', $this->getIp(), $data['email']);
@@ -217,5 +221,15 @@ class Guest extends \Api_Abstract
         } finally {
             \FOSSBilling\Security\RandomizedTimeFloor::apply($startedAt);
         }
+    }
+
+    private function checkPasswordResetCaptcha(array $data): void
+    {
+        $extensionService = $this->di['mod_service']('extension');
+        if (!$extensionService->isExtensionActive('mod', 'spamchecker')) {
+            return;
+        }
+
+        $this->di['mod_service']('Spamchecker')->checkCaptcha($data);
     }
 }
