@@ -113,6 +113,10 @@ class Admin implements InjectionAwareInterface
 
     public function get_updatepassword(\Box_App $app, $hash): string
     {
+        if ($error = $this->checkPageRateLimit($app, 'staff_password_reset_confirm_ip')) {
+            return $error;
+        }
+
         $data = [];
         $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
 
@@ -123,6 +127,7 @@ class Admin implements InjectionAwareInterface
         }
         $isValidReset = false;
         $startedAt = microtime(true);
+
         try {
             $reset = $this->di['db']->findOne('AdminPasswordReset', 'hash = ?', [$hash]);
             if ($reset instanceof \Model_AdminPasswordReset) {
@@ -144,5 +149,19 @@ class Admin implements InjectionAwareInterface
         }
 
         return $app->render('mod_staff_password_update', ['data' => $data]);
+    }
+
+    private function checkPageRateLimit(\Box_App $app, string $policy): ?string
+    {
+        $result = $this->di['rate_limiter']->consume($policy, (string) $this->di['request']->getClientIp());
+        if (!$result->isLimited()) {
+            return null;
+        }
+
+        http_response_code(429);
+
+        return $app->render('error', [
+            'exception' => new \FOSSBilling\InformationException('Rate limit exceeded. Please try again later.', null, 429),
+        ]);
     }
 }
