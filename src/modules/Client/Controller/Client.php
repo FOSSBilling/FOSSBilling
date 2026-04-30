@@ -80,18 +80,6 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         ];
         $template = 'mod_client_set_new_password';
 
-        $apiService = $this->di['mod_service']('api');
-        $ip = $this->di['request']->getClientIp();
-        $apiConfig = \FOSSBilling\Config::getProperty('api', []);
-        $loginSpan = $apiConfig['rate_span_login'] ?? 60;
-        $loginLimit = $apiConfig['rate_limit_login'] ?? 20;
-        $requestPrefix = 'page:/client/reset-password-confirm';
-
-        if ($apiService->isRateLimited($ip, $loginLimit, $loginSpan, $requestPrefix)) {
-            usleep(random_int(50000, 100000));
-            $app->redirect('/');
-        }
-
         $startTime = hrtime(true);
         $result = $service->password_reset_valid($data);
         if ($result !== false) {
