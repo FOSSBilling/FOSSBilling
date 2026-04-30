@@ -121,21 +121,27 @@ class Admin implements InjectionAwareInterface
         if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {
             return $app->render('mod_staff_password_reset');
         }
+        $isValidReset = false;
         $startedAt = microtime(true);
-        $reset = $this->di['db']->findOne('AdminPasswordReset', 'hash = ?', [$hash]);
-        if (!$reset instanceof \Model_AdminPasswordReset) {
-            RandomizedTimeFloor::apply($startedAt);
+        try {
+            $reset = $this->di['db']->findOne('AdminPasswordReset', 'hash = ?', [$hash]);
+            if ($reset instanceof \Model_AdminPasswordReset) {
+                $expiresAt = strtotime($reset->created_at) + 900;
 
+                if ($expiresAt >= time()) {
+                    $admin = $this->di['db']->getExistingModelById('Admin', $reset->admin_id, 'User not found');
+                    $data['hash'] = $reset->hash;
+                    $data['email'] = $admin->email;
+                    $isValidReset = true;
+                }
+            }
+        } finally {
+            RandomizedTimeFloor::apply($startedAt);
+        }
+
+        if (!$isValidReset) {
             return $app->render('mod_staff_password_reset');
         }
-        if (strtotime($reset->created_at) - time() + 900 < 0) {
-            RandomizedTimeFloor::apply($startedAt);
-
-            return $app->render('mod_staff_password_reset');
-        }
-        $admin = $this->di['db']->getExistingModelById('Admin', $reset->admin_id, 'User not found');
-        $data['hash'] = $reset->hash;
-        $data['email'] = $admin->email;
 
         return $app->render('mod_staff_password_update', ['data' => $data]);
     }

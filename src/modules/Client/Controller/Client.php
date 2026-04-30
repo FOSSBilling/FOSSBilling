@@ -48,8 +48,11 @@ class Client implements \FOSSBilling\InjectionAwareInterface
     {
         $startedAt = microtime(true);
         $service = $this->di['mod_service']('client');
-        $service->approveClientEmailByHash($hash);
-        RandomizedTimeFloor::apply($startedAt);
+        try {
+            $service->approveClientEmailByHash($hash);
+        } finally {
+            RandomizedTimeFloor::apply($startedAt);
+        }
 
         $systemService = $this->di['mod_service']('System');
         $systemService->setPendingMessage(__trans('Email address was confirmed'));
@@ -80,12 +83,15 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         ];
 
         $startedAt = microtime(true);
-        $result = $service->password_reset_valid($data);
+        try {
+            $result = $service->password_reset_valid($data);
+        } finally {
+            RandomizedTimeFloor::apply($startedAt);
+        }
+
         if ($result !== false) {
             return $app->render('mod_client_set_new_password');
         }
-
-        RandomizedTimeFloor::apply($startedAt);
 
         $app->redirect('/');
     }
