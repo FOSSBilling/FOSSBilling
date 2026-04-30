@@ -155,6 +155,17 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                         $invoiceDbModel = $this->di['db']->load('Invoice', $tx['invoice_id']);
                     }
 
+                    // For subscription payments, find or generate the correct renewal invoice first
+                    // so that we validate payment amount against the renewal invoice, not the original.
+                    if ($ipn['txn_type'] === 'subscr_payment' && isset($ipn['subscr_id'])) {
+                        $renewalInvoice = $invoiceService->generateRenewalInvoiceForSubscriptionPayment($ipn['subscr_id'], $client_id);
+                        if ($renewalInvoice instanceof Model_Invoice) {
+                            $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $renewalInvoice->id]);
+                            $tx['invoice_id'] = $renewalInvoice->id;
+                            $invoiceDbModel = $renewalInvoice;
+                        }
+                    }
+
                     if ($invoiceDbModel instanceof Model_Invoice) {
                         $expected = $invoiceService->getTotalWithTax($invoiceDbModel);
                         $invoiceService->validatePaymentAmount((float) $ipn['mc_gross'], $expected);
@@ -169,17 +180,6 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                     ];
 
                     $api_admin->client_balance_add_funds($bd);
-
-                    // For subscription payments, always try to find or generate the correct renewal invoice
-                    // based on the subscription SID, instead of blindly reusing the original invoice ID.
-                    if ($ipn['txn_type'] === 'subscr_payment' && isset($ipn['subscr_id'])) {
-                        $renewalInvoice = $invoiceService->generateRenewalInvoiceForSubscriptionPayment($ipn['subscr_id'], $client_id);
-                        if ($renewalInvoice instanceof Model_Invoice) {
-                            $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $renewalInvoice->id]);
-                            $tx['invoice_id'] = $renewalInvoice->id;
-                            $invoiceDbModel = $renewalInvoice;
-                        }
-                    }
 
                     if (!empty($tx['invoice_id']) && $invoiceDbModel instanceof Model_Invoice && !$invoiceService->isInvoiceTypeDeposit($invoiceDbModel)) {
                         if (!$invoiceDbModel->approved) {

@@ -926,10 +926,15 @@ class UpdatePatcher implements InjectionAwareInterface
         try {
             $extService = $this->di['mod_service']('extension');
 
-            // Migrate config from mod_spamchecker to mod_antispam
+            // Migrate config from mod_spamchecker to mod_antispam.
+            // getConfig() always returns at least ['ext' => $ext], so we need to check
+            // for keys beyond 'ext' to determine if there are real settings to migrate.
             $oldConfig = $extService->getConfig('mod_spamchecker');
-            if (!empty($oldConfig)) {
-                $newConfig = $oldConfig;
+            $realOldSettings = array_diff_key($oldConfig, ['ext' => true]);
+            if (!empty($realOldSettings)) {
+                // Merge old spamchecker settings into existing antispam config (don't overwrite)
+                $existingAntispamConfig = $extService->getConfig('mod_antispam');
+                $newConfig = array_merge($realOldSettings, array_diff_key($existingAntispamConfig, ['ext' => true]));
                 $newConfig['ext'] = 'mod_antispam';
                 // Add new default settings if not present
                 $newConfig['honeypot_enabled'] ??= true;
