@@ -26,7 +26,7 @@ final class PaymentAdapterPayPalEmailTest extends BBTestCase
         $originalInvoice->approved = true;
 
         $invoiceService = $this->getMockBuilder(Service::class)
-            ->onlyMethods(['generateRenewalInvoiceForSubscriptionPayment', 'isInvoiceTypeDeposit', 'approveInvoice'])
+            ->onlyMethods(['generateRenewalInvoiceForSubscriptionPayment', 'isInvoiceTypeDeposit', 'approveInvoice', 'getTotalWithTax'])
             ->getMock();
         $invoiceService->expects($this->once())
             ->method('generateRenewalInvoiceForSubscriptionPayment')
@@ -39,6 +39,10 @@ final class PaymentAdapterPayPalEmailTest extends BBTestCase
         $invoiceService->expects($this->once())
             ->method('approveInvoice')
             ->with($renewalInvoice, ['use_credits' => false]);
+        $invoiceService->expects($this->once())
+            ->method('getTotalWithTax')
+            ->with($originalInvoice)
+            ->willReturn(14.99);
 
         $dbMock = $this->createMock(Box_Database::class);
         $dbMock->expects($this->once())
@@ -146,5 +150,115 @@ final class PaymentAdapterPayPalEmailTest extends BBTestCase
         ], $apiAdmin->funds[0]);
         $this->assertSame([['id' => 55]], $apiAdmin->paid);
         $this->assertSame(Model_Transaction::STATUS_PROCESSED, $apiAdmin->updates[array_key_last($apiAdmin->updates)]['status']);
+    }
+
+    public function testProcessTransactionRejectsAmountMismatch(): void
+    {
+        $adapter = new Payment_Adapter_PayPalEmail([
+            'email' => 'merchant@example.com',
+            'test_mode' => true,
+        ]);
+
+        $originalInvoice = new Model_Invoice();
+        $originalInvoice->loadBean(new DummyBean());
+        $originalInvoice->id = 10;
+        $originalInvoice->approved = true;
+
+        $invoiceService = $this->getMockBuilder(Service::class)
+            ->onlyMethods(['isInvoiceTypeDeposit', 'getTotalWithTax'])
+            ->getMock();
+        $invoiceService->expects($this->never())
+            ->method('isInvoiceTypeDeposit');
+        $invoiceService->expects($this->once())
+            ->method('getTotalWithTax')
+            ->with($originalInvoice)
+            ->willReturn(100.00);
+
+        $dbMock = $this->createMock(Box_Database::class);
+        $dbMock->expects($this->once())
+            ->method('load')
+            ->with('Invoice', 10)
+            ->willReturn($originalInvoice);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function (string $service) use ($invoiceService) {
+            if ($service === 'Invoice') {
+                return $invoiceService;
+            }
+
+            throw new RuntimeException('Unexpected service request: ' . $service);
+        });
+        $adapter->setDi($di);
+
+        $apiAdmin = new class {
+            private int $txReads = 0;
+
+            public function invoice_transaction_get(array $data): array
+            {
+                ++$this->txReads;
+
+                return match ($this->txReads) {
+                    1 => [
+                        'invoice_id' => 10,
+                        'type' => 'web_accept',
+                        'txn_id' => null,
+                        'txn_status' => 'Pending',
+                        'amount' => 0,
+                        'currency' => null,
+                        'status' => 'received',
+                    ],
+                    2 => [
+                        'invoice_id' => 10,
+                        'type' => 'web_accept',
+                        'txn_id' => 'PAY-456',
+                        'txn_status' => 'Pending',
+                        'amount' => 0,
+                        'currency' => 'USD',
+                        'status' => Model_Transaction::STATUS_PROCESSING,
+                    ],
+                    default => throw new RuntimeException('Unexpected transaction read'),
+                };
+            }
+
+            public function invoice_get(array $data): array
+            {
+                return [
+                    'id' => 10,
+                    'client' => ['id' => 7],
+                ];
+            }
+
+            public function invoice_transaction_claim_for_processing(array $data): bool
+            {
+                return true;
+            }
+
+            public function invoice_transaction_update(array $data): void
+            {
+            }
+
+            public function client_balance_add_funds(array $data): void
+            {
+            }
+
+            public function invoice_pay_with_credits(array $data): void
+            {
+            }
+        };
+
+        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('Payment amount does not match the expected invoice total');
+
+        $adapter->processTransaction($apiAdmin, 1, [
+            'get' => ['invoice_id' => 10],
+            'post' => [
+                'txn_type' => 'web_accept',
+                'payment_status' => 'Completed',
+                'txn_id' => 'PAY-456',
+                'mc_gross' => '95.00',
+                'mc_currency' => 'USD',
+            ],
+        ], 2);
     }
 }

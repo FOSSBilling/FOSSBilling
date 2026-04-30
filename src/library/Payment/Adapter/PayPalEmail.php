@@ -145,6 +145,21 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                         $tx['txn_status'] = 'Completed';
                     }
 
+                    if ($this->isIpnDuplicate($ipn)) {
+                        throw new Payment_Exception('Cannot process duplicate IPN');
+                    }
+
+                    $invoiceService = $this->di['mod_service']('Invoice');
+                    $invoiceDbModel = null;
+                    if (!empty($tx['invoice_id'])) {
+                        $invoiceDbModel = $this->di['db']->load('Invoice', $tx['invoice_id']);
+                    }
+
+                    if ($invoiceDbModel instanceof Model_Invoice) {
+                        $expected = $invoiceService->getTotalWithTax($invoiceDbModel);
+                        $invoiceService->validatePaymentAmount((float) $ipn['mc_gross'], $expected);
+                    }
+
                     $bd = [
                         'id' => $client_id,
                         'amount' => $ipn['mc_gross'],
@@ -153,17 +168,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                         'rel_id' => $ipn['txn_id'],
                     ];
 
-                    if ($this->isIpnDuplicate($ipn)) {
-                        throw new Payment_Exception('Cannot process duplicate IPN');
-                    }
-
                     $api_admin->client_balance_add_funds($bd);
-
-                    $invoiceService = $this->di['mod_service']('Invoice');
-                    $invoiceDbModel = null;
-                    if (!empty($tx['invoice_id'])) {
-                        $invoiceDbModel = $this->di['db']->load('Invoice', $tx['invoice_id']);
-                    }
 
                     // For subscription payments, always try to find or generate the correct renewal invoice
                     // based on the subscription SID, instead of blindly reusing the original invoice ID.
