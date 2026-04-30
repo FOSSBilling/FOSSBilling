@@ -145,19 +145,9 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                         $tx['txn_status'] = 'Completed';
                     }
 
-                    $bd = [
-                        'id' => $client_id,
-                        'amount' => $ipn['mc_gross'],
-                        'description' => 'PayPal transaction ' . $ipn['txn_id'],
-                        'type' => 'PayPal',
-                        'rel_id' => $ipn['txn_id'],
-                    ];
-
                     if ($this->isIpnDuplicate($ipn)) {
                         throw new Payment_Exception('Cannot process duplicate IPN');
                     }
-
-                    $api_admin->client_balance_add_funds($bd);
 
                     $invoiceService = $this->di['mod_service']('Invoice');
                     $invoiceDbModel = null;
@@ -165,8 +155,8 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                         $invoiceDbModel = $this->di['db']->load('Invoice', $tx['invoice_id']);
                     }
 
-                    // For subscription payments, always try to find or generate the correct renewal invoice
-                    // based on the subscription SID, instead of blindly reusing the original invoice ID.
+                    // For subscription payments, find or generate the correct renewal invoice first
+                    // so that we validate payment amount against the renewal invoice, not the original.
                     if ($ipn['txn_type'] === 'subscr_payment' && isset($ipn['subscr_id'])) {
                         $renewalInvoice = $invoiceService->generateRenewalInvoiceForSubscriptionPayment($ipn['subscr_id'], $client_id);
                         if ($renewalInvoice instanceof Model_Invoice) {
@@ -175,6 +165,21 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                             $invoiceDbModel = $renewalInvoice;
                         }
                     }
+
+                    if ($invoiceDbModel instanceof Model_Invoice) {
+                        $expected = $invoiceService->getTotalWithTax($invoiceDbModel);
+                        $invoiceService->validatePaymentAmount((float) $ipn['mc_gross'], $expected);
+                    }
+
+                    $bd = [
+                        'id' => $client_id,
+                        'amount' => $ipn['mc_gross'],
+                        'description' => 'PayPal transaction ' . $ipn['txn_id'],
+                        'type' => 'PayPal',
+                        'rel_id' => $ipn['txn_id'],
+                    ];
+
+                    $api_admin->client_balance_add_funds($bd);
 
                     if (!empty($tx['invoice_id']) && $invoiceDbModel instanceof Model_Invoice && !$invoiceService->isInvoiceTypeDeposit($invoiceDbModel)) {
                         if (!$invoiceDbModel->approved) {

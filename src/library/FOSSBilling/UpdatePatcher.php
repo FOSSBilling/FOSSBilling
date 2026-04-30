@@ -297,6 +297,7 @@ class UpdatePatcher implements InjectionAwareInterface
             52 => 'patch52',
             53 => 'patch53',
             54 => 'patch54',
+            55 => 'patch55',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -913,6 +914,62 @@ class UpdatePatcher implements InjectionAwareInterface
             Path::join(PATH_LIBRARY, 'Model', 'ClientPasswordResetTable.php') => 'unlink',
             Path::join(PATH_LIBRARY, 'Model', 'ApiRequestTable.php') => 'unlink',
             Path::join(PATH_LIBRARY, 'Model', 'ApiRequest.php') => 'unlink',
+        ];
+        $this->executeFileActions($fileActions);
+    }
+
+    private function patch55(): void
+    {
+        // Migrate Spamchecker module to Anti-Spam module
+        // @see https://github.com/FOSSBilling/FOSSBilling/pull/2700
+
+        try {
+            $extService = $this->di['mod_service']('extension');
+
+            // Migrate config from mod_spamchecker to mod_antispam.
+            // getConfig() always returns at least ['ext' => $ext], so we need to check
+            // for keys beyond 'ext' to determine if there are real settings to migrate.
+            $oldConfig = $extService->getConfig('mod_spamchecker');
+            $spamcheckerSettings = array_diff_key($oldConfig, ['ext' => true]);
+            if (!empty($spamcheckerSettings)) {
+                // Start from spamchecker settings, then let existing antispam settings win
+                // (preserving any antispam config that was already set)
+                $existingAntispamConfig = $extService->getConfig('mod_antispam');
+                $existingAntispamSettings = array_diff_key($existingAntispamConfig, ['ext' => true]);
+                $newConfig = array_merge($spamcheckerSettings, $existingAntispamSettings);
+                $newConfig['ext'] = 'mod_antispam';
+                // Add new default settings if not present
+                $newConfig['honeypot_enabled'] ??= true;
+                $newConfig['honeypot_field'] ??= 'honeypot_field';
+                $extService->setConfig($newConfig);
+            }
+
+            // Migrate hook listeners from spamchecker to antispam
+            $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_hook' AND rel_type = 'mod' AND rel_id = 'spamchecker' AND meta_key = 'listener'");
+
+            // Batch-connect the new Antispam module to register its hooks
+            $hookService = $this->di['mod_service']('hook');
+            $hookService->batchConnect('antispam');
+
+            // Delete old spamchecker config row
+            $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_spamchecker' AND meta_key = 'config'");
+
+            // Uninstall old spamchecker extension if it exists
+            $spamcheckerExt = $extService->findExtension('mod', 'spamchecker');
+            if ($spamcheckerExt instanceof \Model_Extension) {
+                $extService->uninstall($spamcheckerExt);
+            }
+
+            // Invalidate caches
+            $this->di['cache']->delete('config_mod_spamchecker');
+            $this->di['cache']->delete('config_mod_antispam');
+        } catch (\Exception $e) {
+            error_log('Spamchecker to Anti-Spam migration error: ' . $e->getMessage());
+        }
+
+        // Remove old Spamchecker module files from disk
+        $fileActions = [
+            Path::join(PATH_MODS, 'Spamchecker') => 'unlink',
         ];
         $this->executeFileActions($fileActions);
     }

@@ -85,12 +85,12 @@
         "BBLANG",
         "maintmode",
         "endapply",
-"helpdesk",
-    "autorespond",
-    "Antispam",
-    "recaptcha",
-    "spamchecker",
-    "Spamchecker",
+        "helpdesk",
+        "autorespond",
+        "Antispam",
+        "recaptcha",
+        "spamchecker",
+        "Spamchecker",
         "noborder",
         "opengraph",
         "precomposed",
@@ -434,7 +434,8 @@
         "presentationml",
         "quicktime",
         "spreadsheetml",
-        "wordprocessingml"
+        "wordprocessingml",
+        "checkip"
     ],
     "ignorePaths": [
         "tests-legacy/**",

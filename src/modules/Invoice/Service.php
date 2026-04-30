@@ -671,6 +671,14 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    public function validatePaymentAmount(float $received, float $expected): void
+    {
+        $epsilon = 0.01;
+        if ($received < $expected - $epsilon) {
+            throw new \FOSSBilling\Exception('Payment amount does not match the expected invoice total. Expected :expected, received :received.', [':expected' => number_format($expected, 2, '.', ''), ':received' => number_format($received, 2, '.', '')]);
+        }
+    }
+
     public function tryPayWithCredits(\Model_Invoice $invoice)
     {
         if (!$invoice->approved) {
@@ -688,7 +696,7 @@ class Service implements InjectionAwareInterface
         $cbrepo = $this->di['mod_service']('Client', 'Balance');
         $balance = $cbrepo->getClientBalance($client);
         $required = $this->getTotalWithTax($invoice);
-        $epsilon = 0.05;
+        $epsilon = 0.01;
 
         if (abs($balance - $required) < $epsilon || $balance - $required > 0.00001) {
             if (DEBUG) {
