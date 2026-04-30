@@ -9,6 +9,49 @@ use PHPUnit\Framework\TestCase;
 
 final class AdminTest extends TestCase
 {
+    private function invokeIsIpLookupAvailable(): bool
+    {
+        $method = new \ReflectionMethod(self::class, 'isIpLookupAvailable');
+        $method->setAccessible(true);
+
+        /** @var bool $result */
+        $result = $method->invoke($this);
+
+        return $result;
+    }
+
+    public function testIsIpLookupAvailableReturnsTrueWhenServerAddrIsValidIp(): void
+    {
+        $previous = $_SERVER['SERVER_ADDR'] ?? null;
+        $_SERVER['SERVER_ADDR'] = '127.0.0.1';
+
+        try {
+            $this->assertTrue($this->invokeIsIpLookupAvailable());
+        } finally {
+            if ($previous === null) {
+                unset($_SERVER['SERVER_ADDR']);
+            } else {
+                $_SERVER['SERVER_ADDR'] = $previous;
+            }
+        }
+    }
+
+    public function testIsIpLookupAvailableFallsBackWhenServerAddrIsInvalid(): void
+    {
+        $previous = $_SERVER['SERVER_ADDR'] ?? null;
+        $_SERVER['SERVER_ADDR'] = 'not-an-ip';
+
+        try {
+            $this->assertIsBool($this->invokeIsIpLookupAvailable());
+        } finally {
+            if ($previous === null) {
+                unset($_SERVER['SERVER_ADDR']);
+            } else {
+                $_SERVER['SERVER_ADDR'] = $previous;
+            }
+        }
+    }
+
     private function isIpLookupAvailable(): bool
     {
         $serverAddr = $_SERVER['SERVER_ADDR'] ?? null;
@@ -130,30 +173,32 @@ final class AdminTest extends TestCase
         $this->assertFalse($result->wasSuccessful(), 'An invalid custom interface was accepted when it should have been rejected');
     }
 
-    public function testMaliciousInterfaceIsRejected(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('maliciousInterfacePayloadProvider')]
+    public function testMaliciousInterfaceIsRejected(string $payload): void
     {
-        $payloads = [
-            "x\"; echo 'pwned'; //",
-            'eth0|id',
-            'eth0`id`',
-            'eth0$(id)',
-            'eth0 && whoami',
-            'eth0 > /tmp/pwned',
-            '../etc/passwd',
-            '..\\..\\windows\\system32\\drivers\\etc\\hosts',
-            "eth0\0evil",
-            str_repeat('a', 1024),
-            "eth0\nwhoami",
-            ' eth0 ',
-        ];
+        $result = Request::makeRequest('admin/system/set_interface_ip', ['interface' => $payload]);
+        $this->assertFalse(
+            $result->wasSuccessful(),
+            "A malicious interface value was accepted when it should have been rejected: {$payload}"
+        );
+    }
 
-        foreach ($payloads as $payload) {
-            $result = Request::makeRequest('admin/system/set_interface_ip', ['interface' => $payload]);
-            $this->assertFalse(
-                $result->wasSuccessful(),
-                "A malicious interface value was accepted when it should have been rejected: {$payload}"
-            );
-        }
+    public static function maliciousInterfacePayloadProvider(): array
+    {
+        return [
+            'quote-escape' => ["x\"; echo 'pwned'; //"],
+            'pipe-command' => ['eth0|id'],
+            'backticks' => ['eth0`id`'],
+            'subshell' => ['eth0$(id)'],
+            'and-command' => ['eth0 && whoami'],
+            'redirect' => ['eth0 > /tmp/pwned'],
+            'path-traversal-unix' => ['../etc/passwd'],
+            'path-traversal-windows' => ['..\\..\\windows\\system32\\drivers\\etc\\hosts'],
+            'null-byte' => ["eth0\0evil"],
+            'long-string' => [str_repeat('a', 1024)],
+            'newline-injection' => ["eth0\nwhoami"],
+            'leading-trailing-space' => [' eth0 '],
+        ];
     }
 
     public function testMaliciousCustomInterfaceIsRejected(): void
