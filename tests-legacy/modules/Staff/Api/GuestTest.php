@@ -371,9 +371,14 @@ final class GuestTest extends \BBTestCase
     private function getAllowedRateLimiter(): object
     {
         return new class {
-            public function consume(string $policy, string $subject): \FOSSBilling\Security\RateLimitResult
+            public function consume(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
             {
                 return new \FOSSBilling\Security\RateLimitResult($policy, false, 10, 9);
+            }
+
+            public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
+            {
+                return $this->consume($policy, $subject, $tokens);
             }
         };
     }
@@ -383,11 +388,21 @@ final class GuestTest extends \BBTestCase
         return new class {
             public int $consumeCount = 0;
 
-            public function consume(string $policy, string $subject): \FOSSBilling\Security\RateLimitResult
+            public function consume(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
             {
                 ++$this->consumeCount;
 
                 return new \FOSSBilling\Security\RateLimitResult($policy, true, 10, 0);
+            }
+
+            public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
+            {
+                $result = $this->consume($policy, $subject, $tokens);
+                if ($result->isLimited()) {
+                    throw new \FOSSBilling\InformationException('Rate limit exceeded. Please try again later.', null, 429);
+                }
+
+                return $result;
             }
         };
     }

@@ -11,7 +11,7 @@ final class FOSSBilling_RateLimiterTest extends BBTestCase
         $limiter = $this->createRateLimiter();
         $subject = 'subject-' . uniqid('', true);
 
-        $first = $limiter->consume('api_guest', $subject, 300);
+        $first = $limiter->consume('api_guest', $subject, 100);
         $second = $limiter->consume('api_guest', $subject);
 
         $this->assertFalse($first->isLimited());
@@ -30,6 +30,29 @@ final class FOSSBilling_RateLimiterTest extends BBTestCase
 
         $this->assertTrue($second->isLimited());
         $this->assertSame(FOSSBilling\Security\RateLimitResult::REASON_LIMITED, $second->getReason());
+    }
+
+    public function testConsumeOrThrowReturnsAllowedResult(): void
+    {
+        $limiter = $this->createRateLimiter();
+
+        $result = $limiter->consumeOrThrow('api_guest', 'subject-' . uniqid('', true));
+
+        $this->assertFalse($result->isLimited());
+        $this->assertSame(FOSSBilling\Security\RateLimitResult::REASON_ALLOWED, $result->getReason());
+    }
+
+    public function testConsumeOrThrowRaisesRateLimitException(): void
+    {
+        $limiter = $this->createRateLimiter();
+        $subject = 'subject-' . uniqid('', true);
+        $limiter->consume('client_password_reset_email', $subject, 3);
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionCode(429);
+        $this->expectExceptionMessage('Rate limit exceeded. Please try again later.');
+
+        $limiter->consumeOrThrow('client_password_reset_email', $subject);
     }
 
     public function testUnknownPolicyThrowsException(): void

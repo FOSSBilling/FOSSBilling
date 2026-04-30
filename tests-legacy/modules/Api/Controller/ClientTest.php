@@ -148,14 +148,18 @@ final class ClientTest extends \BBTestCase
     private function createController(): TestableClient
     {
         $request = $this->createMock(Request::class);
-        $request->expects($this->atLeastOnce())
-            ->method('getClientIp')
+        $request->method('getClientIp')
             ->willReturn('127.0.0.1');
 
         $rateLimiter = new class {
-            public function consume(string $policy, string $subject): \FOSSBilling\Security\RateLimitResult
+            public function consume(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
             {
                 return new \FOSSBilling\Security\RateLimitResult($policy, false, 100, 99);
+            }
+
+            public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
+            {
+                return $this->consume($policy, $subject, $tokens);
             }
         };
 
@@ -168,6 +172,12 @@ final class ClientTest extends \BBTestCase
 
         $this->di['request'] = $request;
         $this->di['rate_limiter'] = $rateLimiter;
+        $this->di['session'] = new class {
+            public function get(string $key): mixed
+            {
+                return null;
+            }
+        };
         $this->di['api'] = $this->di->protect(fn (string $role): object => $api);
 
         $controller = new TestableClient();

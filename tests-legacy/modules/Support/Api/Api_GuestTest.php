@@ -25,7 +25,7 @@ final class Api_GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $rateLimiterMock = $this->createMock(\FOSSBilling\Security\RateLimiter::class);
-        $rateLimiterMock->method('consume')->willReturn(new \FOSSBilling\Security\RateLimitResult('policy', false, 10, 9));
+        $rateLimiterMock->method('consumeOrThrow')->willReturn(new \FOSSBilling\Security\RateLimitResult('policy', false, 10, 9));
         $di['rate_limiter'] = $rateLimiterMock;
         $this->guestApi->setDi($di);
 
@@ -52,7 +52,7 @@ final class Api_GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $rateLimiterMock = $this->createMock(\FOSSBilling\Security\RateLimiter::class);
-        $rateLimiterMock->method('consume')->willReturn(new \FOSSBilling\Security\RateLimitResult('policy', false, 10, 9));
+        $rateLimiterMock->method('consumeOrThrow')->willReturn(new \FOSSBilling\Security\RateLimitResult('policy', false, 10, 9));
         $di['rate_limiter'] = $rateLimiterMock;
         $this->guestApi->setDi($di);
 
@@ -83,7 +83,7 @@ final class Api_GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $rateLimiterMock = $this->createMock(\FOSSBilling\Security\RateLimiter::class);
-        $rateLimiterMock->method('consume')->willReturn(new \FOSSBilling\Security\RateLimitResult('policy', false, 10, 9));
+        $rateLimiterMock->method('consumeOrThrow')->willReturn(new \FOSSBilling\Security\RateLimitResult('policy', false, 10, 9));
         $di['rate_limiter'] = $rateLimiterMock;
         $this->guestApi->setDi($di);
 
@@ -108,7 +108,7 @@ final class Api_GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $rateLimiterMock = $this->createMock(\FOSSBilling\Security\RateLimiter::class);
-        $rateLimiterMock->method('consume')->willReturn(new \FOSSBilling\Security\RateLimitResult('policy', false, 10, 9));
+        $rateLimiterMock->method('consumeOrThrow')->willReturn(new \FOSSBilling\Security\RateLimitResult('policy', false, 10, 9));
         $di['rate_limiter'] = $rateLimiterMock;
         $this->guestApi->setDi($di);
 
@@ -134,7 +134,7 @@ final class Api_GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $rateLimiterMock = $this->createMock(\FOSSBilling\Security\RateLimiter::class);
-        $rateLimiterMock->method('consume')->willReturn(new \FOSSBilling\Security\RateLimitResult('policy', false, 10, 9));
+        $rateLimiterMock->method('consumeOrThrow')->willReturn(new \FOSSBilling\Security\RateLimitResult('policy', false, 10, 9));
         $di['rate_limiter'] = $rateLimiterMock;
         $this->guestApi->setDi($di);
 

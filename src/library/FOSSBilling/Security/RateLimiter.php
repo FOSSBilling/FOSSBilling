@@ -85,6 +85,16 @@ class RateLimiter implements InjectionAwareInterface
         );
     }
 
+    public function consumeOrThrow(string $policyName, string $subject, int $tokens = 1): RateLimitResult
+    {
+        $result = $this->consume($policyName, $subject, $tokens);
+        if ($result->isLimited()) {
+            throw new \FOSSBilling\InformationException('Rate limit exceeded. Please try again later.', null, 429);
+        }
+
+        return $result;
+    }
+
     protected function getConfig(): array
     {
         $defaults = self::getDefaultConfig();

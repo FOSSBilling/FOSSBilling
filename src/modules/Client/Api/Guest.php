@@ -58,10 +58,7 @@ class Guest extends \Api_Abstract
     #[RequiredParams(['email' => 'Email required', 'first_name' => 'First name required', 'password' => 'Password required', 'password_confirm' => 'Password confirmation required'])]
     public function create($data = []): int
     {
-        $rateLimitResult = $this->di['rate_limiter']->consume('client_signup', (string) $this->getIp());
-        if ($rateLimitResult->isLimited()) {
-            throw new \FOSSBilling\InformationException('Rate limit exceeded. Please try again later.', null, 429);
-        }
+        $this->di['rate_limiter']->consumeOrThrow('client_signup', (string) $this->getIp());
 
         $config = $this->di['mod_config']('client');
 

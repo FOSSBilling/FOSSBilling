@@ -23,7 +23,7 @@ use Symfony\Component\Filesystem\Filesystem;
 
 class Client implements InjectionAwareInterface
 {
-    private $_api_config;
+    private ?array $apiConfig = null;
     private readonly Filesystem $filesystem;
     protected ?\Pimple\Container $di = null;
 
@@ -76,7 +76,7 @@ class Client implements InjectionAwareInterface
         $p = $_POST;
 
         // adding support for raw post input with json string
-        $input = $this->filesystem->readFile('php://input');
+        $input = file_get_contents('php://input');
         if (empty($p) && !empty($input)) {
             $p = json_decode($input, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
@@ -110,8 +110,8 @@ class Client implements InjectionAwareInterface
 
     private function _loadConfig(): void
     {
-        if (is_null($this->_api_config)) {
-            $this->_api_config = Config::getProperty('api', []);
+        if (is_null($this->apiConfig)) {
+            $this->apiConfig = Config::getProperty('api', []);
         }
     }
 
@@ -132,10 +132,7 @@ class Client implements InjectionAwareInterface
             }
         }
 
-        $rateLimitResult = $this->di['rate_limiter']->consume($policy, $subject);
-        if ($rateLimitResult->isLimited()) {
-            throw new \FOSSBilling\InformationException('Rate limit exceeded. Please try again later.', null, 429);
-        }
+        $this->di['rate_limiter']->consumeOrThrow($policy, $subject);
 
         return true;
     }
@@ -143,7 +140,7 @@ class Client implements InjectionAwareInterface
     private function checkHttpReferer(): bool
     {
         // snake oil: check request is from the same domain as FOSSBilling is installed if present
-        $check_referer_header = isset($this->_api_config['require_referrer_header']) && (bool) $this->_api_config['require_referrer_header'];
+        $check_referer_header = isset($this->apiConfig['require_referrer_header']) && (bool) $this->apiConfig['require_referrer_header'];
         if ($check_referer_header) {
             $url = strtolower(SYSTEM_URL);
             $referer = isset($_SERVER['HTTP_REFERER']) ? strtolower((string) $_SERVER['HTTP_REFERER']) : null;
@@ -157,7 +154,7 @@ class Client implements InjectionAwareInterface
 
     private function checkAllowedIps(): bool
     {
-        $ips = $this->_api_config['allowed_ips'];
+        $ips = $this->apiConfig['allowed_ips'];
         if (!empty($ips) && !in_array($this->_getIp(), $ips)) {
             throw new \FOSSBilling\InformationException('Unauthorized IP', null, 1002);
         }
@@ -442,7 +439,7 @@ class Client implements InjectionAwareInterface
     public function _checkCSRFToken()
     {
         $this->_loadConfig();
-        $csrfPrevention = $this->_api_config['CSRFPrevention'] ?? true;
+        $csrfPrevention = $this->apiConfig['CSRFPrevention'] ?? true;
         if (!$csrfPrevention || Environment::isCLI()) {
             return true;
         }
