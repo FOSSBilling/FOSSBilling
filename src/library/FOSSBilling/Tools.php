@@ -336,7 +336,7 @@ class Tools
     /**
      * Returns the public IP address of the current FOSSBilling instance.
      * Will try multiple services in order if they time out.
-     * Try order: ipify.org, ifconfig.io, ip.hestiacp.com.
+     * Try order: ipify.org, checkip.global.api.aws, ifconfig.io.
      *
      * @param bool    $throw if the function should throw an exception on an error
      * @param ?string $bind  overrides the default network interface bind. When `null` (default), the configured default (BIND_TO) is used.
@@ -345,7 +345,7 @@ class Tools
      */
     public static function getExternalIP(bool $throw = true, ?string $bind = null): ?string
     {
-        $services = ['https://api64.ipify.org', 'https://ifconfig.io/ip', 'https://ip.hestiacp.com/'];
+        $services = ['https://api64.ipify.org', 'https://checkip.global.api.aws', 'https://ifconfig.io/ip'];
         $bind ??= BIND_TO;
         $client = HttpClient::create(['bindto' => $bind]);
 

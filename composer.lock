@@ -1321,16 +1321,16 @@
         },
         {
             "name": "gabordemooij/redbean",
-            "version": "v5.7.5",
+            "version": "v5.7.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/gabordemooij/redbean.git",
-                "reference": "fc08c2f9bc5a4f5074721b0d9039881be244f842"
+                "reference": "5d678eba2d1e1ad203bc19c35b3c0d50b560a26c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/gabordemooij/redbean/zipball/fc08c2f9bc5a4f5074721b0d9039881be244f842",
-                "reference": "fc08c2f9bc5a4f5074721b0d9039881be244f842",
+                "url": "https://api.github.com/repos/gabordemooij/redbean/zipball/5d678eba2d1e1ad203bc19c35b3c0d50b560a26c",
+                "reference": "5d678eba2d1e1ad203bc19c35b3c0d50b560a26c",
                 "shasum": ""
             },
             "require": {
@@ -1338,6 +1338,9 @@
             },
             "type": "library",
             "autoload": {
+                "files": [
+                    "RedBeanPHP/Functions.php"
+                ],
                 "psr-4": {
                     "RedBeanPHP\\": "RedBeanPHP"
                 }
@@ -1360,9 +1363,9 @@
             ],
             "support": {
                 "issues": "https://github.com/gabordemooij/redbean/issues",
-                "source": "https://github.com/gabordemooij/redbean/tree/v5.7.5"
+                "source": "https://github.com/gabordemooij/redbean/tree/v5.7.6"
             },
-            "time": "2025-05-01T17:41:56+00:00"
+            "time": "2026-04-30T15:47:40+00:00"
         },
         {
             "name": "guzzlehttp/psr7",
