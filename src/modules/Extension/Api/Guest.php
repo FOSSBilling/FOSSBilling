@@ -39,18 +39,6 @@ class Guest extends \Api_Abstract
     }
 
     /**
-     * Return active theme info.
-     *
-     * @return array
-     */
-    public function theme($client = true)
-    {
-        $systemService = $this->di['mod_service']('theme');
-
-        return $systemService->getThemeConfig($client, null);
-    }
-
-    /**
      * Retrieve extension public settings.
      *
      * @throws \FOSSBilling\Exception

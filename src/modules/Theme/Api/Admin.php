@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Theme\Api;
 
+use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \Api_Abstract
@@ -34,6 +35,16 @@ class Admin extends \Api_Abstract
         $themes = $this->getService()->getThemes(false);
 
         return ['list' => $themes];
+    }
+
+    /**
+     * Get the current client or admin area theme.
+     */
+    public function get_current(array $data): array
+    {
+        $client = Tools::normalizeBoolean($data['client'] ?? true, true);
+
+        return $this->getService()->getThemeConfig($client, null);
     }
 
     /**
