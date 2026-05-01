@@ -9,7 +9,7 @@ final class FOSSBilling_RateLimiterTest extends BBTestCase
 {
     public function testConsumeAllowsUntilLimitIsReached(): void
     {
-        $limiter = $this->createRateLimiter();
+        $limiter = $this->createRateLimiter(requestIp: '1.1.1.1');
         $subject = 'subject-' . uniqid('', true);
 
         $first = $limiter->consume('api_guest', $subject, 100);
@@ -23,7 +23,7 @@ final class FOSSBilling_RateLimiterTest extends BBTestCase
 
     public function testPasswordResetPolicyReportsLimitedResult(): void
     {
-        $limiter = $this->createRateLimiter();
+        $limiter = $this->createRateLimiter(requestIp: '1.1.1.1');
         $subject = 'subject-' . uniqid('', true);
 
         $limiter->consume('client_password_reset_email', $subject, 3);
@@ -35,7 +35,7 @@ final class FOSSBilling_RateLimiterTest extends BBTestCase
 
     public function testConsumeOrThrowReturnsAllowedResult(): void
     {
-        $limiter = $this->createRateLimiter();
+        $limiter = $this->createRateLimiter(requestIp: '1.1.1.1');
 
         $result = $limiter->consumeOrThrow('api_guest', 'subject-' . uniqid('', true));
 
@@ -45,7 +45,7 @@ final class FOSSBilling_RateLimiterTest extends BBTestCase
 
     public function testConsumeOrThrowRaisesRateLimitException(): void
     {
-        $limiter = $this->createRateLimiter();
+        $limiter = $this->createRateLimiter(requestIp: '1.1.1.1');
         $subject = 'subject-' . uniqid('', true);
         $limiter->consume('client_password_reset_email', $subject, 3);
 
@@ -61,25 +61,13 @@ final class FOSSBilling_RateLimiterTest extends BBTestCase
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Rate limiter policy unknown_policy is not defined or invalid');
 
-        $limiter = $this->createRateLimiter();
+        $limiter = $this->createRateLimiter(requestIp: '1.1.1.1');
         $limiter->consume('unknown_policy', 'subject');
     }
 
     public function testCidrWhitelistBypassesLimiter(): void
     {
-        $di = new Pimple\Container();
-        $di['rate_limit_cache'] = new Symfony\Component\Cache\Adapter\ArrayAdapter();
-        $di['request'] = $this->createRequest('10.0.0.5');
-
-        $limiter = new class extends FOSSBilling\Security\RateLimiter {
-            protected function getConfig(): array
-            {
-                $config = self::getDefaultConfig();
-                $config['whitelist_ips'] = ['10.0.0.0/8'];
-                return $config;
-            }
-        };
-        $limiter->setDi($di);
+        $limiter = $this->createRateLimiter(requestIp: '10.0.0.5', whitelist: ['10.0.0.0/8']);
 
         $result = $limiter->consume('api_guest', '10.0.0.5');
 
@@ -90,24 +78,7 @@ final class FOSSBilling_RateLimiterTest extends BBTestCase
 
     public function testWhitelistUsesRequestIpForAuthenticatedSubjects(): void
     {
-        $request = $this->createMock(Request::class);
-        $request->method('getClientIp')
-            ->willReturn('10.0.0.5');
-
-        $di = new Pimple\Container();
-        $di['rate_limit_cache'] = new ArrayAdapter();
-        $di['request'] = $request;
-
-        $limiter = new class extends FOSSBilling\Security\RateLimiter {
-            protected function getConfig(): array
-            {
-                $config = self::getDefaultConfig();
-                $config['whitelist_ips'] = ['10.0.0.0/8'];
-
-                return $config;
-            }
-        };
-        $limiter->setDi($di);
+        $limiter = $this->createRateLimiter(requestIp: '10.0.0.5', whitelist: ['10.0.0.0/8']);
 
         $result = $limiter->consume('api_authenticated', 'client:123');
 
@@ -116,16 +87,35 @@ final class FOSSBilling_RateLimiterTest extends BBTestCase
         $this->assertSame(FOSSBilling\Security\RateLimitResult::REASON_WHITELISTED, $result->getReason());
     }
 
-    private function createRateLimiter(): FOSSBilling\Security\RateLimiter
+    public function testNonWhitelistedRequestIpLimitsAuthenticatedSubject(): void
+    {
+        $limiter = $this->createRateLimiter(requestIp: '1.1.1.1', whitelist: ['10.0.0.0/8']);
+
+        $limiter->consume('client_email_verification_resend_account', 'client:123', 3);
+        $second = $limiter->consume('client_email_verification_resend_account', 'client:123');
+
+        $this->assertTrue($second->isLimited());
+        $this->assertFalse($second->isBypassed());
+        $this->assertSame(FOSSBilling\Security\RateLimitResult::REASON_LIMITED, $second->getReason());
+    }
+
+    private function createRateLimiter(string $requestIp, array $whitelist = []): FOSSBilling\Security\RateLimiter
     {
         $di = new Pimple\Container();
         $di['rate_limit_cache'] = new ArrayAdapter();
-        $di['request'] = $this->createRequest('127.0.0.1');
+        $di['request'] = $this->createRequest($requestIp);
 
-        $limiter = new class extends FOSSBilling\Security\RateLimiter {
+        $limiter = new class($whitelist) extends FOSSBilling\Security\RateLimiter {
+            public function __construct(private readonly array $whitelist)
+            {
+            }
+
             protected function getConfig(): array
             {
-                return self::getDefaultConfig();
+                $config = self::getDefaultConfig();
+                $config['whitelist_ips'] = $this->whitelist;
+
+                return $config;
             }
         };
         $limiter->setDi($di);
