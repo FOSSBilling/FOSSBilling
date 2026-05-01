@@ -119,7 +119,7 @@ class Service implements InjectionAwareInterface
     public function checkCaptcha(array $params): void
     {
         $di = $this->di;
-        $config = $di['mod_config']('Spamchecker');
+        $config = $di['mod_config']('Antispam');
 
         if (isset($config['captcha_enabled']) && $config['captcha_enabled']) {
             $provider = $config['captcha_provider'] ?? 'recaptcha_v2';

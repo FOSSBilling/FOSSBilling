@@ -252,7 +252,7 @@ final class GuestTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $emailServiceMock);
+        $this->registerPasswordResetModService($di, $emailServiceMock);
         $di['logger'] = new \Box_Log();
         $di['tools'] = $toolsMock;
         $di['rate_limiter'] = $this->getAllowedRateLimiter();
@@ -284,6 +284,7 @@ final class GuestTest extends \BBTestCase
         $di['tools'] = $toolsMock;
         $di['logger'] = new \Box_Log();
         $di['rate_limiter'] = $this->getAllowedRateLimiter();
+        $this->registerPasswordResetModService($di);
 
         $client = new Guest();
         $client->setDi($di);
@@ -379,6 +380,7 @@ final class GuestTest extends \BBTestCase
         $di['tools'] = $toolsMock;
         $di['logger'] = new \Box_Log();
         $di['rate_limiter'] = $this->getAllowedRateLimiter();
+        $this->registerPasswordResetModService($di);
 
         $client = new Guest();
         $client->setDi($di);
@@ -409,6 +411,7 @@ final class GuestTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
         $rateLimiter = $this->getLimitedRateLimiter();
         $di['rate_limiter'] = $rateLimiter;
+        $this->registerPasswordResetModService($di);
 
         $client = new Guest();
         $client->setDi($di);
@@ -553,6 +556,20 @@ final class GuestTest extends \BBTestCase
                 return $this->consume($policy, $subject, $tokens);
             }
         };
+    }
+
+    private function registerPasswordResetModService(\Pimple\Container $di, ?object $emailService = null): void
+    {
+        $extensionService = new class {
+            public function isExtensionActive(string $type, string $id): bool
+            {
+                return false;
+            }
+        };
+
+        $di['mod_service'] = $di->protect(
+            fn (string $name): object => strtolower($name) === 'extension' ? $extensionService : ($emailService ?? new \stdClass())
+        );
     }
 
     private function getLimitedRateLimiter(): object

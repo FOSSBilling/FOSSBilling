@@ -261,6 +261,7 @@ final class GuestTest extends \BBTestCase
         $di['tools'] = $toolsMock;
         $di['logger'] = new \Box_Log();
         $di['rate_limiter'] = $this->getAllowedRateLimiter();
+        $this->registerDisabledAntispamModService($di);
 
         $guestApi = new \Box\Mod\Staff\Api\Guest();
         $guestApi->setMod($modMock);
@@ -359,6 +360,7 @@ final class GuestTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
         $rateLimiter = $this->getLimitedRateLimiter();
         $di['rate_limiter'] = $rateLimiter;
+        $this->registerDisabledAntispamModService($di);
 
         $guestApi = new \Box\Mod\Staff\Api\Guest();
         $guestApi->setMod($modMock);
@@ -381,6 +383,18 @@ final class GuestTest extends \BBTestCase
                 return $this->consume($policy, $subject, $tokens);
             }
         };
+    }
+
+    private function registerDisabledAntispamModService(\Pimple\Container $di): void
+    {
+        $extensionService = new class {
+            public function isExtensionActive(string $type, string $id): bool
+            {
+                return false;
+            }
+        };
+
+        $di['mod_service'] = $di->protect(fn (string $name): object => $extensionService);
     }
 
     private function getLimitedRateLimiter(): object

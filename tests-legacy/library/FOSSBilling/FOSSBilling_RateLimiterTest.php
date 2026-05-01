@@ -69,6 +69,7 @@ final class FOSSBilling_RateLimiterTest extends BBTestCase
     {
         $di = new Pimple\Container();
         $di['rate_limit_cache'] = new Symfony\Component\Cache\Adapter\ArrayAdapter();
+        $di['request'] = $this->createRequest('10.0.0.5');
 
         $limiter = new class extends FOSSBilling\Security\RateLimiter {
             protected function getConfig(): array
@@ -119,6 +120,7 @@ final class FOSSBilling_RateLimiterTest extends BBTestCase
     {
         $di = new Pimple\Container();
         $di['rate_limit_cache'] = new ArrayAdapter();
+        $di['request'] = $this->createRequest('127.0.0.1');
 
         $limiter = new class extends FOSSBilling\Security\RateLimiter {
             protected function getConfig(): array
@@ -129,5 +131,14 @@ final class FOSSBilling_RateLimiterTest extends BBTestCase
         $limiter->setDi($di);
 
         return $limiter;
+    }
+
+    private function createRequest(string $ip): Request
+    {
+        $request = $this->createMock(Request::class);
+        $request->method('getClientIp')
+            ->willReturn($ip);
+
+        return $request;
     }
 }
