@@ -161,7 +161,6 @@ class Guest extends \Api_Abstract
 
             // Sanitize email
             $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
-            $this->checkPasswordResetCaptcha($data);
 
             $ipLimit = $this->di['rate_limiter']->consume('client_password_reset_ip', (string) $this->getIp());
             if ($ipLimit->isLimited()) {
@@ -176,6 +175,8 @@ class Guest extends \Api_Abstract
 
                 return true;
             }
+
+            $this->checkPasswordResetCaptcha($data);
 
             $this->di['events_manager']->fire(['event' => 'onBeforeGuestPasswordResetRequest', 'params' => $data]);
 

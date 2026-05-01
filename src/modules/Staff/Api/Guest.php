@@ -170,7 +170,6 @@ class Guest extends \Api_Abstract
             $validator = $this->di['validator'];
             $validator->checkRequiredParamsForArray($required, $data);
             $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
-            $this->checkPasswordResetCaptcha($data);
 
             $ipLimit = $this->di['rate_limiter']->consume('staff_password_reset_ip', (string) $this->getIp());
             if ($ipLimit->isLimited()) {
@@ -185,6 +184,8 @@ class Guest extends \Api_Abstract
 
                 return true;
             }
+
+            $this->checkPasswordResetCaptcha($data);
 
             $c = $this->di['db']->findOne('Admin', 'email = ?', [$data['email']]);
 

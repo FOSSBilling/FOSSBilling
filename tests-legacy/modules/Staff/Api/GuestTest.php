@@ -403,7 +403,7 @@ final class GuestTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
         $rateLimiter = $this->getLimitedRateLimiter();
         $di['rate_limiter'] = $rateLimiter;
-        $this->registerDisabledAntispamModService($di);
+        $antispamService = $this->registerActiveAntispamModService($di);
 
         $guestApi = new \Box\Mod\Staff\Api\Guest();
         $guestApi->setMod($modMock);
@@ -411,6 +411,50 @@ final class GuestTest extends \BBTestCase
 
         $this->assertTrue($guestApi->passwordreset(['email' => 'email@domain.com']));
         $this->assertSame(1, $rateLimiter->consumeCount);
+        $this->assertSame(0, $antispamService->checkCaptchaCount);
+    }
+
+    public function testPasswordResetEmailRateLimitedRequestSkipsCaptcha(): void
+    {
+        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $modMock->expects($this->once())
+            ->method('getConfig')
+            ->willReturn([]);
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->once())
+            ->method('fire');
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->never())
+            ->method('findOne');
+        $dbMock->expects($this->never())
+            ->method('dispense');
+
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
+        $toolsMock->expects($this->once())
+            ->method('validateAndSanitizeEmail')
+            ->willReturn('email@domain.com');
+
+        $di = $this->getDi();
+        $di['events_manager'] = $eventMock;
+        $di['db'] = $dbMock;
+        $di['validator'] = new \FOSSBilling\Validate();
+        $di['tools'] = $toolsMock;
+        $di['logger'] = new \Box_Log();
+        $rateLimiter = $this->getEmailLimitedRateLimiter();
+        $di['rate_limiter'] = $rateLimiter;
+        $antispamService = $this->registerActiveAntispamModService($di);
+
+        $guestApi = new \Box\Mod\Staff\Api\Guest();
+        $guestApi->setMod($modMock);
+        $guestApi->setDi($di);
+
+        $this->assertTrue($guestApi->passwordreset(['email' => 'email@domain.com']));
+        $this->assertSame(['staff_password_reset_ip', 'staff_password_reset_email'], $rateLimiter->policies);
+        $this->assertSame(0, $antispamService->checkCaptchaCount);
     }
 
     private function getAllowedRateLimiter(): object
@@ -438,6 +482,43 @@ final class GuestTest extends \BBTestCase
         };
 
         $di['mod_service'] = $di->protect(fn (string $name): object => $extensionService);
+    }
+
+    private function registerActiveAntispamModService(\Pimple\Container $di): object
+    {
+        $antispamService = new class {
+            public int $checkCaptchaCount = 0;
+
+            public function checkCaptcha(array $data): void
+            {
+                ++$this->checkCaptchaCount;
+            }
+        };
+        $extensionService = new class {
+            public function isExtensionActive(string $type, string $id): bool
+            {
+                return true;
+            }
+        };
+
+        $di['mod_service'] = $di->protect(fn (string $name): object => strtolower($name) === 'antispam' ? $antispamService : $extensionService);
+
+        return $antispamService;
+    }
+
+    private function getEmailLimitedRateLimiter(): object
+    {
+        return new class {
+            public array $policies = [];
+
+            public function consume(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
+            {
+                $this->policies[] = $policy;
+                $limited = count($this->policies) === 2;
+
+                return new \FOSSBilling\Security\RateLimitResult($policy, $limited, 10, $limited ? 0 : 9);
+            }
+        };
     }
 
     private function getLimitedRateLimiter(): object
