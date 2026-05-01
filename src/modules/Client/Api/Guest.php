@@ -240,11 +240,11 @@ class Guest extends \Api_Abstract
     private function checkPasswordResetCaptcha(array $data): void
     {
         $extensionService = $this->di['mod_service']('extension');
-        if (!$extensionService->isExtensionActive('mod', 'spamchecker')) {
+        if (!$extensionService->isExtensionActive('mod', 'antispam')) {
             return;
         }
 
-        $this->di['mod_service']('Spamchecker')->checkCaptcha($data);
+        $this->di['mod_service']('Antispam')->checkCaptcha($data);
     }
 
     #[RequiredParams(['hash' => 'No Hash provided', 'password' => 'Password required', 'password_confirm' => 'Password confirmation required'])]

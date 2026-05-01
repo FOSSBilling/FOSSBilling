@@ -97,6 +97,8 @@ class Service implements InjectionAwareInterface
     {
         $di = $event->getDi();
         $params = $event->getParameters();
+        $params = is_array($params) ? $params : [];
+
         $data = [
             'ip' => $params['ip'] ?? null,
             'email' => $params['email'] ?? null,
@@ -105,6 +107,19 @@ class Service implements InjectionAwareInterface
         ];
 
         $config = $di['mod_config']('Antispam');
+
+        $this->checkCaptcha($params);
+
+        if (isset($config['sfs']) && $config['sfs']) {
+            $antispamService = $di['mod_service']('Antispam');
+            $antispamService->isInStopForumSpamDatabase($data);
+        }
+    }
+
+    public function checkCaptcha(array $params): void
+    {
+        $di = $this->di;
+        $config = $di['mod_config']('Spamchecker');
 
         if (isset($config['captcha_enabled']) && $config['captcha_enabled']) {
             $provider = $config['captcha_provider'] ?? 'recaptcha_v2';
@@ -178,11 +193,6 @@ class Service implements InjectionAwareInterface
                     throw new \FOSSBilling\InformationException('CAPTCHA verification failed. Please try again.');
                 }
             }
-        }
-
-        if (isset($config['sfs']) && $config['sfs']) {
-            $antispamService = $di['mod_service']('Antispam');
-            $antispamService->isInStopForumSpamDatabase($data);
         }
     }
 
