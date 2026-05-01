@@ -235,7 +235,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 ->values([
                     'param' => ':param',
                     'value' => ':value',
-                    'public' => '1',
+                    'public' => '0',
                     'created_at' => ':created_at',
                     'updated_at' => ':updated_at',
                 ])
@@ -298,6 +298,7 @@ class UpdatePatcher implements InjectionAwareInterface
             53 => 'patch53',
             54 => 'patch54',
             55 => 'patch55',
+            56 => 'patch56',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -972,6 +973,11 @@ class UpdatePatcher implements InjectionAwareInterface
             Path::join(PATH_MODS, 'Spamchecker') => 'unlink',
         ];
         $this->executeFileActions($fileActions);
+    }
+
+    private function patch56(): void
+    {
+        $this->executeSql("UPDATE `setting` SET `public` = 0 WHERE `param` = 'last_patch';");
     }
 
     /**
