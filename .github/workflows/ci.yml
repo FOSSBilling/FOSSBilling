@@ -40,7 +40,7 @@ jobs:
 
       - name: 'Prepare Test Environment'
         run: |
-          cp ./src/config-sample.php ./src/config.php
+          php -r '$config = require "./src/config-sample.php"; file_put_contents("./src/config.php", "<?php\nreturn " . var_export($config, true) . ";\n");'
           mkdir -p ./src/data/{cache,log}
           echo APP_ENV=test >> $GITHUB_ENV
         
