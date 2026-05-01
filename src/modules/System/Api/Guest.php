@@ -22,18 +22,6 @@ use FOSSBilling\Validation\Api\RequiredParams;
 class Guest extends \Api_Abstract
 {
     /**
-     * Get FOSSBilling version.
-     *
-     * @return string
-     */
-    public function version()
-    {
-        $service = $this->getService();
-
-        return $service->shouldExposeVersion() ? $service->getVersion() : '';
-    }
-
-    /**
      * Returns company information.
      *
      * @return array
