@@ -253,6 +253,8 @@ class Guest extends \Api_Abstract
         $startedAt = microtime(true);
 
         try {
+            $this->di['rate_limiter']->consumeOrThrow('client_password_reset_confirm_post_ip', (string) $this->getIp());
+
             $this->di['events_manager']->fire(['event' => 'onBeforeClientProfilePasswordReset', 'params' => $data['hash']]);
 
             $this->di['validator']->passwordsMatch($data);

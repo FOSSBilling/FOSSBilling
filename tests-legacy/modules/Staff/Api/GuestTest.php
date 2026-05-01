@@ -214,6 +214,7 @@ final class GuestTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
         $di['db'] = $dbMock;
         $di['validator'] = new \FOSSBilling\Validate();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
 
         $guestApi = new \Box\Mod\Staff\Api\Guest();
         $guestApi->setMod($modMock);
@@ -314,6 +315,7 @@ final class GuestTest extends \BBTestCase
         $di['validator'] = new \FOSSBilling\Validate();
         $di['password'] = $passwordMock;
         $di['logger'] = new \Box_Log();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
 
         $guestApi = new \Box\Mod\Staff\Api\Guest();
         $guestApi->setMod($modMock);
@@ -326,6 +328,47 @@ final class GuestTest extends \BBTestCase
             'password' => 'NewPassword1',
             'password_confirm' => 'NewPassword1',
         ]);
+    }
+
+    public function testUpdatePasswordRateLimitedRequestIsRejected(): void
+    {
+        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $modMock->expects($this->never())
+            ->method('getConfig');
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->never())
+            ->method('fire');
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->never())
+            ->method('findOne');
+
+        $di = $this->getDi();
+        $di['events_manager'] = $eventMock;
+        $di['db'] = $dbMock;
+        $rateLimiter = $this->getLimitedRateLimiter();
+        $di['rate_limiter'] = $rateLimiter;
+
+        $guestApi = new \Box\Mod\Staff\Api\Guest();
+        $guestApi->setMod($modMock);
+        $guestApi->setDi($di);
+
+        try {
+            $guestApi->update_password([
+                'code' => 'hashedString',
+                'password' => 'NewPassword1',
+                'password_confirm' => 'NewPassword1',
+            ]);
+            $this->fail('Expected rate limit exception was not thrown.');
+        } catch (\FOSSBilling\InformationException $e) {
+            $this->assertSame('Rate limit exceeded. Please try again later.', $e->getMessage());
+        }
+
+        $this->assertSame(1, $rateLimiter->consumeCount);
+        $this->assertSame('staff_password_reset_confirm_post_ip', $rateLimiter->lastPolicy);
     }
 
     public function testPasswordResetRateLimitedRequestIsIgnored(): void
@@ -401,10 +444,12 @@ final class GuestTest extends \BBTestCase
     {
         return new class {
             public int $consumeCount = 0;
+            public ?string $lastPolicy = null;
 
             public function consume(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
             {
                 ++$this->consumeCount;
+                $this->lastPolicy = $policy;
 
                 return new \FOSSBilling\Security\RateLimitResult($policy, true, 10, 0);
             }

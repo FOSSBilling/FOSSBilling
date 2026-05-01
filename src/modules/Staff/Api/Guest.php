@@ -94,6 +94,8 @@ class Guest extends \Api_Abstract
         $startedAt = microtime(true);
 
         try {
+            $this->di['rate_limiter']->consumeOrThrow('staff_password_reset_confirm_post_ip', (string) $this->getIp());
+
             $config = $this->getMod()->getConfig();
             if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {
                 throw new \FOSSBilling\InformationException('Password reset has been disabled');
