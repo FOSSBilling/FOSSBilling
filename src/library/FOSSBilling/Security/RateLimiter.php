@@ -84,8 +84,8 @@ class RateLimiter implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Rate limiter policy :policy is not defined or invalid', [':policy' => $policyName]);
         }
 
-        $whitelistSubject = (string) $this->di['request']->getClientIp() ?: $subject;
-        if ($this->isWhitelisted($whitelistSubject)) {
+        $clientIp = (string) $this->di['request']->getClientIp();
+        if ($clientIp !== '' && $this->isWhitelisted($clientIp)) {
             return new RateLimitResult($policyName, false, null, null, null, RateLimitResult::REASON_WHITELISTED);
         }
 
