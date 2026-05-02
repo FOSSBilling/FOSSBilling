@@ -234,7 +234,7 @@ class Guest extends \Api_Abstract
 
             return true;
         } finally {
-            RandomizedTimeFloor::apply($startedAt);
+            RandomizedTimeFloor::apply($startedAt, 300, 450);
         }
     }
 

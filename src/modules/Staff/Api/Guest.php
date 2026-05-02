@@ -149,7 +149,7 @@ class Guest extends \Api_Abstract
 
             $this->di['db']->trash($reset);
         } finally {
-            RandomizedTimeFloor::apply($startedAt);
+            RandomizedTimeFloor::apply($startedAt, 300, 450);
         }
     }
 

@@ -24,11 +24,15 @@ class RandomizedTimeFloor
      * @param int $minMs The minimum total execution time in milliseconds.
      * @param int $maxMs The maximum total execution time in milliseconds.
      */
-    public static function apply(float $startedAt, int $minMs = 500, int $maxMs = 900): void
+    public static function apply(float $startedAt, int $minMs = 75, int $maxMs = 125): void
     {
         // Avoid adding arbitrary delays to tests or command-line scripts
         if (Environment::isCLI() || Environment::isTesting()) {
             return;
+        }
+
+        if ($minMs < 0 || $maxMs < $minMs) {
+            throw new \InvalidArgumentException('Randomized time floor bounds are invalid.');
         }
 
         $minimumMs = random_int($minMs, $maxMs);
