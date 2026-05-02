@@ -298,6 +298,7 @@ class UpdatePatcher implements InjectionAwareInterface
             53 => 'patch53',
             54 => 'patch54',
             55 => 'patch55',
+            56 => 'patch56',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -972,6 +973,18 @@ class UpdatePatcher implements InjectionAwareInterface
             Path::join(PATH_MODS, 'Spamchecker') => 'unlink',
         ];
         $this->executeFileActions($fileActions);
+    }
+
+    private function patch56(): void
+    {
+        // Widen the tld.tld column to accommodate long IDN TLDs in ACE form.
+        // @see https://github.com/FOSSBilling/FOSSBilling/issues/3464
+        $schemaManager = $this->di['dbal']->createSchemaManager();
+        $column = $schemaManager->introspectTable('tld')->getColumn('tld');
+
+        if ($column->getLength() < 64) {
+            $this->executeSql('ALTER TABLE `tld` MODIFY `tld` VARCHAR(64) DEFAULT NULL;');
+        }
     }
 
     /**
