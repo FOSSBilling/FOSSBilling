@@ -810,6 +810,9 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($supportTicketMessageModel);
+        $dbMock->expects($this->atLeastOnce())
+            ->method('toArray')
+            ->willReturn([]);
         $dbMock->expects($this->atleastOnce())
             ->method('load')
             ->willReturnCallback(fn (...$args): \Model_SupportHelpdesk|\Model_Client => match ($args[0]) {
@@ -860,6 +863,9 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn(new \Model_SupportTicketMessage());
+        $dbMock->expects($this->atLeastOnce())
+            ->method('toArray')
+            ->willReturn([]);
         $dbMock->expects($this->atleastOnce())
             ->method('load')
             ->willReturnCallback(function (...$args) {
@@ -933,7 +939,7 @@ final class ServiceTest extends \BBTestCase
         $ticket = new \Model_SupportTicket();
         $ticket->loadBean(new \DummyBean());
 
-        $result = $this->service->getClientApiArrayForTicket($ticket);
+        $result = $this->service->getClientApiArrayForTicket($ticket, new \Model_Admin());
 
         $this->assertIsArray($result);
     }
@@ -1134,7 +1140,7 @@ final class ServiceTest extends \BBTestCase
         $helpdesk = new \Model_SupportHelpdesk();
         $helpdesk->loadBean(new \DummyBean());
         $helpdesk->id = 1;
-        $result = $this->service->helpdeskToApiArray($helpdesk);
+        $result = $this->service->helpdeskToApiArray($helpdesk, new \Model_Admin());
         $this->assertIsArray($result);
     }
 
@@ -1195,9 +1201,10 @@ final class ServiceTest extends \BBTestCase
         $ticketMsg->loadBean(new \DummyBean());
         $ticketMsg->admin_id = 1;
 
-        $result = $this->service->messageGetAuthorDetails($ticketMsg);
+        $result = $this->service->messageGetAuthorDetails($ticketMsg, new \Model_Admin());
         $this->assertIsArray($result);
         $this->assertArrayHasKey('name', $result);
+        $this->assertSame('admin', $result['role']);
         $this->assertArrayHasKey('email', $result);
     }
 
@@ -1220,10 +1227,39 @@ final class ServiceTest extends \BBTestCase
         $ticketMsg->loadBean(new \DummyBean());
         $ticketMsg->client_id = 1;
 
-        $result = $this->service->messageGetAuthorDetails($ticketMsg);
+        $result = $this->service->messageGetAuthorDetails($ticketMsg, new \Model_Admin());
         $this->assertIsArray($result);
         $this->assertArrayHasKey('name', $result);
+        $this->assertSame('client', $result['role']);
         $this->assertArrayHasKey('email', $result);
+    }
+
+    public function testMessageGetAuthorDetailsRedactsEmailForClient(): void
+    {
+        $admin = new \Model_Admin();
+        $admin->loadBean(new \DummyBean());
+        $admin->id = 1;
+        $admin->name = 'Support Agent';
+        $admin->email = 'agent@example.test';
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('load')
+            ->willReturn($admin);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $ticketMsg = new \Model_SupportTicketMessage();
+        $ticketMsg->loadBean(new \DummyBean());
+        $ticketMsg->admin_id = 1;
+
+        $result = $this->service->messageGetAuthorDetails($ticketMsg, new \Model_Client());
+
+        $this->assertSame('Support Agent', $result['name']);
+        $this->assertSame('admin', $result['role']);
+        $this->assertArrayNotHasKey('email', $result);
     }
 
     public function testMessageToApiArray(): void
@@ -1246,7 +1282,7 @@ final class ServiceTest extends \BBTestCase
         $ticketMsg->loadBean(new \DummyBean());
         $ticketMsg->id = 1;
 
-        $result = $serviceMock->messageToApiArray($ticketMsg);
+        $result = $serviceMock->messageToApiArray($ticketMsg, true, new \Model_Admin());
         $this->assertIsArray($result);
         $this->assertArrayHasKey('author', $result);
     }

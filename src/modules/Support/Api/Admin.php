@@ -336,7 +336,7 @@ class Admin extends \Api_Abstract
     {
         $model = $this->di['db']->getExistingModelById('SupportHelpdesk', $data['id'], 'Help desk not found');
 
-        return $this->getService()->helpdeskToApiArray($model);
+        return $this->getService()->helpdeskToApiArray($model, $this->getIdentity());
     }
 
     /**

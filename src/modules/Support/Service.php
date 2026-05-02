@@ -545,16 +545,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $firstSupportTicketMessage = $this->di['db']->findOne('SupportTicketMessage', 'support_ticket_id = :support_ticket_id ORDER by id ASC LIMIT 1', [':support_ticket_id' => $model->id]);
         $supportHelpdesk = $this->di['db']->load('SupportHelpdesk', $model->support_helpdesk_id);
 
-        $data = $this->di['db']->toArray($model);
+        $data = $this->ticketToApiArray($this->di['db']->toArray($model), $identity);
         $data['replies'] = $this->messageGetRepliesCount($model);
-        $data['first'] = $this->messageToApiArray($firstSupportTicketMessage);
-        $data['helpdesk'] = $this->helpdeskToApiArray($supportHelpdesk);
-        $data['client'] = $this->getClientApiArrayForTicket($model);
+        $data['first'] = $firstSupportTicketMessage instanceof \Model_SupportTicketMessage ? $this->messageToApiArray($firstSupportTicketMessage, true, $identity) : null;
+        $data['helpdesk'] = $this->helpdeskToApiArray($supportHelpdesk, $identity);
+        $data['client'] = $this->getClientApiArrayForTicket($model, $identity);
 
         if ($deep) {
             $messages = $this->messageGetTicketMessages($model);
             foreach ($messages as $msg) {
-                $data['messages'][] = $this->messageToApiArray($msg);
+                $data['messages'][] = $this->messageToApiArray($msg, true, $identity);
             }
         }
 
@@ -567,6 +567,26 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 $data['notes'][] = $this->noteToApiArray($note);
             }
         }
+
+        return $data;
+    }
+
+    private function ticketToApiArray(array $data, \Model_Admin|\Model_Client|null $identity = null): array
+    {
+        if ($identity instanceof \Model_Admin) {
+            return $data;
+        }
+
+        unset(
+            $data['support_helpdesk_id'],
+            $data['client_id'],
+            $data['priority'],
+            $data['rel_type'],
+            $data['rel_id'],
+            $data['rel_task'],
+            $data['rel_new_value'],
+            $data['rel_status']
+        );
 
         return $data;
     }
@@ -650,20 +670,19 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if (!empty($clientIds)) {
             $placeholders = implode(',', array_fill(0, count($clientIds), '?'));
             $clientModels = $this->di['db']->find('Client', "id IN ($placeholders)", $clientIds);
-            $clientService = $this->di['mod_service']('client');
             foreach ($clientModels as $client) {
-                $clients[$client->id] = $clientService->toApiArray($client);
+                $clients[$client->id] = $this->clientToTicketApiArray($client, $identity);
             }
         }
 
         $result = [];
         foreach ($tickets as $ticket) {
-            $data = $ticket;
+            $data = $this->ticketToApiArray($ticket, $identity);
             $data['replies'] = $replyCounts[$ticket['id']] ?? 0;
-            $data['first'] = isset($firstMessages[$ticket['id']]) ? $this->messageToApiArray($firstMessages[$ticket['id']]) : null;
+            $data['first'] = isset($firstMessages[$ticket['id']]) ? $this->messageToApiArray($firstMessages[$ticket['id']], true, $identity) : null;
 
             $helpdesk = $helpdesks[$ticket['support_helpdesk_id']] ?? null;
-            $data['helpdesk'] = $helpdesk ? $this->helpdeskToApiArray($helpdesk) : null;
+            $data['helpdesk'] = $helpdesk ? $this->helpdeskToApiArray($helpdesk, $identity) : null;
 
             if (!isset($clients[$ticket['client_id']])) {
                 $this->di['logger']->err('Missing client for ticket ' . $ticket['id']);
@@ -723,18 +742,31 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $ordered;
     }
 
-    public function getClientApiArrayForTicket(\Model_SupportTicket $ticket): array
+    public function getClientApiArrayForTicket(\Model_SupportTicket $ticket, \Model_Admin|\Model_Client|null $identity = null): array
     {
         $client = $this->di['db']->load('Client', $ticket->client_id);
 
         if ($client instanceof \Model_Client) {
-            $clientService = $this->di['mod_service']('client');
-
-            return $clientService->toApiArray($client);
+            return $this->clientToTicketApiArray($client, $identity);
         }
         $this->di['logger']->err('Missing client for ticket ' . $ticket->id);
 
         return [];
+    }
+
+    private function clientToTicketApiArray(\Model_Client $client, \Model_Admin|\Model_Client|null $identity = null): array
+    {
+        if ($identity instanceof \Model_Admin) {
+            $clientService = $this->di['mod_service']('client');
+
+            return $clientService->toApiArray($client, false, $identity);
+        }
+
+        return [
+            'id' => $client->id,
+            'first_name' => $client->first_name,
+            'last_name' => $client->last_name,
+        ];
     }
 
     public function noteGetAuthorDetails(\Model_SupportTicketNote $model): array
@@ -809,9 +841,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function helpdeskToApiArray(\Model_SupportHelpdesk $model): array
+    public function helpdeskToApiArray(\Model_SupportHelpdesk $model, \Model_Admin|\Model_Client|null $identity = null): array
     {
-        return $this->di['db']->toArray($model);
+        if ($identity instanceof \Model_Admin) {
+            return $this->di['db']->toArray($model);
+        }
+
+        return [
+            'id' => $model->id,
+            'name' => $model->name,
+            'can_reopen' => (bool) $model->can_reopen,
+        ];
     }
 
     public function messageGetTicketMessages(\Model_SupportTicket $model): array
@@ -833,28 +873,47 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di['db']->getCell($query, $bindings);
     }
 
-    public function messageGetAuthorDetails(\Model_SupportTicketMessage $model): array
+    public function messageGetAuthorDetails(\Model_SupportTicketMessage $model, \Model_Admin|\Model_Client|null $identity = null): array
     {
         if ($model->admin_id) {
             $author = $this->di['db']->load('Admin', $model->admin_id);
+            $role = 'admin';
         } else {
             $author = $this->di['db']->load('Client', $model->client_id);
+            $role = 'client';
         }
 
         if (!$author) {
             return [];
         }
 
-        return [
+        $result = [
             'name' => $author->getFullName(),
-            'email' => $author->email,
+            'role' => $role,
         ];
+
+        if ($identity instanceof \Model_Admin) {
+            $result['email'] = $author->email;
+        }
+
+        return $result;
     }
 
-    public function messageToApiArray(\Model_SupportTicketMessage $model): array
+    public function messageToApiArray(\Model_SupportTicketMessage $model, bool $deep = true, \Model_Admin|\Model_Client|null $identity = null): array
     {
-        $data = $this->di['db']->toArray($model);
-        $data['author'] = $this->messageGetAuthorDetails($model);
+        if ($identity instanceof \Model_Admin) {
+            $data = $this->di['db']->toArray($model);
+        } else {
+            $data = [
+                'id' => $model->id,
+                'content' => $model->content,
+                'attachment' => $model->attachment,
+                'created_at' => $model->created_at,
+                'updated_at' => $model->updated_at,
+            ];
+        }
+
+        $data['author'] = $this->messageGetAuthorDetails($model, $identity);
 
         return $data;
     }
