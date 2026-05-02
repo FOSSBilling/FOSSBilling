@@ -304,7 +304,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Extract a normalised "sld+tld" domain string from a config array.
+     * Extract a normalized "sld+tld" domain string from a config array.
      * Handles both register_* and transfer_* key pairs.
      * Returns null when the config does not describe a domain.
      */
