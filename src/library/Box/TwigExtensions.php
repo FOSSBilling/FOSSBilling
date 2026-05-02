@@ -137,6 +137,7 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
             new TwigFunction('render_widgets', $this->twig_render_widgets(...), ['needs_environment' => true, 'is_safe' => ['html']]),
             new TwigFunction('svg_sprite', $this->twig_svg_sprite(...), ['needs_environment' => true, 'is_safe' => ['html']]),
             new TwigFunction('has_permission', $this->has_permission(...)),
+            new TwigFunction('antispam_honeypot_field', $this->antispam_honeypot_field(...)),
 
             // FOSSBilling API functions
             new TwigFunction('fb_api', $this->fb_api(...), ['is_safe' => ['html']]),
@@ -205,6 +206,16 @@ class Box_TwigExtensions extends AbstractExtension implements InjectionAwareInte
         } catch (Throwable) {
             return false;
         }
+    }
+
+    /**
+     * Returns the configured honeypot field name for server-rendered templates.
+     */
+    public function antispam_honeypot_field(): string
+    {
+        $config = $this->di['mod_config']('Antispam');
+
+        return $config['honeypot_field'] ?? 'honeypot_field';
     }
 
     public function twig_ipcountryname_filter($value)
