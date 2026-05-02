@@ -100,7 +100,7 @@ final class AdminTest extends TestCase
                         break;
                     }
 
-                    usleep(self::RETRY_DELAY_MICROSECONDS); // 200ms (200000 microseconds)
+                    usleep(self::RETRY_DELAY_MICROSECONDS);
                 }
 
                 $this->assertTrue($isReady, 'Timed out waiting for interface IP to become active');
@@ -160,11 +160,27 @@ final class AdminTest extends TestCase
 
     public function testCustomInterfaceAcceptsValidHostname(): void
     {
-        $result = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => 'eth0']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+        try {
+            $result = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => 'eth0']);
+            $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+        } finally {
+            // Reset to default
+            $resetResult = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => '', 'interface' => self::DEFAULT_INTERFACE]);
+            $this->assertTrue($resetResult->wasSuccessful(), $resetResult->generatePHPUnitMessage());
+        }
+    }
 
-        // Reset to default
-        $resetResult = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => '', 'interface' => self::DEFAULT_INTERFACE]);
-        $this->assertTrue($resetResult->wasSuccessful(), $resetResult->generatePHPUnitMessage());
+    private function isIpLookupAvailable(): bool
+    {
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'GET',
+                'timeout' => 2,
+            ],
+        ]);
+
+        $response = @file_get_contents('https://api.ipify.org', false, $context);
+
+        return $response !== false;
     }
 }
