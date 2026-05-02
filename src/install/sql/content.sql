@@ -304,7 +304,7 @@ LOCK TABLES `setting` WRITE;
 
 INSERT INTO `setting` (`id`, `param`, `value`, `public`, `category`, `hash`, `created_at`, `updated_at`)
 VALUES
-	(1,'last_patch','55',0,NULL,NULL,'2024-12-30 12:00:00','2024-12-30 12:00:00'),
+	(1,'last_patch','56',0,NULL,NULL,'2024-12-30 12:00:00','2024-12-30 12:00:00'),
 	(2,'company_name','Company Name',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(3,'company_email','support@yourcompany.com',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(4,'company_signature','FOSSBilling.org - Client Management, Invoicing and Support Software',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
@@ -334,8 +334,7 @@ VALUES
 	(28,'funds_min_amount','10',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(29,'funds_max_amount','200',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(30,'company_favicon','themes/huraga/assets/build/favicon.ico',0,NULL,NULL,'2023-01-08 12:00:00','2023-01-08 12:00:00'),
-    (31,'hide_version_public',1,0,NULL,NULL,'2023-07-31 12:00:00', '2023-07-31 12:00:00'),
-    (32,'hide_company_public',1,0,NULL,NULL,'2023-07-31 12:00:00', '2023-07-31 12:00:00');
+    (31,'hide_company_public',1,0,NULL,NULL,'2023-07-31 12:00:00', '2023-07-31 12:00:00');
 
 /*!40000 ALTER TABLE `setting` ENABLE KEYS */;
 UNLOCK TABLES;

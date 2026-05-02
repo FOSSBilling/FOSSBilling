@@ -1351,7 +1351,7 @@ CREATE TABLE `tax` (
 CREATE TABLE `tld` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `tld_registrar_id` bigint(20) DEFAULT NULL,
-  `tld` varchar(15) DEFAULT NULL,
+  `tld` varchar(64) DEFAULT NULL,
   `price_registration` decimal(18,2) DEFAULT '0.00',
   `price_renew` decimal(18,2) DEFAULT '0.00',
   `price_transfer` decimal(18,2) DEFAULT '0.00',

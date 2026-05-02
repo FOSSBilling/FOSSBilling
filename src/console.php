@@ -19,6 +19,7 @@ use Symfony\Component\Console\Application;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
+use FOSSBilling\Version;
 
 $di = include Path::join(PATH_ROOT, 'di.php');
 
@@ -29,7 +30,7 @@ $filesystem = new Filesystem();
 
 // Setting the application constraints
 $application->setName('FOSSBilling');
-$application->setVersion($di['mod_service']('system')->getVersion());
+$application->setVersion(Version::VERSION);
 
 $modules = $di['mod']('extension')->getCoreModules();
 
