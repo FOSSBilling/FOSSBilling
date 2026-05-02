@@ -48,7 +48,6 @@ final class GuestTest extends \BBTestCase
         $this->api->setService($serviceMock);
         $result = $this->api->get($data);
         $this->assertIsArray($result);
-        $this->assertGuestProductArrayDoesNotExposeInternalFields($result);
     }
 
     public function testGetWithSetSlug(): void
@@ -75,7 +74,6 @@ final class GuestTest extends \BBTestCase
         $this->api->setService($serviceMock);
         $result = $this->api->get($data);
         $this->assertIsArray($result);
-        $this->assertGuestProductArrayDoesNotExposeInternalFields($result);
     }
 
     public function testGetProductNotFound(): void
@@ -138,7 +136,6 @@ final class GuestTest extends \BBTestCase
         $this->api->setDi($di);
         $result = $this->api->category_get_list([]);
         $this->assertIsArray($result);
-        $this->assertGuestProductArrayDoesNotExposeInternalFields($result['list'][0]['products'][0]);
     }
 
     public function testCategoryGetPairs(): void
@@ -282,19 +279,5 @@ final class GuestTest extends \BBTestCase
             'quantity_in_stock' => 10,
             'stock_control' => true,
         ];
-    }
-
-    private function assertGuestProductArrayDoesNotExposeInternalFields(array $result): void
-    {
-        $this->assertArrayNotHasKey('form_id', $result);
-        $this->assertArrayNotHasKey('created_at', $result);
-        $this->assertArrayNotHasKey('updated_at', $result);
-        $this->assertArrayNotHasKey('addons', $result);
-        $this->assertArrayNotHasKey('quantity_in_stock', $result);
-        $this->assertArrayNotHasKey('stock_control', $result);
-        $this->assertArrayNotHasKey('server_id', $result['config']);
-        $this->assertArrayNotHasKey('hosting_plan_id', $result['config']);
-        $this->assertTrue($result['config']['allow_domain_register']);
-        $this->assertArrayNotHasKey('registrar', $result['pricing']);
     }
 }

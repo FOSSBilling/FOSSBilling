@@ -83,33 +83,34 @@ class Service implements InjectionAwareInterface
         $config = json_decode($model->config ?? '', true) ?? [];
         $pricing = $repo->getPricingArray($model);
         $starting_from = $this->getStartingFromPrice($model);
+        $isAdmin = $identity instanceof \Model_Admin;
 
         $result = [
             'id' => $model->id,
             'product_category_id' => $model->product_category_id,
             'type' => $model->type,
             'title' => $model->title,
-            'form_id' => $model->form_id,
             'slug' => $model->slug,
             'description' => $model->description,
             'unit' => $model->unit,
             'priority' => $model->priority,
-            'created_at' => $model->created_at,
-            'updated_at' => $model->updated_at,
-            'pricing' => $pricing,
-            'config' => $config,
-            'addons' => $addons,
+            'pricing' => $isAdmin ? $pricing : $this->getPublicPricing($pricing),
+            'config' => $isAdmin ? $config : $this->getPublicConfig($config),
 
             'price_starting_from' => $starting_from,
             'icon_url' => $model->icon_url,
 
             // stock control
             'allow_quantity_select' => $model->allow_quantity_select,
-            'quantity_in_stock' => $model->quantity_in_stock,
-            'stock_control' => $model->stock_control,
         ];
 
-        if ($identity instanceof \Model_Admin) {
+        if ($isAdmin) {
+            $result['form_id'] = $model->form_id;
+            $result['created_at'] = $model->created_at;
+            $result['updated_at'] = $model->updated_at;
+            $result['addons'] = $addons;
+            $result['quantity_in_stock'] = $model->quantity_in_stock;
+            $result['stock_control'] = $model->stock_control;
             $result['upgrades'] = $this->getUpgradablePairs($model);
             $result['status'] = $model->status;
             $result['hidden'] = $model->hidden;
@@ -124,6 +125,34 @@ class Service implements InjectionAwareInterface
         }
 
         return $result;
+    }
+
+    private function getPublicConfig(array $config): array
+    {
+        $publicConfigKeys = [
+            'allow_domain_register',
+            'allow_domain_transfer',
+            'allow_domain_own',
+        ];
+
+        return array_intersect_key($config, array_flip($publicConfigKeys));
+    }
+
+    private function getPublicPricing(array $pricing): array
+    {
+        foreach ($pricing as $key => $value) {
+            if ($key === 'registrar') {
+                unset($pricing[$key]);
+
+                continue;
+            }
+
+            if (is_array($value)) {
+                $pricing[$key] = $this->getPublicPricing($value);
+            }
+        }
+
+        return $pricing;
     }
 
     public function getTypes(): array
@@ -530,7 +559,7 @@ class Service implements InjectionAwareInterface
         return [$sql, $params];
     }
 
-    public function toProductCategoryApiArray(\Model_ProductCategory $model, $deep = true)
+    public function toProductCategoryApiArray(\Model_ProductCategory $model, $deep = true, $identity = null)
     {
         $min_price = 0;
         $products = [];
@@ -538,7 +567,7 @@ class Service implements InjectionAwareInterface
 
         $type = null; // identified by first product in category
         foreach ($pr as $p) {
-            $pa = $this->toApiArray($p, false);
+            $pa = $this->toApiArray($p, false, $identity);
             if (reset($pr) == $p) {
                 $type = $p->type;
             }

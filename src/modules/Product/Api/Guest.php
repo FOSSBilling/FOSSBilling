@@ -35,7 +35,7 @@ class Guest extends \Api_Abstract
 
         foreach ($pager['list'] as $key => $item) {
             $model = $this->di['db']->getExistingModelById('Product', $item['id'], 'Post not found');
-            $pager['list'][$key] = $this->toGuestApiArray($model);
+            $pager['list'][$key] = $this->getService()->toApiArray($model, false);
         }
 
         return $pager;
@@ -82,7 +82,7 @@ class Guest extends \Api_Abstract
             throw new \FOSSBilling\Exception('Product not found');
         }
 
-        return $this->toGuestApiArray($model);
+        return $service->toApiArray($model);
     }
 
     /**
@@ -100,7 +100,7 @@ class Guest extends \Api_Abstract
 
         foreach ($pager['list'] as $key => $item) {
             $category = $this->di['db']->getExistingModelById('ProductCategory', $item['id'], 'Product category not found');
-            $pager['list'][$key] = $this->toGuestCategoryApiArray($category);
+            $pager['list'][$key] = $this->getService()->toProductCategoryApiArray($category);
         }
 
         return $pager;
@@ -116,7 +116,6 @@ class Guest extends \Api_Abstract
         return $this->getService()->getProductCategoryPairs($data);
     }
 
-
     /**
      * Return slider data for product types.
      * Products are grouped by type. You can pass parameter to select product type for slider
@@ -124,7 +123,7 @@ class Guest extends \Api_Abstract
      *
      * @optional string $type - product type for slider - default = hosting
      * @optional string $format - return format. Default is array . You can choose json format, to directly inject to javascript
-     * 
+     *
      * @TODO: Redo this and make use of it
      */
     public function get_slider($data)
@@ -139,8 +138,8 @@ class Guest extends \Api_Abstract
 
         $slider = [];
         foreach ($products as $productModel) {
-            $product = $this->toGuestApiArray($productModel);
-            $pc = $this->getPublicConfig($productModel);
+            $product = $this->getService()->toApiArray($productModel);
+            $pc = $product['config'];
             $s = [
                 'product_id' => $product['id'],
                 'slug' => $product['slug'],
@@ -159,78 +158,5 @@ class Guest extends \Api_Abstract
         }
 
         return $slider;
-    }
-
-    private function toGuestApiArray(\Model_Product $model): array
-    {
-        $product = $this->getService()->toApiArray($model, false);
-
-        return $this->toGuestProductArray($product, $this->getPublicConfig($model));
-    }
-
-    private function toGuestCategoryApiArray(\Model_ProductCategory $model): array
-    {
-        $category = $this->getService()->toProductCategoryApiArray($model, true);
-
-        foreach ($category['products'] as $key => $product) {
-            $category['products'][$key] = $this->toGuestProductArray($product, $this->getPublicConfigFromArray($product['config'] ?? []));
-        }
-
-        return $category;
-    }
-
-    private function toGuestProductArray(array $product, array $config): array
-    {
-        return [
-            'id' => $product['id'],
-            'product_category_id' => $product['product_category_id'],
-            'type' => $product['type'],
-            'title' => $product['title'],
-            'slug' => $product['slug'],
-            'description' => $product['description'],
-            'unit' => $product['unit'],
-            'priority' => $product['priority'],
-            'pricing' => $this->getPublicPricing($product['pricing']),
-            'config' => $config,
-            'price_starting_from' => $product['price_starting_from'],
-            'icon_url' => $product['icon_url'],
-            'allow_quantity_select' => $product['allow_quantity_select'],
-        ];
-    }
-
-
-    private function getPublicConfig(\Model_Product $model): array
-    {
-        $config = json_decode($model->config ?? '', true) ?? [];
-
-        return $this->getPublicConfigFromArray($config);
-    }
-
-    private function getPublicConfigFromArray(array $config): array
-    {
-        $publicConfigKeys = [
-            'allow_domain_register',
-            'allow_domain_transfer',
-            'allow_domain_own',
-        ];
-
-        return array_intersect_key($config, array_flip($publicConfigKeys));
-    }
-
-    private function getPublicPricing(array $pricing): array
-    {
-        foreach ($pricing as $key => $value) {
-            if ($key === 'registrar') {
-                unset($pricing[$key]);
-
-                continue;
-            }
-
-            if (is_array($value)) {
-                $pricing[$key] = $this->getPublicPricing($value);
-            }
-        }
-
-        return $pricing;
     }
 }
