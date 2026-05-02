@@ -154,7 +154,7 @@ final class AdminTest extends TestCase
                         break;
                     }
 
-                    usleep(self::RETRY_DELAY_MICROSECONDS); // 200ms
+                    usleep(self::RETRY_DELAY_MICROSECONDS); // 200ms (200000 microseconds)
                 }
 
                 $this->assertTrue($isReady, 'Timed out waiting for interface IP to become active');
