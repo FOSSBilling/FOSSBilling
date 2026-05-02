@@ -31,6 +31,8 @@ final class GuestTest extends \BBTestCase
         ];
 
         $model = new \Model_Product();
+        $model->loadBean(new \DummyBean());
+        $model->config = json_encode(['server_id' => 1, 'allow_domain_register' => true]);
 
         $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -38,7 +40,7 @@ final class GuestTest extends \BBTestCase
             ->willReturn($model);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
-            ->willReturn([]);
+            ->willReturn($this->getApiProductArray());
 
         $di = $this->getDi();
 
@@ -46,6 +48,7 @@ final class GuestTest extends \BBTestCase
         $this->api->setService($serviceMock);
         $result = $this->api->get($data);
         $this->assertIsArray($result);
+        $this->assertGuestProductArrayDoesNotExposeInternalFields($result);
     }
 
     public function testGetWithSetSlug(): void
@@ -55,6 +58,8 @@ final class GuestTest extends \BBTestCase
         ];
 
         $model = new \Model_Product();
+        $model->loadBean(new \DummyBean());
+        $model->config = json_encode(['server_id' => 1, 'allow_domain_register' => true]);
 
         $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -62,7 +67,7 @@ final class GuestTest extends \BBTestCase
             ->willReturn($model);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
-            ->willReturn([]);
+            ->willReturn($this->getApiProductArray());
 
         $di = $this->getDi();
 
@@ -70,6 +75,7 @@ final class GuestTest extends \BBTestCase
         $this->api->setService($serviceMock);
         $result = $this->api->get($data);
         $this->assertIsArray($result);
+        $this->assertGuestProductArrayDoesNotExposeInternalFields($result);
     }
 
     public function testGetProductNotFound(): void
@@ -102,7 +108,7 @@ final class GuestTest extends \BBTestCase
             ->willReturn(['sqlString', []]);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toProductCategoryApiArray')
-            ->willReturn([]);
+            ->willReturn(['products' => [$this->getApiProductArray()]]);
 
         $pager = [
             'list' => [
@@ -132,6 +138,7 @@ final class GuestTest extends \BBTestCase
         $this->api->setDi($di);
         $result = $this->api->category_get_list([]);
         $this->assertIsArray($result);
+        $this->assertGuestProductArrayDoesNotExposeInternalFields($result['list'][0]['products'][0]);
     }
 
     public function testCategoryGetPairs(): void
@@ -179,10 +186,18 @@ final class GuestTest extends \BBTestCase
 
         $arr = [
             'id' => 1,
+            'product_category_id' => 1,
+            'type' => 'hosting',
             'slug' => '/',
             'title' => 'New Item',
-            'pricing' => '1W',
-            'config' => [],
+            'description' => 'Product description',
+            'unit' => 'unit',
+            'priority' => 1,
+            'pricing' => ['type' => 'free'],
+            'config' => ['server_id' => 1],
+            'price_starting_from' => 0,
+            'icon_url' => null,
+            'allow_quantity_select' => true,
         ];
         $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -210,10 +225,18 @@ final class GuestTest extends \BBTestCase
 
         $arr = [
             'id' => 1,
+            'product_category_id' => 1,
+            'type' => 'hosting',
             'slug' => '/',
             'title' => 'New Item',
-            'pricing' => '1W',
-            'config' => [],
+            'description' => 'Product description',
+            'unit' => 'unit',
+            'priority' => 1,
+            'pricing' => ['type' => 'free'],
+            'config' => ['server_id' => 1],
+            'price_starting_from' => 0,
+            'icon_url' => null,
+            'allow_quantity_select' => true,
         ];
         $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -227,5 +250,51 @@ final class GuestTest extends \BBTestCase
         $result = $this->api->get_slider(['format' => 'json']);
         $this->assertIsString($result);
         $this->assertIsArray(json_decode($result ?? '', true));
+    }
+
+    private function getApiProductArray(): array
+    {
+        return [
+            'id' => 1,
+            'product_category_id' => 1,
+            'type' => 'hosting',
+            'title' => 'New Item',
+            'form_id' => 1,
+            'slug' => '/',
+            'description' => 'Product description',
+            'unit' => 'unit',
+            'priority' => 1,
+            'created_at' => '2026-01-01 00:00:00',
+            'updated_at' => '2026-01-02 00:00:00',
+            'pricing' => [
+                'type' => 'free',
+                'registrar' => ['id' => 1, 'title' => 'Registrar'],
+            ],
+            'config' => [
+                'server_id' => 1,
+                'hosting_plan_id' => 2,
+                'allow_domain_register' => true,
+            ],
+            'addons' => [['id' => 2, 'title' => 'Addon']],
+            'price_starting_from' => 0,
+            'icon_url' => null,
+            'allow_quantity_select' => true,
+            'quantity_in_stock' => 10,
+            'stock_control' => true,
+        ];
+    }
+
+    private function assertGuestProductArrayDoesNotExposeInternalFields(array $result): void
+    {
+        $this->assertArrayNotHasKey('form_id', $result);
+        $this->assertArrayNotHasKey('created_at', $result);
+        $this->assertArrayNotHasKey('updated_at', $result);
+        $this->assertArrayNotHasKey('addons', $result);
+        $this->assertArrayNotHasKey('quantity_in_stock', $result);
+        $this->assertArrayNotHasKey('stock_control', $result);
+        $this->assertArrayNotHasKey('server_id', $result['config']);
+        $this->assertArrayNotHasKey('hosting_plan_id', $result['config']);
+        $this->assertTrue($result['config']['allow_domain_register']);
+        $this->assertArrayNotHasKey('registrar', $result['pricing']);
     }
 }
