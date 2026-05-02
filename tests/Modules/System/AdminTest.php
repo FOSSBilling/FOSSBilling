@@ -13,60 +13,6 @@ final class AdminTest extends TestCase
     private const RETRY_DELAY_MICROSECONDS = 200000;
     private const DEFAULT_INTERFACE = '0';
 
-    private function invokeIsIpLookupAvailable(): bool
-    {
-        return $this->isIpLookupAvailable();
-    }
-
-    public function testIsIpLookupAvailableReturnsTrueWhenServerAddrIsValidIp(): void
-    {
-        $previous = $_SERVER['SERVER_ADDR'] ?? null;
-        $_SERVER['SERVER_ADDR'] = '127.0.0.1';
-
-        try {
-            $this->assertTrue($this->invokeIsIpLookupAvailable());
-        } finally {
-            if ($previous === null) {
-                unset($_SERVER['SERVER_ADDR']);
-            } else {
-                $_SERVER['SERVER_ADDR'] = $previous;
-            }
-        }
-    }
-
-    public function testIsIpLookupAvailableFallsBackWhenServerAddrIsInvalid(): void
-    {
-        $previous = $_SERVER['SERVER_ADDR'] ?? null;
-        $_SERVER['SERVER_ADDR'] = 'not-an-ip';
-
-        try {
-            $this->assertIsBool($this->invokeIsIpLookupAvailable());
-        } finally {
-            if ($previous === null) {
-                unset($_SERVER['SERVER_ADDR']);
-            } else {
-                $_SERVER['SERVER_ADDR'] = $previous;
-            }
-        }
-    }
-
-    private function isIpLookupAvailable(): bool
-    {
-        $serverAddr = $_SERVER['SERVER_ADDR'] ?? null;
-        if (is_string($serverAddr) && filter_var($serverAddr, FILTER_VALIDATE_IP) !== false) {
-            return true;
-        }
-
-        $hostname = gethostname();
-        if ($hostname === false || $hostname === '') {
-            return false;
-        }
-
-        $resolved = gethostbyname($hostname);
-
-        return is_string($resolved) && filter_var($resolved, FILTER_VALIDATE_IP) !== false;
-    }
-
     public function testClearCache(): void
     {
         // Read a stable value first so we can verify behavior before/after clearing cache
