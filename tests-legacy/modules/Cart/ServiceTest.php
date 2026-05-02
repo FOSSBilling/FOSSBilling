@@ -987,6 +987,150 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->addItem($cartModel, $productModel, ['quantity' => 1]);
     }
 
+    public function testAddItemRejectsDuplicateDomainRegister(): void
+    {
+        $cartModel = new \Model_Cart();
+        $cartModel->loadBean(new \DummyBean());
+        $cartModel->id = 1;
+
+        $productModel = new \Model_Product();
+        $productModel->loadBean(new \DummyBean());
+        $productModel->type = 'domain';
+
+        // An existing cart item already holds example.com via register keys.
+        $existingCartProduct = new \Model_CartProduct();
+        $existingCartProduct->loadBean(new \DummyBean());
+        $existingCartProduct->config = json_encode(['register_sld' => 'example', 'register_tld' => '.com']);
+
+        $dbMock = $this->createMock('Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('find')
+            ->with('CartProduct')
+            ->willReturn([$existingCartProduct]);
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->atLeastOnce())
+            ->method('fire');
+
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
+            ->onlyMethods(['isRecurrentPricing'])
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('isRecurrentPricing')
+            ->willReturn(false);
+
+        $serviceHostingServiceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)->getMock();
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['events_manager'] = $eventMock;
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
+        $serviceMock->setDi($di);
+        $productModel->setDi($di);
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('This domain is already in the cart.');
+        $serviceMock->addItem($cartModel, $productModel, ['register_sld' => 'example', 'register_tld' => '.com']);
+    }
+
+    public function testAddItemRejectsDuplicateDomainTransfer(): void
+    {
+        $cartModel = new \Model_Cart();
+        $cartModel->loadBean(new \DummyBean());
+        $cartModel->id = 2;
+
+        $productModel = new \Model_Product();
+        $productModel->loadBean(new \DummyBean());
+        $productModel->type = 'domain';
+
+        // An existing cart item holds example.net via transfer keys.
+        $existingCartProduct = new \Model_CartProduct();
+        $existingCartProduct->loadBean(new \DummyBean());
+        $existingCartProduct->config = json_encode(['transfer_sld' => 'example', 'transfer_tld' => '.net']);
+
+        $dbMock = $this->createMock('Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('find')
+            ->with('CartProduct')
+            ->willReturn([$existingCartProduct]);
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->atLeastOnce())
+            ->method('fire');
+
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
+            ->onlyMethods(['isRecurrentPricing'])
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('isRecurrentPricing')
+            ->willReturn(false);
+
+        $serviceHostingServiceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)->getMock();
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['events_manager'] = $eventMock;
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
+        $serviceMock->setDi($di);
+        $productModel->setDi($di);
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('This domain is already in the cart.');
+        // Incoming uses transfer keys too, same domain.
+        $serviceMock->addItem($cartModel, $productModel, ['transfer_sld' => 'example', 'transfer_tld' => '.net']);
+    }
+
+    public function testAddItemRejectsDuplicateDomainNested(): void
+    {
+        $cartModel = new \Model_Cart();
+        $cartModel->loadBean(new \DummyBean());
+        $cartModel->id = 3;
+
+        $productModel = new \Model_Product();
+        $productModel->loadBean(new \DummyBean());
+        $productModel->type = 'hosting';
+
+        // An existing hosting cart item stores the domain under the nested 'domain' key.
+        $existingCartProduct = new \Model_CartProduct();
+        $existingCartProduct->loadBean(new \DummyBean());
+        $existingCartProduct->config = json_encode([
+            'domain' => ['register_sld' => 'mysite', 'register_tld' => '.org'],
+        ]);
+
+        $dbMock = $this->createMock('Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('find')
+            ->with('CartProduct')
+            ->willReturn([$existingCartProduct]);
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->atLeastOnce())
+            ->method('fire');
+
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
+            ->onlyMethods(['isRecurrentPricing'])
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('isRecurrentPricing')
+            ->willReturn(false);
+
+        $serviceHostingServiceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)->getMock();
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['events_manager'] = $eventMock;
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
+        $serviceMock->setDi($di);
+        $productModel->setDi($di);
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('This domain is already in the cart.');
+        // New hosting order bundles the same domain under the 'domain' key.
+        $serviceMock->addItem($cartModel, $productModel, [
+            'domain' => ['register_sld' => 'mysite', 'register_tld' => '.org'],
+        ]);
+    }
+
     public function testAddItemmTypeHosting(): void
     {
         $cartModel = new \Model_Cart();
