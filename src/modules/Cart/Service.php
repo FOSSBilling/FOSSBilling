@@ -119,6 +119,23 @@ class Service implements InjectionAwareInterface
         unset($data['id']);
         unset($data['addons']);
 
+        $domainSld = $data['register_sld'] ?? $data['transfer_sld'] ?? null;
+        $domainTld = $data['register_tld'] ?? $data['transfer_tld'] ?? null;
+        if ($domainSld && $domainTld) {
+            $domain = $domainSld . $domainTld;
+            $existingItems = $this->di['db']->find('CartProduct', 'cart_id = ?', [$cart->id]);
+            foreach ($existingItems as $item) {
+                $itemConfig = json_decode($item->config, true);
+                if (is_array($itemConfig)) {
+                    $itemSld = $itemConfig['register_sld'] ?? $itemConfig['transfer_sld'] ?? null;
+                    $itemTld = $itemConfig['register_tld'] ?? $itemConfig['transfer_tld'] ?? null;
+                    if ($itemSld && $itemTld && strcasecmp($itemSld . $itemTld, $domain) === 0) {
+                        throw new \FOSSBilling\InformationException('This domain is already in the cart.');
+                    }
+                }
+            }
+        }
+
         $list = [];
         $list[] = [
             'product' => $product,
