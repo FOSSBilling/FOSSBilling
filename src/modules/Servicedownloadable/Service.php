@@ -232,13 +232,12 @@ class Service implements InjectionAwareInterface
 
     public function toApiArray(\Model_ServiceDownloadable $model, $deep = false, $identity = null): array
     {
-        $productService = $this->di['mod_service']('product');
         $result = [
-            'path' => Path::join(PATH_UPLOADS, md5($model->filename)),
             'filename' => $model->filename,
         ];
 
         if ($identity instanceof \Model_Admin) {
+            $result['path'] = Path::join(PATH_UPLOADS, md5($model->filename));
             $result['downloads'] = $model->downloads;
         }
 
