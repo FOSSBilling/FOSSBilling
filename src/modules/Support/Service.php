@@ -129,8 +129,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $ticketArr = $supportService->publicToApiArray($ticketObj, true);
 
             $email = [];
-            $email['to'] = $ticketArr['author_email'];
-            $email['to_name'] = $ticketArr['author_name'];
+            $email['to'] = $ticketObj->author_email;
+            $email['to_name'] = $ticketObj->author_name;
             $email['code'] = 'mod_support_pticket_open';
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
@@ -1339,18 +1339,23 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function publicToApiArray(\Model_SupportPTicket $model, bool $deep = true): array
+    public function publicToApiArray(\Model_SupportPTicket $model, bool $deep = true, $identity = null): array
     {
         $data = $this->di['db']->toArray($model);
+
+        if (!$identity instanceof \Model_Admin) {
+            unset($data['author_email']);
+        }
+
         $messages = [];
         $messagesArr = $this->di['db']->find('SupportPTicketMessage', 'support_p_ticket_id = :support_p_ticket_id ORDER BY id', [':support_p_ticket_id' => $model->id]);
         foreach ($messagesArr as $msg) {
-            $messages[] = $this->publicMessageToApiArray($msg);
+            $messages[] = $this->publicMessageToApiArray($msg, true, $identity);
         }
 
         $first = reset($messagesArr);
         if ($first instanceof \Model_SupportPTicketMessage) {
-            $data['author'] = $this->publicMessageGetAuthorDetails($first);
+            $data['author'] = $this->publicMessageGetAuthorDetails($first, $identity);
         } else {
             $data['author'] = [];
         }
@@ -1359,29 +1364,43 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $data;
     }
 
-    public function publicMessageGetAuthorDetails(\Model_SupportPTicketMessage $model): array
+    public function publicMessageGetAuthorDetails(\Model_SupportPTicketMessage $model, $identity = null): array
     {
         if ($model->admin_id) {
             $author = $this->di['db']->getExistingModelById('Admin', $model->admin_id);
 
-            return [
+            $result = [
                 'name' => $author->getFullName(),
-                'email' => $author->email,
             ];
+
+            if ($identity instanceof \Model_Admin) {
+                $result['email'] = $author->email;
+            }
+
+            return $result;
         }
 
         $ticket = $this->di['db']->getExistingModelById('SupportPTicket', $model->support_p_ticket_id);
 
-        return [
+        $result = [
             'name' => $ticket->author_name,
-            'email' => $ticket->author_email,
         ];
+
+        if ($identity instanceof \Model_Admin) {
+            $result['email'] = $ticket->author_email;
+        }
+
+        return $result;
     }
 
-    public function publicMessageToApiArray(\Model_SupportPTicketMessage $model, bool $deep = true): array
+    public function publicMessageToApiArray(\Model_SupportPTicketMessage $model, bool $deep = true, $identity = null): array
     {
         $data = $this->di['db']->toArray($model);
-        $data['author'] = $this->publicMessageGetAuthorDetails($model);
+        if (!$identity instanceof \Model_Admin) {
+            unset($data['ip']);
+        }
+
+        $data['author'] = $this->publicMessageGetAuthorDetails($model, $identity);
 
         return $data;
     }

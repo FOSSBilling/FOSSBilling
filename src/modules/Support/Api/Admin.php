@@ -208,7 +208,7 @@ class Admin extends \Api_Abstract
 
         foreach ($pager['list'] as $key => $ticketArr) {
             $ticket = $this->di['db']->getExistingModelById('SupportPTicket', $ticketArr['id'], 'Ticket not found');
-            $pager['list'][$key] = $this->getService()->publicToApiArray($ticket);
+            $pager['list'][$key] = $this->getService()->publicToApiArray($ticket, true, $this->getIdentity());
         }
 
         return $pager;
@@ -238,7 +238,7 @@ class Admin extends \Api_Abstract
     {
         $model = $this->di['db']->getExistingModelById('SupportPTicket', $data['id'], 'Ticket not found');
 
-        return $this->getService()->publicToApiArray($model, true);
+        return $this->getService()->publicToApiArray($model, true, $this->getIdentity());
     }
 
     /**

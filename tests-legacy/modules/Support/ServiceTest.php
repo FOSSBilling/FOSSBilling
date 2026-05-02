@@ -1950,7 +1950,7 @@ final class ServiceTest extends \BBTestCase
         $ticketMsg->loadBean(new \DummyBean());
         $ticketMsg->admin_id = 1;
 
-        $result = $this->service->publicMessageGetAuthorDetails($ticketMsg);
+        $result = $this->service->publicMessageGetAuthorDetails($ticketMsg, new \Model_Admin());
         $this->assertIsArray($result);
         $this->assertArrayHasKey('name', $result);
         $this->assertArrayHasKey('email', $result);
@@ -1979,7 +1979,7 @@ final class ServiceTest extends \BBTestCase
         $result = $this->service->publicMessageGetAuthorDetails($ticketMsg);
         $this->assertIsArray($result);
         $this->assertArrayHasKey('name', $result);
-        $this->assertArrayHasKey('email', $result);
+        $this->assertArrayNotHasKey('email', $result);
     }
 
     public function testPublicMessageToApiArray(): void
@@ -1987,7 +1987,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('toArray')
-            ->willReturn([]);
+            ->willReturn(['ip' => '192.0.2.1']);
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['publicMessageGetAuthorDetails'])->getMock();
@@ -2005,6 +2005,74 @@ final class ServiceTest extends \BBTestCase
         $result = $serviceMock->publicMessageToApiArray($ticketMsg);
         $this->assertIsArray($result);
         $this->assertArrayHasKey('author', $result);
+        $this->assertArrayNotHasKey('ip', $result);
+    }
+
+    public function testPublicMessageToApiArrayIncludesIpForAdmin(): void
+    {
+        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('toArray')
+            ->willReturn(['ip' => '192.0.2.1']);
+
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
+            ->onlyMethods(['publicMessageGetAuthorDetails'])->getMock();
+        $serviceMock->expects($this->atLeastOnce())->method('publicMessageGetAuthorDetails')
+            ->willReturn([]);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $serviceMock->setDi($di);
+
+        $ticketMsg = new \Model_SupportPTicketMessage();
+        $ticketMsg->loadBean(new \DummyBean());
+        $ticketMsg->id = 1;
+
+        $result = $serviceMock->publicMessageToApiArray($ticketMsg, true, new \Model_Admin());
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('ip', $result);
+    }
+
+    public function testPublicToApiArrayHidesAuthorEmailForGuests(): void
+    {
+        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('toArray')
+            ->willReturn(['author_email' => 'customer@example.com']);
+        $dbMock->expects($this->atLeastOnce())
+            ->method('find')
+            ->willReturn([]);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $ticket = new \Model_SupportPTicket();
+        $ticket->loadBean(new \DummyBean());
+
+        $result = $this->service->publicToApiArray($ticket);
+        $this->assertArrayNotHasKey('author_email', $result);
+    }
+
+    public function testPublicToApiArrayIncludesAuthorEmailForAdmin(): void
+    {
+        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('toArray')
+            ->willReturn(['author_email' => 'customer@example.com']);
+        $dbMock->expects($this->atLeastOnce())
+            ->method('find')
+            ->willReturn([]);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $ticket = new \Model_SupportPTicket();
+        $ticket->loadBean(new \DummyBean());
+
+        $result = $this->service->publicToApiArray($ticket, true, new \Model_Admin());
+        $this->assertArrayHasKey('author_email', $result);
     }
 
     public function testPublicTicketCreate(): void
