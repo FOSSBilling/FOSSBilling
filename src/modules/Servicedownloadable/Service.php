@@ -373,10 +373,8 @@ class Service implements InjectionAwareInterface
 
     public function sendFile(\Model_ServiceDownloadable $serviceDownloadable): bool
     {
-        $info = $this->toApiArray($serviceDownloadable);
-
-        $fileName = $info['filename'];
-        $filePath = $info['path'];
+        $fileName = $serviceDownloadable->filename;
+        $filePath = Path::join(PATH_UPLOADS, md5($fileName));
         if (!$this->filesystem->exists($filePath)) {
             throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
         }
