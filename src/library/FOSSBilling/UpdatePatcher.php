@@ -611,7 +611,7 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         // Change gender column to ENUM type
         $q = 'ALTER TABLE `client`
-            MODIFY COLUMN `gender` ENUM("male", "female", "nonbinary", "other") DEFAULT NULL;';
+                MODIFY COLUMN `gender` ENUM(\'male\', \'female\', \'nonbinary\', \'other\') DEFAULT NULL;';
 
         $this->executeSql($q);
     }
