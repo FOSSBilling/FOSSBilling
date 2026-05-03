@@ -414,7 +414,8 @@ CREATE TABLE `currency` (
   `price_format` varchar(50) DEFAULT '1',
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `code` (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -452,7 +453,8 @@ CREATE TABLE `extension` (
   `name` varchar(255) DEFAULT NULL,
   `status` varchar(100) DEFAULT NULL,
   `version` varchar(100) DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `type_name` (`type`,`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
