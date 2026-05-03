@@ -93,8 +93,8 @@ final class AdminTest extends TestCase
 
                 $isReady = false;
                 for ($attempt = 0; $attempt < self::MAX_RETRY_ATTEMPTS; ++$attempt) {
-                    $result = Request::makeRequest('admin/system/env', ['ip' => true]);
-                    if ($result->wasSuccessful() && (bool) filter_var($result->getResult(), FILTER_VALIDATE_IP)) {
+                    $envResult = Request::makeRequest('admin/system/env', ['ip' => true]);
+                    if ($envResult->wasSuccessful() && (bool) filter_var($envResult->getResult(), FILTER_VALIDATE_IP)) {
                         $isReady = true;
 
                         break;
@@ -164,10 +164,17 @@ final class AdminTest extends TestCase
             $result = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => 'eth0']);
             $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
         } finally {
-            // Reset to default
-            $resetResult = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => '', 'interface' => self::DEFAULT_INTERFACE]);
-            $this->assertTrue($resetResult->wasSuccessful(), $resetResult->generatePHPUnitMessage());
+            $this->resetInterfaceConfiguration();
         }
+    }
+
+    private function resetInterfaceConfiguration(): void
+    {
+        $resetResult = Request::makeRequest(
+            'admin/system/set_interface_ip',
+            ['custom_interface' => '', 'interface' => self::DEFAULT_INTERFACE]
+        );
+        $this->assertTrue($resetResult->wasSuccessful(), $resetResult->generatePHPUnitMessage());
     }
 
     private function isIpLookupAvailable(): bool
@@ -179,7 +186,15 @@ final class AdminTest extends TestCase
             ],
         ]);
 
-        $response = @file_get_contents('https://api.ipify.org', false, $context);
+        set_error_handler(static function (): bool {
+            return true;
+        });
+
+        try {
+            $response = file_get_contents('https://api.ipify.org', false, $context);
+        } finally {
+            restore_error_handler();
+        }
 
         return $response !== false;
     }
