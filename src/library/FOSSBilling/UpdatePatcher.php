@@ -977,6 +977,16 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch56(): void
     {
+        // Widen the tld.tld column to accommodate long IDN TLDs in ACE form.
+        // @see https://github.com/FOSSBilling/FOSSBilling/issues/3464
+        $schemaManager = $this->di['dbal']->createSchemaManager();
+        $column = $schemaManager->introspectTable('tld')->getColumn('tld');
+
+        if ($column->getLength() < 64) {
+            $this->executeSql('ALTER TABLE `tld` MODIFY `tld` VARCHAR(64) DEFAULT NULL;');
+        }
+      
+        // Ensure visibility for 'last_patch' setting is private so it isn't passed to the guest API
         $this->executeSql("UPDATE `setting` SET `public` = 0 WHERE `param` = 'last_patch';");
     }
 

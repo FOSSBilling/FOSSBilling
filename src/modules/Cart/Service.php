@@ -119,6 +119,45 @@ class Service implements InjectionAwareInterface
         unset($data['id']);
         unset($data['addons']);
 
+        // Collect all domains that will be added: top-level (direct domain product) and
+        // nested under $data['domain'] (domain bundled with a hosting product).
+        $domainsBeingAdded = [];
+        $topDomain = $this->extractDomainFromConfig($data);
+        if ($topDomain !== null) {
+            $domainsBeingAdded[] = $topDomain;
+        }
+        if (isset($data['domain']) && is_array($data['domain'])) {
+            $nestedDomain = $this->extractDomainFromConfig($data['domain']);
+            if ($nestedDomain !== null) {
+                $domainsBeingAdded[] = $nestedDomain;
+            }
+        }
+
+        if (!empty($domainsBeingAdded)) {
+            $existingItems = $this->di['db']->find('CartProduct', 'cart_id = ?', [$cart->id]);
+            foreach ($existingItems as $item) {
+                $itemConfig = json_decode($item->config, true);
+                if (!is_array($itemConfig)) {
+                    continue;
+                }
+                // Check both top-level and nested domain shapes in the existing item's config.
+                $candidates = [$this->extractDomainFromConfig($itemConfig)];
+                if (isset($itemConfig['domain']) && is_array($itemConfig['domain'])) {
+                    $candidates[] = $this->extractDomainFromConfig($itemConfig['domain']);
+                }
+                foreach ($candidates as $existing) {
+                    if ($existing === null) {
+                        continue;
+                    }
+                    foreach ($domainsBeingAdded as $incoming) {
+                        if (strcasecmp($existing, $incoming) === 0) {
+                            throw new \FOSSBilling\InformationException('This domain is already in the cart.');
+                        }
+                    }
+                }
+            }
+        }
+
         $list = [];
         $list[] = [
             'product' => $product,
@@ -262,6 +301,22 @@ class Service implements InjectionAwareInterface
     protected function getRequestedQuantity(array $config): int
     {
         return max(1, (int) ($config['quantity'] ?? 1));
+    }
+
+    /**
+     * Extract a normalized "sld+tld" domain string from a config array.
+     * Handles both register_* and transfer_* key pairs.
+     * Returns null when the config does not describe a domain.
+     */
+    private function extractDomainFromConfig(array $config): ?string
+    {
+        $sld = $config['register_sld'] ?? $config['transfer_sld'] ?? null;
+        $tld = $config['register_tld'] ?? $config['transfer_tld'] ?? null;
+        if ($sld !== null && $tld !== null) {
+            return $sld . $tld;
+        }
+
+        return null;
     }
 
     public function removeProduct(\Model_Cart $cart, $id, $removeAddons = true): bool
