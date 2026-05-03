@@ -469,7 +469,8 @@ class UpdatePatcher implements InjectionAwareInterface
             // If the Kb extension exists, uninstall it.
             $kb_ext = $ext_service->findExtension('mod', 'kb');
             if ($kb_ext instanceof \Model_Extension) {
-                $ext_service->uninstall($kb_ext);
+                $ext_service->deactivate($kb_ext);
+                $ext_service->uninstall('mod', 'kb');
             }
         } catch (\Exception) {
         }
@@ -491,7 +492,8 @@ class UpdatePatcher implements InjectionAwareInterface
             // If the queue extension exists, uninstall it.
             $queue_ext = $ext_service->findExtension('mod', 'queue');
             if ($queue_ext instanceof \Model_Extension) {
-                $ext_service->uninstall($queue_ext);
+                $ext_service->deactivate($queue_ext);
+                $ext_service->uninstall('mod', 'queue');
             }
         } catch (\Exception) {
         }
@@ -958,7 +960,8 @@ class UpdatePatcher implements InjectionAwareInterface
             // Uninstall old spamchecker extension if it exists
             $spamcheckerExt = $extService->findExtension('mod', 'spamchecker');
             if ($spamcheckerExt instanceof \Model_Extension) {
-                $extService->uninstall($spamcheckerExt);
+                $extService->deactivate($spamcheckerExt);
+                $extService->uninstall('mod', 'spamchecker');
             }
 
             // Invalidate caches
