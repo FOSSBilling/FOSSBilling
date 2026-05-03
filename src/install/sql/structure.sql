@@ -414,7 +414,8 @@ CREATE TABLE `currency` (
   `price_format` varchar(50) DEFAULT '1',
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `code` (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -452,7 +453,8 @@ CREATE TABLE `extension` (
   `name` varchar(255) DEFAULT NULL,
   `status` varchar(100) DEFAULT NULL,
   `version` varchar(100) DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `type_name` (`type`,`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -868,47 +870,6 @@ CREATE TABLE `promo` (
   KEY `end_index_idx` (`end_at`),
   KEY `active_index_idx` (`active`),
   KEY `code_index_idx` (`code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `queue`
---
-
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `queue` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) DEFAULT NULL,
-  `module` varchar(255) DEFAULT NULL,
-  `timeout` bigint(20) DEFAULT NULL,
-  `iteration` int(10) DEFAULT NULL,
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `queue_message`
---
-
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `queue_message` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `queue_id` bigint(20) DEFAULT NULL,
-  `handle` char(32) DEFAULT NULL,
-  `handler` varchar(255) DEFAULT NULL,
-  `body` longblob,
-  `hash` char(32) DEFAULT NULL,
-  `timeout` double(18,2) DEFAULT NULL,
-  `log` text,
-  `execute_at` datetime DEFAULT NULL,
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `queue_id_idx` (`queue_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
