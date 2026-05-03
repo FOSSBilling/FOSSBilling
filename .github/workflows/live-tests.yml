@@ -89,44 +89,48 @@ jobs:
 
       - name: Setup Apache
         run: |
-          sudo apt-get update
-          sudo apt-get install --no-install-recommends \
-            libapache2-mod-php8.4 php8.4 php8.4-common php8.4-intl \
-            php8.4-mysql php8.4-xml php8.4-curl php8.4-fpm php8.4-mbstring \
-            php8.4-opcache php8.4-gd
-          sudo a2enmod php8.4
+          # Only install apache2 from the default Ubuntu repos — no Ondrej PPA needed.
+          # PHP 8.4 (including php8.4-fpm) was already installed by the Setup PHP step.
+          sudo apt-get install --no-install-recommends apache2
+          sudo a2enmod proxy_fcgi setenvif rewrite
           sudo systemctl start apache2
-          sudo a2enmod rewrite
           sudo mkdir /var/www/localhost
           # sudo unzip "FOSSBilling Preview.zip" -d /var/www/localhost
           sudo cp -r ./src/* /var/www/localhost
-        
+
+          # Pass APP_ENV to the PHP-FPM pool so getenv('APP_ENV') works inside PHP.
+          echo "env[APP_ENV] = ${APP_ENV}" | sudo tee -a /etc/php/8.4/fpm/pool.d/www.conf
+          sudo service php8.4-fpm start
+
           # Create a new Apache configuration file
           sudo tee /etc/apache2/sites-available/localhost.conf > /dev/null <<EOF
           <VirtualHost *:80>
             ServerAdmin webmaster@localhost
             ServerName localhost
             DocumentRoot /var/www/localhost
-        
+
             <Directory /var/www/localhost>
               Options Indexes FollowSymLinks
               AllowOverride All
               Require all granted
-              SetEnv APP_ENV ${APP_ENV}
             </Directory>
-        
+
+            <FilesMatch \.php$>
+              SetHandler "proxy:unix:/run/php/php8.4-fpm.sock|fcgi://localhost/"
+            </FilesMatch>
+
             ErrorLog \${APACHE_LOG_DIR}/error.log
             CustomLog \${APACHE_LOG_DIR}/access.log combined
           </VirtualHost>
           EOF
-        
+
           # Enable the new configuration and disable the default one
           sudo a2ensite localhost.conf
           sudo a2dissite 000-default.conf
-        
+
           # Test the Apache configuration
           sudo apache2ctl configtest
-        
+
           # Restart Apache
           sudo systemctl restart apache2
 
