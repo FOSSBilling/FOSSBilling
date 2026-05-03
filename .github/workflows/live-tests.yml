@@ -102,7 +102,7 @@ jobs:
           # setup-php may have already started php8.4-fpm; use restart to ensure the
           # updated pool config (with env[APP_ENV]) is reloaded.
           echo "env[APP_ENV] = ${APP_ENV}" | sudo tee -a /etc/php/8.4/fpm/pool.d/www.conf
-          sudo service php8.4-fpm restart
+          sudo systemctl restart php8.4-fpm
 
           # Create a new Apache configuration file
           sudo tee /etc/apache2/sites-available/localhost.conf > /dev/null <<EOF
