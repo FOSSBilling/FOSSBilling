@@ -41,7 +41,8 @@ class RateLimiter implements InjectionAwareInterface
             'whitelist_ips' => [],
             'policies' => [
                 'api_guest' => ['policy' => 'token_bucket', 'limit' => 100, 'interval' => '60 seconds'],
-                'api_authenticated' => ['policy' => 'token_bucket', 'limit' => 1000, 'interval' => '1 hour'],
+                'api_authenticated_ip' => ['policy' => 'token_bucket', 'limit' => 1000, 'interval' => '1 hour'],
+                'api_authenticated_account' => ['policy' => 'token_bucket', 'limit' => 1000, 'interval' => '1 hour'],
                 'api_login' => ['policy' => 'fixed_window', 'limit' => 10, 'interval' => '1 hour'],
                 'client_password_reset_ip' => ['policy' => 'fixed_window', 'limit' => 10, 'interval' => '1 hour'],
                 'client_password_reset_email' => ['policy' => 'fixed_window', 'limit' => 3, 'interval' => '1 hour'],

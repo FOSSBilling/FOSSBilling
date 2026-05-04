@@ -122,14 +122,18 @@ class Client implements InjectionAwareInterface
 
         if ($method === 'staff_login' || $method === 'client_login') {
             $policy = 'api_login';
+        } elseif ($role === 'guest') {
+            $policy = 'api_guest';
         } else {
-            $policy = $role === 'guest' ? 'api_guest' : 'api_authenticated';
+            $policy = 'api_authenticated_ip';
 
             if ($useAuthenticatedSubject && $role === 'client' && $this->di['session']->get('client_id')) {
                 $subject = 'client:' . $this->di['session']->get('client_id');
+                $policy = 'api_authenticated_account';
             } elseif ($useAuthenticatedSubject && $role === 'admin' && $this->di['session']->get('admin')) {
                 $admin = $this->di['session']->get('admin');
                 $subject = 'admin:' . ($admin['id'] ?? '');
+                $policy = 'api_authenticated_account';
             }
         }
 

@@ -139,7 +139,7 @@ final class ClientTest extends \BBTestCase
             $this->assertSame(204, $exception->getCode());
         }
 
-        $this->assertSame([['api_authenticated', '127.0.0.1', 1]], $this->rateLimitCalls?->getArrayCopy());
+        $this->assertSame([['api_authenticated_ip', '127.0.0.1', 1]], $this->rateLimitCalls?->getArrayCopy());
         $this->assertSame(['token'], $controller->calls);
     }
 
@@ -155,7 +155,7 @@ final class ClientTest extends \BBTestCase
             $this->assertSame(201, $exception->getCode());
         }
 
-        $this->assertSame([['api_authenticated', '127.0.0.1', 1]], $this->rateLimitCalls?->getArrayCopy());
+        $this->assertSame([['api_authenticated_ip', '127.0.0.1', 1]], $this->rateLimitCalls?->getArrayCopy());
         $this->assertSame([], $controller->calls);
     }
 
@@ -172,7 +172,7 @@ final class ClientTest extends \BBTestCase
             $this->assertSame(403, $exception->getCode());
         }
 
-        $this->assertSame([['api_authenticated', '127.0.0.1', 1]], $this->rateLimitCalls?->getArrayCopy());
+        $this->assertSame([['api_authenticated_ip', '127.0.0.1', 1]], $this->rateLimitCalls?->getArrayCopy());
         $this->assertSame(['csrf'], $controller->calls);
     }
 
@@ -189,7 +189,7 @@ final class ClientTest extends \BBTestCase
         $this->assertSame([], $controller->calls);
     }
 
-    private function createController(): TestableClient
+    private function createController(array $sessionData = []): TestableClient
     {
         $request = $this->createMock(Request::class);
         $request->method('getClientIp')
@@ -224,10 +224,19 @@ final class ClientTest extends \BBTestCase
 
         $this->di['request'] = $request;
         $this->di['rate_limiter'] = $rateLimiter;
-        $this->di['session'] = new class {
+        $this->di['session'] = new class($sessionData) {
+            public function __construct(private array $data)
+            {
+            }
+
             public function get(string $key): mixed
             {
-                return null;
+                return $this->data[$key] ?? null;
+            }
+
+            public function set(string $key, mixed $value): void
+            {
+                $this->data[$key] = $value;
             }
         };
         $this->di['api'] = $this->di->protect(fn (string $role): object => $api);

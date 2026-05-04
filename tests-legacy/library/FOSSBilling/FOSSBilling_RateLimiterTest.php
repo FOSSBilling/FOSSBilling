@@ -86,7 +86,7 @@ final class FOSSBilling_RateLimiterTest extends BBTestCase
     {
         $limiter = $this->createRateLimiter(requestIp: '10.0.0.5', whitelist: ['10.0.0.0/8']);
 
-        $result = $limiter->consume('api_authenticated', 'client:123');
+        $result = $limiter->consume('api_authenticated_account', 'client:123');
 
         $this->assertFalse($result->isLimited());
         $this->assertTrue($result->isBypassed());
