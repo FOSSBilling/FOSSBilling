@@ -49,16 +49,22 @@ final class FOSSBilling_RateLimiterTest extends BBTestCase
         $subject = 'subject-' . uniqid('', true);
         $limiter->consume('client_password_reset_email', $subject, 3);
 
-        $this->expectException(\FOSSBilling\InformationException::class);
-        $this->expectExceptionCode(429);
-        $this->expectExceptionMessage('Rate limit exceeded. Please try again later.');
-
-        $limiter->consumeOrThrow('client_password_reset_email', $subject);
+        try {
+            $limiter->consumeOrThrow('client_password_reset_email', $subject);
+            self::fail('Expected rate limit exception was not thrown.');
+        } catch (FOSSBilling\Security\RateLimitException $exception) {
+            $this->assertSame(429, $exception->getCode());
+            $this->assertSame('Rate limit exceeded. Please try again later.', $exception->getMessage());
+            $this->assertSame('client_password_reset_email', $exception->getRateLimitResult()->getPolicy());
+            $this->assertTrue($exception->hasRetryAfter());
+            $this->assertGreaterThan(0, $exception->getRetryAfterSeconds());
+            $this->assertLessThanOrEqual(3600, $exception->getRetryAfterSeconds());
+        }
     }
 
     public function testUnknownPolicyThrowsException(): void
     {
-        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectException(FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Rate limiter policy unknown_policy is not defined or invalid');
 
         $limiter = $this->createRateLimiter(requestIp: '1.1.1.1');

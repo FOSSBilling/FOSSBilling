@@ -107,7 +107,7 @@ class RateLimiter implements InjectionAwareInterface
     {
         $result = $this->consume($policyName, $subject, $tokens);
         if ($result->isLimited()) {
-            throw new \FOSSBilling\InformationException('Rate limit exceeded. Please try again later.', null, 429);
+            throw new RateLimitException($result);
         }
 
         return $result;
@@ -164,7 +164,7 @@ class RateLimiter implements InjectionAwareInterface
     private function isWhitelisted(string $subject): bool
     {
         $whitelist = $this->getConfig()['whitelist_ips'] ?? [];
-        
+
         return \Symfony\Component\HttpFoundation\IpUtils::checkIp($subject, $whitelist);
     }
 }

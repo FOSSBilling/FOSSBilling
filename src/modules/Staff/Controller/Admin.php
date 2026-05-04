@@ -159,9 +159,12 @@ class Admin implements InjectionAwareInterface
         }
 
         http_response_code(429);
+        if ($result->hasRetryAfter()) {
+            header('Retry-After: ' . $result->getRetryAfterSeconds());
+        }
 
         return $app->render('error', [
-            'exception' => new \FOSSBilling\InformationException('Rate limit exceeded. Please try again later.', null, 429),
+            'exception' => new \FOSSBilling\Security\RateLimitException($result),
         ]);
     }
 }

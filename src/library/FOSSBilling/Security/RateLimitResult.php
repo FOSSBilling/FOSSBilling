@@ -60,9 +60,14 @@ class RateLimitResult
         return $this->retryAfter;
     }
 
+    public function hasRetryAfter(): bool
+    {
+        return $this->retryAfter instanceof \DateTimeImmutable;
+    }
+
     public function getRetryAfterSeconds(): int
     {
-        if (!$this->retryAfter instanceof \DateTimeImmutable) {
+        if (!$this->hasRetryAfter()) {
             return 0;
         }
 

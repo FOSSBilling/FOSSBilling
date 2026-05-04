@@ -19,6 +19,7 @@ namespace Box\Mod\Api\Controller;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Security\RateLimitException;
 use Symfony\Component\Filesystem\Filesystem;
 
 class Client implements InjectionAwareInterface
@@ -422,6 +423,9 @@ class Client implements InjectionAwareInterface
                 header('HTTP/1.1 403 Forbidden');
             } elseif ($code == 429) {
                 header('HTTP/1.1 429 Too Many Requests');
+                if ($e instanceof RateLimitException && $e->hasRetryAfter()) {
+                    header('Retry-After: ' . $e->getRetryAfterSeconds());
+                }
             } elseif ($code == 701 || $code == 879) {
                 header('HTTP/1.1 400 Bad Request');
             }
