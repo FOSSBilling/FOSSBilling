@@ -71,5 +71,4 @@ final class ServiceTest extends \BBTestCase
 
         $this->assertSame(3, $result);
     }
-    }
 }
