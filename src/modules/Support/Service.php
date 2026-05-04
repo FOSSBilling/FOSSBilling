@@ -1454,9 +1454,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function publicMessageToApiArray(\Model_SupportPTicketMessage $model, bool $deep = true, $identity = null): array
     {
-        $data = $this->di['db']->toArray($model);
-        if (!$identity instanceof \Model_Admin) {
-            unset($data['ip']);
+        $data = [
+            'id' => $model->id,
+            'content' => $model->content,
+            'created_at' => $model->created_at,
+            'updated_at' => $model->updated_at,
+        ];
+
+        if ($identity instanceof \Model_Admin) {
+            $data['support_p_ticket_id'] = $model->support_p_ticket_id;
+            $data['admin_id'] = $model->admin_id;
+            $data['ip'] = $model->ip;
         }
 
         $data['author'] = $this->publicMessageGetAuthorDetails($model, $identity);

@@ -2020,52 +2020,61 @@ final class ServiceTest extends \BBTestCase
 
     public function testPublicMessageToApiArray(): void
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('toArray')
-            ->willReturn(['ip' => '192.0.2.1']);
-
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['publicMessageGetAuthorDetails'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicMessageGetAuthorDetails')
             ->willReturn([]);
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
         $serviceMock->setDi($di);
 
         $ticketMsg = new \Model_SupportPTicketMessage();
         $ticketMsg->loadBean(new \DummyBean());
         $ticketMsg->id = 1;
+        $ticketMsg->support_p_ticket_id = 10;
+        $ticketMsg->admin_id = 20;
+        $ticketMsg->content = 'Public reply';
+        $ticketMsg->ip = '192.0.2.1';
+        $ticketMsg->created_at = '2026-01-01 00:00:00';
+        $ticketMsg->updated_at = '2026-01-01 00:00:01';
 
         $result = $serviceMock->publicMessageToApiArray($ticketMsg);
         $this->assertIsArray($result);
+        $this->assertSame(1, $result['id']);
+        $this->assertSame('Public reply', $result['content']);
+        $this->assertSame('2026-01-01 00:00:00', $result['created_at']);
+        $this->assertSame('2026-01-01 00:00:01', $result['updated_at']);
         $this->assertArrayHasKey('author', $result);
         $this->assertArrayNotHasKey('ip', $result);
+        $this->assertArrayNotHasKey('support_p_ticket_id', $result);
+        $this->assertArrayNotHasKey('admin_id', $result);
     }
 
     public function testPublicMessageToApiArrayIncludesIpForAdmin(): void
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('toArray')
-            ->willReturn(['ip' => '192.0.2.1']);
-
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['publicMessageGetAuthorDetails'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicMessageGetAuthorDetails')
             ->willReturn([]);
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
         $serviceMock->setDi($di);
 
         $ticketMsg = new \Model_SupportPTicketMessage();
         $ticketMsg->loadBean(new \DummyBean());
         $ticketMsg->id = 1;
+        $ticketMsg->support_p_ticket_id = 10;
+        $ticketMsg->admin_id = 20;
+        $ticketMsg->content = 'Admin reply';
+        $ticketMsg->ip = '192.0.2.1';
+        $ticketMsg->created_at = '2024-01-01 00:00:00';
+        $ticketMsg->updated_at = '2024-01-01 00:00:01';
 
         $result = $serviceMock->publicMessageToApiArray($ticketMsg, true, new \Model_Admin());
         $this->assertIsArray($result);
+        $this->assertSame(10, $result['support_p_ticket_id']);
+        $this->assertSame(20, $result['admin_id']);
+        $this->assertSame('192.0.2.1', $result['ip']);
         $this->assertArrayHasKey('ip', $result);
     }
 
