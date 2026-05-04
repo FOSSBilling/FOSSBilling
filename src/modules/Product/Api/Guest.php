@@ -23,23 +23,19 @@ class Guest extends \Api_Abstract
     /**
      * Get paginated list of products.
      *
-     * @optional bool $show_hidden - also get hidden products. Default false
-     *
      * @return array
      */
     public function get_list($data)
     {
         $data['status'] = 'enabled';
-        if (!isset($data['show_hidden'])) {
-            $data['show_hidden'] = false;
-        }
+        $data['show_hidden'] = false;
 
         [$sql, $params] = $this->getService()->getProductSearchQuery($data);
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $model = $this->di['db']->getExistingModelById('Product', $item['id'], 'Post not found');
-            $pager['list'][$key] = $this->getService()->toApiArray($model, false, $this->getIdentity());
+            $pager['list'][$key] = $this->getService()->toApiArray($model, false);
         }
 
         return $pager;
@@ -104,7 +100,7 @@ class Guest extends \Api_Abstract
 
         foreach ($pager['list'] as $key => $item) {
             $category = $this->di['db']->getExistingModelById('ProductCategory', $item['id'], 'Product category not found');
-            $pager['list'][$key] = $this->getService()->toProductCategoryApiArray($category, true, $this->getIdentity());
+            $pager['list'][$key] = $this->getService()->toProductCategoryApiArray($category);
         }
 
         return $pager;
@@ -118,47 +114,5 @@ class Guest extends \Api_Abstract
     public function category_get_pairs($data)
     {
         return $this->getService()->getProductCategoryPairs($data);
-    }
-
-    /**
-     * Return slider data for product types.
-     * Products are grouped by type. You can pass parameter to select product type for slider
-     * Product configuration must have slider_%s keys.
-     *
-     * @optional string $type - product type for slider - default = hosting
-     * @optional string $format - return format. Default is array . You can choose json format, to directly inject to javascript
-     */
-    public function get_slider($data)
-    {
-        $format = $data['format'] ?? null;
-        $type = $data['type'] ?? 'hosting';
-
-        $products = $this->di['db']->find('Product', 'type = :type', [':type' => $type]);
-        if (\FOSSBilling\Tools::safeCount($products) <= 0) {
-            return [];
-        }
-
-        $slider = [];
-        foreach ($products as $productModel) {
-            $product = $this->getService()->toApiArray($productModel);
-            $pc = $product['config'];
-            $s = [
-                'product_id' => $product['id'],
-                'slug' => $product['slug'],
-                'title' => $product['title'],
-                'pricing' => $product['pricing'],
-            ];
-            foreach ($pc as $k => $v) {
-                if (str_contains((string) $k, 'slider_')) {
-                    $s[substr((string) $k, strlen('slider_'))] = $v;
-                }
-            }
-            $slider[] = $s;
-        }
-        if ($format == 'json') {
-            return json_encode($slider);
-        }
-
-        return $slider;
     }
 }

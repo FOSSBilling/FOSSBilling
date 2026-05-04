@@ -184,7 +184,7 @@ final class GuestTest extends \BBTestCase
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(403);
-        $this->expectExceptionMessage("You are not allowed to login to admin area from {$ip} address.");
+        $this->expectExceptionMessage("You are not allowed to login to admin area from this IP address.");
 
         $data = [
             'email' => 'email@domain.com',

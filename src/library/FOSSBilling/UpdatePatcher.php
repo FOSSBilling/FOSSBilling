@@ -243,7 +243,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 ->values([
                     'param' => ':param',
                     'value' => ':value',
-                    'public' => '1',
+                    'public' => '0',
                     'created_at' => ':created_at',
                     'updated_at' => ':updated_at',
                 ])
@@ -991,6 +991,9 @@ class UpdatePatcher implements InjectionAwareInterface
         if ($column->getLength() < 64) {
             $this->executeSql('ALTER TABLE `tld` MODIFY `tld` VARCHAR(64) DEFAULT NULL;');
         }
+      
+        // Ensure visibility for 'last_patch' setting is private so it isn't passed to the guest API
+        $this->executeSql("UPDATE `setting` SET `public` = 0 WHERE `param` = 'last_patch';");
     }
 
     /**

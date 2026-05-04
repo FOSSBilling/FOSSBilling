@@ -9,17 +9,6 @@ use PHPUnit\Framework\TestCase;
 
 final class GuestTest extends TestCase
 {
-    public function testTheme(): void
-    {
-        $result = Request::makeRequest('guest/extension/theme');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsArray($result->getResult());
-
-        $this->assertArrayHasKey('name', $result->getResult());
-        $this->assertArrayHasKey('version', $result->getResult());
-        $this->assertEquals('FOSSBilling', $result->getResult()['author']);
-    }
-
     public function testSettings(): void
     {
         $result = Request::makeRequest('guest/extension/settings', ['ext' => 'index']);

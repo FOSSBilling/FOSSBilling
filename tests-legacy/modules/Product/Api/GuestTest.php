@@ -31,6 +31,8 @@ final class GuestTest extends \BBTestCase
         ];
 
         $model = new \Model_Product();
+        $model->loadBean(new \DummyBean());
+        $model->config = json_encode(['server_id' => 1, 'allow_domain_register' => true]);
 
         $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -38,7 +40,7 @@ final class GuestTest extends \BBTestCase
             ->willReturn($model);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
-            ->willReturn([]);
+            ->willReturn($this->getApiProductArray());
 
         $di = $this->getDi();
 
@@ -55,6 +57,8 @@ final class GuestTest extends \BBTestCase
         ];
 
         $model = new \Model_Product();
+        $model->loadBean(new \DummyBean());
+        $model->config = json_encode(['server_id' => 1, 'allow_domain_register' => true]);
 
         $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -62,7 +66,7 @@ final class GuestTest extends \BBTestCase
             ->willReturn($model);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
-            ->willReturn([]);
+            ->willReturn($this->getApiProductArray());
 
         $di = $this->getDi();
 
@@ -102,7 +106,7 @@ final class GuestTest extends \BBTestCase
             ->willReturn(['sqlString', []]);
         $serviceMock->expects($this->atLeastOnce())
             ->method('toProductCategoryApiArray')
-            ->willReturn([]);
+            ->willReturn(['products' => [$this->getApiProductArray()]]);
 
         $pager = [
             'list' => [
@@ -146,86 +150,35 @@ final class GuestTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testGetSliderEmptyList(): void
+    private function getApiProductArray(): array
     {
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('find')
-            ->willReturn([]);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-
-        $this->api->setDi($di);
-
-        $result = $this->api->get_slider([]);
-        $this->assertIsArray($result);
-        $this->assertSame([], $result);
-    }
-
-    public function testGetSlider(): void
-    {
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('find')
-            ->willReturn([$productModel]);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-
-        $this->api->setDi($di);
-
-        $arr = [
+        return [
             'id' => 1,
-            'slug' => '/',
+            'product_category_id' => 1,
+            'type' => 'hosting',
             'title' => 'New Item',
-            'pricing' => '1W',
-            'config' => [],
-        ];
-        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('toApiArray')
-            ->willReturn($arr);
-
-        $this->api->setService($serviceMock);
-        $result = $this->api->get_slider([]);
-        $this->assertIsArray($result);
-    }
-
-    public function testGetSliderJsonFormat(): void
-    {
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('find')
-            ->willReturn([$productModel]);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-
-        $this->api->setDi($di);
-
-        $arr = [
-            'id' => 1,
+            'form_id' => 1,
             'slug' => '/',
-            'title' => 'New Item',
-            'pricing' => '1W',
-            'config' => [],
+            'description' => 'Product description',
+            'unit' => 'unit',
+            'priority' => 1,
+            'created_at' => '2026-01-01 00:00:00',
+            'updated_at' => '2026-01-02 00:00:00',
+            'pricing' => [
+                'type' => 'free',
+                'registrar' => ['id' => 1, 'title' => 'Registrar'],
+            ],
+            'config' => [
+                'server_id' => 1,
+                'hosting_plan_id' => 2,
+                'allow_domain_register' => true,
+            ],
+            'addons' => [['id' => 2, 'title' => 'Addon']],
+            'price_starting_from' => 0,
+            'icon_url' => null,
+            'allow_quantity_select' => true,
+            'quantity_in_stock' => 10,
+            'stock_control' => true,
         ];
-        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('toApiArray')
-            ->willReturn($arr);
-
-        $this->api->setService($serviceMock);
-        $result = $this->api->get_slider([]);
-        $this->assertIsArray($result);
-
-        $result = $this->api->get_slider(['format' => 'json']);
-        $this->assertIsString($result);
-        $this->assertIsArray(json_decode($result ?? '', true));
     }
 }
