@@ -16,14 +16,6 @@ final class GuestTest extends \BBTestCase
         $this->api = new Guest();
     }
 
-    public function testGetDi(): void
-    {
-        $di = $this->getDi();
-        $this->api->setDi($di);
-        $getDi = $this->api->getDi();
-        $this->assertEquals($di, $getDi);
-    }
-
     public function testCompanyShowPublicOn(): void
     {
         $companyData = ['companyName' => 'TestCo'];

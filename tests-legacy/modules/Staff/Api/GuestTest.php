@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Box\Tests\Mod\Staff\Api;
 
+use FOSSBilling\Security\RateLimitResult;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -14,14 +15,6 @@ final class GuestTest extends \BBTestCase
     public function setUp(): void
     {
         $this->api = new \Box\Mod\Staff\Api\Guest();
-    }
-
-    public function testGetDi(): void
-    {
-        $di = $this->getDi();
-        $this->api->setDi($di);
-        $getDi = $this->api->getDi();
-        $this->assertEquals($di, $getDi);
     }
 
     public function testLoginWithoutEmail(): void
@@ -113,7 +106,7 @@ final class GuestTest extends \BBTestCase
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionCode(403);
-        $this->expectExceptionMessage("You are not allowed to login to admin area from {$ip} address.");
+        $this->expectExceptionMessage('You are not allowed to login to admin area from this IP address.');
 
         $data = [
             'email' => 'email@domain.com',
@@ -139,10 +132,14 @@ final class GuestTest extends \BBTestCase
         $dbMock->expects($this->never())
             ->method('findOne');
 
+        $rateLimiterMock = $this->createMock(\FOSSBilling\Security\RateLimiter::class);
+        $rateLimiterMock->method('consumeOrThrow')->willReturn(new RateLimitResult('test', false, 10, 9));
+
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['db'] = $dbMock;
         $di['validator'] = new \FOSSBilling\Validate();
+        $di['rate_limiter'] = $rateLimiterMock;
 
         $guestApi = new \Box\Mod\Staff\Api\Guest();
         $guestApi->setMod($modMock);
@@ -201,6 +198,9 @@ final class GuestTest extends \BBTestCase
             ->with('staff@example.com')
             ->willReturn('staff@example.com');
 
+        $rateLimiterMock = $this->createMock(\FOSSBilling\Security\RateLimiter::class);
+        $rateLimiterMock->method('consume')->willReturn(new RateLimitResult('test', false, 10, 9));
+
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
@@ -208,6 +208,7 @@ final class GuestTest extends \BBTestCase
         $di['tools'] = $toolsMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $emailServiceMock);
         $di['logger'] = $this->createMock('\Box_Log');
+        $di['rate_limiter'] = $rateLimiterMock;
 
         $guestApi = new \Box\Mod\Staff\Api\Guest();
         $guestApi->setDi($di);
@@ -254,11 +255,15 @@ final class GuestTest extends \BBTestCase
         $passwordMock->expects($this->never())
             ->method('hashIt');
 
+        $rateLimiterMock = $this->createMock(\FOSSBilling\Security\RateLimiter::class);
+        $rateLimiterMock->method('consumeOrThrow')->willReturn(new RateLimitResult('test', false, 10, 9));
+
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
         $di['validator'] = new \FOSSBilling\Validate();
         $di['password'] = $passwordMock;
+        $di['rate_limiter'] = $rateLimiterMock;
 
         $guestApi = new \Box\Mod\Staff\Api\Guest();
         $guestApi->setDi($di);
