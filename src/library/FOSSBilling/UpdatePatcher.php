@@ -12,7 +12,6 @@ declare(strict_types=1);
 namespace FOSSBilling;
 
 use Doctrine\DBAL\ParameterType;
-use FOSSBilling\Security\RateLimiter;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -86,7 +85,10 @@ class UpdatePatcher implements InjectionAwareInterface
             $newConfig['api']['rate_limit_whitelist'],
         );
         $newConfig['api']['CSRFPrevention'] ??= true;
-        $newConfig['rate_limiter'] = array_replace_recursive(RateLimiter::getDefaultConfig(), $newConfig['rate_limiter'] ?? []);
+        $newConfig['rate_limiter']['enabled'] ??= true;
+        $newConfig['rate_limiter']['whitelist_ips'] ??= [];
+        $newConfig['rate_limiter']['policies'] ??= [];
+        $newConfig['rate_limiter']['whitelist_ips'] = array_values(array_unique(array_merge($newConfig['rate_limiter']['whitelist_ips'], $currentConfig['api']['rate_limit_whitelist'] ?? [])));
         $newConfig['debug_and_monitoring'] ??= [];
         $newConfig['debug_and_monitoring']['debug'] ??= $newConfig['debug'] ?? false;
         $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'] ?? true;
