@@ -125,6 +125,7 @@ final class AdminTest extends \BBTestCase
         $di = $this->getDi();
         $di['validator'] = new \FOSSBilling\Validate();
         $di['password'] = new \FOSSBilling\PasswordManager();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
 
         $model = new \Model_Admin();
         $model->loadBean(new \DummyBean());
@@ -179,5 +180,15 @@ final class AdminTest extends \BBTestCase
 
         $result = $adminApi->api_key_reset(['id' => 1]);
         $this->assertSame('new-api-key', $result);
+    }
+
+    private function getAllowedRateLimiter(): object
+    {
+        return new class {
+            public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
+            {
+                return new \FOSSBilling\Security\RateLimitResult($policy, false, 10, 9);
+            }
+        };
     }
 }

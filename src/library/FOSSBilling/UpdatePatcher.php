@@ -76,11 +76,19 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['i18n']['time_format'] ??= 'short';
         $newConfig['db']['driver'] ??= 'pdo_mysql';
         $newConfig['db']['port'] ??= '3306';
-        $newConfig['api']['throttle_delay'] ??= 2;
-        $newConfig['api']['rate_span_login'] ??= 60;
-        $newConfig['api']['rate_limit_login'] ??= 20;
+        unset(
+            $newConfig['api']['rate_span'],
+            $newConfig['api']['rate_limit'],
+            $newConfig['api']['throttle_delay'],
+            $newConfig['api']['rate_span_login'],
+            $newConfig['api']['rate_limit_login'],
+            $newConfig['api']['rate_limit_whitelist'],
+        );
         $newConfig['api']['CSRFPrevention'] ??= true;
-        $newConfig['api']['rate_limit_whitelist'] ??= [];
+        $newConfig['rate_limiter']['enabled'] ??= true;
+        $newConfig['rate_limiter']['whitelist_ips'] ??= [];
+        $newConfig['rate_limiter']['policies'] ??= [];
+        $newConfig['rate_limiter']['whitelist_ips'] = array_values(array_unique(array_merge($newConfig['rate_limiter']['whitelist_ips'], $currentConfig['api']['rate_limit_whitelist'] ?? [])));
         $newConfig['debug_and_monitoring'] ??= [];
         $newConfig['debug_and_monitoring']['debug'] ??= $newConfig['debug'] ?? false;
         $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'] ?? true;

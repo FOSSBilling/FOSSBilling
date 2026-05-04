@@ -60,11 +60,16 @@ class Client extends \Api_Abstract
 
     public function resend_email_verification()
     {
-        if ($this->identity->email_approved) {
+        $client = $this->getIdentity();
+
+        if ($client->email_approved) {
             // Email is already validated, so we don't need to do so again
             return true;
         }
 
-        return $this->getService()->sendEmailConfirmationForClient($this->identity);
+        $this->di['rate_limiter']->consumeOrThrow('client_email_verification_resend_ip', (string) $this->getIp());
+        $this->di['rate_limiter']->consumeOrThrow('client_email_verification_resend_account', 'client:' . $client->id);
+
+        return $this->getService()->sendEmailConfirmationForClient($client);
     }
 }

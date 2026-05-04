@@ -248,6 +248,7 @@ final class GuestTest extends \BBTestCase
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $di = $this->getDi();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
         $this->guestApi->setDi($di);
 
         $this->guestApi->setService($serviceMock);
@@ -283,6 +284,7 @@ final class GuestTest extends \BBTestCase
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $di = $this->getDi();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
         $this->guestApi->setDi($di);
 
         $this->guestApi->setService($serviceMock);
@@ -319,6 +321,7 @@ final class GuestTest extends \BBTestCase
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $di = $this->getDi();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
         $this->guestApi->setDi($di);
 
         $this->guestApi->setService($serviceMock);
@@ -353,6 +356,7 @@ final class GuestTest extends \BBTestCase
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
 
         $di = $this->getDi();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
         $this->guestApi->setDi($di);
 
         $this->guestApi->setService($serviceMock);
@@ -494,5 +498,15 @@ final class GuestTest extends \BBTestCase
         $result = $apiMock->add_item($data);
 
         $this->assertTrue($result);
+    }
+
+    private function getAllowedRateLimiter(): object
+    {
+        return new class {
+            public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
+            {
+                return new \FOSSBilling\Security\RateLimitResult($policy, false, 10, 9);
+            }
+        };
     }
 }
