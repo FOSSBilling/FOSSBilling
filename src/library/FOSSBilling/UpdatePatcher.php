@@ -105,14 +105,14 @@ class UpdatePatcher implements InjectionAwareInterface
         // Remove the hardcoded protocol
         $newConfig['url'] = str_replace(['https://', 'http://'], '', $newConfig['url']);
 
-        // Remove depreciated config keys/subkeys.
-        $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls', 'salt', 'path_logs', 'log_to_db'];
-        $depreciatedConfigSubkeys = [
+        // Remove deprecated config keys/subkeys.
+        $deprecatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls', 'salt', 'path_logs', 'log_to_db'];
+        $deprecatedConfigSubkeys = [
             'security' => 'cookie_lifespan',
             'db' => 'type',
         ];
-        $newConfig = array_diff_key($newConfig, array_flip($depreciatedConfigKeys));
-        foreach ($depreciatedConfigSubkeys as $key => $subkey) {
+        $newConfig = array_diff_key($newConfig, array_flip($deprecatedConfigKeys));
+        foreach ($deprecatedConfigSubkeys as $key => $subkey) {
             unset($newConfig[$key][$subkey]);
         }
 
@@ -146,7 +146,7 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         foreach ($files as $file => $action) {
             try {
-                if ($action == 'unlink' && $this->filesystem->exists($file)) {
+                if ($action === 'unlink' && $this->filesystem->exists($file)) {
                     $this->filesystem->remove($file);
                 } elseif ($this->filesystem->exists($file)) {
                     $this->filesystem->rename($file, $action);
@@ -464,7 +464,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $q = 'RENAME TABLE kb_article TO support_kb_article, kb_article_category TO support_kb_article_category;';
         $this->executeSql($q);
 
-        // An error here can pretty safely be ignore.
+        // An error here can pretty safely be ignored.
         try {
             // If the Kb extension is currently active, set enabled in Support settings.
             $ext_service = $this->di['mod_service']('extension');
@@ -618,15 +618,10 @@ class UpdatePatcher implements InjectionAwareInterface
     private function patch46(): void
     {
         // Change gender column to ENUM type
-        $q1 = 'ALTER TABLE `client`
-            MODIFY COLUMN `gender` ENUM("male", "female", "nonbinary", "other") DEFAULT NULL;';
+        $q = 'ALTER TABLE `client`
+                MODIFY COLUMN `gender` ENUM(\'male\', \'female\', \'nonbinary\', \'other\') DEFAULT NULL;';
 
-        // Change document_type column to ENUM type
-        $q2 = 'ALTER TABLE `client`
-            MODIFY COLUMN `document_type` ENUM("passport") DEFAULT NULL;';
-
-        $this->executeSql($q1);
-        $this->executeSql($q2);
+        $this->executeSql($q);
     }
 
     private function patch47(): void
