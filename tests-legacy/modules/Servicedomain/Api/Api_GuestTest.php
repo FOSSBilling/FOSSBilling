@@ -103,6 +103,7 @@ final class Api_GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
         $this->guestApi->setDi($di);
 
         $data = [
@@ -122,6 +123,7 @@ final class Api_GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
         $this->guestApi->setDi($di);
 
         $data = [
@@ -150,6 +152,7 @@ final class Api_GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
         $this->guestApi->setDi($di);
 
         $data = [
@@ -178,6 +181,7 @@ final class Api_GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
         $this->guestApi->setDi($di);
 
         $data = [
@@ -202,6 +206,7 @@ final class Api_GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
         $this->guestApi->setDi($di);
 
         $this->guestApi->setService($serviceMock);
@@ -228,6 +233,7 @@ final class Api_GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
         $this->guestApi->setDi($di);
         $this->guestApi->setService($serviceMock);
 
@@ -253,6 +259,7 @@ final class Api_GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
         $this->guestApi->setDi($di);
         $this->guestApi->setService($serviceMock);
 
@@ -263,5 +270,15 @@ final class Api_GuestTest extends \BBTestCase
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->guestApi->can_be_transferred($data);
+    }
+
+    private function getAllowedRateLimiter(): object
+    {
+        return new class {
+            public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
+            {
+                return new \FOSSBilling\Security\RateLimitResult($policy, false, 10, 9);
+            }
+        };
     }
 }

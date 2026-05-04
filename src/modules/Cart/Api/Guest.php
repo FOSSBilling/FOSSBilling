@@ -95,6 +95,8 @@ class Guest extends \Api_Abstract
     #[RequiredParams(['promocode' => 'Promo code was not passed'])]
     public function apply_promo($data)
     {
+        $this->di['rate_limiter']->consumeOrThrow('cart_promo_apply_ip', (string) $this->getIp());
+
         $promo = $this->getService()->findActivePromoByCode($data['promocode']);
         if (!$promo instanceof \Model_Promo) {
             throw new \FOSSBilling\InformationException('The promo code has expired or does not exist');

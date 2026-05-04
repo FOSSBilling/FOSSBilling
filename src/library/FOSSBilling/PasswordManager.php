@@ -91,6 +91,6 @@ class PasswordManager
      */
     public function dummyVerify(string $password): void
     {
-        password_verify($password, '$2y$10$v5x5RsGeA.HJebQ2XPMCuO/ae3nws6oA1B.dOvnGxN6f8mNdYMzHe');
+        password_verify($password, '$2y$12$PQthNKx3xYyijvBtW0W6kOpwM0T4VkfCabQ5kWCPxht6L71W6tw.K');
     }
 }

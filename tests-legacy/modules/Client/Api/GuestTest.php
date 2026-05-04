@@ -58,6 +58,7 @@ final class GuestTest extends \BBTestCase
         $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
         $di['validator'] = $validatorMock;
         $di['tools'] = $toolsMock;
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
 
         $client = new Guest();
         $client->setDi($di);
@@ -101,8 +102,10 @@ final class GuestTest extends \BBTestCase
         $di['validator'] = $validatorMock;
 
         $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail')->willReturn($data['email']);
         $di['tools'] = $toolsMock;
+        $di['logger'] = new \Box_Log();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
 
         $client = new Guest();
         $client->setDi($di);
@@ -128,6 +131,7 @@ final class GuestTest extends \BBTestCase
         $client = new Guest();
         $di = $this->getDi();
         $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
         $client->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -150,6 +154,7 @@ final class GuestTest extends \BBTestCase
         $client = new Guest();
         $di = $this->getDi();
         $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
         $client->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -199,6 +204,7 @@ final class GuestTest extends \BBTestCase
         $di['session'] = $sessionMock;
         $di['logger'] = new \Box_Log();
         $di['tools'] = $toolsMock;
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $cartServiceMock);
 
         $client = new Guest();
@@ -246,9 +252,10 @@ final class GuestTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $emailServiceMock);
+        $this->registerPasswordResetModService($di, $emailServiceMock);
         $di['logger'] = new \Box_Log();
         $di['tools'] = $toolsMock;
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
 
         $client = new Guest();
         $client->setDi($di);
@@ -273,8 +280,11 @@ final class GuestTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
 
         $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail')->willReturn($data['email']);
         $di['tools'] = $toolsMock;
+        $di['logger'] = new \Box_Log();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
+        $this->registerPasswordResetModService($di);
 
         $client = new Guest();
         $client->setDi($di);
@@ -333,6 +343,7 @@ final class GuestTest extends \BBTestCase
         $di['password'] = $passwordMock;
         $di['logger'] = new \Box_Log();
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $emailServiceMock);
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
 
         $client = new Guest();
         $client->setDi($di);
@@ -341,7 +352,111 @@ final class GuestTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testUpdatePasswordRejectsInactiveClient(): void
+    public function testResetPasswordInactiveClientIsIgnored(): void
+    {
+        $data['email'] = 'john@example.com';
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->atLeastOnce())->method('fire');
+
+        $modelClient = new \Model_Client();
+        $modelClient->loadBean(new \DummyBean());
+        $modelClient->id = 1;
+        $modelClient->status = \Model_Client::SUSPENDED;
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('findOne')
+            ->with('Client', 'email = ?', [$data['email']])
+            ->willReturn($modelClient);
+        $dbMock->expects($this->never())->method('dispense');
+
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
+        $toolsMock->expects($this->once())
+            ->method('validateAndSanitizeEmail')->willReturn($data['email']);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['events_manager'] = $eventMock;
+        $di['tools'] = $toolsMock;
+        $di['logger'] = new \Box_Log();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
+        $this->registerPasswordResetModService($di);
+
+        $client = new Guest();
+        $client->setDi($di);
+
+        $result = $client->reset_password($data);
+        $this->assertTrue($result);
+    }
+
+    public function testResetPasswordRateLimitedRequestIsIgnored(): void
+    {
+        $data['email'] = 'john@example.com';
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->once())->method('fire');
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->never())->method('findOne');
+        $dbMock->expects($this->never())->method('dispense');
+
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
+        $toolsMock->expects($this->once())
+            ->method('validateAndSanitizeEmail')->willReturn($data['email']);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['events_manager'] = $eventMock;
+        $di['tools'] = $toolsMock;
+        $di['logger'] = new \Box_Log();
+        $rateLimiter = $this->getLimitedRateLimiter();
+        $di['rate_limiter'] = $rateLimiter;
+        $antispamService = $this->registerActiveAntispamModService($di);
+
+        $client = new Guest();
+        $client->setDi($di);
+
+        $result = $client->reset_password($data);
+        $this->assertTrue($result);
+        $this->assertSame(1, $rateLimiter->consumeCount);
+        $this->assertSame(0, $antispamService->checkCaptchaCount);
+    }
+
+    public function testResetPasswordEmailRateLimitedRequestSkipsCaptcha(): void
+    {
+        $data['email'] = 'john@example.com';
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->once())->method('fire');
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->never())->method('findOne');
+        $dbMock->expects($this->never())->method('dispense');
+
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
+        $toolsMock->expects($this->once())
+            ->method('validateAndSanitizeEmail')->willReturn($data['email']);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['events_manager'] = $eventMock;
+        $di['tools'] = $toolsMock;
+        $di['logger'] = new \Box_Log();
+        $rateLimiter = $this->getEmailLimitedRateLimiter();
+        $di['rate_limiter'] = $rateLimiter;
+        $antispamService = $this->registerActiveAntispamModService($di);
+
+        $client = new Guest();
+        $client->setDi($di);
+
+        $result = $client->reset_password($data);
+        $this->assertTrue($result);
+        $this->assertSame(['client_password_reset_ip', 'client_password_reset_email'], $rateLimiter->policies);
+        $this->assertSame(0, $antispamService->checkCaptchaCount);
+    }
+
+    public function testUpdatePasswordInactiveClientIsRejected(): void
     {
         $data = [
             'hash' => 'hashedString',
@@ -349,9 +464,9 @@ final class GuestTest extends \BBTestCase
             'password_confirm' => 'NewPassword1',
         ];
 
-        $inactiveClient = new \Model_Client();
-        $inactiveClient->loadBean(new \DummyBean());
-        $inactiveClient->status = \Model_Client::SUSPENDED;
+        $modelClient = new \Model_Client();
+        $modelClient->loadBean(new \DummyBean());
+        $modelClient->status = \Model_Client::SUSPENDED;
 
         $modelPasswordReset = new \Model_ClientPasswordReset();
         $modelPasswordReset->loadBean(new \DummyBean());
@@ -361,11 +476,9 @@ final class GuestTest extends \BBTestCase
         $dbMock->expects($this->once())
             ->method('findOne')->willReturn($modelPasswordReset);
         $dbMock->expects($this->once())
-            ->method('getExistingModelById')->willReturn($inactiveClient);
-        $dbMock->expects($this->never())
-            ->method('store');
-        $dbMock->expects($this->never())
-            ->method('trash');
+            ->method('getExistingModelById')->willReturn($modelClient);
+        $dbMock->expects($this->never())->method('store');
+        $dbMock->expects($this->never())->method('trash');
 
         $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->once())
@@ -379,12 +492,13 @@ final class GuestTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
         $di['password'] = $passwordMock;
-        $di['validator'] = new \FOSSBilling\Validate();
+        $di['logger'] = new \Box_Log();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
 
         $client = new Guest();
         $client->setDi($di);
 
-        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\InformationException::class);
         $this->expectExceptionMessage('The link has expired or you have already reset your password.');
         $client->update_password($data);
     }
@@ -411,6 +525,8 @@ final class GuestTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
+        $di['logger'] = new \Box_Log();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
 
         $client = new Guest();
         $client->setDi($di);
@@ -441,6 +557,7 @@ final class GuestTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
         $di['db'] = $dbMock;
         $di['validator'] = new \FOSSBilling\Validate();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
 
         $client = new Guest();
         $client->setDi($di);
@@ -448,6 +565,42 @@ final class GuestTest extends \BBTestCase
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Minimum password length is 8 characters.');
         $client->update_password($data);
+    }
+
+    public function testUpdatePasswordRateLimitedRequestIsRejected(): void
+    {
+        $data = [
+            'hash' => 'hashedString',
+            'password' => 'NewPassword1',
+            'password_confirm' => 'NewPassword1',
+        ];
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->never())
+            ->method('fire');
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->never())
+            ->method('findOne');
+
+        $di = $this->getDi();
+        $di['events_manager'] = $eventMock;
+        $di['db'] = $dbMock;
+        $rateLimiter = $this->getLimitedRateLimiter();
+        $di['rate_limiter'] = $rateLimiter;
+
+        $client = new Guest();
+        $client->setDi($di);
+
+        try {
+            $client->update_password($data);
+            $this->fail('Expected rate limit exception was not thrown.');
+        } catch (\FOSSBilling\InformationException $e) {
+            $this->assertSame('Rate limit exceeded. Please try again later.', $e->getMessage());
+        }
+
+        $this->assertSame(1, $rateLimiter->consumeCount);
+        $this->assertSame('client_password_reset_confirm_post_ip', $rateLimiter->lastPolicy);
     }
 
     public function testRequired(): void
@@ -462,5 +615,97 @@ final class GuestTest extends \BBTestCase
 
         $result = $client->required();
         $this->assertIsArray($result);
+    }
+
+    private function getAllowedRateLimiter(): object
+    {
+        return new class {
+            public function consume(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
+            {
+                return new \FOSSBilling\Security\RateLimitResult($policy, false, 10, 9);
+            }
+
+            public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
+            {
+                return $this->consume($policy, $subject, $tokens);
+            }
+        };
+    }
+
+    private function registerPasswordResetModService(\Pimple\Container $di, ?object $emailService = null): void
+    {
+        $extensionService = new class {
+            public function isExtensionActive(string $type, string $id): bool
+            {
+                return false;
+            }
+        };
+
+        $di['mod_service'] = $di->protect(
+            fn (string $name): object => strtolower($name) === 'extension' ? $extensionService : ($emailService ?? new \stdClass())
+        );
+    }
+
+    private function registerActiveAntispamModService(\Pimple\Container $di): object
+    {
+        $antispamService = new class {
+            public int $checkCaptchaCount = 0;
+
+            public function checkCaptcha(array $data): void
+            {
+                ++$this->checkCaptchaCount;
+            }
+        };
+        $extensionService = new class {
+            public function isExtensionActive(string $type, string $id): bool
+            {
+                return true;
+            }
+        };
+
+        $di['mod_service'] = $di->protect(fn (string $name): object => strtolower($name) === 'antispam' ? $antispamService : $extensionService);
+
+        return $antispamService;
+    }
+
+    private function getEmailLimitedRateLimiter(): object
+    {
+        return new class {
+            public array $policies = [];
+
+            public function consume(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
+            {
+                $this->policies[] = $policy;
+                $limited = count($this->policies) === 2;
+
+                return new \FOSSBilling\Security\RateLimitResult($policy, $limited, 10, $limited ? 0 : 9);
+            }
+        };
+    }
+
+    private function getLimitedRateLimiter(): object
+    {
+        return new class {
+            public int $consumeCount = 0;
+            public ?string $lastPolicy = null;
+
+            public function consume(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
+            {
+                ++$this->consumeCount;
+                $this->lastPolicy = $policy;
+
+                return new \FOSSBilling\Security\RateLimitResult($policy, true, 10, 0);
+            }
+
+            public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
+            {
+                $result = $this->consume($policy, $subject, $tokens);
+                if ($result->isLimited()) {
+                    throw new \FOSSBilling\InformationException('Rate limit exceeded. Please try again later.', null, 429);
+                }
+
+                return $result;
+            }
+        };
     }
 }

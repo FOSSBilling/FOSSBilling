@@ -115,6 +115,9 @@ class Client extends \Api_Abstract
 
         $client = $this->getIdentity();
 
+        $this->di['rate_limiter']->consumeOrThrow('profile_password_change_ip', (string) $this->getIp());
+        $this->di['rate_limiter']->consumeOrThrow('profile_password_change_account', 'client:' . $client->id);
+
         if (!$this->di['password']->verify($data['current_password'], $client->pass)) {
             throw new \FOSSBilling\InformationException('Current password incorrect');
         }

@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Staff\Api;
 
+use FOSSBilling\Security\RandomizedTimeFloor;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Guest extends \Api_Abstract
@@ -63,107 +64,176 @@ class Guest extends \Api_Abstract
     #[RequiredParams(['email' => 'Email required', 'password' => 'Password required'])]
     public function login($data)
     {
-        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email'], true, false);
+        $startedAt = microtime(true);
 
-        $config = $this->getMod()->getConfig();
+        try {
+            $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email'], true, false);
 
-        // check ip
-        if (!empty($config['allowed_ips']) && isset($config['check_ip']) && $config['check_ip']) {
-            $allowed_ips = explode(PHP_EOL, (string) $config['allowed_ips']);
-            $allowed_ips = array_map(trim(...), $allowed_ips);
-            if (!in_array($this->getIp(), $allowed_ips)) {
-                throw new \FOSSBilling\InformationException('You are not allowed to login to admin area from :ip address.', [':ip' => $this->getIp()], 403);
+            $config = $this->getMod()->getConfig();
+
+            // check ip
+            if (!empty($config['allowed_ips']) && isset($config['check_ip']) && $config['check_ip']) {
+                $allowed_ips = explode(PHP_EOL, (string) $config['allowed_ips']);
+                $allowed_ips = array_map(trim(...), $allowed_ips);
+                if (!in_array($this->getIp(), $allowed_ips)) {
+                    throw new \FOSSBilling\InformationException('You are not allowed to login to admin area from :ip address.', [':ip' => $this->getIp()], 403);
+                }
             }
+
+            $result = $this->getService()->login($data['email'], $data['password'], $this->getIp());
+            $this->di['session']->delete('redirect_uri');
+
+            return $result;
+        } finally {
+            RandomizedTimeFloor::apply($startedAt);
         }
-
-        $result = $this->getService()->login($data['email'], $data['password'], $this->getIp());
-        $this->di['session']->delete('redirect_uri');
-
-        return $result;
     }
 
     public function update_password($data): void
     {
-        $config = $this->getMod()->getConfig();
-        if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {
-            throw new \FOSSBilling\InformationException('Password reset has been disabled');
+        $startedAt = microtime(true);
+
+        try {
+            $this->di['rate_limiter']->consumeOrThrow('staff_password_reset_confirm_post_ip', (string) $this->getIp());
+
+            $config = $this->getMod()->getConfig();
+            if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {
+                throw new \FOSSBilling\InformationException('Password reset has been disabled');
+            }
+            $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
+            $required = [
+                'code' => 'Code required',
+                'password' => 'Password required',
+                'password_confirm' => 'Password confirmation required',
+            ];
+
+            $validator = $this->di['validator'];
+            $validator->checkRequiredParamsForArray($required, $data);
+            $validator->passwordsMatch($data);
+            $validator->isPasswordStrong($data['password']);
+
+            $reset = $this->di['db']->findOne('AdminPasswordReset', 'hash = ?', [$data['code']]);
+            if (!$reset instanceof \Model_AdminPasswordReset) {
+                $this->di['logger']->setChannel('security')->info('Staff password reset confirmation failed from IP %s: reset token not found', $this->getIp());
+
+                throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
+            }
+
+            if (strtotime($reset->created_at) - time() + 900 < 0) {
+                $this->di['logger']->setChannel('security')->info('Staff password reset confirmation failed for admin #%s from IP %s: reset token expired', $reset->admin_id, $this->getIp());
+
+                throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
+            }
+
+            $admin = $this->di['db']->getExistingModelById('Admin', $reset->admin_id, 'Admin not found');
+
+            if ($admin->status !== \Model_Admin::STATUS_ACTIVE || $admin->role === \Model_Admin::ROLE_CRON) {
+                $this->di['logger']->setChannel('security')->info('Staff password reset confirmation failed for admin #%s from IP %s: account status %s, role %s', $admin->id, $this->getIp(), $admin->status, $admin->role);
+
+                throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
+            }
+
+            $admin->pass = $this->di['password']->hashIt($data['password']);
+            $this->di['db']->store($admin);
+
+            $this->di['logger']->setChannel('security')->info('Staff password reset completed for admin #%s from IP %s', $admin->id, $this->getIp());
+
+            $this->di['events_manager']->fire(['event' => 'onAfterPasswordResetStaff', 'params' => ['id' => $admin->id]]);
+
+            // send email
+            $email = [];
+            $email['to_admin'] = $admin->id;
+            $email['code'] = 'mod_staff_password_reset_approve';
+            $emailService = $this->di['mod_service']('email');
+            $emailService->sendTemplate($email);
+
+            $this->di['db']->trash($reset);
+        } finally {
+            RandomizedTimeFloor::apply($startedAt, 300, 450);
         }
-        $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
-        $required = [
-            'code' => 'Code required',
-            'password' => 'Password required',
-            'password_confirm' => 'Password confirmation required',
-        ];
-
-        $validator = $this->di['validator'];
-        $validator->checkRequiredParamsForArray($required, $data);
-        $validator->passwordsMatch($data);
-        $validator->isPasswordStrong($data['password']);
-
-        $reset = $this->di['db']->findOne('AdminPasswordReset', 'hash = ?', [$data['code']]);
-        if (!$reset instanceof \Model_AdminPasswordReset) {
-            throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
-        }
-
-        if (strtotime($reset->created_at) - time() + 900 < 0) {
-            throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
-        }
-
-        $c = $this->di['db']->getExistingModelById('Admin', $reset->admin_id, 'User not found');
-        if ($c->status !== \Model_Admin::STATUS_ACTIVE) {
-            throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
-        }
-        $c->pass = $this->di['password']->hashIt($data['password']);
-        $this->di['db']->store($c);
-
-        $this->di['logger']->info('Admin user requested password reset. Sent to email %s', $c->email);
-
-        // send email
-        $email = [];
-        $email['to_admin'] = $c->id;
-        $email['code'] = 'mod_staff_password_reset_approve';
-        $emailService = $this->di['mod_service']('email');
-        $emailService->sendTemplate($email);
-
-        $this->di['db']->trash($reset);
     }
 
-    public function passwordreset($data)
+    public function passwordreset(array $data): bool
     {
         $config = $this->getMod()->getConfig();
         if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {
             throw new \FOSSBilling\InformationException('Password reset has been disabled');
         }
-        $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
-        $required = [
-            'email' => 'Email required',
-        ];
-        $validator = $this->di['validator'];
-        $validator->checkRequiredParamsForArray($required, $data);
-        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
-        $c = $this->di['db']->findOne('Admin', 'email = ? AND status = ?', [$data['email'], \Model_Admin::STATUS_ACTIVE]);
 
-        if (!$c instanceof \Model_Admin) {
+        $startedAt = microtime(true);
+
+        try {
+            $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
+            $required = [
+                'email' => 'Email required',
+            ];
+            $validator = $this->di['validator'];
+            $validator->checkRequiredParamsForArray($required, $data);
+            $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+
+            $ipLimit = $this->di['rate_limiter']->consume('staff_password_reset_ip', (string) $this->getIp());
+            if ($ipLimit->isLimited()) {
+                $this->di['logger']->setChannel('security')->info('Staff password reset rate limited from IP %s: email %s', $this->getIp(), $data['email']);
+
+                return true;
+            }
+
+            $emailLimit = $this->di['rate_limiter']->consume('staff_password_reset_email', (string) $data['email']);
+            if ($emailLimit->isLimited()) {
+                $this->di['logger']->setChannel('security')->info('Staff password reset rate limited for email %s from IP %s', $data['email'], $this->getIp());
+
+                return true;
+            }
+
+            $this->checkPasswordResetCaptcha($data);
+
+            $c = $this->di['db']->findOne('Admin', 'email = ?', [$data['email']]);
+
+            if (!$c instanceof \Model_Admin) {
+                $this->di['logger']->setChannel('security')->info('Staff password reset requested for unknown email %s from IP %s', $data['email'], $this->getIp());
+
+                return true;
+            }
+
+            if ($c->status !== \Model_Admin::STATUS_ACTIVE || $c->role === \Model_Admin::ROLE_CRON) {
+                $this->di['logger']->setChannel('security')->info('Staff password reset requested for ineligible admin #%s from IP %s: email %s, account status %s, role %s', $c->id, $this->getIp(), $data['email'], $c->status, $c->role);
+
+                return true;
+            }
+
+            $hash = hash('sha256', random_bytes(32));
+
+            $reset = $this->di['db']->dispense('AdminPasswordReset');
+            $reset->admin_id = $c->id;
+            $reset->ip = $this->ip;
+            $reset->hash = $hash;
+            $reset->created_at = date('Y-m-d H:i:s');
+            $reset->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($reset);
+
+            // send email
+            $email = [];
+            $email['to_admin'] = $c->id;
+            $email['code'] = 'mod_staff_password_reset_request';
+            $email['hash'] = $hash;
+            $emailService = $this->di['mod_service']('email');
+            $emailService->sendTemplate($email);
+
+            $this->di['logger']->setChannel('security')->info('Staff password reset email queued for admin #%s from IP %s: email %s', $c->id, $this->getIp(), $data['email']);
+
             return true;
+        } finally {
+            RandomizedTimeFloor::apply($startedAt);
         }
-        $hash = hash('sha256', random_bytes(32));
+    }
 
-        $reset = $this->di['db']->dispense('AdminPasswordReset');
-        $reset->admin_id = $c->id;
-        $reset->ip = $this->ip;
-        $reset->hash = $hash;
-        $reset->created_at = date('Y-m-d H:i:s');
-        $reset->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($reset);
+    private function checkPasswordResetCaptcha(array $data): void
+    {
+        $extensionService = $this->di['mod_service']('extension');
+        if (!$extensionService->isExtensionActive('mod', 'antispam')) {
+            return;
+        }
 
-        // send email
-        $email = [];
-        $email['to_admin'] = $c->id;
-        $email['code'] = 'mod_staff_password_reset_request';
-        $email['hash'] = $hash;
-        $emailService = $this->di['mod_service']('email');
-        $emailService->sendTemplate($email);
-
-        $this->di['logger']->info('Admin user requested password reset. Sent to email %s', $c->email);
+        $this->di['mod_service']('Antispam')->checkCaptcha($data);
     }
 }

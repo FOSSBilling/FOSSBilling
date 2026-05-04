@@ -82,6 +82,8 @@ class Guest extends \Api_Abstract
     ])]
     public function check($data): bool
     {
+        $this->di['rate_limiter']->consumeOrThrow('domain_lookup_ip', (string) $this->getIp());
+
         $sld = htmlspecialchars((string) $data['sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $validator = $this->di['validator'];
         if (!$validator->isSldValid($sld)) {
@@ -112,6 +114,8 @@ class Guest extends \Api_Abstract
     ])]
     public function can_be_transferred($data): bool
     {
+        $this->di['rate_limiter']->consumeOrThrow('domain_lookup_ip', (string) $this->getIp());
+
         $tld = $this->getService()->tldFindOneByTld($data['tld']);
         if (!$tld instanceof \Model_Tld) {
             throw new \FOSSBilling\InformationException('TLD is not active.');

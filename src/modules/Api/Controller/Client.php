@@ -19,13 +19,11 @@ namespace Box\Mod\Api\Controller;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Security\RateLimitException;
 use Symfony\Component\Filesystem\Filesystem;
 
 class Client implements InjectionAwareInterface
 {
-    private int|float|null $_requests_left = null;
-    private int $_rate_span = 3600;
-    private int $_rate_limit = 1000;
     private ?array $apiConfig = null;
     private readonly Filesystem $filesystem;
     protected ?\Pimple\Container $di = null;
@@ -118,44 +116,35 @@ class Client implements InjectionAwareInterface
         }
     }
 
-    private function checkRateLimit($method = null): bool
+    private function checkRateLimit(string $role, ?string $method = null, bool $useAuthenticatedSubject = true): bool
     {
-        $rateLimitWhitelist = $this->apiConfig['rate_limit_whitelist'] ?? [];
-        if (in_array($this->_getIp(), $rateLimitWhitelist)) {
-            $this->_requests_left = null;
+        $subject = (string) $this->_getIp();
 
-            return true;
+        if ($method === 'staff_login' || $method === 'client_login') {
+            $policy = 'api_login';
+        } elseif ($role === 'guest') {
+            $policy = 'api_guest';
+        } else {
+            $policy = 'api_authenticated_ip';
+
+            if ($useAuthenticatedSubject && $role === 'client' && $this->di['session']->get('client_id')) {
+                $subject = 'client:' . $this->di['session']->get('client_id');
+                $policy = 'api_authenticated_account';
+            } elseif ($useAuthenticatedSubject && $role === 'admin' && $this->di['session']->get('admin')) {
+                $admin = $this->di['session']->get('admin');
+                $subject = 'admin:' . ($admin['id'] ?? '');
+                $policy = 'api_authenticated_account';
+            }
         }
 
-        if ($method == 'staff_login' || $method == 'client_login') {
-            usleep(random_int(25000, 250000));
-        }
-
-        $rate_span = ($method == 'staff_login' || $method == 'client_login')
-            ? ($this->apiConfig['rate_span_login'] ?? 60)
-            : ($this->apiConfig['rate_span'] ?? 3600);
-        $rate_limit = ($method == 'staff_login' || $method == 'client_login')
-            ? ($this->apiConfig['rate_limit_login'] ?? 20)
-            : ($this->apiConfig['rate_limit'] ?? 1000);
-
-        $requestPrefix = match ($method) {
-            'staff_login' => 'api:/api/guest/staff/login',
-            'client_login' => 'api:/api/guest/client/login',
-            default => 'api:',
-        };
-
-        $service = $this->di['mod_service']('api');
-        $this->_requests_left = $service->getRemainingRequests($this->_getIp(), $rate_limit, $rate_span, $requestPrefix);
-        $this->_rate_span = $rate_span;
-        $this->_rate_limit = $rate_limit;
-
-        if ($this->_requests_left <= 0) {
-            sleep((int) ($this->apiConfig['throttle_delay'] ?? 2));
-
-            throw new \FOSSBilling\InformationException('Rate limit exceeded. Please try again later.', null, 429);
-        }
+        $this->di['rate_limiter']->consumeOrThrow($policy, $subject);
 
         return true;
+    }
+
+    private function checkPreAuthRateLimit(string $role, ?string $method = null): bool
+    {
+        return $this->checkRateLimit($role, $method, false);
     }
 
     private function checkHttpReferer(): bool
@@ -199,17 +188,21 @@ class Client implements InjectionAwareInterface
     {
         $this->_loadConfig();
         $this->checkAllowedIps();
-        $this->checkRateLimit($method);
+
         $this->checkHttpReferer();
         $this->isRoleAllowed($role);
 
         if ($role !== 'guest') {
+            $this->checkPreAuthRateLimit($role, $method);
+
             if ($this->shouldUseTokenLogin($role)) {
                 $this->_tryTokenLogin($role);
             } else {
                 $this->requireSessionAuth($role);
             }
         }
+
+        $this->checkRateLimit($role, $method);
 
         $api = $this->di['api']($role);
         unset($params['CSRFToken']);
@@ -283,7 +276,7 @@ class Client implements InjectionAwareInterface
                 break;
 
             case 'admin':
-                $model = $this->di['db']->findOne('Admin', 'api_token = ? AND status = ?', [$password, \Model_Admin::STATUS_ACTIVE]);
+                $model = $this->di['db']->findOne('Admin', 'api_token = ? AND status = ? AND role != ?', [$password, \Model_Admin::STATUS_ACTIVE, \Model_Admin::ROLE_CRON]);
                 if (!$model instanceof \Model_Admin) {
                     throw new \FOSSBilling\InformationException('Authentication Failed', null, 205);
                 }
@@ -422,24 +415,21 @@ class Client implements InjectionAwareInterface
         header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
         header('Content-type: application/json; charset=utf-8');
 
-        if ($this->_requests_left !== null) {
-            header('X-RateLimit-Span: ' . $this->_rate_span);
-            header('X-RateLimit-Limit: ' . $this->_rate_limit);
-            header('X-RateLimit-Remaining: ' . max(0, $this->_requests_left));
-        }
         if ($e instanceof \Exception) {
             error_log("{$e->getMessage()} {$e->getCode()}.");
             $code = $e->getCode() ?: 9999;
             $result = ['result' => null, 'error' => ['message' => $e->getMessage(), 'code' => $code]];
             $authFailed = [201, 202, 206, 204, 205, 203, 1004, 1002];
 
-            if ($code == 429) {
-                header('HTTP/1.1 429 Too Many Requests');
-                header('Retry-After: ' . $this->_rate_span);
-            } elseif (in_array($code, $authFailed)) {
+            if (in_array($code, $authFailed)) {
                 header('HTTP/1.1 401 Unauthorized');
             } elseif ($code == 403) {
                 header('HTTP/1.1 403 Forbidden');
+            } elseif ($code == 429) {
+                header('HTTP/1.1 429 Too Many Requests');
+                if ($e instanceof RateLimitException && $e->hasRetryAfter()) {
+                    header('Retry-After: ' . $e->getRetryAfterSeconds());
+                }
             } elseif ($code == 701 || $code == 879) {
                 header('HTTP/1.1 400 Bad Request');
             }

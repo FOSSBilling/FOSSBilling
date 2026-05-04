@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Client\Controller;
 
+use FOSSBilling\Security\RandomizedTimeFloor;
+
 class Client implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
@@ -42,15 +44,21 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_client_index');
     }
 
-    public function get_client_confirmation(\Box_App $app, $hash): never
+    public function get_client_confirmation(\Box_App $app, $hash): string
     {
-        $startTime = hrtime(true);
-        $service = $this->di['mod_service']('client');
-        $service->approveClientEmailByHash($hash);
-        $elapsed = (hrtime(true) - $startTime) / 1_000_000;
-        if ($elapsed < 50) {
-            usleep(random_int((int) (50_000 - $elapsed * 1000), 100_000));
+        if ($error = $this->checkPageRateLimit($app, 'client_email_confirm_ip')) {
+            return $error;
         }
+
+        $startedAt = microtime(true);
+        $service = $this->di['mod_service']('client');
+
+        try {
+            $service->approveClientEmailByHash($hash);
+        } finally {
+            RandomizedTimeFloor::apply($startedAt);
+        }
+
         $systemService = $this->di['mod_service']('System');
         $systemService->setPendingMessage(__trans('Email address was confirmed'));
         $app->redirect('/');
@@ -73,36 +81,45 @@ class Client implements \FOSSBilling\InjectionAwareInterface
 
     public function get_reset_password_confirm(\Box_App $app, $hash): string
     {
+        if ($error = $this->checkPageRateLimit($app, 'client_password_reset_confirm_ip')) {
+            return $error;
+        }
+
         $service = $this->di['mod_service']('client');
         $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetClient']);
         $data = [
             'hash' => $hash,
         ];
-        $template = 'mod_client_set_new_password';
 
-        $apiService = $this->di['mod_service']('api');
-        $ip = $this->di['request']->getClientIp();
-        $apiConfig = \FOSSBilling\Config::getProperty('api', []);
-        $loginSpan = $apiConfig['rate_span_login'] ?? 60;
-        $loginLimit = $apiConfig['rate_limit_login'] ?? 20;
-        $requestPrefix = 'page:/client/reset-password-confirm';
+        $startedAt = microtime(true);
 
-        if ($apiService->isRateLimited($ip, $loginLimit, $loginSpan, $requestPrefix)) {
-            usleep(random_int(50000, 100000));
-            $app->redirect('/');
+        try {
+            $result = $service->password_reset_valid($data);
+        } finally {
+            RandomizedTimeFloor::apply($startedAt);
         }
 
-        $startTime = hrtime(true);
-        $result = $service->password_reset_valid($data);
         if ($result !== false) {
-            return $app->render($template);
-        }
-
-        $elapsed = (hrtime(true) - $startTime) / 1_000_000;
-        if ($elapsed < 50) {
-            usleep(random_int((int) (50_000 - $elapsed * 1000), 100_000));
+            return $app->render('mod_client_set_new_password');
         }
 
         $app->redirect('/');
+    }
+
+    private function checkPageRateLimit(\Box_App $app, string $policy): ?string
+    {
+        $result = $this->di['rate_limiter']->consume($policy, (string) $this->di['request']->getClientIp());
+        if (!$result->isLimited()) {
+            return null;
+        }
+
+        http_response_code(429);
+        if ($result->hasRetryAfter()) {
+            header('Retry-After: ' . $result->getRetryAfterSeconds());
+        }
+
+        return $app->render('error', [
+            'exception' => new \FOSSBilling\Security\RateLimitException($result),
+        ]);
     }
 }
