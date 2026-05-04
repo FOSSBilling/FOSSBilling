@@ -166,6 +166,10 @@ final class GuestTest extends \BBTestCase
 
         $this->api->setService($serviceMock);
 
+        $di = $this->getDi();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
+        $this->api->setDi($di);
+
         $result = $this->api->payment($data);
         $this->assertIsArray($result);
     }
@@ -204,10 +208,21 @@ final class GuestTest extends \BBTestCase
             ->method('generatePDF');
 
         $di = $this->getDi();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);
 
         $this->api->pdf($data);
+    }
+
+    private function getAllowedRateLimiter(): object
+    {
+        return new class {
+            public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
+            {
+                return new \FOSSBilling\Security\RateLimitResult($policy, false, 10, 9);
+            }
+        };
     }
 }

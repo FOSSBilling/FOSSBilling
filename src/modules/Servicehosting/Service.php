@@ -1130,7 +1130,7 @@ class Service implements InjectionAwareInterface
         return ['product' => $d, 'config' => $dc];
     }
 
-    public function getFreeTlds(\Model_Product $product): array
+    public function getFreeTlds(\Model_Product $product, $identity = null): array
     {
         $config = json_decode($product->config ?? '', true) ?? [];
         $freeTlds = $config['free_tlds'] ?? [];
@@ -1144,7 +1144,7 @@ class Service implements InjectionAwareInterface
             $tlds = $this->di['db']->find('Tld', $query, []);
             $serviceDomainService = $this->di['mod_service']('Servicedomain');
             foreach ($tlds as $model) {
-                $result[] = $serviceDomainService->tldToApiArray($model);
+                $result[] = $serviceDomainService->tldToApiArray($model, $identity);
             }
         }
 

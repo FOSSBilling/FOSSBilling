@@ -48,7 +48,9 @@ final class ClientTest extends \BBTestCase
             'id' => 1,
         ];
         $di = $this->getDi();
-
+        $rateLimiterMock = $this->createMock(\FOSSBilling\Security\RateLimiter::class);
+        $rateLimiterMock->method('consumeOrThrow')->willReturn(new \FOSSBilling\Security\RateLimitResult('policy', false, 10, 9));
+        $di['rate_limiter'] = $rateLimiterMock;
         $this->clientApi->setDi($di);
         $result = $this->clientApi->checkout($data);
 

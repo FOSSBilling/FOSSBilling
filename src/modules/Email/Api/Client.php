@@ -80,7 +80,12 @@ class Client extends \Api_Abstract
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function resend($data)
     {
-        $model = $this->getService()->findOneForClientById($this->getIdentity(), $data['id']);
+        $client = $this->getIdentity();
+
+        $this->di['rate_limiter']->consumeOrThrow('client_email_resend_ip', (string) $this->getIp());
+        $this->di['rate_limiter']->consumeOrThrow('client_email_resend_account', 'client:' . $client->id);
+
+        $model = $this->getService()->findOneForClientById($client, $data['id']);
         if (!$model instanceof \Model_ActivityClientEmail) {
             throw new \FOSSBilling\Exception('Email not found');
         }

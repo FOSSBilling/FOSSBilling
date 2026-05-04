@@ -232,13 +232,12 @@ class Service implements InjectionAwareInterface
 
     public function toApiArray(\Model_ServiceDownloadable $model, $deep = false, $identity = null): array
     {
-        $productService = $this->di['mod_service']('product');
         $result = [
-            'path' => Path::join(PATH_UPLOADS, md5($model->filename)),
             'filename' => $model->filename,
         ];
 
         if ($identity instanceof \Model_Admin) {
+            $result['path'] = Path::join(PATH_UPLOADS, md5($model->filename));
             $result['downloads'] = $model->downloads;
         }
 
@@ -374,10 +373,8 @@ class Service implements InjectionAwareInterface
 
     public function sendFile(\Model_ServiceDownloadable $serviceDownloadable): bool
     {
-        $info = $this->toApiArray($serviceDownloadable);
-
-        $fileName = $info['filename'];
-        $filePath = $info['path'];
+        $fileName = $serviceDownloadable->filename;
+        $filePath = Path::join(PATH_UPLOADS, md5($fileName));
         if (!$this->filesystem->exists($filePath)) {
             throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
         }

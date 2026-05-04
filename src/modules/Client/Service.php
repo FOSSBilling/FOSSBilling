@@ -412,13 +412,12 @@ class Service implements InjectionAwareInterface
 
     public function toApiArray(\Model_Client $model, $deep = false, $identity = null, bool $includeSensitive = false): array
     {
+        $isAdmin = $identity instanceof \Model_Admin;
         $details = [
             'id' => $model->id,
-            'aid' => $model->aid,
             'email' => $model->email,
             'email_approved' => $model->email_approved,
             'type' => $model->type,
-            'group_id' => $model->client_group_id,
             'company' => $model->company,
             'company_vat' => $model->company_vat,
             'company_number' => $model->company_number,
@@ -435,8 +434,6 @@ class Service implements InjectionAwareInterface
             'postcode' => $model->postcode,
             'country' => $model->country,
             'currency' => $model->currency,
-            'notes' => $model->notes,
-            'created_at' => $model->created_at,
             'document_nr' => $model->document_nr,
         ];
 
@@ -445,18 +442,31 @@ class Service implements InjectionAwareInterface
         }
 
         $m = $this->di['db']->toArray($model);
+        $clientVisibleCustomFields = [];
+        if (!$isAdmin) {
+            $config = $this->di['mod_config']('client');
+            $clientVisibleCustomFields = array_filter(
+                $config['custom_fields'] ?? [],
+                fn ($field) => isset($field['active']) && $field['active']
+            );
+        }
+
         for ($i = 1; $i < 11; ++$i) {
             $k = 'custom_' . $i;
-            if (isset($m[$k]) && !empty($m[$k])) {
+            if (isset($m[$k]) && !empty($m[$k]) && ($isAdmin || isset($clientVisibleCustomFields[$k]))) {
                 $details[$k] = $m[$k];
             }
         }
 
-        $clientGroup = $this->di['db']->load('ClientGroup', $model->client_group_id);
+        if ($isAdmin) {
+            $clientGroup = $this->di['db']->load('ClientGroup', $model->client_group_id);
 
-        if ($identity instanceof \Model_Admin) {
+            $details['aid'] = $model->aid;
             $details['auth_type'] = $model->auth_type;
+            $details['created_at'] = $model->created_at;
+            $details['group_id'] = $model->client_group_id;
             $details['ip'] = $model->ip;
+            $details['notes'] = $model->notes;
             $details['status'] = $model->status;
             $details['tax_exempt'] = $model->tax_exempt;
             $details['group'] = ($clientGroup) ? $clientGroup->title : null;

@@ -796,13 +796,6 @@ final class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
-    public function testGetVersion(): void
-    {
-        $result = $this->service->getVersion();
-        $this->assertIsString($result);
-        $this->assertEquals(\FOSSBilling\Version::VERSION, $result);
-    }
-
     public function testGetPendingMessages(): void
     {
         $di = $this->getDi();

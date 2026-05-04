@@ -1465,7 +1465,7 @@ final class ServiceTest extends \BBTestCase
         $model->min_years = 2;
         $model->tld_registrar_id = 1;
 
-        $result = $this->service->tldToApiArray($model);
+        $result = $this->service->tldToApiArray($model, new \Model_Admin());
         $this->assertIsArray($result);
 
         $this->assertArrayHasKey('tld', $result);
@@ -1494,6 +1494,33 @@ final class ServiceTest extends \BBTestCase
 
         $this->assertEquals($registrar['id'], $model->tld_registrar_id);
         $this->assertEquals($registrar['title'], $tldRegistrar->name);
+    }
+
+    public function testTldToApiArrayOmitsRegistrarWithoutAdminIdentity(): void
+    {
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->never())
+            ->method('load');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $model = new \Model_Tld();
+        $model->loadBean(new \DummyBean());
+        $model->tld = '.com';
+        $model->price_registration = 1;
+        $model->price_renew = 1;
+        $model->price_transfer = 1;
+        $model->active = 1;
+        $model->allow_register = 1;
+        $model->allow_transfer = 1;
+        $model->min_years = 2;
+        $model->tld_registrar_id = 1;
+
+        $result = $this->service->tldToApiArray($model);
+
+        $this->assertArrayNotHasKey('registrar', $result);
     }
 
     public function testTldFindOneByTld(): void

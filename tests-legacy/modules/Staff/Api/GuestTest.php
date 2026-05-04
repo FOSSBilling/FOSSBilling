@@ -16,6 +16,14 @@ final class GuestTest extends \BBTestCase
         $this->api = new \Box\Mod\Staff\Api\Guest();
     }
 
+    public function testGetDi(): void
+    {
+        $di = $this->getDi();
+        $this->api->setDi($di);
+        $getDi = $this->api->getDi();
+        $this->assertEquals($di, $getDi);
+    }
+
     public function testLoginWithoutEmail(): void
     {
         $guestApi = new \Box\Mod\Staff\Api\Guest();

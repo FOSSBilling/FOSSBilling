@@ -860,11 +860,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function tldToApiArray(\Model_Tld $model): array
+    public function tldToApiArray(\Model_Tld $model, $identity = null): array
     {
-        $tldRegistrar = $this->di['db']->load('TldRegistrar', $model->tld_registrar_id);
-
-        return [
+        $result = [
             'id' => $model->id,
             'tld' => $model->tld,
             'price_registration' => $model->price_registration,
@@ -874,11 +872,18 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'allow_register' => $model->allow_register,
             'allow_transfer' => $model->allow_transfer,
             'min_years' => $model->min_years,
-            'registrar' => [
+        ];
+
+        if ($identity instanceof \Model_Admin) {
+            $tldRegistrar = $this->di['db']->load('TldRegistrar', $model->tld_registrar_id);
+
+            $result['registrar'] = [
                 'id' => $model->tld_registrar_id,
                 'title' => $tldRegistrar->name,
-            ],
-        ];
+            ];
+        }
+
+        return $result;
     }
 
     /**

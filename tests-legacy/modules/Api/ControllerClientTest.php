@@ -55,29 +55,6 @@ final class ControllerClientTest extends \BBTestCase
         $this->assertFalse($result);
     }
 
-    public function testShouldUseTokenLoginReturnsFalseWhenOnlyUsernameSet(): void
-    {
-        $controller = new Client();
-
-        $_SERVER['PHP_AUTH_USER'] = 'client';
-
-        $result = $this->invokePrivate($controller, 'shouldUseTokenLogin', ['client']);
-
-        $this->assertFalse($result);
-    }
-
-    public function testShouldUseTokenLoginReturnsTrueWhenBothUsernameAndPasswordSet(): void
-    {
-        $controller = new Client();
-
-        $_SERVER['PHP_AUTH_USER'] = 'client';
-        $_SERVER['PHP_AUTH_PW'] = 'some-token';
-
-        $result = $this->invokePrivate($controller, 'shouldUseTokenLogin', ['client']);
-
-        $this->assertTrue($result);
-    }
-
     public function testShouldUseTokenLoginRejectsRouteRoleMismatch(): void
     {
         $controller = new Client();
@@ -125,6 +102,7 @@ final class ControllerClientTest extends \BBTestCase
         $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->once())
             ->method('findOne')
+            ->with('Admin', 'api_token = ? AND status = ? AND role != ?', [$cronToken, \Model_Admin::STATUS_ACTIVE, \Model_Admin::ROLE_CRON])
             ->willReturn($cronAdmin);
 
         $staffService = new readonly class($cronAdmin) {
@@ -148,75 +126,45 @@ final class ControllerClientTest extends \BBTestCase
         $this->invokePrivate($controller, '_tryTokenLogin', ['admin']);
     }
 
-    public function testTryTokenLoginClientQueriesOnlyActiveClients(): void
+    public function testTryTokenLoginRequiresActiveClientToken(): void
     {
         $controller = new Client();
-        $token = 'client-api-token';
-        $_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode('client:' . $token);
-
-        $client = $this->buildClientModel(11, $token);
+        $apiToken = 'inactive-client-token';
+        $_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode('client:' . $apiToken);
 
         $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->once())
             ->method('findOne')
-            ->with('Client', 'api_token = ? AND status = ?', [$token, \Model_Client::ACTIVE])
-            ->willReturn($client);
-
-        $sessionMock = $this->createMock(\FOSSBilling\Session::class);
-        $sessionMock->expects($this->once())
-            ->method('set')
-            ->with('client_id', 11);
+            ->with('Client', 'api_token = ? AND status = ?', [$apiToken, \Model_Client::ACTIVE])
+            ->willReturn(null);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['session'] = $sessionMock;
         $controller->setDi($di);
 
+        $this->expectException(InformationException::class);
+        $this->expectExceptionCode(204);
         $this->invokePrivate($controller, '_tryTokenLogin', ['client']);
     }
 
-    public function testTryTokenLoginAdminQueriesOnlyActiveAdmins(): void
+    public function testTryTokenLoginRequiresActiveNonCronAdminToken(): void
     {
         $controller = new Client();
-        $token = 'admin-api-token';
-        $_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode('admin:' . $token);
-
-        $admin = $this->buildAdminModel(12, $token, \Model_Admin::ROLE_ADMIN);
-        $cronAdmin = $this->buildAdminModel(1, 'cron-token', \Model_Admin::ROLE_CRON);
+        $apiToken = 'inactive-admin-token';
+        $_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode('admin:' . $apiToken);
 
         $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->once())
             ->method('findOne')
-            ->with('Admin', 'api_token = ? AND status = ?', [$token, \Model_Admin::STATUS_ACTIVE])
-            ->willReturn($admin);
-
-        $sessionMock = $this->createMock(\FOSSBilling\Session::class);
-        $sessionMock->expects($this->once())
-            ->method('set')
-            ->with('admin', [
-                'id' => 12,
-                'email' => '',
-                'name' => '',
-                'role' => \Model_Admin::ROLE_ADMIN,
-            ]);
-
-        $staffService = new readonly class($cronAdmin) {
-            public function __construct(private \Model_Admin $cronAdmin)
-            {
-            }
-
-            public function getCronAdmin(): \Model_Admin
-            {
-                return $this->cronAdmin;
-            }
-        };
+            ->with('Admin', 'api_token = ? AND status = ? AND role != ?', [$apiToken, \Model_Admin::STATUS_ACTIVE, \Model_Admin::ROLE_CRON])
+            ->willReturn(null);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['session'] = $sessionMock;
-        $di['mod_service'] = $di->protect(fn ($name): ?object => $name === 'staff' ? $staffService : null);
         $controller->setDi($di);
 
+        $this->expectException(InformationException::class);
+        $this->expectExceptionCode(205);
         $this->invokePrivate($controller, '_tryTokenLogin', ['admin']);
     }
 
@@ -227,26 +175,12 @@ final class ControllerClientTest extends \BBTestCase
         $bean->id = $id;
         $bean->api_token = $apiToken;
         $bean->role = $role;
-        $bean->email = '';
-        $bean->name = '';
+        $bean->status = \Model_Admin::STATUS_ACTIVE;
 
         $property = new \ReflectionProperty(\RedBeanPHP\SimpleModel::class, 'bean');
         $property->setValue($admin, $bean);
 
         return $admin;
-    }
-
-    private function buildClientModel(int $id, string $apiToken): \Model_Client
-    {
-        $client = new \Model_Client();
-        $bean = new \stdClass();
-        $bean->id = $id;
-        $bean->api_token = $apiToken;
-
-        $property = new \ReflectionProperty(\RedBeanPHP\SimpleModel::class, 'bean');
-        $property->setValue($client, $bean);
-
-        return $client;
     }
 
     private function invokePrivate(object $instance, string $method, array $args = [])

@@ -76,11 +76,19 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['i18n']['time_format'] ??= 'short';
         $newConfig['db']['driver'] ??= 'pdo_mysql';
         $newConfig['db']['port'] ??= '3306';
-        $newConfig['api']['throttle_delay'] ??= 2;
-        $newConfig['api']['rate_span_login'] ??= 60;
-        $newConfig['api']['rate_limit_login'] ??= 20;
+        unset(
+            $newConfig['api']['rate_span'],
+            $newConfig['api']['rate_limit'],
+            $newConfig['api']['throttle_delay'],
+            $newConfig['api']['rate_span_login'],
+            $newConfig['api']['rate_limit_login'],
+            $newConfig['api']['rate_limit_whitelist'],
+        );
         $newConfig['api']['CSRFPrevention'] ??= true;
-        $newConfig['api']['rate_limit_whitelist'] ??= [];
+        $newConfig['rate_limiter']['enabled'] ??= true;
+        $newConfig['rate_limiter']['whitelist_ips'] ??= [];
+        $newConfig['rate_limiter']['policies'] ??= [];
+        $newConfig['rate_limiter']['whitelist_ips'] = array_values(array_unique(array_merge($newConfig['rate_limiter']['whitelist_ips'], $currentConfig['api']['rate_limit_whitelist'] ?? [])));
         $newConfig['debug_and_monitoring'] ??= [];
         $newConfig['debug_and_monitoring']['debug'] ??= $newConfig['debug'] ?? false;
         $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'] ?? true;
@@ -97,14 +105,14 @@ class UpdatePatcher implements InjectionAwareInterface
         // Remove the hardcoded protocol
         $newConfig['url'] = str_replace(['https://', 'http://'], '', $newConfig['url']);
 
-        // Remove depreciated config keys/subkeys.
-        $depreciatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls', 'salt', 'path_logs', 'log_to_db'];
-        $depreciatedConfigSubkeys = [
+        // Remove deprecated config keys/subkeys.
+        $deprecatedConfigKeys = ['guzzle', 'locale', 'locale_date_format', 'locale_time_format', 'timezone', 'sef_urls', 'salt', 'path_logs', 'log_to_db'];
+        $deprecatedConfigSubkeys = [
             'security' => 'cookie_lifespan',
             'db' => 'type',
         ];
-        $newConfig = array_diff_key($newConfig, array_flip($depreciatedConfigKeys));
-        foreach ($depreciatedConfigSubkeys as $key => $subkey) {
+        $newConfig = array_diff_key($newConfig, array_flip($deprecatedConfigKeys));
+        foreach ($deprecatedConfigSubkeys as $key => $subkey) {
             unset($newConfig[$key][$subkey]);
         }
 
@@ -138,7 +146,7 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         foreach ($files as $file => $action) {
             try {
-                if ($action == 'unlink' && $this->filesystem->exists($file)) {
+                if ($action === 'unlink' && $this->filesystem->exists($file)) {
                     $this->filesystem->remove($file);
                 } elseif ($this->filesystem->exists($file)) {
                     $this->filesystem->rename($file, $action);
@@ -235,7 +243,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 ->values([
                     'param' => ':param',
                     'value' => ':value',
-                    'public' => '1',
+                    'public' => '0',
                     'created_at' => ':created_at',
                     'updated_at' => ':updated_at',
                 ])
@@ -458,7 +466,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $q = 'RENAME TABLE kb_article TO support_kb_article, kb_article_category TO support_kb_article_category;';
         $this->executeSql($q);
 
-        // An error here can pretty safely be ignore.
+        // An error here can pretty safely be ignored.
         try {
             // If the Kb extension is currently active, set enabled in Support settings.
             $ext_service = $this->di['mod_service']('extension');
@@ -471,7 +479,8 @@ class UpdatePatcher implements InjectionAwareInterface
             // If the Kb extension exists, uninstall it.
             $kb_ext = $ext_service->findExtension('mod', 'kb');
             if ($kb_ext instanceof \Model_Extension) {
-                $ext_service->uninstall($kb_ext);
+                $ext_service->deactivate($kb_ext);
+                $ext_service->uninstall('mod', 'kb');
             }
         } catch (\Exception) {
         }
@@ -493,7 +502,8 @@ class UpdatePatcher implements InjectionAwareInterface
             // If the queue extension exists, uninstall it.
             $queue_ext = $ext_service->findExtension('mod', 'queue');
             if ($queue_ext instanceof \Model_Extension) {
-                $ext_service->uninstall($queue_ext);
+                $ext_service->deactivate($queue_ext);
+                $ext_service->uninstall('mod', 'queue');
             }
         } catch (\Exception) {
         }
@@ -610,15 +620,10 @@ class UpdatePatcher implements InjectionAwareInterface
     private function patch46(): void
     {
         // Change gender column to ENUM type
-        $q1 = 'ALTER TABLE `client`
-            MODIFY COLUMN `gender` ENUM("male", "female", "nonbinary", "other") DEFAULT NULL;';
+        $q = 'ALTER TABLE `client`
+                MODIFY COLUMN `gender` ENUM(\'male\', \'female\', \'nonbinary\', \'other\') DEFAULT NULL;';
 
-        // Change document_type column to ENUM type
-        $q2 = 'ALTER TABLE `client`
-            MODIFY COLUMN `document_type` ENUM("passport") DEFAULT NULL;';
-
-        $this->executeSql($q1);
-        $this->executeSql($q2);
+        $this->executeSql($q);
     }
 
     private function patch47(): void
@@ -950,7 +955,8 @@ class UpdatePatcher implements InjectionAwareInterface
 
             $spamcheckerExt = $extService->findExtension('mod', 'spamchecker');
             if ($spamcheckerExt instanceof \Model_Extension) {
-                $extService->uninstall($spamcheckerExt);
+                $extService->deactivate($spamcheckerExt);
+                $extService->uninstall('mod', 'spamchecker');
             }
 
             $this->di['cache']->delete('config_mod_spamchecker');
@@ -967,6 +973,15 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch56(): void
     {
+        $schemaManager = $this->di['dbal']->createSchemaManager();
+        $column = $schemaManager->introspectTable('tld')->getColumn('tld');
+
+        if ($column->getLength() < 64) {
+            $this->executeSql('ALTER TABLE `tld` MODIFY `tld` VARCHAR(64) DEFAULT NULL;');
+        }
+
+        $this->executeSql("UPDATE `setting` SET `public` = 0 WHERE `param` = 'last_patch';");
+
         try {
             $finder = new Finder();
             $finder->directories()->in(PATH_MODS)->depth('== 1')->name('/^html_(admin|client|email)$/');
@@ -996,7 +1011,6 @@ class UpdatePatcher implements InjectionAwareInterface
             Path::join(PATH_LIBRARY, 'FOSSBilling', 'TwigExtensions', 'DebugBar.php') => 'unlink',
         ]);
     }
-
     private function patch57(): void
     {
         $legacyHashes = [

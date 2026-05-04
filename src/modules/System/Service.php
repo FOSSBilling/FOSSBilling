@@ -1014,18 +1014,6 @@ class Service
         return $this->di['db']->getAssoc($query);
     }
 
-    public function getVersion(): string
-    {
-        return Version::VERSION;
-    }
-
-    public function shouldExposeVersion(): bool
-    {
-        $hideVersionPublic = $this->getParamValue('hide_version_public');
-
-        return $this->di['auth']->isAdminLoggedIn() || !$hideVersionPublic;
-    }
-
     public function getPendingMessages()
     {
         $messages = $this->di['session']->get('pending_messages');
@@ -1088,7 +1076,6 @@ class Service
             'company_number',
             'company_vat_number',
             'company_account_number',
-            'hide_version_public',
             'hide_company_public',
             'company_signature',
         ];

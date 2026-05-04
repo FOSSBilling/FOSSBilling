@@ -108,6 +108,9 @@ class Guest extends \Api_Abstract
             throw new \FOSSBilling\Exception('Payment method not found. Missing param gateway_id', null, 811);
         }
 
+        $this->di['rate_limiter']->consumeOrThrow('invoice_payment_ip', (string) $this->getIp());
+        $this->di['rate_limiter']->consumeOrThrow('invoice_payment_hash', (string) $data['hash']);
+
         return $this->getService()->processInvoice($data);
     }
 
@@ -119,6 +122,9 @@ class Guest extends \Api_Abstract
     #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
     public function pdf($data)
     {
+        $this->di['rate_limiter']->consumeOrThrow('invoice_pdf_ip', (string) $this->getIp());
+        $this->di['rate_limiter']->consumeOrThrow('invoice_pdf_hash', (string) $data['hash']);
+
         return $this->getService()->generatePDF($data['hash'], $this->getIdentity());
     }
 }

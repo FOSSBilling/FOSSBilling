@@ -141,6 +141,7 @@ final class Api_ClientTest extends \BBTestCase
         $clientApi->setIdentity($client);
 
         $di = $this->getDi();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
         $clientApi->setDi($di);
 
         $clientApi->setService($service);
@@ -165,6 +166,7 @@ final class Api_ClientTest extends \BBTestCase
         $clientApi->setIdentity($client);
 
         $di = $this->getDi();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
         $clientApi->setDi($di);
 
         $clientApi->setService($service);
@@ -226,5 +228,15 @@ final class Api_ClientTest extends \BBTestCase
         $this->expectException(\FOSSBilling\Exception::class);
         $result = $clientApi->delete(['id' => 1]);
         $this->assertIsArray($result);
+    }
+
+    private function getAllowedRateLimiter(): object
+    {
+        return new class {
+            public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
+            {
+                return new \FOSSBilling\Security\RateLimitResult($policy, false, 10, 9);
+            }
+        };
     }
 }

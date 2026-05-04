@@ -101,4 +101,39 @@ final class ClientTest extends \BBTestCase
         $this->assertIsBool($result);
         $this->assertEquals($clientIsTaxable, $result);
     }
+
+    public function testResendEmailVerification(): void
+    {
+        $client = new \Model_Client();
+        $client->loadBean(new \DummyBean());
+        $client->id = 5;
+        $client->email_approved = false;
+
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->once())
+            ->method('sendEmailConfirmationForClient')
+            ->with($client);
+
+        $di = $this->getDi();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
+
+        $api = new Client();
+        $api->setDi($di);
+        $api->setService($serviceMock);
+        $api->setIdentity($client);
+
+        $result = $api->resend_email_verification();
+
+        $this->assertNull($result);
+    }
+
+    private function getAllowedRateLimiter(): object
+    {
+        return new class {
+            public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
+            {
+                return new \FOSSBilling\Security\RateLimitResult($policy, false, 10, 9);
+            }
+        };
+    }
 }

@@ -153,6 +153,24 @@ class FOSSBillingExtension
         }
     }
 
+    #[AsTwigFunction('antispam_honeypot')]
+    public function antispamHoneypot(): array
+    {
+        if ($this->di['mod_service']('extension')->isExtensionActive('mod', 'antispam')) {
+            $config = $this->di['mod_config']('Antispam');
+
+            return [
+                'enabled' => $config['honeypot_enabled'] ?? true,
+                'field' => $config['honeypot_field'] ?? 'honeypot_field',
+            ];
+        }
+
+        return [
+            'enabled' => false,
+            'field' => 'honeypot_field',
+        ];
+    }
+
     #[AsTwigFilter('asset_url', isSafe: ['html'], needsEnvironment: true)]
     public function assetUrl(Environment $env, $asset): string
     {

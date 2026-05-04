@@ -328,7 +328,7 @@ class Admin extends \Api_Abstract
     {
         $model = $this->di['db']->getExistingModelById('ProductCategory', $data['id'], 'Category not found');
 
-        return $this->getService()->toProductCategoryApiArray($model);
+        return $this->getService()->toProductCategoryApiArray($model, true, $this->getIdentity());
     }
 
     /**

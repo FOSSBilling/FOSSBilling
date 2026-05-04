@@ -41,20 +41,4 @@ class Guest extends \Api_Abstract
 
         return $this->getService()->runCrons();
     }
-
-    /**
-     * Get cron settings.
-     */
-    public function settings(): array
-    {
-        return $this->getMod()->getConfig();
-    }
-
-    /**
-     * Tells if cron is late.
-     */
-    public function is_late(): bool
-    {
-        return $this->getService()->isLate();
-    }
 }

@@ -47,7 +47,7 @@ final class ServiceTest extends \BBTestCase
                 ['approved' => true],
                 'AND p.approved = :approved',
                 [
-                    'approved' => true,
+                    'approved' => 1,
                 ],
             ],
             [
@@ -264,10 +264,10 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $serviceMock) {
-            if ($serviceName == 'invoice') {
+            if ($serviceName === 'invoice') {
                 return $serviceMock;
             }
-            if ($serviceName == 'email') {
+            if ($serviceName === 'email') {
                 return $emailService;
             }
 
@@ -493,6 +493,8 @@ final class ServiceTest extends \BBTestCase
             if ($serviceName == 'email') {
                 return $emailService;
             }
+
+            return null;
         });
         $di['db'] = $dbMock;
 

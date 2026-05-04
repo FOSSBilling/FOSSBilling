@@ -16,6 +16,14 @@ final class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
+    public function testGetDi(): void
+    {
+        $di = $this->getDi();
+        $this->service->setDi($di);
+        $getDi = $this->service->getDi();
+        $this->assertEquals($di, $getDi);
+    }
+
     public function testGetRequestCount(): void
     {
         $since = 674_690_401; // timestamp == '1991-05-20 00:00:01';
@@ -62,5 +70,6 @@ final class ServiceTest extends \BBTestCase
         $result = $this->service->getRequestCount($since, $ip, $requestPrefix);
 
         $this->assertSame(3, $result);
+    }
     }
 }

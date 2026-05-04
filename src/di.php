@@ -251,6 +251,15 @@ $di['request'] = fn (): Request => Request::createFromGlobals();
  */
 $di['cache'] = fn (): FilesystemAdapter => new FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
 
+$di['rate_limit_cache'] = fn (): FilesystemAdapter => new FilesystemAdapter('rate_limit', 24 * 60 * 60, PATH_CACHE);
+
+$di['rate_limiter'] = function () use ($di) {
+    $rateLimiter = new FOSSBilling\Security\RateLimiter();
+    $rateLimiter->setDi($di);
+
+    return $rateLimiter;
+};
+
 /*
  *
  * @param void

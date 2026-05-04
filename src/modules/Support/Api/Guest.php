@@ -34,6 +34,8 @@ class Guest extends \Api_Abstract
     ])]
     public function ticket_create(array $data): string
     {
+        $this->di['rate_limiter']->consumeOrThrow('guest_ticket_create', (string) $this->getIp());
+
         if (strlen((string) $data['message']) < 4) {
             throw new \FOSSBilling\InformationException('Please enter your message');
         }

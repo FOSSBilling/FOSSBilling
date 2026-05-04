@@ -58,7 +58,7 @@
                     {% endif %}
                 </td>
                 <td>
-                    {% if guest.extension_theme(true).code != theme.code %}
+                    {% if admin.theme_get_current({ 'client': true }).code != theme.code %}
                         <a class="btn btn-primary" href="{{ 'theme/select'|api_url(query: { 'code': theme.code }) }}" {{ fb_api_link({ redirect: 'extension/settings/theme'|url }) }}>
                             <svg class="icon">
                                 <use xlink:href="#check"/>
@@ -124,7 +124,7 @@
                     {% endif %}
                 </td>
                 <td>
-                    {% if guest.extension_theme(false).code != theme.code %}
+                    {% if admin.theme_get_current({ 'client': false }).code != theme.code %}
                         <a class="btn btn-primary" href="{{ 'theme/select'|api_url(query: {'code' : theme.code }) }}" {{ fb_api_link({ redirect: 'extension/settings/theme'|url }) }}>
                             <svg class="icon">
                                 <use xlink:href="#check"/>

@@ -55,8 +55,6 @@ class Box_Authorization
     public function authorizeUser(?object $user, string $plainTextPassword): ?object
     {
         if ($user === null) {
-            // 25 to 100ms delay
-            usleep(random_int(25000, 100000));
             $this->di['password']->dummyVerify($plainTextPassword);
 
             return null;

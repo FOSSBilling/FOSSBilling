@@ -12,6 +12,7 @@ final class TestableClient extends Client
 {
     public bool $hasValidSession = false;
     public bool $shouldUseTokenLogin = false;
+    public bool $shouldFailTokenLogin = false;
     public bool $shouldFailCsrf = false;
     public array $calls = [];
     public mixed $renderedData = null;
@@ -38,6 +39,10 @@ final class TestableClient extends Client
     protected function _tryTokenLogin(string $routeRole): void
     {
         $this->calls[] = 'token';
+
+        if ($this->shouldFailTokenLogin) {
+            throw new InformationException('Authentication Failed', null, 204);
+        }
     }
 
     #[\Override]
@@ -67,6 +72,7 @@ final class ClientTest extends \BBTestCase
     private ?array $postBackup = [];
     private ?array $cookieBackup = [];
     private ?\Pimple\Container $di = null;
+    private ?\ArrayObject $rateLimitCalls = null;
 
     protected function setUp(): void
     {
@@ -120,16 +126,54 @@ final class ClientTest extends \BBTestCase
         $this->assertSame(['token'], $controller->calls);
     }
 
+    public function testTokenAuthenticationFailureConsumesPreAuthRateLimit(): void
+    {
+        $controller = $this->createController();
+        $controller->shouldUseTokenLogin = true;
+        $controller->shouldFailTokenLogin = true;
+
+        try {
+            $this->invokeApiCall($controller, 'client', 'test', 'testMethod', []);
+            self::fail('Expected token authentication to fail');
+        } catch (InformationException $exception) {
+            $this->assertSame(204, $exception->getCode());
+        }
+
+        $this->assertSame([['api_authenticated_ip', '127.0.0.1', 1]], $this->rateLimitCalls?->getArrayCopy());
+        $this->assertSame(['token'], $controller->calls);
+    }
+
+    public function testMissingSessionConsumesPreAuthRateLimit(): void
+    {
+        $controller = $this->createController();
+        $controller->hasValidSession = false;
+
+        try {
+            $this->invokeApiCall($controller, 'client', 'test', 'testMethod', []);
+            self::fail('Expected session authentication to fail');
+        } catch (InformationException $exception) {
+            $this->assertSame(201, $exception->getCode());
+        }
+
+        $this->assertSame([['api_authenticated_ip', '127.0.0.1', 1]], $this->rateLimitCalls?->getArrayCopy());
+        $this->assertSame([], $controller->calls);
+    }
+
     public function testSessionAuthenticatedRequestStillRequiresCsrfToken(): void
     {
         $controller = $this->createController();
         $controller->hasValidSession = true;
         $controller->shouldFailCsrf = true;
 
-        $this->expectException(InformationException::class);
-        $this->expectExceptionCode(403);
+        try {
+            $this->invokeApiCall($controller, 'client', 'test', 'testMethod', []);
+            self::fail('Expected CSRF authentication to fail');
+        } catch (InformationException $exception) {
+            $this->assertSame(403, $exception->getCode());
+        }
 
-        $this->invokeApiCall($controller, 'client', 'test', 'testMethod', []);
+        $this->assertSame([['api_authenticated_ip', '127.0.0.1', 1]], $this->rateLimitCalls?->getArrayCopy());
+        $this->assertSame(['csrf'], $controller->calls);
     }
 
     public function testGuestRequestIgnoresTokenAuthCredentials(): void
@@ -145,27 +189,31 @@ final class ClientTest extends \BBTestCase
         $this->assertSame([], $controller->calls);
     }
 
-    public function testRateLimitExceededReturns429(): void
+    private function createController(array $sessionData = []): TestableClient
     {
-        $controller = $this->createController(rateLimited: true);
-        $controller->hasValidSession = false;
-
-        $this->expectException(InformationException::class);
-        $this->expectExceptionCode(429);
-
-        $this->invokeApiCall($controller, 'guest', 'test', 'testMethod', []);
-    }
-
-    private function createController(bool $rateLimited = false): TestableClient
-    {
-        $service = $this->createMock(\Box\Mod\Api\Service::class);
-        $service->method('getRemainingRequests')
-            ->willReturn($rateLimited ? 0 : 100);
-
         $request = $this->createMock(Request::class);
-        $request->expects($this->atLeastOnce())
-            ->method('getClientIp')
+        $request->method('getClientIp')
             ->willReturn('127.0.0.1');
+
+        $this->rateLimitCalls = new \ArrayObject();
+
+        $rateLimiter = new class($this->rateLimitCalls) {
+            public function __construct(private \ArrayObject $calls)
+            {
+            }
+
+            public function consume(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
+            {
+                $this->calls[] = [$policy, $subject, $tokens];
+
+                return new \FOSSBilling\Security\RateLimitResult($policy, false, 100, 99);
+            }
+
+            public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
+            {
+                return $this->consume($policy, $subject, $tokens);
+            }
+        };
 
         $api = new class {
             public function testMethod(array $params): array
@@ -174,8 +222,23 @@ final class ClientTest extends \BBTestCase
             }
         };
 
-        $this->di['mod_service'] = $this->di->protect(fn (string $name): \PHPUnit\Framework\MockObject\MockObject => $service);
         $this->di['request'] = $request;
+        $this->di['rate_limiter'] = $rateLimiter;
+        $this->di['session'] = new class($sessionData) {
+            public function __construct(private array $data)
+            {
+            }
+
+            public function get(string $key): mixed
+            {
+                return $this->data[$key] ?? null;
+            }
+
+            public function set(string $key, mixed $value): void
+            {
+                $this->data[$key] = $value;
+            }
+        };
         $this->di['api'] = $this->di->protect(fn (string $role): object => $api);
 
         $controller = new TestableClient();

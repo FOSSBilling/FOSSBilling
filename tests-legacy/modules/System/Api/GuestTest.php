@@ -16,39 +16,12 @@ final class GuestTest extends \BBTestCase
         $this->api = new Guest();
     }
 
-    public function testVersionShowPublicOn(): void
+    public function testGetDi(): void
     {
-        $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('shouldExposeVersion')
-            ->willReturn(true);
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getVersion')
-            ->willReturn(\FOSSBilling\Version::VERSION);
-
         $di = $this->getDi();
         $this->api->setDi($di);
-        $this->api->setService($serviceMock);
-        $result = $this->api->version();
-
-        $this->assertIsString($result);
-        $this->assertNotEmpty($result);
-    }
-
-    public function testVersionShowPublicOff(): void
-    {
-        $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('shouldExposeVersion')
-            ->willReturn(false);
-
-        $di = $this->getDi();
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
-        $result = $this->api->version();
-
-        $this->assertIsString($result);
-        $this->assertEmpty($result);
+        $getDi = $this->api->getDi();
+        $this->assertEquals($di, $getDi);
     }
 
     public function testCompanyShowPublicOn(): void

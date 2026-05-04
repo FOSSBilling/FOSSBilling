@@ -9,65 +9,9 @@ use PHPUnit\Framework\TestCase;
 
 final class AdminTest extends TestCase
 {
-    private function invokeIsIpLookupAvailable(): bool
-    {
-        $method = new \ReflectionMethod(self::class, 'isIpLookupAvailable');
-        $method->setAccessible(true);
-
-        /** @var bool $result */
-        $result = $method->invoke($this);
-
-        return $result;
-    }
-
-    public function testIsIpLookupAvailableReturnsTrueWhenServerAddrIsValidIp(): void
-    {
-        $previous = $_SERVER['SERVER_ADDR'] ?? null;
-        $_SERVER['SERVER_ADDR'] = '127.0.0.1';
-
-        try {
-            $this->assertTrue($this->invokeIsIpLookupAvailable());
-        } finally {
-            if ($previous === null) {
-                unset($_SERVER['SERVER_ADDR']);
-            } else {
-                $_SERVER['SERVER_ADDR'] = $previous;
-            }
-        }
-    }
-
-    public function testIsIpLookupAvailableFallsBackWhenServerAddrIsInvalid(): void
-    {
-        $previous = $_SERVER['SERVER_ADDR'] ?? null;
-        $_SERVER['SERVER_ADDR'] = 'not-an-ip';
-
-        try {
-            $this->assertIsBool($this->invokeIsIpLookupAvailable());
-        } finally {
-            if ($previous === null) {
-                unset($_SERVER['SERVER_ADDR']);
-            } else {
-                $_SERVER['SERVER_ADDR'] = $previous;
-            }
-        }
-    }
-
-    private function isIpLookupAvailable(): bool
-    {
-        $serverAddr = $_SERVER['SERVER_ADDR'] ?? null;
-        if (is_string($serverAddr) && filter_var($serverAddr, FILTER_VALIDATE_IP) !== false) {
-            return true;
-        }
-
-        $hostname = gethostname();
-        if ($hostname === false || $hostname === '') {
-            return false;
-        }
-
-        $resolved = gethostbyname($hostname);
-
-        return is_string($resolved) && filter_var($resolved, FILTER_VALIDATE_IP) !== false;
-    }
+    private const MAX_RETRY_ATTEMPTS = 10;
+    private const RETRY_DELAY_MICROSECONDS = 200000;
+    private const DEFAULT_INTERFACE = '0';
 
     public function testClearCache(): void
     {
@@ -102,23 +46,30 @@ final class AdminTest extends TestCase
         $before = $beforeResult->getResult();
         $this->assertIsBool($before);
 
-        // Toggle the option
-        $result = Request::makeRequest('admin/system/toggle_error_reporting');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertTrue($result->getResult());
-
-        // Check that it was correctly switched
-        $afterResponse = Request::makeRequest('admin/system/error_reporting_enabled');
-        $this->assertTrue($afterResponse->wasSuccessful(), $afterResponse->generatePHPUnitMessage());
-        $after = $afterResponse->getResult();
-        $this->assertIsBool($after);
-        $this->assertNotSame($before, $after);
-
-        // Ensure we don't leave error reporting on (it shouldn't report anyways, but this is best practice)
-        if ($after) {
+        try {
+            // Toggle the option
             $result = Request::makeRequest('admin/system/toggle_error_reporting');
             $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
             $this->assertTrue($result->getResult());
+
+            // Check that it was correctly switched
+            $afterResponse = Request::makeRequest('admin/system/error_reporting_enabled');
+            $this->assertTrue($afterResponse->wasSuccessful(), $afterResponse->generatePHPUnitMessage());
+            $after = $afterResponse->getResult();
+            $this->assertIsBool($after);
+            $this->assertNotSame($before, $after);
+        } finally {
+            // Always restore original state, even if assertions above fail
+            $currentResponse = Request::makeRequest('admin/system/error_reporting_enabled');
+            $this->assertTrue($currentResponse->wasSuccessful(), $currentResponse->generatePHPUnitMessage());
+            $current = $currentResponse->getResult();
+            $this->assertIsBool($current);
+
+            if ($current !== $before) {
+                $restoreResult = Request::makeRequest('admin/system/toggle_error_reporting');
+                $this->assertTrue($restoreResult->wasSuccessful(), $restoreResult->generatePHPUnitMessage());
+                $this->assertTrue($restoreResult->getResult());
+            }
         }
     }
 
@@ -141,15 +92,15 @@ final class AdminTest extends TestCase
                 $this->assertTrue($testResult->wasSuccessful(), $testResult->generatePHPUnitMessage());
 
                 $isReady = false;
-                for ($attempt = 0; $attempt < 10; ++$attempt) {
-                    $result = Request::makeRequest('admin/system/env', ['ip' => true]);
-                    if ($result->wasSuccessful() && (bool) filter_var($result->getResult(), FILTER_VALIDATE_IP)) {
+                for ($attempt = 0; $attempt < self::MAX_RETRY_ATTEMPTS; ++$attempt) {
+                    $envResult = Request::makeRequest('admin/system/env', ['ip' => true]);
+                    if ($envResult->wasSuccessful() && (bool) filter_var($envResult->getResult(), FILTER_VALIDATE_IP)) {
                         $isReady = true;
 
                         break;
                     }
 
-                    usleep(200000); // 200ms
+                    usleep(self::RETRY_DELAY_MICROSECONDS);
                 }
 
                 $this->assertTrue($isReady, 'Timed out waiting for interface IP to become active');
@@ -157,7 +108,7 @@ final class AdminTest extends TestCase
         }
 
         // Finally, set it back to the default interface
-        $cleanupResult = Request::makeRequest('admin/system/set_interface_ip', ['interface' => '0']);
+        $cleanupResult = Request::makeRequest('admin/system/set_interface_ip', ['interface' => self::DEFAULT_INTERFACE]);
         $this->assertTrue($cleanupResult->wasSuccessful(), $cleanupResult->generatePHPUnitMessage());
     }
 
@@ -209,11 +160,42 @@ final class AdminTest extends TestCase
 
     public function testCustomInterfaceAcceptsValidHostname(): void
     {
-        $result = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => 'eth0']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+        try {
+            $result = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => 'eth0']);
+            $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+        } finally {
+            $this->resetInterfaceConfiguration();
+        }
+    }
 
-        // Reset to default
-        $resetResult = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => '', 'interface' => '0']);
+    private function resetInterfaceConfiguration(): void
+    {
+        $resetResult = Request::makeRequest(
+            'admin/system/set_interface_ip',
+            ['custom_interface' => '', 'interface' => self::DEFAULT_INTERFACE]
+        );
         $this->assertTrue($resetResult->wasSuccessful(), $resetResult->generatePHPUnitMessage());
+    }
+
+    private function isIpLookupAvailable(): bool
+    {
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'GET',
+                'timeout' => 2,
+            ],
+        ]);
+
+        set_error_handler(static function (): bool {
+            return true;
+        });
+
+        try {
+            $response = file_get_contents('https://api.ipify.org', false, $context);
+        } finally {
+            restore_error_handler();
+        }
+
+        return $response !== false;
     }
 }

@@ -17,6 +17,8 @@ final class GuestTest extends TestCase
         $result = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_spamchecker', 'check_temp_emails' => true]);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
 
+        $this->clearRateLimitCache();
+
         // Generate a new test user with by using a throwaway email address, which should fail
         $password = 'A1a' . bin2hex(random_bytes(6));
         $result = Request::makeRequest('guest/client/create', [
@@ -44,6 +46,8 @@ final class GuestTest extends TestCase
         $result = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_spamchecker', 'sfs' => true]);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
 
+        $this->clearRateLimitCache();
+
         /**
          * This one should create without any errors as long as the email address doesn't get listed as spam.
          *
@@ -65,5 +69,11 @@ final class GuestTest extends TestCase
         $result = Request::makeRequest('admin/client/delete', ['id' => $id]);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
         $this->assertTrue($result->getResult());
+    }
+
+    private function clearRateLimitCache(): void
+    {
+        $result = Request::makeRequest('admin/system/clear_cache');
+        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
     }
 }

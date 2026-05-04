@@ -143,7 +143,7 @@ class Admin extends \Api_Abstract
 
         foreach ($pager['list'] as $key => $tldArr) {
             $tld = $this->di['db']->getExistingModelById('Tld', $tldArr['id'], sprintf('Tld #%s not found', $tldArr['id']));
-            $pager['list'][$key] = $this->getService()->tldToApiArray($tld);
+            $pager['list'][$key] = $this->getService()->tldToApiArray($tld, $this->identity);
         }
 
         return $pager;
@@ -169,7 +169,7 @@ class Admin extends \Api_Abstract
             throw new \FOSSBilling\Exception('TLD not found');
         }
 
-        return $this->getService()->tldToApiArray($model);
+        return $this->getService()->tldToApiArray($model, $this->identity);
     }
 
     /**
@@ -187,7 +187,7 @@ class Admin extends \Api_Abstract
             throw new \FOSSBilling\Exception('ID not found');
         }
 
-        return $this->getService()->tldToApiArray($model);
+        return $this->getService()->tldToApiArray($model, $this->identity);
     }
 
     /**

@@ -50,9 +50,10 @@ class Client extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket ID was not passed'])]
     public function ticket_get(array $data): array
     {
-        $ticket = $this->getService()->findOneByClient($this->getIdentity(), (int) $data['id']);
+        $identity = $this->getIdentity();
+        $ticket = $this->getService()->findOneByClient($identity, (int) $data['id']);
 
-        return $this->getService()->toApiArray($ticket);
+        return $this->getService()->toApiArray($ticket, true, $identity);
     }
 
     /**
