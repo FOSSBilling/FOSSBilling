@@ -115,48 +115,4 @@ class Guest extends \Api_Abstract
     {
         return $this->getService()->getProductCategoryPairs($data);
     }
-
-    /**
-     * Return slider data for product types.
-     * Products are grouped by type. You can pass parameter to select product type for slider
-     * Product configuration must have slider_%s keys.
-     *
-     * @optional string $type - product type for slider - default = hosting
-     * @optional string $format - return format. Default is array . You can choose json format, to directly inject to javascript
-     *
-     * @TODO: Redo this and make use of it
-     */
-    public function get_slider($data)
-    {
-        $format = $data['format'] ?? null;
-        $type = $data['type'] ?? 'hosting';
-
-        $products = $this->di['db']->find('Product', "type = :type AND active = 1 AND status = 'enabled' AND hidden = 0 AND is_addon = 0", [':type' => $type]);
-        if (\FOSSBilling\Tools::safeCount($products) <= 0) {
-            return [];
-        }
-
-        $slider = [];
-        foreach ($products as $productModel) {
-            $product = $this->getService()->toApiArray($productModel);
-            $pc = $product['config'];
-            $s = [
-                'product_id' => $product['id'],
-                'slug' => $product['slug'],
-                'title' => $product['title'],
-                'pricing' => $product['pricing'],
-            ];
-            foreach ($pc as $k => $v) {
-                if (str_contains((string) $k, 'slider_')) {
-                    $s[substr((string) $k, strlen('slider_'))] = $v;
-                }
-            }
-            $slider[] = $s;
-        }
-        if ($format == 'json') {
-            return json_encode($slider);
-        }
-
-        return $slider;
-    }
 }
