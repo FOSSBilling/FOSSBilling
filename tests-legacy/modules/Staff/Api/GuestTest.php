@@ -174,7 +174,7 @@ final class GuestTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->once())
             ->method('findOne')
-            ->with('Admin', 'email = ? AND status = ?', ['staff@example.com', \Model_Admin::STATUS_ACTIVE])
+            ->with('Admin', 'email = ?', ['staff@example.com'])
             ->willReturn($admin);
         $dbMock->expects($this->once())
             ->method('dispense')
@@ -273,6 +273,7 @@ final class GuestTest extends \BBTestCase
         $di['validator'] = new \FOSSBilling\Validate();
         $di['password'] = $passwordMock;
         $di['rate_limiter'] = $rateLimiterMock;
+        $di['logger'] = $this->createMock('\Box_Log');
 
         $guestApi = new \Box\Mod\Staff\Api\Guest();
         $guestApi->setDi($di);
