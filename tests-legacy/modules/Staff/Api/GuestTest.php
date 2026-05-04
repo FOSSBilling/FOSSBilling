@@ -167,6 +167,7 @@ final class GuestTest extends \BBTestCase
         $admin->loadBean(new \DummyBean());
         $admin->id = 7;
         $admin->email = 'staff@example.com';
+        $admin->status = \Model_Admin::STATUS_ACTIVE;
 
         $reset = new \Model_AdminPasswordReset();
         $reset->loadBean(new \DummyBean());
