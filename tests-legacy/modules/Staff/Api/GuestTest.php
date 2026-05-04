@@ -201,12 +201,21 @@ final class GuestTest extends \BBTestCase
         $rateLimiterMock = $this->createMock(\FOSSBilling\Security\RateLimiter::class);
         $rateLimiterMock->method('consume')->willReturn(new RateLimitResult('test', false, 10, 9));
 
+        $extensionServiceMock = $this->createMock(\Box\Mod\Extension\Service::class);
+        $extensionServiceMock->method('isExtensionActive')->willReturn(false);
+
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
         $di['validator'] = new \FOSSBilling\Validate();
         $di['tools'] = $toolsMock;
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $emailServiceMock);
+        $di['mod_service'] = $di->protect(function (string $name) use ($emailServiceMock, $extensionServiceMock) {
+            return match ($name) {
+                'email' => $emailServiceMock,
+                'extension' => $extensionServiceMock,
+                default => $this->createMock(\Box\Mod\Extension\Service::class),
+            };
+        });
         $di['logger'] = $this->createMock('\Box_Log');
         $di['rate_limiter'] = $rateLimiterMock;
 
@@ -240,7 +249,7 @@ final class GuestTest extends \BBTestCase
             ->willReturn($reset);
         $dbMock->expects($this->once())
             ->method('getExistingModelById')
-            ->with('Admin', $reset->admin_id, 'User not found')
+            ->with('Admin', $reset->admin_id, 'Admin not found')
             ->willReturn($inactiveAdmin);
         $dbMock->expects($this->never())
             ->method('store');
