@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
+use Symfony\Component\HttpFoundation\Response;
+use Twig\Environment as TwigEnvironment;
 
 #[Group('Core')]
 final class ServiceTest extends \BBTestCase
@@ -2031,5 +2035,146 @@ final class ServiceTest extends \BBTestCase
 
         $this->service->validatePaymentAmount($received, $expected);
         $this->assertTrue(true);
+    }
+
+    public function testGeneratePdfReturnsInlinePdfResponse(): void
+    {
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        $invoiceModel->client_id = 1;
+        $invoiceModel->currency = 'USD';
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('findOne')
+            ->with('Invoice', 'hash = :hash', [':hash' => 'hash'])
+            ->willReturn($invoiceModel);
+
+        $systemService = $this->createMock(\Box\Mod\System\Service::class);
+        $systemService->method('getCompany')
+            ->willReturn([
+                'name' => 'FOSSBilling',
+                'bank_name' => '',
+                'account_number' => '',
+                'bic' => '',
+                'display_bank_info' => '',
+                'vat_number' => '',
+                'number' => '',
+                'www' => '',
+                'email' => '',
+                'tel' => '',
+                'signature' => '',
+                'address_1' => '',
+                'address_2' => '',
+                'address_3' => '',
+                'logo_url' => '',
+            ]);
+        $systemService->method('getParamValue')
+            ->with('invoice_document_format', 'Letter')
+            ->willReturn('Letter');
+
+        $twig = $this->createMock(TwigEnvironment::class);
+        $twig->expects($this->once())
+            ->method('setLoader');
+        $twig->expects($this->once())
+            ->method('render')
+            ->willReturn('<html>invoice</html>');
+
+        $pdfOptions = new Options();
+
+        $pdfMock = $this->createMock(Dompdf::class);
+        $pdfMock->method('getOptions')
+            ->willReturn($pdfOptions);
+        $pdfMock->expects($this->once())
+            ->method('setPaper')
+            ->with('Letter', 'portrait');
+        $pdfMock->expects($this->once())
+            ->method('setOptions')
+            ->with($pdfOptions);
+        $pdfMock->expects($this->once())
+            ->method('loadHtml')
+            ->with('<html>invoice</html>');
+        $pdfMock->expects($this->once())
+            ->method('render');
+        $pdfMock->expects($this->once())
+            ->method('output')
+            ->willReturn('%PDF-test');
+
+        $service = new class($pdfMock) extends Service {
+            public function __construct(private Dompdf $pdf)
+            {
+                parent::__construct();
+            }
+
+            public function checkInvoiceAuth(?int $invoiceClientId): void
+            {
+            }
+
+            public function toApiArray($invoice, $deep = false, $identity = null): array
+            {
+                return [
+                    'serie_nr' => 'INV-100',
+                    'seller' => [
+                        'company' => 'Seller',
+                        'address_1' => '',
+                        'address_2' => '',
+                        'address_3' => '',
+                        'phone' => '',
+                        'email' => '',
+                        'company_vat' => '',
+                    ],
+                    'buyer' => [
+                        'company' => '',
+                        'first_name' => 'Jane',
+                        'last_name' => 'Doe',
+                        'address' => '',
+                        'city' => '',
+                        'state' => '',
+                        'zip' => '',
+                        'country' => '',
+                        'phone' => '',
+                        'company_vat' => '',
+                        'email' => 'jane@example.com',
+                    ],
+                ];
+            }
+
+            protected function createPdfGenerator(): Dompdf
+            {
+                return $this->pdf;
+            }
+
+            protected function getPdfCss(): string
+            {
+                return 'body { color: black; }';
+            }
+
+            protected function getPdfTemplate(): string
+            {
+                return 'default-invoice.twig';
+            }
+        };
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['twig'] = $twig;
+        $di['mod_service'] = $di->protect(function (string $service) use ($systemService) {
+            if (strtolower($service) === 'system') {
+                return $systemService;
+            }
+
+            return null;
+        });
+
+        $service->setDi($di);
+
+        $_SERVER['DOCUMENT_ROOT'] ??= '/';
+
+        $response = $service->generatePDF('hash', new \Model_Guest());
+
+        $this->assertInstanceOf(Response::class, $response);
+        $this->assertSame('%PDF-test', $response->getContent());
+        $this->assertSame('application/pdf', $response->headers->get('Content-Type'));
+        $this->assertSame('inline; filename=INV-100.pdf', $response->headers->get('Content-Disposition'));
     }
 }
