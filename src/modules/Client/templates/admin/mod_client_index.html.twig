@@ -292,7 +292,7 @@
                 <div class="card-footer d-flex align-items-center justify-content-between">
                     <div>
                         {% if can_bulk_delete_clients %}
-                        {% include 'partial_batch_delete.html.twig' with { 'action': 'client/batch_delete' } %}
+                            {% include 'partial_batch_delete.html.twig' with { 'action': 'client/batch_delete' } %}
                         {% endif %}
                         {% include 'partial_pagination.html.twig' with { 'list': clients, 'url': 'client' } %}
                     </div>
@@ -303,7 +303,6 @@
                             </svg>
                             {{ 'Export Clients'|trans }}
                         </a>
-                        {% endif %}
                     </div>
                 </div>
             </div>
