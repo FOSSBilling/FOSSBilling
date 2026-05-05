@@ -195,7 +195,9 @@ class Client implements InjectionAwareInterface
         if ($role !== 'guest') {
             $this->checkPreAuthRateLimit($role, $method);
 
-            if ($this->shouldUseTokenLogin($role)) {
+            if ($this->shouldPreferSessionAuth($method) && $this->hasAuthenticatedSession($role)) {
+                $this->requireSessionAuth($role);
+            } elseif ($this->shouldUseTokenLogin($role)) {
                 $this->_tryTokenLogin($role);
             } else {
                 $this->requireSessionAuth($role);
@@ -326,6 +328,24 @@ class Client implements InjectionAwareInterface
         }
 
         return true;
+    }
+
+    private function shouldPreferSessionAuth(string $method): bool
+    {
+        return in_array($method, [
+            'profile_api_key_get',
+            'profile_api_key_reset',
+            'profile_generate_api_key',
+        ], true);
+    }
+
+    private function hasAuthenticatedSession(string $role): bool
+    {
+        try {
+            return $this->isRoleLoggedIn($role);
+        } catch (\Exception) {
+            return false;
+        }
     }
 
     private function getProvidedBasicAuthUsername(): ?string
