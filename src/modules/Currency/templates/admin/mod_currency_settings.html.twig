@@ -129,7 +129,6 @@
                             </svg>
                             <span>{{ 'Update Rates'|trans }}</span>
                         </a>
-                        {% endif %}
                         {% if params.provider|default('exchangerate-api') == "exchangerate-api" and not params.exchangerate_api_key %}
                             <a href="https://www.exchangerate-api.com" target="_blank"><p class="mt-1 mb-0">{{ 'Currency exchange rates by ExchangeRate-API'|trans }}</p></a>
                         {% endif %}
