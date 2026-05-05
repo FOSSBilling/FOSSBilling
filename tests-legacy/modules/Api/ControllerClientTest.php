@@ -66,6 +66,29 @@ final class ControllerClientTest extends \BBTestCase
         $this->invokePrivate($controller, 'shouldUseTokenLogin', ['admin']);
     }
 
+    public function testShouldPreferSessionAuthForApiKeyManagementMethods(): void
+    {
+        $controller = new Client();
+
+        $this->assertTrue($this->invokePrivate($controller, 'shouldPreferSessionAuth', ['profile_api_key_get']));
+        $this->assertTrue($this->invokePrivate($controller, 'shouldPreferSessionAuth', ['profile_api_key_reset']));
+        $this->assertTrue($this->invokePrivate($controller, 'shouldPreferSessionAuth', ['profile_generate_api_key']));
+        $this->assertFalse($this->invokePrivate($controller, 'shouldPreferSessionAuth', ['profile_get']));
+    }
+
+    public function testHasAuthenticatedSessionReturnsFalseWhenSessionLookupThrows(): void
+    {
+        $controller = new Client();
+        $di = $this->getDi();
+        $di['is_client_logged'] = function (): void {
+            throw new \Exception('Session lookup failed');
+        };
+
+        $controller->setDi($di);
+
+        $this->assertFalse($this->invokePrivate($controller, 'hasAuthenticatedSession', ['client']));
+    }
+
     public function testRequireSessionAuthNormalizesGenericAuthExceptions(): void
     {
         $controller = new Client();
