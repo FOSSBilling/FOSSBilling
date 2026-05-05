@@ -166,7 +166,6 @@
                     </svg>
                     <span>{{ 'Login to client area'|trans }}</span>
                 </a>
-                {% endif %}
                 {% if can_delete_client %}
                 <a class="btn btn-danger"
                     {{ fb_api_link({href: 'client/delete'|api_url(query: {'id': client.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'client'|url}) }}>
