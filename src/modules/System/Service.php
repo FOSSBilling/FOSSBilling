@@ -465,6 +465,8 @@ class Service
         $html = preg_replace('#<script\b[^>]*>.*?</script>#is', '', $html);
         $html = preg_replace('#<script\b[^>]*/?>#is', '', $html);
         $html = preg_replace('#\s+\bon\w+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]*)#i', '', $html);
+        $html = preg_replace('#\s+\b(?:href|src|action|formaction|xlink:href)\s*=\s*(["\'])\s*(?:javascript|data)\s*:[^"\']*\1#i', '', $html);
+        $html = preg_replace('#\s+\b(?:href|src|action|formaction|xlink:href)\s*=\s*(?:javascript|data)\s*:[^\s>]*#i', '', $html);
 
         return $html;
     }

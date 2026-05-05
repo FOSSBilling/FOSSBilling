@@ -504,7 +504,7 @@ ZW=Zimbabwe
                         <h3 class="card-title">{{ 'Cache Control'|trans }}</h3>
                         <div class="card-actions">
                             <form method="post" action="{{ 'system/clear_cache'|api_url }}" {{ fb_api_form({ message: 'Cache Directory Cleared'|trans}) }}>
-                                <button class="btn btn-danger" type="submit">{{ 'Invalidate cache'|trans }}</button>
+                                <button class="btn btn-danger" type="submit"{% if not can_invalidate_cache %} disabled aria-disabled="true"{% endif %}>{{ 'Invalidate cache'|trans }}</button>
                             </form>
                         </div>
                     </div>
@@ -593,9 +593,13 @@ ZW=Zimbabwe
                                     <div class="text-muted small">{{ 'This FOSSBilling instance is automatically sending error reports which helps us improve the software and keep it stable. Thanks!'|trans }}</div>
                                 </div>
                             </div>
-                            <a class="btn btn-danger ms-3" href="{{ 'system/toggle_error_reporting'|api_url }}" {{ fb_api_link({ message: 'Error Reporting Disabled'|trans}) }}>
-                                {{ 'Disable error reporting'|trans }}
-                            </a>
+                            {% if can_toggle_error_reporting %}
+                                <a class="btn btn-danger ms-3" href="{{ 'system/toggle_error_reporting'|api_url }}" {{ fb_api_link({ message: 'Error Reporting Disabled'|trans}) }}>
+                                    {{ 'Disable error reporting'|trans }}
+                                </a>
+                            {% else %}
+                                <button class="btn btn-danger ms-3" type="button" disabled aria-disabled="true">{{ 'Disable error reporting'|trans }}</button>
+                            {% endif %}
                         </div>
                         {% else %}
                         <div class="alert alert-warning d-flex align-items-center justify-content-between" role="alert">
@@ -610,9 +614,13 @@ ZW=Zimbabwe
                                     <div class="text-muted small">{{ 'Please consider enabling error reporting. This allows us to provide better technical support and helps us proactively improve FOSSBilling.'|trans }}</div>
                                 </div>
                             </div>
-                            <a class="btn btn-success ms-3" href="{{ 'system/toggle_error_reporting'|api_url }}" {{ fb_api_link({ message: 'Error Reporting Enabled'|trans}) }}>
-                                {{ 'Enable error reporting'|trans }}
-                            </a>
+                            {% if can_toggle_error_reporting %}
+                                <a class="btn btn-success ms-3" href="{{ 'system/toggle_error_reporting'|api_url }}" {{ fb_api_link({ message: 'Error Reporting Enabled'|trans}) }}>
+                                    {{ 'Enable error reporting'|trans }}
+                                </a>
+                            {% else %}
+                                <button class="btn btn-success ms-3" type="button" disabled aria-disabled="true">{{ 'Enable error reporting'|trans }}</button>
+                            {% endif %}
                         </div>
                         {% endif %}
                         <p>{{ "FOSSBilling optionally includes automated error reporting to help aid the project's development and stability. To find the most up-to-date information about it, you should review the links and information below."|trans }}</p>

@@ -366,6 +366,18 @@ final class ServiceTest extends \BBTestCase
         $this->assertSame($html, $result);
     }
 
+    public function testSanitizeAdapterOutputStripsJavascriptHref(): void
+    {
+        $result = $this->service->sanitizeAdapterOutput('<a href="javascript:alert(1)">Pay</a>');
+        $this->assertSame('<a>Pay</a>', $result);
+    }
+
+    public function testSanitizeAdapterOutputStripsDataUriSrc(): void
+    {
+        $result = $this->service->sanitizeAdapterOutput('<iframe src="data:text/html,<script>alert(1)</script>"></iframe>');
+        $this->assertSame('<iframe></iframe>', $result);
+    }
+
     public function testSanitizeAdapterOutputHandlesEmptyString(): void
     {
         $result = $this->service->sanitizeAdapterOutput('');
