@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
 <ul class="breadcrumb">
 <li class="breadcrumb-item">
-<a href="{{ '/'|alink }}">
+<a href="{{ '/'|url(area: 'admin') }}">
 <svg class="icon">
 <use xlink:href="#home"/>
 </svg>
 </a>
 </li>
 <li class="breadcrumb-item">
-<a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+<a href="{{ 'system'|url(area: 'admin') }}">{{ 'Settings'|trans }}</a>
 </li>
 <li class="breadcrumb-item active" aria-current="page">{{ 'Anti-Spam Settings'|trans }}</li>
 </ul>
@@ -29,7 +29,7 @@
 </div>
 
 {% set params = admin.extension_config_get({ "ext": "mod_antispam" }) %}
-<form method="post" action="{{ 'api/admin/extension/config_save'|link }}" {{ fb_api_form({message: 'Configuration Updated'|trans}) }}>
+<form method="post" action="{{ 'extension/config_save'|api_url(role: 'admin') }}" {{ fb_api_form({message: 'Configuration Updated'|trans}) }}>
 <div class="card-body">
 <input type="hidden" name="ext" value="mod_antispam">
 <div class="row">
