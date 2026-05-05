@@ -21,6 +21,7 @@ use FOSSBilling\Environment;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Security\RateLimitException;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\HttpFoundation\Response;
 
 class Client implements InjectionAwareInterface
 {
@@ -209,6 +210,12 @@ class Client implements InjectionAwareInterface
         $api = $this->di['api']($role);
         unset($params['CSRFToken']);
         $result = $api->$method($params);
+
+        if ($result instanceof Response) {
+            $this->sendResponse($result);
+
+            return null;
+        }
 
         $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower((string) $_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
         $isLoginMethod = ($method === 'login');
@@ -457,6 +464,12 @@ class Client implements InjectionAwareInterface
             $result = ['result' => $data, 'error' => null];
         }
         echo json_encode($result);
+        exit;
+    }
+
+    protected function sendResponse(Response $response): void
+    {
+        $response->send();
         exit;
     }
 
