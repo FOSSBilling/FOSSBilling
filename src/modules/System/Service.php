@@ -465,8 +465,20 @@ class Service
         $html = preg_replace('#<script\b[^>]*>.*?</script>#is', '', $html);
         $html = preg_replace('#<script\b[^>]*/?>#is', '', $html);
         $html = preg_replace('#\s+\bon\w+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]*)#i', '', $html);
-        $html = preg_replace('#\s+\b(?:href|src|action|formaction|xlink:href)\s*=\s*(["\'])\s*(?:javascript|data)\s*:[^"\']*\1#i', '', $html);
-        $html = preg_replace('#\s+\b(?:href|src|action|formaction|xlink:href)\s*=\s*(?:javascript|data)\s*:[^\s>]*#i', '', $html);
+        $html = preg_replace_callback(
+            '#\s+\b(href|src|action|formaction|xlink:href)\s*=\s*(?:(["\'])(.*?)\2|([^\s>]*))#is',
+            static function (array $matches): string {
+                $value = html_entity_decode($matches[3] !== '' ? $matches[3] : $matches[4], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $normalizedValue = preg_replace('/[\x00-\x20\x7F]+/', '', trim($value));
+
+                if (preg_match('/^(?:javascript|data):/i', $normalizedValue)) {
+                    return '';
+                }
+
+                return $matches[0];
+            },
+            $html
+        );
 
         return $html;
     }

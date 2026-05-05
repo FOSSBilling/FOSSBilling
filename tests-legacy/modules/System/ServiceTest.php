@@ -372,6 +372,18 @@ final class ServiceTest extends \BBTestCase
         $this->assertSame('<a>Pay</a>', $result);
     }
 
+    public function testSanitizeAdapterOutputStripsEncodedJavascriptHref(): void
+    {
+        $result = $this->service->sanitizeAdapterOutput('<a href="java&#x73;cript:alert(1)">Pay</a>');
+        $this->assertSame('<a>Pay</a>', $result);
+    }
+
+    public function testSanitizeAdapterOutputStripsWhitespaceObfuscatedJavascriptHref(): void
+    {
+        $result = $this->service->sanitizeAdapterOutput("<a href=\"java\nscript:alert(1)\">Pay</a>");
+        $this->assertSame('<a>Pay</a>', $result);
+    }
+
     public function testSanitizeAdapterOutputStripsDataUriSrc(): void
     {
         $result = $this->service->sanitizeAdapterOutput('<iframe src="data:text/html,<script>alert(1)</script>"></iframe>');
@@ -498,8 +510,25 @@ final class ServiceTest extends \BBTestCase
         $twig = $this->createBaseTwigEnvironment($di);
         $result = $twig->createTemplate("{{ fb_api_link({ href: '/admin/test', reload: true }) }}")->render([]);
 
-        $this->assertSame('href="/admin/test" data-fb-api=\'{"reload":true,"type":"link"}\'', $result);
+        $this->assertSame('href="/admin/test" data-fb-api="{&quot;reload&quot;:true,&quot;type&quot;:&quot;link&quot;}"', $result);
         $this->assertStringNotContainsString('"href"', $result);
+    }
+
+    public function testBaseTwigEnvironmentFbApiEscapesAttributeJson(): void
+    {
+        $di = $this->getDi();
+        $di['api_guest'] = new \stdClass();
+        $di['session'] = $this->mockSession();
+
+        $twig = $this->createBaseTwigEnvironment($di);
+        $result = $twig->createTemplate("{{ fb_api_link({ modal: {type: 'confirm', content: content} }) }}")->render([
+            'content' => 'Block IP 127.0.0.1\' autofocus onfocus=alert(1) x=\'',
+        ]);
+
+        $this->assertStringContainsString('data-fb-api="{&quot;modal&quot;:', $result);
+        $this->assertStringContainsString('\u0027 autofocus', $result);
+        $this->assertStringNotContainsString("' autofocus", $result);
+        $this->assertStringNotContainsString("x='", $result);
     }
 
     public function testRenderEmailTemplateBlocksSetTag(): void
