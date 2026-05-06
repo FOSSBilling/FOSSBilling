@@ -8,6 +8,18 @@ use Box\Mod\Api\Controller\Client;
 use FOSSBilling\InformationException;
 use PHPUnit\Framework\Attributes\Group;
 
+final class CronStaffServiceDouble
+{
+    public function __construct(private \Model_Admin $cronAdmin)
+    {
+    }
+
+    public function getCronAdmin(): \Model_Admin
+    {
+        return $this->cronAdmin;
+    }
+}
+
 #[Group('Core')]
 final class ControllerClientTest extends \BBTestCase
 {
@@ -120,24 +132,16 @@ final class ControllerClientTest extends \BBTestCase
         $cronToken = 'cron-api-token';
         $_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode('admin:' . $cronToken);
 
+        $dbAdmin = $this->buildAdminModel(1, $cronToken, \Model_Admin::ROLE_ADMIN);
         $cronAdmin = $this->buildAdminModel(1, $cronToken, \Model_Admin::ROLE_CRON);
 
         $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->once())
             ->method('findOne')
             ->with('Admin', 'api_token = ? AND status = ? AND role != ?', [$cronToken, \Model_Admin::STATUS_ACTIVE, \Model_Admin::ROLE_CRON])
-            ->willReturn($cronAdmin);
+            ->willReturn($dbAdmin);
 
-        $staffService = new readonly class($cronAdmin) {
-            public function __construct(private \Model_Admin $cronAdmin)
-            {
-            }
-
-            public function getCronAdmin(): \Model_Admin
-            {
-                return $this->cronAdmin;
-            }
-        };
+        $staffService = new CronStaffServiceDouble($cronAdmin);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -206,7 +210,7 @@ final class ControllerClientTest extends \BBTestCase
         return $admin;
     }
 
-    private function invokePrivate(object $instance, string $method, array $args = [])
+    private function invokePrivate(object $instance, string $method, array $args = []): mixed
     {
         $reflection = new \ReflectionClass($instance);
         $reflectionMethod = $reflection->getMethod($method);

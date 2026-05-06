@@ -18,7 +18,7 @@ final class GuestTest extends TestCase
 
     public function testSettingsMissingExt(): void
     {
-        $result = Request::makeRequest('guest/extension/settings', ['ext']);
+        $result = Request::makeRequest('guest/extension/settings', ['ext' => '']);
         $this->assertFalse($result->wasSuccessful(), $result->generatePHPUnitMessage());
         $this->assertEquals('Parameter ext is missing', $result->getErrorMessage());
     }

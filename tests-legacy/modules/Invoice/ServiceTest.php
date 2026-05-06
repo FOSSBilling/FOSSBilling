@@ -2100,60 +2100,48 @@ final class ServiceTest extends \BBTestCase
             ->method('output')
             ->willReturn('%PDF-test');
 
-        $service = new class($pdfMock) extends Service {
-            public function __construct(private Dompdf $pdf)
-            {
-                parent::__construct();
-            }
+        $service = $this->getMockBuilder(Service::class)
+            ->onlyMethods(['checkInvoiceAuth', 'toApiArray', 'createPdfGenerator', 'getPdfCss', 'getPdfTemplate'])
+            ->getMock();
 
-            public function checkInvoiceAuth(?int $invoiceClientId): void
-            {
-            }
+        $service->expects($this->once())
+            ->method('checkInvoiceAuth');
 
-            public function toApiArray($invoice, $deep = false, $identity = null): array
-            {
-                return [
-                    'serie_nr' => 'INV-100',
-                    'seller' => [
-                        'company' => 'Seller',
-                        'address_1' => '',
-                        'address_2' => '',
-                        'address_3' => '',
-                        'phone' => '',
-                        'email' => '',
-                        'company_vat' => '',
-                    ],
-                    'buyer' => [
-                        'company' => '',
-                        'first_name' => 'Jane',
-                        'last_name' => 'Doe',
-                        'address' => '',
-                        'city' => '',
-                        'state' => '',
-                        'zip' => '',
-                        'country' => '',
-                        'phone' => '',
-                        'company_vat' => '',
-                        'email' => 'jane@example.com',
-                    ],
-                ];
-            }
+        $service->method('toApiArray')
+            ->willReturn([
+                'serie_nr' => 'INV-100',
+                'seller' => [
+                    'company' => 'Seller',
+                    'address_1' => '',
+                    'address_2' => '',
+                    'address_3' => '',
+                    'phone' => '',
+                    'email' => '',
+                    'company_vat' => '',
+                ],
+                'buyer' => [
+                    'company' => '',
+                    'first_name' => 'Jane',
+                    'last_name' => 'Doe',
+                    'address' => '',
+                    'city' => '',
+                    'state' => '',
+                    'zip' => '',
+                    'country' => '',
+                    'phone' => '',
+                    'company_vat' => '',
+                    'email' => 'jane@example.com',
+                ],
+            ]);
 
-            protected function createPdfGenerator(): Dompdf
-            {
-                return $this->pdf;
-            }
+        $service->method('createPdfGenerator')
+            ->willReturn($pdfMock);
 
-            protected function getPdfCss(): string
-            {
-                return 'body { color: black; }';
-            }
+        $service->method('getPdfCss')
+            ->willReturn('body { color: black; }');
 
-            protected function getPdfTemplate(): string
-            {
-                return 'default-invoice.twig';
-            }
-        };
+        $service->method('getPdfTemplate')
+            ->willReturn('default-invoice.twig');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
