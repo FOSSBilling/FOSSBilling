@@ -1,5 +1,8 @@
 name: CI
 
+permissions:
+  contents: read
+
 on:
   push:
   pull_request:
@@ -11,8 +14,6 @@ on:
 jobs:
   merge-hold:
     name: 'Check for Merge Hold'
-    permissions:
-      contents: read
     if: ${{ github.event_name == 'pull_request' || (github.event_name == 'pull_request_target' && (github.event.action == 'labeled' || github.event.action == 'unlabeled')) }}
     runs-on: ubuntu-latest
     steps:
@@ -49,17 +50,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: release-drafter/release-drafter@563bf132657a13ded0b01fcb723c5a58cdd824e2 # v7
+        with:
+          config-name: release-drafter.yml
+          disable-autolabeler: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   spellcheck:
     name: 'Spellcheck'
-    permissions:
-      contents: read
     runs-on: ubuntu-latest
-    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
+    if: &normal_ci ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - &checkout_step
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: 'Perform Spellcheck'
         uses: streetsidesoftware/cspell-action@de2a73e963e7443969755b648a1008f77033c5b2 # v8
@@ -68,19 +71,17 @@ jobs:
 
   php-build-test:
     name: 'PHP Build and Test'
-    permissions:
-      contents: read
     needs: [ spellcheck ]
-    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
+    if: *normal_ci
     runs-on: ubuntu-latest
     strategy:
       matrix:
         php: [8.3, 8.4]
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - *checkout_step
 
       - name: 'PHP Build' 
-        uses: FOSSBilling/.workflows/.github/actions/php-build@3273310677c9a62cdb61aa6f8f0d3ec4993b1a8e
+        uses: FOSSBilling/.workflows/.github/actions/php-build@76b4af76fb2a1a2b553ec1c2839044984299a271
         with:
           php-version: ${{ matrix.php }}
 
@@ -101,9 +102,7 @@ jobs:
 
   live-tests:
     name: 'fresh-install'
-    permissions:
-      contents: read
-    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
+    if: *normal_ci
     runs-on: ubuntu-latest
     env:
       DB_HOST: 127.0.0.1
@@ -117,7 +116,7 @@ jobs:
       APP_URL: http://localhost/
       TEST_API_KEY: AW6qEQCa7U7FG96J9NFIZXNYMJ79M8LH
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - *checkout_step
 
       - name: 'PHP Build'
         uses: FOSSBilling/.workflows/.github/actions/php-build@76b4af76fb2a1a2b553ec1c2839044984299a271
@@ -146,7 +145,7 @@ jobs:
           key: huraga-${{ hashFiles('./package-lock.json', './src/themes/huraga/assets/huraga.js', './src/themes/huraga/assets/scss/*.scss') }}
 
       - name: 'Install Node.js and Enable Caching'
-        if: steps.cache-admin_default.outputs.cache-hit != 'true' || steps.cache-huraga.outputs.cache-hit != 'true'
+        if: &needs_theme_build steps.cache-admin_default.outputs.cache-hit != 'true' || steps.cache-huraga.outputs.cache-hit != 'true'
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           cache: 'npm'
@@ -154,11 +153,11 @@ jobs:
           node-version: 24
 
       - name: 'Install Node.js Dependencies'
-        if: steps.cache-admin_default.outputs.cache-hit != 'true' || steps.cache-huraga.outputs.cache-hit != 'true'
+        if: *needs_theme_build
         run: npm ci
 
       - name: 'Build Frontend Assets'
-        if: steps.cache-admin_default.outputs.cache-hit != 'true' || steps.cache-huraga.outputs.cache-hit != 'true'
+        if: *needs_theme_build
         run: npm run build
 
       - name: 'Download Latest Translations'
@@ -293,10 +292,8 @@ jobs:
 
   preview-build:
     name: 'Create Preview Release'
-    permissions: 
-      contents: read
     needs: [ php-build-test ]
-    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
+    if: *normal_ci
     uses: ./.github/workflows/release-build.yml
     with:
       artifact-name: 'preview-build'
@@ -304,10 +301,8 @@ jobs:
 
   upload-preview:
     name: 'Upload Preview Release'
-    permissions:
-      contents: read
     needs: [ preview-build ]
-    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
+    if: *normal_ci
     runs-on: ubuntu-latest
     steps:
       - name: 'Download Preview Release Archive'
