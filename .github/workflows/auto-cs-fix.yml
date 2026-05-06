@@ -5,6 +5,10 @@ on:
     - cron: "0 12 * * 2,4" # Runs once every Tuesday and Thursday
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   fix-cs:
     name: Rector & PHP-CS-Fixer
