@@ -129,8 +129,7 @@ INSERT INTO `extension` (`id`, `type`, `name`, `status`, `version`)
 VALUES
 	(1,'mod','news','installed','1.0.0'),
 	(2,'mod','branding','installed','0.0.1'),
-	(3,'mod','redirect','installed','1.0.0'),
-	(4,'mod','wysiwyg','installed','1.0.0');
+	(3,'mod','redirect','installed','1.0.0');
 
 /*!40000 ALTER TABLE `extension` ENABLE KEYS */;
 UNLOCK TABLES;

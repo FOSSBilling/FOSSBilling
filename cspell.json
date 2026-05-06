@@ -472,7 +472,6 @@
         "src/themes/*/node_modules",
         "phpstan.neon",
         "*.config.js",
-        "src/modules/Wysiwyg/src/ckeditor.js",
         ".github/**",
         ".gitignore",
         "src/.htaccess",

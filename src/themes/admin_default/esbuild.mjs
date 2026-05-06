@@ -236,6 +236,22 @@ async function build() {
       logLevel: 'info'
     });
 
+    await esbuild.build({
+      entryPoints: [resolve(__dirname, 'assets/js/wysiwyg.js')],
+      bundle: true,
+      outfile: resolve(__dirname, 'assets/build/js/wysiwyg.js'),
+      globalName: 'CKEditor',
+      platform: 'browser',
+      target: 'es2018',
+      loader: sharedLoaders,
+      define: {
+        'process.env.NODE_ENV': isProduction ? '"production"' : '"development"'
+      },
+      minify: isProduction,
+      sourcemap: !isProduction,
+      logLevel: 'info'
+    });
+
     await generateManifest();
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);

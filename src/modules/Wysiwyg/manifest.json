@@ -1,8 +1,0 @@
-{
-  "id": "wysiwyg",
-  "type": "mod",
-  "name": "Wysiwyg",
-  "description": "Integrates a What You See Is What You Get (WYSIWYG) editor to your admin panel.",
-  "icon_url": "icon.svg",
-  "version": "1.0.0"
-}

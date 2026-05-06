@@ -1,20 +1,17 @@
-{{ 'ckeditor.js' | mod_asset_url('wysiwyg') | script_tag }}
-{{ 'ckeditor.css' | mod_asset_url('wysiwyg') | stylesheet_tag }}
+{{ 'build/js/wysiwyg.js' | asset_url | script_tag }}
+{{ 'build/js/wysiwyg.css' | asset_url | stylesheet_tag }}
 <script type="text/javascript">
     (function() {
-        // Import editor registration utilities from admin_default theme
-        import('/themes/admin_default/assets/js/utils.js').then(({ registerEditor }) => {
+        import('{{ 'js/utils.js' | asset_url }}').then(({ registerEditor }) => {
             const initEditors = function() {
                 document.querySelectorAll('.{{ class }}').forEach(function (element) {
                     CKEditor.default.create(element)
                         .then(editor => {
-                            // Handle required attribute - CKEditor manages this internally
                             if (element.hasAttribute('required')) {
                                 element.dataset.editorRequired = 'true';
                                 element.removeAttribute('required');
                             }
 
-                            // Register editor for canned response functionality
                             registerEditor(element, editor);
                         })
                         .catch(error => {
@@ -22,22 +19,18 @@
                         });
                 });
 
-                // Adjust CKEditor text color for dark theme compatibility
                 if (localStorage.getItem('theme') === 'dark') {
                     setTimeout(function () {
                         document.querySelectorAll('.ck-editor__main').forEach(function (element) {
-                            element.style.color = "#1d273b";
+                            element.style.color = '#1d273b';
                         });
                     }, 1000);
                 }
             };
 
-            // Check if DOM is already loaded
             if (document.readyState === 'loading') {
-                // Still loading, wait for DOMContentLoaded
-                document.addEventListener("DOMContentLoaded", initEditors);
+                document.addEventListener('DOMContentLoaded', initEditors);
             } else {
-                // DOM already loaded, run immediately
                 initEditors();
             }
         }).catch(error => {

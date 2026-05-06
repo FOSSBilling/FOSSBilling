@@ -3,7 +3,6 @@
  * @see {@link https://ckeditor.com/docs/ckeditor5/latest/getting-started/setup/optimizing-build-size.html}
  */
 
-// Code imports.
 import { Autoformat } from '@ckeditor/ckeditor5-autoformat/dist/index.js';
 import { AutoImage, Image, ImageStyle, ImageInsertViaUrl, ImageToolbar } from '@ckeditor/ckeditor5-image/dist/index.js';
 import { BlockQuote } from '@ckeditor/ckeditor5-block-quote/dist/index.js';
@@ -20,7 +19,6 @@ import { SourceEditing } from '@ckeditor/ckeditor5-source-editing/dist/index.js'
 import { Table, TableToolbar } from '@ckeditor/ckeditor5-table/dist/index.js';
 import { TextTransformation } from '@ckeditor/ckeditor5-typing/dist/index.js';
 
-// Style imports - core styles (required).
 import '@ckeditor/ckeditor5-ui/dist/index.css';
 import '@ckeditor/ckeditor5-clipboard/dist/index.css';
 import '@ckeditor/ckeditor5-core/dist/index.css';
@@ -35,7 +33,6 @@ import '@ckeditor/ckeditor5-utils/dist/index.css';
 import '@ckeditor/ckeditor5-watchdog/dist/index.css';
 import '@ckeditor/ckeditor5-widget/dist/index.css';
 
-// Style imports - plugin styles.
 import '@ckeditor/ckeditor5-autoformat/dist/index.css';
 import '@ckeditor/ckeditor5-image/dist/index.css';
 import '@ckeditor/ckeditor5-block-quote/dist/index.css';
@@ -50,7 +47,6 @@ import '@ckeditor/ckeditor5-paste-from-office/dist/index.css';
 import '@ckeditor/ckeditor5-source-editing/dist/index.css';
 import '@ckeditor/ckeditor5-table/dist/index.css';
 
-// Default/base editor configuration.
 export default class CKEditor extends ClassicEditor {
   static builtinPlugins = [
     Autoformat,

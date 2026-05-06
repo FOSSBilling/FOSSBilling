@@ -74,11 +74,7 @@
 
 
 {% macro wysiwyg(selector) %}
-    {% if guest.extension_is_on({"mod":"wysiwyg"}) %}
-        {% include "mod_wysiwyg_js.html.twig" with {"class":selector|trim('.#')} %}
-    {% else %}
-        <!-- No WYSIWYG, no fancy stuff. Enable the WYSIWYG extension for a better management experience. -->
-    {% endif %}
+    {% include "mod_wysiwyg_js.html.twig" with {"class":selector|trim('.#')} %}
 {% endmacro wysiwyg %}
 
 {% macro avatar(email, size, classes, fallback) %}

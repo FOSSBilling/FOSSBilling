@@ -309,6 +309,7 @@ class UpdatePatcher implements InjectionAwareInterface
             56 => 'patch56',
             57 => 'patch57',
             58 => 'patch58',
+            59 => 'patch59',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1133,6 +1134,21 @@ class UpdatePatcher implements InjectionAwareInterface
                 ], ['id' => $gateway['id']]);
             }
         }
+    }
+
+    private function patch59(): void
+    {
+        try {
+            $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_wysiwyg' OR (rel_type = 'mod' AND rel_id = 'wysiwyg')");
+            $this->executeSql("DELETE FROM extension WHERE type = 'mod' AND name = 'wysiwyg'");
+            $this->di['cache']->delete('config_mod_wysiwyg');
+        } catch (\Exception $e) {
+            error_log('Wysiwyg cleanup migration error: ' . $e->getMessage());
+        }
+
+        $this->executeFileActions([
+            Path::join(PATH_MODS, 'Wysiwyg') => 'unlink',
+        ]);
     }
 
     /**
