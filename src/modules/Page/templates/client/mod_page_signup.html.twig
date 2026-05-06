@@ -72,7 +72,7 @@
                                         <option value="male">{{ 'Male'|trans }}</option>
                                         <option value="female">{{ 'Female'|trans }}</option>
                                         <option value="nonbinary">{{ 'Non-binary'|trans }}</option>
-                                        <option value="other">{{ 'Other'|trans }}Other</option>
+                                        <option value="other">{{ 'Other'|trans }}</option>
                                     </select>
                                 </div>
                             {% endif %}
@@ -131,11 +131,11 @@
 
                             {% if 'phone' in r %}
                                 <div class="mb-3">
-                                    <label class="form-label" for="phone">{{ 'Phone Number'|trans }}</label>
+                                    <label class="form-label" for="phone-number">{{ 'Phone Number'|trans }}</label>
                                     <div class="input-group">
-                                        <input class="form-control" id="phone" type="text" name="phone_cc" value=""
-                                               style="width: 20%"/>
-                                        <input class="form-control" id="phone" type="text" name="phone"
+                                        <input class="form-control" id="phone-country-code" type="text" name="phone_cc" value=""
+                                               style="width: 20%" aria-label="{{ 'Country code'|trans }}"/>
+                                        <input class="form-control" id="phone-number" type="text" name="phone"
                                                value="{{ request.phone }}" style="width: 70%"/>
                                     </div>
                                 </div>
