@@ -257,7 +257,7 @@ jobs:
 
   preview-build:
     name: 'Create Preview Release'
-    needs: [ php-build-test ]
+    needs: [ php-build-test, live-tests ]
     if: *normal_ci
     uses: ./.github/workflows/release-build.yml
     with:
