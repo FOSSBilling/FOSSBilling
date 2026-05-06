@@ -124,52 +124,12 @@ jobs:
           composer-args: '--prefer-dist --optimize-autoloader'
           php-version: 8.3
 
-      - name: Make Needed Directories
-        run: |
-          mkdir -p ./src/themes/admin_default/build
-          mkdir -p ./src/themes/huraga/build
-
-      - name: Cache Built Admin Theme
-        id: cache-admin_default
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      - name: 'Prepare Application Assets'
+        uses: ./.github/actions/prepare-application-assets
         with:
-          path: ./src/themes/admin_default/build
-          key: admin_default-${{ hashFiles('./package-lock.json', './src/themes/admin_default/assets/fossbilling.js', './src/themes/admin_default/assets/scss/*.scss', './src/themes/admin_default/assets/js/*.js', './src/themes/admin_default/assets/js/ui/*.js') }}
-
-      - name: Cache Built Huraga Theme
-        id: cache-huraga
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-        with:
-          path: ./src/themes/huraga/build
-          key: huraga-${{ hashFiles('./package-lock.json', './src/themes/huraga/assets/huraga.js', './src/themes/huraga/assets/scss/*.scss') }}
-
-      - name: 'Install Node.js and Enable Caching'
-        if: &needs_theme_build steps.cache-admin_default.outputs.cache-hit != 'true' || steps.cache-huraga.outputs.cache-hit != 'true'
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
-        with:
-          cache: 'npm'
-          cache-dependency-path: '**/package-lock.json'
-          node-version: 24
-
-      - name: 'Install Node.js Dependencies'
-        if: *needs_theme_build
-        run: npm ci
-
-      - name: 'Build Frontend Assets'
-        if: *needs_theme_build
-        run: npm run build
-
-      - name: 'Download Latest Translations'
-        run: |
-          wget https://github.com/FOSSBilling/locale/releases/download/latest/translations.zip -O translations.zip
-          mkdir -p ./src/locale
-          unzip -o translations.zip -d ./src/locale
-
-      - name: 'Copy Required Files and Clean-up'
-        run: |
-          cp README.md ./src/
-          cp LICENSE ./src/
-          rm translations.zip
+          cache-theme-builds: 'true'
+          install-command: 'npm ci'
+          build-command: 'npm run build'
 
       - name: Start MySQL
         run: sudo systemctl start mysql.service

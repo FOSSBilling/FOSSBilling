@@ -1,0 +1,88 @@
+name: 'Prepare Application Assets'
+description: 'Build frontend assets, fetch translations, and stage required project files.'
+inputs:
+  cache-theme-builds:
+    description: 'Whether to cache built admin_default and huraga theme assets.'
+    required: false
+    default: 'false'
+  install-command:
+    description: 'The command used to install Node.js dependencies.'
+    required: false
+    default: 'npm ci'
+  build-command:
+    description: 'The command used to build frontend assets.'
+    required: false
+    default: 'npm run build'
+  node-version:
+    description: 'The Node.js version to use for the frontend build.'
+    required: false
+    default: '24'
+  remove-admin-node-modules:
+    description: 'Whether to remove admin_default node_modules after preparing the tree.'
+    required: false
+    default: 'false'
+  translations-url:
+    description: 'The URL used to download translations.'
+    required: false
+    default: 'https://github.com/FOSSBilling/locale/releases/latest/download/translations.zip'
+runs:
+  using: 'composite'
+  steps:
+    - name: Make theme build directories
+      if: ${{ inputs.cache-theme-builds == 'true' }}
+      shell: bash
+      run: |
+        mkdir -p ./src/themes/admin_default/build
+        mkdir -p ./src/themes/huraga/build
+
+    - name: Cache Built Admin Theme
+      if: ${{ inputs.cache-theme-builds == 'true' }}
+      id: cache-admin_default
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        path: ./src/themes/admin_default/build
+        key: admin_default-${{ hashFiles('./package-lock.json', './src/themes/admin_default/assets/fossbilling.js', './src/themes/admin_default/assets/scss/*.scss', './src/themes/admin_default/assets/js/*.js', './src/themes/admin_default/assets/js/ui/*.js') }}
+
+    - name: Cache Built Huraga Theme
+      if: ${{ inputs.cache-theme-builds == 'true' }}
+      id: cache-huraga
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        path: ./src/themes/huraga/build
+        key: huraga-${{ hashFiles('./package-lock.json', './src/themes/huraga/assets/huraga.js', './src/themes/huraga/assets/scss/*.scss') }}
+
+    - name: Install Node.js and Enable Caching
+      if: ${{ inputs.cache-theme-builds != 'true' || steps.cache-admin_default.outputs.cache-hit != 'true' || steps.cache-huraga.outputs.cache-hit != 'true' }}
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+      with:
+        cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
+        node-version: ${{ inputs.node-version }}
+
+    - name: Install Node.js Dependencies
+      if: ${{ inputs.cache-theme-builds != 'true' || steps.cache-admin_default.outputs.cache-hit != 'true' || steps.cache-huraga.outputs.cache-hit != 'true' }}
+      shell: bash
+      run: ${{ inputs.install-command }}
+
+    - name: Build Frontend Assets
+      if: ${{ inputs.cache-theme-builds != 'true' || steps.cache-admin_default.outputs.cache-hit != 'true' || steps.cache-huraga.outputs.cache-hit != 'true' }}
+      shell: bash
+      run: ${{ inputs.build-command }}
+
+    - name: Download Latest Translations
+      shell: bash
+      run: |
+        wget "${{ inputs.translations-url }}" -O translations.zip
+        mkdir -p ./src/locale
+        unzip -o translations.zip -d ./src/locale
+
+    - name: Copy Required Files and Clean-up
+      shell: bash
+      run: |
+        cp README.md ./src/
+        cp LICENSE ./src/
+        rm translations.zip
+
+        if [[ "${{ inputs.remove-admin-node-modules }}" == 'true' ]]; then
+          rm -rf ./src/themes/admin_default/node_modules/
+        fi

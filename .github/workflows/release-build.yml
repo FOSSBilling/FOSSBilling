@@ -30,31 +30,12 @@ jobs:
           composer-args: '--prefer-dist --no-dev --optimize-autoloader'
           php-version: 8.3
 
-      - name: 'Install Node.js and Enable Caching'
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+      - name: 'Prepare Application Assets'
+        uses: ./.github/actions/prepare-application-assets
         with:
-          cache: 'npm'
-          cache-dependency-path: '**/package-lock.json'
-          node-version: 24
-
-      - name: 'Install Node.js Dependencies'
-        run: npm install
-
-      - name: 'Build Frontend Assets'
-        run: NODE_ENV=production npm run build
-
-      - name: 'Download Latest Translations'
-        run: |
-          wget https://github.com/FOSSBilling/locale/releases/latest/download/translations.zip -O translations.zip
-          mkdir -p ./src/locale
-          unzip -o translations.zip -d ./src/locale
-
-      - name: 'Copy Required Files and Clean-up'
-        run: |
-          cp README.md ./src/
-          cp LICENSE ./src/
-          rm translations.zip
-          rm -rf ./src/themes/admin_default/node_modules/
+          install-command: 'npm install'
+          build-command: 'NODE_ENV=production npm run build'
+          remove-admin-node-modules: 'true'
 
       - name: 'Add Short Commit Hash as the Release Vesion'
         if: ${{ inputs.preview }}
