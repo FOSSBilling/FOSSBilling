@@ -4,8 +4,29 @@ on:
   push:
   pull_request:
     branches: main
+  pull_request_target:
+    branches: main
+    types: [labeled, unlabeled]
 
 jobs:
+  merge-hold:
+    name: 'Check for Merge Hold'
+    permissions:
+      contents: read
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Check merge-hold label'
+        run: |
+          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'merge-hold') }}" == 'true' ]]; then
+            echo "Pull request labeled 'merge-hold'"
+            echo "The pull request cannot be merged until the 'merge-hold' label is removed."
+            exit 1
+          fi
+
+          echo "Pull request not labeled 'merge-hold'"
+          echo "The pull request can be merged as no 'merge-hold' label is set."
+
   spellcheck:
     name: 'Spellcheck'
     permissions:
