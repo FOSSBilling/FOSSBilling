@@ -8,6 +8,18 @@ use Box\Mod\Api\Controller\Client;
 use FOSSBilling\InformationException;
 use PHPUnit\Framework\Attributes\Group;
 
+final class CronStaffServiceDouble
+{
+    public function __construct(private \Model_Admin $cronAdmin)
+    {
+    }
+
+    public function getCronAdmin(): \Model_Admin
+    {
+        return $this->cronAdmin;
+    }
+}
+
 #[Group('Core')]
 final class ControllerClientTest extends \BBTestCase
 {
@@ -129,10 +141,7 @@ final class ControllerClientTest extends \BBTestCase
             ->with('Admin', 'api_token = ? AND status = ? AND role != ?', [$cronToken, \Model_Admin::STATUS_ACTIVE, \Model_Admin::ROLE_CRON])
             ->willReturn($dbAdmin);
 
-        $staffService = $this->getMockBuilder(\stdClass::class)
-            ->addMethods(['getCronAdmin'])
-            ->getMock();
-        $staffService->method('getCronAdmin')->willReturn($cronAdmin);
+        $staffService = new CronStaffServiceDouble($cronAdmin);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;

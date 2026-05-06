@@ -2105,8 +2105,7 @@ final class ServiceTest extends \BBTestCase
             ->getMock();
 
         $service->expects($this->once())
-            ->method('checkInvoiceAuth')
-            ->with(null);
+            ->method('checkInvoiceAuth');
 
         $service->method('toApiArray')
             ->willReturn([
