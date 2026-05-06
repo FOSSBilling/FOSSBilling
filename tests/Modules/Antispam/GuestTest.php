@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SpamcheckerTests;
+namespace AntispamTests;
 
 use APIHelper\Request;
 use PHPUnit\Framework\TestCase;
@@ -11,15 +11,14 @@ final class GuestTest extends TestCase
 {
     public function testDisposableEmailCheck(): void
     {
-        $result = Request::makeRequest('admin/extension/activate', ['type' => 'mod', 'id' => 'spamchecker']);
+        $result = Request::makeRequest('admin/extension/activate', ['type' => 'mod', 'id' => 'antispam']);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
 
-        $result = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_spamchecker', 'check_temp_emails' => true]);
+        $result = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_antispam', 'check_temp_emails' => true]);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
 
         $this->clearRateLimitCache();
 
-        // Generate a new test user with by using a throwaway email address, which should fail
         $password = 'A1a' . bin2hex(random_bytes(6));
         $result = Request::makeRequest('guest/client/create', [
             'email' => 'email@yopmail.net',
@@ -31,7 +30,6 @@ final class GuestTest extends TestCase
         $this->assertFalse($result->wasSuccessful(), 'The client account was created when it should not have been');
         $this->assertEquals('Disposable email addresses are not allowed', $result->getErrorMessage());
 
-        // If the account was created, perform cleanup
         if ($result->wasSuccessful()) {
             $id = intval($result->getResult());
             Request::makeRequest('admin/client/delete', ['id' => $id]);
@@ -40,19 +38,14 @@ final class GuestTest extends TestCase
 
     public function testStopForumSpam(): void
     {
-        $result = Request::makeRequest('admin/extension/activate', ['type' => 'mod', 'id' => 'spamchecker']);
+        $result = Request::makeRequest('admin/extension/activate', ['type' => 'mod', 'id' => 'antispam']);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
 
-        $result = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_spamchecker', 'sfs' => true]);
+        $result = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_antispam', 'sfs' => true]);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
 
         $this->clearRateLimitCache();
 
-        /**
-         * This one should create without any errors as long as the email address doesn't get listed as spam.
-         *
-         * @see http://api.stopforumspam.org/api?email=email@example.com
-         */
         $password = 'A1a' . bin2hex(random_bytes(6));
         $result = Request::makeRequest('guest/client/create', [
             'email' => 'email@example.com',
