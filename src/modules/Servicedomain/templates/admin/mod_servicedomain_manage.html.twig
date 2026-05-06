@@ -240,6 +240,7 @@
 </div>
 {% endif %}
 
+{% if order.status == 'active' %}
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         {% if service.locked == 0 %}
@@ -279,13 +280,11 @@
         });
 
         {% if service.privacy == 0 %}
-            {# document.getElementById('domain-disable-pp').style.display = 'none'; #}
             document.getElementById('domain-disable-pp').classList.remove('d-inline-block');
             document.getElementById('domain-disable-pp').style.display = 'none';
         {% endif %}
 
         {% if service.privacy == 1 %}
-            {# document.getElementById('domain-enable-pp').style.display = 'none'; #}
             document.getElementById('domain-enable-pp').classList.remove('d-inline-block');
             document.getElementById('domain-enable-pp').style.display = 'none';
         {% endif %}
@@ -324,3 +323,4 @@
         });
     });
 </script>
+{% endif %}
