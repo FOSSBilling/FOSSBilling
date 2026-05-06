@@ -108,8 +108,14 @@
                 const replyTextarea = document.getElementById('ticket-reply-text');
 
                 if (replyTextarea) {
-                    replyTextarea.value = this.getAttribute('message-quote');
-                    replyTextarea.focus();
+                    const quote = this.getAttribute('message-quote');
+                    if (replyTextarea.editor) {
+                        replyTextarea.editor.setData(quote);
+                        replyTextarea.editor.editing.view.focus();
+                    } else {
+                        replyTextarea.value = quote;
+                        replyTextarea.focus();
+                    }
                 }
             });
         });

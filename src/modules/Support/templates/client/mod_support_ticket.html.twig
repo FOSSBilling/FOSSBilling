@@ -195,13 +195,23 @@
                 reply.addEventListener('click', (e) => {
                     e.preventDefault();
                     let quote = e.currentTarget.getAttribute('message-quote');
-                    ticketReplyTextArea.textContent = quote.replace(/^\s*$(?:\r\n?|\n)/gm, '');
-                    ticketReplyTextArea.focus();
+                    quote = quote.replace(/^\s*$(?:\r\n?|\n)/gm, '');
+                    if (ticketReplyTextArea.editor) {
+                        ticketReplyTextArea.editor.setData(quote);
+                        ticketReplyTextArea.editor.editing.view.focus();
+                    } else {
+                        ticketReplyTextArea.textContent = quote;
+                        ticketReplyTextArea.focus();
+                    }
                 });
             })
 
             document.getElementById('reply-to-btn').addEventListener('click', () => {
-                ticketReplyTextArea.focus();
+                if (ticketReplyTextArea.editor) {
+                    ticketReplyTextArea.editor.editing.view.focus();
+                } else {
+                    ticketReplyTextArea.focus();
+                }
             });
 
             const toggleLoader = () => {

@@ -6,11 +6,13 @@
         document.querySelectorAll('.{{ class }}').forEach(function (element) {
             CKEditor.default.create(element)
                 .then(editor => {
-                    // Handle required attribute - CKEditor manages this internally
                     if (element.hasAttribute('required')) {
                         element.dataset.editorRequired = 'true';
                         element.removeAttribute('required');
                     }
+
+                    element.editor = editor;
+                    element.setAttribute('data-editor', 'true');
 
                     const syncEditorData = function () {
                         if ('value' in element) {
