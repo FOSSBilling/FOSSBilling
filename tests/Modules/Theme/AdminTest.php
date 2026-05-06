@@ -13,24 +13,26 @@ final class AdminTest extends TestCase
     {
         $result = Request::makeRequest('admin/theme/get_current');
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsArray($result->getResult());
+        $data = $result->getResult();
+        $this->assertIsArray($data);
 
-        $this->assertArrayHasKey('name', $result->getResult());
-        $this->assertArrayHasKey('version', $result->getResult());
-        $this->assertArrayHasKey('author', $result->getResult());
-        $this->assertEquals('FOSSBilling', $result->getResult()['author']);
+        $this->assertArrayHasKey('name', $data);
+        $this->assertArrayHasKey('version', $data);
+        $this->assertArrayHasKey('author', $data);
+        $this->assertEquals('FOSSBilling', $data['author']);
     }
 
     public function testGetCurrentAdminTheme(): void
     {
         $result = Request::makeRequest('admin/theme/get_current', ['client' => false]);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsArray($result->getResult());
+        $data = $result->getResult();
+        $this->assertIsArray($data);
 
-        $this->assertArrayHasKey('name', $result->getResult());
-        $this->assertArrayHasKey('version', $result->getResult());
-        $this->assertArrayHasKey('author', $result->getResult());
-        $this->assertEquals('FOSSBilling', $result->getResult()['author']);
+        $this->assertArrayHasKey('name', $data);
+        $this->assertArrayHasKey('version', $data);
+        $this->assertArrayHasKey('author', $data);
+        $this->assertEquals('FOSSBilling', $data['author']);
     }
 
     public function testInvalidThemeActionReturnsError(): void
