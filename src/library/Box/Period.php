@@ -82,13 +82,13 @@ class Box_Period
     public static function getPredefined($simple = true): array
     {
         $periods = [
-            self::PERIOD_WEEK => ['rec_qty' => 1, 'title' => __trans('Every week'), 'code' => self::PERIOD_WEEK, 'rec_unit' => self::UNIT_WEEK],
-            self::PERIOD_MONTH => ['rec_qty' => 1, 'title' => __trans('Every month'), 'code' => self::PERIOD_MONTH, 'rec_unit' => self::UNIT_MONTH],
-            self::PERIOD_QUARTER => ['rec_qty' => 3, 'title' => __trans('Every 3 months'), 'code' => self::PERIOD_QUARTER, 'rec_unit' => self::UNIT_MONTH],
-            self::PERIOD_BIANNUAL => ['rec_qty' => 6, 'title' => __trans('Every 6 months'), 'code' => self::PERIOD_BIANNUAL, 'rec_unit' => self::UNIT_MONTH],
-            self::PERIOD_ANNUAL => ['rec_qty' => 1, 'title' => __trans('Every year'), 'code' => self::PERIOD_ANNUAL, 'rec_unit' => self::UNIT_YEAR],
-            self::PERIOD_BIENNIAL => ['rec_qty' => 2, 'title' => __trans('Every 2 years'), 'code' => self::PERIOD_BIENNIAL, 'rec_unit' => self::UNIT_YEAR],
-            self::PERIOD_TRIENNIAL => ['rec_qty' => 3, 'title' => __trans('Every 3 years'), 'code' => self::PERIOD_TRIENNIAL, 'rec_unit' => self::UNIT_YEAR],
+            self::PERIOD_WEEK => ['rec_qty' => 1, 'title' => __trans('Every Week'), 'code' => self::PERIOD_WEEK, 'rec_unit' => self::UNIT_WEEK],
+            self::PERIOD_MONTH => ['rec_qty' => 1, 'title' => __trans('Every Month'), 'code' => self::PERIOD_MONTH, 'rec_unit' => self::UNIT_MONTH],
+            self::PERIOD_QUARTER => ['rec_qty' => 3, 'title' => __trans('Every 3 Months'), 'code' => self::PERIOD_QUARTER, 'rec_unit' => self::UNIT_MONTH],
+            self::PERIOD_BIANNUAL => ['rec_qty' => 6, 'title' => __trans('Every 6 Months'), 'code' => self::PERIOD_BIANNUAL, 'rec_unit' => self::UNIT_MONTH],
+            self::PERIOD_ANNUAL => ['rec_qty' => 1, 'title' => __trans('Every Year'), 'code' => self::PERIOD_ANNUAL, 'rec_unit' => self::UNIT_YEAR],
+            self::PERIOD_BIENNIAL => ['rec_qty' => 2, 'title' => __trans('Every 2 Years'), 'code' => self::PERIOD_BIENNIAL, 'rec_unit' => self::UNIT_YEAR],
+            self::PERIOD_TRIENNIAL => ['rec_qty' => 3, 'title' => __trans('Every 3 Years'), 'code' => self::PERIOD_TRIENNIAL, 'rec_unit' => self::UNIT_YEAR],
         ];
 
         if ($simple) {

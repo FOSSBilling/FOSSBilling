@@ -33,7 +33,7 @@
 			<div class="card-body">
 				<input type="hidden" name="ext" value="mod_activity">
 				<div class="mb-3">
-					<label class="form-label">{{ 'Activity log retention'|trans }}</label>
+					<label class="form-label">{{ 'Activity Log Retention'|trans }}</label>
 					<div class="form-floating">
 						<input class="form-control" id="max_age" name="max_age" type="number" value="{{ params.max_age|default(90) }}">
 						<label for="max_age">{{ 'Number of days'|trans }}</label>
@@ -42,7 +42,7 @@
 				</div>
 
 				<div class="mb-3">
-					<label class="form-label">{{ 'Email log retention'|trans }}</label>
+					<label class="form-label">{{ 'Email Log Retention'|trans }}</label>
 					<div class="form-floating">
 						<input class="form-control" id="email_max_age" name="email_max_age" type="number" value="{{ params.email_max_age|default(0) }}">
 						<label for="email_max_age">{{ 'Number of days'|trans }}</label>

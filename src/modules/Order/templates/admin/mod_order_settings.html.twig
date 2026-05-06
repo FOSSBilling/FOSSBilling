@@ -30,7 +30,7 @@
         {% set params = admin.extension_config_get({ 'ext': 'mod_order' }) %}
         <form method="post" action="{{ 'extension/config_save'|api_url }}" {{ fb_api_form({message: 'Settings Updated'|trans}) }}>
             <div class="form-group mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Expiration date'|trans }}</label>
+                <label class="form-label col-3 col-form-label">{{ 'Expiration Date'|trans }}</label>
                 <div class="col">
                     <div class="form-check">
                         <input class="form-check-input" id="radioFromExpirationDay" type="radio" name="order_renewal_logic" value="from_expiration_date"{% if params.order_renewal_logic == "from_expiration_date" or not params.order_renewal_logic %} checked{% endif %}>
@@ -47,7 +47,7 @@
                 </div>
             </div>
             <div class="form-group mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Show addon orders in orders list'|trans }}</label>
+                <label class="form-label col-3 col-form-label">{{ 'Show Addon Orders in Orders List'|trans }}</label>
                 <div class="col">
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" id="radioShowAddonsYes" type="radio" name="show_addons" value="1"{% if params.show_addons %} checked{% endif %}>
@@ -61,7 +61,7 @@
                 </div>
             </div>
             <div class="form-group mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Auto suspend reason'|trans }}</label>
+                <label class="form-label col-3 col-form-label">{{ 'Auto Suspend Reason'|trans }}</label>
                 <div class="col">
                     <input class="form-control" type="text" name="batch_suspend_reason" value="{{ params.batch_suspend_reason }}">
                 </div>
@@ -81,7 +81,7 @@
                 </div>
             </div>
             <div class="form-group mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Suspension reasons'|trans }}</label>
+                <label class="form-label col-3 col-form-label">{{ 'Suspension Reasons'|trans }}</label>
                 <div class="col">
                     <textarea class="form-control" name="suspend_reason_list" rows="2">{{ params.suspend_reason_list }}</textarea>
                 </div>

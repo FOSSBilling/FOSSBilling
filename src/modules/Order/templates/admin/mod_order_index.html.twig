@@ -27,35 +27,35 @@
             <div class="form-group mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}</label>
                 <div class="col">
-                    {{ mf.selectbox('status', admin.order_get_status_pairs, request.status, 0, 'All statuses'|trans) }}
+                    {{ mf.selectbox('status', admin.order_get_status_pairs, request.status, 0, 'All Statuses'|trans) }}
                 </div>
             </div>
             <div class="form-group mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Type'|trans }}:</label>
                 <div class="col">
-                    {{ mf.selectbox('type', admin.product_get_types, request.type, 0, 'All types'|trans) }}
+                    {{ mf.selectbox('type', admin.product_get_types, request.type, 0, 'All Types'|trans) }}
                 </div>
             </div>
             <div class="form-group mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Product'|trans }}:</label>
                 <div class="col">
-                    {{ mf.selectbox('product_id', admin.product_get_pairs, request.product_id, 0, 'All products'|trans) }}
+                    {{ mf.selectbox('product_id', admin.product_get_pairs, request.product_id, 0, 'All Products'|trans) }}
                 </div>
             </div>
             <div class="form-group mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Period'|trans }}</label>
                 <div class="col">
-                    {{ mf.selectbox('period', guest.system_periods, request.period, 0, 'All periods'|trans) }}
+                    {{ mf.selectbox('period', guest.system_periods, request.period, 0, 'All Periods'|trans) }}
                 </div>
             </div>
             <div class="form-group mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Invoice option'|trans }}</label>
+                <label class="form-label col-3 col-form-label">{{ 'Invoice Option'|trans }}</label>
                 <div class="col">
-                    {{ mf.selectbox('invoice_option', admin.order_get_invoice_options, request.invoice_option, 0, 'All types'|trans) }}
+                    {{ mf.selectbox('invoice_option', admin.order_get_invoice_options, request.invoice_option, 0, 'All Invoice Options'|trans) }}
                 </div>
             </div>
             <div class="form-group mb-3 row">
-                <label class="form-label col-3 col-form-label" for="creation_date">{{ 'Creation date'|trans }}</label>
+                <label class="form-label col-3 col-form-label" for="creation_date">{{ 'Creation Date'|trans }}</label>
                 <div class="col">
                     <div class="input-group">
                         <div class="input-icon w-100">
@@ -280,7 +280,7 @@
                                             placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
                                             id="client_id"
                                             name="client_id"
-                                            data-resturl="admin/client/get_pairs"
+                                            data-resturl="/api/admin/client/get_pairs"
                                             required aria-required="true">
                                     </select>
                                 {% else %}

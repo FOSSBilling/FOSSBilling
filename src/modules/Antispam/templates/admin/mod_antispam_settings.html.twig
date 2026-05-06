@@ -33,7 +33,7 @@
 <div class="card-body">
 <input type="hidden" name="ext" value="mod_antispam">
 <div class="row">
-<label class="col-md-3 col-form-label" for="block_ips_check">{{ 'Enable IP blocking'|trans }}</label>
+<label class="col-md-3 col-form-label" for="block_ips_check">{{ 'Enable IP Blocking'|trans }}</label>
 <div class="row col-md-6 pt-2 ps-0">
 <label class="form-check form-check-single form-switch ps-0 mb-2">
 <input id="block_ips_check" class="form-check-input" name="block_ips" type="checkbox"
@@ -142,7 +142,7 @@ value="{{ params.captcha_recaptcha_privatekey }}">
 <p class="card-subtitle">{{ 'If enabled, email addresses will be checked against a database of disposable email domains.'|trans }}</p>
 <p class="card-subtitle">{{ 'This database is updated daily and provided free of charge by the FakeFilter project under the BSD 3-Clause License.'|trans }}</p>
 <div class="mb-3 row">
-<label class="col-md-3 col-form-label" for="check_temp_emails">{{ 'Check for temporary / disposable email addresses.'|trans }}</label>
+<label class="col-md-3 col-form-label" for="check_temp_emails">{{ 'Check for Temporary / Disposable Email Addresses.'|trans }}</label>
 <div class="col-md-6 pt-2 ps-0">
 <label class="form-check form-check-single form-switch ps-0">
 <input id="check_temp_emails" class="form-check-input" name="check_temp_emails" type="checkbox"
@@ -156,7 +156,7 @@ value="{{ params.captcha_recaptcha_privatekey }}">
 <h3 class="card-title">{{ 'Honeypot Protection'|trans }}</h3>
 <p class="card-subtitle">{{ 'Honeypot is a hidden field that bots will fill out but humans will not. If enabled, registration will fail if this field is filled.'|trans }}</p>
 <div class="mb-3 row">
-<label class="col-md-3 col-form-label" for="honeypot_enabled">{{ 'Enable honeypot protection'|trans }}</label>
+<label class="col-md-3 col-form-label" for="honeypot_enabled">{{ 'Enable Honeypot Protection'|trans }}</label>
 <div class="col-md-6 pt-2 ps-0">
 <label class="form-check form-check-single form-switch ps-0">
 <input id="honeypot_enabled" class="form-check-input" name="honeypot_enabled" type="checkbox"
@@ -165,7 +165,7 @@ value="{{ params.captcha_recaptcha_privatekey }}">
 </div>
 </div>
 <div class="mb-3 row">
-<label class="col-md-3 col-form-label" for="honeypot_field">{{ 'Honeypot field name'|trans }}</label>
+<label class="col-md-3 col-form-label" for="honeypot_field">{{ 'Honeypot Field Name'|trans }}</label>
 <div class="col-md-6 row">
 <input class="form-control" type="text" id="honeypot_field" name="honeypot_field" value="{{ params.honeypot_field|default('honeypot_field') }}">
 <small class="form-hint">{{ 'The name of the hidden form field. Change this if you suspect bots are bypassing the honeypot.'|trans }}</small>

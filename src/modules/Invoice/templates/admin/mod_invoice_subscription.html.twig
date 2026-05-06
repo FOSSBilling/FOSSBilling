@@ -51,11 +51,11 @@
                                 <td>{{ subscription.amount|format_currency(subscription.currency) }} {{ subscription.period|period_title }}</td>
                             </tr>
                             <tr>
-                                <td class="text-end">{{ 'Payment gateway'|trans }}:</td>
+                                <td class="text-end">{{ 'Payment Gateway'|trans }}:</td>
                                 <td>{{ subscription.gateway.title }}</td>
                             </tr>
                             <tr>
-                                <td class="text-end d-none d-sm-table-cell">{{ 'Subscription ID on payment gateway'|trans }}:</td>
+                                <td class="text-end d-none d-sm-table-cell">{{ 'Subscription ID on Payment Gateway'|trans }}:</td>
                                 <td class="text-end d-sm-none">{{ 'Subscription ID on PG'|trans }}:</td>
                                 <td>{{ subscription.sid|default('-') }}</td>
                             </tr>
@@ -72,12 +72,12 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td class="text-end">{{ 'Created at'|trans }}:</td>
+                                <td class="text-end">{{ 'Created At'|trans }}:</td>
                                 <td>{{ subscription.created_at|format_date }}</td>
                             </tr>
                             {% if subscription.created_at != subscription.updated_at %}
                             <tr>
-                                <td class="text-end">{{ 'Updated at'|trans }}:</td>
+                                <td class="text-end">{{ 'Updated At'|trans }}:</td>
                                 <td>{{ subscription.updated_at|format_date }}</td>
                             </tr>
                             {% endif %}
@@ -106,7 +106,7 @@
                             </div>
                         </div>
                         <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Subscription ID on payment gateway'|trans }}:</label>
+                            <label class="form-label col-3 col-form-label">{{ 'Subscription ID on Payment Gateway'|trans }}:</label>
                             <div class="col">
                                 <input class="form-control" type="text" name="sid" value="{{subscription.sid}}" required>
                             </div>

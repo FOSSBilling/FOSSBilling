@@ -41,11 +41,11 @@
                     <td>{{ "now"|format_date(pattern='zzz') }}</td>
                 </tr>
                 <tr>
-                    <td class="text-end">{{ 'Time on server'|trans }}:</td>
+                    <td class="text-end">{{ 'Time on Server'|trans }}:</td>
                     <td>{{ "now"|format_datetime }}</td>
                 </tr>
                 <tr>
-                    <td class="text-end">{{ 'Last time scheduled tasks were executed'|trans }}:</td>
+                    <td class="text-end">{{ 'Last Time Scheduled Tasks Were Executed'|trans }}:</td>
                     <td>
                         {% if cron.last_cron_exec %}
                             {{ cron.last_cron_exec|format_datetime }}
@@ -56,7 +56,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <td class="text-end">{{ 'Recommended crontab setup'|trans }}:</td>
+                    <td class="text-end">{{ 'Recommended Crontab Setup'|trans }}:</td>
                     <td><code>*/5 * * * * php {{ cron.cron_path }}</code></td>
                 </tr>
                 </tbody>
@@ -68,7 +68,7 @@
                 <input type="hidden" name="ext" value="mod_cron">
                 <div class="row">
                     <div class="col-3">
-                        <label>{{ 'Enable the cron API endpoint for guests'|trans }}</label>
+                        <label>{{ 'Enable the Cron API Endpoint for Guests'|trans }}</label>
                     </div>
                     <div class="col-1">
                         <label class="form-check form-switch">
@@ -86,7 +86,7 @@
                 <svg class="icon icon-tabler">
                     <use xlink:href="#play"/>
                 </svg>
-                <span>{{ 'Execute now'|trans }}</span>
+                <span>{{ 'Execute Now'|trans }}</span>
             </a>
         </div>
     </div>

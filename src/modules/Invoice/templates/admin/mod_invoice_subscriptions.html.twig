@@ -106,7 +106,7 @@
                                         placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
                                         id="client_id"
                                         name="client_id"
-                                        data-resturl="admin/client/get_pairs">
+                                        data-resturl="/api/admin/client/get_pairs">
                                 </select>
                             {% else %}
                                 {% set client = admin.client_get({ 'id': request.client_id }) %}

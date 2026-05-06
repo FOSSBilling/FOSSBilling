@@ -702,7 +702,7 @@ class Service implements InjectionAwareInterface
 
             // mark promo as used
             if ($cart->promo_id) {
-                $promo = $this->di['db']->getExistingModelById('Promo', $cart->promo_id, 'Promo not found.');
+                $promo = $this->di['db']->getExistingModelById('Promo', $cart->promo_id, 'Promo Not Found');
                 $this->usePromo($promo);
 
                 // set promo info for later use
@@ -712,7 +712,7 @@ class Service implements InjectionAwareInterface
             }
 
             $orderService = $this->di['mod_service']('order');
-            $orderService->saveStatusChange($order, 'Order created');
+            $orderService->saveStatusChange($order, 'Order Created');
 
             $invoice_items[] = [
                 'title' => $order->title,

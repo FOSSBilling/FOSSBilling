@@ -66,15 +66,15 @@
                             <td>{{ transaction.amount }} {{ transaction.currency }}</td>
                         </tr>
                         <tr>
-                            <td class="text-end">{{ 'Payment gateway'|trans }}</td>
+                            <td class="text-end">{{ 'Payment Gateway'|trans }}</td>
                             <td>{{ transaction.gateway|default('-') }}</td>
                         </tr>
                         <tr>
-                            <td class="text-end">{{ 'Transaction ID on payment gateway'|trans }}</td>
+                            <td class="text-end">{{ 'Transaction ID on Payment Gateway'|trans }}</td>
                             <td>{{ transaction.txn_id|default('-') }}</td>
                         </tr>
                         <tr>
-                            <td class="text-end">{{ 'Transaction status on payment gateway'|trans }}</td>
+                            <td class="text-end">{{ 'Transaction Status on Payment Gateway'|trans }}</td>
                             <td>{{ mf.status_name(transaction.txn_status) }}</td>
                         </tr>
                         <tr>
@@ -97,12 +97,12 @@
                         </tr>
                         {% endif %}
                         <tr>
-                            <td class="text-end">{{ 'Received at'|trans }}</td>
+                            <td class="text-end">{{ 'Received At'|trans }}</td>
                             <td>{{ transaction.created_at|format_date }}</td>
                         </tr>
                         {% if transaction.created_at != transaction.updated_at %}
                         <tr>
-                            <td class="text-end">{{ 'Updated at'|trans }}</td>
+                            <td class="text-end">{{ 'Updated At'|trans }}</td>
                             <td>{{ transaction.updated_at|format_date }}</td>
                         </tr>
                         {% endif %}

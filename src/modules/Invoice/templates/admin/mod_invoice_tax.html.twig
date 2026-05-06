@@ -99,13 +99,13 @@
             <div class="card-body">
                 <form method="post" action="{{ 'invoice/tax_create'|api_url }}" {{ fb_api_form({reload: true}) }}>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Tax title'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Tax Title'|trans }}:</label>
                         <div class="col">
                             <input class="form-control" type="text" name="name" value="{{ request.name }}" required placeholder="{{ 'Sales Tax'|trans }}">
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Tax rate'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Tax Rate'|trans }}:</label>
                         <div class="col">
                             <div class="input-group">
                                 <input class="form-control" type="text" name="taxrate" value="{{ request.taxrate }}" required placeholder="18">
@@ -136,15 +136,15 @@
             <div class="card-body">
                 <form method="post" action="{{ 'system/update_params'|api_url }}" {{ fb_api_form({message: 'Tax Settings Updated'|trans}) }}>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Enable tax support'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Enable Tax Support'|trans }}:</label>
                         <div class="col">
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioTexEnabledYes" type="radio" name="tax_enabled" value="1"{% if params.tax_enabled %} checked{% endif %}>
-                                <label class="form-check-label" for="radioTexEnabledYes">{{ 'Yes'|trans }}</label>
+                                <input class="form-check-input" id="radioTaxEnabledYes" type="radio" name="tax_enabled" value="1"{% if params.tax_enabled %} checked{% endif %}>
+                                <label class="form-check-label" for="radioTaxEnabledYes">{{ 'Yes'|trans }}</label>
                             </div>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioTexEnabledNo" type="radio" name="tax_enabled" value="0"{% if not params.tax_enabled %} checked{% endif %}>
-                                <label class="form-check-label" for="radioTexEnabledNo">{{ 'No'|trans }}</label>
+                                <input class="form-check-input" id="radioTaxEnabledNo" type="radio" name="tax_enabled" value="0"{% if not params.tax_enabled %} checked{% endif %}>
+                                <label class="form-check-label" for="radioTaxEnabledNo">{{ 'No'|trans }}</label>
                             </div>
                         </div>
                     </div>

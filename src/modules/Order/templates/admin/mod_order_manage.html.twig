@@ -84,21 +84,21 @@
                             <td><a href='{{ "product/manage/#{order.product_id}"|url }}'><strong>{{ order.title }}</strong></a></td>
                         </tr>
                         <tr>
-                            <td class="text-end">{{ 'Payment amount'|trans }}</td>
-                            <td>{{ order.total|format_currency(order.currency) }}{% if order.period %}{{ order.period|period_title }}{% endif %}{% if order.quantity > 1 %}({{ order.quantity }} x {{ order.price|format_currency(order.currency) }}){% endif %}</td>
+                            <td class="text-end">{{ 'Payment Amount'|trans }}</td>
+                            <td>{{ order.total|format_currency(order.currency) }} {% if order.period %}{{ order.period|period_title }}{% endif %}{% if order.quantity > 1 %}({{ order.quantity }} x {{ order.price|format_currency(order.currency) }}){% endif %}</td>
                         </tr>
                         {% if order.discount and order.discount > 0%}
                         <tr>
-                            <td class="text-end">{{ 'Order discount'|trans }}</td>
+                            <td class="text-end">{{ 'Order Discount'|trans }}</td>
                             <td>-{{ order.discount|format_currency(order.currency) }} </td>
                         </tr>
                         <tr>
-                            <td class="text-end">{{ 'Payment amount after discount'|trans }}</td>
+                            <td class="text-end">{{ 'Payment Amount After Discount'|trans }}</td>
                             <td>{{ (order.total - order.discount)|format_currency(order.currency)}} </td>
                         </tr>
                         {% endif %}
                         <tr>
-                            <td class="text-end">{{ 'Order status'|trans }}</td>
+                            <td class="text-end">{{ 'Order Status'|trans }}</td>
                             <td>
                             {% if order.status == 'pending_setup' or order.status == 'failed_setup' or order.status == 'failed_renew' %}
                                 <span class="badge bg-warning me-1"></span>
@@ -117,7 +117,7 @@
                         </tr>
                         {% if order.notes %}
                         <tr>
-                            <td class="text-end">{{ 'Order notes'|trans }}</td>
+                            <td class="text-end">{{ 'Order Notes'|trans }}</td>
                             <td>
                                 <svg class="icon">
                                     <use xlink:href="#support" />
@@ -139,12 +139,12 @@
                             <td>{% if order.expires_at %}{{ order.expires_at|format_date }} ({{ order.expires_at|daysleft }} {{ 'day(s)'|trans }}){% else %}-{% endif %}</td>
                         </tr>
                         <tr>
-                            <td class="text-end">{{ 'Order group ID'|trans }}</td>
+                            <td class="text-end">{{ 'Order Group ID'|trans }}</td>
                             <td>{{ order.group_id|default('-') }}</td>
                         </tr>
                         {% if order.promo_id %}
                         <tr>
-                            <td class="text-end">{{ 'Order promo code'|trans }}</td>
+                            <td class="text-end">{{ 'Order Promo Code'|trans }}</td>
                             <td>
                                 {% set promo = admin.product_promo_get({ 'id': order.promo_id }) %}
                                 {{ promo.code }}
@@ -153,7 +153,7 @@
                         {% endif %}
                         {% if order.active_tickets > 0 %}
                         <tr>
-                            <td class="text-end">{{ 'Active support tickets'|trans }}</td>
+                            <td class="text-end">{{ 'Active Support Tickets'|trans }}</td>
                             <td>
                                 <div class="num">
                                     <a href="{{ 'support'|url(query: { 'status': 'open', 'order_id': order.id }) }}" class="redNum">{{ order.active_tickets }}</a>
@@ -308,13 +308,13 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Changes status without performing action'|trans }}</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Changes Status Without Performing Action'|trans }}</label>
                         <div class="col">
                             {{ mf.selectbox('status', admin.order_get_status_pairs, order.status, 0, 'Select status'|trans) }}
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Invoice option'|trans }}</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Invoice Option'|trans }}</label>
                         <div class="col">
                             {{ mf.selectbox('invoice_option', admin.order_get_invoice_options, order.invoice_option) }}
                         </div>
@@ -427,7 +427,7 @@
                         <div class="col">
                             {% if config is iterable %}
                                 {% for key2, config2 in config %}
-                                    <input class="form-control" type="text" name="config[{{ key }}][{{ key2 }}]" value="{{ config }}"{% if config2 is null %} placeholder="null"{% endif %}>
+                                    <input class="form-control" type="text" name="config[{{ key }}][{{ key2 }}]" value="{{ config2 }}"{% if config2 is null %} placeholder="null"{% endif %}>
                                 {% endfor %}
                             {% else %}
                                 <input class="form-control" type="text" name="config[{{ key }}]" value="{{ config }}"{% if config is null %} placeholder="null"{% endif %}>

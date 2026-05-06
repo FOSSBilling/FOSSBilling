@@ -38,12 +38,12 @@ class Payment_Adapter_Custom
             'form' => [
                 'single' => [
                     'textarea', [
-                        'label' => 'Enter your text for single payment information',
+                        'label' => 'Enter Your Text for Single Payment Information',
                     ],
                 ],
                 'recurrent' => [
                     'textarea', [
-                        'label' => 'Enter your text for subscription information',
+                        'label' => 'Enter Your Text for Subscription Information',
                     ],
                 ],
             ],

@@ -118,7 +118,7 @@
                             <span class="bg-danger text-white avatar">{{ statuses.open }}</span>
                         </div>
                         <div class="col">
-                            <div class="font-weight-medium">{{ 'Awaiting staff'|trans }}</div>
+                            <div class="font-weight-medium">{{ 'Awaiting Staff'|trans }}</div>
                         </div>
                     </div>
                 </div>
@@ -132,7 +132,7 @@
                             <span class="bg-warning text-white avatar">{{ statuses.on_hold }}</span>
                         </div>
                         <div class="col">
-                            <div class="font-weight-medium">{{ 'Awaiting client'|trans }}</div>
+                            <div class="font-weight-medium">{{ 'Awaiting Client'|trans }}</div>
                         </div>
                     </div>
                 </div>
@@ -295,7 +295,7 @@
                                         placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
                                         id="client_id"
                                         name="client_id"
-                                        data-resturl="admin/client/get_pairs">
+                                        data-resturl="/api/admin/client/get_pairs">
                                 </select>
                             {% else %}
                                 {% set client = admin.client_get({ 'id': request.client_id }) %}

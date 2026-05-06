@@ -48,7 +48,7 @@
                     <div class="card-actions">
                         <a href="#" id="new-form" class="btn btn-primary">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 5l0 14"></path><path d="M5 12l14 0"></path></svg>
-                            <span>{{ 'Add new'|trans }}</span>
+                            <span>{{ 'Add New'|trans }}</span>
                         </a>
                     </div>
                 </div>
@@ -119,28 +119,28 @@
                     <input type="hidden" name="form_id" value="{{ form.id }}">
                     <div class="mb-3 row">
                         <label class="col-md-3 col-form-label"
-                               for="form_name">{{ 'Form title'|trans }}</label>
+                               for="form_name">{{ 'Form Title'|trans }}</label>
                         <div class="col-md-8">
                             <input class="form-control" type="text" name="form_name" id="form_name"
                                    value="{{ form.name }}"/>
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="col-md-3 col-form-label" for="form_type">{{ 'Labels position'|trans }}</label>
+                        <label class="col-md-3 col-form-label" for="form_type">{{ 'Labels Position'|trans }}</label>
                         <div class="col-md-8">
                             <select class="form-select" name="type" id="form_type">
-                                <option value="default" {% if form.style.type=='default' %} selected {% endif %}>{{ 'Labels on top'|trans }}</option>
+                                <option value="default" {% if form.style.type=='default' %} selected {% endif %}>{{ 'Labels on Top'|trans }}</option>
                                 <option
-                                    value="horizontal" {% if form.style.type=='horizontal' %} selected {% endif %}>{{ 'Labels on the left'|trans }}</option>
+                                    value="horizontal" {% if form.style.type=='horizontal' %} selected {% endif %}>{{ 'Labels on the Left'|trans }}</option>
                             </select>
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="col-md-3 col-form-label" for="show_title">{{ 'Form title visibility'|trans }}</label>
+                        <label class="col-md-3 col-form-label" for="show_title">{{ 'Form Title Visibility'|trans }}</label>
                         <div class="col-md-8">
                             <select class="form-select" name="show_title" id="show_title">
-                                <option value="1" {% if form.style.show_title=='1' %} selected {% endif %}>{{ 'Show form title'|trans }}</option>
-                                <option value="0" {% if form.style.show_title=='0' %} selected {% endif %}>{{ 'Do not show form title'|trans }}</option>
+                                <option value="1" {% if form.style.show_title=='1' %} selected {% endif %}>{{ 'Show Form Title'|trans }}</option>
+                                <option value="0" {% if form.style.show_title=='0' %} selected {% endif %}>{{ 'Do not Show Form Title'|trans }}</option>
                             </select>
                         </div>
                     </div>

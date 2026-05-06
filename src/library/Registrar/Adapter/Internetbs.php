@@ -33,13 +33,13 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
             'label' => 'Manages domains on Internetbs via API',
             'form' => [
                 'apikey' => ['text', [
-                    'label' => 'Internetbs API key',
-                    'description' => 'Internetbs API key',
+                    'label' => 'Internetbs API Key',
+                    'description' => 'Internetbs API Key',
                 ],
                 ],
                 'password' => ['password', [
-                    'label' => 'Internetbs API password',
-                    'description' => 'Internetbs API password',
+                    'label' => 'Internetbs API Password',
+                    'description' => 'Internetbs API Password',
                     'renderPassword' => true,
                 ],
                 ],

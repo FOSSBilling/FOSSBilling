@@ -64,23 +64,23 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             'form' => [
                 'pub_key' => [
                     'text', [
-                        'label' => 'Live publishable key:',
+                        'label' => 'Live Publishable Key:',
                     ],
                 ],
                 'api_key' => [
                     'text', [
-                        'label' => 'Live Secret key:',
+                        'label' => 'Live Secret Key:',
                     ],
                 ],
                 'test_pub_key' => [
                     'text', [
-                        'label' => 'Test Publishable key:',
+                        'label' => 'Test Publishable Key:',
                         'required' => false,
                     ],
                 ],
                 'test_api_key' => [
                     'text', [
-                        'label' => 'Test Secret key:',
+                        'label' => 'Test Secret Key:',
                         'required' => false,
                     ],
                 ],

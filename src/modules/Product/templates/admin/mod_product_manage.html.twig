@@ -118,15 +118,15 @@
                         <div class="col">
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" name="setup" value="after_order"{% if product.setup == 'after_order' %} checked{% endif %} id="activation-after-order">
-                                <label class="form-check-label" for="activation-after-order">{{ 'After order is placed'|trans }}</label>
+                                <label class="form-check-label" for="activation-after-order">{{ 'After Order is Placed'|trans }}</label>
                             </div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" name="setup" value="after_payment"{% if product.setup == 'after_payment' %} checked{% endif %} id="activation-after-payment">
-                                <label class="form-check-label" for="activation-after-payment">{{ 'After payment is received'|trans }}</label>
+                                <label class="form-check-label" for="activation-after-payment">{{ 'After Payment is Received'|trans }}</label>
                             </div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" name="setup" value="manual"{% if product.setup == 'manual' %} checked{% endif %} id="activation-manual">
-                                <label class="form-check-label" for="activation-manual">{{ 'Manual activation'|trans }}</label>
+                                <label class="form-check-label" for="activation-manual">{{ 'Manual Activation'|trans }}</label>
                             </div>
                         </div>
                     </div>
@@ -155,7 +155,7 @@
 
                     <h2>{{'Pricing & Stock Control'|trans }}</h2>
                     <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Enable stock control'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Enable Stock Control'|trans }}:</label>
                         <div class="col">
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" id="radioStockControlYes" name="stock_control" value="1"{% if product.stock_control %} checked{% endif %}>
@@ -183,7 +183,7 @@
                     </div>
                     #}
                     <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Quantity in stock'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Quantity in Stock'|trans }}:</label>
                         <div class="col">
                             <input class="form-control" type="text" name="quantity_in_stock" value="{{ product.quantity_in_stock }}">
                         </div>
@@ -253,7 +253,7 @@
                         <svg class="icon">
                             <use xlink:href="#plus" />
                         </svg>
-                        {{ 'Create new addon'|trans }}
+                        {{ 'Create New Addon'|trans }}
                     </a>
 
                     <input type="hidden" name="id" value="{{ product.id }}">
@@ -319,7 +319,7 @@
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#search" />
                     </svg>
-                    <span>{{ 'View as client'|trans }}</span>
+                    <span>{{ 'View as Client'|trans }}</span>
                 </a>
             </div>
         </div>

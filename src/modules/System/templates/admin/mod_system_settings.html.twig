@@ -104,13 +104,13 @@
                                 </div>
                             </div>
                             <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Company number, chamber of commerce number'|trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'Company Number'|trans }}</label>
                                 <div class="col-md-6">
                                     <input class="form-control" type="text" name="company_number" value="{{ params.company_number }}">
                                 </div>
                             </div>
                             <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'VAT number'|trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'VAT Number'|trans }}</label>
                                 <div class="col-md-6">
                                     <input class="form-control" type="text" name="company_vat_number" value="{{ params.company_vat_number }}">
                                 </div>
@@ -128,13 +128,13 @@
                                 </div>
                             </div>
                             <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Bank Account number'|trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'Bank Account Number'|trans }}</label>
                                 <div class="col-md-6">
                                     <input class="form-control" type="text" name="company_account_number" value="{{ params.company_account_number }}">
                                 </div>
                             </div>
                             <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Display bank account information on documents?'|trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'Display Bank Account Information on Documents?'|trans }}</label>
                                 <div class="col-md-6">
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" type="radio" name="company_display_bank_info" id="display_bank_info_yes" value="1" {% if params.company_display_bank_info == "1" %}checked{% endif %}>
@@ -147,7 +147,7 @@
                                 </div>
                             </div>
                             <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Display bank account information on the bottom of every page?'|trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'Display Bank Account Information on the Bottom of Every Page?'|trans }}</label>
                                 <div class="col-md-6">
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" type="radio" name="company_bank_info_pagebottom" id="company_bank_info_pagebottom_yes" value="1" {% if params.company_bank_info_pagebottom == "1" %}checked{% endif %}>
@@ -161,7 +161,7 @@
                             </div>
                             <div class="mb-3 row">
                                 <label class="form-label col-3 col-form-label">
-                                    {{ 'Hide some company information in the guest API'|trans }}
+                                    {{ 'Hide Some Company Information in the Guest API'|trans }}
                                     <br/>
                                     <small class="text-muted">{{'Enabling this will hide some information from the "company" guest API endpoint such as the address, phone number, email, VAT number, and more.'|trans }}</small>
                                 </label>
@@ -188,7 +188,7 @@
                             </div>
                         </div>
                         <div class="card-footer text-end">
-                            <button class="btn btn-primary" type="submit"{% if not can_update_params %} disabled aria-disabled="true"{% endif %}>{{ 'Update settings'|trans }}</button>
+                            <button class="btn btn-primary" type="submit"{% if not can_update_params %} disabled aria-disabled="true"{% endif %}>{{ 'Update Settings'|trans }}</button>
                         </div>
                     </form>
                 </div>
@@ -210,7 +210,7 @@
                             </div>
                         </div>
                         <div class="card-footer text-end">
-                            <button class="btn btn-primary" type="submit"{% if not can_update_params %} disabled aria-disabled="true"{% endif %}>{{ 'Update settings'|trans }}</button>
+                            <button class="btn btn-primary" type="submit"{% if not can_update_params %} disabled aria-disabled="true"{% endif %}>{{ 'Update Settings'|trans }}</button>
                         </div>
                     </form>
                 </div>
@@ -468,7 +468,7 @@ ZW=Zimbabwe
 {% endset %}
 
                             <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Default country for new users'|trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'Default Country for New Users'|trans }}</label>
                                 <div class="col-md-6">
                                     <select class="form-select" name="default_country">
                                         <option value="" {% if new_params.default_country is not defined or new_params.default_country == '' %}selected{% endif %}>
@@ -487,14 +487,14 @@ ZW=Zimbabwe
                             </div>
 
                             <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'List of countries'|trans }}</label>
+                                <label class="col-md-3 col-form-label">{{ 'List of Countries'|trans }}</label>
                                 <div class="col-md-6">
                                     <textarea class="form-control" name="countries" rows="25" placeholder="US=United States">{{ new_params.countries|default(default_countries) }}</textarea>
                                 </div>
                             </div>
                         </div>
                         <div class="card-footer text-end">
-                            <button class="btn btn-primary" type="submit">{{ 'Update settings'|trans }}</button>
+                            <button class="btn btn-primary" type="submit">{{ 'Update Settings'|trans }}</button>
                         </div>
                     </form>
                 </div>
@@ -595,10 +595,10 @@ ZW=Zimbabwe
                             </div>
                             {% if can_toggle_error_reporting %}
                                 <a class="btn btn-danger ms-3" href="{{ 'system/toggle_error_reporting'|api_url }}" {{ fb_api_link({ message: 'Error Reporting Disabled'|trans}) }}>
-                                    {{ 'Disable error reporting'|trans }}
+                                    {{ 'Disable Error Reporting'|trans }}
                                 </a>
                             {% else %}
-                                <button class="btn btn-danger ms-3" type="button" disabled aria-disabled="true">{{ 'Disable error reporting'|trans }}</button>
+                                <button class="btn btn-danger ms-3" type="button" disabled aria-disabled="true">{{ 'Disable Error Reporting'|trans }}</button>
                             {% endif %}
                         </div>
                         {% else %}
@@ -616,10 +616,10 @@ ZW=Zimbabwe
                             </div>
                             {% if can_toggle_error_reporting %}
                                 <a class="btn btn-success ms-3" href="{{ 'system/toggle_error_reporting'|api_url }}" {{ fb_api_link({ message: 'Error Reporting Enabled'|trans}) }}>
-                                    {{ 'Enable error reporting'|trans }}
+                                    {{ 'Enable Error Reporting'|trans }}
                                 </a>
                             {% else %}
-                                <button class="btn btn-success ms-3" type="button" disabled aria-disabled="true">{{ 'Enable error reporting'|trans }}</button>
+                                <button class="btn btn-success ms-3" type="button" disabled aria-disabled="true">{{ 'Enable Error Reporting'|trans }}</button>
                             {% endif %}
                         </div>
                         {% endif %}
@@ -648,7 +648,7 @@ ZW=Zimbabwe
                                 <p>{{ 'If your server has multiple network interfaces, you may select the default one for FOSSBilling to use when making requests here.'|trans }}</p>
 
                                 <div class="col-12 col-lg-3">
-                                    <label for="interface">{{ 'Select the default network interface:'|trans }}</label>
+                                    <label for="interface">{{ 'Select the Default Network Interface:'|trans }}</label>
                                     <select class="form-select" name="interface" id="interface">
                                         <option value="0">{{ 'None (Default PHP Behavior)'|trans }}</option>
                                     </select>
@@ -657,7 +657,7 @@ ZW=Zimbabwe
                                 <br>
 
                                 <div class="col-12 col-lg-3">
-                                    <label for="custom_interface">{{'Enter a custom interface to use:'|trans }}</label>
+                                    <label for="custom_interface">{{'Enter a Custom Interface to Use:'|trans }}</label>
                                     <input class="form-control mt-1" type="text" name="custom_interface" id="custom_interface">
                                 </div>
                                 <span class="text-muted">

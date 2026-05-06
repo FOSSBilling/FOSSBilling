@@ -56,14 +56,14 @@
                 </div>
             </div>
             <div class="mb-3 row">
-                <label class="col-md-3 col-form-label">{{ 'Close tickets after (in hours)'|trans }}</label>
+                <label class="col-md-3 col-form-label">{{ 'Close Tickets After (in hours)'|trans }}</label>
                 <div class="col-md-6">
                     <input class="form-control" type="text" size="3" name="close_after" value="{{ helpdesk.close_after }}" required>
                     <small class="form-hint">{{ 'Define a very large number of hours to disable auto close ticket option.'|trans }}</small>
                 </div>
             </div>
             <div class="row">
-                <label class="col-md-3 form-label">{{ 'Tickets can be reopened?'|trans }}</label>
+                <label class="col-md-3 form-label">{{ 'Tickets Can Be Reopened?'|trans }}</label>
                 <div class="col-md-6">
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" id="radioCanReopenYes" type="radio" name="can_reopen" value="1"{% if helpdesk.can_reopen %} checked{% endif %}>

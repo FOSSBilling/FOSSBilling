@@ -31,7 +31,7 @@
                                 placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
                                 id="client_id"
                                 name="client_id"
-                                data-resturl="admin/client/get_pairs">
+                                data-resturl="/api/admin/client/get_pairs">
                         {% if not request.client_id %}
                         {% else %}
                             {% set client = admin.client_get({ 'id': request.client_id }) %}
@@ -299,7 +299,7 @@
                                             placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
                                             id="client_id"
                                             name="client_id"
-                                            data-resturl="admin/client/get_pairs">
+                                            data-resturl="/api/admin/client/get_pairs">
                                     </select>
                                 {% else %}
                                     {% set client = admin.client_get({ 'id': request.client_id }) %}
@@ -312,12 +312,11 @@
                             <label class="form-label col-3 col-form-label" for="product_id">{{ 'Product'|trans }}</label>
                             <div class="col">
                                 <select class="form-control autocomplete-selector"
-                                        placeholder="{{ 'Start typing to select product (optional)'|trans }}"
+                                        placeholder="{{ 'Start Typing to Select Product (optional)'|trans }}"
                                         id="product_id"
                                         name="product_id"
-                                        data-resturl="admin/product/get_pairs">
+                                        data-resturl="/api/admin/product/get_pairs">
                                 </select>
-                                <small class="form-text text-muted">{{ 'Optionally select a product to pre-fill title and price'|trans }}</small>
                             </div>
                         </div>
                         <input type="submit" value="{{ 'Prepare'|trans }}" class="btn btn-primary">

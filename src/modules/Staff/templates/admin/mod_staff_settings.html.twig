@@ -124,7 +124,7 @@
                         <div class="card-body">
                         {% set params = admin.extension_config_get({ 'ext': 'mod_staff' }) %}
                             <div class="mt-3 mb-3 row">
-                                <label class="col-md-3 form-label">{{ 'Check login IP'|trans }}</label>
+                                <label class="col-md-3 form-label">{{ 'Check Login IP'|trans }}</label>
                                 <div class="col-md-6">
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" id="radioCheckIpYes" type="radio" name="check_ip" value="1"{% if params.check_ip == "1" %} checked{% endif %}>
@@ -147,7 +147,7 @@
                             </div>
                             <div class="mb-3 row">
                                 <label
-                                    class="col-md-3 form-label">{{ 'Allow staff reset passwords'|trans }}</label>
+                                    class="col-md-3 form-label">{{ 'Allow Staff Reset Passwords'|trans }}</label>
                                 <div class="col-md-6">
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" id="radioPWresetYes" type="radio"

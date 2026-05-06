@@ -40,7 +40,7 @@
                     <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
                         <div class="card-body">
                             <div class="mb-3 row">
-                                <label class="col-sm-4 col-md-3 form-label">{{ 'Disable new signups'|trans }}</label>
+                                <label class="col-sm-4 col-md-3 form-label">{{ 'Disable New Signups'|trans }}</label>
                                 <div class="col-sm-7 col-md-6">
                                     <label class="form-check form-switch">
                                         <input class="form-check-input" name="disable_signup" type="checkbox" {% if params.disable_signup %} checked="checked"{% endif %}>
@@ -48,7 +48,7 @@
                                 </div>
                             </div>
                             <div class="mb-3 row">
-                                <label class="col-sm-4 col-md-3 form-label">{{ 'Require email confirmation'|trans }}</label>
+                                <label class="col-sm-4 col-md-3 form-label">{{ 'Require Email Confirmation'|trans }}</label>
                                 <div class="col-sm-7 col-md-6">
                                     <label class="form-check form-switch">
                                         <input class="form-check-input" name="require_email_confirmation" type="checkbox" {% if params.require_email_confirmation %} checked="checked"{% endif %}>
@@ -58,7 +58,7 @@
                             </div>
 
                             <div class="mb-3 row">
-                                <label class="col-sm-4 col-md-3 form-label">{{ 'Disable email change'|trans }}</label>
+                                <label class="col-sm-4 col-md-3 form-label">{{ 'Disable Email Change'|trans }}</label>
                                 <div class="col-sm-7 col-md-6">
                                     <label class="form-check form-switch">
                                         <input class="form-check-input" name="disable_change_email" type="checkbox" {% if params.disable_change_email %} checked="checked"{% endif %}>
@@ -67,7 +67,7 @@
                             </div>
 
                             <div class="mb-3 row">
-                                <label class="col-sm-4 col-md-3 form-label">{{ 'Required fields'|trans }}</label>
+                                <label class="col-sm-4 col-md-3 form-label">{{ 'Required Fields'|trans }}</label>
                                 <div class="col-sm-7 col-md-6">
                                     <select class="form-select" name="required[]" multiple size="13">
                                         <optgroup label="General">
@@ -82,7 +82,7 @@
                                             <option value="state" {% if 'state' in params.required %}selected{% endif %}>{{ 'State'|trans }}</option>
                                             <option value="address_1" {% if 'address_1' in params.required %}selected{% endif %}>{{ 'Address Line 1'|trans }}</option>
                                             <option value="address_2" {% if 'address_2' in params.required %}selected{% endif %}>{{ 'Address Line 2'|trans }}</option>
-                                            <option value="postcode" {% if 'last_name' in params.required %}selected{% endif %}>{{ 'Post code'|trans }}</option>
+                                            <option value="postcode" {% if 'last_name' in params.required %}selected{% endif %}>{{ 'Post Code'|trans }}</option>
                                             <option value="phone" {% if 'phone' in params.required %}selected{% endif %}>{{ 'Phone'|trans }}</option>
                                         </optgroup>
                                     </select>

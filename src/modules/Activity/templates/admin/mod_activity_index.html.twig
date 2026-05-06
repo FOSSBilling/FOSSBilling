@@ -49,10 +49,10 @@
                     <label class="form-label col-3 col-form-label" for="admin_id">{{ 'Specific admin'|trans }}</label>
                     <div class="col">
                         <select class="form-control autocomplete-selector"
-                                placeholder="{{ 'Start typing the admin name or ID'|trans }}"
+                                placeholder="{{ 'Start Typing the Admin Name or ID'|trans }}"
                                 id="admin_id"
                                 name="admin_id"
-                                data-resturl="admin/staff/get_pairs">
+                                data-resturl="/api/admin/staff/get_pairs">
                         {% if not request.admin_id %}
                         {% else %}
                             {% set admin = admin.staff_get({ 'id': request.admin_id }) %}
@@ -67,10 +67,10 @@
                     <label class="form-label col-3 col-form-label" for="client_id">{{ 'Specific client'|trans }}</label>
                     <div class="col">
                         <select class="form-control autocomplete-selector"
-                                placeholder="{{ 'Start typing the client name or ID'|trans }}"
+                                placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
                                 id="client_id"
                                 name="client_id"
-                                data-resturl="admin/client/get_pairs">
+                                data-resturl="/api/admin/client/get_pairs">
                         {% if not request.client_id %}
                         {% else %}
                             {% set client = admin.client_get({ 'id': request.client_id }) %}
