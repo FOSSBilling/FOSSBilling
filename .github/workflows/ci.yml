@@ -40,6 +40,18 @@ jobs:
           repo-token: '${{ secrets.GITHUB_TOKEN }}'
           sync-labels: true
 
+  release-drafter:
+    name: 'Release Drafter'
+    permissions:
+      contents: write
+      pull-requests: read
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: release-drafter/release-drafter@563bf132657a13ded0b01fcb723c5a58cdd824e2 # v7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   spellcheck:
     name: 'Spellcheck'
     permissions:
