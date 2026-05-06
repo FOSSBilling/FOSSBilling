@@ -17,6 +17,7 @@ final class AdminTest extends TestCase
 
         $this->assertArrayHasKey('name', $result->getResult());
         $this->assertArrayHasKey('version', $result->getResult());
+        $this->assertArrayHasKey('author', $result->getResult());
         $this->assertEquals('FOSSBilling', $result->getResult()['author']);
     }
 
@@ -28,6 +29,13 @@ final class AdminTest extends TestCase
 
         $this->assertArrayHasKey('name', $result->getResult());
         $this->assertArrayHasKey('version', $result->getResult());
+        $this->assertArrayHasKey('author', $result->getResult());
         $this->assertEquals('FOSSBilling', $result->getResult()['author']);
+    }
+
+    public function testInvalidThemeActionReturnsError(): void
+    {
+        $result = Request::makeRequest('admin/theme/non_existing_action');
+        $this->assertFalse($result->wasSuccessful(), 'Invalid theme action should not be successful.');
     }
 }

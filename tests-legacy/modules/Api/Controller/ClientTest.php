@@ -9,6 +9,50 @@ use PHPUnit\Framework\Attributes\Group;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+final class ClientTestRateLimiterDouble
+{
+    public function __construct(private \ArrayObject $calls)
+    {
+    }
+
+    public function consume(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
+    {
+        $this->calls[] = [$policy, $subject, $tokens];
+
+        return new \FOSSBilling\Security\RateLimitResult($policy, false, 100, 99);
+    }
+
+    public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
+    {
+        return $this->consume($policy, $subject, $tokens);
+    }
+}
+
+final class ClientTestDefaultApiDouble
+{
+    public function testMethod(array $params): array
+    {
+        return ['ok' => true];
+    }
+}
+
+final class ClientTestSessionDouble
+{
+    public function __construct(private array $data)
+    {
+    }
+
+    public function get(string $key): mixed
+    {
+        return $this->data[$key] ?? null;
+    }
+
+    public function set(string $key, mixed $value): void
+    {
+        $this->data[$key] = $value;
+    }
+}
+
 final class TestableClient extends Client
 {
     public bool $hasValidSession = false;
@@ -226,48 +270,13 @@ final class ClientTest extends \BBTestCase
 
         $this->rateLimitCalls = new \ArrayObject();
 
-        $rateLimiter = new class($this->rateLimitCalls) {
-            public function __construct(private \ArrayObject $calls)
-            {
-            }
+        $rateLimiter = new ClientTestRateLimiterDouble($this->rateLimitCalls);
 
-            public function consume(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
-            {
-                $this->calls[] = [$policy, $subject, $tokens];
-
-                return new \FOSSBilling\Security\RateLimitResult($policy, false, 100, 99);
-            }
-
-            public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
-            {
-                return $this->consume($policy, $subject, $tokens);
-            }
-        };
-
-        $api ??= new class {
-            public function testMethod(array $params): array
-            {
-                return ['ok' => true];
-            }
-        };
+        $api ??= new ClientTestDefaultApiDouble();
 
         $this->di['request'] = $request;
         $this->di['rate_limiter'] = $rateLimiter;
-        $this->di['session'] = new class($sessionData) {
-            public function __construct(private array $data)
-            {
-            }
-
-            public function get(string $key): mixed
-            {
-                return $this->data[$key] ?? null;
-            }
-
-            public function set(string $key, mixed $value): void
-            {
-                $this->data[$key] = $value;
-            }
-        };
+        $this->di['session'] = new ClientTestSessionDouble($sessionData);
         $this->di['api'] = $this->di->protect(fn (string $role): object => $api);
 
         $controller = new TestableClient();
