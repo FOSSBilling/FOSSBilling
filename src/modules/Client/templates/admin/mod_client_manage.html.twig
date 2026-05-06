@@ -182,7 +182,7 @@
         <div class="tab-pane fade" id="tab-profile" role="tabpanel">
             <div class="card-body">
                 {% if can_edit_profile %}
-                <h5>{{ 'Client profile details'|trans }}</h5>
+                <h5>{{ 'Client Profile Details'|trans }}</h5>
                 <form method="post" action="{{ 'client/update'|api_url }}" {{ fb_api_form({ message: 'Client Profile Updated'|trans}) }}>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
@@ -234,7 +234,7 @@
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Group'|trans }}:</label>
                         <div class="col">
-                            {{ mf.selectbox('group_id', admin.client_group_get_pairs, client.group_id, 0, 'Select group'|trans) }}
+                            {{ mf.selectbox('group_id', admin.client_group_get_pairs, client.group_id, 0, 'Select Group'|trans) }}
                         </div>
                     </div>
                     <div class="mb-3 row">
@@ -301,7 +301,7 @@
                     <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
                     <hr>
 
-                    <h5>{{ 'Address and contact details'|trans }}</h5>
+                    <h5>{{ 'Address and Contact Details'|trans }}</h5>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Address Line 1'|trans }}:</label>
                         <div class="col">
@@ -318,7 +318,7 @@
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Country'|trans }}:</label>
                         <div class="col">
-                            {{ mf.selectbox('country', guest.system_countries, client.country, 0, 'Select country'|trans) }}
+                            {{ mf.selectbox('country', guest.system_countries, client.country, 0, 'Select Country'|trans) }}
                         </div>
                     </div>
                     <div class="mb-3 row">
@@ -359,7 +359,7 @@
                     <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
                     <hr>
 
-                    <h5>{{ 'Additional settings'|trans }}</h5>
+                    <h5>{{ 'Additional Settings'|trans }}</h5>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Alternative ID'|trans }}:</label>
                         <div class="col">
@@ -369,7 +369,7 @@
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Currency'|trans }}:</label>
                         <div class="col">
-                            {{ mf.selectbox('currency', guest.currency_get_pairs, client.currency, 0, 'Select currency'|trans) }}
+                            {{ mf.selectbox('currency', guest.currency_get_pairs, client.currency, 0, 'Select Currency'|trans) }}
                         </div>
                     </div>
                     <div class="mb-3 row">
@@ -424,7 +424,7 @@
                 {% endif %}
 
                 {% if can_change_password %}
-                <h5>{{ 'Change password'|trans }}</h5>
+                <h5>{{ 'Change Password'|trans }}</h5>
                 <form method="post" action="{{ 'client/change_password'|api_url }}" {{ fb_api_form({ message: 'Password Changed'|trans}) }}>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Password'|trans }}</label>
@@ -540,7 +540,7 @@
 
         <div class="tab-pane fade" id="tab-invoice" role="tabpanel">
             <div class="card-body">
-                <h5>{{ 'Client invoices'|trans }}</h5>
+                <h5>{{ 'Client Invoices'|trans }}</h5>
             </div>
 
             <div class="table-responsive">
@@ -549,8 +549,8 @@
                         <tr>
                             <th class="w-1">#</th>
                             <th>{{ 'Amount'|trans }}</th>
-                            <th>{{ 'Issued on'|trans }}</th>
-                            <th>{{ 'Paid on'|trans }}</th>
+                            <th>{{ 'Issued On'|trans }}</th>
+                            <th>{{ 'Paid On'|trans }}</th>
                             <th>{{ 'Status'|trans }}</th>
                             <th class="w-1"></th>
                         </tr>
@@ -609,7 +609,7 @@
 
         <div class="tab-pane fade" id="tab-support" role="tabpanel" aria-labelledby="support-tab">
             <div class="card-body">
-                <h5>{{ 'Client support tickets'|trans }}</h5>
+                <h5>{{ 'Help Desk'|trans }}</h5>
             </div>
 
             <div class="table-responsive">
@@ -674,7 +674,7 @@
         {% if can_manage_balance %}
         <div class="tab-pane fade" id="tab-balance" role="tabpanel" aria-labelledby="balance-tab">
             <div class="card-body">
-                <h5>{{ 'Client payments history'|trans }}</h5>
+                <h5>{{ 'Client Payments History'|trans }}</h5>
             </div>
 
             <div class="table-responsive">
@@ -714,7 +714,7 @@
             <hr>
 
             <div class="card-body">
-                <h5>{{ 'Add funds for client'|trans }}</h5>
+                <h5>{{ 'Add Funds for Client'|trans }}</h5>
                 <form method="post" action="{{ 'client/balance_add_funds'|api_url }}" {{ fb_api_form({ message: 'Funds Added'|trans}) }}>
                     <div class="form-group mb-3 row">
                         <label class="form-label col-3 col-form-label" for="inputAmount">{{ 'Amount'|trans }}:</label>
@@ -749,7 +749,7 @@
         {% if can_view_client_login_history %}
         <div class="tab-pane fade" id="tab-history" role="tabpanel" aria-labelledby="history-tab">
             <div class="card-body">
-                <h5>{{ 'Login history'|trans }}</h5>
+                <h5>{{ 'Login History'|trans }}</h5>
             </div>
 
             <div class="table-responsive">
@@ -791,7 +791,7 @@
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <thead>
                         <tr>
-                            <th>{{ 'Email subject'|trans }}</th>
+                            <th>{{ 'Email Subject'|trans }}</th>
                             <th>{{ 'To'|trans }}</th>
                             <th>{{ 'Date'|trans }}</th>
                             <th class="w-1"></th>
@@ -835,7 +835,7 @@
 
         <div class="tab-pane fade" id="tab-transactions" role="tabpanel" aria-labelledby="transactions-tab">
             <div class="card-body">
-                <h5>{{ 'Transactions received'|trans }}</h5>
+                <h5>{{ 'Transactions Received'|trans }}</h5>
             </div>
 
             {% set transactions = admin.invoice_transaction_get_list({ 'client_id': client.id, 'per_page': 100 }).list %}

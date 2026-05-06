@@ -38,14 +38,14 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             'subpages' => [
                 [
                     'location' => 'security',
-                    'label' => __trans('Security dashboard'),
+                    'label' => __trans('Security Dashboard'),
                     'index' => 100,
                     'uri' => $this->di['url']->adminLink('security'),
                     'class' => '',
                 ],
                 [
                     'location' => 'security',
-                    'label' => __trans('IP lookup'),
+                    'label' => __trans('IP Lookup'),
                     'index' => 200,
                     'uri' => $this->di['url']->adminLink('security/iplookup'),
                     'class' => '',

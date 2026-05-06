@@ -10,7 +10,7 @@
 {% if request.show_filter %}
 <section class="card mb-3">
     <div class="card-body">
-        <h5>{{ 'Filter transactions'|trans }}</h5>
+        <h5>{{ 'Filter Transactions'|trans }}</h5>
         <form method="get">
 
             <div class="mb-3 row">
@@ -203,7 +203,7 @@
                             <use xlink:href="#edit" />
                         </svg>
                     </a>
-                    <a class="btn btn-icon" href="{{ 'invoice/transaction_process'|api_url(query: { 'id': tx.id }) }}" title="Process again" {{ fb_api_link({message: 'Processed'|trans}) }}>
+                    <a class="btn btn-icon" href="{{ 'invoice/transaction_process'|api_url(query: { 'id': tx.id }) }}" title="{{ 'Process Again'|trans }}" {{ fb_api_link({message: 'Processed'|trans}) }}>
                         <svg class="icon">
                             <use xlink:href="#refresh" />
                         </svg>

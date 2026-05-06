@@ -28,7 +28,7 @@
 {% block content %}
 <div class="card">
     <div class="card-body">
-        <h5>{{ 'Canned response'|trans }}</h5>
+        <h5>{{ 'Canned Response'|trans }}</h5>
         <p class="text-muted">{{ response.title }}</p>
 
         <form method="post" action="{{ 'support/canned_update'|api_url }}" {{ fb_api_form({ redirect: 'support/canned-responses'|url }) }}>

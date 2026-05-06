@@ -25,7 +25,7 @@
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title">{{ 'SEO settings'|trans }}</h3>
+        <h3 class="card-title">{{ 'SEO Settings'|trans }}</h3>
     </div>
 
     {% set info = admin.seo_info %}
@@ -34,7 +34,7 @@
     <form method="post" action="{{ 'extension/config_save'|api_url }}" {{ fb_api_form({message: 'Configuration Updated'|trans}) }}>
         <input type="hidden" name="ext" value="mod_seo">
         <div class="card-body">
-            <h3 class="card-title">Enabled engines</h3>
+            <h3 class="card-title">{{ 'Enabled Engines'|trans }}</h3>
 
             {% for i, engine in info.engines %}
             <div class="row">

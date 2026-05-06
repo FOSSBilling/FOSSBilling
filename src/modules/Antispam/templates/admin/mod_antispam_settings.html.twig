@@ -42,14 +42,14 @@
 <div class="col ps-0">
 <small class="form-hint">{{ 'Blocked IPs are not allowed to login, register or open public ticket. (One IP per line)'|trans }}</small>
 <textarea id="block_ips" class="form-control" name="blocked_ips" rows="5" placeholder="127.0.0.1">{{ params.blocked_ips }}</textarea>
-<label class="hidden" for="block_ips">Blocked IP list</label>
+<label class="hidden" for="block_ips">{{ 'Blocked IP List'|trans }}</label>
 </div>
 </div>
 </div>
 </div>
 
 <div class="card-body">
-<h3 class="card-title">{{ 'CAPTCHA settings'|trans }}</h3>
+<h3 class="card-title">{{ 'CAPTCHA Settings'|trans }}</h3>
 <p class="card-subtitle">
 {{ 'Enable captcha for client registration and contact forms'|trans }}<br>
 {{ 'Get keys from %recaptcha%, %turnstile% or %hcaptcha%.'|trans({ '%recaptcha%': '<a href="https://www.google.com/recaptcha/about/" target="_blank">Google reCAPTCHA</a>', '%turnstile%': '<a href="https://www.cloudflare.com/products/turnstile/" target="_blank">Cloudflare Turnstile</a>', '%hcaptcha%': '<a href="https://www.hcaptcha.com" target="_blank">hCaptcha</a>' })|raw }}
@@ -77,14 +77,14 @@
 
 <div id="recaptcha_v2_settings">
 <div class="mb-3 row">
-<label class="col-md-3 col-form-label" for="captcha_recaptcha_publickey">{{ 'reCAPTCHA Public key'|trans }}</label>
+<label class="col-md-3 col-form-label" for="captcha_recaptcha_publickey">{{ 'reCAPTCHA Public Key'|trans }}</label>
 <div class="col-md-6 row">
 <input class="form-control" type="text" id="captcha_recaptcha_publickey" name="captcha_recaptcha_publickey"
 value="{{ params.captcha_recaptcha_publickey }}">
 </div>
 </div>
 <div class="mb-3 row">
-<label class="col-md-3 col-form-label" for="captcha_recaptcha_privatekey">{{ 'reCAPTCHA Secret key'|trans }}</label>
+<label class="col-md-3 col-form-label" for="captcha_recaptcha_privatekey">{{ 'reCAPTCHA Secret Key'|trans }}</label>
 <div class="col-md-6 pt-2 row">
 <input class="form-control" type="text" id="captcha_recaptcha_privatekey" name="captcha_recaptcha_privatekey"
 value="{{ params.captcha_recaptcha_privatekey }}">

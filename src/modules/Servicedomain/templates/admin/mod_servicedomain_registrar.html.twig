@@ -16,7 +16,7 @@
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'servicedomain'|url }}">{{ 'Domain management'|trans }}</a>
+            <a href="{{ 'servicedomain'|url }}">{{ 'Domain Management'|trans }}</a>
         </li>
         <li class="breadcrumb-item">
             <a href="{{ 'servicedomain'|url }}#tab-registrars">{{ 'Registrars'|trans }}</a>
@@ -34,7 +34,7 @@
 
         <form method="post" action="{{ 'servicedomain/registrar_update'|api_url }}" {{ fb_api_form({message: 'Registrar Updated'|trans}) }}>
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Enable test mode'|trans }}:</label>
+                <label class="form-label col-3 col-form-label">{{ 'Enable Test Mode'|trans }}:</label>
                 <div class="col">
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" id="radioTestModeYes" type="radio" name="test_mode" value="1"{% if registrar.test_mode %} checked{% endif %}>
@@ -48,7 +48,7 @@
             </div>
 
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Registrar title'|trans }}:</label>
+                <label class="form-label col-3 col-form-label">{{ 'Registrar Title'|trans }}:</label>
                 <div class="col">
                     <input class="form-control" type="text" name="title" value="{{ registrar.title }}">
                 </div>

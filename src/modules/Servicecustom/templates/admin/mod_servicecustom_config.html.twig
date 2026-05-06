@@ -1,5 +1,5 @@
 <div class="card-body">
-    <h5>{{ 'Stock control settings'|trans }}</h5>
+    <h5>{{ 'Stock Control Settings'|trans }}</h5>
 
     <h5>{{ 'Plugin'|trans }}</h5>
     <form method="post" action="{{ 'product/update'|api_url }}" {{ fb_api_form({message: 'Settings Updated'|trans}) }}>
@@ -15,7 +15,7 @@
     <hr>
 
     <form method="post" action="{{ 'product/update_config'|api_url }}" {{ fb_api_form({reload: true}) }}>
-        <h6>Custom parameters</h6>
+        <h6>{{ 'Custom Parameters'|trans }}</h6>
         {% for k, v in product.config %}
         <div class="form-group mb-3 row">
             <label class="form-label col-3 col-form-label">{{ k }}:</label>
@@ -25,7 +25,7 @@
         </div>
         {% endfor %}
 
-        <h6>Add custom parameter</h6>
+        <h6>{{ 'Add Custom Parameter'|trans }}</h6>
         <div class="form-group mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Parameter name'|trans }}:</label>
             <div class="col">

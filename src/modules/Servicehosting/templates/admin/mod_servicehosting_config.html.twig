@@ -6,17 +6,17 @@
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Server'|trans }}:</label>
             <div class="col">
-                {{ mf.selectbox('config[server_id]', admin.servicehosting_server_get_pairs, product.config.server_id, 0, 'Select server'|trans) }}
+                {{ mf.selectbox('config[server_id]', admin.servicehosting_server_get_pairs, product.config.server_id, 0, 'Select Server'|trans) }}
             </div>
         </div>
         <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Hosting plan'|trans }}:</label>
+            <label class="form-label col-3 col-form-label">{{ 'Hosting Plan'|trans }}:</label>
             <div class="col">
-                {{ mf.selectbox('config[hosting_plan_id]', admin.servicehosting_hp_get_pairs, product.config.hosting_plan_id, 0, 'Select hosting plan'|trans) }}
+                {{ mf.selectbox('config[hosting_plan_id]', admin.servicehosting_hp_get_pairs, product.config.hosting_plan_id, 0, 'Select Hosting Plan'|trans) }}
             </div>
         </div>
         <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Reseller hosting'|trans }}:</label>
+            <label class="form-label col-3 col-form-label">{{ 'Reseller Hosting'|trans }}:</label>
             <div class="col">
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" id="radioResellerYes" type="radio" name="config[reseller]" value="1"{% if product.config.reseller %} checked{% endif %}>
@@ -35,7 +35,7 @@
         <p class="text-muted">{{ 'Select which domain options are available to customers when ordering this product.'|trans }}</p>
 
         <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Allow domain registration'|trans }}:</label>
+            <label class="form-label col-3 col-form-label">{{ 'Allow Domain Registration'|trans }}:</label>
             <div class="col">
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" id="radioAllowRegisterYes" type="radio" name="config[allow_domain_register]" value="1"{% if product.config.allow_domain_register is not defined or product.config.allow_domain_register %} checked{% endif %}>
@@ -48,7 +48,7 @@
             </div>
         </div>
         <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Allow domain transfer'|trans }}:</label>
+            <label class="form-label col-3 col-form-label">{{ 'Allow Domain Transfer'|trans }}:</label>
             <div class="col">
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" id="radioAllowTransferYes" type="radio" name="config[allow_domain_transfer]" value="1"{% if product.config.allow_domain_transfer is not defined or product.config.allow_domain_transfer %} checked{% endif %}>
@@ -61,7 +61,7 @@
             </div>
         </div>
         <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Allow using own domain'|trans }}:</label>
+            <label class="form-label col-3 col-form-label">{{ 'Allow Using Own Domain'|trans }}:</label>
             <div class="col">
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" id="radioAllowOwnYes" type="radio" name="config[allow_domain_own]" value="1"{% if product.config.allow_domain_own is not defined or product.config.allow_domain_own %} checked{% endif %}>
@@ -86,7 +86,7 @@
         <h3 class="mt-4">{{ 'Free Domain Options'|trans }}</h3>
 
         <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Free domain registration'|trans }}:</label>
+            <label class="form-label col-3 col-form-label">{{ 'Free Domain Registration'|trans }}:</label>
             <div class="col">
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" id="radioFreeRegistrationYes" type="radio" name="config[free_domain]" value="1"{% if product.config.free_domain %} checked{% endif %}>
@@ -100,7 +100,7 @@
         </div>
 
         <div class="mb-3 row free-tlds-row">
-            <label class="form-label col-3 col-form-label">{{ 'Select free TLDs'|trans }}</label>
+            <label class="form-label col-3 col-form-label">{{ 'Select Free TLDs'|trans }}</label>
             <div class="col">
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <tbody>
@@ -114,7 +114,7 @@
         </div>
             <!-- Select periods to offer free domains -->
             <div class="mb-3 row free-periods-row">
-            <label class="form-label col-3 col-form-label">{{ 'Select free periods'|trans }}</label>
+            <label class="form-label col-3 col-form-label">{{ 'Select Free Periods'|trans }}</label>
             <div class="col">
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <tbody>
@@ -129,7 +129,7 @@
             </div>
         </div>
         <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Free domain transfer'|trans }}:</label>
+            <label class="form-label col-3 col-form-label">{{ 'Free Domain Transfer'|trans }}:</label>
             <div class="col">
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" id="radioFreeTransferYes" type="radio" name="config[free_transfer]" value="1"{% if product.config.free_transfer %} checked{% endif %}>
@@ -153,7 +153,7 @@
             <svg class="icon me-2">
                 <use xlink:href="#plus" />
             </svg>
-            {{ 'New hosting plan'|trans }}
+            {{ 'New Hosting Plan'|trans }}
         </a>
     </div>
     <table class="table card-table table-vcenter table-striped text-nowrap">
@@ -192,7 +192,7 @@
             <svg class="icon me-2">
                 <use xlink:href="#plus" />
             </svg>
-            {{ 'New server'|trans }}
+            {{ 'New Server'|trans }}
         </a>
     </div>
     <table class="table card-table table-vcenter table-striped text-nowrap">

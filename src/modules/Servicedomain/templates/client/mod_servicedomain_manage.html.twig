@@ -23,7 +23,7 @@
             {# Domain details #}
             <div class="card-body tab-pane active" id="details-tab-pane" role="tabpanel" tabindex="0">
                 <div class="tab-pane container active" id="details">
-                    <h5 class="mb-3 mt-1">{{ 'Domain details'|trans }}</h5>
+                    <h5 class="mb-3 mt-1">{{ 'Domain Details'|trans }}</h5>
                     <div class="d-flex justify-content-around py-3">
                         <div class="d-flex flex-column">
                             <span class="fs-6 text-muted">{{ 'Name'|trans }}</span>
@@ -111,7 +111,7 @@
             {# Domain WHOIS #}
             <div class="card-body tab-pane" id="whois-tab-pane" role="tabpanel" tabindex="0">
                 <div class="mb-3">
-                    <h5 class="mt-1 mb-1">{{ 'Update domain contact details'|trans }}</h5>
+                    <h5 class="mt-1 mb-1">{{ 'Update Domain Contact Details'|trans }}</h5>
                     <span class="small text-secondary">{{ 'Domain contact details will be displayed once someone will check WHOIS output (which is public) of your service. This will update Technical, Billing and Admin contacts for this service. You can enable domain privacy protection if you want to hide your public WHOIS information.'|trans }}</span>
                 </div>
                 <form method="post" action="{{ 'servicedomain/update_contacts'|api_url }}" {{ fb_api_form({message: 'Contact Details Updated'|trans}) }}>
@@ -183,7 +183,7 @@
                                    value="{{ request.phone_cc|default(service.contact.phone_cc) }}" required>
                         </div>
                         <div class="col-md-5">
-                            <label for="whois_phone" class="form-label">{{ 'Phone number'|trans }}</label>
+                            <label for="whois_phone" class="form-label">{{ 'Phone Number'|trans }}</label>
                             <input class="form-control" type="text" name="contact[phone]" id="whois_phone"
                                    value="{{ request.phone|default(service.contact.phone) }}" required>
                         </div>
@@ -199,7 +199,7 @@
                     <h5 class="mt-1 mb-1">{{ 'Domain Secret'|trans }}</h5>
                     <span class="small text-secondary">{{ 'Most domain names (except a few top-level domains like .EU and .UK) have a Domain Secret Key/Authorization Code (EPP Code) associated with them. This code is typically required when transferring the domain to a new registrar.'|trans }}</span>
                 </div>
-                <button class="btn btn-primary" type="button" id="get-epp">{{ 'Get EPP code'|trans }}</button>
+                <button class="btn btn-primary" type="button" id="get-epp">{{ 'Get EPP Code'|trans }}</button>
             </div>
         </div>
     </div>

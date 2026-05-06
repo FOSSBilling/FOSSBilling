@@ -24,7 +24,7 @@
             {% endif %}
             <div class="card">
                 <div class="card-body">
-                    <h5 class="text-center m-4">{{ 'Login to your account'|trans }}</h5>
+                    <h5 class="text-center m-4">{{ 'Login to Your Account'|trans }}</h5>
                     <form method="post" action="{{ 'client/login'|api_url(role: 'guest') }}" class="auth" {{ fb_api_form({redirect: redirect_uri|default('/')|url}) }}>
                         <div class="mb-3">
                             <label class="form-label" for="email">{{ 'Email'|trans }}</label>

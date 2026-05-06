@@ -32,7 +32,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             'subpages' => [
                 [
                     'location' => 'extensions',
-                    'label' => __trans('Embed and integrate'),
+                    'label' => __trans('Embed and Integrate'),
                     'index' => 1500,
                     'uri' => $this->di['url']->adminLink('embed'),
                     'class' => '',

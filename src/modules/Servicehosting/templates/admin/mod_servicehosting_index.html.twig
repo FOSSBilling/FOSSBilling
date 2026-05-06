@@ -44,7 +44,7 @@
                         <th>{{  '#'|trans }}</th>
                         <th>{{ 'Title'|trans }}</th>
                         <th>{{ 'IP'|trans }}</th>
-                        <th>{{ 'Server manager'|trans }}</th>
+                        <th>{{ 'Server Manager'|trans }}</th>
                         <th>{{ 'Active'|trans }}</th>
                         <th class="w-1 no-sort"></th>
                     </tr>
@@ -61,7 +61,7 @@
                         <td>{{ mf.status_name(server.manager) }}</td>
                         <td>{{ mf.q(server.active) }}</td>
                         <td>
-                            <a class="btn btn-icon" href="{{ server.cpanel_url }}"  data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Log into the control panel'|trans }}" target="_blank">
+                            <a class="btn btn-icon" href="{{ server.cpanel_url }}"  data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Log Into the Control Panel'|trans }}" target="_blank">
                                 <svg class="icon">
                                     <use xlink:href="#settings" />
                                 </svg>
@@ -71,7 +71,7 @@
                                     <use xlink:href="#wifi" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon" href='{{ "servicehosting/server/#{server.id}"|url }}' data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Edit server details'|trans }}">
+                            <a class="btn btn-icon" href='{{ "servicehosting/server/#{server.id}"|url }}' data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Edit Server Details'|trans }}">
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
@@ -104,8 +104,8 @@
                     <tr>
                         <th>{{  '#'|trans }}</th>
                         <th>{{ 'Title'|trans }}</th>
-                        <th>{{ 'Addon domains'|trans }}</th>
-                        <th>{{ 'Disk quota'|trans }}</th>
+                        <th>{{ 'Addon Domains'|trans }}</th>
+                        <th>{{ 'Disk Quota'|trans }}</th>
                         <th>{{ 'Bandwidth'|trans }}</th>
                         <th class="w-1 no-sort"></th>
                     </tr>
@@ -123,7 +123,7 @@
                         <td>{{ hp.quota }} <span class="text-body-secondary">MB</span></td>
                         <td>{{ hp.bandwidth }} <span class="text-body-secondary">MB</span></td>
                         <td>
-                            <a class="btn btn-icon" href='{{ "servicehosting/plan/#{hp.id}"|url }}' data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Edit plan details'|trans }}">
+                            <a class="btn btn-icon" href='{{ "servicehosting/plan/#{hp.id}"|url }}' data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Edit Plan Details'|trans }}">
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
                                 </svg>
@@ -213,9 +213,9 @@
                         </div>
                     </div>
 
-                    <h5>{{ 'Server manager'|trans }}</h5>
+                    <h5>{{ 'Server Manager'|trans }}</h5>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Server manager'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Server Manager'|trans }}:</label>
                         <div class="col">
                             <select class="form-select" name="manager" onchange="handleManagerChange(this)">
                                 {% for code, manager in admin.servicehosting_manager_get_pairs %}
@@ -226,19 +226,19 @@
                     </div>
                     <div id="credentials"></div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Connection port'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Connection Port'|trans }}:</label>
                         <div class="col">
                             <input class="form-control" type="number" name="port" min="1" max="65535" value="" placeholder="{{ 'Custom port. Use blank to use default. Used to connect to the API'|trans }}">
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Password length'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Password Length'|trans }}:</label>
                         <div class="col">
                             <input class="form-control" type="number" name="passwordLength" min="1" max="100" value="" placeholder="{{ 'Length of generated passwords when creating user accounts. Defaults to 10'|trans }}">
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Use secure connection'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Use Secure Connection'|trans }}:</label>
                         <div class="col">
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" id="radioSecureYes" type="radio" name="secure" value="1" checked>
@@ -252,7 +252,7 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Verify TLS certificate'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Verify TLS Certificate'|trans }}:</label>
                         <div class="col">
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" id="radioTlsVerifyCreateYes" type="radio" name="tls_verify" value="1" checked>
@@ -265,7 +265,7 @@
                             <span class="text-muted">{{ 'Recommended: keep enabled unless your server uses a self-signed or otherwise invalid certificate.'|trans }}</span>
                         </div>
                     </div>
-                    <input type="submit" value="{{ 'Add server'|trans }}" class="btn btn-primary">
+                    <input type="submit" value="{{ 'Add Server'|trans }}" class="btn btn-primary">
                 </form>
             </div>
         </div>

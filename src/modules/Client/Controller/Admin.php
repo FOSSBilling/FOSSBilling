@@ -46,7 +46,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 ],
                 [
                     'location' => 'client',
-                    'label' => __trans('Advanced search'),
+                    'label' => __trans('Advanced Search'),
                     'uri' => $this->di['url']->adminLink('client', ['show_filter' => 1]),
                     'index' => 200,
                     'class' => '',
@@ -54,7 +54,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 [
                     'location' => 'activity',
                     'index' => 900,
-                    'label' => __trans('Client login history'),
+                    'label' => __trans('Client Login History'),
                     'uri' => $this->di['url']->adminLink('client/logins'),
                     'class' => '',
                 ],

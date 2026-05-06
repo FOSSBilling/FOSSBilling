@@ -30,7 +30,7 @@
                                 <th>{{ 'Order ID'|trans }}</th>
                                 <th>{{ 'Product/Service'|trans }}</th>
                                 <th>{{ 'Price'|trans }}</th>
-                                <th>{{ 'Next due date'|trans }}</th>
+                                <th>{{ 'Next Due Date'|trans }}</th>
                                 <th>{{ 'Status'|trans }}</th>
                                 <th>{{ 'Actions'|trans }}</th>
                             </tr>
@@ -48,7 +48,7 @@
                                     {{ mf.status_badge(order.status, 'order') }}
                                     </td>
                                     <td class="actions">
-                                        <a class="btn btn-sm btn-outline-primary" href='{{ "order/service/manage/#{order.id}"|url }}'>Manage</a>
+                                        <a class="btn btn-sm btn-outline-primary" href='{{ "order/service/manage/#{order.id}"|url }}'>{{ 'Manage'|trans }}</a>
                                     </td>
                                 </tr>
                             {% endfor %}

@@ -6,7 +6,7 @@
 
 {% block body_class %}support-contact-us-conversation{% endblock %}
 {% block breadcrumb %}
-<li class="breadcrumb-item"><a href="{{ 'support/contact-us'|url }}">{{ 'Contact us'|trans }}</a></li>
+<li class="breadcrumb-item"><a href="{{ 'support/contact-us'|url }}">{{ 'Contact Us'|trans }}</a></li>
 <li class="breadcrumb-item active" aria-current="page">{{ ticket.subject }}</li>
 {% endblock %}
 
@@ -44,7 +44,7 @@
                 </tr>
 
                 <tr>
-                    <td>{{ 'Time opened'|trans }}</td>
+                    <td>{{ 'Time Opened'|trans }}</td>
                     <td>{{ ticket.created_at|format_date }}</td>
                 </tr>
                 </tbody>

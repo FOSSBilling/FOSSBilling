@@ -15,7 +15,7 @@
 {% if request.show_filter %}
     <section class="card mb-3">
         <div class="card-body">
-            <h5>{{ 'Filter clients'|trans }}</h5>
+            <h5>{{ 'Filter Clients'|trans }}</h5>
             <form method="get">
                 <div class="form-group mb-3 row">
                     <label class="form-label col-3 col-form-label">{{ 'Client ID'|trans }}</label>
@@ -47,7 +47,7 @@
                 <div class="form-group mb-3 row">
                     <label class="form-label col-3 col-form-label">{{ 'Group'|trans }}:</label>
                     <div class="col">
-                        {{ mf.selectbox('group_id', admin.client_group_get_pairs, request.group_id, 0, 'All groups'|trans) }}
+                        {{ mf.selectbox('group_id', admin.client_group_get_pairs, request.group_id, 0, 'All Groups'|trans) }}
                     </div>
                 </div>
 

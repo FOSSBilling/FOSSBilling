@@ -285,7 +285,7 @@
     <form method="post" action="{{ 'support/ticket_reply'|api_url }}" {{ fb_api_form({ reload: true }) }}>
         <div class="card-body">
             <div class="d-flex">
-                <h5>{{ 'Reply as'|trans }} {{ profile.name }}</h5>
+                <h5>{{ 'Reply As'|trans }} {{ profile.name }}</h5>
                 <div class="ms-auto">{{ include('mod_support_canned_selector.html.twig') }}</div>
             </div>
 

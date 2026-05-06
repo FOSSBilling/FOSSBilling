@@ -14,7 +14,7 @@
         </a>
     </li>
     <li class="breadcrumb-item">
-        <a href="{{ 'servicehosting'|url }}">{{ 'Hosting plans and servers'|trans }}</a>
+        <a href="{{ 'servicehosting'|url }}">{{ 'Hosting Plans and Servers'|trans }}</a>
     </li>
     <li class="breadcrumb-item active" aria-current="page">{{ server.name }}</li>
 </ul>
@@ -66,9 +66,9 @@
             </div>
             <hr>
 
-            <h5>{{ 'Server manager'|trans }}</h5>
+            <h5>{{ 'Server Manager'|trans }}</h5>
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Server manager'|trans }}:</label>
+                <label class="form-label col-3 col-form-label">{{ 'Server Manager'|trans }}:</label>
                 <div class="col">
                     <select class="form-select" name="manager" onchange="handleManagerChange(this)">
                         {% for code, manager in admin.servicehosting_manager_get_pairs %}
@@ -81,19 +81,19 @@
             <div id="credentials"></div>
 
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Connection port'|trans }}:</label>
+                <label class="form-label col-3 col-form-label">{{ 'Connection Port'|trans }}:</label>
                 <div class="col">
                     <input class="form-control" type="number" name="port" min="1" max="65535" value="{{ server.port }}" placeholder="{{ 'Custom port. Use blank to use default. Used to connect to the API'|trans }}">
                 </div>
             </div>
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Password length'|trans }}:</label>
+                <label class="form-label col-3 col-form-label">{{ 'Password Length'|trans }}:</label>
                 <div class="col">
                     <input class="form-control" type="number" name="passwordLength" min="1" max="100" value="{{ server.passwordLength }}" placeholder="{{ 'Length of generated passwords when creating user accounts. Defaults to 10'|trans }}">
                 </div>
             </div>
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Use secure connection'|trans }}:</label>
+                <label class="form-label col-3 col-form-label">{{ 'Use Secure Connection'|trans }}:</label>
                 <div class="col">
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" id="radioSecureConnectionYes" type="radio" name="secure" value="1"{% if server.secure %} checked{% endif %}>
@@ -107,7 +107,7 @@
                 </div>
             </div>
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Verify TLS certificate'|trans }}:</label>
+                <label class="form-label col-3 col-form-label">{{ 'Verify TLS Certificate'|trans }}:</label>
                 <div class="col">
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" id="radioTlsVerifyYes" type="radio" name="tls_verify" value="1"{% if tlsVerify %} checked{% endif %}>
@@ -121,11 +121,11 @@
                 </div>
             </div>
 
-            <input class="btn btn-primary w-100" id="test-connection" type="button" value="{{ 'Update and test connection'|trans }}">
+            <input class="btn btn-primary w-100" id="test-connection" type="button" value="{{ 'Update and Test Connection'|trans }}">
 
-            <h5>{{ 'Optional configuration'|trans }}</h5>
+            <h5>{{ 'Optional Configuration'|trans }}</h5>
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Users prefix'|trans }}:</label>
+                <label class="form-label col-3 col-form-label">{{ 'Users Prefix'|trans }}:</label>
                 <div class="col">
                     <input class="form-control" type="text" name="userprefix" value="{{ server.config.userprefix }}" placeholder="{{ 'Prefix for created users (especially for database)'|trans }}">
                     <span class="text-muted">{{ 'Some server managers may ignore this option due to limitations / requirements for usernames imposed by the control panel.'|trans }}</span>

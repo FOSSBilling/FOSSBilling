@@ -28,7 +28,7 @@
                                 <img src="{{ company.logo_url }}" alt="Logo" class="img-fluid">
                             {% endif %}
                             <dl class="row">
-                                <dt class="col-sm-6">{{ 'Invoice number'|trans }}:</dt>
+                                <dt class="col-sm-6">{{ 'Invoice Number'|trans }}:</dt>
                                 <dd class="col-sm-6">{{ nr }}</dd>
                                 <dt class="col-sm-6">{{ 'Invoice Date'|trans }}:</dt>
                                 <dd class="col-sm-6">
@@ -102,7 +102,7 @@
                 <div class="col-md-4">
                     <div class="card">
                         <div class="card-body">
-                            <h4>{{ 'Billing & Delivery address'|trans }}</h4>
+                            <h4>{{ 'Billing & Delivery Address'|trans }}</h4>
                             <dl class="row">
                                 {% if buyer.first_name or buyer.last_name %}
                                     <dt class="col-sm-6">{{ 'Name'|trans }}:</dt>
@@ -113,7 +113,7 @@
                                     <dd class="col-sm-6">{{ buyer.company }}</dd>
                                 {% endif %}
                                 {% if buyer.company_number %}
-                                    <dt class="col-sm-6">{{ 'Company number'|trans }}:</dt>
+                                    <dt class="col-sm-6">{{ 'Company Number'|trans }}:</dt>
                                     <dd class="col-sm-6">{{ buyer.company_number }}</dd>
                                 {% endif %}
                                 {% if buyer.company_vat %}

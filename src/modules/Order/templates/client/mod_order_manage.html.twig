@@ -41,56 +41,56 @@
                         </tr>
 
                         <tr>
-                            <td><label>{{ 'Product name'|trans }}</label></td>
+                            <td><label>{{ 'Product Name'|trans }}</label></td>
                             <td><strong>{{ order.title }}</strong></td>
                         </tr>
 
                         <tr>
-                            <td><label>{{ 'Payment amount'|trans }}</label></td>
+                            <td><label>{{ 'Payment Amount'|trans }}</label></td>
                             <td>{{ order.total|format_currency(order.currency) }}</td>
                         </tr>
 
                         {% if order.period %}
                             <tr>
-                                <td><label>{{ 'Billing cycle'|trans }}</label></td>
+                                <td><label>{{ 'Billing Cycle'|trans }}</label></td>
                                 <td>{{ order.period|period_title }}</td>
                             </tr>
                         {% endif %}
 
                         <tr>
-                            <td><label>{{ 'Order status'|trans }}</label></td>
+                            <td><label>{{ 'Order Status'|trans }}</label></td>
                             <td>
                                 {{ mf.status_badge(order.status, 'order') }}
                             </td>
                         </tr>
 
                         <tr>
-                            <td><label>{{ 'Order created'|trans }}</label></td>
+                            <td><label>{{ 'Order Created'|trans }}</label></td>
                             <td>{{ order.created_at|format_date }}</td>
                         </tr>
 
                         <tr>
-                            <td><label>{{ 'Activated at'|trans }}</label></td>
+                            <td><label>{{ 'Activated At'|trans }}</label></td>
                             <td>{% if order.activated_at %}{{ order.activated_at|format_date }}{% else %}-{% endif %}</td>
                         </tr>
 
                         {% if order.period %}
                             <tr>
-                                <td><label>{{ 'Renewal date'|trans }} {% if order.expires_at %} in {{ order.expires_at|daysleft }} day(s) {% endif %}</label></td>
+                                <td><label>{{ 'Renewal Date'|trans }} {% if order.expires_at %} in {{ order.expires_at|daysleft }} day(s) {% endif %}</label></td>
                                 <td>{% if order.expires_at %}{{ order.expires_at|format_date }}{% else %}-{% endif %}</td>
                             </tr>
                         {% endif %}
 
                         {% if order.notes %}
                             <tr>
-                                <td><label>{{ 'Order notes'|trans }}</label></td>
+                                <td><label>{{ 'Order Notes'|trans }}</label></td>
                                 <td>{{ (order.notes ?? '')|markdown_to_html }}</td>
                             </tr>
                         {% endif %}
 
                         {% if order.active_tickets > 0 %}
                             <tr>
-                                <td><label>{{ 'Active support tickets'|trans }}</label></td>
+                                <td><label>{{ 'Active Support Tickets'|trans }}</label></td>
                                 <td>
                                     <div class="num"><a href="{{ 'support'|url }}" class="redNum">{{ order.active_tickets }}</a></div>
                                     {# <div class="num"><a href="{{ 'support'|url }}" class="greenNum">{{ order.active_tickets }}</a></div> #}
@@ -103,14 +103,14 @@
                 </div>
                 <div class="card-footer">
                     {% if order.period and order.status != 'failed_renew' %}
-                        <button class="btn btn-primary btn-sm" type="button" id="renewal-button">{{ 'Renew now'|trans }}</button>
+                        <button class="btn btn-primary btn-sm" type="button" id="renewal-button">{{ 'Renew Now'|trans }}</button>
                     {% endif %}
                     {% if upgradables %}
                         <button class="btn btn-success btn-sm" type="button" id="request-upgrade" data-bs-toggle="modal" data-bs-target="#upgrade-request-modal">{{ 'Request Upgrade'|trans }}</button>
                     {% endif %}
-                    <button class="btn btn-info btn-sm" type="button" id="open-ticket" data-bs-toggle="modal" data-bs-target="#open-ticket-modal">{{ 'Open ticket'|trans }}</button>
+                    <button class="btn btn-info btn-sm" type="button" id="open-ticket" data-bs-toggle="modal" data-bs-target="#open-ticket-modal">{{ 'Open Ticket'|trans }}</button>
                     {% if order.status == 'active' %}
-                        <button class="btn btn-danger btn-sm" type="button" id="request-cancel" data-bs-toggle="modal" data-bs-target="#cancel-request-modal">{{ 'Request cancellation'|trans }}</button>
+                        <button class="btn btn-danger btn-sm" type="button" id="request-cancel" data-bs-toggle="modal" data-bs-target="#cancel-request-modal">{{ 'Request Cancellation'|trans }}</button>
                     {% endif %}
                 </div>
             </div>
@@ -139,7 +139,7 @@
                                 <th>{{ 'Product/Service'|trans }}</th>
                                 <th>{{ 'Price'|trans }}</th>
                                 <th>{{ 'Billing Cycle'|trans }}</th>
-                                <th>{{ 'Next due date'|trans }}</th>
+                                <th>{{ 'Next Due Date'|trans }}</th>
                                 <th>{{ 'Status'|trans }}</th>
                                 <th>{{ 'Actions'|trans }}</th>
                             </tr>
@@ -178,7 +178,7 @@
                                 <input type="hidden" name="rel_id" value="{{ order.id }}">
                                 <input type="hidden" name="rel_task" value="cancel">
                                 <div class="mb-3">
-                                    <label for="support-helpdesk-id" class="form-label">{{ 'Help desk'|trans }}</label>
+                                    <label for="support-helpdesk-id" class="form-label">{{ 'Help Desk'|trans }}</label>
                                     {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
                                 </div>
                                 <div class="mb-3">
@@ -210,7 +210,7 @@
                                 <input type="hidden" name="rel_type" value="order">
                                 <input type="hidden" name="rel_id" value="{{ order.id }}">
                                 <div class="mb-3">
-                                    <label for="support-helpdesk-id" class="form-label">{{ 'Help desk'|trans }}</label>
+                                    <label for="support-helpdesk-id" class="form-label">{{ 'Help Desk'|trans }}</label>
                                     {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
                                 </div>
                                 <div class="mb-3">
@@ -223,7 +223,7 @@
                                 </div>
                             </div>
                             <div class="modal-footer">
-                                <button type="submit" class="btn btn-primary">{{ 'Open ticket'|trans }}</button>
+                                <button type="submit" class="btn btn-primary">{{ 'Open Ticket'|trans }}</button>
                             </div>
                         </form>
                     </div>
@@ -243,7 +243,7 @@
                                 <input type="hidden" name="rel_id" value="{{ order.id }}">
                                 <input type="hidden" name="rel_task" value="upgrade">
                                 <div class="mb-3">
-                                    <label for="support-helpdesk-id" class="form-label">{{ 'Help desk'|trans }}</label>
+                                    <label for="support-helpdesk-id" class="form-label">{{ 'Help Desk'|trans }}</label>
                                     {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
                                 </div>
                                 <div class="mb-3">
@@ -251,7 +251,7 @@
                                     <input class="form-control" type="text" name="subject" id="subject" value="{{ request.subject|e }}" required />
                                 </div>
                                 <div class="mb-3">
-                                    <label for="rel_new_value" class="form-label">{{ 'Upgrade to'|trans }}</label>
+                                    <label for="rel_new_value" class="form-label">{{ 'Upgrade To'|trans }}</label>
                                     {{ mf.selectbox('rel_new_value', upgradables, '', 1) }}
                                 </div>
                                 <div class="mb-3">

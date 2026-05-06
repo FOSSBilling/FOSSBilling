@@ -36,7 +36,7 @@ class Admin implements InjectionAwareInterface
                 [
                     'location' => 'activity',
                     'index' => 400,
-                    'label' => __trans('Staff login history'),
+                    'label' => __trans('Staff Login History'),
                     'uri' => $this->di['url']->adminLink('staff/logins'),
                     'class' => '',
                 ],

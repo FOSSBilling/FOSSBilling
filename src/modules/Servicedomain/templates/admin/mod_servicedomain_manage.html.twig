@@ -31,7 +31,7 @@
             <td>{{ service.ns4 }}</td>
         </tr>
         <tr>
-            <td class="text-end">{{ 'Transfer code'|trans }}:</td>
+            <td class="text-end">{{ 'Transfer Code'|trans }}:</td>
             <td>{{ service.transfer_code }}</td>
         </tr>
         <tr>
@@ -45,7 +45,7 @@
             </td>
         </tr>
         <tr>
-            <td class="text-end">{{ 'Privacy protection'|trans }}:</td>
+            <td class="text-end">{{ 'Privacy Protection'|trans }}:</td>
             <td id="privacy-value">
                 {% if service.privacy == 1 %}
                     <span class="badge bg-danger me-1"></span> {{ 'Enabled'|trans }}
@@ -55,15 +55,15 @@
             </td>
         </tr>
         <tr>
-            <td class="text-end">{{ 'Registration/Renewal years'|trans }}:</td>
+            <td class="text-end">{{ 'Registration/Renewal Years'|trans }}:</td>
             <td>{{ service.period }}</td>
         </tr>
         <tr>
-            <td class="text-end">{{ 'Registration date'|trans }}:</td>
+            <td class="text-end">{{ 'Registration Date'|trans }}:</td>
             <td>{{ service.registered_at|format_date }}</td>
         </tr>
         <tr>
-            <td class="text-end">{{ 'Expires at'|trans }}:</td>
+            <td class="text-end">{{ 'Expires At'|trans }}:</td>
             <td>{{ service.expires_at|format_date }}</td>
         </tr>
     </tbody>
@@ -228,7 +228,7 @@
             </div>
         </div>
         <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Phone number'|trans }}: </label>
+            <label class="form-label col-3 col-form-label">{{ 'Phone Number'|trans }}: </label>
             <div class="col">
                 <input class="form-control" type="text" name="contact[phone]" value="{{ request.phone|default(service.contact.phone) }}" required>
             </div>

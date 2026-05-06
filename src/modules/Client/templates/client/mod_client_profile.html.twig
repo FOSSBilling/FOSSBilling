@@ -2,7 +2,7 @@
 {% import "macro_functions.html.twig" as mf %}
 
 {% block meta_title %}{{ 'Profile Details'|trans }}{% endblock %}
-{% block page_header %}{{ 'User profile settings'|trans }}{% endblock %}
+{% block page_header %}{{ 'User Profile Settings'|trans }}{% endblock %}
 {% block breadcrumb %}
     <li class="breadcrumb-item active" aria-current="page">{{ 'Profile'|trans }}</li>{% endblock %}
 
@@ -150,7 +150,7 @@
                                     <input type="text" class="form-control" id="postcode" name="postcode" value="{{ profile.postcode }}" {% if "postcode" in required %} required {% endif %}>
                                 </div>
                                 <div class="mb-3 col-md-5">
-                                    <label class="form-label" for="document_nr">{{ 'Passport number'|trans }}</label>
+                                    <label class="form-label" for="document_nr">{{ 'Passport Number'|trans }}</label>
                                     <input type="text" class="form-control" name="document_nr" id="document_nr" value="{{ profile.document_nr }}">
                                 </div>
                             </div>
@@ -164,7 +164,7 @@
                                     </div>
                                 {% endif %}
                             {% endfor %}
-                            <button class="btn btn-primary" type="submit">{{ 'Update profile'|trans }}</button>
+                            <button class="btn btn-primary" type="submit">{{ 'Update Profile'|trans }}</button>
                         </form>
                     </div>
                     <div class="card-body tab-pane" id="pass-tab-pane" role="tabpanel" tabindex="0">
@@ -203,7 +203,7 @@
                                 <input class="form-control" readonly type="text"
                                        value="{{ client.profile_api_key_get }}" id="api-key">
                             </div>
-                            <button class="btn btn-primary" type="submit">{{ 'Generate a new key'|trans }}</button>
+                            <button class="btn btn-primary" type="submit">{{ 'Generate a New Key'|trans }}</button>
                         </form>
                     </div>
                     <div class="card-body tab-pane" id="currency-tab-pane" role="tabpanel" tabindex="0">

@@ -54,7 +54,7 @@
                         </tr>
 
                         <tr>
-                            <td>{{ 'Hosting plan'|trans }}:</td>
+                            <td>{{ 'Hosting Plan'|trans }}:</td>
                             <td>{{ hp.name }}</td>
                         </tr>
 
@@ -64,7 +64,7 @@
                         </tr>
 
                         <tr>
-                            <td>{{ 'Disk quota'|trans }}:</td>
+                            <td>{{ 'Disk Quota'|trans }}:</td>
                             <td>{{ hp.quota }} MB</td>
                         </tr>
                     </tbody>
@@ -72,7 +72,7 @@
                 <div class="control-group">
                     <div class="controls">
                         {% if service.domain_order_id %}
-                            <a class="btn btn-primary" href='{{ "order/service/manage/#{service.domain_order_id}"|url }}'>{{ 'Manage domain'|trans }}</a>
+                            <a class="btn btn-primary" href='{{ "order/service/manage/#{service.domain_order_id}"|url }}'>{{ 'Manage Domain'|trans }}</a>
                         {% endif %}
                         <a class="btn btn-primary" href="{{ 'servicehosting/get_login_url'|api_url(query: { 'order_id':  order.id }) }}" {{ fb_api_link({callback: 'onAfterLoginLinkCreated'}) }}>{{ 'Login to Control Panel'|trans }}</a>
                     </div>
@@ -90,7 +90,7 @@
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="col-form-label" >{{ 'Password confirm'|trans }}: </label>
+                            <label class="col-form-label" >{{ 'Password Confirm'|trans }}: </label>
                             <div class="controls">
                                 <input class="form-control" type="password" name="password_confirm" value="{{ request.password_confirm }}" required="required">
                             </div>
@@ -99,7 +99,7 @@
                         <input type="hidden" name="order_id" value="{{ order.id }}">
                         <div class="control-group mt-1">
                             <div class="controls">
-                                <button class="btn btn-primary" type="submit" value="{{ 'Change password'|trans }}">{{ 'Change password'|trans }}</button>
+                                <button class="btn btn-primary" type="submit" value="{{ 'Change Password'|trans }}">{{ 'Change Password'|trans }}</button>
                             </div>
                         </div>
                     </fieldset>
@@ -111,7 +111,7 @@
                 <form action="{{ 'servicehosting/change_domain'|api_url }}" method="post" {{ fb_api_form({message: 'Domain Name Changed'|trans}) }}>
                     <fieldset>
                         <div class="control-group">
-                            <label class="col-form-label" >{{ 'New domain'|trans }}: </label>
+                            <label class="col-form-label" >{{ 'New Domain'|trans }}: </label>
                             <div class="controls row">
                                 <input class="form-control w-50 ms-2" type="text" name="sld" value="{{ request.domain|default(service.sld) }}" required="required" class="span2">
                                 <input class="form-control w-25" type="text" name="tld" value="{{ request.domain|default(service.tld) }}" required="required" class="span1">
@@ -120,7 +120,7 @@
                         <input type="hidden" name="order_id" value="{{ order.id }}">
                         <div class="control-group mt-1">
                             <div class="controls">
-                                <button class="btn btn-primary" type="submit" value="{{ 'Change domain'|trans }}">{{ 'Change domain'|trans }}</button>
+                                <button class="btn btn-primary" type="submit" value="{{ 'Change Domain'|trans }}">{{ 'Change Domain'|trans }}</button>
                             </div>
                         </div>
                     </fieldset>
@@ -141,7 +141,7 @@
                         <input type="hidden" name="order_id" value="{{ order.id }}">
                         <div class="control-group mt-1">
                             <div class="controls">
-                                <button class="btn btn-primary" type="submit" value="{{ 'Change username'|trans }}">{{ 'Change username'|trans }}</button>
+                                <button class="btn btn-primary" type="submit" value="{{ 'Change Username'|trans }}">{{ 'Change Username'|trans }}</button>
                             </div>
                         </div>
                     </fieldset>

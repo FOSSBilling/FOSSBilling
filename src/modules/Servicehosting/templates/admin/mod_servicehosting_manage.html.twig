@@ -23,7 +23,7 @@
             <td><a href='{{ "servicehosting/server/#{server.id}"|url }}'>{{ server.name }}</a></td>
         </tr>
         <tr>
-            <td class="text-end">{{ 'Hosting plan'|trans }}:</td>
+            <td class="text-end">{{ 'Hosting Plan'|trans }}:</td>
             <td><a href='{{ "servicehosting/plan/#{hp.id}"|url }}'>{{ hp.name }}</a></td>
         </tr>
         <tr>
@@ -63,7 +63,7 @@
             <td>{{ hp.bandwidth }} MB / {{ 'per month'|trans }}</td>
         </tr>
         <tr>
-            <td class="text-end">{{ 'Disk quota'|trans }}:</td>
+            <td class="text-end">{{ 'Disk Quota'|trans }}:</td>
             <td>{{ hp.quota }} MB</td>
         </tr>
     </tbody>
@@ -100,7 +100,7 @@
 
     <form method="post" action="{{ 'servicehosting/change_plan'|api_url }}" {{ fb_api_form({message: 'Hosting Plan Changed'|trans}) }}>
         <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'New hosting plan'|trans }}:</label>
+            <label class="form-label col-3 col-form-label">{{ 'New Hosting Plan'|trans }}:</label>
             <div class="col">
                 {{ mf.selectbox('plan_id', admin.servicehosting_hp_get_pairs, hp.id, 1) }}
             </div>

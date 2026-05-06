@@ -15,7 +15,7 @@
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'client'|url }}#tab-groups">{{ 'Client groups'|trans }}</a>
+            <a href="{{ 'client'|url }}#tab-groups">{{ 'Client Groups'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ group.title}}</li>
     </ol>
@@ -24,7 +24,7 @@
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <h4>{{ 'Edit client group'|trans }} - {{ group.title }}</h4>
+        <h4>{{ 'Edit Client Group'|trans }} - {{ group.title }}</h4>
     </div>
     <form method="post" action="{{ 'client/group_update'|api_url }}" {{ fb_api_form({redirect: 'client'|url}) }}>
         <div class="card-body">

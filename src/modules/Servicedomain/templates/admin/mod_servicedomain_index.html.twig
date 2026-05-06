@@ -211,7 +211,7 @@
                             <a href='{{ "servicedomain/registrar/#{registrar.id}"|url }}'>{{ registrar.title }}</a>
                         </td>
                         <td>
-                            <a class="btn btn-icon" href="{{ 'servicedomain/registrar_copy'|api_url(query: { 'id': registrar.id }) }}" title="Install" {{ fb_api_link({reload: true}) }}>
+                            <a class="btn btn-icon" href="{{ 'servicedomain/registrar_copy'|api_url(query: { 'id': registrar.id }) }}" title="{{ 'Install'|trans }}" {{ fb_api_link({reload: true}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#copy" />
                                 </svg>
@@ -263,7 +263,7 @@
                 <tr>
                     <td>{{ code }}</td>
                     <td>
-                        <a class="btn btn-icon" href="{{ 'servicedomain/registrar_install'|api_url(query: { 'code': code }) }}" title="Install" {{ fb_api_link({message: 'Domain Registrar Installed'|trans}) }}>
+                        <a class="btn btn-icon" href="{{ 'servicedomain/registrar_install'|api_url(query: { 'code': code }) }}" title="{{ 'Install'|trans }}" {{ fb_api_link({message: 'Domain Registrar Installed'|trans}) }}>
                             <svg  class="icon">
                                 <use xlink:href="#cog" />
                             </svg>
@@ -318,7 +318,7 @@
                         </div>
                     </div>
 
-                    <input type="submit" value="{{ 'Update nameservers'|trans }}" class="btn btn-primary w-100">
+                    <input type="submit" value="{{ 'Update Nameservers'|trans }}" class="btn btn-primary w-100">
                 </form>
             </div>
         </div>
