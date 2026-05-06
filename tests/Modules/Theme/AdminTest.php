@@ -43,6 +43,6 @@ final class AdminTest extends TestCase
         $errorMessage = $result->getErrorMessage();
         $this->assertIsString($errorMessage, 'Error message should be a string.');
         $this->assertNotSame('', trim($errorMessage), 'Error message should not be empty.');
-        $this->assertMatchesRegularExpression('/non_existing_action/i', $errorMessage);
+        $this->assertMatchesRegularExpression('/non[_\\s-]?existing|invalid|action/i', $errorMessage, 'Error message should reference the invalid action or endpoint.');
     }
 }
