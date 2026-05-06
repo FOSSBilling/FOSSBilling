@@ -17,12 +17,12 @@ class RandomizedTimeFloor
 {
     /**
      * Enforces a randomized minimum execution time for sensitive operations.
-     * This helps mask processing time differences to mitigate user enumeration 
+     * This helps mask processing time differences to mitigate user enumeration
      * and timing attacks.
      *
-     * @param float $startedAt The microtime(true) timestamp of when the operation started.
-     * @param int $minMs The minimum total execution time in milliseconds.
-     * @param int $maxMs The maximum total execution time in milliseconds.
+     * @param float $startedAt the microtime(true) timestamp of when the operation started
+     * @param int   $minMs     the minimum total execution time in milliseconds
+     * @param int   $maxMs     the maximum total execution time in milliseconds
      */
     public static function apply(float $startedAt, int $minMs = 75, int $maxMs = 125): void
     {
@@ -37,7 +37,7 @@ class RandomizedTimeFloor
 
         $minimumMs = random_int($minMs, $maxMs);
         $elapsedMs = (microtime(true) - $startedAt) * 1000;
-        
+
         if ($elapsedMs < $minimumMs) {
             usleep((int) (($minimumMs - $elapsedMs) * 1000));
         }

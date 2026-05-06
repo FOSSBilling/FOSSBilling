@@ -319,10 +319,9 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch25(): void
     {
-        // Migrate email templates to be compatible with Twig 3.x.
         $this->di['dbal']->createQueryBuilder()
             ->update('email_template')
-            ->set('content', 'REPLACE(content, \'{% filter markdown %}\', \'{% apply markdown %}\')')
+            ->set('content', 'REPLACE(content, \'{% filter markdown %}\', \'{% apply markdown_to_html %}\')')
             ->executeStatement();
 
         $this->di['dbal']->createQueryBuilder()
@@ -1011,6 +1010,7 @@ class UpdatePatcher implements InjectionAwareInterface
             Path::join(PATH_LIBRARY, 'FOSSBilling', 'TwigExtensions', 'DebugBar.php') => 'unlink',
         ]);
     }
+
     private function patch57(): void
     {
         $legacyHashes = [
@@ -1119,16 +1119,18 @@ class UpdatePatcher implements InjectionAwareInterface
             $needsSave = false;
             foreach ($fields as $field) {
                 if (isset($config[$field]) && is_string($config[$field]) && preg_match('/\b(function|include|import|extends|range|max|min|dump|system|guest\.|admin\.|client\.)\b/i', $config[$field])) {
+                    $this->di['logger']->setChannel('update')->warning('Custom payment adapter template for gateway ID {id} contained incompatible Twig syntax and has been cleared. Please re-create it with compatible syntax.', [
+                        'id' => $gateway['id'],
+                    ]);
+                    unset($config[$field]);
                     $needsSave = true;
-
-                    break;
                 }
             }
 
             if ($needsSave) {
-                $this->di['logger']->setChannel('update')->warning('Custom payment adapter template may contain unsupported Twig syntax. Please review and update gateway ID {id}.', [
-                    'id' => $gateway['id'],
-                ]);
+                $this->di['dbal']->update('pay_gateway', [
+                    'config' => json_encode($config, JSON_UNESCAPED_SLASHES),
+                ], ['id' => $gateway['id']]);
             }
         }
     }

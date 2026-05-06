@@ -55,7 +55,7 @@
                             <img src="assets/icons/edit.svg" alt="">
                         </a>
                         <a class="btn btn14" href="{{ 'staff/delete'|api_url(query: { 'id': member.id }) }}"
-                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'staff'|url}) }}
+                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'staff'|url}) }}>
                             <img src="assets/icons/delete.svg" alt="">
                         </a>
                     </td>
@@ -148,7 +148,7 @@
                             <img src="assets/icons/edit.svg" alt="">
                         </a>
                         <a class="btn btn14" href="{{ 'staff/group_delete'|api_url(query: {'id' : group.id }) }}"
-                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'staff'|url}) }}
+                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'staff'|url}) }}>
                             <img src="assets/icons/delete.svg" alt="">
                         </a>
                     </td>

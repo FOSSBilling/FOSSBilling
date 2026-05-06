@@ -190,7 +190,7 @@
                     <span>{{ 'Refund'|trans }}</span>
                 </a>
                 {% endif %}
-                <a href='{{ "invoice/pdf/#{invoice.hash}"|url }}' class="btn btn-primary" target="_blank">
+                <a href='{{ "invoice/pdf/#{invoice.hash}"|url(area: 'client') }}' class="btn btn-primary" target="_blank">
                     <svg class="icon" width="24" height="24">
                         <use xlink:href="#download" />
                     </svg>
@@ -590,7 +590,7 @@
         </table>
         <div class="card-footer d-flex gap-2">
             {% if not invoice.approved %}
-            <a class="btn btn-success w-100" href="{{ '/invoice/approve'|api_url(query: { 'id': invoice.id }) }}"
+            <a class="btn btn-success w-100" href="{{ 'invoice/approve'|api_url(query: { 'id': invoice.id }) }}"
                 {{ fb_api_link({redirect: 'invoice'|url}) }}>
                 <svg class="icon">
                     <use xlink:href="#check" />
