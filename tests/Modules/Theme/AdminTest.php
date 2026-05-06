@@ -45,6 +45,6 @@ final class AdminTest extends TestCase
         $this->assertArrayHasKey('error', $data, 'Error response should include an "error" key.');
         $this->assertIsString($data['error'], 'Error message should be a string.');
         $this->assertNotSame('', trim($data['error']), 'Error message should not be empty.');
-        $this->assertMatchesRegularExpression('/non[_\\s-]?existing|invalid|action/i', $data['error']);
+        $this->assertMatchesRegularExpression('/non[_\\s-]?existing|invalid|action/i', $data['error'], 'Error message should reference the invalid action or endpoint.');
     }
 }
