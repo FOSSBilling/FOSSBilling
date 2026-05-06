@@ -7,17 +7,17 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'product'|alink }}">{{ 'Products'|trans }}</a>
+            <a href="{{ 'product'|url }}">{{ 'Products'|trans }}</a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'product/addons'|alink }}">{{ 'Addons'|trans }}</a>
+            <a href="{{ 'product/addons'|url }}">{{ 'Addons'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ product.title }}</li>
     </ol>
@@ -26,8 +26,8 @@
 {% block content %}
 <div class="card">
     <div class="card-body">
-        <h5>{{ 'Edit product addon'|trans }}</h5>
-        <form method="post" action="{{ 'api/admin/product/addon_update'|link }}" {{ fb_api_form({message: 'Addon Updated'|trans}) }}>
+        <h5>{{ 'Edit Product Addon'|trans }}</h5>
+        <form method="post" action="{{ 'product/addon_update'|api_url }}" {{ fb_api_form({message: 'Addon Updated'|trans}) }}>
             <div class="form-group mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
                 <div class="col">
@@ -46,15 +46,15 @@
                 <div class="col">
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="radio" id="setupAfterPlaced" name="setup" value="after_order"{% if product.setup == 'after_order' %} checked{% endif %}>
-                        <label class="form-check-label" for="setupAfterPlaced">{{ 'After order is placed'|trans }}</label>
+                        <label class="form-check-label" for="setupAfterPlaced">{{ 'After Order is Placed'|trans }}</label>
                     </div>
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="radio" id="setupAfterReceived" name="setup" value="after_payment"{% if product.setup == 'after_payment' %} checked{% endif %}>
-                        <label class="form-check-label" for="setupAfterReceived">{{ 'After payment is received'|trans }}</label>
+                        <label class="form-check-label" for="setupAfterReceived">{{ 'After Payment is Received'|trans }}</label>
                     </div>
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="radio" id="setupManual" name="setup" value="manual"{% if product.setup == 'manual' %} checked{% endif %}>
-                        <label class="form-check-label" for="setupManual">{{ 'Manual activation'|trans }}</label>
+                        <label class="form-check-label" for="setupManual">{{ 'Manual Activation'|trans }}</label>
                     </div>
                 </div>
             </div>

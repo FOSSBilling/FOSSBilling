@@ -8,18 +8,18 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item">
             {% if can_manage_settings %}
-            <a href="{{ 'extension/settings/email'|alink }}">{{ 'Email'|trans }}</a>
+            <a href="{{ 'extension/settings/email'|url }}">{{ 'Email'|trans }}</a>
             {% else %}
                 {{ 'Email'|trans }}
             {% endif %}
@@ -85,13 +85,13 @@
                         <div class="card-footer d-flex justify-content-between">
                             {% if template.has_default %}
                                 <a class="btn btn-danger"
-                                   href="{{ 'api/admin/email/template_reset'|link({'code' : template.action_code })}}"
+                                   href="{{ 'email/template_reset'|api_url(query: {'code' : template.action_code })}}"
                                    {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Reset'|trans}, reload: true}) }}>
                                     {{ 'Reset'|trans }}
                                 </a>
                             {% elseif template.is_custom or not template.has_default %}
                                 <a class="btn btn-danger"
-                                   href="{{ 'api/admin/email/template_delete'|link({'id' : template.id })}}"
+                                   href="{{ 'email/template_delete'|api_url(query: {'id' : template.id })}}"
                                    {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Delete'|trans}, reload: true}) }}>
                                     {{ 'Delete'|trans }}
                                 </a>
@@ -210,7 +210,7 @@
                         <p class="card-subtitle">{{ 'Email template playground. Use this tool to try rendering email templates.'|trans }}</p>
 
                         <div class="mb-3">
-                    <textarea class="form-control" id="email-sample-template" rows="20">{% autoescape false %}{% apply markdown %}
+                            <textarea class="form-control" id="email-sample-template" rows="20">{% autoescape false %}{% apply markdown_to_html %}
 This is an example of markdown syntax in email template
 
 *Italic text*
@@ -224,22 +224,20 @@ Lists:
 
 ***
 
-Link to login form: <{{ 'login'|link }}>
+Link to login form: <{{ 'login'|url(area: 'client') }}>
 
 Company signature: {{ guest.system_company.signature }}
+
+FOSSBilling version: {{ FOSSBillingVersion }}
+
+Today's date: {{ now|date('Y-m-d') }}
 
 You can event use IF statements in email templates: {% if 1 == 2 %}This will never show{% else %}Of course 1 is not equal 2{% endif %}
 
 ***
 
-Accessing Admin API can get information about your FOSSBilling, for example how many clients you have:
-{% set stats =  admin.stats_get_summary %}
-**Total clients:** {{ stats.clients_total }}
-
 {# Comments in email templates. This text is not visible #}
 {# Uncomment the line below to see what is the output #}
-
-{#<pre>{% debug stats %}</pre>#}
 {% endapply %}{% endautoescape %}</textarea>
                         </div>
 

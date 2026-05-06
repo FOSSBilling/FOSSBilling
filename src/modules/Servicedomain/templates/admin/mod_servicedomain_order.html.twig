@@ -1,7 +1,7 @@
 {% import 'macro_functions.html.twig' as mf %}
 
 <div class="mb-3 row">
-    <label class="form-label col-3 col-form-label">{{ 'Domain action'|trans }}:</label>
+    <label class="form-label col-3 col-form-label">{{ 'Domain Action'|trans }}:</label>
     <div class="col domain-action-select">
         <div class="form-check form-check-inline">
             <input class="form-check-input" id="radioActionRegister" type="radio" name="config[action]" value="register" checked>
@@ -14,10 +14,10 @@
     </div>
 </div>
 <div class="mb-3 row domain-action domain-register">
-    <label class="form-label col-3 col-form-label">{{ 'Register domain'|trans }}:</label>
+    <label class="form-label col-3 col-form-label">{{ 'Register Domain'|trans }}:</label>
     <div class="col">
         <div class="input-group mb-3">
-            <input class="form-control" type="text" name="config[register_sld]" value="{{ request.register_sld }}" placeholder="{{ 'Domain name to register'|trans }}">
+            <input class="form-control" type="text" name="config[register_sld]" value="{{ request.register_sld }}" placeholder="{{ 'Domain Name to Register'|trans }}">
             {{ mf.selectboxtld('config[register_tld]', guest.serviceDomain_tlds({ 'allow_register': 1 })) }}
         </div>
         <div class="input-group mb-3">
@@ -27,10 +27,10 @@
     </div>
 </div>
 <div class="mb-3 row domain-action domain-transfer" style="display: none;">
-    <label class="form-label col-3 col-form-label">{{ 'Transfer domain'|trans }}:</label>
+    <label class="form-label col-3 col-form-label">{{ 'Transfer Domain'|trans }}:</label>
     <div class="col">
         <div class="input-group mb-3">
-            <input class="form-control" type="text" name="config[transfer_sld]" value="{{ request.transfer_sld }}"  placeholder="{{ 'Domain name to transfer'|trans }}">
+            <input class="form-control" type="text" name="config[transfer_sld]" value="{{ request.transfer_sld }}"  placeholder="{{ 'Domain Name to Transfer'|trans }}">
             {{ mf.selectboxtld('config[transfer_tld]', guest.serviceDomain_tlds({ "allow_transfer": 1 })) }}
         </div>
         <div class="input-group mb-3">

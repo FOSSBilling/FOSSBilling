@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li>
-            <a href="{{ 'servicedomain'|alink }}">{{ 'Domain management'|trans }}</a>
+            <a href="{{ 'servicedomain'|url }}">{{ 'Domain Management'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ tld.tld }}</li>
     </ol>
@@ -25,9 +25,9 @@
 {% block content %}
 <div class="card">
     <div class="card-body">
-        <h3>{{ tld.tld }} {{ 'Top level domain management'|trans }}</h3>
+        <h3>{{ tld.tld }} {{ 'Top Level Domain Management'|trans }}</h3>
 
-        <form method="post" action="{{ 'api/admin/servicedomain/tld_update'|link }}" {{ fb_api_form({message: 'Top Level Domain Settings Updated'|trans}) }}>
+        <form method="post" action="{{ 'servicedomain/tld_update'|api_url }}" {{ fb_api_form({message: 'Top Level Domain Settings Updated'|trans}) }}>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Registrar'|trans }}:</label>
                 <div class="col">
@@ -39,31 +39,31 @@
                 </div>
             </div>
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Registration price'|trans }}:</label>
+                <label class="form-label col-3 col-form-label">{{ 'Registration Price'|trans }}:</label>
                 <div class="col">
                     <input class="form-control" type="text" name="price_registration" value="{{ tld.price_registration }}" required>
                 </div>
             </div>
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Renewal price'|trans }}:</label>
+                <label class="form-label col-3 col-form-label">{{ 'Renewal Price'|trans }}:</label>
                 <div class="col">
                     <input class="form-control" type="text" name="price_renew" value="{{ tld.price_renew }}" required>
                 </div>
             </div>
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Transfer price'|trans }}:</label>
+                <label class="form-label col-3 col-form-label">{{ 'Transfer Price'|trans }}:</label>
                 <div class="col">
                     <input class="form-control" type="text" name="price_transfer" value="{{ tld.price_transfer }}" required>
                 </div>
             </div>
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Minimum years of registration'|trans }}:</label>
+                <label class="form-label col-3 col-form-label">{{ 'Minimum Years of Registration'|trans }}:</label>
                 <div class="col">
                     <input class="form-control" type="text" name="min_years" value="{{ tld.min_years }}" required>
                 </div>
             </div>
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Allow registration'|trans }}:</label>
+                <label class="form-label col-3 col-form-label">{{ 'Allow Registration'|trans }}:</label>
                 <div class="col">
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" id="inputAllowRegisterYes" type="radio" name="allow_register" value="1"{% if tld.allow_register %} checked{% endif %}>
@@ -76,7 +76,7 @@
                 </div>
             </div>
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Allow transfer'|trans }}:</label>
+                <label class="form-label col-3 col-form-label">{{ 'Allow Transfer'|trans }}:</label>
                 <div class="col">
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" id="inputAllowTransferYes" type="radio" name="allow_transfer" value="1"{% if tld.allow_transfer %} checked{% endif %}>

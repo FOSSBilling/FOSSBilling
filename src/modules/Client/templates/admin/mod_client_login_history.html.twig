@@ -10,7 +10,7 @@
 {% block content %}
 <div class="card overflow-auto">
     <div class="card-body">
-        <h5>{{ 'Client login history'|trans }}</h5>
+        <h5>{{ 'Client Login History'|trans }}</h5>
     </div>
 
     {% if can_view_client_login_history %}
@@ -33,25 +33,26 @@
         <tr>
             <td>{{ event.id }}</td>
             <td>
-                <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">
-                    <span class="db-avatar avatar avatar-xs d-none d-md-inline-block" data-avatar-seed="{{ event.client.email|hash('xxh128') }}" data-avatar-size="24"></span>
+                <a href='{{ "client/manage/#{event.client.id}"|url }}'>
+                    {{ mf.avatar(event.client.email, 24, 'db-avatar avatar avatar-xs d-none d-md-inline-block') }}
                 </a>
             </td>
             <td>
-                <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">{{ event.client.first_name }} {{ event.client.last_name }}</a>
+                <a href='{{ "client/manage/#{event.client.id}"|url }}'>{{ event.client.first_name }} {{ event.client.last_name }}</a>
             </td>
-<td>{{ event.ip|iplookup }}
-{% if event.ip %}
-<a href="{{ 'api/admin/antispam/block_ip'|link({ 'ip': event.ip }) }}" {{ fb_api_link({ modal: {type: 'confirm', title: 'Block IP'|trans, content: ('Are you sure you want to block IP address %ip%?'|trans({'%ip%': event.ip}))}, reload: true }) }} title="{{ 'Block IP'|trans }}">
-<svg class="icon icon-xs text-danger" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-<circle cx="12" cy="12" r="10"></circle>
-<line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
-</svg>
-</a>
-{% endif %}
-</td>
-<td>{{ event.ip|ipcountryname|default('Unknown'|trans) }}</td>
-<td>{{ event.created_at|format_datetime }}</td>
+            <td>
+                {{ mf.ip_lookup_link(event.ip) }}
+                {% if event.ip %}
+                <a href="{{ 'antispam/block_ip'|api_url(query: { 'ip': event.ip }) }}" {{ fb_api_link({ modal: {type: 'confirm', title: 'Block IP'|trans, content: ('Are you sure you want to block IP address %ip%?'|trans({'%ip%': event.ip}))}, reload: true }) }} title="{{ 'Block IP'|trans }}">
+                    <svg class="icon icon-xs text-danger" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                    </svg>
+                </a>
+                {% endif %}
+            </td>
+            <td>{{ event.ip|ip_country_name|default('Unknown'|trans) }}</td>
+            <td>{{ event.created_at|format_datetime }}</td>
         </tr>
         {% else %}
         <tr>

@@ -17,14 +17,6 @@ final class ServiceSubscriptionTest extends \BBTestCase
         $this->service = new ServiceSubscription();
     }
 
-    public function testGetDi(): void
-    {
-        $di = $this->getDi();
-        $this->service->setDi($di);
-        $getDi = $this->service->getDi();
-        $this->assertEquals($di, $getDi);
-    }
-
     public function testCreate(): void
     {
         $subscriptionModel = new \Model_Subscription();

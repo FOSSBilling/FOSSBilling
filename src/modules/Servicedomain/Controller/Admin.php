@@ -33,7 +33,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 [
                     'location' => 'system',
                     'index' => 150,
-                    'label' => __trans('Domain registration'),
+                    'label' => __trans('Domain Registration'),
                     'uri' => $this->di['url']->adminLink('servicedomain'),
                     'class' => '',
                 ],

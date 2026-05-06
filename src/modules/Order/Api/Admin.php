@@ -337,8 +337,8 @@ class Admin extends \Api_Abstract
     public function get_invoice_options($data): array
     {
         return [
-            'issue-invoice' => __trans('Automatically issue renewal invoices'),
-            'no-invoice' => __trans('Issue invoices manually'),
+            'issue-invoice' => __trans('Automatically Issue Renewal Invoices'),
+            'no-invoice' => __trans('Issue Invoices Manually'),
         ];
     }
 
@@ -348,8 +348,8 @@ class Admin extends \Api_Abstract
     public function get_status_pairs($data): array
     {
         return [
-            \Model_ClientOrder::STATUS_PENDING_SETUP => 'Pending setup',
-            \Model_ClientOrder::STATUS_FAILED_SETUP => 'Setup failed',
+            \Model_ClientOrder::STATUS_PENDING_SETUP => 'Pending Setup',
+            \Model_ClientOrder::STATUS_FAILED_SETUP => 'Setup Failed',
             \Model_ClientOrder::STATUS_ACTIVE => 'Active',
             \Model_ClientOrder::STATUS_SUSPENDED => 'Suspended',
             \Model_ClientOrder::STATUS_CANCELED => 'Canceled',
@@ -378,7 +378,7 @@ class Admin extends \Api_Abstract
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        return $this->di['db']->getExistingModelById('ClientOrder', $data['id'], 'Order not found');
+        return $this->di['db']->getExistingModelById('ClientOrder', $data['id'], 'Order Not Found');
     }
 
     /**

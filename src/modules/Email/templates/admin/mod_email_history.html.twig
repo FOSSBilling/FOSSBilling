@@ -15,7 +15,7 @@
         <div class="alert alert-primary alert-dismissible fade show mb-3" role="alert">
             <strong>{{ 'Information'|trans }}:</strong> {{ 'Email logging is not enabled. If you want to log sent mails to database, enable it in'|trans }}
             {% if can_manage_settings %}
-                <a href="{{ 'extension/settings/email'|alink }}"> {{ 'Email Settings.'|trans }}</a>
+                <a href="{{ 'extension/settings/email'|url }}">{{ 'Email Settings.'|trans }}</a>
             {% else %}
                 {{ 'Email Settings.'|trans }}
             {% endif %}
@@ -57,7 +57,7 @@
             <td>{{ email.recipients }}</td>
             <td>{{ email.sender }}</td>
             <td>
-                <a href="{{ '/email'|alink }}/{{ email.id }}">{{ email.subject|truncate(40) }}</a>
+                <a href='{{ "email/#{email.id}"|url }}'>{{ email.subject|truncate(40) }}</a>
             </td>
             <td>{{ email.created_at|format_date }}</td>
             <td>
@@ -69,14 +69,14 @@
                         <use xlink:href="#eye" />
                     </svg>
                 </button>
-                <a class="btn btn-icon" href="{{ '/email'|alink }}/{{ email.id }}">
+                <a class="btn btn-icon" href='{{ "email/#{email.id}"|url }}'>
                     <svg class="icon">
                         <use xlink:href="#edit" />
                     </svg>
                 </a>
                 {% if can_delete_email_history %}
-                <a class="btn btn-icon" href="{{ 'api/admin/email/email_delete'|link({ 'id': email.id }) }}"
-                    {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'email/history'|alink}) }}>
+                <a class="btn btn-icon" href="{{ 'email/email_delete'|api_url(query: { 'id': email.id }) }}"
+                    {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'email/history'|url}) }}>
                     <svg class="icon">
                         <use xlink:href="#delete" />
                     </svg>

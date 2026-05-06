@@ -31,7 +31,7 @@
             <td>{{ service.ns4 }}</td>
         </tr>
         <tr>
-            <td class="text-end">{{ 'Transfer code'|trans }}:</td>
+            <td class="text-end">{{ 'Transfer Code'|trans }}:</td>
             <td>{{ service.transfer_code }}</td>
         </tr>
         <tr>
@@ -45,7 +45,7 @@
             </td>
         </tr>
         <tr>
-            <td class="text-end">{{ 'Privacy protection'|trans }}:</td>
+            <td class="text-end">{{ 'Privacy Protection'|trans }}:</td>
             <td id="privacy-value">
                 {% if service.privacy == 1 %}
                     <span class="badge bg-danger me-1"></span> {{ 'Enabled'|trans }}
@@ -55,15 +55,15 @@
             </td>
         </tr>
         <tr>
-            <td class="text-end">{{ 'Registration/Renewal years'|trans }}:</td>
+            <td class="text-end">{{ 'Registration/Renewal Years'|trans }}:</td>
             <td>{{ service.period }}</td>
         </tr>
         <tr>
-            <td class="text-end">{{ 'Registration date'|trans }}:</td>
+            <td class="text-end">{{ 'Registration Date'|trans }}:</td>
             <td>{{ service.registered_at|format_date }}</td>
         </tr>
         <tr>
-            <td class="text-end">{{ 'Expires at'|trans }}:</td>
+            <td class="text-end">{{ 'Expires At'|trans }}:</td>
             <td>{{ service.expires_at|format_date }}</td>
         </tr>
     </tbody>
@@ -108,7 +108,7 @@
 {% if order.status == 'active' %}
 <div class="card-body">
     <h3>{{ 'Nameservers'|trans }}</h3>
-    <form method="post" action="{{ 'api/admin/servicedomain/update_nameservers'|link }}" {{ fb_api_form({message: 'Nameservers Updated'|trans}) }}>
+    <form method="post" action="{{ 'servicedomain/update_nameservers'|api_url }}" {{ fb_api_form({message: 'Nameservers Updated'|trans}) }}>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Nameserver 1'|trans }}:</label>
             <div class="col">
@@ -140,7 +140,7 @@
     <hr>
 
     <h3>{{ 'Domain Data'|trans }}</h3>
-    <form method="post" action="{{ 'api/admin/servicedomain/update'|link }}" {{ fb_api_form({message: 'Domain Data Updated'|trans}) }}>
+    <form method="post" action="{{ 'servicedomain/update'|api_url }}" {{ fb_api_form({message: 'Domain Data Updated'|trans}) }}>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Transfer code (EPP)'|trans }}: </label>
             <div class="col">
@@ -160,7 +160,7 @@
     <hr>
 
     <h3>{{ 'Update Domain Contact Details'|trans }}</h3>
-    <form method="post" action="{{ 'api/admin/servicedomain/update_contacts'|link }}" {{ fb_api_form({message: 'Domain Contact Details Updated'|trans}) }}>
+    <form method="post" action="{{ 'servicedomain/update_contacts'|api_url }}" {{ fb_api_form({message: 'Domain Contact Details Updated'|trans}) }}>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'First Name'|trans }}: </label>
             <div class="col">
@@ -228,7 +228,7 @@
             </div>
         </div>
         <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Phone number'|trans }}: </label>
+            <label class="form-label col-3 col-form-label">{{ 'Phone Number'|trans }}: </label>
             <div class="col">
                 <input class="form-control" type="text" name="contact[phone]" value="{{ request.phone|default(service.contact.phone) }}" required>
             </div>
@@ -240,6 +240,7 @@
 </div>
 {% endif %}
 
+{% if order.status == 'active' %}
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         {% if service.locked == 0 %}
@@ -279,13 +280,11 @@
         });
 
         {% if service.privacy == 0 %}
-            {# document.getElementById('domain-disable-pp').style.display = 'none'; #}
             document.getElementById('domain-disable-pp').classList.remove('d-inline-block');
             document.getElementById('domain-disable-pp').style.display = 'none';
         {% endif %}
 
         {% if service.privacy == 1 %}
-            {# document.getElementById('domain-enable-pp').style.display = 'none'; #}
             document.getElementById('domain-enable-pp').classList.remove('d-inline-block');
             document.getElementById('domain-enable-pp').style.display = 'none';
         {% endif %}
@@ -324,3 +323,4 @@
         });
     });
 </script>
+{% endif %}

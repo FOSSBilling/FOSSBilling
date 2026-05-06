@@ -1,0 +1,40 @@
+{{ 'build/js/wysiwyg.js' | asset_url | script_tag }}
+{{ 'build/js/wysiwyg.css' | asset_url | stylesheet_tag }}
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.{{ class }}').forEach(function (element) {
+            CKEditor.default.create(element)
+                .then(editor => {
+                    if (element.hasAttribute('required')) {
+                        element.dataset.editorRequired = 'true';
+                        element.removeAttribute('required');
+                    }
+
+                    element.editor = editor;
+                    element.setAttribute('data-editor', 'true');
+
+                    const syncEditorData = function () {
+                        if ('value' in element) {
+                            element.value = editor.getData();
+                        } else {
+                            element.textContent = editor.getData();
+                        }
+                    };
+
+                    syncEditorData();
+                    editor.model.document.on('change:data', syncEditorData);
+                })
+                .catch(error => {
+                    console.error('CKEditor initialization error:', error);
+                });
+        });
+
+        {% if 'dark' in settings.theme %}
+        setTimeout(function () {
+            document.querySelectorAll('.ck-editor__main').forEach(function (element) {
+                element.style.color = '#1d273b';
+            });
+        }, 1000);
+        {% endif %}
+    });
+</script>

@@ -9,15 +9,6 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class ServiceTest extends \BBTestCase
 {
-    public function testGetDi(): void
-    {
-        $di = $this->getDi();
-        $service = new Service();
-        $service->setDi($di);
-        $getDi = $service->getDi();
-        $this->assertEquals($di, $getDi);
-    }
-
     public function testGetCronInfo(): void
     {
         $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);

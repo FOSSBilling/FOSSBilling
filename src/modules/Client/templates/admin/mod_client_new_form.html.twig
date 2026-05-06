@@ -1,6 +1,5 @@
 {% import 'macro_functions.html.twig' as mf %}
-{% if has_permission('client', 'create') %}
-<form method="post" action="{{ 'api/admin/client/create'|link }}" {{ fb_api_form({ redirect: 'client'|alink}) }}>
+<form method="post" action="{{ 'client/create'|api_url }}" {{ fb_api_form({ redirect: 'client'|url}) }}>
 	<div class="card">
 		<div class="card-header">
 			<h3 class="card-title">{{ 'Create a New Client'|trans }}</h3>
@@ -47,13 +46,13 @@
 					<div class="mb-3 row">
 						<label class="col-3 col-form-label">{{ 'Group'|trans }}</label>
 						<div class="col">
-							{{ mf.selectbox('group_id', admin.client_group_get_pairs, request.group_id, 0, 'Select group'|trans) }}
+							{{ mf.selectbox('group_id', admin.client_group_get_pairs, request.group_id, 0, 'Select Group'|trans) }}
 						</div>
 					</div>
 					<div class="mb-3 row">
 						<label class="col-3 col-form-label">{{ 'Currency'|trans }}</label>
 						<div class="col">
-							{{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'Select currency'|trans) }}
+							{{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'Select Currency'|trans) }}
 						</div>
 					</div>
 					<div class="mb-3 row">
@@ -131,7 +130,7 @@
 					<div class="mb-3 row">
 						<label class="col-3 col-form-label">{{ 'Country'|trans }}</label>
 						<div class="col">
-							{{ mf.selectbox('country', guest.system_countries, guest.system_default_country, 0, 'Select country'|trans) }}
+							{{ mf.selectbox('country', guest.system_countries, guest.system_default_country, 0, 'Select Country'|trans) }}
 						</div>
 					</div>
 				</div>
@@ -154,4 +153,3 @@
 		</div>
 	</div>
 </form>
-{% endif %}

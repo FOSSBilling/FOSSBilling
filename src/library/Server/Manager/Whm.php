@@ -42,7 +42,7 @@ class Server_Manager_Whm extends Server_Manager
                         [
                             'name' => 'accesshash',
                             'type' => 'text',
-                            'label' => 'Access hash',
+                            'label' => 'Access Hash',
                             'placeholder' => 'Access hash to connect to the server',
                             'required' => true,
                         ],

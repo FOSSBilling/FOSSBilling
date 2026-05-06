@@ -70,7 +70,6 @@ class SentryHelper
         'support',
         'system',
         'theme',
-        'wysiwyg',
     ];
 
     // Themes we want to receive error reports for

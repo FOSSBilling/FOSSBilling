@@ -398,8 +398,16 @@ final class ServiceTest extends \BBTestCase
 
         $systemService = $this->createMock(\Box\Mod\System\Service::class);
         $systemService->expects($this->atLeastOnce())
-            ->method('getParamValue')
-            ->willReturn('value');
+            ->method('renderEmailTplString')
+            ->willReturn('rendered');
+        $systemService->method('getParamValue')
+            ->willReturnCallback(function ($param) {
+                return match ($param) {
+                    'company_email' => 'company@example.com',
+                    'company_name' => 'Test Company',
+                    default => 'value',
+                };
+            });
 
         $twig = $this->getMockBuilder(\Twig\Environment::class)->disableOriginalConstructor()->getMock();
 
@@ -504,7 +512,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn('value');
 
         $system->expects($this->atLeastOnce())
-            ->method('renderString')
+            ->method('renderEmailTplString')
             ->willReturn('value');
 
         $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
@@ -767,7 +775,7 @@ final class ServiceTest extends \BBTestCase
 
         $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
         $systemServiceMock->expects($this->$templateRenderExpects())
-            ->method('renderString');
+            ->method('renderEmailTplString');
 
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
 

@@ -1,7 +1,8 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% import "macro_functions.html.twig" as mf %}
 
 {% block meta_title %}{{ 'Profile Details'|trans }}{% endblock %}
-{% block page_header %}{{ 'User profile settings'|trans }}{% endblock %}
+{% block page_header %}{{ 'User Profile Settings'|trans }}{% endblock %}
 {% block breadcrumb %}
     <li class="breadcrumb-item active" aria-current="page">{{ 'Profile'|trans }}</li>{% endblock %}
 
@@ -13,7 +14,7 @@
             <div class="row">
                 <span>{{ 'You must verify your email address before you may access our services.'|trans }}</span>
             </div>
-            <a class="btn btn-primary" href="{{ 'api/client/client/resend_email_verification'|link }}"
+            <a class="btn btn-primary" href="{{ 'client/resend_email_verification'|api_url }}"
                {{ fb_api_link({message: 'Verification Email Re-sent'|trans}) }}>{{ 'Resend Verification Email'|trans }}</a>
         </div>
     {% endif %}
@@ -40,7 +41,7 @@
                         <form method="post" action="client/profile/update" id="profile-update" {{ fb_api_form({message: 'Profile Updated'|trans}) }}>
                             <div class="row mb-4 d-flex justify-content-center">
                                 <div class="col-md-2">
-                                    <div class="db-avatar img-thumbnail" data-avatar-seed="{{ profile.email|hash('xxh128') }}" data-avatar-size="100" style="width: 100px; height: 100px;"></div>
+                                    {{ mf.avatar(profile.email, 100, 'db-avatar img-thumbnail') }}
                                 </div>
                                 <div class="col-md-10 d-flex align-items-center">
                                     {{ 'Avatar is generated locally based on your email address.'|trans }}
@@ -149,7 +150,7 @@
                                     <input type="text" class="form-control" id="postcode" name="postcode" value="{{ profile.postcode }}" {% if "postcode" in required %} required {% endif %}>
                                 </div>
                                 <div class="mb-3 col-md-5">
-                                    <label class="form-label" for="document_nr">{{ 'Passport number'|trans }}</label>
+                                    <label class="form-label" for="document_nr">{{ 'Passport Number'|trans }}</label>
                                     <input type="text" class="form-control" name="document_nr" id="document_nr" value="{{ profile.document_nr }}">
                                 </div>
                             </div>
@@ -163,13 +164,13 @@
                                     </div>
                                 {% endif %}
                             {% endfor %}
-                            <button class="btn btn-primary" type="submit">{{ 'Update profile'|trans }}</button>
+                            <button class="btn btn-primary" type="submit">{{ 'Update Profile'|trans }}</button>
                         </form>
                     </div>
                     <div class="card-body tab-pane" id="pass-tab-pane" role="tabpanel" tabindex="0">
                         <h5 class="card-title mb-1">{{ 'Change Password'|trans }}</h5>
                         <p class="card-text fs-7 text-muted">{{ 'Enter your new password twice to avoid mistakes. '|trans }}</p>
-                        <form method="post" action="{{ 'api/client/profile/change_password'|link }}" {{ fb_api_form() }}>
+                        <form method="post" action="{{ 'profile/change_password'|api_url }}" {{ fb_api_form() }}>
                             <div class="mb-3">
                                 <label class="form-label" for="current_password">{{ 'Current Password'|trans }}</label>
                                 <input class="form-control" type="password" name="current_password"
@@ -198,11 +199,11 @@
                                 </div>
                             {% endif %}
                             <div class="mb-3">
-                                <label for="api-key" class="form-label">{{ 'Your API key'|trans }}</label>
+                                <label for="api-key" class="form-label">{{ 'Your API Key'|trans }}</label>
                                 <input class="form-control" readonly type="text"
                                        value="{{ client.profile_api_key_get }}" id="api-key">
                             </div>
-                            <button class="btn btn-primary" type="submit">{{ 'Generate a new key'|trans }}</button>
+                            <button class="btn btn-primary" type="submit">{{ 'Generate a New Key'|trans }}</button>
                         </form>
                     </div>
                     <div class="card-body tab-pane" id="currency-tab-pane" role="tabpanel" tabindex="0">

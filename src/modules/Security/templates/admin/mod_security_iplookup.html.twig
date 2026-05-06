@@ -2,7 +2,7 @@
 
 {% import 'macro_functions.html.twig' as mf %}
 
-{% block meta_title %}{{ 'IP lookup'|trans }}{% endblock %}
+{% block meta_title %}{{ 'IP Lookup'|trans }}{% endblock %}
 
 {% set active_menu = 'system' %}
 
@@ -10,14 +10,14 @@
 <div class="card">
     <div class="card-header">
         <div>
-            <h3 class="card-title">{{ 'IP lookup'|trans }}</h3>
+            <h3 class="card-title">{{ 'IP Lookup'|trans }}</h3>
         </div>
     </div>
     <div class="card-body border-bottom">
         <span class="card-subtitle">{{ 'Lookup & discover info about IP addresses.'|trans }}</span>
     </div>
     <div class="card-body container">
-        <form method="post" action="{{'api/admin/security/ip_lookup'|link }}" {{ fb_api_form({callback: 'appendResult'}) }}>
+        <form method="post" action="{{'security/ip_lookup'|api_url }}" {{ fb_api_form({callback: 'appendResult'}) }}>
             <div class="d-flex">
                 <input type="text" name="ip" class="form-control me-2" placeholder="{{ 'IP address to lookup'|trans }}" {% if request.ip %}value="{{ request.ip }}"{% endif %}>
                 <button class="btn btn-primary" type="submit">{{ 'Submit'|trans }}</button>
@@ -30,7 +30,7 @@
                     <tr>
                         <th scope="col">{{ 'IP Address'|trans }}</th>
                         <th scope="col">{{ 'Country'|trans }}</th>
-                        <th scope="col">ASN</th>
+                        <th scope="col">{{ 'ASN'|trans }}</th>
                         <th scope="col">{{ 'ASN Organization'|trans }}</th>
                     </tr>
                 </thead>

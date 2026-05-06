@@ -121,27 +121,6 @@ final class ServiceTest extends \BBTestCase
         $service->login($email, $password, $ip);
     }
 
-    public function testGetAdminCount(): void
-    {
-        $countResult = 3;
-
-        $dbMock = $this->getMockBuilder('\Box_Database')
-            ->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getCell')
-            ->willReturn($countResult);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-
-        $service = new Service();
-        $service->setDi($di);
-
-        $result = $service->getAdminsCount();
-        $this->assertIsInt($result);
-        $this->assertEquals($countResult, $result);
-    }
-
     public function testHasPermissionRoleAdmin(): void
     {
         $member = new \Model_Admin();
@@ -1245,56 +1224,6 @@ final class ServiceTest extends \BBTestCase
         $this->expectExceptionCode(788954);
         $this->expectExceptionMessage("Staff member with email {$data['email']} is already registered.");
         $serviceMock->create($data);
-    }
-
-    public function testCreateAdmin(): void
-    {
-        $data = [
-            'email' => 'test@example.com',
-            'admin_group_id' => '1',
-            'name' => 'testJohn',
-            'status' => 'active',
-            'password' => '1345',
-        ];
-
-        $newId = 1;
-
-        $adminModel = new \Model_Admin();
-        $adminModel->loadBean(new \DummyBean());
-
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('dispense')
-            ->willReturn($adminModel);
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store')
-            ->willReturn($newId);
-
-        $logMock = $this->createMock('\Box_Log');
-
-        $systemService = $this->createMock(\Box\Mod\System\Service::class);
-
-        $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
-        $passwordMock->expects($this->atLeastOnce())
-            ->method('hashIt')
-            ->with($data['password']);
-
-        $di = $this->getDi();
-        $di['logger'] = $logMock;
-        $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(function ($serviceName) use ($systemService) {
-            if ($serviceName == 'system') {
-                return $systemService;
-            }
-        });
-        $di['password'] = $passwordMock;
-
-        $service = new Service();
-        $service->setDi($di);
-
-        $result = $service->createAdmin($data);
-        $this->assertIsInt($result);
-        $this->assertEquals($newId, $result);
     }
 
     public function testGetAdminGroupPair(): void

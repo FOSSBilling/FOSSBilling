@@ -437,60 +437,82 @@ class Service
         return false;
     }
 
-    public function renderString($tpl, $try_render, $vars)
+    public function renderAdapterTplString(string $tpl, array $vars): string
     {
-        $twig = $this->di['twig'];
-        // add client api if _client_id is set
-        if (isset($vars['_client_id'])) {
-            $identity = $this->di['db']->load('Client', $vars['_client_id']);
-            if ($identity instanceof \Model_Client) {
-                try {
-                    $twig->addGlobal('client', $this->di['api_client']);
-                } catch (\Exception $e) {
-                    error_log("api_client could not be added to template: {$e->getMessage()}.");
-                }
-            }
-        } else {
-            // attempt adding admin api to twig
-            try {
-                if ($this->di['auth']->isAdminLoggedIn()) {
-                    $twig->addGlobal('admin', $this->di['api_admin']);
-                }
-            } catch (\Exception) {
-                // skip if admin is not logged in
-            }
-        }
-        if (is_null($tpl)) {
-            return $this->createTemplateFromString('No template was provided, please contact the site administrator', $try_render, $vars);
-        }
+        $twigFactory = $this->di['twig_factory'];
+        $twig = $twigFactory->createAdapterEnvironment();
 
         try {
-            $template = $twig->load($tpl);
-            $parsed = $template->render($vars);
-        } catch (\Exception) {
-            // $twig->load throws error when $tpl is string
-            $parsed = $this->createTemplateFromString($tpl, $try_render, $vars);
+            $template = $twig->createTemplate($tpl);
+            $rendered = $template->render($vars);
+        } catch (\Twig\Sandbox\SecurityError $e) {
+            $this->di['logger']->setChannel('security')->warning('Payment adapter template sandbox violation', [
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new \FOSSBilling\InformationException('Payment adapter template contains disallowed Twig syntax: ' . $e->getMessage());
+        } catch (\Twig\Error\SyntaxError $e) {
+            throw new \FOSSBilling\InformationException('Payment adapter template syntax error: ' . $e->getMessage());
+        } catch (\Twig\Error\Error $e) {
+            throw new \FOSSBilling\InformationException('Payment adapter template rendering error: ' . $e->getMessage());
         }
 
-        return $parsed;
+        return $this->sanitizeAdapterOutput($rendered);
     }
 
-    public function createTemplateFromString($tpl, $try_render, $vars)
+    public function sanitizeAdapterOutput(string $html): string
     {
+        $html = preg_replace('#<script\b[^>]*>.*?</script>#is', '', $html);
+        $html = preg_replace('#<script\b[^>]*/?>#is', '', $html);
+        $html = preg_replace('#\s+\bon\w+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]*)#i', '', $html);
+        $html = preg_replace_callback(
+            '#\s+\b(href|src|action|formaction|xlink:href)\s*=\s*(?:(["\'])(.*?)\2|([^\s>]*))#is',
+            static function (array $matches): string {
+                $value = html_entity_decode($matches[3] !== '' ? $matches[3] : $matches[4], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $normalizedValue = preg_replace('/[\x00-\x20\x7F]+/', '', trim($value));
+
+                if (preg_match('/^(?:javascript|data):/i', $normalizedValue)) {
+                    return '';
+                }
+
+                return $matches[0];
+            },
+            $html
+        );
+
+        return $html;
+    }
+
+    /**
+     * Render a template string using the sandboxed email Twig environment.
+     * Use this for database-stored templates (email templates, mass mailer).
+     *
+     * @param string $tpl  The template string to render
+     * @param array  $vars Variables to pass to the template
+     *
+     * @return string The rendered template
+     *
+     * @throws \FOSSBilling\InformationException If template violates sandbox policy or has syntax errors
+     */
+    public function renderEmailTplString(string $tpl, array $vars): string
+    {
+        $twigFactory = $this->di['twig_factory'];
+        $twig = $twigFactory->createEmailEnvironment();
+
         try {
-            $twig = $this->di['twig'];
             $template = $twig->createTemplate($tpl);
 
             return $template->render($vars);
-        } catch (\Exception $e) {
-            if (!$try_render) {
-                $errorMsg = 'Template rendering failed: ' . $e->getMessage();
+        } catch (\Twig\Sandbox\SecurityError $e) {
+            $this->di['logger']->setChannel('security')->warning('Email template sandbox violation', [
+                'error' => $e->getMessage(),
+            ]);
 
-                throw new \FOSSBilling\InformationException($errorMsg, null, $e->getCode());
-            }
-
-            // Return the original template string instead
-            return $tpl;
+            throw new \FOSSBilling\InformationException('Email template contains disallowed Twig syntax: ' . $e->getMessage());
+        } catch (\Twig\Error\SyntaxError $e) {
+            throw new \FOSSBilling\InformationException('Email template syntax error: ' . $e->getMessage());
+        } catch (\Twig\Error\Error $e) {
+            throw new \FOSSBilling\InformationException('Email template rendering error: ' . $e->getMessage());
         }
     }
 

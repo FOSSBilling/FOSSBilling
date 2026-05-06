@@ -1,37 +1,37 @@
 <div class="card-body">
     <h5>{{ 'File'|trans }}</h5>
         <div class="row mb-3">
-            <form method="post" action="{{ '/api/admin/servicedownloadable/config_save'|link }}" {{ fb_api_form({ message: 'Settings Updated'|trans}) }}>
+            <form method="post" action="{{ 'servicedownloadable/config_save'|api_url }}" {{ fb_api_form({ message: 'Settings Updated'|trans}) }}>
             <label class="col-md-3 form-label">
                 {{ 'Keep Orders Updated'|trans }}
             </label>
             <div class="col-md-6">
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" type="radio" name="update_orders" value="1" {% if product.config.update_orders == '1' %} checked {% endif %} {% if product.config.update_orders == '' %} checked {% endif %} required>
-                    <label class="form-check-label">Yes</label>
+                    <label class="form-check-label">{{ 'Yes'|trans }}</label>
                 </div>
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" type="radio" name="update_orders" value="0" {% if product.config.update_orders == '0' %} checked {% endif %} required>
-                    <label class="form-check-label">No</label>
+                    <label class="form-check-label">{{ 'No'|trans }}</label>
                 </div>
             </div>
             <input type="hidden" name="id" value="{{ product.id }}">
-            <input type="submit" value="{{ 'Save config'|trans }}" class="btn btn-primary w-100" id="config-save-button">
+            <input type="submit" value="{{ 'Save Config'|trans }}" class="btn btn-primary w-100" id="config-save-button">
         </form>
         </div>
     <div class="row mb-3">
-        <form method="post" action="{{ 'api/admin/servicedownloadable/upload'|link }}" enctype="multipart/form-data" id="upload-form">
+        <form method="post" action="{{ 'servicedownloadable/upload'|api_url }}" enctype="multipart/form-data" id="upload-form">
             {% if product.config.filename  %}
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Currently uploaded file'|trans }}:</label>
+                <label class="form-label col-3 col-form-label">{{ 'Currently Uploaded File'|trans }}:</label>
                 <div class="col align-content-center">
-                    <a href="{{ 'servicedownloadable/get-file'|alink }}/{{ product.id }}" target="_blank">{{ product.config.filename }}</a>
+                    <a href="{{ 'servicedownloadable/get-file'|url }}/{{ product.id }}" target="_blank">{{ product.config.filename }}</a>
                 </div>
             </div>
             {% endif %}
 
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Upload new file'|trans }}:</label>
+                <label class="form-label col-3 col-form-label">{{ 'Upload New File'|trans }}:</label>
                 <div class="col">
                     <input class="form-control" type="file" name="file_data" id="file_data">
                 </div>

@@ -9,15 +9,6 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class ClientTest extends \BBTestCase
 {
-    public function testGetDi(): void
-    {
-        $di = $this->getDi();
-        $client = new Client();
-        $client->setDi($di);
-        $getDi = $client->getDi();
-        $this->assertEquals($di, $getDi);
-    }
-
     public function testBalanceGetList(): void
     {
         $data = [];

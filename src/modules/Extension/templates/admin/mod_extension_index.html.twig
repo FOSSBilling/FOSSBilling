@@ -66,12 +66,12 @@
                                     </td>
                                     <td>
                                         {{ ext.description }}<br>
-                                        <a href="{{ ext.project_url }}" target="_blank" data-bs-toggle="tooltip" data-bs-title="Project details">{{ 'Learn more'|trans }}</a>
+                                        <a href="{{ ext.project_url }}" target="_blank" data-bs-toggle="tooltip" data-bs-title="{{ 'Project Details'|trans }}">{{ 'Learn more'|trans }}</a>
                                     </td>
                                     <td>
                                         {% if ext.type == 'mod' %}
                                             {% if ext.status == 'installed' %}
-                                                <a class="btn btn-icon" href="{{ 'api/admin/extension/deactivate'|link({ 'type': ext.type, 'id': ext.id }) }}"
+                                                <a class="btn btn-icon" href="{{ 'extension/deactivate'|api_url(query: { 'type': ext.type, 'id': ext.id }) }}"
                                                     data-bs-toggle="tooltip" data-bs-title="{{ 'Deactivate'|trans }}"
                                                     {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Deactivate'|trans}, reload: true}) }}>
                                                     <svg class="icon">
@@ -80,7 +80,7 @@
                                                 </a>
                                             {% else %}
                                                 <a class="btn btn-icon"
-                                                    href="{{ 'api/admin/extension/uninstall'|link({ 'type': ext.type, 'id': ext.id }) }}"
+                                                    href="{{ 'extension/uninstall'|api_url(query: { 'type': ext.type, 'id': ext.id }) }}"
                                                     data-bs-toggle="tooltip" data-bs-title="{{ 'Uninstall'|trans }}"
                                                     {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, content: 'Uninstalling this module will permanently delete all its database tables and remove its files from the disk. This action cannot be undone.'|trans, button: 'Uninstall'|trans}, callback: 'onAfterModuleActivated'}) }}>
 
@@ -94,7 +94,7 @@
                                     <td>
                                         {% if ext.type == 'mod' and ext.status != 'installed' %}
                                             <a class="btn btn-icon"
-                                                href="{{ 'api/admin/extension/activate'|link({ 'type': ext.type, 'id': ext.id }) }}"
+                                                href="{{ 'extension/activate'|api_url(query:{ 'type': ext.type, 'id': ext.id }) }}"
                                                 {{ fb_api_link({modal: { type: 'confirm', title: 'Are you sure?'|trans, button: 'Activate'|trans}, callback: 'onAfterModuleActivated'}) }}
                                                 data-bs-toggle="tooltip" data-bs-title="{{ 'Activate'|trans }}">
                                                 <svg class="icon">
@@ -103,7 +103,7 @@
                                             </a>
                                         {% endif %}
                                         {% if ext.has_settings %}
-                                            <a class="btn btn-icon" href="{{ 'extension/settings'|alink }}/{{ ext.id }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Settings'|trans }}">
+                                            <a class="btn btn-icon" href='{{ "extension/settings/#{ext.id}"|url }}' data-bs-toggle="tooltip" data-bs-title="{{ 'Settings'|trans }}">
                                                 <svg class="icon">
                                                     <use xlink:href="#cog" />
                                                 </svg>
@@ -154,14 +154,14 @@
 
                         <h3>{{ 'Supported Extension Types'|trans }}</h3>
                         <ul>
-                            <li>{{ 'Payment gateways'|trans }}</li>
-                            <li>{{ 'Server managers'|trans }}</li>
-                            <li>{{ 'Domain registrars'|trans }}</li>
-                            <li>{{ 'Client area themes'|trans }}</li>
-                            <li>{{ 'Admin area themes'|trans }}</li>
-                            <li>{{ 'Translations for client and admin areas'|trans }}</li>
-                            <li>{{ 'Event hooks - Hooks can be injected into the process, change its behaviour, stop executing actions'|trans }}</li>
-                            <li>{{ 'API module - External program which uses FOSSBilling API'|trans }}</li>
+                            <li>{{ 'Payment Gateways'|trans }}</li>
+                            <li>{{ 'Server Managers'|trans }}</li>
+                            <li>{{ 'Domain Registrars'|trans }}</li>
+                            <li>{{ 'Client Area Themes'|trans }}</li>
+                            <li>{{ 'Admin Area Themes'|trans }}</li>
+                            <li>{{ 'Translations for Client and Admin Areas'|trans }}</li>
+                            <li>{{ 'Event Hooks - Hooks can be injected into the process, change its behaviour, stop executing actions'|trans }}</li>
+                            <li>{{ 'API Module - External program which uses FOSSBilling API'|trans }}</li>
                         </ul>
 
                         <h3>{{ 'Extension Support'|trans }}</h3>
@@ -205,9 +205,9 @@
         function onAfterUpdate(result) {}
         function onAfterModuleActivated(result) {
             if(result.redirect && result.type === 'mod') {
-                window.location = "{{ ''|alink }}/" + result.id;
+                window.location = "{{ ''|url }}/" + result.id;
             } else if (result.has_settings) {
-                window.location = "{{ 'extension/settings'|alink }}/" + result.id;
+                window.location = "{{ 'extension/settings'|url }}/" + result.id;
             } else {
                 window.location.reload();
             }

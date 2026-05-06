@@ -1,69 +1,8 @@
-{% macro selectbox(name, options, selected, required, nullOption) %}
-    <select name="{{ name }}" class="form-control{% if required %} is-required{% endif %}">
-        {% if nullOption %}<option value="">{{ nullOption }}</option>{% endif %}
-        {% for val, label in options %}
-        <option value="{{ val }}" {% if selected == val %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-    </select>
-{% endmacro %}
-
-{% macro selectboxtld(name, options, selected, required) %}
-    <select name="{{ name }}" class="form-control{% if required %} is-required{% endif %}" style="width: 120px;">
-        {% for data in options %}
-        <option value="{{ data.tld }}" {% if selected == data.tld %}selected{% endif %}>{{ data.tld }}</option>
-        {% endfor %}
-    </select>
-{% endmacro %}
-
-{# deprecated - use money filter #}
-{% macro currency_format(price, currency) %}
-    {{ price | money(currency) }}
-{% endmacro %}
-
-{# deprecated - use money_convert filter #}
-{% macro currency(price, currency) %}
-    {{ price | money_convert(currency) }}
-{% endmacro %}
-
-{% macro status_name(status) %}
-    {% set status = status|replace({'_': " "})|title|trim %}
-    {% if status == 'Active' %}
-        {{ 'Active'|trans }}
-    {% elseif status == 'Pending Setup' %}
-        {{ 'Pending Setup'|trans }}
-    {% elseif status == 'Failed Setup' %}
-        {{ 'Failed Setup'|trans }}
-    {% elseif status == 'Failed Renew' %}
-        {{ 'Failed Renewal'|trans }}
-    {% elseif status == 'Suspended' %}
-        {{ 'Suspended'|trans }}
-    {% elseif status == 'Canceled' %}
-        {{ 'Canceled'|trans }}
-    {% elseif status == 'Paid' %}
-        {{ 'Paid'|trans }}
-    {% elseif status == 'Unpaid' %}
-        {{ 'Unpaid'|trans }}
-    {% elseif status == 'Refunded' %}
-        {{ 'Refunded'|trans }}
-    {% else %}
-        {{ status|trans }}
-    {% endif %}
-{% endmacro %}
-
-{# deprecated - use period_title filter #}
-{% macro period_name(period) %}
-    {{ period | period_title }}
-{% endmacro %}
-
 {% macro markdown_quote(text) %}
-
-
-
-{% for line in text|split('\n') %}
-> {{ line }}
-{% endfor %}
-{% endmacro %}
-
+    {% for line in text|split('\n') %}
+        > {{ line }}
+    {% endfor %}
+{% endmacro markdown_quote %}
 
 {% macro recaptcha() %}
 
@@ -97,12 +36,109 @@
                 {% endif %}
             {% endif %}
         {% endif %}
-{% endmacro %}
+{% endmacro recaptcha %}
+
+{% macro selectbox(name, options, selected, required, nullOption) %}
+    <select name="{{ name }}" class="form-control{% if required %} is-required{% endif %}">
+        {% if nullOption %}<option value="">{{ nullOption }}</option>{% endif %}
+        {% for val, label in options %}
+            <option value="{{ val }}" {% if selected == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+{% endmacro selectbox %}
+
+{% macro status_name(status) %}
+    {% set status = status|replace({'_': " "})|title|trim %}
+    {% if status == 'Active' %}
+        {{ 'Active'|trans }}
+    {% elseif status == 'Pending Setup' %}
+        {{ 'Pending Setup'|trans }}
+    {% elseif status == 'Failed Setup' %}
+        {{ 'Failed Setup'|trans }}
+    {% elseif status == 'Failed Renew' %}
+        {{ 'Failed Renewal'|trans }}
+    {% elseif status == 'Suspended' %}
+        {{ 'Suspended'|trans }}
+    {% elseif status == 'Canceled' %}
+        {{ 'Canceled'|trans }}
+    {% elseif status == 'Paid' %}
+        {{ 'Paid'|trans }}
+    {% elseif status == 'Unpaid' %}
+        {{ 'Unpaid'|trans }}
+    {% elseif status == 'Refunded' %}
+        {{ 'Refunded'|trans }}
+    {% else %}
+        {{ status|trans }}
+    {% endif %}
+{% endmacro status_name %}
+
 
 {% macro wysiwyg(selector) %}
-{% if guest.extension_is_on({"mod":"wysiwyg"}) %}
-{{ include('mod_wysiwyg_js.html.twig', { 'class': selector|trim('.#') }) }}
-{% else %}
-<!-- No WYSIWYG, no fancy stuff. Enable the WYSIWYG extension for a better management experience. -->
+    {% include "mod_wysiwyg_js.html.twig" with {"class":selector|trim('.#')} %}
+{% endmacro wysiwyg %}
+
+{% macro avatar(email, size, classes, fallback) %}
+{% if email %}
+<div class="db-avatar {{ classes|default('rounded-circle') }}" data-avatar-seed="{{ email|hash('xxh128') }}" data-avatar-size="{{ size|default(25) }}"{% if size %} style="width: {{ size }}px; height: {{ size }}px;"{% endif %}></div>
+{% elseif fallback %}
+{{ fallback }}
 {% endif %}
+{% endmacro %}
+
+{% macro status_badge(status, type) %}
+{% if type == 'order' %}
+    {% if status == 'active' %}{% set badge_class = 'bg-success' %}
+    {% elseif status == 'pending_setup' %}{% set badge_class = 'bg-warning' %}
+    {% elseif status == 'failed_setup' or status == 'suspended' or status == 'failed_renew' %}{% set badge_class = 'bg-danger' %}
+    {% elseif status == 'canceled' %}{% set badge_class = 'bg-secondary' %}
+    {% else %}{% set badge_class = 'bg-primary' %}
+    {% endif %}
+{% elseif type == 'ticket' %}
+    {% if status == 'open' %}{% set badge_class = 'bg-success' %}
+    {% elseif status == 'on_hold' %}{% set badge_class = 'bg-warning' %}
+    {% elseif status == 'closed' %}{% set badge_class = 'bg-secondary' %}
+    {% else %}{% set badge_class = 'bg-primary' %}
+    {% endif %}
+{% elseif type == 'invoice' %}
+    {% if status == 'paid' %}{% set badge_class = 'bg-success' %}
+    {% elseif status == 'unpaid' %}{% set badge_class = 'bg-warning' %}
+    {% elseif status == 'refunded' %}{% set badge_class = 'bg-info' %}
+    {% else %}{% set badge_class = 'bg-primary' %}
+    {% endif %}
+{% elseif type == 'client' %}
+    {% if status == 'active' %}{% set badge_class = 'bg-success' %}
+    {% elseif status == 'suspended' %}{% set badge_class = 'bg-danger' %}
+    {% elseif status == 'canceled' %}{% set badge_class = 'bg-secondary' %}
+    {% else %}{% set badge_class = 'bg-primary' %}
+    {% endif %}
+{% elseif type == 'subscription' %}
+    {% if status == 'active' %}{% set badge_class = 'bg-success' %}
+    {% elseif status == 'canceled' %}{% set badge_class = 'bg-secondary' %}
+    {% elseif status == 'past_due' %}{% set badge_class = 'bg-danger' %}
+    {% else %}{% set badge_class = 'bg-primary' %}
+    {% endif %}
+{% elseif type == 'post' %}
+    {% if status == 'published' %}{% set badge_class = 'bg-success' %}
+    {% elseif status == 'draft' %}{% set badge_class = 'bg-secondary' %}
+    {% else %}{% set badge_class = 'bg-primary' %}
+    {% endif %}
+{% elseif type == 'tx' %}
+    {% if status == 'success' %}{% set badge_class = 'bg-success' %}
+    {% elseif status == 'failed' %}{% set badge_class = 'bg-danger' %}
+    {% elseif status == 'pending' %}{% set badge_class = 'bg-warning' %}
+    {% elseif status == 'refunded' %}{% set badge_class = 'bg-info' %}
+    {% else %}{% set badge_class = 'bg-primary' %}
+    {% endif %}
+{% else %}
+    {% if status == 'active' or status == 'open' or status == 'paid' or status == 'published' %}{% set badge_class = 'bg-success' %}
+    {% elseif status == 'pending_setup' or status == 'on_hold' or status == 'unpaid' or status == 'pending' %}{% set badge_class = 'bg-warning' %}
+    {% elseif status == 'failed_setup' or status == 'suspended' or status == 'failed_renew' or status == 'canceled' or status == 'closed' or status == 'failed' %}{% set badge_class = 'bg-danger' %}
+    {% else %}{% set badge_class = 'bg-primary' %}
+    {% endif %}
+{% endif %}
+<span class="badge {{ badge_class }}">{{ _self.status_name(status) }}</span>
+{% endmacro %}
+
+{% macro empty_list(colspan, message) %}
+<td class="text-muted" colspan="{{ colspan|default(5) }}">{{ (message|default('The list is empty'))|trans }}</td>
 {% endmacro %}

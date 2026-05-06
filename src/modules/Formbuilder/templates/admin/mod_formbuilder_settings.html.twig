@@ -9,21 +9,21 @@
 {% block breadcrumbs %}
     <ul class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home"/>
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         {% if not request.id %}
             <li class="breadcrumb-item active" aria-current="page">{{ 'Custom Form Builder'|trans }}</li>
         {% else %}
             {% set form = admin.formbuilder_get_form({ "id": request.id }) %}
             <li class="breadcrumb-item">
-                <a href="{{ 'extension/settings/formbuilder'|alink }}">{{ 'Custom Form Builder'|trans }}</a>
+                <a href="{{ 'extension/settings/formbuilder'|url }}">{{ 'Custom Form Builder'|trans }}</a>
             </li>
             <li class="breadcrumb-item active" aria-current="page">{{ form.name }}</li>
         {% endif %}
@@ -48,7 +48,7 @@
                     <div class="card-actions">
                         <a href="#" id="new-form" class="btn btn-primary">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 5l0 14"></path><path d="M5 12l14 0"></path></svg>
-                            <span>{{ 'Add new'|trans }}</span>
+                            <span>{{ 'Add New'|trans }}</span>
                         </a>
                     </div>
                 </div>
@@ -69,18 +69,18 @@
                                 <td>{{ form.order_count }}</td>
                                 <td>{{ form.product_count }}</td>
                                 <td>
-                                <a class="btn btn-icon copy-form" href="#" title="Copy" {{ fb_api_link({ reload: true}) }}
+                                <a class="btn btn-icon copy-form" href="#" title="Copy" {{ fb_api_link({ reload: true }) }}
                                    data-form-id="{{ form.id }}">
                                     <svg class="icon">
                                         <use xlink:href="#copy" />
                                     </svg>
                                 </a>
-                                    <a class="btn btn-icon" href="{{ 'extension/settings/formbuilder'|alink({'id' : form.id}) }}" title="Edit">
+                                    <a class="btn btn-icon" href="{{ 'extension/settings/formbuilder'|url(query:{'id' : form.id}) }}" title="{{ 'Edit'|trans }}">
                                         <svg class="icon">
                                             <use xlink:href="#edit" />
                                         </svg>
                                     </a>
-                                    <a class="btn btn-icon remove-form" data-form-id="{{ form.id }}" title="Delete">
+                                    <a class="btn btn-icon remove-form" data-form-id="{{ form.id }}" title="{{ 'Delete'|trans }}">
                                         <svg class="icon">
                                             <use xlink:href="#delete" />
                                         </svg>
@@ -95,7 +95,7 @@
         </div>
 
 {#        <div class="tab-pane fade" id="tab-import" role="tabpanel">#}
-{#            <form method="post" action="{{ 'api/admin/formbuilder/import'|link }}" data-fb-api='{ "reload": true }'> #}
+{#            <form method="post" action="{{ 'formbuilder/import'|api_url }}"> #}
 {#                <fieldset>#}
 {#                    <div class="formBottom">#}
 {#                        <textarea name="form" cols="5" rows="5"#}
@@ -113,34 +113,34 @@
         <div class="card-header">
             <h3 class="card-title">{{ 'Form Options'|trans }}</h3>
         </div>
-        <form method="post" action="{{ 'api/admin/formbuilder/update_form_settings'|link }}" {{ fb_api_form({message: 'Form Options Updated'|trans}) }}>
+        <form method="post" action="{{ 'formbuilder/update_form_settings'|api_url }}" {{ fb_api_form({message: 'Form Options Updated'|trans}) }}>
             <div class="row row-cards">
                 <div class="card-body col-12">
                     <input type="hidden" name="form_id" value="{{ form.id }}">
                     <div class="mb-3 row">
                         <label class="col-md-3 col-form-label"
-                               for="form_name">{{ 'Form title'|trans }}</label>
+                               for="form_name">{{ 'Form Title'|trans }}</label>
                         <div class="col-md-8">
                             <input class="form-control" type="text" name="form_name" id="form_name"
                                    value="{{ form.name }}"/>
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="col-md-3 col-form-label" for="form_type">{{ 'Labels position'|trans }}</label>
+                        <label class="col-md-3 col-form-label" for="form_type">{{ 'Labels Position'|trans }}</label>
                         <div class="col-md-8">
                             <select class="form-select" name="type" id="form_type">
-                                <option value="default" {% if form.style.type=='default' %} selected {% endif %}>{{ 'Labels on top'|trans }}</option>
+                                <option value="default" {% if form.style.type=='default' %} selected {% endif %}>{{ 'Labels on Top'|trans }}</option>
                                 <option
-                                    value="horizontal" {% if form.style.type=='horizontal' %} selected {% endif %}>{{ 'Labels on the left'|trans }}</option>
+                                    value="horizontal" {% if form.style.type=='horizontal' %} selected {% endif %}>{{ 'Labels on the Left'|trans }}</option>
                             </select>
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="col-md-3 col-form-label" for="show_title">{{ 'Form title visibility'|trans }}</label>
+                        <label class="col-md-3 col-form-label" for="show_title">{{ 'Form Title Visibility'|trans }}</label>
                         <div class="col-md-8">
                             <select class="form-select" name="show_title" id="show_title">
-                                <option value="1" {% if form.style.show_title=='1' %} selected {% endif %}>{{ 'Show form title'|trans }}</option>
-                                <option value="0" {% if form.style.show_title=='0' %} selected {% endif %}>{{ 'Do not show form title'|trans }}</option>
+                                <option value="1" {% if form.style.show_title=='1' %} selected {% endif %}>{{ 'Show Form Title'|trans }}</option>
+                                <option value="0" {% if form.style.show_title=='0' %} selected {% endif %}>{{ 'Do not Show Form Title'|trans }}</option>
                             </select>
                         </div>
                     </div>
@@ -160,31 +160,31 @@
             <div class="card-body col-12">
                     <div class="mb-3 row">
                         <div class="d-flex gap-2 flex-wrap mb-3" id="fields">
-                            <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'text' }) }}" {{ fb_api_link({reload: true}) }}>
+                            <a class="btn btn-outline-primary" href="{{ 'formbuilder/add_field'|api_url(query: {'form_id': form.id, 'type': 'text' }) }}" {{ fb_api_link({reload: true}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#plus"/>
                                 </svg>
                                 <span>{{ 'Text'|trans }}</span>
                             </a>
-                            <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'select' }) }}" {{ fb_api_link({reload: true}) }}>
+                            <a class="btn btn-outline-primary" href="{{ 'formbuilder/add_field'|api_url(query: {'form_id': form.id, 'type': 'select' }) }}" {{ fb_api_link({reload: true}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#plus"/>
                                 </svg>
                                 <span>{{ 'Dropdown'|trans }}</span>
                             </a>
-                            <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'radio' }) }}" {{ fb_api_link({reload: true}) }}>
+                            <a class="btn btn-outline-primary" href="{{ 'formbuilder/add_field'|api_url(query: {'form_id': form.id, 'type': 'radio' }) }}" {{ fb_api_link({reload: true}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#plus"/>
                                 </svg>
                                 <span>{{ 'Radio'|trans }}</span>
                             </a>
-                            <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'checkbox' }) }}" {{ fb_api_link({reload: true}) }}>
+                            <a class="btn btn-outline-primary" href="{{ 'formbuilder/add_field'|api_url(query:{'form_id': form.id, 'type': 'checkbox' }) }}" {{ fb_api_link({reload: true}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#plus"/>
                                 </svg>
                                 <span>{{ 'Checkbox'|trans }}</span>
                             </a>
-                            <a class="btn btn-outline-primary" href="{{ 'api/admin/formbuilder/add_field'|link({'form_id': form.id, 'type': 'textarea' }) }}" {{ fb_api_link({reload: true}) }}>
+                            <a class="btn btn-outline-primary" href="{{ 'formbuilder/add_field'|api_url(query: {'form_id': form.id, 'type': 'textarea' }) }}" {{ fb_api_link({reload: true}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#plus"/>
                                 </svg>
@@ -262,7 +262,7 @@
                     confirmCallback: () => {
                         API.admin.post('formbuilder/delete_form', { id: fid },
                             () => {
-                                window.location = "{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}";
+                                window.location = "{{ 'extension/settings/formbuilder'|url(query: { 'id': '' }) }}";
                             });
                     }
                 });
@@ -281,7 +281,7 @@
                 promptConfirmCallback: function(title) {
                     API.admin.post('formbuilder/create_form', { name: title },
                         (id) => {
-                            window.location = "{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}" + id;
+                            window.location = "{{ 'extension/settings/formbuilder'|url(query: { 'id': '' }) }}" + id;
                         });
                 }
             });
@@ -303,7 +303,7 @@
                     promptConfirmCallback: (title) => {
                         API.admin.post('formbuilder/copy_form', { name: title, form_id: fid },
                             (id) => {
-                                window.location = "{{ 'extension/settings/formbuilder'|alink({ 'id': '' }) }}" + id;
+                                window.location = "{{ 'extension/settings/formbuilder'|url(query: { 'id': '' }) }}" + id;
                             });
                     }
                 });

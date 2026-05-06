@@ -6,6 +6,7 @@ namespace Box\Mod\Invoice;
 
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use FOSSBilling\Twig\TwigFactory;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,14 +20,6 @@ final class ServiceTest extends \BBTestCase
     public function setUp(): void
     {
         $this->service = new Service();
-    }
-
-    public function testGetDi(): void
-    {
-        $di = $this->getDi();
-        $this->service->setDi($di);
-        $getDi = $this->service->getDi();
-        $this->assertEquals($di, $getDi);
     }
 
     public static function dataForSearchQuery(): array
@@ -2143,9 +2136,12 @@ final class ServiceTest extends \BBTestCase
         $service->method('getPdfTemplate')
             ->willReturn('default-invoice.twig');
 
+        $twigFactory = $this->createMock(TwigFactory::class);
+        $twigFactory->method('createBaseEnvironment')->willReturn($twig);
+
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['twig'] = $twig;
+        $di['twig_factory'] = $twigFactory;
         $di['mod_service'] = $di->protect(function (string $service) use ($systemService) {
             if (strtolower($service) === 'system') {
                 return $systemService;

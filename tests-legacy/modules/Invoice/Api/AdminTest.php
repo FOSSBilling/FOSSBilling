@@ -24,14 +24,6 @@ final class AdminTest extends \BBTestCase
             ->getMock();
     }
 
-    public function testGetDi(): void
-    {
-        $di = $this->getDi();
-        $this->api->setDi($di);
-        $getDi = $this->api->getDi();
-        $this->assertEquals($di, $getDi);
-    }
-
     public function testGetList(): void
     {
         $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);

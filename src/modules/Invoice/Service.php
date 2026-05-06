@@ -1393,8 +1393,9 @@ class Service implements InjectionAwareInterface
             'invoice' => $invoice,
         ];
 
+        $twigFactory = $this->di['twig_factory'];
+        $twig = $twigFactory->createBaseEnvironment();
         $loader = new FilesystemLoader(Path::join(__DIR__, 'templates', 'pdf'));
-        $twig = $this->di['twig'];
         $twig->setLoader($loader);
         $html = $twig->render($this->getPdfTemplate(), $vars);
 
@@ -1632,6 +1633,25 @@ class Service implements InjectionAwareInterface
     }
 
     // Start of PDF related functions
+    protected function createPdfGenerator(): Dompdf
+    {
+        return new Dompdf();
+    }
+
+    protected function createPdfResponse(string $content, string $fileName): Response
+    {
+        $response = new Response($content);
+        $disposition = $response->headers->makeDisposition(
+            HeaderUtils::DISPOSITION_INLINE,
+            $fileName . '.pdf'
+        );
+
+        $response->headers->set('Content-Type', 'application/pdf');
+        $response->headers->set('Content-Disposition', $disposition);
+
+        return $response;
+    }
+
     protected function getPdfCss(): string
     {
         $basePath = Path::join(__DIR__, 'templates', 'pdf');
@@ -1681,25 +1701,6 @@ class Service implements InjectionAwareInterface
         }
 
         return [$source, $remote];
-    }
-
-    protected function createPdfGenerator(): Dompdf
-    {
-        return new Dompdf();
-    }
-
-    protected function createPdfResponse(string $content, string $fileName): Response
-    {
-        $response = new Response($content);
-        $disposition = $response->headers->makeDisposition(
-            HeaderUtils::DISPOSITION_INLINE,
-            $fileName . '.pdf'
-        );
-
-        $response->headers->set('Content-Type', 'application/pdf');
-        $response->headers->set('Content-Disposition', $disposition);
-
-        return $response;
     }
 
     private function getSellerData(array $invoice, int &$lines): array

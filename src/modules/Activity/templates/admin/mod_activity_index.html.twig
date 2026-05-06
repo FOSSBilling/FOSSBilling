@@ -10,7 +10,7 @@
 {% if request.show_filter %}
     <section class="card mb-3">
         <div class="card-body">
-            <h5>{{ 'Filter activity logs'|trans }}</h5>
+            <h5>{{ 'Filter Activity Logs'|trans }}</h5>
             <form method="get">
                 <div class="mb-3 row">
                     <label class="form-label col-3 col-form-label">{{ 'Search'|trans }}</label>
@@ -49,10 +49,10 @@
                     <label class="form-label col-3 col-form-label" for="admin_id">{{ 'Specific admin'|trans }}</label>
                     <div class="col">
                         <select class="form-control autocomplete-selector"
-                                placeholder="{{ 'Start typing the admin name or ID'|trans }}"
+                                placeholder="{{ 'Start Typing the Admin Name or ID'|trans }}"
                                 id="admin_id"
                                 name="admin_id"
-                                data-resturl="admin/staff/get_pairs">
+                                data-resturl="/api/admin/staff/get_pairs">
                         {% if not request.admin_id %}
                         {% else %}
                             {% set admin = admin.staff_get({ 'id': request.admin_id }) %}
@@ -67,10 +67,10 @@
                     <label class="form-label col-3 col-form-label" for="client_id">{{ 'Specific client'|trans }}</label>
                     <div class="col">
                         <select class="form-control autocomplete-selector"
-                                placeholder="{{ 'Start typing the client name or ID'|trans }}"
+                                placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
                                 id="client_id"
                                 name="client_id"
-                                data-resturl="admin/client/get_pairs">
+                                data-resturl="/api/admin/client/get_pairs">
                         {% if not request.client_id %}
                         {% else %}
                             {% set client = admin.client_get({ 'id': request.client_id }) %}
@@ -204,28 +204,28 @@
             <td>{{ event.id }}</td>
             <td>
                 {% if event.client %}
-                <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">
-                    <span class="db-avatar avatar avatar-sm d-none d-md-inline-block" data-avatar-seed="{{ event.client.email|hash('xxh128') }}" data-avatar-size="20"></span>
+                <a href='{{ "client/manage/#{event.client.id}"|url }}'>
+                    {{ mf.avatar(event.client.email, 20, 'db-avatar avatar avatar-sm d-none d-md-inline-block') }}
                 </a>
                 {% elseif event.staff %}
-                <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">
-                    <span class="db-avatar avatar avatar-sm d-none d-md-inline-block" data-avatar-seed="{{ event.staff.email|hash('xxh128') }}" data-avatar-size="24"></span>
+                <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>
+                    {{ mf.avatar(event.staff.email, 24, 'db-avatar avatar avatar-sm d-none d-md-inline-block') }}
                 </a>
                 {% else %}
-                <span class="db-avatar avatar avatar-sm d-none d-md-inline-block" data-avatar-seed="{{ 'guest@fossbilling.org'|hash('xxh128') }}" data-avatar-size="24"></span>
+                {{ mf.avatar('guest@fossbilling.org', 24, 'db-avatar avatar avatar-sm d-none d-md-inline-block') }}
                 {% endif %}
             </td>
             <td>
                 {% if event.client %}
-                    <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">{{ event.client.name }}</a>
-                    <a href="{{ request._url|link(request|merge({ 'client_id': event.client.id, 'show_filter': 1, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this client'|trans }}">
+                    <a href='{{ "client/manage/#{event.client.id}"|url }}'>{{ event.client.name }}</a>
+                    <a href="{{ request._url|url(request|merge({ 'client_id': event.client.id, 'show_filter': 1, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this client'|trans }}">
                         <svg class="icon icon-sm text-muted">
                             <use xlink:href="#filter" />
                         </svg>
                     </a>
                 {% elseif event.staff %}
-                    <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">{{ event.staff.name }}</a>
-                    <a href="{{ request._url|link(request|merge({ 'admin_id': event.staff.id, 'show_filter': 1, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this admin'|trans }}">
+                    <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>{{ event.staff.name }}</a>
+                    <a href="{{ request._url|url(request|merge({ 'admin_id': event.staff.id, 'show_filter': 1, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this admin'|trans }}">
                         <svg class="icon icon-sm text-muted">
                             <use xlink:href="#filter" />
                         </svg>
@@ -256,23 +256,23 @@
                 {% endif %}
             </td>
             <td>{{ event.message }}</td>
-<td>
-{{ event.ip|iplookup }}
-{% if event.ip %}
-<a href="{{ request._url|link(request|merge({ 'ip': event.ip, 'show_filter': 1, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this IP address'|trans }}">
-<svg class="icon icon-sm text-muted">
-<use xlink:href="#filter" />
-</svg>
-</a>
-<a href="{{ 'api/admin/antispam/block_ip'|link({ 'ip': event.ip }) }}" class="ms-1" {{ fb_api_link({ modal: {type: 'confirm', title: 'Block IP'|trans, content: ('Are you sure you want to block IP address %ip%?'|trans({'%ip%': event.ip}))}, reload: true }) }} data-bs-toggle="tooltip" data-bs-title="{{ 'Block IP'|trans }}">
-<svg class="icon icon-sm text-danger" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-<circle cx="12" cy="12" r="10"></circle>
-<line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
-</svg>
-</a>
-{% endif %}
-</td>
-            <td>{{ event.ip|ipcountryname|default('Unknown'|trans) }}</td>
+            <td>
+                {{ mf.ip_lookup_link(event.ip) }}
+                {% if event.ip %}
+                <a href="{{ request._url|url(request|merge({ 'ip': event.ip, 'show_filter': 1, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this IP address'|trans }}">
+                    <svg class="icon icon-sm text-muted">
+                        <use xlink:href="#filter" />
+                    </svg>
+                </a>
+                <a href="{{ 'antispam/block_ip'|api_url(query: { 'ip': event.ip }) }}" class="ms-1" {{ fb_api_link({ modal: {type: 'confirm', title: 'Block IP'|trans, content: ('Are you sure you want to block IP address %ip%?'|trans({'%ip%': event.ip}))}, reload: true }) }} data-bs-toggle="tooltip" data-bs-title="{{ 'Block IP'|trans }}">
+                    <svg class="icon icon-sm text-danger" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                    </svg>
+                </a>
+                {% endif %}
+            </td>
+            <td>{{ event.ip|ip_country_name|default('Unknown'|trans) }}</td>
             <td title="{{ event.created_at|timeago }} ago">{{ event.created_at|format_datetime }}</td>
         </tr>
         {% else %}

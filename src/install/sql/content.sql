@@ -129,8 +129,7 @@ INSERT INTO `extension` (`id`, `type`, `name`, `status`, `version`)
 VALUES
 	(1,'mod','news','installed','1.0.0'),
 	(2,'mod','branding','installed','0.0.1'),
-	(3,'mod','redirect','installed','1.0.0'),
-	(4,'mod','wysiwyg','installed','1.0.0');
+	(3,'mod','redirect','installed','1.0.0');
 
 /*!40000 ALTER TABLE `extension` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -304,7 +303,7 @@ LOCK TABLES `setting` WRITE;
 
 INSERT INTO `setting` (`id`, `param`, `value`, `public`, `category`, `hash`, `created_at`, `updated_at`)
 VALUES
-	(1,'last_patch','56',0,NULL,NULL,'2024-12-30 12:00:00','2024-12-30 12:00:00'),
+	(1,'last_patch','59',0,NULL,NULL,'2024-12-30 12:00:00','2024-12-30 12:00:00'),
 	(2,'company_name','Company Name',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(3,'company_email','support@yourcompany.com',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(4,'company_signature','FOSSBilling.org - Client Management, Invoicing and Support Software',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),

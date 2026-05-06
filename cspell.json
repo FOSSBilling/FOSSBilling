@@ -44,13 +44,13 @@
         "triaging",
         "hostable",
         "cooldown",
-        "ONLYDIR"
+        "ONLYDIR",
+        "sandboxed"
     ],
 
     "ignoreWords": [
         "thead",
         "tbody",
-        "alink",
         "xlink",
         "stylesheet",
         "endfor",
@@ -72,7 +72,6 @@
         "punnycode",
         "timeago",
         "daysleft",
-        "ipcountryname",
         "bbmd",
         "lngh",
         "loggedin",
@@ -88,9 +87,9 @@
         "helpdesk",
         "autorespond",
         "Antispam",
-        "recaptcha",
         "spamchecker",
         "Spamchecker",
+        "recaptcha",
         "noborder",
         "opengraph",
         "precomposed",
@@ -435,7 +434,9 @@
         "quicktime",
         "spreadsheetml",
         "wordprocessingml",
-        "checkip"
+        "checkip",
+        "srclink",
+        "striptags"
     ],
     "ignorePaths": [
         "tests-legacy/**",
@@ -471,7 +472,6 @@
         "src/themes/*/node_modules",
         "phpstan.neon",
         "*.config.js",
-        "src/modules/Wysiwyg/src/ckeditor.js",
         ".github/**",
         ".gitignore",
         "src/.htaccess",

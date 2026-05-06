@@ -16,12 +16,12 @@
 
 <div class="card-footer text-center">
     {{ order_actions }}
-    <a class="btn btn-primary" href="{{ 'api/admin/serviceapikey/reset'|link({ 'order_id': order.id }) }}"
+    <a class="btn btn-primary" href="{{ 'serviceapikey/reset'|api_url(query: { 'order_id': order.id }) }}"
         {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
         <svg class="icon" width="24" height="24">
             <use xlink:href="#refresh" />
         </svg>
-        <span>{{ 'Reset API key'|trans }}</span>
+        <span>{{ 'Reset API Key'|trans }}</span>
     </a>
 </div>
 
@@ -29,7 +29,7 @@
     <h2>{{ 'API Key Configuration'|trans }}</h2>
     <P>{{ 'Changing the API key generation options will not automatically regenerate the API key. You must do so manually.'|trans }}</p>
 
-    <form method="post" action="{{ 'api/admin/serviceapikey/update'|link }}" {{ fb_api_form({message: 'API Key Updated'|trans}) }}>
+    <form method="post" action="{{ 'serviceapikey/update'|api_url }}" {{ fb_api_form({message: 'API Key Updated'|trans}) }}>
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Length'|trans }}:</label>
             <div class="col">
@@ -40,7 +40,7 @@
         <hr>
 
         <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Split API key with dashes'|trans }}:</label>
+            <label class="form-label col-3 col-form-label">{{ 'Split API Key with Dashes'|trans }}:</label>
             <div class="col">
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" type="radio" name="config[split]" id="split_yes" value="1" {% if request.config.split|default(service.config.split) == 1 %} checked {% endif %}>
@@ -63,7 +63,7 @@
         <hr>
 
         <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'API key capitalization'|trans }}:</label>
+            <label class="form-label col-3 col-form-label">{{ 'API Key Capitalization'|trans }}:</label>
             <div class="col">
                 <select class="form-select" aria-label="API key capitalization options" name="config[case]">
                     <option {% if request.config.case|default(service.config.case) == "upper" %} selected {% endif %} value="upper">{{ 'Uppercase'|trans }}</option>
@@ -78,14 +78,14 @@
         <div class="mb-3 row">
             <h2>{{ 'Custom Parameters'|trans }}</h2>
             <div class="col" id="customParameters">
-                <span class="btn btn-primary" onclick="addNewField()">{{ 'Add new field'|trans }}</span>
+                <span class="btn btn-primary" onclick="addNewField()">{{ 'Add New Field'|trans }}</span>
                 {% for key, value in service.config %}
                     {% if key starts with 'custom_' %}
                         <div class="field-container row" id="{{key}}">
                             <label class="form-label col-3 col-form-label">{{key}}:</label>
                             <div class="col d-flex align-items-center">
                                 <input type="text" class="form-control me-2" value="{{value}}" name="config[{{key}}]"/><span
-                                class="btn btn-primary ms-2" onclick='deleteField("{{key}}")'>Delete</span>
+                                class="btn btn-primary ms-2" onclick='deleteField("{{key}}")'>{{ 'Delete'|trans }}</span>
                             </div>
                         </div>
                     {% endif %}

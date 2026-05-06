@@ -24,14 +24,14 @@ class Server_Manager_Hestia extends Server_Manager
                         [
                             'name' => 'username',
                             'type' => 'text',
-                            'label' => 'Access key ID',
+                            'label' => 'Access Key ID',
                             'placeholder' => 'ID for the access key you\'ve generated in Hestia.',
                             'required' => true,
                         ],
                         [
                             'name' => 'accesshash',
                             'type' => 'text',
-                            'label' => 'Secret key',
+                            'label' => 'Secret Key',
                             'placeholder' => 'Secret key for the access key you\'ve generated in Hestia',
                             'required' => true,
                         ],

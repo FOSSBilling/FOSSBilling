@@ -25,67 +25,67 @@ class Service implements InjectionAwareInterface
         return [
             'view' => [
                 'type' => 'bool',
-                'display_name' => __trans('View client details'),
+                'display_name' => __trans('View Client Details'),
                 'description' => __trans('Allows the staff member to view client account details and listings.'),
             ],
             'create' => [
                 'type' => 'bool',
-                'display_name' => __trans('Create clients'),
+                'display_name' => __trans('Create Clients'),
                 'description' => __trans('Allows the staff member to create new client accounts.'),
             ],
             'edit_profile' => [
                 'type' => 'bool',
-                'display_name' => __trans('Edit client profiles'),
+                'display_name' => __trans('Edit Client Profiles'),
                 'description' => __trans('Allows the staff member to update client profile details and account settings.'),
             ],
             'impersonate_login' => [
                 'type' => 'bool',
-                'display_name' => __trans('Login as client'),
+                'display_name' => __trans('Login as Client'),
                 'description' => __trans('Allows the staff member to authenticate as any client account.'),
             ],
             'manage_api_keys' => [
                 'type' => 'bool',
-                'display_name' => __trans('Manage client API keys'),
+                'display_name' => __trans('Manage Client API Keys'),
                 'description' => __trans('Allows the staff member to view and generate API keys for client accounts.'),
             ],
             'change_password' => [
                 'type' => 'bool',
-                'display_name' => __trans('Change client passwords'),
+                'display_name' => __trans('Change Client Passwords'),
                 'description' => __trans('Allows the staff member to set new passwords for client accounts.'),
             ],
             'manage_balance' => [
                 'type' => 'bool',
-                'display_name' => __trans('Manage client balance'),
+                'display_name' => __trans('Manage Client Balance'),
                 'description' => __trans('Allows the staff member to add or remove balance entries for client accounts.'),
             ],
             'view_login_history' => [
                 'type' => 'bool',
-                'display_name' => __trans('View client login history'),
+                'display_name' => __trans('View Client Login History'),
                 'description' => __trans('Allows the staff member to view client login history and IP addresses.'),
             ],
             'manage_groups' => [
                 'type' => 'bool',
-                'display_name' => __trans('Manage client groups'),
+                'display_name' => __trans('Manage Client Groups'),
                 'description' => __trans('Allows the staff member to create, update, and delete client groups.'),
             ],
             'delete' => [
                 'type' => 'bool',
-                'display_name' => __trans('Delete clients'),
+                'display_name' => __trans('Delete Clients'),
                 'description' => __trans('Allows the staff member to permanently remove client accounts.'),
             ],
             'bulk_delete' => [
                 'type' => 'bool',
-                'display_name' => __trans('Bulk delete clients'),
+                'display_name' => __trans('Bulk Delete Clients'),
                 'description' => __trans('Allows the staff member to permanently remove multiple client accounts in a single action.'),
             ],
             'export' => [
                 'type' => 'bool',
-                'display_name' => __trans('Export clients'),
+                'display_name' => __trans('Export Clients'),
                 'description' => __trans('Allows the staff member to export client account data.'),
             ],
             'manage_settings' => [
                 'type' => 'bool',
-                'display_name' => __trans('Manage client settings'),
+                'display_name' => __trans('Manage Client Settings'),
                 'description' => __trans('Allows the staff member to manage client module settings and configuration.'),
             ],
         ];
@@ -481,14 +481,14 @@ class Service implements InjectionAwareInterface
         return $details;
     }
 
-    public function getClientBalance(\Model_Client $c)
+    public function getClientBalance(\Model_Client $c): float
     {
         $sql = 'SELECT SUM(amount) as client_total
                 FROM client_balance
                 WHERE client_id = ?
                 GROUP BY client_id';
 
-        return $this->di['db']->getCell($sql, [$c->id]);
+        return (float) $this->di['db']->getCell($sql, [$c->id]);
     }
 
     public function get($data)

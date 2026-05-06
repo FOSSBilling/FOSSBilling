@@ -10,14 +10,14 @@
 {% block breadcrumbs %}
     <ul class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home"/>
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Order Button Settings'|trans }}</li>
     </ul>
@@ -36,7 +36,7 @@
             </li>
         </ul>
 
-        <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" {{ fb_api_form({reload: true}) }}>
+        <form method="post" action="{{ 'extension/config_save'|api_url }}" {{ fb_api_form({reload: true}) }}>
             <input type="hidden" name="ext" value="mod_orderbutton">
             <div class="card">
                 <div class="tab-content">
@@ -49,7 +49,7 @@
                         </div>
                         <div class="card-body">
                             <div class="row">
-                                <label class="col-md-3 form-label">{{ 'Theme color'|trans }}</label>
+                                <label class="col-md-3 form-label">{{ 'Theme Color'|trans }}</label>
                                 <div class="col-md-6">
                                     <select class="form-select" name="theme_color" id="theme_color">
                                         <option value="green" {% if params.theme_color == 'green' %}selected{% endif %}>{{ 'Green'|trans }}</option>
@@ -84,14 +84,14 @@
                                         <div class="col">
                                             <label class="col-form-label" for="popup_width">{{ 'Width'|trans }}</label>
                                             <div class="input-group mb-2">
-                                                <input class="form-control" type="text" name="popup_width" id="popup_width" value="{{ params.popup_width | default(600) }}" placeholder="600">
+                                                <input class="form-control" type="text" name="popup_width" id="popup_width" value="{{ params.popup_width|default(600) }}" placeholder="600">
                                                 <span class="input-group-text">px</span>
                                             </div>
                                         </div>
                                         <div class="col">
-                                            <label class="col-form-label" for="border-radius">{{ 'Border radius'|trans }}</label>
+                                            <label class="col-form-label" for="border-radius">{{ 'Border Radius'|trans }}</label>
                                             <div class="input-group mb-2">
-                                                <input class="form-control" type="text" name="border_radius" value="{{ params.border_radius | default('0') }}" id="border-radius">
+                                                <input class="form-control" type="text" name="border_radius" value="{{ params.border_radius|default(0) }}" id="border-radius">
                                                 <span class="input-group-text">px</span>
                                             </div>
                                         </div>
@@ -107,14 +107,14 @@
                                             <label class="col-form-label" for="coloris-picker">{{ 'Color'|trans }}</label>
                                             <div>
                                                 <input type="text" class="form-control" name="background_color"
-                                                       id="coloris-picker" value="{{ params.background_color | default('#000000') }}">
+                                                       id="coloris-picker" value="{{ params.background_color|default('#000000') }}">
                                             </div>
                                         </div>
                                         <div class="col">
                                             <label class="col-form-label" for="background_opacity">{{ 'Opacity'|trans }}</label>
                                             <div class="input-group mb-2">
                                                 <input type="text" class="form-control" name="background_opacity"
-                                                       id="background_opacity" value="{{ params.background_opacity | default(50) }}">
+                                                       id="background_opacity" value="{{ params.background_opacity|default(50) }}">
                                                 <span class="input-group-text">%</span>
                                             </div>
                                         </div>
@@ -136,7 +136,7 @@
                                                     </div>
                                                     <div>
                                                         <span>loader{{ i }}</span>
-                                                        <img class="ms-2" src="{{ loader_link | mod_asset_url('orderbutton') }}"/>
+                                                        <img class="ms-2" src="{{ loader_link|mod_asset_url('orderbutton') }}"/>
                                                     </div>
                                                 </div>
                                             </label>
@@ -146,18 +146,18 @@
                             </div>
 
                             <div class="row mb-3 mt-4">
-                                <label class="col-sm-4 col-md-3 form-label" for="background-close">{{ 'Close (ESC key by default)'|trans }}</label>
+                                <label class="col-sm-4 col-md-3 form-label" for="background-close">{{ 'Close (ESC Key by Default)'|trans }}</label>
                                 <div class="col-sm-7 col-md-6">
                                     <label class="form-check form-switch">
                                         <input class="form-check-input" id="background-close" type="checkbox" name="background_close" {% if params.background_close %}checked{% endif %}>
-                                        <span class="form-check-label">{{ 'Click on background closes popup'|trans }}</span>
+                                        <span class="form-check-label">{{ 'Click on Background Closes Popup'|trans }}</span>
                                     </label>
                                 </div>
                             </div>
 
                             {% if guest.extension_is_on({"mod":"formbuilder"}) %}
                                 <div class="row mb-3">
-                                    <label class="col-sm-4 col-md-3 form-label" for="show-custom-form-values">{{ 'Show values of custom form before checkout'|trans }}</label>
+                                    <label class="col-sm-4 col-md-3 form-label" for="show-custom-form-values">{{ 'Show Values of Custom Form Before Checkout'|trans }}</label>
                                     <div class="col-sm-7 col-md-6">
                                         <label class="form-check form-switch">
                                             <input class="form-check-input" id="show-custom-form-values" type="checkbox" name="show_custom_form_values" {% if params.show_custom_form_values %}checked{% endif %}>
@@ -186,19 +186,19 @@
                     <div class="col">
                         <div class="row align-items-center">
                             <div class="col-sm-auto d-flex align-items-center mb-2">
-                                <label>{{ 'Clicking on an HTML element with the classname or ID'|trans }}</label>
+                                <label>{{ 'Clicking on an HTML Element with the Classname or ID'|trans }}</label>
                             </div>
                             <div class="col-5 col-sm-auto d-flex align-items-center mb-2">
-                                <input class="form-control" type="text" name="bind_selector" id="bind_selector" value="{{ params.bind_selector | default('.order-button') }}" placeholder=".order-button">
+                                <input class="form-control" type="text" name="bind_selector" id="bind_selector" value="{{ params.bind_selector|default('.order-button') }}" placeholder=".order-button">
                             </div>
                             <div class="col-7 col-sm-auto d-flex align-items-center mb-2">
-                                <label>{{ 'will open a popup window for'|trans }}</label>
+                                <label>{{ 'Will Open a Popup Window for'|trans }}</label>
                             </div>
                             <div class="col-8 col-sm-2 d-flex align-items-center mb-2">
                                 {{ mf.selectbox('product_id', admin.product_get_pairs, request.product_id, 0, 'All products'|trans) }}
                             </div>
                             <div class="col-4 col-sm-auto d-flex align-items-center mb-2">
-                                <label>{{ 'symbols'|trans }}</label>
+                                <label>{{ 'Symbols'|trans }}</label>
                             </div>
                         </div>
                     </div>
@@ -246,7 +246,7 @@
                 </div>
 
                 <div class="row mb-3">
-                    <label for="domain-checker-form" class="col-12 form-label">{{ 'Copy this code to your website'|trans }}</label>
+                    <label for="domain-checker-form" class="col-12 form-label">{{ 'Copy This Code to Your Website'|trans }}</label>
                     <div class="col">
                         <div class="input-group input-group-flat">
                             <textarea id="script-code" rows="3" class="form-control"></textarea>
@@ -264,7 +264,7 @@
             </div>
             <div class="card-footer text-end">
                 <button type="button" class="btn btn-success" id="load">
-                    <span>{{ 'Try your popup'|trans }}</span>
+                    <span>{{ 'Try Your Popup'|trans }}</span>
                 </button>
             </div>
         </form>
@@ -286,7 +286,7 @@
             const generate_link = function (selector) {
                 selector = (typeof selector === "undefined") ? document.getElementById('bind_selector').value : selector;
 
-                const initial_link = "{{ 'orderbutton/js' | link({'options' : 1}) }}";
+                const initial_link = "{{ 'orderbutton/js'|url(query: { 'options' : 1 }, area: 'client') }}";
 
                 const options = {
                     'width': document.getElementById('popup_width').value,

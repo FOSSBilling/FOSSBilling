@@ -1,35 +1,10 @@
-{% macro q(bool) %}
-    {% if bool %}
-        {{ 'Yes'|trans }}
-    {% else %}
-        {{ 'No'|trans }}
-    {% endif %}
-{% endmacro %}
-
-{% macro selectbox(name, options, selected, required, nullOption) %}
-    <select class="form-select" name="{{ name }}" id="{{ name }}"{% if required %} required{% endif %}>
-        {% if nullOption %}<option value="">-- {{ nullOption }} --</option>{% endif %}
-        {% for val, label in options %}
-        <option value="{{ val }}" label="{{ label|e }}" {% if selected == val %}selected="selected"{% endif %}>{{ label|e }}</option>
-        {% endfor %}
-    </select>
-{% endmacro %}
-
-{% macro selectboxtld(name, options, selected, required) %}
-    <select class="form-select" name="{{ name }}"{% if required %} required{% endif %}>
-        {% for data in options %}
-        <option value="{{ data.tld }}" label="{{ data.tld }}"{% if selected == data.tld %} selected{% endif %}>{{ data.tld }}</option>
-        {% endfor %}
-    </select>
-{% endmacro %}
-
 {% macro build_form(elements, values) %}
     {% for name, element in elements %}
     <div class="mb-3 row">
         {% if element[0] == 'select' %}
         <div class="col-3">
             <label class="form-label col-form-label">{{ element[1].label }}</label>
-            {% if element[1].description %}<div class="form-text mt-0">{{ element[1].description | markdown }}</div>{% endif %}
+            {% if element[1].description %}<div class="form-text mt-0">{{ element[1].description | markdown_to_html }}</div>{% endif %}
         </div>
         <div class="col">
             <select class="form-select" name="config[{{ name }}]">
@@ -41,7 +16,7 @@
         {% elseif element[0] == 'multiselect' %}
         <div class="col-3">
             <label class="form-label col-form-label">{{ element[1].label }}</label>
-            {% if element[1].description %}<div class="form-text mt-0">{{ element[1].description | markdown }}</div>{% endif %}
+            {% if element[1].description %}<div class="form-text mt-0">{{ (element[1].description ?? '')|markdown_to_html }}</div>{% endif %}
         </div>
         <div class="col">
             <select class="form-select" name="config[{{ name }}]" multiple>
@@ -53,12 +28,12 @@
         {% elseif element[0] == 'radio' %}
         <div class="col-3">
             <label class="form-label col-form-label">{{ element[1].label }}</label>
-            {% if element[1].description %}<div class="form-text mt-0">{{ element[1].description | markdown }}</div>{% endif %}
+            {% if element[1].description %}<div class="form-text mt-0">{{ (element[1].description ?? '')|markdown_to_html }}</div>{% endif %}
         </div>
         <div class="col">
             {% for k, v in element[1].multiOptions %}
                 <div class="form-check form-check-inline">
-                    <input class="form-check-input" id="el-{{ name ~ k }}" type="radio" name="config[{{ name }}]" value="{{ k }}"{% if k == values[name] %} checked{% endif %}>
+                    <input class="form-check-input" id="el-{{ name ~ k }}" type="radio" name="config[{{ name }}]" value="{{ k }}"{% if k == values[name] %}checked{% endif %}>
                     <label class="form-check-label" for="el-{{ name ~ k }}">{{ v }}</label>
                 </div>
             {% endfor %}
@@ -66,7 +41,7 @@
         {% elseif element[0] == 'textarea' %}
         <div class="col-3">
             <label class="form-label col-form-label" for="el-{{ name }}">{{ element[1].label }}</label>
-            {% if element[1].description %}<div class="form-text mt-0">{{ element[1].description | markdown }}</div>{% endif %}
+            {% if element[1].description %}<div class="form-text mt-0">{{ (element[1].description ?? '')|markdown_to_html }}</div>{% endif %}
         </div>
         <div class="col">
             <textarea class="form-control" id="el-{{ name }}" name="config[{{ name }}]" rows="20"{% if element[1].required is defined and element[1].required != 'false' %} required{% endif %}>{{ values[name] }}</textarea>
@@ -74,56 +49,15 @@
         {% else %}
         <div class="col-3">
             <label class="form-label col-form-label" for="el-{{ name }}">{{ element[1].label }}</label>
-            {% if element[1].description %}<div class="form-text mt-0">{{ element[1].description | markdown }}</div>{% endif %}
+            {% if element[1].description %}<div class="form-text mt-0">{{ (element[1].description ?? '')|markdown_to_html }}</div>{% endif %}
         </div>
         <div class="col">
-            <input class="form-control" id="el-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ values[name] }}"{% if element[1].required is defined and element[1].required != 'false' %} required{% endif %}>
+            <input class="form-control" id="el-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ values[name] }}"{% if element[1].required is defined and element[1].required != 'false' %}required{% endif %}>
         </div>
         {% endif %}
     </div>
     {% endfor %}
-{% endmacro %}
-
-{% macro currency_format(price, currency) %}
-    {% set c = guest.currency_get({"code":currency}) %}
-    {% set p = (price)|number %}
-    {% if c.price_format == 1 %}
-        {% set p = p|number(2, '.', '') %}
-    {% elseif c.price_format == 2 %}
-        {% set p = p|number(2, '.', ',') %}
-    {% elseif c.price_format == 3 %}
-        {% set p = p|number(2, ',', '.') %}
-    {% elseif c.price_format == 4 %}
-        {% set p = p|number(0, '', ',') %}
-    {% elseif c.price_format == 5 %}
-        {% set p = p|number(0, '', '') %}
-    {% endif %}
-    {{ c.format|replace({'{{price}}': p }) }}
-{% endmacro %}
-
-{% macro currency(price, currency) %}
-    {% if currency == null %}
-        {% set c = guest.cart_get_currency %}
-    {% else %}
-        {% set c = guest.currency_get({"code":currency}) %}
-    {% endif %}
-
-    {% set p = (price * c.conversion_rate) %}
-
-    {% if c.price_format == 1 %}
-        {% set p = p|number(2, '.', '') %}
-    {% elseif c.price_format == 2 %}
-        {% set p = p|number(2, '.', ',') %}
-    {% elseif c.price_format == 3 %}
-        {% set p = p|number(2, ',', '.') %}
-    {% elseif c.price_format == 4 %}
-        {% set p = p|number(0, '', ',') %}
-    {% elseif c.price_format == 5 %}
-        {% set p = p|number(0, '', '') %}
-    {% endif %}
-
-    {{ c.format|replace({'{{price}}': p }) }}
-{% endmacro %}
+{% endmacro build_form %}
 
 {% macro status_name(status) %}
     {% set status = status|replace({'_': " "})|title|trim %}
@@ -148,18 +82,40 @@
     {% else %}
         {{ status|trans }}
     {% endif %}
-{% endmacro %}
+{% endmacro status_name %}
 
-{% macro period_name(period) %}
-    {{ guest.system_period_title({"code":period}) }}
-{% endmacro %}
+{% macro ip_lookup_link(ip) %}
+    {% if ip is not empty %}
+        <a href="{{ 'security/iplookup'|url({'ip': ip }) }}" target="_blank" class='ip_lookup_link'>{{ ip }}</a>
+    {% else %}
+        {{ ip }}
+    {% endif %}
+{% endmacro ip_lookup_link %}
 
-{% macro markdown_quote(text) %}
+{% macro q(bool) %}
+    {% if bool %}
+        {{ 'Yes'|trans }}
+    {% else %}
+        {{ 'No'|trans }}
+    {% endif %}
+{% endmacro q %}
 
-{% for line in text|split('\n') %}
-> {{ line }}
-{% endfor %}
-{% endmacro %}
+{% macro selectbox(name, options, selected, required, nullOption) %}
+    <select class="form-select" name="{{ name }}" id="{{ name }}"{% if required %}required{% endif%}>
+        {% if nullOption %}<option value="">-- {{ nullOption }} --</option>{% endif %}
+        {% for val, label in options %}
+            <option value="{{ val }}" label="{{ label|e }}" {% if selected == val %}selected="selected"{% endif %}>{{ label|e }}</option>
+        {% endfor %}
+    </select>
+{% endmacro selectbox %}
+
+{% macro selectboxtld(name, options, selected, required) %}
+    <select class="form-select" name="{{ name }}"{% if required %}required{% endif %}>
+        {% for data in options %}
+            <option value="{{ data.tld }}" label="{{ data.tld }}"{% if selected == data.tld %}selected{% endif %}>{{ data.tld }}</option>
+        {% endfor %}
+    </select>
+{% endmacro selectboxtld %}
 
 {% macro recaptcha() %}
 
@@ -195,14 +151,6 @@
         {% endif %}
 {% endmacro %}
 
-{% macro bb_editor(selector) %}
-{% if guest.extension_is_on({"mod":"wysiwyg"}) %}
-{{ include('mod_wysiwyg_js.html.twig', { 'class': selector|trim('.#') }) }}
-{% else %}
-<!-- No WYSIWYG, no fancy stuff. Enable the WYSIWYG extension for a better management experience. -->
-{% endif %}
-{% endmacro %}
-
 {% macro table_search() %}
 <div style="position: relative;">
     <div class="dataTables_filter">
@@ -212,4 +160,74 @@
         </form>
     </div>
 </div>
+{% endmacro table_search %}
+
+{% macro wysiwyg(selector) %}
+    {% include "mod_wysiwyg_js.html.twig" with {"class":selector|trim('.#')} %}
+{% endmacro %}
+
+{% macro avatar(email, size, classes, fallback) %}
+    {% if email %}
+        <span class="db-avatar {{ classes|default('avatar') }}" data-avatar-seed="{{ email|hash('xxh128') }}" data-avatar-size="{{ size|default(40) }}"></span>
+    {% elseif fallback %}
+        {{ fallback }}
+    {% endif %}
+{% endmacro %}
+
+{% macro status_badge(status, type) %}
+    {% if type == 'order' %}
+        {% if status == 'active' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status == 'pending_setup' %}{% set badge_class = 'text-bg-warning' %}
+        {% elseif status == 'failed_setup' or status == 'suspended' or status == 'failed_renew' %}{% set badge_class = 'text-bg-danger' %}
+        {% elseif status == 'canceled' %}{% set badge_class = 'text-bg-secondary' %}
+        {% else %}{% set badge_class = 'text-bg-primary' %}
+        {% endif %}
+    {% elseif type == 'ticket' %}
+        {% if status == 'open' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status == 'on_hold' %}{% set badge_class = 'text-bg-warning' %}
+        {% elseif status == 'closed' %}{% set badge_class = 'text-bg-secondary' %}
+        {% else %}{% set badge_class = 'text-bg-primary' %}
+        {% endif %}
+    {% elseif type == 'invoice' %}
+        {% if status == 'paid' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status == 'unpaid' %}{% set badge_class = 'text-bg-warning' %}
+        {% elseif status == 'refunded' %}{% set badge_class = 'text-bg-info' %}
+        {% else %}{% set badge_class = 'text-bg-primary' %}
+        {% endif %}
+    {% elseif type == 'client' %}
+        {% if status == 'active' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status == 'suspended' %}{% set badge_class = 'text-bg-danger' %}
+        {% elseif status == 'canceled' %}{% set badge_class = 'text-bg-secondary' %}
+        {% else %}{% set badge_class = 'text-bg-primary' %}
+        {% endif %}
+    {% elseif type == 'subscription' %}
+        {% if status == 'active' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status == 'canceled' %}{% set badge_class = 'text-bg-secondary' %}
+        {% elseif status == 'past_due' %}{% set badge_class = 'text-bg-danger' %}
+        {% else %}{% set badge_class = 'text-bg-primary' %}
+        {% endif %}
+    {% elseif type == 'post' %}
+        {% if status == 'published' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status == 'draft' %}{% set badge_class = 'text-bg-secondary' %}
+        {% else %}{% set badge_class = 'text-bg-primary' %}
+        {% endif %}
+    {% elseif type == 'tx' %}
+        {% if status == 'success' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status == 'failed' %}{% set badge_class = 'text-bg-danger' %}
+        {% elseif status == 'pending' %}{% set badge_class = 'text-bg-warning' %}
+        {% elseif status == 'refunded' %}{% set badge_class = 'text-bg-info' %}
+        {% else %}{% set badge_class = 'text-bg-primary' %}
+        {% endif %}
+    {% else %}
+        {% if status == 'active' or status == 'open' or status == 'paid' or status == 'published' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status == 'pending_setup' or status == 'on_hold' or status == 'unpaid' or status == 'pending' %}{% set badge_class = 'text-bg-warning' %}
+        {% elseif status == 'failed_setup' or status == 'suspended' or status == 'failed_renew' or status == 'canceled' or status == 'closed' or status == 'failed' %}{% set badge_class = 'text-bg-danger' %}
+        {% else %}{% set badge_class = 'text-bg-primary' %}
+        {% endif %}
+    {% endif %}
+    <span class="badge {{ badge_class }}">{{ _self.status_name(status) }}</span>
+{% endmacro %}
+
+{% macro empty_list(colspan, message) %}
+<td class="text-muted" colspan="{{ colspan|default(5) }}">{{ (message|default('The list is empty'))|trans }}</td>
 {% endmacro %}

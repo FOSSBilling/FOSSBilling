@@ -9,7 +9,7 @@
 {% block content %}
 <div class="card overflow-auto">
     <div class="card-body">
-        <h5>{{ 'Staff members login history'|trans }}</h5>
+        <h5>{{ 'Staff Members Login History'|trans }}</h5>
     </div>
 
     {{ include('partial_search.html.twig') }}
@@ -31,17 +31,17 @@
         <tr>
             <td>{{ event.id }}</td>
             <td>
-                <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">
-                    <span class="db-avatar avatar avatar-xs d-none d-md-inline-block" data-avatar-seed="{{ event.staff.email|hash('xxh128') }}" data-avatar-size="24"></span>
+                <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>
+                    {{ mf.avatar(event.staff.email, 24, 'db-avatar avatar avatar-xs d-none d-md-inline-block') }}
                 </a>
             </td>
             <td>
-                <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">
+                <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>
                     {{ event.staff.name }}
                 </a>
             </td>
-            <td>{{ event.ip|iplookup }}</td>
-            <td>{{ event.ip|ipcountryname|default('Unknown'|trans) }}</td>
+            <td>{{ mf.ip_lookup_link(event.ip) }}</td>
+            <td>{{ event.ip|ip_country_name|default('Unknown'|trans) }}</td>
             <td>{{ event.created_at|format_datetime }}</td>
         </tr>
         {% else %}

@@ -9,15 +9,6 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class ServiceBalanceTest extends \BBTestCase
 {
-    public function testGetDi(): void
-    {
-        $di = $this->getDi();
-        $service = new \Box\Mod\Client\ServiceBalance();
-        $service->setDi($di);
-        $getDi = $service->getDi();
-        $this->assertEquals($di, $getDi);
-    }
-
     public function testDeductFunds(): void
     {
         $di = $this->getDi();

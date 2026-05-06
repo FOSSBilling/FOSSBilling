@@ -33,14 +33,6 @@ final class ServiceTest extends \BBTestCase
         $this->service = new Service($this->filesystemMock);
     }
 
-    public function testGetDi(): void
-    {
-        $di = $this->getDi();
-        $this->service->setDi($di);
-        $getDi = $this->service->getDi();
-        $this->assertEquals($di, $getDi);
-    }
-
     public function testIsCoreModule(): void
     {
         $coreModules = ['extension', 'cron', 'staff'];

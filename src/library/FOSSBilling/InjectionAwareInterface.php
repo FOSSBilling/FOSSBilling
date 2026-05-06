@@ -15,6 +15,4 @@ namespace FOSSBilling;
 interface InjectionAwareInterface
 {
     public function setDi(\Pimple\Container $di): void;
-
-    public function getDi(): ?\Pimple\Container;
 }

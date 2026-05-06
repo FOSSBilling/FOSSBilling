@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
 <ul class="breadcrumb">
 <li class="breadcrumb-item">
-<a href="{{ '/'|alink }}">
+<a href="{{ '/'|url(area: 'admin') }}">
 <svg class="icon">
 <use xlink:href="#home"/>
 </svg>
 </a>
 </li>
 <li class="breadcrumb-item">
-<a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+<a href="{{ 'system'|url(area: 'admin') }}">{{ 'Settings'|trans }}</a>
 </li>
 <li class="breadcrumb-item active" aria-current="page">{{ 'Anti-Spam Settings'|trans }}</li>
 </ul>
@@ -29,11 +29,11 @@
 </div>
 
 {% set params = admin.extension_config_get({ "ext": "mod_antispam" }) %}
-<form method="post" action="{{ 'api/admin/extension/config_save'|link }}" {{ fb_api_form({message: 'Configuration Updated'|trans}) }}>
+<form method="post" action="{{ 'extension/config_save'|api_url(role: 'admin') }}" {{ fb_api_form({message: 'Configuration Updated'|trans}) }}>
 <div class="card-body">
 <input type="hidden" name="ext" value="mod_antispam">
 <div class="row">
-<label class="col-md-3 col-form-label" for="block_ips_check">{{ 'Enable IP blocking'|trans }}</label>
+<label class="col-md-3 col-form-label" for="block_ips_check">{{ 'Enable IP Blocking'|trans }}</label>
 <div class="row col-md-6 pt-2 ps-0">
 <label class="form-check form-check-single form-switch ps-0 mb-2">
 <input id="block_ips_check" class="form-check-input" name="block_ips" type="checkbox"
@@ -42,14 +42,14 @@
 <div class="col ps-0">
 <small class="form-hint">{{ 'Blocked IPs are not allowed to login, register or open public ticket. (One IP per line)'|trans }}</small>
 <textarea id="block_ips" class="form-control" name="blocked_ips" rows="5" placeholder="127.0.0.1">{{ params.blocked_ips }}</textarea>
-<label class="hidden" for="block_ips">Blocked IP list</label>
+<label class="hidden" for="block_ips">{{ 'Blocked IP List'|trans }}</label>
 </div>
 </div>
 </div>
 </div>
 
 <div class="card-body">
-<h3 class="card-title">{{ 'CAPTCHA settings'|trans }}</h3>
+<h3 class="card-title">{{ 'CAPTCHA Settings'|trans }}</h3>
 <p class="card-subtitle">
 {{ 'Enable captcha for client registration and contact forms'|trans }}<br>
 {{ 'Get keys from %recaptcha%, %turnstile% or %hcaptcha%.'|trans({ '%recaptcha%': '<a href="https://www.google.com/recaptcha/about/" target="_blank">Google reCAPTCHA</a>', '%turnstile%': '<a href="https://www.cloudflare.com/products/turnstile/" target="_blank">Cloudflare Turnstile</a>', '%hcaptcha%': '<a href="https://www.hcaptcha.com" target="_blank">hCaptcha</a>' })|raw }}
@@ -77,14 +77,14 @@
 
 <div id="recaptcha_v2_settings">
 <div class="mb-3 row">
-<label class="col-md-3 col-form-label" for="captcha_recaptcha_publickey">{{ 'reCAPTCHA Public key'|trans }}</label>
+<label class="col-md-3 col-form-label" for="captcha_recaptcha_publickey">{{ 'reCAPTCHA Public Key'|trans }}</label>
 <div class="col-md-6 row">
 <input class="form-control" type="text" id="captcha_recaptcha_publickey" name="captcha_recaptcha_publickey"
 value="{{ params.captcha_recaptcha_publickey }}">
 </div>
 </div>
 <div class="mb-3 row">
-<label class="col-md-3 col-form-label" for="captcha_recaptcha_privatekey">{{ 'reCAPTCHA Secret key'|trans }}</label>
+<label class="col-md-3 col-form-label" for="captcha_recaptcha_privatekey">{{ 'reCAPTCHA Secret Key'|trans }}</label>
 <div class="col-md-6 pt-2 row">
 <input class="form-control" type="text" id="captcha_recaptcha_privatekey" name="captcha_recaptcha_privatekey"
 value="{{ params.captcha_recaptcha_privatekey }}">
@@ -142,7 +142,7 @@ value="{{ params.captcha_recaptcha_privatekey }}">
 <p class="card-subtitle">{{ 'If enabled, email addresses will be checked against a database of disposable email domains.'|trans }}</p>
 <p class="card-subtitle">{{ 'This database is updated daily and provided free of charge by the FakeFilter project under the BSD 3-Clause License.'|trans }}</p>
 <div class="mb-3 row">
-<label class="col-md-3 col-form-label" for="check_temp_emails">{{ 'Check for temporary / disposable email addresses.'|trans }}</label>
+<label class="col-md-3 col-form-label" for="check_temp_emails">{{ 'Check for Temporary / Disposable Email Addresses.'|trans }}</label>
 <div class="col-md-6 pt-2 ps-0">
 <label class="form-check form-check-single form-switch ps-0">
 <input id="check_temp_emails" class="form-check-input" name="check_temp_emails" type="checkbox"
@@ -156,7 +156,7 @@ value="{{ params.captcha_recaptcha_privatekey }}">
 <h3 class="card-title">{{ 'Honeypot Protection'|trans }}</h3>
 <p class="card-subtitle">{{ 'Honeypot is a hidden field that bots will fill out but humans will not. If enabled, registration will fail if this field is filled.'|trans }}</p>
 <div class="mb-3 row">
-<label class="col-md-3 col-form-label" for="honeypot_enabled">{{ 'Enable honeypot protection'|trans }}</label>
+<label class="col-md-3 col-form-label" for="honeypot_enabled">{{ 'Enable Honeypot Protection'|trans }}</label>
 <div class="col-md-6 pt-2 ps-0">
 <label class="form-check form-check-single form-switch ps-0">
 <input id="honeypot_enabled" class="form-check-input" name="honeypot_enabled" type="checkbox"
@@ -165,7 +165,7 @@ value="{{ params.captcha_recaptcha_privatekey }}">
 </div>
 </div>
 <div class="mb-3 row">
-<label class="col-md-3 col-form-label" for="honeypot_field">{{ 'Honeypot field name'|trans }}</label>
+<label class="col-md-3 col-form-label" for="honeypot_field">{{ 'Honeypot Field Name'|trans }}</label>
 <div class="col-md-6 row">
 <input class="form-control" type="text" id="honeypot_field" name="honeypot_field" value="{{ params.honeypot_field|default('honeypot_field') }}">
 <small class="form-hint">{{ 'The name of the hidden form field. Change this if you suspect bots are bypassing the honeypot.'|trans }}</small>

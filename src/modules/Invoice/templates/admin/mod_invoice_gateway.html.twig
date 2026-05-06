@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ul class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'invoice/gateways'|alink }}">{{ 'Payment gateways'|trans }}</a>
+            <a href="{{ 'invoice/gateways'|url }}">{{ 'Payment Gateways'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ gateway.title }}</li>
     </ul>
@@ -29,9 +29,9 @@
         <h5>{{ gateway.title }}</h5>
         {{ gateway.description|raw }}
 
-        <form method="post" action="{{ 'api/admin/invoice/gateway_update'|link }}" {{ fb_api_form({message: 'Gateway Updated'|trans}) }}>
+        <form method="post" action="{{ 'invoice/gateway_update'|api_url }}" {{ fb_api_form({message: 'Gateway Updated'|trans}) }}>
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Payment gateway title'|trans }}:</label>
+                <label class="form-label col-3 col-form-label">{{ 'Payment Gateway Title'|trans }}:</label>
                 <div class="col">
                     <input class="form-control" type="text" name="title" value="{{ gateway.title }}">
                 </div>
@@ -41,7 +41,7 @@
             {{ mf.build_form(gateway.form, gateway.config) }}
 
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Select which currencies can accept this payment gateway (Select none to allow all currencies)'|trans }}</label>
+                <label class="form-label col-3 col-form-label">{{ 'Select Which Currencies Can Accept This Payment Gateway (Select None to Allow All Currencies)'|trans }}</label>
                 <div class="col">
                     {% set currencies = guest.currency_get_pairs %}
                     <select class="form-select" name="accepted_currencies[]" multiple="multiple" size="{{ currencies|length }}">
@@ -67,7 +67,7 @@
 
             {% if gateway.supports_one_time_payments %}
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Allow one time payments'|trans }}:</label>
+                <label class="form-label col-3 col-form-label">{{ 'Allow One Time Payments'|trans }}:</label>
                 <div class="col">
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" id="radioAllowSingleYes" type="radio" name="allow_single" value="1"{% if gateway.allow_single %} checked{% endif %}>
@@ -85,7 +85,7 @@
 
             {% if gateway.supports_subscriptions %}
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Allow subscription payments'|trans }}:</label>
+                <label class="form-label col-3 col-form-label">{{ 'Allow Subscription Payments'|trans }}:</label>
                 <div class="col">
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" id="radioAllowRecurrentYes" type="radio" name="allow_recurrent" value="1"{% if gateway.allow_recurrent %} checked{% endif %}>
@@ -102,7 +102,7 @@
             {% endif %}
 
             <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Enable test mode'|trans }}:</label>
+                <label class="form-label col-3 col-form-label">{{ 'Enable Test Mode'|trans }}:</label>
                 <div class="col">
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" id="radioTestModeYes" type="radio" name="test_mode" value="1"{% if gateway.test_mode %} checked{% endif %}>

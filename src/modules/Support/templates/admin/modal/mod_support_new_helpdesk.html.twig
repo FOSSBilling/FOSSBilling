@@ -1,8 +1,8 @@
 <div class="modal modal-blur fade" id="mod-support-new-helpdesk" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <form method="post" action="{{ 'api/admin/support/helpdesk_create'|link }}"
-                {{ fb_api_form({ redirect: 'extension/settings/support'|alink }) }}>
+            <form method="post" action="{{ 'support/helpdesk_create'|api_url }}"
+                {{ fb_api_form({ redirect: 'extension/settings/support'|url }) }}>
                 <div class="modal-header">
                     <h5 class="modal-title">{{ 'Create New Helpdesk'|trans }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
@@ -27,14 +27,14 @@
                         </div>
                     </div>
                     <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Close tickets after (in hours)'|trans }}</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Close Tickets After (in hours)'|trans }}</label>
                         <div class="col">
                             <input class="form-control" type="text" size="3" name="close_after" value="{{ helpdesk.close_after|default(48) }}" required>
                             <small class="form-hint">{{ 'Define a very large number of hours to disable auto close ticket option.'|trans }}</small>
                         </div>
                     </div>
                     <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Tickets can be reopened?'|trans }}</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Tickets Can Be Reopened?'|trans }}</label>
                         <div class="col">
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" id="radioCanReopenYes" type="radio" name="can_reopen" value="1" checked>

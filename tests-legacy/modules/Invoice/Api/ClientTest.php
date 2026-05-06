@@ -16,14 +16,6 @@ final class ClientTest extends \BBTestCase
         $this->api = new Client();
     }
 
-    public function testGetDi(): void
-    {
-        $di = $this->getDi();
-        $this->api->setDi($di);
-        $getDi = $this->api->getDi();
-        $this->assertEquals($di, $getDi);
-    }
-
     public function testGet(): void
     {
         $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);

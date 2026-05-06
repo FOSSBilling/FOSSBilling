@@ -6,14 +6,14 @@
 {% block breadcrumbs %}
     <ul class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
                     <use xlink:href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Email'|trans }}</li>
     </ul>
@@ -64,19 +64,19 @@
 
                     {% if can_manage_templates %}
                     <div class="card-footer text-center">
-                        <a class="btn btn-primary" href="{{ 'api/admin/email/batch_template_generate'|link }}" {{ fb_api_link({ reload: true}) }}>
+                        <a class="btn btn-primary" href="{{ 'email/batch_template_generate'|api_url }}" {{ fb_api_link({ reload: true }) }}>
                             <svg class="icon icon-tabler" width="24" height="24">
                                 <use xlink:href="#mail" />
                             </svg>
                             <span>{{ 'Regenerate Templates'|trans }}</span>
                         </a>
-                        <a class="btn btn-primary" href="{{ 'api/admin/email/batch_template_enable'|link }}" {{ fb_api_link({ message: 'All Email Templates Enabled'|trans}) }}>
+                        <a class="btn btn-primary" href="{{ 'email/batch_template_enable'|api_url }}" {{ fb_api_link({ message: 'All Email Templates Enabled'|trans}) }}>
                             <svg class="icon icon-tabler" width="24" height="24">
                                 <use xlink:href="#play" />
                             </svg>
                             <span>{{ 'Enable All'|trans }}</span>
                         </a>
-                        <a class="btn btn-primary" href="{{ 'api/admin/email/batch_template_disable'|link }}" {{ fb_api_link({ message: 'All Email Templates Disabled'|trans}) }}>
+                        <a class="btn btn-primary" href="{{ 'email/batch_template_disable'|api_url }}" {{ fb_api_link({ message: 'All Email Templates Disabled'|trans}) }}>
                             <svg class="icon icon-tabler" width="24" height="24">
                                 <use xlink:href="#close" />
                             </svg>
@@ -119,7 +119,7 @@
                                 {% endif %}
                                 <tr>
                                     <td>
-                                        <a href="{{ '/email/template'|alink }}/{{ template.id }}">{{ template.subject }}</a>
+                                        <a href='{{ "email/template/#{template.id}"|url }}'>{{ template.subject }}</a>
                                     </td>
                                     <td>{{ template.category }}</td>
                                     <td>{{ template.action_code }}</td>
@@ -135,7 +135,7 @@
                                         {{ mf.q(template.enabled) }}
                                     </td>
                                     <td>
-                                        <a class="btn btn-icon" href="{{ '/email/template'|alink }}/{{ template.id }}"
+                                        <a class="btn btn-icon" href='{{ "email/template/#{template.id}"|url }}'
                                            data-bs-toggle="tooltip" data-bs-title="{{ (can_manage_templates ? 'Edit' : 'View')|trans }}">
                                             <svg class="icon">
                                                 <use xlink:href="{{ can_manage_templates ? '#edit' : '#eye' }}" />
@@ -144,7 +144,7 @@
                                         {% if can_manage_templates and (template.is_custom or not template.has_default) %}
                                             <a class="btn btn-icon"
                                                 data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
-                                                {{ fb_api_link({href: 'api/admin/email/template_delete'|link({id: template.id}), modal: {type: 'danger', title: 'Are you sure?'|trans, content: 'This action will delete the email template'|trans, button: 'Delete'|trans}, reload: true}) }}>
+                                                {{ fb_api_link({href: 'email/template_delete'|api_url(query:{'id': template.id}), modal: {type: 'danger', title: 'Are you sure?'|trans, content: 'This action will delete the email template'|trans, button: 'Delete'|trans}, reload: true}) }}>
                                                 <svg class="icon">
                                                     <use xlink:href="#delete" />
                                                 </svg>
@@ -165,7 +165,7 @@
 
                 {% if can_manage_templates %}
                 <div class="tab-pane fade{% if active_tab == 'new' %} show active{% endif %}" id="tab-new" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/email/template_create'|link }}" {{ fb_api_form({ reload: true}) }}>
+                    <form method="post" action="{{ 'email/template_create'|api_url }}" {{ fb_api_form({ reload: true}) }}>
                         <div class="card-body">
                             <h3 class="card-title">{{ 'Where Can I Use a New Email Template?'|trans }}</h3>
                             <p class="card-subtitle">{{ 'Newly created email templates can be used in custom event hooks.'|trans }}</p>
@@ -290,7 +290,7 @@
 
                 {% if can_manage_settings %}
                 <div class="tab-pane fade{% if active_tab == 'email' %} show active{% endif %}" id="tab-email" role="tabpanel">
-                    <form method="post" action="{{ 'api/admin/extension/config_save'|link }}" {{ fb_api_form({ message: 'Email Settings Updated'|trans}) }}>
+                    <form method="post" action="{{ 'extension/config_save'|api_url }}" {{ fb_api_form({ message: 'Email Settings Updated'|trans}) }}>
                         <div class="card-body">
                             <h3 class="card-title">{{ 'Configure Email Options'|trans }}</h3>
                             <p class="card-subtitle">{{ 'FOSSBilling sends emails using <em>sendmail</em> by default or you can configure your own SMTP server'|trans|raw }}</p>

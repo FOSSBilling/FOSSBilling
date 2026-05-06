@@ -32,7 +32,7 @@ class Registrar_Adapter_Custom extends Registrar_AdapterAbstract
             'form' => [
                 'use_whois' => ['radio', [
                     'multiOptions' => ['1' => 'Yes', '0' => 'No'],
-                    'label' => 'Use WHOIS to check for domain availability',
+                    'label' => 'Use WHOIS to Check for Domain Availability',
                 ],
                 ],
             ],

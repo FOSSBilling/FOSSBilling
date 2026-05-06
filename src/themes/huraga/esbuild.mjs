@@ -203,6 +203,22 @@ async function build() {
     await purgeCssFile(join(cssDir, 'huraga.css'), __dirname, isProduction, true);
 
     await esbuild.build({
+      entryPoints: [resolve(__dirname, 'assets/js/wysiwyg.js')],
+      bundle: true,
+      outfile: join(jsDir, 'wysiwyg.js'),
+      globalName: 'CKEditor',
+      platform: 'browser',
+      target: 'es2018',
+      loader: { '.svg': 'file', '.woff': 'file', '.woff2': 'file', '.ttf': 'file', '.eot': 'file' },
+      define: { 'process.env.NODE_ENV': isProduction ? '"production"' : '"development"' },
+      minify: isProduction,
+      sourcemap: !isProduction,
+      logLevel: 'info',
+      treeShaking: true,
+      legalComments: 'none'
+    });
+
+    await esbuild.build({
       entryPoints: [resolve(__dirname, 'assets/css/vendor.css')],
       bundle: true,
       outfile: join(cssDir, 'vendor.css'),

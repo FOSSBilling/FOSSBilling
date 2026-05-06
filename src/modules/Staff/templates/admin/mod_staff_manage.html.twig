@@ -9,17 +9,17 @@
 {% block breadcrumbs %}
 	<ol class="breadcrumb">
 		<li class="breadcrumb-item">
-			<a href="{{ '/'|alink }}">
+			<a href="{{ '/'|url }}">
 				<svg class="icon">
 					<use xlink:href="#home"/>
 				</svg>
 			</a>
 		</li>
 		<li class="breadcrumb-item">
-			<a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+			<a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
 		</li>
 		<li class="breadcrumb-item">
-			<a href="{{ 'extension/settings/staff'|alink }}">{{ 'Staff'|trans }}</a>
+			<a href="{{ 'extension/settings/staff'|url }}">{{ 'Staff'|trans }}</a>
 		</li>
 		<li class="breadcrumb-item active" aria-current="page">{{ staff.name }}</li>
 	</ol>

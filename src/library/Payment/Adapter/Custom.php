@@ -29,7 +29,7 @@ class Payment_Adapter_Custom
             'can_load_in_iframe' => true,
             'supports_one_time_payments' => true,
             'supports_subscriptions' => true,
-            'description' => 'Custom payment gateway allows you to give instructions how can your client pay invoice. All system, client, order and invoice details can be printed. HTML and JavaScript code is supported.',
+            'description' => 'Custom payment gateway allows you to give instructions how can your client pay invoice. All system, client, order and invoice details can be printed. HTML code is supported.',
             'logo' => [
                 'logo' => 'custom.png',
                 'height' => '50px',
@@ -38,12 +38,12 @@ class Payment_Adapter_Custom
             'form' => [
                 'single' => [
                     'textarea', [
-                        'label' => 'Enter your text for single payment information',
+                        'label' => 'Enter Your Text for Single Payment Information',
                     ],
                 ],
                 'recurrent' => [
                     'textarea', [
-                        'label' => 'Enter your text for subscription information',
+                        'label' => 'Enter Your Text for Subscription Information',
                     ],
                 ],
             ],
@@ -61,14 +61,13 @@ class Payment_Adapter_Custom
         $invoiceService = $this->di['mod_service']('Invoice');
         $invoice = $invoiceService->toApiArray($invoiceModel, true);
 
+        $tpl = $subscription ? ($this->config['recurrent'] ?? '"Custom" payment adapter is not fully configured.') : ($this->config['single'] ?? '"Custom" payment adapter is not fully configured.');
         $vars = [
-            '_client_id' => $invoice['client']['id'],
             'invoice' => $invoice,
-            '_tpl' => $subscription ? ($this->config['recurrent'] ?? '"Custom" payment adapter is not fully configured.') : ($this->config['single'] ?? '"Custom" payment adapter is not fully configured.'),
         ];
         $systemService = $this->di['mod_service']('System');
 
-        return $systemService->renderString($vars['_tpl'], true, $vars);
+        return $systemService->renderAdapterTplString($tpl, $vars);
     }
 
     /**

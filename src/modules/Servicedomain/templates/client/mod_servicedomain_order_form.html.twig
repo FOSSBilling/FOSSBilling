@@ -6,11 +6,11 @@
     <nav class="nav nav-pills flex-column border-end me-3 gap-2">
         {% if tlds is not empty %}
             <a class="nav-link me-3 py-1 px-2 fs-7 active" href="#" id="register-tab" data-bs-toggle="tab" data-bs-target="#register-tab-pane"
-                role="tab" aria-controls="register-tab-pane">Register</a>
+                role="tab" aria-controls="register-tab-pane">{{ 'Register'|trans }}</a>
         {% endif %}
         {% if transfer_tlds is not empty %}
         <a class="nav-link me-3 py-1 px-2 fs-7 {% if tlds is empty %} active {% endif %}" href="#" id="transfer-tab" data-bs-toggle="tab" data-bs-target="#transfer-tab-pane"
-               role="tab" aria-controls="transfer-tab-pane">Transfer</a>
+               role="tab" aria-controls="transfer-tab-pane">{{ 'Transfer'|trans }}</a>
         {% endif %}
     </nav>
     <div class="tab-content">

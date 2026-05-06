@@ -1,0 +1,40 @@
+{{ 'build/js/wysiwyg.js' | asset_url | script_tag }}
+{{ 'build/js/wysiwyg.css' | asset_url | stylesheet_tag }}
+<script type="text/javascript">
+    (function() {
+        import('{{ 'js/utils.js' | asset_url }}').then(({ registerEditor }) => {
+            const initEditors = function() {
+                document.querySelectorAll('.{{ class }}').forEach(function (element) {
+                    CKEditor.default.create(element)
+                        .then(editor => {
+                            if (element.hasAttribute('required')) {
+                                element.dataset.editorRequired = 'true';
+                                element.removeAttribute('required');
+                            }
+
+                            registerEditor(element, editor);
+                        })
+                        .catch(error => {
+                            console.error('CKEditor initialization error:', error);
+                        });
+                });
+
+                if (localStorage.getItem('theme') === 'dark') {
+                    setTimeout(function () {
+                        document.querySelectorAll('.ck-editor__main').forEach(function (element) {
+                            element.style.color = '#1d273b';
+                        });
+                    }, 1000);
+                }
+            };
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initEditors);
+            } else {
+                initEditors();
+            }
+        }).catch(error => {
+            console.error('Failed to load editor utilities:', error);
+        });
+    })();
+</script>

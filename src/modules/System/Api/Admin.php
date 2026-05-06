@@ -83,30 +83,6 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Parse string like FOSSBilling template.
-     *
-     * @optional bool $_try - if true, will not throw error if template is invalid, returns _tpl string
-     * @optional int $_client_id - if passed client id, then client API will also be available
-     *
-     * @return string
-     */
-    public function string_render($data)
-    {
-        if (!isset($data['_tpl'])) {
-            error_log('_tpl parameter not passed');
-
-            return '';
-        }
-        $tpl = $data['_tpl'];
-        $try_render = $data['_try'] ?? false;
-
-        $vars = $data;
-        unset($vars['_tpl'], $vars['_try']);
-
-        return $this->getService()->renderString($tpl, $try_render, $vars);
-    }
-
-    /**
      * Returns system environment information.
      *
      * @return array
