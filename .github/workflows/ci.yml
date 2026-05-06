@@ -106,6 +106,7 @@ jobs:
 
   live-tests:
     name: 'Live Tests'
+    needs: [ spellcheck ]
     if: *normal_ci
     runs-on: ubuntu-latest
     env:
