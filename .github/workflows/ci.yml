@@ -6,14 +6,14 @@ on:
     branches: main
   pull_request_target:
     branches: main
-    types: [labeled, unlabeled]
+    types: [opened, reopened, synchronize, labeled, unlabeled]
 
 jobs:
   merge-hold:
     name: 'Check for Merge Hold'
     permissions:
       contents: read
-    if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
+    if: ${{ github.event_name == 'pull_request' || (github.event_name == 'pull_request_target' && (github.event.action == 'labeled' || github.event.action == 'unlabeled')) }}
     runs-on: ubuntu-latest
     steps:
       - name: 'Check merge-hold label'
@@ -26,6 +26,19 @@ jobs:
 
           echo "Pull request not labeled 'merge-hold'"
           echo "The pull request can be merged as no 'merge-hold' label is set."
+
+  labeler:
+    name: 'Pull Request Labeler'
+    permissions:
+      contents: read
+      pull-requests: write
+    if: ${{ github.event_name == 'pull_request_target' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/labeler@f27b608878404679385c85cfa523b85ccb86e213 # v6
+        with:
+          repo-token: '${{ secrets.GITHUB_TOKEN }}'
+          sync-labels: true
 
   spellcheck:
     name: 'Spellcheck'
