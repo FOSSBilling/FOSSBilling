@@ -56,7 +56,7 @@ class TwigLoader extends FilesystemLoader
 
     /**
      * Override findTemplate to handle module icon naming convention.
-     * Matches the original Box_TwigLoader behavior for icon.svg files.
+     * Handles module icon naming convention for icon.svg files.
      */
     protected function findTemplate(string $name, bool $throw = true)
     {
