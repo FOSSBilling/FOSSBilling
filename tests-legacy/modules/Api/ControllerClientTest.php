@@ -128,7 +128,7 @@ final class ControllerClientTest extends \BBTestCase
             ->with('Admin', 'api_token = ? AND status = ? AND role != ?', [$cronToken, \Model_Admin::STATUS_ACTIVE, \Model_Admin::ROLE_CRON])
             ->willReturn($cronAdmin);
 
-        $staffService = new readonly class($cronAdmin) {
+        $staffService = new class($cronAdmin) {
             public function __construct(private \Model_Admin $cronAdmin)
             {
             }
