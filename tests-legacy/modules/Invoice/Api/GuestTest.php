@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Box\Mod\Invoice\Api;
 
 use PHPUnit\Framework\Attributes\Group;
+use Symfony\Component\HttpFoundation\Response;
 
 #[Group('Core')]
 final class GuestTest extends \BBTestCase
@@ -203,9 +204,11 @@ final class GuestTest extends \BBTestCase
         $data = [
             'hash' => '',
         ];
+        $response = new Response('pdf', 200, ['Content-Type' => 'application/pdf']);
         $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);
         $serviceMock->expects($this->atLeastOnce())
-            ->method('generatePDF');
+            ->method('generatePDF')
+            ->willReturn($response);
 
         $di = $this->getDi();
         $di['rate_limiter'] = $this->getAllowedRateLimiter();
@@ -213,7 +216,8 @@ final class GuestTest extends \BBTestCase
 
         $this->api->setService($serviceMock);
 
-        $this->api->pdf($data);
+        $result = $this->api->pdf($data);
+        $this->assertSame($response, $result);
     }
 
     private function getAllowedRateLimiter(): object

@@ -3061,16 +3061,16 @@
         },
         {
             "name": "prinsfrank/standards",
-            "version": "v3.16.3",
+            "version": "v3.16.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PrinsFrank/standards.git",
-                "reference": "c1f5b5ed8416adc0726d061c54ffd6c11c5b7a08"
+                "reference": "e51d547f8d370fbb792d4497ef13ca6c403d69a6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PrinsFrank/standards/zipball/c1f5b5ed8416adc0726d061c54ffd6c11c5b7a08",
-                "reference": "c1f5b5ed8416adc0726d061c54ffd6c11c5b7a08",
+                "url": "https://api.github.com/repos/PrinsFrank/standards/zipball/e51d547f8d370fbb792d4497ef13ca6c403d69a6",
+                "reference": "e51d547f8d370fbb792d4497ef13ca6c403d69a6",
                 "shasum": ""
             },
             "require": {
@@ -3110,7 +3110,7 @@
             "description": "A collection of standards as PHP Enums: ISO3166, ISO4217, ISO639...",
             "support": {
                 "issues": "https://github.com/PrinsFrank/standards/issues",
-                "source": "https://github.com/PrinsFrank/standards/tree/v3.16.3"
+                "source": "https://github.com/PrinsFrank/standards/tree/v3.16.4"
             },
             "funding": [
                 {
@@ -3118,7 +3118,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-04-23T19:06:25+00:00"
+            "time": "2026-05-05T17:25:37+00:00"
         },
         {
             "name": "psr/cache",
@@ -3556,16 +3556,16 @@
         },
         {
             "name": "sentry/sentry",
-            "version": "4.25.0",
+            "version": "4.26.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/getsentry/sentry-php.git",
-                "reference": "bfee3381e1f6dea8a5f3a18adba6419fe81c5f54"
+                "reference": "7597fd10c443929c62489d7cf38d1cb8341d6608"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/getsentry/sentry-php/zipball/bfee3381e1f6dea8a5f3a18adba6419fe81c5f54",
-                "reference": "bfee3381e1f6dea8a5f3a18adba6419fe81c5f54",
+                "url": "https://api.github.com/repos/getsentry/sentry-php/zipball/7597fd10c443929c62489d7cf38d1cb8341d6608",
+                "reference": "7597fd10c443929c62489d7cf38d1cb8341d6608",
                 "shasum": ""
             },
             "require": {
@@ -3634,7 +3634,7 @@
             ],
             "support": {
                 "issues": "https://github.com/getsentry/sentry-php/issues",
-                "source": "https://github.com/getsentry/sentry-php/tree/4.25.0"
+                "source": "https://github.com/getsentry/sentry-php/tree/4.26.0"
             },
             "funding": [
                 {
@@ -3646,7 +3646,7 @@
                     "type": "custom"
                 }
             ],
-            "time": "2026-04-23T12:50:03+00:00"
+            "time": "2026-04-30T12:50:22+00:00"
         },
         {
             "name": "stripe/stripe-php",

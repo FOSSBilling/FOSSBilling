@@ -1652,7 +1652,7 @@ class Service implements InjectionAwareInterface
         return $response;
     }
 
-    private function getPdfCss(): string
+    protected function getPdfCss(): string
     {
         $basePath = Path::join(__DIR__, 'templates', 'pdf');
         $customCssPath = Path::join($basePath, 'custom-invoice.css');
@@ -1671,7 +1671,7 @@ class Service implements InjectionAwareInterface
         return $CSS;
     }
 
-    private function getPdfTemplate(): string
+    protected function getPdfTemplate(): string
     {
         if ($this->filesystem->exists(Path::join(__DIR__, 'templates', 'pdf', 'custom-invoice.twig'))) {
             return 'custom-invoice.twig';
@@ -1680,7 +1680,7 @@ class Service implements InjectionAwareInterface
         return 'default-invoice.twig';
     }
 
-    private function getPdfLogoSource(string $originalUrl): array
+    protected function getPdfLogoSource(string $originalUrl): array
     {
         $source = parse_url($originalUrl, PHP_URL_PATH);
         $remote = false;

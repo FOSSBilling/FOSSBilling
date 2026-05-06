@@ -7,6 +7,7 @@ namespace Box\Mod\Api\Controller;
 use FOSSBilling\InformationException;
 use PHPUnit\Framework\Attributes\Group;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 final class TestableClient extends Client
 {
@@ -17,12 +18,19 @@ final class TestableClient extends Client
     public array $calls = [];
     public mixed $renderedData = null;
     public ?\Exception $renderedException = null;
+    public ?Response $sentResponse = null;
 
     #[\Override]
     public function renderJson($data = null, ?\Exception $e = null): void
     {
         $this->renderedData = $data;
         $this->renderedException = $e;
+    }
+
+    #[\Override]
+    protected function sendResponse(Response $response): void
+    {
+        $this->sentResponse = $response;
     }
 
     #[\Override]
@@ -189,7 +197,28 @@ final class ClientTest extends \BBTestCase
         $this->assertSame([], $controller->calls);
     }
 
-    private function createController(array $sessionData = []): TestableClient
+    public function testRawResponseBypassesJsonRendering(): void
+    {
+        $response = new Response('pdf-bytes', 200, ['Content-Type' => 'application/pdf']);
+        $controller = $this->createController(api: new class($response) {
+            public function __construct(private Response $response)
+            {
+            }
+
+            public function testMethod(array $params): Response
+            {
+                return $this->response;
+            }
+        });
+
+        $this->invokeApiCall($controller, 'guest', 'test', 'testMethod', []);
+
+        $this->assertSame($response, $controller->sentResponse);
+        $this->assertNull($controller->renderedData);
+        $this->assertNull($controller->renderedException);
+    }
+
+    private function createController(array $sessionData = [], ?object $api = null): TestableClient
     {
         $request = $this->createMock(Request::class);
         $request->method('getClientIp')
@@ -215,7 +244,7 @@ final class ClientTest extends \BBTestCase
             }
         };
 
-        $api = new class {
+        $api ??= new class {
             public function testMethod(array $params): array
             {
                 return ['ok' => true];
