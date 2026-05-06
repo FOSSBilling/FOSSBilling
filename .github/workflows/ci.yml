@@ -100,7 +100,7 @@ jobs:
           phpunit-enable: 'true'
 
   live-tests:
-    name: 'fresh-install'
+    name: 'Live Tests'
     if: *normal_ci
     runs-on: ubuntu-latest
     env:
