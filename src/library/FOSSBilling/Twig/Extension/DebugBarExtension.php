@@ -28,7 +28,24 @@ class DebugBarExtension
     #[AsTwigFunction('debug_bar_render_head', isSafe: ['html'])]
     public function renderHead(): string
     {
-        return (Environment::isDevelopment()) ? $this->debugbarRenderer->renderHead() : '';
+        if (!Environment::isDevelopment()) {
+            return '';
+        }
+
+        $css = $this->debugbarRenderer->dumpCssAssets(echo: false);
+        $js = $this->debugbarRenderer->dumpJsAssets(echo: false);
+        $head = $this->debugbarRenderer->dumpHeadAssets(echo: false);
+
+        $html = '';
+        if ($css) {
+            $html .= '<style>' . $css . '</style>';
+        }
+        if ($js) {
+            $html .= '<script type="text/javascript">' . $js . '</script>';
+        }
+        $html .= $head;
+
+        return $html;
     }
 
     #[AsTwigFunction('debug_bar_render', isSafe: ['html'])]
