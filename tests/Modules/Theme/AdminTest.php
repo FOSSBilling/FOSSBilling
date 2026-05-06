@@ -40,13 +40,9 @@ final class AdminTest extends TestCase
         $result = Request::makeRequest('admin/theme/non_existing_action');
         $this->assertFalse($result->wasSuccessful(), 'Invalid theme action should not be successful.');
 
-        $response = $result->getResponse();
-        $this->assertIsArray($response, 'Error response should be an array.');
-        $this->assertArrayHasKey('error', $response, 'Error response should include an "error" key.');
-        $this->assertIsArray($response['error'], 'Error payload should be an array.');
-        $this->assertArrayHasKey('message', $response['error'], 'Error payload should include a message.');
-        $this->assertIsString($response['error']['message'], 'Error message should be a string.');
-        $this->assertNotSame('', trim($response['error']['message']), 'Error message should not be empty.');
-        $this->assertMatchesRegularExpression('/non[_\\s-]?existing|invalid|action/i', $response['error']['message'], 'Error message should reference the invalid action or endpoint.');
+        $errorMessage = $result->getErrorMessage();
+        $this->assertIsString($errorMessage, 'Error message should be a string.');
+        $this->assertNotSame('', trim($errorMessage), 'Error message should not be empty.');
+        $this->assertMatchesRegularExpression('/non[_\\s-]?existing|invalid|action/i', $errorMessage, 'Error message should reference the invalid action or endpoint.');
     }
 }
