@@ -133,7 +133,7 @@ final class ControllerClientTest extends \BBTestCase
         $_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode('admin:' . $cronToken);
 
         $dbAdmin = $this->buildAdminModel(1, $cronToken, \Model_Admin::ROLE_ADMIN);
-        $cronAdmin = $this->buildAdminModel(2, $cronToken, \Model_Admin::ROLE_CRON);
+        $cronAdmin = $this->buildAdminModel(1, $cronToken, \Model_Admin::ROLE_CRON);
 
         $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->once())
