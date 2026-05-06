@@ -1,19 +1,71 @@
 name: CI
 
+permissions:
+  contents: read
+
 on:
   push:
   pull_request:
     branches: main
+  pull_request_target:
+    branches: main
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  spellcheck:
-    name: 'Spellcheck'
+  merge-hold:
+    name: 'Check for Merge Hold'
+    if: ${{ github.event_name == 'pull_request' || (github.event_name == 'pull_request_target' && (github.event.action == 'labeled' || github.event.action == 'unlabeled')) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Check merge-hold label'
+        run: |
+          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'merge-hold') }}" == 'true' ]]; then
+            echo "Pull request labeled 'merge-hold'"
+            echo "The pull request cannot be merged until the 'merge-hold' label is removed."
+            exit 1
+          fi
+
+          echo "Pull request not labeled 'merge-hold'"
+          echo "The pull request can be merged as no 'merge-hold' label is set."
+
+  labeler:
+    name: 'Pull Request Labeler'
     permissions:
       contents: read
+      pull-requests: write
+    if: ${{ github.event_name == 'pull_request_target' }}
     runs-on: ubuntu-latest
-    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/labeler@f27b608878404679385c85cfa523b85ccb86e213 # v6
+        with:
+          repo-token: '${{ secrets.GITHUB_TOKEN }}'
+          sync-labels: true
+
+  release-drafter:
+    name: 'Release Drafter'
+    permissions:
+      contents: write
+      pull-requests: read
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: release-drafter/release-drafter@563bf132657a13ded0b01fcb723c5a58cdd824e2 # v7
+        with:
+          config-name: release-drafter.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  spellcheck:
+    name: 'Spellcheck'
+    runs-on: ubuntu-latest
+    if: &normal_ci ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
+    steps:
+      - &checkout_step
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: 'Perform Spellcheck'
         uses: streetsidesoftware/cspell-action@de2a73e963e7443969755b648a1008f77033c5b2 # v8
@@ -22,19 +74,18 @@ jobs:
 
   php-build-test:
     name: 'PHP Build and Test'
-    permissions:
-      contents: read
     needs: [ spellcheck ]
-    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
+    if: *normal_ci
     runs-on: ubuntu-latest
     strategy:
       matrix:
         php: [8.3, 8.4]
+      fail-fast: true
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - *checkout_step
 
       - name: 'PHP Build' 
-        uses: FOSSBilling/.workflows/.github/actions/php-build@3273310677c9a62cdb61aa6f8f0d3ec4993b1a8e
+        uses: FOSSBilling/.workflows/.github/actions/php-build@76b4af76fb2a1a2b553ec1c2839044984299a271
         with:
           php-version: ${{ matrix.php }}
 
@@ -53,12 +104,161 @@ jobs:
           phpstan-php-version: 8.4
           phpunit-enable: 'true'
 
+  live-tests:
+    name: 'Live Tests'
+    needs: [ spellcheck ]
+    if: *normal_ci
+    runs-on: ubuntu-latest
+    env:
+      DB_HOST: 127.0.0.1
+      DB_NAME: fossbilling
+      DB_USER: root
+      DB_PASS: root
+      DB_PORT: 3306
+      APP_ENV: test
+      TEST_PASS: 4WGemqiihh8iM3
+      TEST_EMAIL: email@example.com
+      APP_URL: http://localhost/
+      TEST_API_KEY: AW6qEQCa7U7FG96J9NFIZXNYMJ79M8LH
+    steps:
+      - *checkout_step
+
+      - name: 'PHP Build'
+        uses: FOSSBilling/.workflows/.github/actions/php-build@76b4af76fb2a1a2b553ec1c2839044984299a271
+        with:
+          cache-deps: 'true'
+          composer-args: '--prefer-dist --optimize-autoloader'
+          php-version: 8.3
+
+      - name: 'Prepare Application Assets'
+        uses: ./.github/actions/prepare-application-assets
+        with:
+          cache-theme-builds: 'true'
+          install-command: 'npm ci'
+          build-command: 'npm run build'
+
+      - name: Start MySQL
+        run: sudo systemctl start mysql.service
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2
+        with:
+          php-version: '8.4'
+          extensions: imagick, gd, intl, xml, dom, curl, iconv, json, opcache, mbstring, bz2, simplexml, pdo, pdo_mysql
+
+      - name: Setup Apache
+        run: |
+          # Only install apache2 from the default Ubuntu repos — no Ondrej PPA needed.
+          # PHP 8.4 (including php8.4-fpm) was already installed by the Setup PHP step.
+          sudo apt-get install --no-install-recommends apache2
+          sudo a2enmod proxy_fcgi setenvif rewrite
+          sudo systemctl start apache2
+          sudo mkdir /var/www/localhost
+          sudo cp -r ./src/* /var/www/localhost
+
+          # Pass APP_ENV to the PHP-FPM pool so getenv('APP_ENV') works inside PHP.
+          # setup-php may have already started php8.4-fpm; use restart to ensure the
+          # updated pool config (with env[APP_ENV]) is reloaded.
+          echo "env[APP_ENV] = ${APP_ENV}" | sudo tee -a /etc/php/8.4/fpm/pool.d/www.conf
+          sudo systemctl restart php8.4-fpm
+
+          sudo tee /etc/apache2/sites-available/localhost.conf > /dev/null <<EOF
+          <VirtualHost *:80>
+            ServerAdmin webmaster@localhost
+            ServerName localhost
+            DocumentRoot /var/www/localhost
+
+            <Directory /var/www/localhost>
+              Options Indexes FollowSymLinks
+              AllowOverride All
+              Require all granted
+            </Directory>
+
+            <FilesMatch \.php$>
+              SetHandler "proxy:unix:/run/php/php8.4-fpm.sock|fcgi://localhost/"
+            </FilesMatch>
+
+            ErrorLog \${APACHE_LOG_DIR}/error.log
+            CustomLog \${APACHE_LOG_DIR}/access.log combined
+          </VirtualHost>
+          EOF
+
+          sudo a2ensite localhost.conf
+          sudo a2dissite 000-default.conf
+          sudo apache2ctl configtest
+          sudo systemctl restart apache2
+
+          sudo chown -R www-data:www-data /var/www/localhost*
+          cd /var/www/localhost
+          sudo find . -type d -exec chmod 755 {} \;
+          sudo find . -type f -exec chmod 644 {} \;
+
+      - name: Setup MySQL
+        run: |
+          mysql -u ${{ env.DB_USER }} -p${{ env.DB_PASS }} -e "create database ${{ env.DB_NAME }}";
+          sudo service mysql status
+
+      - name: Install FOSSBilling
+        run: |
+          curl -H "Content-type: multipart/form-data" \
+          -F error_reporting=0 \
+          -F database_hostname="${{ env.DB_HOST }}" \
+          -F database_port="${{ env.DB_PORT }}" \
+          -F database_name="${{ env.DB_NAME }}" \
+          -F database_username="${{ env.DB_USER }}" \
+          -F database_password="${{ env.DB_PASS }}" \
+          -F admin_name="test" \
+          -F admin_email="${{ env.TEST_EMAIL }}" \
+          -F admin_password="${{ env.TEST_PASS }}" \
+          -F currency_code="USD" \
+          -F currency_title="US Dollar" \
+          -F admin_api_token="${{ env.TEST_API_KEY }}" \
+          -X POST \
+          http://localhost/install/install.php?a=install
+
+      - name: Display the installer error log if it exists
+        run: |
+          LOG_PATH="/var/www/localhost/install/php_error.log"
+
+          if [ -f "$LOG_PATH" ]; then
+            cat "$LOG_PATH"
+          else
+            echo "The installer error log does not exist."
+          fi
+
+      - name: Display the admin page
+        run: curl http://localhost/admin
+
+      - name: Run the API test suite
+        run: php ./src/vendor/bin/phpunit --configuration phpunit-live.xml
+
+      - name: Display the FOSSBilling PHP error log, if it exists
+        if: always()
+        run: |
+          PHP_ERROR_LOG_PATH="/var/www/localhost/data/log/php_error.log"
+
+          if [ -f "$PHP_ERROR_LOG_PATH" ]; then
+            cat "$PHP_ERROR_LOG_PATH"
+          else
+            echo "The PHP error log does not exist."
+          fi
+
+      - name: Display the other FOSSBilling logs
+        if: always()
+        working-directory: /var/www/localhost/data/log/
+        run: |
+          files=$(find . -type f ! -name '*.html' ! -name 'php_error.log')
+
+          for file in $files; do
+            echo "Contents of $file:"
+            cat "$file"
+            echo "--------------------------"
+          done
+
   preview-build:
     name: 'Create Preview Release'
-    permissions: 
-      contents: read
-    needs: [ php-build-test ]
-    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
+    needs: [ php-build-test, live-tests ]
+    if: *normal_ci
     uses: ./.github/workflows/release-build.yml
     with:
       artifact-name: 'preview-build'
@@ -66,10 +266,8 @@ jobs:
 
   upload-preview:
     name: 'Upload Preview Release'
-    permissions:
-      contents: read
     needs: [ preview-build ]
-    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
+    if: *normal_ci
     runs-on: ubuntu-latest
     steps:
       - name: 'Download Preview Release Archive'
