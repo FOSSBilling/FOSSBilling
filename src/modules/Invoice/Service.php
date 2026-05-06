@@ -19,6 +19,8 @@ use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
+use Symfony\Component\HttpFoundation\HeaderUtils;
+use Symfony\Component\HttpFoundation\Response;
 use Twig\Loader\FilesystemLoader;
 
 class Service implements InjectionAwareInterface
@@ -1339,7 +1341,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function generatePDF($hash, $identity): void
+    public function generatePDF($hash, $identity): Response
     {
         $systemService = $this->di['mod_service']('system');
         $c = $systemService->getCompany();
@@ -1365,7 +1367,7 @@ class Service implements InjectionAwareInterface
 
         $CSS = $this->getPdfCss();
 
-        $pdf = new Dompdf();
+        $pdf = $this->createPdfGenerator();
         $pdf->setPaper($document_format, 'portrait');
         $options = $pdf->getOptions();
         $options->setChroot($_SERVER['DOCUMENT_ROOT']);
@@ -1400,8 +1402,8 @@ class Service implements InjectionAwareInterface
         $pdf->setOptions($options);
         $pdf->loadHtml($html);
         $pdf->render();
-        $pdf->stream($invoice['serie_nr'], ['Attachment' => false]);
-        exit(0);
+
+        return $this->createPdfResponse($pdf->output(), $invoice['serie_nr']);
     }
 
     public function addNote(\Model_Invoice $model, $note): bool
@@ -1631,6 +1633,25 @@ class Service implements InjectionAwareInterface
     }
 
     // Start of PDF related functions
+    protected function createPdfGenerator(): Dompdf
+    {
+        return new Dompdf();
+    }
+
+    protected function createPdfResponse(string $content, string $fileName): Response
+    {
+        $response = new Response($content);
+        $disposition = $response->headers->makeDisposition(
+            HeaderUtils::DISPOSITION_INLINE,
+            $fileName . '.pdf'
+        );
+
+        $response->headers->set('Content-Type', 'application/pdf');
+        $response->headers->set('Content-Disposition', $disposition);
+
+        return $response;
+    }
+
     private function getPdfCss(): string
     {
         $basePath = Path::join(__DIR__, 'templates', 'pdf');
