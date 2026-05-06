@@ -39,5 +39,10 @@ final class AdminTest extends TestCase
     {
         $result = Request::makeRequest('admin/theme/non_existing_action');
         $this->assertFalse($result->wasSuccessful(), 'Invalid theme action should not be successful.');
+
+        $errorMessage = $result->getErrorMessage();
+        $this->assertIsString($errorMessage, 'Error message should be a string.');
+        $this->assertNotSame('', trim($errorMessage), 'Error message should not be empty.');
+        $this->assertMatchesRegularExpression('/non_existing_action/i', $errorMessage);
     }
 }
