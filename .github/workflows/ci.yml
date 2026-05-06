@@ -11,6 +11,10 @@ on:
     branches: main
     types: [opened, reopened, synchronize, labeled, unlabeled]
 
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   merge-hold:
     name: 'Check for Merge Hold'
@@ -76,6 +80,7 @@ jobs:
     strategy:
       matrix:
         php: [8.3, 8.4]
+      fail-fast: true
     steps:
       - *checkout_step
 
