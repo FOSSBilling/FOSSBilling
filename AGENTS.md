@@ -97,31 +97,24 @@ npm run build
 This command builds assets for:
 
 * `admin_default` theme
-* `huraga` theme  
-* `Wysiwyg` module
+* `huraga` theme
 
-Build scripts are defined in each theme/module's `package.json` and use `esbuild.mjs` for configuration:
+Build scripts are defined in each theme's `package.json` and use `esbuild.mjs` for configuration:
 
 ```bash
 # Build only themes
 npm run build-themes
 
-# Build only modules
-npm run build-modules
-
 # Build specific theme (uses workspace scripts)
 npm run build-admin_default
 npm run build-huraga
-
-# Build specific module
-npm run build-wysiwyg
 ```
 
 **Theme Structure:**
 
 * **admin_default**: Uses `esbuild.mjs` with SVG sprite generation, SCSS compilation, and multiple asset types
 * **huraga**: Uses simplified `esbuild.mjs` for basic JS/CSS bundling
-* **Wysiwyg**: Uses esbuild to build CKEditor from source
+* **Theme-owned editor assets**: Rich text editor bundles are built within the relevant theme instead of a shared module
 
 **Development Mode:**
 
