@@ -9,12 +9,31 @@ use PHPUnit\Framework\TestCase;
 
 final class GuestTest extends TestCase
 {
+    private ?array $originalConfig = null;
+
+    protected function tearDown(): void
+    {
+        if ($this->originalConfig !== null) {
+            $result = Request::makeRequest('admin/extension/config_save', [
+                'ext' => 'mod_antispam',
+                'check_temp_emails' => $this->originalConfig['check_temp_emails'] ?? true,
+                'sfs' => $this->originalConfig['sfs'] ?? false,
+            ]);
+            $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+            $this->originalConfig = null;
+        }
+
+        parent::tearDown();
+    }
+
     public function testDisposableEmailCheck(): void
     {
-        $result = Request::makeRequest('admin/extension/activate', ['type' => 'mod', 'id' => 'antispam']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+        $this->captureOriginalConfig();
 
-        $result = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_antispam', 'check_temp_emails' => true]);
+        $result = Request::makeRequest('admin/extension/config_save', [
+            'ext' => 'mod_antispam',
+            'check_temp_emails' => true,
+        ]);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
 
         $this->clearRateLimitCache();
@@ -38,10 +57,12 @@ final class GuestTest extends TestCase
 
     public function testStopForumSpam(): void
     {
-        $result = Request::makeRequest('admin/extension/activate', ['type' => 'mod', 'id' => 'antispam']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+        $this->captureOriginalConfig();
 
-        $result = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_antispam', 'sfs' => true]);
+        $result = Request::makeRequest('admin/extension/config_save', [
+            'ext' => 'mod_antispam',
+            'sfs' => true,
+        ]);
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
 
         $this->clearRateLimitCache();
@@ -68,5 +89,20 @@ final class GuestTest extends TestCase
     {
         $result = Request::makeRequest('admin/system/clear_cache');
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+    }
+
+    private function captureOriginalConfig(): void
+    {
+        if ($this->originalConfig !== null) {
+            return;
+        }
+
+        $result = Request::makeRequest('admin/extension/config_get', ['ext' => 'mod_antispam']);
+        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+
+        $config = $result->getResult();
+        $this->assertIsArray($config);
+
+        $this->originalConfig = $config;
     }
 }
