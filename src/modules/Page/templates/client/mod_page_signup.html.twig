@@ -11,50 +11,68 @@
 {% else %}
     {% set logo_url =  company.logo_url %}
 {% endif %}
+{% set auth_hero_enabled = settings.auth_hero_enabled is not defined or settings.auth_hero_enabled == '1' %}
+{% set auth_signup_hero_title = settings.auth_signup_hero_title is defined ? settings.auth_signup_hero_title : 'Start with a client account'|trans %}
+{% set auth_signup_hero_subtitle = settings.auth_signup_hero_subtitle is defined ? settings.auth_signup_hero_subtitle : 'Create one account to order services, pay invoices, and contact support.'|trans %}
+{% set auth_signup_heading_title = settings.auth_signup_heading_title is defined ? settings.auth_signup_heading_title : 'Create a new account'|trans %}
+{% set auth_signup_heading_subtitle = settings.auth_signup_heading_subtitle is defined ? settings.auth_signup_heading_subtitle : 'Fill in the details below to access the client area.'|trans %}
 
 {% block body_class %}page-signup{% endblock %}
 {% block body %}
-    <div class="container h-100">
-        <div class="row h-75 justify-content-center align-items-center">
-            <div class="col-md-6 col-lg-4">
-                {% if settings.login_page_show_logo %}
-                    <div class="d-flex justify-content-center">
-                        <a href="{{ settings.login_page_logo_url|default('/') }}" target="_blank">
-                            <img class="my-4" height="50px" src="{{ logo_url }}" alt="{{ company.name }}"/>
-                        </a>
+    <div class="auth-shell auth-shell-wide container">
+        <div class="auth-panel{% if not auth_hero_enabled %} auth-panel-no-hero{% endif %} row g-0">
+            {% if auth_hero_enabled %}
+                <div class="auth-hero col-lg-5 d-none d-lg-flex">
+                    <div class="auth-hero-content">
+                        {% if auth_signup_hero_title %}<h1>{{ auth_signup_hero_title }}</h1>{% endif %}
+                        {% if auth_signup_hero_subtitle %}<p>{{ auth_signup_hero_subtitle }}</p>{% endif %}
                     </div>
-                {% endif %}
-                <div class="card">
+                </div>
+            {% endif %}
+            <div class="auth-form-column auth-form-column-wide col-lg-{{ auth_hero_enabled ? '7' : '12' }}">
+                <div class="auth-card card">
                     <div class="card-body">
-                        <h5 class="text-center m-4">{{ 'Create a new account'|trans }}</h5>
+                        {% if settings.login_page_show_logo %}
+                            <div class="auth-brand">
+                                <a href="{{ settings.login_page_logo_url|default('/') }}" target="_blank" rel="noopener">
+                                    <img src="{{ logo_url }}" alt="{{ company.name }}"/>
+                                </a>
+                            </div>
+                        {% endif %}
+
+                        <div class="auth-heading">
+                            {% if auth_signup_heading_title %}<h1>{{ auth_signup_heading_title }}</h1>{% endif %}
+                            {% if auth_signup_heading_subtitle %}<p>{{ auth_signup_heading_subtitle }}</p>{% endif %}
+                        </div>
+
                         <form method="post" action="{{ 'client/create'|api_url(role: 'guest') }}" class="auth" {{ fb_api_form({redirect: '/'|url}) }}>
                             {% set r = guest.client_required %}
 
                             <div class="mb-3">
                                 <label class="form-label" for="first-name">{{ 'First Name'|trans }}</label>
                                 <input class="form-control" id="first-name" type="text" name="first_name"
-                                       value="{{ request.first_name }}" required="required"/>
+                                       value="{{ request.first_name }}" required="required" autocomplete="given-name"/>
                             </div>
 
                             {% if 'last_name' in r %}
                                 <div class="mb-3">
                                     <label class="form-label" for="last_name">{{ 'Last Name'|trans }}</label>
                                     <input class="form-control" id="last_name" type="text" name="last_name"
-                                           value="{{ request.last_name }}" required="required"/>
+                                           value="{{ request.last_name }}" required="required" autocomplete="family-name"/>
                                 </div>
                             {% endif %}
 
                             <div class="mb-3">
                                 <label class="form-label" for="reg-email">{{ 'Email Address'|trans }}</label>
                                 <input class="form-control" id="reg-email" type="email" name="email"
-                                       value="{{ request.email }}" required="required"/>
+                                       value="{{ request.email }}" required="required" autocomplete="email"/>
                             </div>
 
                             {% if 'company' in r %}
                                 <div class="mb-3">
                                     <label class="form-label" for="company">{{ 'Company'|trans }}</label>
                                     <input class="form-control" id="company" type="text" name="company"
-                                           value="{{ request.company }}" required="required"/>
+                                           value="{{ request.company }}" required="required" autocomplete="organization"/>
                                 </div>
                             {% endif %}
 
@@ -81,7 +99,7 @@
                                 <div class="mb-3">
                                     <label class="form-label" for="address_1">{{ 'Address'|trans }}</label>
                                     <input class="form-control" id="address_1" type="text" name="address_1"
-                                           value="{{ request.address_1 }}"/>
+                                           value="{{ request.address_1 }}" autocomplete="address-line1"/>
                                 </div>
                             {% endif %}
 
@@ -89,7 +107,7 @@
                                 <div class="mb-3">
                                     <label class="form-label" for="address_2">{{ 'Address 2'|trans }}</label>
                                     <input class="form-control" id="address_2" type="text" name="address_2"
-                                           value="{{ request.address_2 }}"/>
+                                           value="{{ request.address_2 }}" autocomplete="address-line2"/>
                                 </div>
                             {% endif %}
 
@@ -97,14 +115,14 @@
                                 <div class="mb-3">
                                     <label class="form-label" for="city">{{ 'City'|trans }}</label>
                                     <input class="form-control" id="city" type="text" name="city"
-                                           value="{{ request.city }}"/>
+                                           value="{{ request.city }}" autocomplete="address-level2"/>
                                 </div>
                             {% endif %}
 
                             {% if 'country' in r %}
                                 <div class="mb-3">
                                     <label class="form-label" for="country">{{ 'Country'|trans }}</label>
-                                    <select class="form-select" id="country" name="country" required="required">
+                                    <select class="form-select" id="country" name="country" required="required" autocomplete="country">
                                         <option value="">{{ '-- Select country --'|trans }}</option>
                                         {% for val,label in guest.system_countries %}
                                             <option value="{{ val }}" label="{{ label|e }}" {% if guest.system_default_country == val %}selected{% endif %}>{{ label|e }}</option>
@@ -117,7 +135,7 @@
                                 <div class="mb-3">
                                     <label class="form-label" for="state">{{ 'State'|trans }}</label>
                                     <input class="form-control" id="state" type="text" name="state"
-                                           value="{{ request.state }}"/>
+                                           value="{{ request.state }}" autocomplete="address-level1"/>
                                 </div>
                             {% endif %}
 
@@ -125,7 +143,7 @@
                                 <div class="mb-3">
                                     <label class="form-label" for="postcode">{{ 'Zip/Postal Code'|trans }}</label>
                                     <input class="form-control" id="postcode" type="text" name="postcode"
-                                           value="{{ request.postcode }}"/>
+                                           value="{{ request.postcode }}" autocomplete="postal-code"/>
                                 </div>
                             {% endif %}
 
@@ -133,10 +151,10 @@
                                 <div class="mb-3">
                                     <label class="form-label" for="phone-number">{{ 'Phone Number'|trans }}</label>
                                     <div class="input-group">
-                                        <input class="form-control" id="phone-country-code" type="text" name="phone_cc" value=""
-                                               style="width: 20%" aria-label="{{ 'Country code'|trans }}"/>
+                                        <input class="form-control auth-phone-code" id="phone-country-code" type="text" name="phone_cc" value=""
+                                               aria-label="{{ 'Country code'|trans }}" autocomplete="tel-country-code"/>
                                         <input class="form-control" id="phone-number" type="text" name="phone"
-                                               value="{{ request.phone }}" style="width: 70%"/>
+                                               value="{{ request.phone }}" autocomplete="tel-national"/>
                                     </div>
                                 </div>
                             {% endif %}
@@ -154,24 +172,24 @@
                                 {% endif %}
                             {% endfor %}
 
-{% set honeypot = antispam_honeypot() %}
-{% if honeypot.enabled %}
-{% set honeypot_field = honeypot.field %}
-<div class="mb-3" style="position: absolute; left: -9999px;">
-<label class="form-label" for="{{ honeypot_field }}">{{ honeypot_field }}</label>
-<input class="form-control" id="{{ honeypot_field }}" type="text" name="{{ honeypot_field }}" value="" tabindex="-1" autocomplete="off"/>
-</div>
-{% endif %}
+                            {% set honeypot = antispam_honeypot() %}
+                            {% if honeypot.enabled %}
+                                {% set honeypot_field = honeypot.field %}
+                                <div class="auth-honeypot mb-3">
+                                    <label class="form-label" for="{{ honeypot_field }}">{{ honeypot_field }}</label>
+                                    <input class="form-control" id="{{ honeypot_field }}" type="text" name="{{ honeypot_field }}" value="" tabindex="-1" autocomplete="off"/>
+                                </div>
+                            {% endif %}
 
-<div class="mb-3">
-<label class="form-label" for="reg-password">{{ 'Password'|trans }}</label>
+                            <div class="mb-3">
+                                <label class="form-label" for="reg-password">{{ 'Password'|trans }}</label>
                                 <input class="form-control" id="reg-password" type="password" name="password" value=""
-                                       required="required"/>
+                                       required="required" autocomplete="new-password"/>
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label" for="password-confirm">{{ 'Password Confirm'|trans }}</label>
-                                <input class="form-control" id="password-confirm" type="password" name="password_confirm" value="" required="required"/>
+                                <input class="form-control" id="password-confirm" type="password" name="password_confirm" value="" required="required" autocomplete="new-password"/>
                             </div>
 
                             {{ mf.recaptcha }}
@@ -181,7 +199,7 @@
                                     <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" required>
                                     <label class="form-check-label" for="flexCheckDefault">
                                         {# TODO: Make this translatable once support for placeholders is implemented #}
-                                        <span>I agree to the <a href="{{ 'tos'|url }}" target="_blank">{{ 'Terms of Service'|trans }}</a> and <a href="{{ 'privacy-policy'|url }}" target="_blank">{{ 'Privacy Policy'|trans }}.</span>
+                                        <span>I agree to the <a href="{{ 'tos'|url }}" target="_blank" rel="noopener">{{ 'Terms of Service'|trans }}</a> and <a href="{{ 'privacy-policy'|url }}" target="_blank" rel="noopener">{{ 'Privacy Policy'|trans }}.</span>
                                     </label>
                                 </div>
                             {% endif %}
@@ -193,19 +211,14 @@
                             {% if settings.signup_tos == 'implicit' %}
                                 <div class="mb-1">
                                     {# TODO: Make this translatable once support for placeholders is implemented #}
-                                    <span class="text-muted mb-1">By creating an account, you agree to our <a href="{{ 'tos'|url }}" target="_blank">{{ 'Terms of Service'|trans }}</a> and <a href="{{ 'privacy-policy'|url }}" target="_blank">{{ 'Privacy Policy'|trans }}</a>.</span>
+                                    <span class="text-muted mb-1">By creating an account, you agree to our <a href="{{ 'tos'|url }}" target="_blank" rel="noopener">{{ 'Terms of Service'|trans }}</a> and <a href="{{ 'privacy-policy'|url }}" target="_blank" rel="noopener">{{ 'Privacy Policy'|trans }}</a>.</span>
                                 </div>
                             {% endif %}
                         </form>
-                        <div class="row">
-                            <div class="col">
-                                <a class="btn btn-outline-primary mb-2 w-100"
-                                   href="{{ 'login'|url }}">{{ 'Already a User?'|trans }}</a>
-                            </div>
+                        <div class="auth-actions">
+                            <a class="btn btn-outline-primary" href="{{ 'login'|url }}">{{ 'Already a User?'|trans }}</a>
                             {% if settings.show_password_reset_link %}
-                                <div class="col">
-                                    <a class="btn btn-outline-primary mb-2 w-100" href="{{ 'password-reset'|url }}">{{ 'Forgot password?'|trans }}</a>
-                                </div>
+                                <a class="btn btn-link" href="{{ 'password-reset'|url }}">{{ 'Forgot password?'|trans }}</a>
                             {% endif %}
                         </div>
                     </div>

@@ -1,4 +1,21 @@
 {% block content %}
+{% set auth_login_hero_title_default = 'Welcome back'|trans %}
+{% set auth_login_hero_subtitle_default = 'Manage your billing, services, invoices, and support tickets from one secure place.'|trans %}
+{% set auth_login_heading_title_default = 'Login to your account'|trans %}
+{% set auth_login_heading_subtitle_default = 'Enter your details below to continue to the client area.'|trans %}
+{% set auth_signup_hero_title_default = 'Start with a client account'|trans %}
+{% set auth_signup_hero_subtitle_default = 'Create one account to order services, pay invoices, and contact support.'|trans %}
+{% set auth_signup_heading_title_default = 'Create a new account'|trans %}
+{% set auth_signup_heading_subtitle_default = 'Fill in the details below to access the client area.'|trans %}
+{% set auth_password_reset_hero_title_default = 'Recover access'|trans %}
+{% set auth_password_reset_hero_subtitle_default = 'Request a secure password reset link and get back to managing your account.'|trans %}
+{% set auth_password_reset_heading_title_default = 'Reset your password'|trans %}
+{% set auth_password_reset_heading_subtitle_default = 'Enter your email address and we will send reset instructions if an account exists.'|trans %}
+{% set auth_set_password_hero_title_default = 'Secure your account'|trans %}
+{% set auth_set_password_hero_subtitle_default = 'Choose a new password before returning to the client area.'|trans %}
+{% set auth_set_password_heading_title_default = 'Set new password'|trans %}
+{% set auth_set_password_heading_subtitle_default = 'Use a strong password that you have not used with this account before.'|trans %}
+
 <fieldset>
     <legend>{{ 'Look and Feel'|trans }}</legend>
 
@@ -77,6 +94,101 @@
                 <label><input type="radio" name="show_signup_link" value="1" id="show_signup_link_1" checked="checked">{{ 'Yes'|trans }}</label>
                 <label><input type="radio" name="show_signup_link" value="0" id="show_signup_link_0">{{ 'No'|trans }}</label>
             </td>
+        </tr>
+    </table>
+</fieldset>
+
+<fieldset>
+    <legend>{{ 'Authentication Pages'|trans }}</legend>
+
+    <h3>{{ 'Shared Authentication Layout'|trans }}</h3>
+    <table>
+        <tr>
+            <td><label>{{ 'Show Desktop Hero Panel'|trans }}</label></td>
+            <td>
+                <label><input type="radio" name="auth_hero_enabled" value="1" id="auth_hero_enabled_1" checked="checked">{{ 'Yes'|trans }}</label>
+                <label><input type="radio" name="auth_hero_enabled" value="0" id="auth_hero_enabled_0">{{ 'No'|trans }}</label>
+            </td>
+        </tr>
+    </table>
+
+    <h3>{{ 'Login Page Text'|trans }}</h3>
+    <table>
+        <tr>
+            <td><label for="auth_login_hero_title">{{ 'Hero Title'|trans }}</label></td>
+            <td><input type="text" name="auth_login_hero_title" id="auth_login_hero_title" value="{{ auth_login_hero_title_default }}"></td>
+        </tr>
+        <tr>
+            <td><label for="auth_login_hero_subtitle">{{ 'Hero Subtitle'|trans }}</label></td>
+            <td><textarea name="auth_login_hero_subtitle" id="auth_login_hero_subtitle">{{ auth_login_hero_subtitle_default }}</textarea></td>
+        </tr>
+        <tr>
+            <td><label for="auth_login_heading_title">{{ 'Form Title'|trans }}</label></td>
+            <td><input type="text" name="auth_login_heading_title" id="auth_login_heading_title" value="{{ auth_login_heading_title_default }}"></td>
+        </tr>
+        <tr>
+            <td><label for="auth_login_heading_subtitle">{{ 'Form Subtitle'|trans }}</label></td>
+            <td><textarea name="auth_login_heading_subtitle" id="auth_login_heading_subtitle">{{ auth_login_heading_subtitle_default }}</textarea></td>
+        </tr>
+    </table>
+
+    <h3>{{ 'Signup Page Text'|trans }}</h3>
+    <table>
+        <tr>
+            <td><label for="auth_signup_hero_title">{{ 'Hero Title'|trans }}</label></td>
+            <td><input type="text" name="auth_signup_hero_title" id="auth_signup_hero_title" value="{{ auth_signup_hero_title_default }}"></td>
+        </tr>
+        <tr>
+            <td><label for="auth_signup_hero_subtitle">{{ 'Hero Subtitle'|trans }}</label></td>
+            <td><textarea name="auth_signup_hero_subtitle" id="auth_signup_hero_subtitle">{{ auth_signup_hero_subtitle_default }}</textarea></td>
+        </tr>
+        <tr>
+            <td><label for="auth_signup_heading_title">{{ 'Form Title'|trans }}</label></td>
+            <td><input type="text" name="auth_signup_heading_title" id="auth_signup_heading_title" value="{{ auth_signup_heading_title_default }}"></td>
+        </tr>
+        <tr>
+            <td><label for="auth_signup_heading_subtitle">{{ 'Form Subtitle'|trans }}</label></td>
+            <td><textarea name="auth_signup_heading_subtitle" id="auth_signup_heading_subtitle">{{ auth_signup_heading_subtitle_default }}</textarea></td>
+        </tr>
+    </table>
+
+    <h3>{{ 'Password Reset Page Text'|trans }}</h3>
+    <table>
+        <tr>
+            <td><label for="auth_password_reset_hero_title">{{ 'Hero Title'|trans }}</label></td>
+            <td><input type="text" name="auth_password_reset_hero_title" id="auth_password_reset_hero_title" value="{{ auth_password_reset_hero_title_default }}"></td>
+        </tr>
+        <tr>
+            <td><label for="auth_password_reset_hero_subtitle">{{ 'Hero Subtitle'|trans }}</label></td>
+            <td><textarea name="auth_password_reset_hero_subtitle" id="auth_password_reset_hero_subtitle">{{ auth_password_reset_hero_subtitle_default }}</textarea></td>
+        </tr>
+        <tr>
+            <td><label for="auth_password_reset_heading_title">{{ 'Form Title'|trans }}</label></td>
+            <td><input type="text" name="auth_password_reset_heading_title" id="auth_password_reset_heading_title" value="{{ auth_password_reset_heading_title_default }}"></td>
+        </tr>
+        <tr>
+            <td><label for="auth_password_reset_heading_subtitle">{{ 'Form Subtitle'|trans }}</label></td>
+            <td><textarea name="auth_password_reset_heading_subtitle" id="auth_password_reset_heading_subtitle">{{ auth_password_reset_heading_subtitle_default }}</textarea></td>
+        </tr>
+    </table>
+
+    <h3>{{ 'Set New Password Page Text'|trans }}</h3>
+    <table>
+        <tr>
+            <td><label for="auth_set_password_hero_title">{{ 'Hero Title'|trans }}</label></td>
+            <td><input type="text" name="auth_set_password_hero_title" id="auth_set_password_hero_title" value="{{ auth_set_password_hero_title_default }}"></td>
+        </tr>
+        <tr>
+            <td><label for="auth_set_password_hero_subtitle">{{ 'Hero Subtitle'|trans }}</label></td>
+            <td><textarea name="auth_set_password_hero_subtitle" id="auth_set_password_hero_subtitle">{{ auth_set_password_hero_subtitle_default }}</textarea></td>
+        </tr>
+        <tr>
+            <td><label for="auth_set_password_heading_title">{{ 'Form Title'|trans }}</label></td>
+            <td><input type="text" name="auth_set_password_heading_title" id="auth_set_password_heading_title" value="{{ auth_set_password_heading_title_default }}"></td>
+        </tr>
+        <tr>
+            <td><label for="auth_set_password_heading_subtitle">{{ 'Form Subtitle'|trans }}</label></td>
+            <td><textarea name="auth_set_password_heading_subtitle" id="auth_set_password_heading_subtitle">{{ auth_set_password_heading_subtitle_default }}</textarea></td>
         </tr>
     </table>
 </fieldset>
