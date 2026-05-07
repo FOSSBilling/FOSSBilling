@@ -43,9 +43,8 @@ class DebugBarExtension
         if ($js) {
             $html .= '<script type="text/javascript">' . $js . '</script>';
         }
-        $html .= $head;
 
-        return $html;
+        return $html . $head;
     }
 
     #[AsTwigFunction('debug_bar_render', isSafe: ['html'])]

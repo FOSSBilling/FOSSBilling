@@ -20,7 +20,7 @@ use Twig\Extra\Markdown\MarkdownInterface;
 
 class FOSSBillingMarkdown implements MarkdownInterface
 {
-    private MarkdownConverter $converter;
+    private readonly MarkdownConverter $converter;
 
     public function __construct(\Pimple\Container $di)
     {

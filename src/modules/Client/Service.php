@@ -447,7 +447,7 @@ class Service implements InjectionAwareInterface
             $config = $this->di['mod_config']('client');
             $clientVisibleCustomFields = array_filter(
                 $config['custom_fields'] ?? [],
-                fn ($field) => isset($field['active']) && $field['active']
+                fn ($field): bool => isset($field['active']) && $field['active']
             );
         }
 

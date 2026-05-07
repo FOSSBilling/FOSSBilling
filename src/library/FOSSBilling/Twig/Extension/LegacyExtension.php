@@ -30,7 +30,7 @@ class LegacyExtension
             $record = $this->di['geoip']->country($ip);
 
             return $record->name;
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return '';
         }
     }

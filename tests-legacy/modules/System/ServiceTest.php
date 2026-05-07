@@ -448,7 +448,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['api_guest'] = $apiGuest;
-        $di['mod_service'] = $di->protect(fn (string $service) => match ($service) {
+        $di['mod_service'] = $di->protect(fn (string $service): object => match ($service) {
             'theme' => $themeService,
             default => throw new \RuntimeException(sprintf('Unexpected mod_service request: %s', $service)),
         });
@@ -490,7 +490,7 @@ final class ServiceTest extends \BBTestCase
         $di['api_guest'] = new \stdClass();
         $di['loggedin_admin'] = (object) ['id' => 42];
         $di['session'] = $this->mockSession();
-        $di['mod_service'] = $di->protect(fn (string $service) => match ($service) {
+        $di['mod_service'] = $di->protect(fn (string $service): object => match ($service) {
             'Staff' => $staffService,
             default => throw new \RuntimeException(sprintf('Unexpected mod_service request: %s', $service)),
         });

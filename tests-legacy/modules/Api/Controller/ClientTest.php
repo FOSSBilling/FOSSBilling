@@ -244,7 +244,7 @@ final class ClientTest extends \BBTestCase
     public function testRawResponseBypassesJsonRendering(): void
     {
         $response = new Response('pdf-bytes', 200, ['Content-Type' => 'application/pdf']);
-        $controller = $this->createController(api: new class($response) {
+        $controller = $this->createController(api: new readonly class($response) {
             public function __construct(private Response $response)
             {
             }

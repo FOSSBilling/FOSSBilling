@@ -210,12 +210,10 @@ final class GuestTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
         $di['validator'] = new \FOSSBilling\Validate();
         $di['tools'] = $toolsMock;
-        $di['mod_service'] = $di->protect(function (string $name) use ($emailServiceMock, $extensionServiceMock) {
-            return match ($name) {
-                'email' => $emailServiceMock,
-                'extension' => $extensionServiceMock,
-                default => $this->createMock(\Box\Mod\Extension\Service::class),
-            };
+        $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+            'email' => $emailServiceMock,
+            'extension' => $extensionServiceMock,
+            default => $this->createMock(\Box\Mod\Extension\Service::class),
         });
         $di['logger'] = $this->createMock('\Box_Log');
         $di['rate_limiter'] = $rateLimiterMock;

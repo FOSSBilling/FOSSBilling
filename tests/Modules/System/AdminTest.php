@@ -9,9 +9,9 @@ use PHPUnit\Framework\TestCase;
 
 final class AdminTest extends TestCase
 {
-    private const MAX_RETRY_ATTEMPTS = 10;
-    private const RETRY_DELAY_MICROSECONDS = 200000;
-    private const DEFAULT_INTERFACE = '0';
+    private const int MAX_RETRY_ATTEMPTS = 10;
+    private const int RETRY_DELAY_MICROSECONDS = 200000;
+    private const string DEFAULT_INTERFACE = '0';
 
     public function testClearCache(): void
     {
@@ -186,9 +186,7 @@ final class AdminTest extends TestCase
             ],
         ]);
 
-        set_error_handler(static function (): bool {
-            return true;
-        });
+        set_error_handler(static fn (): bool => true);
 
         try {
             $response = file_get_contents('https://api.ipify.org', false, $context);

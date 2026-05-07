@@ -41,14 +41,12 @@ use Twig\RuntimeLoader\RuntimeLoaderInterface;
 
 class TwigFactory
 {
-    private \Pimple\Container $di;
-    private array $baseConfig;
+    private readonly array $baseConfig;
     private ?Environment $emailEnvironment = null;
     private ?Environment $adapterEnvironment = null;
 
-    public function __construct(\Pimple\Container $di)
+    public function __construct(private \Pimple\Container $di)
     {
-        $this->di = $di;
         $this->baseConfig = Config::getProperty('twig', []);
     }
 
@@ -60,8 +58,8 @@ class TwigFactory
         // Get internationalisation settings from config, or use sensible defaults.
         $locale = i18n::getActiveLocale();
         $timezone = Config::getProperty('i18n.timezone', 'UTC');
-        $dateFormat = strtoupper(Config::getProperty('i18n.date_format', 'MEDIUM'));
-        $timeFormat = strtoupper(Config::getProperty('i18n.time_format', 'SHORT'));
+        $dateFormat = strtoupper((string) Config::getProperty('i18n.date_format', 'MEDIUM'));
+        $timeFormat = strtoupper((string) Config::getProperty('i18n.time_format', 'SHORT'));
         $dateTimePattern = Config::getProperty('i18n.datetime_pattern');
 
         // Create Twig environment with ArrayLoader (will be replaced in specific contexts).
@@ -181,8 +179,8 @@ class TwigFactory
         // Get internationalisation settings from config
         $locale = i18n::getActiveLocale();
         $timezone = Config::getProperty('i18n.timezone', 'UTC');
-        $dateFormat = strtoupper(Config::getProperty('i18n.date_format', 'MEDIUM'));
-        $timeFormat = strtoupper(Config::getProperty('i18n.time_format', 'SHORT'));
+        $dateFormat = strtoupper((string) Config::getProperty('i18n.date_format', 'MEDIUM'));
+        $timeFormat = strtoupper((string) Config::getProperty('i18n.time_format', 'SHORT'));
         $dateTimePattern = Config::getProperty('i18n.datetime_pattern');
 
         // Create Twig environment with ArrayLoader
@@ -213,12 +211,9 @@ class TwigFactory
         $twig->addExtension(new AttributeExtension(LegacyExtension::class));
 
         // Minimal runtime loader for email environment only
-        $runtimeLoader = new class($this->di) implements RuntimeLoaderInterface {
-            private \Pimple\Container $di;
-
-            public function __construct(\Pimple\Container $di)
+        $runtimeLoader = new readonly class($this->di) implements RuntimeLoaderInterface {
+            public function __construct(private \Pimple\Container $di)
             {
-                $this->di = $di;
             }
 
             public function load($class)
@@ -259,8 +254,8 @@ class TwigFactory
 
         $locale = i18n::getActiveLocale();
         $timezone = Config::getProperty('i18n.timezone', 'UTC');
-        $dateFormat = strtoupper(Config::getProperty('i18n.date_format', 'MEDIUM'));
-        $timeFormat = strtoupper(Config::getProperty('i18n.time_format', 'SHORT'));
+        $dateFormat = strtoupper((string) Config::getProperty('i18n.date_format', 'MEDIUM'));
+        $timeFormat = strtoupper((string) Config::getProperty('i18n.time_format', 'SHORT'));
         $dateTimePattern = Config::getProperty('i18n.datetime_pattern');
 
         $loader = new ArrayLoader();
@@ -284,12 +279,9 @@ class TwigFactory
         $twig->addExtension(new AttributeExtension(FOSSBillingExtension::class));
         $twig->addExtension(new AttributeExtension(LegacyExtension::class));
 
-        $runtimeLoader = new class($this->di) implements RuntimeLoaderInterface {
-            private \Pimple\Container $di;
-
-            public function __construct(\Pimple\Container $di)
+        $runtimeLoader = new readonly class($this->di) implements RuntimeLoaderInterface {
+            public function __construct(private \Pimple\Container $di)
             {
-                $this->di = $di;
             }
 
             public function load($class)
@@ -320,12 +312,9 @@ class TwigFactory
 
     private function configureRuntimeLoaders(Environment $twig): void
     {
-        $runtimeLoader = new class($this->di) implements RuntimeLoaderInterface {
-            private \Pimple\Container $di;
-
-            public function __construct(\Pimple\Container $di)
+        $runtimeLoader = new readonly class($this->di) implements RuntimeLoaderInterface {
+            public function __construct(private \Pimple\Container $di)
             {
-                $this->di = $di;
             }
 
             public function load($class)
@@ -403,7 +392,7 @@ class TwigFactory
 
         $twig->addExtension(new AttributeExtension(DebugBarExtension::class));
         $twig->addRuntimeLoader(new FactoryRuntimeLoader([
-            DebugBarExtension::class => fn () => new DebugBarExtension($debugBar),
+            DebugBarExtension::class => fn (): DebugBarExtension => new DebugBarExtension($debugBar),
         ]));
     }
 }

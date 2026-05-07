@@ -8,7 +8,7 @@ use Box\Mod\Api\Controller\Client;
 use FOSSBilling\InformationException;
 use PHPUnit\Framework\Attributes\Group;
 
-final class CronStaffServiceDouble
+final readonly class CronStaffServiceDouble
 {
     public function __construct(private \Model_Admin $cronAdmin)
     {

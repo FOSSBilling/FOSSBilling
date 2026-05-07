@@ -515,7 +515,7 @@ final class ServiceInvoiceItemTest extends \BBTestCase
                 return $data['code'] . ' ' . $data['price'];
             }
         };
-        $di['mod_service'] = $di->protect(fn (string $serviceName) => match ($serviceName) {
+        $di['mod_service'] = $di->protect(fn (string $serviceName): \PHPUnit\Framework\MockObject\MockObject => match ($serviceName) {
             'Order' => $orderService,
             'client' => $clientService,
             'Product' => $productService,

@@ -61,7 +61,7 @@ final class DomainPricingTest extends \BBTestCase
         $db = $this->createMock('Box_Database');
         $db->expects($this->atLeast(4))
             ->method('load')
-            ->willReturnCallback(static fn (string $model) => $model === 'Cart' ? $cart : $product);
+            ->willReturnCallback(static fn (string $model): \Model_Cart|\PHPUnit\Framework\MockObject\MockObject => $model === 'Cart' ? $cart : $product);
 
         $di = $this->getDi();
         $di['db'] = $db;

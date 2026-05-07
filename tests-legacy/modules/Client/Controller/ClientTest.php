@@ -60,7 +60,7 @@ final class ClientTest extends \BBTestCase
         $this->rateLimitCalls = new \ArrayObject();
 
         $rateLimiter = new class($this->rateLimitCalls, $limited) {
-            public function __construct(private \ArrayObject $calls, private bool $limited)
+            public function __construct(private \ArrayObject $calls, private readonly bool $limited)
             {
             }
 

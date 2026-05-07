@@ -58,6 +58,7 @@ class TwigLoader extends FilesystemLoader
      * Override findTemplate to handle module icon naming convention.
      * Handles module icon naming convention for icon.svg files.
      */
+    #[\Override]
     protected function findTemplate(string $name, bool $throw = true)
     {
         // Normalize name (same as parent's private normalizeName)
@@ -69,7 +70,7 @@ class TwigLoader extends FilesystemLoader
 
         // Handle module icons: mod_ModuleName_icon.svg -> PATH_MODS/ModuleName/icon.svg
         // Also handles mod_ModuleName_filename.svg -> PATH_MODS/ModuleName/filename.svg
-        if (preg_match('/^mod_([A-Za-z0-9]+)_(.+\.svg)$/', $name, $matches)) {
+        if (preg_match('/^mod_([A-Za-z0-9]+)_(.+\.svg)$/', (string) $name, $matches)) {
             $moduleName = $matches[1];
             $iconFile = $matches[2];
             $iconPath = Path::join(PATH_MODS, $moduleName, $iconFile);

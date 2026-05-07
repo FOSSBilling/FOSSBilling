@@ -401,12 +401,10 @@ final class ServiceTest extends \BBTestCase
             ->method('renderEmailTplString')
             ->willReturn('rendered');
         $systemService->method('getParamValue')
-            ->willReturnCallback(function ($param) {
-                return match ($param) {
-                    'company_email' => 'company@example.com',
-                    'company_name' => 'Test Company',
-                    default => 'value',
-                };
+            ->willReturnCallback(fn ($param) => match ($param) {
+                'company_email' => 'company@example.com',
+                'company_name' => 'Test Company',
+                default => 'value',
             });
 
         $twig = $this->getMockBuilder(\Twig\Environment::class)->disableOriginalConstructor()->getMock();

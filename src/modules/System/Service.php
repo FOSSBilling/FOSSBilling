@@ -463,9 +463,10 @@ class Service
     public function sanitizeAdapterOutput(string $html): string
     {
         $html = preg_replace('#<script\b[^>]*>.*?</script>#is', '', $html);
-        $html = preg_replace('#<script\b[^>]*/?>#is', '', $html);
-        $html = preg_replace('#\s+\bon\w+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]*)#i', '', $html);
-        $html = preg_replace_callback(
+        $html = preg_replace('#<script\b[^>]*/?>#is', '', (string) $html);
+        $html = preg_replace('#\s+\bon\w+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]*)#i', '', (string) $html);
+
+        return preg_replace_callback(
             '#\s+\b(href|src|action|formaction|xlink:href)\s*=\s*(?:(["\'])(.*?)\2|([^\s>]*))#is',
             static function (array $matches): string {
                 $value = html_entity_decode($matches[3] !== '' ? $matches[3] : $matches[4], ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -477,10 +478,8 @@ class Service
 
                 return $matches[0];
             },
-            $html
+            (string) $html
         );
-
-        return $html;
     }
 
     /**

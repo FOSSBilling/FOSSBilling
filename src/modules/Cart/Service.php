@@ -136,7 +136,7 @@ class Service implements InjectionAwareInterface
         if (!empty($domainsBeingAdded)) {
             $existingItems = $this->di['db']->find('CartProduct', 'cart_id = ?', [$cart->id]);
             foreach ($existingItems as $item) {
-                $itemConfig = json_decode($item->config, true);
+                $itemConfig = json_decode((string) $item->config, true);
                 if (!is_array($itemConfig)) {
                     continue;
                 }
