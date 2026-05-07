@@ -117,7 +117,7 @@
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Fund balance'|trans }}:</td>
-                            <td class="text-danger fw-bold">{{ client.balance|format_currency(client.currency) }}</td>
+                            <td class="text-danger fw-bold">{% if client.currency %}{{ client.balance|format_currency(client.currency) }}{% else %}{{ client.balance|default(0) }}{% endif %}</td>
                         </tr>
                         {% if client.notes %}
                         <tr>

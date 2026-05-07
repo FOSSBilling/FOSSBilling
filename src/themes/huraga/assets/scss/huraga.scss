@@ -529,6 +529,67 @@ header .navbar {
     }
 }
 
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 12rem;
+    padding: 2rem 1rem;
+    color: var(--bs-secondary-color);
+    text-align: center;
+    background:
+        radial-gradient(circle at center top, rgba(var(--bs-primary-rgb), 0.08), transparent 14rem),
+        var(--huraga-surface-muted);
+    border: 1px dashed var(--huraga-border-subtle);
+    border-radius: var(--huraga-radius-lg);
+
+    h3 {
+        margin: 0.75rem 0 0.35rem;
+        color: var(--bs-body-color);
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+    p {
+        max-width: 28rem;
+        margin-bottom: 1rem;
+        font-size: 0.925rem;
+    }
+}
+
+.empty-state-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    color: var(--bs-primary);
+    background: rgba(var(--bs-primary-rgb), 0.1);
+    border-radius: 999px;
+
+    .svg-icon {
+        width: 1.35rem;
+        height: 1.35rem;
+    }
+}
+
+.empty-state-compact {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 1rem;
+    color: var(--bs-secondary-color);
+}
+
+@media (max-width: 575.98px) {
+    .empty-state-compact {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
 // Language selector vertical alignment in navbar
 .nav-item {
     display: flex;

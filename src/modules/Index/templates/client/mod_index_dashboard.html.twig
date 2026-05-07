@@ -166,8 +166,9 @@
                                     {% endfor %}
                                 </div>
                             {% else %}
-                                <div class="d-flex justify-content-center my-2 p-2">
-                                    <span class="m-0">{{ 'No recent orders'|trans }}</span>
+                                <div class="empty-state-compact">
+                                    <span>{{ 'No recent orders'|trans }}</span>
+                                    <a class="btn btn-sm btn-primary" href="{{ 'order'|url }}">{{ 'Order now'|trans }}</a>
                                 </div>
                             {% endif %}
                         </div>
@@ -198,8 +199,9 @@
                                     {% endfor %}
                                 </div>
                             {% else %}
-                                <div class="d-flex justify-content-center my-2 p-2">
-                                    <span class="m-0">{{ 'No recent support tickets'|trans }}</span>
+                                <div class="empty-state-compact">
+                                    <span>{{ 'No recent support tickets'|trans }}</span>
+                                    <a class="btn btn-sm btn-primary" href="{{ 'support'|url(query: { 'ticket': 1 }) }}">{{ 'Open ticket'|trans }}</a>
                                 </div>
                             {% endif %}
                         </div>

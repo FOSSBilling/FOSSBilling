@@ -55,9 +55,7 @@
                             </tbody>
                         </table>
                     {% else %}
-                        <div class="d-flex justify-content-center my-2 py-4">
-                            <span class="m-0">{{ 'No orders yet'|trans }}</span>
-                        </div>
+                        {{ mf.empty_state('No services yet', 'Order a service and it will show up here for management.', 'order'|url, 'Order now') }}
                     {% endif %}
                     {{ include('partial_pagination.html.twig', { 'list': orders }) }}
                 </div>
