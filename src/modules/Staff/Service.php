@@ -295,7 +295,7 @@ class Service implements InjectionAwareInterface
 
         try {
             $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getTicketById($params['id']);
+            $ticketModel = $supportTicketService->getTicketById((int) $params['id']);
             $ticket = $supportTicketService->toApiArray($ticketModel, true);
 
             $helpdeskModel = $di['db']->load('SupportHelpdesk', $ticketModel->support_helpdesk_id);
@@ -327,7 +327,7 @@ class Service implements InjectionAwareInterface
 
         try {
             $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getTicketById($params['id']);
+            $ticketModel = $supportTicketService->getTicketById((int) $params['id']);
             $ticket = $supportTicketService->toApiArray($ticketModel, true);
 
             $email = [];
@@ -349,7 +349,7 @@ class Service implements InjectionAwareInterface
 
         try {
             $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getTicketById($params['id']);
+            $ticketModel = $supportTicketService->getTicketById((int) $params['id']);
             $ticket = $supportTicketService->toApiArray($ticketModel, true);
             $email = [];
             $email['to_staff'] = true;
@@ -370,7 +370,7 @@ class Service implements InjectionAwareInterface
 
         try {
             $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getPublicTicketById($params['id']);
+            $ticketModel = $supportTicketService->getPublicTicketById((int) $params['id']);
             $ticket = $supportTicketService->publicToApiArray($ticketModel, true);
             $email = [];
             $email['to_staff'] = true;
@@ -411,7 +411,7 @@ class Service implements InjectionAwareInterface
 
         try {
             $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getPublicTicketById($params['id']);
+            $ticketModel = $supportTicketService->getPublicTicketById((int) $params['id']);
             $ticket = $supportTicketService->publicToApiArray($ticketModel, true);
             $email = [];
             $email['to_staff'] = true;

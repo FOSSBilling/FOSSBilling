@@ -171,7 +171,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 }
 
                 $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
-                if (!$transactionService->claimForProcessing($tx->id)) {
+                if (!$transactionService->claimForProcessing((int) $tx->id)) {
                     return;
                 }
 

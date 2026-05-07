@@ -251,7 +251,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if (!$model instanceof MassmailerMessage) {
             throw new \Exception('Mass mail message not found');
         }
-        $this->sendMessage($model, $params['client_id']);
+        $this->sendMessage($model, (int) $params['client_id']);
     }
 
     private function normalizeEnumFilterValues(mixed $values, array $allowedValues, string $field, bool $strict): array

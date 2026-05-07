@@ -40,7 +40,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         if ($product['form_id']) {
             $formbuilderService = $this->di['mod_service']('formbuilder');
-            $form = $formbuilderService->getForm($product['form_id']);
+            $form = $formbuilderService->getForm((int) $product['form_id']);
             foreach ($form['fields'] as $field) {
                 if ($field['required'] == 1) {
                     $field_name = $field['name'];

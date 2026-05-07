@@ -1374,7 +1374,7 @@ class Service implements InjectionAwareInterface
     {
         if ($order->form_id) {
             $formbuilderService = $this->di['mod_service']('formbuilder');
-            $form = $formbuilderService->getForm($order->form_id);
+            $form = $formbuilderService->getForm((int) $order->form_id);
             $this->validateConfigAgainstForm($config, $form);
         }
 

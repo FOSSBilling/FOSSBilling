@@ -173,7 +173,7 @@ Order our services at {{ "order"|url }}
 
         $clients = $this->getService()->getMessageReceivers($model);
         foreach ($clients as $c) {
-            $this->getService()->sendMessage($model, $c['id']);
+            $this->getService()->sendMessage($model, (int) $c['id']);
         }
 
         $model->setStatus(MassmailerMessage::STATUS_SENT);

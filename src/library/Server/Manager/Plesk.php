@@ -147,7 +147,7 @@ class Server_Manager_Plesk extends Server_Manager
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 
-        $client->setId((string) $id);
+        $client->setId((int) $id);
 
         $this->setSubscription($account);
 
@@ -243,7 +243,7 @@ class Server_Manager_Plesk extends Server_Manager
         if (!$id) {
             throw new Server_Exception('Can\'t modify client');
         }
-        $client->setId($id);
+        $client->setId((int) $id);
 
         $account->setPackage($package);
         $this->updateSubscription($account);

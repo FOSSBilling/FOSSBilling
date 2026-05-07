@@ -37,7 +37,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $emailService = $di['mod_service']('email');
 
         try {
-            $ticketObj = $supportService->getTicketById($params['id']);
+            $ticketObj = $supportService->getTicketById((int) $params['id']);
             $identity = $di['loggedin_client'];
             $ticketArr = $supportService->toApiArray($ticketObj, true, $identity);
 
@@ -59,7 +59,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $params = $event->getParameters();
 
         try {
-            $ticketObj = $supportService->getTicketById($params['id']);
+            $ticketObj = $supportService->getTicketById((int) $params['id']);
             $identity = $di['loggedin_admin'];
             $ticketArr = $supportService->toApiArray($ticketObj, true, $identity);
 
@@ -82,7 +82,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         try {
             $identity = $di['loggedin_admin'];
-            $ticketObj = $supportService->getTicketById($params['id']);
+            $ticketObj = $supportService->getTicketById((int) $params['id']);
             $ticketArr = $supportService->toApiArray($ticketObj, true, $identity);
 
             $email = [];
@@ -103,7 +103,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $params = $event->getParameters();
 
         try {
-            $ticketObj = $supportService->getTicketById($params['id']);
+            $ticketObj = $supportService->getTicketById((int) $params['id']);
             $identity = $di['loggedin_admin'];
             $ticketArr = $supportService->toApiArray($ticketObj, true, $identity);
 
@@ -125,7 +125,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $params = $event->getParameters();
 
         try {
-            $ticketObj = $supportService->getPublicTicketById($params['id']);
+            $ticketObj = $supportService->getPublicTicketById((int) $params['id']);
             $ticketArr = $supportService->publicToApiArray($ticketObj, true);
 
             $email = [];
@@ -147,7 +147,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $params = $event->getParameters();
 
         try {
-            $ticketObj = $supportService->getPublicTicketById($params['id']);
+            $ticketObj = $supportService->getPublicTicketById((int) $params['id']);
             $identity = $di['loggedin_admin'];
             $ticketArr = $supportService->publicToApiArray($ticketObj, true, $identity);
 
@@ -170,7 +170,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $params = $event->getParameters();
 
         try {
-            $ticketObj = $supportService->getPublicTicketById($params['id']);
+            $ticketObj = $supportService->getPublicTicketById((int) $params['id']);
             $identity = $di['loggedin_admin'];
             $ticketArr = $supportService->publicToApiArray($ticketObj, true, $identity);
 
@@ -193,7 +193,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $params = $event->getParameters();
 
         try {
-            $ticketObj = $supportService->getPublicTicketById($params['id']);
+            $ticketObj = $supportService->getPublicTicketById((int) $params['id']);
             $identity = $di['loggedin_admin'];
             $ticketArr = $supportService->publicToApiArray($ticketObj, true, $identity);
 

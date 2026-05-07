@@ -76,7 +76,7 @@ class Service implements InjectionAwareInterface
         $currency = null;
         $clientId = $this->di['session']->get('client_id');
         if ($clientId) {
-            $currency = $currencyService->getCurrencyByClientId($clientId);
+            $currency = $currencyService->getCurrencyByClientId((int) $clientId);
         }
 
         // Fallback to default currency
