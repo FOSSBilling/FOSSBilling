@@ -192,8 +192,12 @@ final class AdminTest extends TestCase
 
         $lookupErrorMessage = null;
         set_error_handler(static function (int $severity, string $message) use (&$lookupErrorMessage): bool {
-            $lookupErrorMessage = $message;
-            return true;
+            if ($severity === E_WARNING) {
+                $lookupErrorMessage = $message;
+                return true;
+            }
+
+            return false;
         });
 
         try {
