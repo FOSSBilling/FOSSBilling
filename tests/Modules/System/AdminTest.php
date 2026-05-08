@@ -9,7 +9,9 @@ use PHPUnit\Framework\TestCase;
 
 final class AdminTest extends TestCase
 {
+    // Retry up to 10 times to tolerate short-lived backend/cache propagation delays in CI.
     private const int MAX_RETRY_ATTEMPTS = 10;
+    // Wait 200ms between retries to reduce API hammering while keeping total wait time reasonable.
     private const int RETRY_DELAY_MICROSECONDS = 200000;
     private const string DEFAULT_INTERFACE = '0';
 
@@ -85,26 +87,28 @@ final class AdminTest extends TestCase
             $this->assertTrue((bool) filter_var($ip, FILTER_VALIDATE_IP));
         }
 
-        // Only test each found interface if ipify.org is functioning
-        if ($this->isIpLookupAvailable()) {
-            foreach ($result->getResult() as $ip) {
-                $testResult = Request::makeRequest('admin/system/set_interface_ip', ['interface' => $ip]);
-                $this->assertTrue($testResult->wasSuccessful(), $testResult->generatePHPUnitMessage());
+        // This test depends on external IP lookup availability; skip deterministically if unavailable.
+        if (!$this->isIpLookupAvailable()) {
+            $this->markTestSkipped('Integration test requires ipify.org to be available.');
+        }
 
-                $isReady = false;
-                for ($attempt = 0; $attempt < self::MAX_RETRY_ATTEMPTS; ++$attempt) {
-                    $envResult = Request::makeRequest('admin/system/env', ['ip' => true]);
-                    if ($envResult->wasSuccessful() && (bool) filter_var($envResult->getResult(), FILTER_VALIDATE_IP)) {
-                        $isReady = true;
+        foreach ($result->getResult() as $ip) {
+            $testResult = Request::makeRequest('admin/system/set_interface_ip', ['interface' => $ip]);
+            $this->assertTrue($testResult->wasSuccessful(), $testResult->generatePHPUnitMessage());
 
-                        break;
-                    }
+            $isReady = false;
+            for ($attempt = 0; $attempt < self::MAX_RETRY_ATTEMPTS; ++$attempt) {
+                $envResult = Request::makeRequest('admin/system/env', ['ip' => true]);
+                if ($envResult->wasSuccessful() && (bool) filter_var($envResult->getResult(), FILTER_VALIDATE_IP)) {
+                    $isReady = true;
 
-                    usleep(self::RETRY_DELAY_MICROSECONDS);
+                    break;
                 }
 
-                $this->assertTrue($isReady, 'Timed out waiting for interface IP to become active');
+                usleep(self::RETRY_DELAY_MICROSECONDS);
             }
+
+            $this->assertTrue($isReady, 'Timed out waiting for interface IP to become active');
         }
 
         // Finally, set it back to the default interface
@@ -186,12 +190,20 @@ final class AdminTest extends TestCase
             ],
         ]);
 
-        set_error_handler(static fn (): bool => true);
+        $lookupErrorMessage = null;
+        set_error_handler(static function (int $severity, string $message) use (&$lookupErrorMessage): bool {
+            $lookupErrorMessage = $message;
+            return true;
+        });
 
         try {
             $response = file_get_contents('https://api.ipify.org', false, $context);
         } finally {
             restore_error_handler();
+        }
+
+        if ($response === false && $lookupErrorMessage !== null) {
+            error_log('IP lookup availability check failed: ' . $lookupErrorMessage);
         }
 
         return $response !== false;

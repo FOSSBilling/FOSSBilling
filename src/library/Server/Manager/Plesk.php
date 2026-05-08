@@ -688,7 +688,7 @@ class Server_Manager_Plesk extends Server_Manager
      *
      * @return bool returns true after the DNS records have been removed
      *
-     * @throws Exception
+     * @throws \Exception
      */
     private function removeDns(array $ns): bool
     {
