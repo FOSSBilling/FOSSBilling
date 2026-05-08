@@ -105,7 +105,9 @@ final class AdminTest extends TestCase
                     break;
                 }
 
-                usleep(self::RETRY_DELAY_MICROSECONDS);
+                if ($attempt < self::MAX_RETRY_ATTEMPTS - 1) {
+                    usleep(self::RETRY_DELAY_MICROSECONDS);
+                }
             }
 
             $this->assertTrue($isReady, 'Timed out waiting for interface IP to become active');
@@ -191,15 +193,26 @@ final class AdminTest extends TestCase
         ]);
 
         $lookupErrorMessage = null;
-        set_error_handler(static function (int $severity, string $message) use (&$lookupErrorMessage): bool {
-            if ($severity === E_WARNING) {
-                $lookupErrorMessage = $message;
-                return true;
-            }
+        $previousErrorHandler = set_error_handler(
+            static function (
+                int $severity,
+                string $message,
+                string $file = '',
+                int $line = 0
+            ) use (&$lookupErrorMessage, &$previousErrorHandler): bool {
+                if ($severity === E_WARNING) {
+                    $lookupErrorMessage = $message;
+                    return true;
+                }
 
-            // Delegate non-warning severities to PHP's default error handler.
-            return false;
-        });
+                if (is_callable($previousErrorHandler)) {
+                    return (bool) $previousErrorHandler($severity, $message, $file, $line);
+                }
+
+                // No previous user handler; allow PHP internal handling.
+                return false;
+            }
+        );
 
         try {
             $response = file_get_contents('https://api.ipify.org', false, $context);

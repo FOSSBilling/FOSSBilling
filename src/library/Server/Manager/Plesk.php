@@ -692,6 +692,8 @@ class Server_Manager_Plesk extends Server_Manager
      */
     private function removeDns(array $ns): bool
     {
+        $params = [];
+
         // Iterate over each DNS record ID
         foreach ($ns as $key => $id) {
             // Prepare the parameters for the API request

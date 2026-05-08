@@ -187,7 +187,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Determines  if a staff member has the required permissions.
+     * Determines if a staff member has the required permissions.
      *
      * @param \Model_Admin|null $member     The model for the staff member to check. If you pass null, FOSSBilling will automatically get the currently authenticated staff member.
      * @param string            $module     what module to check permission for
@@ -506,13 +506,13 @@ class Service implements InjectionAwareInterface
         $cronEmail = $this->di['tools']->generatePassword() . '@' . $this->di['tools']->generatePassword() . '.com';
         $cronEmail = filter_var($cronEmail, FILTER_SANITIZE_EMAIL);
 
-        $CronPass = $this->di['tools']->generatePassword(256, 4);
+        $cronPass = $this->di['tools']->generatePassword(256, 4);
 
         $cron = $this->di['db']->dispense('Admin');
         $cron->role = \Model_Admin::ROLE_CRON;
         $cron->admin_group_id = 1;
         $cron->email = $cronEmail;
-        $cron->pass = $this->di['password']->hashIt($CronPass);
+        $cron->pass = $this->di['password']->hashIt($cronPass);
         $cron->name = 'System Cron Job';
         $cron->signature = '';
         $cron->protected = 1;
