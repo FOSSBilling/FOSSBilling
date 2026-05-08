@@ -197,6 +197,7 @@ final class AdminTest extends TestCase
                 return true;
             }
 
+            // Delegate non-warning severities to PHP's default error handler.
             return false;
         });
 
