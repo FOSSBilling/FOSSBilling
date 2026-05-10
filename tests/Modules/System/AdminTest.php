@@ -221,8 +221,8 @@ final class AdminTest extends TestCase
         }
 
         if ($response === false && $lookupErrorMessage !== null) {
-            $sanitizedLookupErrorMessage = str_replace(["\r", "\n"], ' ', $lookupErrorMessage);
-            error_log('IP lookup availability check failed: ' . $sanitizedLookupErrorMessage);
+            $singleLineLookupErrorMessage = str_replace(["\r", "\n"], ' ', $lookupErrorMessage);
+            error_log('IP lookup availability check failed: ' . $singleLineLookupErrorMessage);
         }
 
         return $response !== false;
