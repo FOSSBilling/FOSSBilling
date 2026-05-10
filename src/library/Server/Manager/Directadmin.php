@@ -167,13 +167,13 @@ class Server_Manager_Directadmin extends Server_Manager
         ];
 
         // Match the package name with a server package, if it exists. Otherwise, use custom values.
-        $packageName = $package->getName() ?? $package->getCustomValue('package');
+        $packageName = $package->getCustomValue('package') ?: $package->getName();
         $serverPackages = $this->getUserPackages();
         if (in_array($packageName, $serverPackages)) {
             $this->getLog()->info("Using DirectAdmin package name: {$packageName}.");
 
             $fields['action'] = 'package';
-            $fields['package'] = $account->getPackage()->getName();
+            $fields['package'] = $packageName;
         } else {
             $this->getLog()->info("Using custom package values: {$packageName} does not exist on the server.");
 
@@ -327,7 +327,7 @@ class Server_Manager_Directadmin extends Server_Manager
         ];
 
         // Match the package name with a server package, if it exists. Otherwise, use custom values.
-        $packageName = $package->getName() ?? $package->getCustomValue('package');
+        $packageName = $package->getCustomValue('package') ?: $package->getName();
         $serverPackages = $this->getUserPackages();
         if (in_array($packageName, $serverPackages)) {
             $this->getLog()->info("Using DirectAdmin package name: {$packageName}.");
