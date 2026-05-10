@@ -619,9 +619,28 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch46(): void
     {
+        // Normalize legacy values before converting to restrictive ENUM columns.
+        $q = 'UPDATE `client`
+                SET `gender` = NULL
+                WHERE `gender` IS NOT NULL
+                AND `gender` NOT IN (\'male\', \'female\', \'nonbinary\', \'other\');';
+        $this->executeSql($q);
+
+        $q = 'UPDATE `client`
+                SET `document_type` = NULL
+                WHERE `document_type` IS NOT NULL
+                AND `document_type` NOT IN (\'passport\');';
+        $this->executeSql($q);
+
         // Change gender column to ENUM type
         $q = 'ALTER TABLE `client`
                 MODIFY COLUMN `gender` ENUM(\'male\', \'female\', \'nonbinary\', \'other\') DEFAULT NULL;';
+
+        $this->executeSql($q);
+
+        // Change document_type column to ENUM type
+        $q = 'ALTER TABLE `client`
+                MODIFY COLUMN `document_type` ENUM(\'passport\') DEFAULT NULL;';
 
         $this->executeSql($q);
     }
