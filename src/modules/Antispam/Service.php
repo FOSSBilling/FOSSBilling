@@ -80,6 +80,20 @@ class Service implements InjectionAwareInterface
         $antispamService->isBlockedIp($event);
     }
 
+    public static function onBeforeClientLogin(\Box_Event $event): void
+    {
+        $di = $event->getDi();
+        $antispamService = $di['mod_service']('Antispam');
+        $antispamService->isBlockedIp($event);
+    }
+
+    public static function onBeforeAdminLogin(\Box_Event $event): void
+    {
+        $di = $event->getDi();
+        $antispamService = $di['mod_service']('Antispam');
+        $antispamService->isBlockedIp($event);
+    }
+
     public function isBlockedIp($event): void
     {
         $di = $event->getDi();
