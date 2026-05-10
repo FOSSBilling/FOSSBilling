@@ -47,7 +47,7 @@ FROM php-base AS composer-base
 
 WORKDIR /app
 
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2@sha256:d4ee82e9374726e237781aa32837a9933e288ca9ac11d30e6df3d9f27b174726 /usr/bin/composer /usr/bin/composer
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends git \
