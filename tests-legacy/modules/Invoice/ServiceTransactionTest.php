@@ -557,13 +557,27 @@ final class ServiceTransactionTest extends \BBTestCase
 
     public function testCreateAndProcess(): void
     {
+        $tx = new \Model_Transaction();
+        $tx->loadBean(new \DummyBean());
+        $tx->status = \Model_Transaction::STATUS_RECEIVED;
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('getExistingModelById')
+            ->willReturn($tx);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+
         $serviceMock = $this->getMockBuilder(ServiceTransaction::class)
             ->onlyMethods(['create', 'processTransaction'])
             ->getMock();
         $serviceMock->expects($this->once())
-            ->method('create');
+            ->method('create')
+            ->willReturn(1);
         $serviceMock->expects($this->once())
             ->method('processTransaction');
+        $serviceMock->setDi($di);
 
         $ipn = [];
         $serviceMock->createAndProcess($ipn);
