@@ -38,6 +38,7 @@ final class AdminTest extends TestCase
     public function testInvalidThemeActionReturnsError(): void
     {
         $result = Request::makeRequest('admin/theme/non_existing_action');
+        $this->assertSame(404, $result->getStatusCode(), 'Invalid theme action should return HTTP 404.');
         $this->assertFalse($result->wasSuccessful(), 'Invalid theme action should not be successful.');
         $this->assertSame(740, $result->getErrorCode(), 'Invalid theme action should return error code 740.');
 

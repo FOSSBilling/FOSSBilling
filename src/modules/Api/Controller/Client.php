@@ -452,6 +452,8 @@ class Client implements InjectionAwareInterface
                 header('HTTP/1.1 401 Unauthorized');
             } elseif ($code == 403) {
                 header('HTTP/1.1 403 Forbidden');
+            } elseif ($code == 740) {
+                header('HTTP/1.1 404 Not Found');
             } elseif ($code == 429) {
                 header('HTTP/1.1 429 Too Many Requests');
                 if ($e instanceof RateLimitException && $e->hasRetryAfter()) {
