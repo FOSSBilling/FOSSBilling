@@ -33,7 +33,7 @@ final class Api_GuestTest extends \BBTestCase
 
         $data = [
             'name' => 'Name',
-            'email' => 'email@wxample.com',
+            'email' => 'email@example.com',
             'subject' => 'Subject',
             'message' => 'Message',
         ];
@@ -60,7 +60,7 @@ final class Api_GuestTest extends \BBTestCase
 
         $data = [
             'name' => 'Name',
-            'email' => 'email@wxample.com',
+            'email' => 'email@example.com',
             'subject' => 'Subject',
             'message' => '',
         ];
@@ -89,7 +89,7 @@ final class Api_GuestTest extends \BBTestCase
 
         $data = [
             'name' => 'Name',
-            'email' => 'email@wxample.com',
+            'email' => 'email@example.com',
             'subject' => 'Subject',
             'message' => ['invalid'],
         ];

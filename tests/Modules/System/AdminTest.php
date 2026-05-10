@@ -96,19 +96,15 @@ final class AdminTest extends TestCase
             $testResult = Request::makeRequest('admin/system/set_interface_ip', ['interface' => $ip]);
             $this->assertTrue($testResult->wasSuccessful(), $testResult->generatePHPUnitMessage());
 
-            $isReady = false;
-            for ($attempt = 0; $attempt < self::MAX_RETRY_ATTEMPTS; ++$attempt) {
-                $envResult = Request::makeRequest('admin/system/env', ['ip' => true]);
-                if ($envResult->wasSuccessful() && (bool) filter_var($envResult->getResult(), FILTER_VALIDATE_IP)) {
-                    $isReady = true;
+            $isReady = $this->retryUntil(
+                static function (): bool {
+                    $envResult = Request::makeRequest('admin/system/env', ['ip' => true]);
 
-                    break;
-                }
-
-                if ($attempt < self::MAX_RETRY_ATTEMPTS - 1) {
-                    usleep(self::RETRY_DELAY_MICROSECONDS);
-                }
-            }
+                    return $envResult->wasSuccessful() && (bool) filter_var($envResult->getResult(), FILTER_VALIDATE_IP);
+                },
+                self::MAX_RETRY_ATTEMPTS,
+                self::RETRY_DELAY_MICROSECONDS
+            );
 
             $this->assertTrue($isReady, 'Timed out waiting for interface IP to become active');
         }
@@ -226,5 +222,20 @@ final class AdminTest extends TestCase
         }
 
         return $response !== false;
+    }
+
+    private function retryUntil(callable $operation, int $maxAttempts, int $delayMicroseconds): bool
+    {
+        for ($attempt = 0; $attempt < $maxAttempts; ++$attempt) {
+            if ($operation()) {
+                return true;
+            }
+
+            if ($attempt < $maxAttempts - 1) {
+                usleep($delayMicroseconds);
+            }
+        }
+
+        return false;
     }
 }
