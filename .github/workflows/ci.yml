@@ -13,7 +13,7 @@ on:
     types: [opened, reopened, synchronize]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event_name == 'pull_request' && (github.event.action == 'labeled' || github.event.action == 'unlabeled') && 'labels' || 'run' }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -199,6 +199,7 @@ jobs:
       platforms: linux/amd64,linux/arm64
       cache: true
       cache-mode: max
+      cache-scope: fossbilling-release
       sbom: true
       set-meta-labels: true
       set-meta-annotations: true

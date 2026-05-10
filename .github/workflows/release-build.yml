@@ -28,6 +28,7 @@ jobs:
       artifact-name: ${{ inputs.artifact-name }}-release-tree
       cache: true
       cache-mode: max
+      cache-scope: fossbilling-release
       sign: false
       build-args: |
         FOSSBILLING_VERSION=${{ inputs.preview && github.sha || github.ref_name }}
@@ -38,6 +39,7 @@ jobs:
     name: 'Build and Prepare Release'
     needs: [ build-release-tree ]
     permissions: 
+      actions: write
       contents: read
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -58,3 +60,21 @@ jobs:
           name: ${{ inputs.artifact-name }}
           path: /tmp/build.tar
           retention-days: 1
+
+      - name: 'Delete Intermediate Release Tree Artifact'
+        if: ${{ always() }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_NAME: ${{ needs.build-release-tree.outputs.artifact-name }}
+        run: |
+          artifact_ids="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts" --paginate --jq '.artifacts[] | select(.name == env.ARTIFACT_NAME) | .id')"
+
+          if [ -z "${artifact_ids}" ]; then
+            echo "No intermediate artifact found for ${ARTIFACT_NAME}"
+            exit 0
+          fi
+
+          while IFS= read -r artifact_id; do
+            gh api --method DELETE "repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}"
+          done <<< "${artifact_ids}"
