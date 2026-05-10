@@ -87,6 +87,11 @@ class Response
         return $this->code;
     }
 
+    public function getStatusCode(): int
+    {
+        return $this->code;
+    }
+
     public function getResponse(): array
     {
         return $this->decodedResponse;
