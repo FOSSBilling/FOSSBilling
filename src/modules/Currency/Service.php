@@ -304,7 +304,7 @@ class Service implements InjectionAwareInterface
         }
 
         // Automatically set the correct conversion rate if it's not specified
-        if ($conversionRate === null || $conversionRate === 0.0) {
+        if ($conversionRate === null || $conversionRate === '') {
             try {
                 $conversionRate = $this->_getRate(null, $code);
             } catch (\Exception $e) {
@@ -316,6 +316,12 @@ class Service implements InjectionAwareInterface
                 );
                 $conversionRate = 1.0;
             }
+        } else {
+            if (!is_numeric($conversionRate) || $conversionRate <= 0) {
+                throw new \FOSSBilling\Exception('Currency conversion rate must be a positive number');
+            }
+
+            $conversionRate = (float) $conversionRate;
         }
 
         $model = new Currency($code, $format);

@@ -583,6 +583,63 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $code);
     }
 
+
+    public function testCreateCurrencyWithBlankConversionRateUsesAutoRate(): void
+    {
+        $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
+            ->onlyMethods(['_getRate'])
+            ->getMock();
+        $service->expects($this->once())
+            ->method('_getRate')
+            ->with(null, 'EUR')
+            ->willReturn(1.5);
+
+        $systemService = $this->getMockBuilder(\Box\Mod\System\Service::class)->onlyMethods(['checkLimits'])->getMock();
+        $systemService->expects($this->once())
+            ->method('checkLimits')
+            ->willReturn(null);
+
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $emMock->expects($this->once())->method('persist');
+        $emMock->expects($this->once())->method('flush');
+
+        $di = $this->getDi();
+        $di['logger'] = new \Box_Log();
+        $di['em'] = $emMock;
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
+
+        $service->setDi($di);
+
+        $result = $service->createCurrency('EUR', '€{{price}}', 'Euros', '');
+
+        $this->assertSame('EUR', $result);
+    }
+
+    public function testCreateCurrencyWithZeroStringConversionRateThrowsException(): void
+    {
+        $systemService = $this->getMockBuilder(\Box\Mod\System\Service::class)->onlyMethods(['checkLimits'])->getMock();
+        $systemService->expects($this->once())
+            ->method('checkLimits')
+            ->willReturn(null);
+
+        $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $di = $this->getDi();
+        $di['logger'] = new \Box_Log();
+        $di['em'] = $emMock;
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
+
+        $service = new \Box\Mod\Currency\Service();
+        $service->setDi($di);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('Currency conversion rate must be a positive number');
+        $service->createCurrency('EUR', '€{{price}}', 'Euros', '0');
+    }
     public function testUpdateCurrency(): void
     {
         $code = 'EUR';
