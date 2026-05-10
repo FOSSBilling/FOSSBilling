@@ -40,7 +40,7 @@ final class AdminTest extends TestCase
         $result = Request::makeRequest('admin/theme/non_existing_action');
         $this->assertSame(404, $result->getStatusCode(), 'Invalid theme action should return HTTP 404.');
         $this->assertFalse($result->wasSuccessful(), 'Invalid theme action should not be successful.');
-        // API not-found actions/endpoints are mapped to error code 740 (see API controller not-found error mapping).
+        // API not-found actions/endpoints are mapped to error code 740 (see src/library/Api/Handler.php).
         $expectedNotFoundErrorCode = 740;
         $this->assertSame($expectedNotFoundErrorCode, $result->getErrorCode(), 'Invalid theme action should return the API not-found error code.');
 
