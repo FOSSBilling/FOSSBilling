@@ -6,15 +6,6 @@ on:
       - published
 
 jobs:
-  release-build:
-    name: 'Create Release (${{ github.ref_name }})'
-    permissions: 
-      contents: read
-    uses: ./.github/workflows/release-build.yml
-    with:
-      artifact-name: 'release-build'
-      preview: false
-
   # Latest release is identified by branch/tag SemVer,
   # not the 'Set as the latest release' GitHub option.
   check-latest:
@@ -46,14 +37,29 @@ jobs:
     name: 'Build and Push Release to Docker Hub'
     permissions: 
       contents: read
-      actions: write
-    needs: [ release-build, check-latest ]
-    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@76b4af76fb2a1a2b553ec1c2839044984299a271
+      id-token: write
+    needs: [ check-latest ]
+    uses: docker/github-builder/.github/workflows/build.yml@c2782c55efa56a01b9c30021db8f5ec3993228a3 # v1.8.0
     secrets:
-      dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME }}
-      dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
+      registry-auths: |
+        - registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
     with:
-      download-artifact: 'release-build'
-      platforms: '["linux/amd64", "linux/arm64"]'
-      repository-name: 'fossbilling/fossbilling'
-      tag-latest: ${{ needs.check-latest.outputs.is_latest }}
+      output: image
+      push: true
+      platforms: linux/amd64,linux/arm64
+      cache: true
+      cache-mode: max
+      sbom: true
+      set-meta-labels: true
+      set-meta-annotations: true
+      meta-images: fossbilling/fossbilling
+      meta-flavor: |
+        latest=false
+      meta-tags: |
+        type=semver,pattern={{version}}
+        type=raw,value=latest,enable=${{ needs.check-latest.outputs.is_latest == 'true' }}
+      build-args: |
+        FOSSBILLING_VERSION=${{ github.ref_name }}
+        SENTRY_DSN=${{ vars.SENTRY_DSN }}

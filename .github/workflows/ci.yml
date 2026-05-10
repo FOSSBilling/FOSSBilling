@@ -316,16 +316,30 @@ jobs:
     name: 'Build and Push Preview to Docker Hub'
     permissions:
       contents: read
-      actions: write
+      id-token: write
     needs: [ preview-build ]
     if: ${{ github.ref == 'refs/heads/main' }}
-    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@3273310677c9a62cdb61aa6f8f0d3ec4993b1a8e
+    uses: docker/github-builder/.github/workflows/build.yml@c2782c55efa56a01b9c30021db8f5ec3993228a3 # v1.8.0
     secrets:
-      dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME }}
-      dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
+      registry-auths: |
+        - registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
     with:
-      download-artifact: 'preview-build'
-      platforms: '["linux/amd64", "linux/arm64"]'
-      repository-name: 'fossbilling/fossbilling'
-      tag-latest: 'false'
-      tag-raw: 'preview'
+      output: image
+      push: true
+      platforms: linux/amd64,linux/arm64
+      cache: true
+      cache-mode: max
+      sbom: true
+      set-meta-labels: true
+      set-meta-annotations: true
+      meta-images: fossbilling/fossbilling
+      meta-flavor: |
+        latest=false
+      meta-tags: |
+        type=raw,value=preview
+      build-args: |
+        FOSSBILLING_VERSION=${{ github.sha }}
+        FOSSBILLING_VERSION_TRUNCATE=7
+        SENTRY_DSN=${{ vars.SENTRY_DSN }}
