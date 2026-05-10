@@ -73,6 +73,12 @@ class ServiceTransaction implements InjectionAwareInterface
     public function createAndProcess($ipn)
     {
         $id = $this->create($ipn);
+
+        $tx = $this->di['db']->getExistingModelById('Transaction', $id);
+        if ($tx->status === \Model_Transaction::STATUS_PROCESSED && empty($tx->error)) {
+            return $id;
+        }
+
         $this->processTransaction($id);
 
         return $id;
@@ -106,9 +112,13 @@ class ServiceTransaction implements InjectionAwareInterface
             $this->di['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Gateway was not found');
         }
 
-        // Early duplicate check: if gateway + txn_id already exists and is processed,
-        // return the existing transaction id to ensure idempotency for duplicate IPNs.
-        $txnIdCandidate = $data['txn_id'] ?? ($data['post']['txn_id'] ?? ($data['get']['txn_id'] ?? null));
+        // Early duplicate check: if gateway + external transaction identifier already exists
+        // and is processed, return the existing transaction id to ensure idempotency.
+        $txnIdCandidate = $data['txn_id']
+            ?? ($data['post']['txn_id'] ?? null)
+            ?? ($data['get']['txn_id'] ?? null)
+            ?? ($data['post']['payment_intent'] ?? null)
+            ?? ($data['get']['payment_intent'] ?? null);
         if ($txnIdCandidate && !empty($data['gateway_id'])) {
             $existing = $this->di['db']->findOne('Transaction', 'txn_id = ? AND gateway_id = ?', [$txnIdCandidate, $data['gateway_id']]);
             if ($existing instanceof \Model_Transaction && $existing->status == \Model_Transaction::STATUS_PROCESSED) {
