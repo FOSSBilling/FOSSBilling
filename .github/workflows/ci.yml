@@ -80,16 +80,22 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php: [8.3, 8.4, 8.5]
+        php: ['8.3', '8.4', '8.5']
       fail-fast: true
     steps:
       - *checkout_step
+
+      - name: 'Set up Docker Buildx'
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
       - name: 'Build Docker Test Image'
         run: |
           docker buildx build \
             --target test \
             --build-arg PHP_VERSION=${{ matrix.php }} \
+            --build-arg INSTALL_TRANSLATIONS=false \
+            --cache-from type=gha,scope=fossbilling-test-${{ matrix.php }} \
+            --cache-to type=gha,scope=fossbilling-test-${{ matrix.php }},mode=max \
             --load \
             --tag fossbilling:test-${{ matrix.php }} \
             .
@@ -108,28 +114,13 @@ jobs:
             fossbilling:test-${{ matrix.php }} \
             ./src/vendor/bin/phpunit --configuration phpunit.xml.dist
 
-  live-tests:
-    name: 'Live Tests'
-    needs: [ spellcheck ]
-    if: *normal_ci
-    runs-on: ubuntu-latest
-    steps:
-      - *checkout_step
-
-      - name: 'Build Docker Test Image'
-        run: |
-          docker buildx build \
-            --target test \
-            --load \
-            --tag fossbilling:test-live \
-            .
-
       - name: 'Run Live Tests'
-        run: bash ./.github/scripts/run-docker-live-tests.sh fossbilling:test-live
+        if: ${{ matrix.php == '8.5' }}
+        run: bash ./.github/scripts/run-docker-live-tests.sh fossbilling:test-${{ matrix.php }}
 
   preview-build:
     name: 'Create Preview Release'
-    needs: [ php-build-test, live-tests ]
+    needs: [ php-build-test ]
     if: *normal_ci
     uses: ./.github/workflows/release-build.yml
     with:
