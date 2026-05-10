@@ -1402,7 +1402,7 @@ class Service implements InjectionAwareInterface
             $options = $field['options'] ?? [];
             if (!empty($options)) {
                 if ($field['type'] === 'select' || $field['type'] === 'radio') {
-                    if ($value !== null && $value !== '' && !array_key_exists($value, $options) && !in_array($value, $options, true)) {
+                    if ($value !== null && $value !== '' && (!is_scalar($value) || (!array_key_exists($value, $options) && !in_array($value, $options, true)))) {
                         throw new \FOSSBilling\Exception('Invalid value for field ":field"', [':field' => $field['label']], 4893);
                     }
                 } elseif ($field['type'] === 'checkbox') {

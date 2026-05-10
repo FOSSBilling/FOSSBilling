@@ -2304,6 +2304,38 @@ final class ServiceTest extends \BBTestCase
         $this->service->updateOrderConfig($order, ['plan' => 'enterprise']);
     }
 
+    public function testUpdateOrderConfigSelectRejectsArrayValue(): void
+    {
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionCode(4893);
+
+        $form = [
+            'fields' => [
+                ['name' => 'plan', 'label' => 'Plan', 'type' => 'select', 'required' => false, 'options' => ['basic' => 'Basic', 'pro' => 'Pro']],
+            ],
+        ];
+
+        $formbuilderServiceMock = $this->createMock(\Box\Mod\Formbuilder\Service::class);
+        $formbuilderServiceMock->expects($this->once())
+            ->method('getForm')
+            ->willReturn($form);
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($formbuilderServiceMock) {
+            if ($serviceName === 'formbuilder') {
+                return $formbuilderServiceMock;
+            }
+        });
+
+        $this->service->setDi($di);
+
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+        $order->form_id = 11;
+
+        $this->service->updateOrderConfig($order, ['plan' => ['pro']]);
+    }
+
     public function testUpdateOrderConfigInvalidRadioOption(): void
     {
         $this->expectException(\FOSSBilling\Exception::class);
