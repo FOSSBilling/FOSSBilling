@@ -255,7 +255,7 @@ class Service implements InjectionAwareInterface
     {
         $mods = [];
         $finder = new Finder();
-        $finder->directories()->in(PATH_MODS)->depth('== 0')->name('/^[a-zA-Z0-9]+$/');
+        $finder->directories()->in(PATH_MODS)->depth('== 0')->name('/\A[a-zA-Z0-9]+\z/');
 
         foreach ($finder as $dir) {
             $m = $dir->getBasename();
