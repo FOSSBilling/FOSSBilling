@@ -79,6 +79,9 @@ jobs:
 
   php-build-test:
     name: 'PHP Build and Test (${{ matrix.php }})'
+    permissions:
+      actions: write
+      contents: read
     needs: [ spellcheck ]
     if: *normal_ci
     runs-on: ubuntu-latest
