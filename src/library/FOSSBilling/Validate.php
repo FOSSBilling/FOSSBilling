@@ -148,9 +148,9 @@ class Validate
         }
     }
 
-    public function isPasswordStrong(?string $pwd): bool
+    public function isPasswordStrong($pwd): bool
     {
-        if (empty($pwd)) {
+        if (!is_string($pwd) || $pwd === '') {
             throw new InformationException('Password is required.');
         }
 
