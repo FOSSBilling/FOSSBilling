@@ -245,7 +245,7 @@ class SentryHelper
             return true;
         }
 
-        if (in_array(INSTANCE_ID, self::$blacklistedInstances) && strtotime((string) self::$blacklistedInstances[INSTANCE_ID]) >= time()) {
+        if (array_key_exists(INSTANCE_ID, self::$blacklistedInstances) && strtotime((string) self::$blacklistedInstances[INSTANCE_ID]) >= time()) {
             return true;
         }
 
