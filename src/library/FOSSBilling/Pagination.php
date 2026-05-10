@@ -66,11 +66,11 @@ class Pagination implements InjectionAwareInterface
     public function paginateDoctrineQuery(QueryBuilder $qb, PaginationOptions $pagination): array
     {
         $serializer = new Serializer([new ObjectNormalizer()]);
-        $paginator = new DoctrinePaginator($qb, true);
 
         $offset = ($pagination->page - 1) * $pagination->perPage;
         $qb->setFirstResult($offset)
            ->setMaxResults($pagination->perPage);
+        $paginator = new DoctrinePaginator($qb, true);
 
         $total = count($paginator);
 
