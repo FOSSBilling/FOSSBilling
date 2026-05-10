@@ -118,6 +118,10 @@ RUN set -eux; \
   php -r '$version = getenv("FOSSBILLING_VERSION") ?: "0.0.1"; $truncate = (int) (getenv("FOSSBILLING_VERSION_TRUNCATE") ?: 0); if ($truncate > 0) { $version = substr($version, 0, $truncate); } $versionFile = "./src/library/FOSSBilling/Version.php"; file_put_contents($versionFile, str_replace("0.0.1", $version, file_get_contents($versionFile))); $dsn = getenv("SENTRY_DSN"); if ($dsn !== false && $dsn !== "") { $sentryFile = "./src/library/FOSSBilling/SentryHelper.php"; file_put_contents($sentryFile, str_replace("--replace--this--during--release--process--", $dsn, file_get_contents($sentryFile))); }'; \
   chmod -R u=rwX,go=rX ./src
 
+FROM scratch AS release-artifact
+
+COPY --from=release-tree /app/src /
+
 FROM php-base AS runtime
 
 WORKDIR /var/www/html

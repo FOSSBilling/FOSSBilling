@@ -21,6 +21,7 @@ jobs:
     name: 'Check for Merge Hold'
     if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: 'Check merge-hold label'
         run: |
@@ -40,6 +41,7 @@ jobs:
       pull-requests: write
     if: ${{ github.event_name == 'pull_request_target' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/labeler@f27b608878404679385c85cfa523b85ccb86e213 # v6
         with:
@@ -53,6 +55,7 @@ jobs:
       pull-requests: read
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: release-drafter/release-drafter@c2e2804cc59f45f57076a99af580d0fedb697927 # v7
         with:
@@ -63,6 +66,7 @@ jobs:
   spellcheck:
     name: 'Spellcheck'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: &normal_ci ${{ (github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
     steps:
       - &checkout_step
@@ -78,6 +82,7 @@ jobs:
     needs: [ spellcheck ]
     if: *normal_ci
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     strategy:
       matrix:
         php: ['8.3', '8.4', '8.5']
@@ -132,6 +137,7 @@ jobs:
     needs: [ preview-build ]
     if: *normal_ci
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: 'Download Preview Release Archive'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
@@ -142,10 +148,10 @@ jobs:
       - name: 'Extract Preview Release Archive'
         run: |
           mkdir ./src
-          tar -xvf /tmp/build.tar -C ./src
+          tar -xf /tmp/build.tar -C ./src
 
       - name: 'Create Downloadable Preview'
-        run: zip -r ../FOSSBilling-preview.zip .
+        run: zip -qr ../FOSSBilling-preview.zip .
         working-directory: ./src/
 
       - name: 'Move Downloadable Preview for Upload'

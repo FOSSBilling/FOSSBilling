@@ -15,55 +15,41 @@ on:
         type: boolean
 
 jobs:
+  build-release-tree:
+    name: 'Build Release Tree'
+    permissions:
+      contents: read
+      id-token: write
+    uses: docker/github-builder/.github/workflows/build.yml@c2782c55efa56a01b9c30021db8f5ec3993228a3 # v1.8.0
+    with:
+      output: local
+      target: release-artifact
+      artifact-upload: true
+      artifact-name: ${{ inputs.artifact-name }}-release-tree
+      cache: true
+      cache-mode: max
+      sign: false
+      build-args: |
+        FOSSBILLING_VERSION=${{ inputs.preview && github.sha || github.ref_name }}
+        FOSSBILLING_VERSION_TRUNCATE=${{ inputs.preview && '7' || '0' }}
+        SENTRY_DSN=${{ vars.SENTRY_DSN }}
+
   release-build:
     name: 'Build and Prepare Release'
+    needs: [ build-release-tree ]
     permissions: 
       contents: read
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-
-      - name: 'PHP Build' 
-        uses: FOSSBilling/.workflows/.github/actions/php-build@76b4af76fb2a1a2b553ec1c2839044984299a271
+      - name: 'Download Release Tree'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          cache-deps: 'false'
-          composer-args: '--prefer-dist --no-dev --optimize-autoloader'
-          php-version: 8.3
-
-      - name: 'Prepare Application Assets'
-        uses: ./.github/actions/prepare-application-assets
-        with:
-          install-command: 'npm install'
-          build-command: 'NODE_ENV=production npm run build'
-          remove-admin-node-modules: 'true'
-
-      - name: 'Add Short Commit Hash as the Release Vesion'
-        if: ${{ inputs.preview }}
-        run: sed -i s/0.0.1/${GITHUB_SHA::7}/ Version.php
-        working-directory: ./src/library/FOSSBilling
-
-      - name: 'Add the Branch/Tag Name as the Release Version'
-        if: ${{ inputs.preview == false }}
-        run: sed -i s/0.0.1/${{ github.ref_name }}/ Version.php
-        working-directory: ./src/library/FOSSBilling
-
-      - name: 'Add the Sentry DSN'
-        if: ${{ vars.SENTRY_DSN }}
-        run: |
-          d=$'\03'
-          sed -i "s${d}--replace--this--during--release--process--${d}$SENTRY_DSN$d" SentryHelper.php
-        working-directory: ./src/library/FOSSBilling
-        env:
-          SENTRY_DSN: ${{ vars.SENTRY_DSN }}
-
-      - name: 'Correct the file & folder permissions'
-        run: |
-          cd ./src/
-          find . -type d -exec chmod 755 {} \;
-          find . -type f -exec chmod 644 {} \;
+          name: ${{ inputs.artifact-name }}-release-tree
+          path: /tmp/release-tree
 
       - name: 'Create Release Build Archive'
-        run: tar -cvf /tmp/build.tar -C ./src/ ./
+        run: tar -cf /tmp/build.tar -C /tmp/release-tree ./
 
       - name: 'Upload Release Build Archive'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

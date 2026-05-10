@@ -13,6 +13,7 @@ jobs:
     permissions: 
       contents: read
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       is_latest: ${{ steps.compare-latest.outputs.is_latest }}
     steps:
@@ -28,9 +29,9 @@ jobs:
         id: compare-latest
         run: |
           if [ "${{ github.ref_name }}" = "${{ steps.get-latest.outputs.release }}" ]; then
-            echo "is_latest=true" >> $GITHUB_OUTPUT
+            echo "is_latest=true" >> "${GITHUB_OUTPUT}"
           else
-            echo "is_latest=false" >> $GITHUB_OUTPUT
+            echo "is_latest=false" >> "${GITHUB_OUTPUT}"
           fi
 
   deploy-release-docker:
