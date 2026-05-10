@@ -599,9 +599,14 @@ final class ServiceTest extends \BBTestCase
             ->method('checkLimits')
             ->willReturn(null);
 
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
         $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
+        $emMock->expects($this->once())->method('getRepository')->willReturn($repositoryMock);
         $emMock->expects($this->once())->method('persist');
         $emMock->expects($this->once())->method('flush');
 
@@ -624,9 +629,14 @@ final class ServiceTest extends \BBTestCase
             ->method('checkLimits')
             ->willReturn(null);
 
+        $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
         $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
+        $emMock->expects($this->once())->method('getRepository')->willReturn($repositoryMock);
 
         $di = $this->getDi();
         $di['logger'] = new \Box_Log();
