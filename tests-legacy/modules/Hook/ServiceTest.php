@@ -166,7 +166,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn($returnArr);
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
-            ->willReturn(new \Model_Extension());
+            ->willReturn(null);
 
         $activityServiceMock = $this->createMock(\Box\Mod\Activity\Service::class);
 
@@ -185,7 +185,7 @@ final class ServiceTest extends \BBTestCase
         $extensionServiceMock->expects($this->atLeastOnce())
             ->method('isCoreModule')
             ->with($mod)
-            ->willReturn(false);
+            ->willReturn(true);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
