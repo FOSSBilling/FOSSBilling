@@ -46,5 +46,12 @@ final class AdminTest extends TestCase
         $this->assertIsString($errorMessage, 'Error message should be a string.');
         $this->assertNotSame('', trim($errorMessage), 'Error message should not be empty.');
         $this->assertStringContainsString('non_existing_action', $errorMessage, 'Error message should reference the invalid action or endpoint.');
+
+        if (method_exists($result, 'getStatusCode')) {
+            $this->assertSame(404, $result->getStatusCode(), 'Invalid theme action should return HTTP 404.');
+        } else {
+            // The API helper result used in live tests does not expose HTTP status directly.
+            $this->assertStringContainsString('does not exist', $errorMessage, 'Invalid theme action should report a missing endpoint/action.');
+        }
     }
 }

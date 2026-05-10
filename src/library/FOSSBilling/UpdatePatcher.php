@@ -162,7 +162,7 @@ class UpdatePatcher implements InjectionAwareInterface
      *
      * @param $sql The SQL statement to execute
      */
-    private function executeSql($sql): void
+    private function executeSql(string $sql): void
     {
         try {
             $this->di['dbal']->executeStatement($sql);
@@ -272,7 +272,7 @@ class UpdatePatcher implements InjectionAwareInterface
      *
      * @return array array containing the patches to be executed, in order
      */
-    private function getPatches($patchLevel = 0): array
+    private function getPatches(?int $patchLevel = 0): array
     {
         $patches = [
             25 => 'patch25',
@@ -322,12 +322,16 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         $this->di['dbal']->createQueryBuilder()
             ->update('email_template')
-            ->set('content', 'REPLACE(content, \'{% filter markdown %}\', \'{% apply markdown_to_html %}\')')
+            ->set('content', 'REPLACE(content, :old_filter, :new_filter)')
+            ->setParameter('old_filter', '{% filter markdown %}')
+            ->setParameter('new_filter', '{% apply markdown_to_html %}')
             ->executeStatement();
 
         $this->di['dbal']->createQueryBuilder()
             ->update('email_template')
-            ->set('content', 'REPLACE(content, \'{% endfilter %}\', \'{% endapply %}\')')
+            ->set('content', 'REPLACE(content, :old_endfilter, :new_endfilter)')
+            ->setParameter('old_endfilter', '{% endfilter %}')
+            ->setParameter('new_endfilter', '{% endapply %}')
             ->executeStatement();
     }
 
@@ -367,7 +371,9 @@ class UpdatePatcher implements InjectionAwareInterface
         // @see https://github.com/FOSSBilling/FOSSBilling/issues/863
         $this->di['dbal']->createQueryBuilder()
             ->update('email_template')
-            ->set('action_code', 'REPLACE(action_code, \'.html\', \'\')')
+            ->set('action_code', 'REPLACE(action_code, :search, :replace)')
+            ->setParameter('search', '.html')
+            ->setParameter('replace', '')
             ->executeStatement();
     }
 
@@ -378,12 +384,16 @@ class UpdatePatcher implements InjectionAwareInterface
         // @see https://github.com/FOSSBilling/FOSSBilling/pull/948
         $this->di['dbal']->createQueryBuilder()
             ->update('email_template')
-            ->set('content', 'REPLACE(content, \'bb_date\', \'format_date\')')
+            ->set('content', 'REPLACE(content, :search, :replace)')
+            ->setParameter('search', 'bb_date')
+            ->setParameter('replace', 'format_date')
             ->executeStatement();
 
         $this->di['dbal']->createQueryBuilder()
             ->update('email_template')
-            ->set('content', 'REPLACE(content, \'bb_datetime\', \'format_datetime\')')
+            ->set('content', 'REPLACE(content, :search, :replace)')
+            ->setParameter('search', 'bb_datetime')
+            ->setParameter('replace', 'format_datetime')
             ->executeStatement();
     }
 
