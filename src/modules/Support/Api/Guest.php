@@ -36,7 +36,7 @@ class Guest extends \Api_Abstract
     {
         $this->di['rate_limiter']->consumeOrThrow('guest_ticket_create', (string) $this->getIp());
 
-        if (strlen((string) $data['message']) < 4) {
+        if (!is_string($data['message']) || strlen($data['message']) < 4) {
             throw new \FOSSBilling\InformationException('Please enter your message');
         }
 
@@ -79,6 +79,10 @@ class Guest extends \Api_Abstract
     public function ticket_reply(array $data): string
     {
         $publicTicket = $this->getService()->publicFindOneByHash($data['hash']);
+
+        if (!is_string($data['message'])) {
+            throw new \FOSSBilling\InformationException('Message cannot be empty');
+        }
 
         // Sanitize message to prevent XSS attacks
         $data['message'] = \FOSSBilling\Tools::sanitizeContent($data['message'], true);

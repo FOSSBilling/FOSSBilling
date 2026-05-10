@@ -72,6 +72,32 @@ final class Api_GuestTest extends \BBTestCase
         $this->assertEquals(40, strlen($result));
     }
 
+
+    public function testTicketCreateMessageArrayException(): void
+    {
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
+            ->onlyMethods(['ticketCreateForGuest'])->getMock();
+        $serviceMock->expects($this->never())->method('ticketCreateForGuest');
+
+        $di = $this->getDi();
+        $rateLimiterMock = $this->createMock(\FOSSBilling\Security\RateLimiter::class);
+        $rateLimiterMock->method('consumeOrThrow')->willReturn(new \FOSSBilling\Security\RateLimitResult('policy', false, 10, 9));
+        $di['rate_limiter'] = $rateLimiterMock;
+        $this->guestApi->setDi($di);
+
+        $this->guestApi->setService($serviceMock);
+
+        $data = [
+            'name' => 'Name',
+            'email' => 'email@wxample.com',
+            'subject' => 'Subject',
+            'message' => ['invalid'],
+        ];
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->guestApi->ticket_create($data);
+    }
+
     public function testTicketGet(): void
     {
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
@@ -148,6 +174,32 @@ final class Api_GuestTest extends \BBTestCase
 
         $this->assertIsString($result);
         $this->assertEquals(40, strlen($result));
+    }
+
+
+    public function testTicketReplyMessageArrayException(): void
+    {
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
+            ->onlyMethods(['publicFindOneByHash', 'publicTicketReplyForGuest'])->getMock();
+        $serviceMock->expects($this->atLeastOnce())->method('publicFindOneByHash')
+            ->willReturn(new \Model_SupportPTicket());
+        $serviceMock->expects($this->never())->method('publicTicketReplyForGuest');
+
+        $di = $this->getDi();
+        $rateLimiterMock = $this->createMock(\FOSSBilling\Security\RateLimiter::class);
+        $rateLimiterMock->method('consumeOrThrow')->willReturn(new \FOSSBilling\Security\RateLimitResult('policy', false, 10, 9));
+        $di['rate_limiter'] = $rateLimiterMock;
+        $this->guestApi->setDi($di);
+
+        $this->guestApi->setService($serviceMock);
+
+        $data = [
+            'hash' => sha1(uniqid()),
+            'message' => ['invalid'],
+        ];
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->guestApi->ticket_reply($data);
     }
 
     /*
