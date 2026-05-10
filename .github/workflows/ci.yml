@@ -203,7 +203,7 @@ jobs:
       platforms: linux/amd64,linux/arm64
       cache: true
       cache-mode: max
-      cache-scope: fossbilling-release
+      cache-scope: fossbilling-preview-image
       sbom: true
       set-meta-labels: true
       set-meta-annotations: true

@@ -28,7 +28,7 @@ jobs:
       artifact-name: ${{ inputs.artifact-name }}-release-tree
       cache: true
       cache-mode: max
-      cache-scope: fossbilling-release
+      cache-scope: fossbilling-release-artifact
       sign: false
       build-args: |
         FOSSBILLING_VERSION=${{ inputs.preview && github.sha || github.ref_name }}
