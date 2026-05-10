@@ -125,6 +125,10 @@ jobs:
 
   preview-build:
     name: 'Create Preview Release'
+    permissions:
+      actions: write
+      contents: read
+      id-token: write
     needs: [ php-build-test ]
     if: *normal_ci
     uses: ./.github/workflows/release-build.yml
