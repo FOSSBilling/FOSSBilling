@@ -34,7 +34,7 @@ $connection = $di['em']->getConnection();
 $native = $connection->getNativeConnection();
 
 if ($native instanceof PDO) {
-    $pdoCollector->addConnection($native, 'Doctrine');
+    $pdoCollector->addConnection(new DebugBar\DataCollector\PDO\TraceablePDO($native), 'Doctrine');
 }
 
 $debugBar->addCollector($pdoCollector);
