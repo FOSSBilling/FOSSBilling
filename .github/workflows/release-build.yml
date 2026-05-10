@@ -64,7 +64,7 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
-          ARTIFACT_NAME: ${{ needs.build-release-tree.outputs.artifact-name }}
+          ARTIFACT_NAME: ${{ inputs.artifact-name }}-release-tree
         run: |
           artifact_ids="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts" --paginate --jq '.artifacts[] | select(.name == env.ARTIFACT_NAME) | .id')"
 
