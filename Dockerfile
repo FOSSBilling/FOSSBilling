@@ -36,6 +36,17 @@ RUN --mount=type=cache,target=/tmp/composer-cache \
   COMPOSER_CACHE_DIR=/tmp/composer-cache \
   composer install --prefer-dist --no-dev --optimize-autoloader --no-interaction --no-progress
 
+FROM php-base AS php-dev-vendor
+
+WORKDIR /app
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY composer.json composer.lock ./
+
+RUN --mount=type=cache,target=/tmp/composer-cache \
+  COMPOSER_CACHE_DIR=/tmp/composer-cache \
+  composer install --prefer-dist --optimize-autoloader --no-interaction --no-progress
+
 FROM node:${NODE_VERSION}-bookworm-slim AS frontend-assets
 
 WORKDIR /app
@@ -91,3 +102,18 @@ RUN set -eux; \
   rm /tmp/www-data.cron
 
 CMD ["sh", "-c", "cron & exec apache2-foreground"]
+
+FROM runtime AS test
+
+WORKDIR /workspace
+
+COPY --from=release-tree /app/src ./src
+COPY --from=php-dev-vendor /app/src/vendor ./src/vendor
+COPY composer.json composer.lock phpstan.neon phpstan-baseline.neon phpunit.xml.dist phpunit-live.xml ./
+COPY tests ./tests
+COPY tests-legacy ./tests-legacy
+
+RUN set -eux; \
+  php -r '$config = require "./src/config-sample.php"; file_put_contents("./src/config.php", "<?php\nreturn " . var_export($config, true) . ";\n");'; \
+  mkdir -p ./src/data/cache ./src/data/log ./src/data/uploads; \
+  chown -R www-data:www-data ./src/data ./src/config.php
