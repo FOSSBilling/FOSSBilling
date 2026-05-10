@@ -2161,4 +2161,18 @@ final class ServiceTest extends \BBTestCase
         $this->assertSame('application/pdf', $response->headers->get('Content-Type'));
         $this->assertSame('inline; filename=INV-100.pdf', $response->headers->get('Content-Disposition'));
     }
+
+    public function testCreatePdfResponseSanitizesInvalidFilenameCharacters(): void
+    {
+        $reflection = new \ReflectionClass($this->service);
+        $method = $reflection->getMethod('createPdfResponse');
+        $method->setAccessible(true);
+
+        /** @var Response $response */
+        $response = $method->invoke($this->service, '%PDF-test', 'INV/2026/Å');
+
+        $this->assertInstanceOf(Response::class, $response);
+        $this->assertSame('application/pdf', $response->headers->get('Content-Type'));
+        $this->assertStringContainsString('inline;', (string) $response->headers->get('Content-Disposition'));
+    }
 }

@@ -1641,9 +1641,21 @@ class Service implements InjectionAwareInterface
     protected function createPdfResponse(string $content, string $fileName): Response
     {
         $response = new Response($content);
+        $safeFileName = str_replace(['/', '\\', '%'], '-', trim($fileName));
+        if ($safeFileName === '') {
+            $safeFileName = 'invoice';
+        }
+
+        $fallbackFileName = preg_replace('/[^A-Za-z0-9._-]/', '-', $safeFileName);
+        $fallbackFileName = trim((string) $fallbackFileName, '.-');
+        if ($fallbackFileName === '') {
+            $fallbackFileName = 'invoice';
+        }
+
         $disposition = $response->headers->makeDisposition(
             HeaderUtils::DISPOSITION_INLINE,
-            $fileName . '.pdf'
+            $safeFileName . '.pdf',
+            $fallbackFileName . '.pdf'
         );
 
         $response->headers->set('Content-Type', 'application/pdf');
