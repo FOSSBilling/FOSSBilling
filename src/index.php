@@ -19,7 +19,7 @@ $config = FOSSBilling\Config::getConfig();
 $debugBar = null;
 $timeCollector = null;
 
-if ((bool) ($config['debug'] ?? false)) {
+if ((bool) FOSSBilling\Config::getProperty('debug_and_monitoring.debug', false)) {
     // Setting up the debug bar
     $debugBar = new DebugBar\StandardDebugBar();
     $timeCollector = $debugBar->getCollector('time');
