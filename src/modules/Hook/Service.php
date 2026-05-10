@@ -97,16 +97,21 @@ class Service implements InjectionAwareInterface
     {
         // Clean up the existing list before we add to it
         $this->_disconnectUnavailable();
+        $extensionService = $this->di['mod_service']('extension');
 
         $mods = [];
         if ($mod_name !== null) {
             $mods[] = $mod_name;
         } else {
-            $extensionService = $this->di['mod_service']('extension');
             $mods = $extensionService->getCoreAndActiveModules();
         }
 
         foreach ($mods as $m) {
+            $ext = $this->di['db']->findOne('extension', "type = 'mod' AND name = :mod AND status = 'installed'", ['mod' => $m]);
+            if (!$ext && !$extensionService->isCoreModule($m)) {
+                continue;
+            }
+
             $mod = $this->di['mod']($m);
             if ($mod->hasService()) {
                 $class = $mod->getService();
