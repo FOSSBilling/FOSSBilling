@@ -47,27 +47,27 @@
             </div>
             <div class="mb-3">
                 <label class="form-label" for="plan-addon">{{ 'Maximum Addon Domains'|trans }}:</label>
-                <input class="form-control" id="plan-addon" type="number" name="max_addon" value="{{ hp.max_addon }}">
+                <input class="form-control" id="plan-addon" type="text" name="max_addon" value="{{ hp.max_addon }}">
             </div>
             <div class="mb-3">
                 <label class="form-label" for="plan-ftp">{{ 'Maximum FTP Accounts'|trans }}:</label>
-                <input class="form-control" id="plan-ftp" type="number" name="max_ftp" value="{{ hp.max_ftp }}">
+                <input class="form-control" id="plan-ftp" type="text" name="max_ftp" value="{{ hp.max_ftp }}">
             </div>
             <div class="mb-3">
                 <label class="form-label" for="plan-sql">{{ 'Maximum Databases'|trans }}:</label>
-                <input class="form-control" id="plan-sql" type="number" name="max_sql" value="{{ hp.max_sql }}">
+                <input class="form-control" id="plan-sql" type="text" name="max_sql" value="{{ hp.max_sql }}">
             </div>
             <div class="mb-3">
                 <label class="form-label" for="plan-email">{{ 'Maximum Email Accounts'|trans }}:</label>
-                <input class="form-control" id="plan-email" type="number" name="max_pop" value="{{ hp.max_pop }}">
+                <input class="form-control" id="plan-email" type="text" name="max_pop" value="{{ hp.max_pop }}">
             </div>
             <div class="mb-3">
                 <label class="form-label" for="plan-subdomains">{{ 'Maximum Subdomains'|trans }}:</label>
-                <input class="form-control" id="plan-subdomains" type="number" name="max_sub" value="{{ hp.max_sub }}">
+                <input class="form-control" id="plan-subdomains" type="text" name="max_sub" value="{{ hp.max_sub }}">
             </div>
             <div class="mb-3">
                 <label class="form-label" for="plan-parked">{{ 'Maximum Parked Domains'|trans }}:</label>
-                <input class="form-control" id="plan-parked" type="number" name="max_park" value="{{ hp.max_park }}">
+                <input class="form-control" id="plan-parked" type="text" name="max_park" value="{{ hp.max_park }}">
             </div>
             {% if hp.config|length > 0 %}
                 <h3>{{ 'Server Manager Specific Parameters'|trans }}</h3>
