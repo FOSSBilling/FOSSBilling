@@ -199,8 +199,8 @@ class Update implements InjectionAwareInterface
         // Apply system patches and migrate configuration file.
         $patcher = new UpdatePatcher();
         $patcher->setDi($this->di);
-        $patcher->applyCorePatches();
         $patcher->applyConfigPatches();
+        $patcher->applyCorePatches();
     }
 
     /**
@@ -288,8 +288,8 @@ class Update implements InjectionAwareInterface
         }
 
         // Now run the patches
-        $patcher->applyCorePatches();
         $patcher->applyConfigPatches();
+        $patcher->applyCorePatches();
 
         // Clear cache and remove the install folder.
         try {
