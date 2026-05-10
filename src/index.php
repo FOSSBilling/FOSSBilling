@@ -56,7 +56,7 @@ if ((bool) ($config['debug_and_monitoring']['debug'] ?? false)) {
 if (isset($_GET['_url']) && is_string($_GET['_url'])) {
     $rawUrl = $_GET['_url'];
 } else {
-    $rawUrl = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
+    $rawUrl = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?? '/';
 }
 $url = is_string($rawUrl) ? $rawUrl : '/';
 
