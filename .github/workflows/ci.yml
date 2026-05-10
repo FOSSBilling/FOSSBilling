@@ -10,7 +10,7 @@ on:
     types: [opened, reopened, synchronize, labeled, unlabeled]
   pull_request_target:
     branches: main
-    types: [opened, reopened, synchronize, labeled, unlabeled]
+    types: [opened, reopened, synchronize]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
@@ -19,7 +19,7 @@ concurrency:
 jobs:
   merge-hold:
     name: 'Check for Merge Hold'
-    if: ${{ github.event_name == 'pull_request' || (github.event_name == 'pull_request_target' && (github.event.action == 'labeled' || github.event.action == 'unlabeled')) }}
+    if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     steps:
       - name: 'Check merge-hold label'
@@ -63,7 +63,7 @@ jobs:
   spellcheck:
     name: 'Spellcheck'
     runs-on: ubuntu-latest
-    if: &normal_ci ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
+    if: &normal_ci ${{ (github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
     steps:
       - &checkout_step
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
