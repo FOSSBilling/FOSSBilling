@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.7
+# syntax=docker/dockerfile:1.18
 
 ARG PHP_VERSION=8.5
 ARG NODE_VERSION=24
