@@ -58,7 +58,7 @@ if (isset($_GET['_url']) && is_string($_GET['_url'])) {
 } else {
     $rawUrl = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
 }
-$url = $rawUrl;
+$url = is_string($rawUrl) ? $rawUrl : '/';
 
 // Validate and normalize URL path before using it in routing logic
 if ($url === '') {
