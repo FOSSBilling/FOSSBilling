@@ -145,14 +145,14 @@ class Guest extends \Api_Abstract
                 return true;
             }
 
+            $this->checkPasswordResetCaptcha($data);
+
             $emailLimit = $this->di['rate_limiter']->consume('staff_password_reset_email', (string) $data['email']);
             if ($emailLimit->isLimited()) {
                 $this->di['logger']->setChannel('security')->info('Staff password reset rate limited for email %s from IP %s', $data['email'], $this->getIp());
 
                 return true;
             }
-
-            $this->checkPasswordResetCaptcha($data);
 
             $c = $this->di['db']->findOne('Admin', 'email = ?', [$data['email']]);
 
