@@ -610,6 +610,178 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->countIncome($invoiceModel);
     }
 
+    public function testMarkAsPaidByAdminUsesGatewayOverrideAndDoesNotChargeBalance(): void
+    {
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        $invoiceModel->gateway_id = null;
+
+        $gatewayModel = new \Model_PayGateway();
+        $gatewayModel->loadBean(new \DummyBean());
+        $gatewayModel->id = 7;
+        $gatewayModel->gateway = 'PayPal';
+        $gatewayModel->enabled = 1;
+
+        $serviceMock = $this->getMockBuilder(Service::class)
+            ->onlyMethods(['markAsPaid'])
+            ->getMock();
+        $serviceMock->expects($this->once())
+            ->method('markAsPaid')
+            ->with($invoiceModel, false, true)
+            ->willReturn(true);
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('store')
+            ->with($invoiceModel);
+        $dbMock->expects($this->once())
+            ->method('getExistingModelById')
+            ->with('PayGateway', 7, 'Payment gateway not found')
+            ->willReturn($gatewayModel);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['logger'] = new \Box_Log();
+
+        $serviceMock->setDi($di);
+
+        $result = $serviceMock->markAsPaidByAdmin($invoiceModel, [
+            'gateway_id' => 7,
+            'execute' => true,
+        ]);
+
+        $this->assertTrue($result);
+        $this->assertSame(7, $invoiceModel->gateway_id);
+    }
+
+    public function testMarkAsPaidByAdminProcessesTrustedCustomTransaction(): void
+    {
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        $invoiceModel->id = 42;
+        $invoiceModel->gateway_id = 5;
+        $invoiceModel->currency = 'USD';
+
+        $gatewayModel = new \Model_PayGateway();
+        $gatewayModel->loadBean(new \DummyBean());
+        $gatewayModel->id = 5;
+        $gatewayModel->gateway = 'Custom';
+        $gatewayModel->enabled = 1;
+
+        $transactionServiceMock = $this->createMock(ServiceTransaction::class);
+        $transactionServiceMock->expects($this->once())
+            ->method('create')
+            ->with($this->callback(function (array $payload) use ($invoiceModel): bool {
+                $this->assertSame($invoiceModel->id, $payload['invoice_id']);
+                $this->assertSame($invoiceModel->gateway_id, $payload['gateway_id']);
+                $this->assertSame($invoiceModel->currency, $payload['currency']);
+                $this->assertSame('received', $payload['status']);
+                $this->assertSame('admin', $payload['source']);
+                $this->assertSame('manual-txn-1', $payload['txn_id']);
+
+                return true;
+            }))
+            ->willReturn(99);
+        $transactionServiceMock->expects($this->once())
+            ->method('processTransaction')
+            ->with(99)
+            ->willReturn(true);
+
+        $serviceMock = $this->getMockBuilder(Service::class)
+            ->onlyMethods(['markAsPaid'])
+            ->getMock();
+        $serviceMock->expects($this->never())
+            ->method('markAsPaid');
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('getExistingModelById')
+            ->with('PayGateway', 5, 'Payment gateway not found')
+            ->willReturn($gatewayModel);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['logger'] = new \Box_Log();
+        $di['mod_service'] = $di->protect(fn (string $serviceName, string $sub = '') => match ([$serviceName, $sub]) {
+            ['Invoice', 'Transaction'] => $transactionServiceMock,
+            default => throw new \RuntimeException('Unexpected service request'),
+        });
+
+        $serviceMock->setDi($di);
+
+        $this->assertTrue($serviceMock->markAsPaidByAdmin($invoiceModel, [
+            'transactionId' => '  manual-txn-1  ',
+        ]));
+        $this->assertSame(5, $invoiceModel->gateway_id);
+    }
+
+    public function testMarkAsPaidByAdminRequiresTransactionIdForCustomGateway(): void
+    {
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        $invoiceModel->gateway_id = 5;
+
+        $gatewayModel = new \Model_PayGateway();
+        $gatewayModel->loadBean(new \DummyBean());
+        $gatewayModel->gateway = 'Custom';
+        $gatewayModel->enabled = 1;
+
+        $serviceMock = $this->getMockBuilder(Service::class)
+            ->onlyMethods(['markAsPaid'])
+            ->getMock();
+        $serviceMock->expects($this->never())
+            ->method('markAsPaid');
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('getExistingModelById')
+            ->with('PayGateway', 5, 'Payment gateway not found')
+            ->willReturn($gatewayModel);
+        $dbMock->expects($this->never())
+            ->method('store');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['logger'] = new \Box_Log();
+
+        $serviceMock->setDi($di);
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('Transaction ID is required when using the Custom payment gateway.');
+        $serviceMock->markAsPaidByAdmin($invoiceModel, []);
+    }
+
+    public function testMarkAsPaidByAdminReturnsEarlyForAlreadyPaidInvoice(): void
+    {
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        $invoiceModel->id = 42;
+        $invoiceModel->status = \Model_Invoice::STATUS_PAID;
+        $invoiceModel->gateway_id = 5;
+
+        $serviceMock = $this->getMockBuilder(Service::class)
+            ->onlyMethods(['markAsPaid'])
+            ->getMock();
+        $serviceMock->expects($this->never())
+            ->method('markAsPaid');
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->never())
+            ->method('getExistingModelById');
+        $dbMock->expects($this->never())
+            ->method('store');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['logger'] = new \Box_Log();
+
+        $serviceMock->setDi($di);
+
+        $this->assertTrue($serviceMock->markAsPaidByAdmin($invoiceModel, [
+            'gateway_id' => 5,
+        ]));
+    }
+
     public function testPrepareInvoiceCurrencyWasNotDefined(): void
     {
         $serviceMock = $this->getMockBuilder(Service::class)

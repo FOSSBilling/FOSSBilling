@@ -17,6 +17,7 @@ use Dompdf\Dompdf;
 use FOSSBilling\Environment;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\HeaderUtils;
@@ -495,6 +496,57 @@ class Service implements InjectionAwareInterface
         $this->di['logger']->info("Marked invoice {$invoice->id} as paid.");
 
         return true;
+    }
+
+    public function markAsPaidByAdmin(\Model_Invoice $invoice, array $data = []): bool
+    {
+        if ($invoice->status === \Model_Invoice::STATUS_PAID) {
+            return true;
+        }
+
+        $execute = Tools::normalizeBoolean($data['execute'] ?? false);
+        $payGateway = $this->validateAdminMarkAsPaidRequest($data, $invoice);
+        $transactionId = isset($data['transactionId']) ? trim((string) $data['transactionId']) : null;
+
+        if ((int) $payGateway->id !== (int) $invoice->gateway_id) {
+            $invoice->gateway_id = (int) $payGateway->id;
+            $invoice->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($invoice);
+        }
+
+        if (($payGateway->gateway ?? null) === 'Custom' && (int) ($payGateway->enabled ?? 0) === 1) {
+            $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+            $newtx = $transactionService->create([
+                'invoice_id' => $invoice->id,
+                'gateway_id' => $invoice->gateway_id,
+                'currency' => $invoice->currency,
+                'status' => 'received',
+                'source' => 'admin',
+                'txn_id' => $transactionId,
+            ]);
+
+            return $transactionService->processTransaction($newtx);
+        }
+
+        return $this->markAsPaid($invoice, false, $execute);
+    }
+
+    public function validateAdminMarkAsPaidRequest(array $data, ?\Model_Invoice $invoice = null): \Model_PayGateway
+    {
+        $gatewayId = isset($data['gateway_id']) && !empty($data['gateway_id']) ? (int) $data['gateway_id'] : (int) ($invoice->gateway_id ?? 0);
+        if ($gatewayId <= 0) {
+            throw new InformationException('Payment gateway is required when marking an invoice as paid.');
+        }
+
+        $payGateway = $this->di['db']->getExistingModelById('PayGateway', $gatewayId, 'Payment gateway not found');
+        if (($payGateway->gateway ?? null) === 'Custom' && (int) ($payGateway->enabled ?? 0) === 1) {
+            $transactionId = trim((string) ($data['transactionId'] ?? ''));
+            if ($transactionId === '') {
+                throw new InformationException('Transaction ID is required when using the Custom payment gateway.');
+            }
+        }
+
+        return $payGateway;
     }
 
     /**

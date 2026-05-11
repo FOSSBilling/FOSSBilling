@@ -55,50 +55,18 @@ class Admin extends \Api_Abstract
     /**
      * Sets invoice status to paid. This method differs from invoice update method
      * in a way that it sends notification to Events system, so emails are sent.
-     * Also this will try to automatically apply payment if clients balance is
-     * available.
      *
      * @optional bool $execute - execute related tasks on invoice items. Default false.
+     * @optional int $gateway_id - Payment gateway to associate with the invoice
+     * @optional string $transactionId - Custom transaction ID to use when the selected gateway is Custom
      *
-     * @return array
+     * @return bool
      */
     public function mark_as_paid($data)
     {
-        $execute = false;
-        if (isset($data['execute']) && $data['execute']) {
-            $execute = true;
-        }
         $invoice = $this->_getInvoice($data);
-        $gateway_id = ['id' => $invoice->gateway_id];
 
-        if (!$gateway_id['id']) {
-            throw new InformationException('You must set the payment gateway in the invoice manage tab before marking it as paid.');
-        }
-
-        $payGateway = $this->gateway_get($gateway_id);
-        $charge = false;
-
-        // Check if the payment type is "Custom Payment", Add the transaction and process it.
-        if (($payGateway['code'] ?? null) == 'Custom' && ($payGateway['enabled'] ?? 0) == 1) {
-            // create transaction
-            $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
-            $newtx = $transactionService->create([
-                'invoice_id' => $invoice->id,
-                'gateway_id' => $invoice->gateway_id,
-                'currency' => $invoice->currency,
-                'status' => 'received',
-                'source' => 'admin',
-                'txn_id' => $data['transactionId'],
-            ]);
-
-            try {
-                return $transactionService->processTransaction($newtx);
-            } catch (\Exception $e) {
-                $this->di['logger']->info("Error processing transaction: {$e->getMessage()}.");
-            }
-        }
-
-        return $this->getService()->markAsPaid($invoice, $charge, $execute);
+        return $this->getService()->markAsPaidByAdmin($invoice, $data);
     }
 
     /**
