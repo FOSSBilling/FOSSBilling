@@ -684,6 +684,10 @@ class Service implements InjectionAwareInterface
             $generatedOrderTitle = null;
         }
 
+        // Store invoice ID for post-transaction processing
+        $invoiceId = null;
+        $markInvoicePaid = \FOSSBilling\Tools::normalizeBoolean($data['mark_invoice_paid'] ?? false);
+
         $id = $this->di['db']->transaction(function () use (
             $client,
             $config,
@@ -695,7 +699,8 @@ class Service implements InjectionAwareInterface
             $parent_order,
             $period,
             $product,
-            $qty
+            $qty,
+            &$invoiceId
         ) {
             $order = $this->di['db']->dispense('ClientOrder');
             $order->client_id = $client->id;
@@ -769,18 +774,25 @@ class Service implements InjectionAwareInterface
             if ($invoiceOption == 'issue-invoice' && $order->price > 0) {
                 $invoiceService = $this->di['mod_service']('invoice');
                 $invoice = $invoiceService->generateForOrder($order);
-
-                $invoiceService->approveInvoice($invoice, ['id' => $invoice->id, 'use_credits' => true]);
-
-                $markInvoicePaid = \FOSSBilling\Tools::normalizeBoolean($data['mark_invoice_paid'] ?? false);
-
-                if ($markInvoicePaid) {
-                    $invoiceService->markAsPaidByAdmin($invoice, $data);
-                }
+                // Store invoice ID for post-transaction processing
+                $invoiceId = $invoice->id;
             }
 
             return $id;
         });
+
+        // Process invoice operations outside transaction to avoid inconsistent side effects
+        // if transaction rolls back (events can trigger emails and other non-rollbackable actions)
+        if ($invoiceId !== null) {
+            $invoiceService = $this->di['mod_service']('invoice');
+            $invoice = $this->di['db']->getExistingModelById('Invoice', $invoiceId, 'Invoice not found');
+
+            $invoiceService->approveInvoice($invoice, ['id' => $invoice->id, 'use_credits' => true]);
+
+            if ($markInvoicePaid) {
+                $invoiceService->markAsPaidByAdmin($invoice, $data);
+            }
+        }
 
         $order = $this->di['db']->getExistingModelById('ClientOrder', $id, 'Order not found');
 
