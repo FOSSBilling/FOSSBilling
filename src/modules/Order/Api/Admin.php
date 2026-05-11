@@ -122,6 +122,12 @@ class Admin extends \Api_Abstract
                 $orderId,
                 $e->getMessage()
             ));
+
+            throw new \FOSSBilling\InformationException(sprintf(
+                'Order %d was created, but marking its invoice as paid failed: %s',
+                $orderId,
+                $e->getMessage()
+            ));
         }
 
         return $orderId;
