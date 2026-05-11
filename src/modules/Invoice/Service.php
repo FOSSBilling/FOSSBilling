@@ -503,7 +503,7 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
-        $execute = (bool) ($data['execute'] ?? false);
+        $execute = \Tools::normalizeBoolean($data['execute'] ?? false);
         $payGateway = $this->validateAdminMarkAsPaidRequest($data, $invoice);
         $transactionId = isset($data['transactionId']) ? trim((string) $data['transactionId']) : null;
 
