@@ -76,7 +76,7 @@ done
 
 docker run --rm --network "${network}" "${image}" curl -fsS "http://${app_container}/install/" >/dev/null
 
-docker exec "${app_container}" sh -c 'rm -f /var/www/html/config.php /workspace/src/config.php /workspace/config.php'
+docker exec "${app_container}" rm -f /var/www/html/config.php
 
 docker run --rm \
   --network "${network}" \
