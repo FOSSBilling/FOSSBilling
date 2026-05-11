@@ -243,14 +243,17 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
     private function getClientFromTransaction(Model_Transaction $tx, Stripe\PaymentIntent $charge): Model_Client
     {
-        if ($charge->customer) {
-            $client = $this->di['db']->findOne('Client', 'stripe_customer_id = :customer_id', [':customer_id' => $charge->customer]);
-            if ($client instanceof Model_Client) {
-                return $client;
+        $clientId = (int) ($charge->metadata->client_id ?? 0);
+
+        if ($clientId > 0) {
+            try {
+                return $this->di['db']->getExistingModelById('Client', $clientId);
+            } catch (\FOSSBilling\Exception $e) {
+                throw new Payment_Exception('Unable to load client for transaction: :msg', [':msg' => $e->getMessage()]);
             }
         }
 
-        throw new Payment_Exception('Unable to determine client for transaction. No invoice or customer information available.');
+        throw new Payment_Exception('Unable to determine client for transaction. No invoice or client metadata available.');
     }
 
     protected function _generateForm(Model_Invoice $invoice): string
@@ -261,6 +264,10 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             'description' => $this->getInvoiceTitle($invoice),
             'automatic_payment_methods' => ['enabled' => true],
             'receipt_email' => $invoice->buyer_email,
+            'metadata' => [
+                'client_id' => (string) $invoice->client_id,
+                'invoice_id' => (string) $invoice->id,
+            ],
         ]);
 
         $pubKey = ($this->config['test_mode']) ? $this->config['test_pub_key'] : $this->config['pub_key'];

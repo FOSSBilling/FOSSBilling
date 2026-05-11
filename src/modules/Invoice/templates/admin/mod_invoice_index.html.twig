@@ -480,13 +480,18 @@
                     }
                 });
 
-                if (items.length > 0) {
-                    const itemsInput = document.createElement('input');
-                    itemsInput.type = 'hidden';
-                    itemsInput.name = 'items';
-                    itemsInput.value = JSON.stringify(items);
-                    invoiceForm.appendChild(itemsInput);
-                }
+                invoiceForm.querySelectorAll('input[data-generated-item="true"]').forEach(input => input.remove());
+
+                items.forEach((item, index) => {
+                    Object.entries(item).forEach(([key, value]) => {
+                        const itemInput = document.createElement('input');
+                        itemInput.type = 'hidden';
+                        itemInput.name = `items[${index}][${key}]`;
+                        itemInput.value = value;
+                        itemInput.dataset.generatedItem = 'true';
+                        invoiceForm.appendChild(itemInput);
+                    });
+                });
             });
         }
     });
