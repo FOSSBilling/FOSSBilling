@@ -501,6 +501,7 @@ class Service implements InjectionAwareInterface
     {
         $execute = (bool) ($data['execute'] ?? false);
         $payGateway = $this->validateAdminMarkAsPaidRequest($data, $invoice);
+        $transactionId = isset($data['transactionId']) ? trim((string) $data['transactionId']) : null;
 
         if ((int) $payGateway->id !== (int) $invoice->gateway_id) {
             $invoice->gateway_id = (int) $payGateway->id;
@@ -516,7 +517,7 @@ class Service implements InjectionAwareInterface
                 'currency' => $invoice->currency,
                 'status' => 'received',
                 'source' => 'admin',
-                'txn_id' => $data['transactionId'] ?? null,
+                'txn_id' => $transactionId,
             ]);
 
             return $transactionService->processTransaction($newtx);

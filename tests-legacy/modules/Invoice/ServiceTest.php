@@ -709,7 +709,7 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $this->assertTrue($serviceMock->markAsPaidByAdmin($invoiceModel, [
-            'transactionId' => 'manual-txn-1',
+            'transactionId' => '  manual-txn-1  ',
         ]));
     }
 
