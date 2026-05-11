@@ -243,8 +243,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
     private function getClientFromTransaction(Model_Transaction $tx, Stripe\PaymentIntent $charge): Model_Client
     {
-        if (!empty($charge->metadata->client_id)) {
-            return $this->di['db']->getExistingModelById('Client', (int) $charge->metadata->client_id);
+        $clientId = (int) ($charge->metadata->client_id ?? 0);
+
+        if ($clientId > 0) {
+            try {
+                return $this->di['db']->getExistingModelById('Client', $clientId);
+            } catch (\FOSSBilling\Exception $e) {
+                throw new Payment_Exception('Unable to load client for transaction: :msg', [':msg' => $e->getMessage()]);
+            }
         }
 
         throw new Payment_Exception('Unable to determine client for transaction. No invoice or client metadata available.');

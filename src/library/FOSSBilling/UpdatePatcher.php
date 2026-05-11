@@ -1229,16 +1229,8 @@ class UpdatePatcher implements InjectionAwareInterface
         $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_hook' AND rel_type = 'mod' AND rel_id = 'Paidsupport' AND meta_key = 'listener'");
         $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_paidsupport' AND meta_key = 'config'");
 
-        $cacheKey = 'config_mod_paidsupport';
         if ($this->di !== null && $this->di->offsetExists('cache')) {
-            $cache = $this->di['cache'];
-            if (is_object($cache)) {
-                if (method_exists($cache, 'deleteItem')) {
-                    $cache->deleteItem($cacheKey);
-                } elseif (method_exists($cache, 'delete')) {
-                    $cache->delete($cacheKey);
-                }
-            }
+            $this->di['cache']->deleteItem('config_mod_paidsupport');
         }
     }
 }
