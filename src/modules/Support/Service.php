@@ -1141,6 +1141,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $this->canClientSubmitNewTicket($client, $config);
         }
 
+        $this->ensureLegacyPaidSupportHooksAreNotConfigured();
+
         $event_params = $data;
         $event_params['client_id'] = $client->id;
         $this->di['events_manager']->fire(['event' => 'onBeforeClientOpenTicket', 'params' => $event_params]);
@@ -1177,6 +1179,24 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['logger']->info('Submitted new ticket "%s"', $ticketId);
 
         return (int) $ticketId;
+    }
+
+    private function ensureLegacyPaidSupportHooksAreNotConfigured(): void
+    {
+        $hasLegacyPaidSupportHooks = (int) $this->di['db']->getCell(
+            "SELECT count(*)
+            FROM extension_meta
+            WHERE extension = 'mod_hook'
+            AND rel_type = 'mod'
+            AND rel_id = :module
+            AND meta_key = 'listener'
+            AND meta_value IN ('onBeforeClientOpenTicket', 'onAfterClientOpenTicket')",
+            [':module' => 'Paidsupport']
+        );
+
+        if ($hasLegacyPaidSupportHooks > 0) {
+            throw new InformationException('Legacy paid support configuration detected. Please ask an administrator to remove old paid support hooks before opening a ticket.');
+        }
     }
 
     private function cannedReply(\Model_SupportTicket $ticket, $cannedId): void
