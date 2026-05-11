@@ -111,7 +111,9 @@ final class FOSSBilling_Installer
         $this->filesystem = new Filesystem();
         if ($this->filesystem->exists(PATH_CONFIG)) {
             $config = require PATH_CONFIG;
-            $this->isDebug = (bool) ($config['debug_and_monitoring']['debug'] ?? false);
+            if (is_array($config)) {
+                $this->isDebug = (bool) ($config['debug_and_monitoring']['debug'] ?? false);
+            }
         }
 
         $action = $this->request->query->get('a', 'index');
