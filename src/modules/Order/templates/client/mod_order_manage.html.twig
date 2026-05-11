@@ -120,12 +120,13 @@
             </div>
 
             {# Service management #}
+            {% set service = null %}
+            {{ render_widgets('client.order.manage.service.before', { 'order': order, 'service': service }) }}
             {% if guest.system_template_exists({ 'file': service_partial }) %}
                 {% set service = client.order_service({ 'id': order.id }) %}
-                {{ render_widgets('client.order.manage.service.before', { 'order': order, 'service': service }) }}
                 {{ include(service_partial, { 'order': order, 'service': service }) }}
-                {{ render_widgets('client.order.manage.service.after', { 'order': order, 'service': service }) }}
             {% endif %}
+            {{ render_widgets('client.order.manage.service.after', { 'order': order, 'service': service }) }}
 
             {# Order addons #}
             {% if order.group_master == 1 and addons|length > 0 %}
