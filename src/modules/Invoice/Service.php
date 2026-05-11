@@ -15,12 +15,15 @@ namespace Box\Mod\Invoice;
 use Box\Mod\Currency\Entity\Currency;
 use Dompdf\Dompdf;
 use FOSSBilling\Environment;
+use FOSSBilling\Http\HttpResponseException;
+use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\HeaderUtils;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Twig\Loader\FilesystemLoader;
 
@@ -1646,13 +1649,13 @@ class Service implements InjectionAwareInterface
         return false;
     }
 
-    public function exportCSV(array $headers)
+    public function exportCSV(array $headers): Response
     {
         if (!$headers) {
             $headers = ['id', 'client_id', 'nr', 'currency', 'credit', 'base_income', 'base_refund', 'refund', 'notes', 'status', 'buyer_first_name', 'buyer_last_name', 'buyer_company', 'buyer_company_vat', 'buyer_company_number', 'buyer_address', 'buyer_city', 'buyer_state', 'buyer_country', 'buyer_zip', 'buyer_phone', 'buyer_phone_cc', 'buyer_email', 'approved', 'taxname', 'taxrate', 'due_at', 'reminded_at', 'paid_at'];
         }
 
-        return $this->di['table_export_csv']('invoice', 'invoices.csv', $headers);
+        return $this->di['csv_response_factory']->create('invoice', 'invoices.csv', $headers);
     }
 
     public function checkInvoiceAuth(?int $invoiceClientId): void
@@ -1670,16 +1673,15 @@ class Service implements InjectionAwareInterface
             if ($invoiceClientId != $client->id) {
                 // Then either give an appropriate API response or redirect to the login page.
                 $api_str = '/api/';
-                $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
+                $url = RequestFactory::getRoutePath($this->di['request']);
                 if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
                     // Throw Exception if api request
                     throw new InformationException('You do not have permission to perform this action', [], 403);
                 }
                 // Redirect to login page if browser request
                 $invoiceLink = $this->di['url']->link('invoice');
-                header("Location: $invoiceLink");
-                echo __trans('You do not have permission to perform this action');
-                exit;
+
+                throw new HttpResponseException(new RedirectResponse($invoiceLink));
             }
         }
     }
@@ -1783,7 +1785,7 @@ class Service implements InjectionAwareInterface
 
         if (!$remote && str_ends_with($source, '.svg')) {
             $source = 'data:image/svg+xml;base64,' . base64_encode($this->filesystem->readFile($source));
-            $remote = false; // The contents of the SVG are directly added to the page, so we can safely disable remote files for the PDFs.
+            $remote = false;
         }
 
         return [$source, $remote];

@@ -10,8 +10,9 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use FOSSBilling\Environment;
+use FOSSBilling\Http\HttpResponseException;
 use Symfony\Component\Filesystem\Path;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class Box_AppAdmin extends Box_App
 {
@@ -29,10 +30,9 @@ class Box_AppAdmin extends Box_App
         $service = $this->di['mod_service']('Staff');
 
         if ($this->mod !== 'extension' && $this->di['auth']->isAdminLoggedIn() && !$service->hasPermission(null, $this->mod)) {
-            http_response_code(403);
             $e = new FOSSBilling\InformationException('You do not have permission to access the :mod: module', [':mod:' => $this->mod], 403);
-            echo $this->render('error', ['exception' => $e]);
-            exit;
+
+            throw new HttpResponseException($this->errorResponse($e, 403));
         }
     }
 
@@ -48,8 +48,7 @@ class Box_AppAdmin extends Box_App
     public function redirect($path): never
     {
         $location = $this->di['url']->adminLink($path);
-        header("Location: $location");
-        exit;
+        $this->abortWithResponse(new RedirectResponse($location));
     }
 
     /**

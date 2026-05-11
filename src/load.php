@@ -12,12 +12,12 @@ declare(strict_types=1);
 
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
+use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\SentryHelper;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
 
@@ -55,8 +55,8 @@ function checkSSL(): void
     global $request;
 
     if (!empty(Config::getProperty('security.force_https')) && Config::getProperty('security.force_https') && !Environment::isCLI()) {
-        if (!Tools::isHTTPS()) {
-            header('Location: https://' . $request->getHost() . $request->getRequestUri());
+        if (!$request->isSecure()) {
+            (new RedirectResponse('https://' . $request->getHost() . $request->getRequestUri()))->send();
             exit;
         }
     }
@@ -166,6 +166,7 @@ function preInit(): void
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'ErrorPage.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'SentryHelper.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Environment.php');
+    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RequestFactory.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Config.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Tools.php');
 }
@@ -182,7 +183,8 @@ function init(): void
     // Initialize required Symfony components.
     global $filesystem, $request;
     $filesystem = new Filesystem();
-    $request = Request::createFromGlobals();
+    $request = RequestFactory::createFromGlobals();
+    RequestFactory::normalizeRoutePath($request);
 
     // Check config exists, redirecting to installer or throwing an exception if not.
     if (!$filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::join('install', 'install.php'))) {
@@ -192,6 +194,8 @@ function init(): void
     } elseif (!$filesystem->exists(PATH_CONFIG) && !$filesystem->exists(Path::join('install', 'install.php'))) {
         throw new Exception('The FOSSBilling configuration file is empty or invalid.', 3);
     }
+
+    RequestFactory::configureFromConfig($request);
 
     // Set globals and relevant settings based on the config.
     date_default_timezone_set(Config::getProperty('i18n.timezone', 'UTC'));
@@ -203,7 +207,7 @@ function init(): void
     define('INSTANCE_ID', Config::getProperty('info.instance_id', 'Unknown'));
 
     // Set the system URL.
-    $scheme = Config::getProperty('security.force_https', true) || Tools::isHTTPS() ? 'https://' : 'http://';
+    $scheme = Config::getProperty('security.force_https', true) || $request->isSecure() ? 'https://' : 'http://';
 
     // Keep the app working correctly if the URL didn't get correctly updated
     $url = str_replace(['https://', 'http://'], '', Config::getProperty('url'));

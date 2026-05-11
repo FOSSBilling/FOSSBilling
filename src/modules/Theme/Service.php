@@ -15,6 +15,8 @@ namespace Box\Mod\Theme;
 use Box\Mod\Extension\Entity\ExtensionMeta;
 use Box\Mod\Extension\Repository\ExtensionMetaRepository;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
+use FOSSBilling\Twig\SandboxedStringRenderer;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -227,6 +229,27 @@ class Service implements InjectionAwareInterface
         }
 
         return true;
+    }
+
+    public function renderThemeSettingsPageHtml(Model\Theme $theme, array $settings): string
+    {
+        $twigFactory = $this->di['twig_factory'];
+        $twig = $twigFactory->createThemeSettingsEnvironment();
+
+        $rendered = SandboxedStringRenderer::render(
+            $twig,
+            $theme->getSettingsPageHtml(),
+            ['settings' => $settings],
+            'Theme settings template',
+            function (\Twig\Sandbox\SecurityError $e) use ($theme): void {
+                $this->di['logger']->setChannel('security')->warning('Theme settings template sandbox violation', [
+                    'theme' => $theme->getName(),
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        );
+
+        return BrowserHtmlSanitizer::sanitizeThemeSettingsHtml($rendered);
     }
 
     public function getCurrentAdminAreaTheme(): array

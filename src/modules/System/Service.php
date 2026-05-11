@@ -15,8 +15,10 @@ namespace Box\Mod\System;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\GeoIP\Reader;
+use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
 use FOSSBilling\SentryHelper;
 use FOSSBilling\Tools;
+use FOSSBilling\Twig\SandboxedStringRenderer;
 use FOSSBilling\Version;
 use Pimple\Container;
 use PrinsFrank\Standards\Country\CountryAlpha2;
@@ -442,44 +444,19 @@ class Service
         $twigFactory = $this->di['twig_factory'];
         $twig = $twigFactory->createAdapterEnvironment();
 
-        try {
-            $template = $twig->createTemplate($tpl);
-            $rendered = $template->render($vars);
-        } catch (\Twig\Sandbox\SecurityError $e) {
-            $this->di['logger']->setChannel('security')->warning('Payment adapter template sandbox violation', [
-                'error' => $e->getMessage(),
-            ]);
-
-            throw new \FOSSBilling\InformationException('Payment adapter template contains disallowed Twig syntax: ' . $e->getMessage());
-        } catch (\Twig\Error\SyntaxError $e) {
-            throw new \FOSSBilling\InformationException('Payment adapter template syntax error: ' . $e->getMessage());
-        } catch (\Twig\Error\Error $e) {
-            throw new \FOSSBilling\InformationException('Payment adapter template rendering error: ' . $e->getMessage());
-        }
-
-        return $this->sanitizeAdapterOutput($rendered);
-    }
-
-    public function sanitizeAdapterOutput(string $html): string
-    {
-        $html = preg_replace('#<script\b[^>]*>.*?</script>#is', '', $html);
-        $html = preg_replace('#<script\b[^>]*/?>#is', '', (string) $html);
-        $html = preg_replace('#\s+\bon\w+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]*)#i', '', (string) $html);
-
-        return preg_replace_callback(
-            '#\s+\b(href|src|action|formaction|xlink:href)\s*=\s*(?:(["\'])(.*?)\2|([^\s>]*))#is',
-            static function (array $matches): string {
-                $value = html_entity_decode($matches[3] !== '' ? $matches[3] : $matches[4], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                $normalizedValue = preg_replace('/[\x00-\x20\x7F]+/', '', trim($value));
-
-                if (preg_match('/^(?:javascript|data):/i', $normalizedValue)) {
-                    return '';
-                }
-
-                return $matches[0];
-            },
-            (string) $html
+        $rendered = SandboxedStringRenderer::render(
+            $twig,
+            $tpl,
+            $vars,
+            'Payment adapter template',
+            function (\Twig\Sandbox\SecurityError $e): void {
+                $this->di['logger']->setChannel('security')->warning('Payment adapter template sandbox violation', [
+                    'error' => $e->getMessage(),
+                ]);
+            }
         );
+
+        return BrowserHtmlSanitizer::sanitizeAdapterHtml($rendered);
     }
 
     /**
@@ -498,21 +475,17 @@ class Service
         $twigFactory = $this->di['twig_factory'];
         $twig = $twigFactory->createEmailEnvironment();
 
-        try {
-            $template = $twig->createTemplate($tpl);
-
-            return $template->render($vars);
-        } catch (\Twig\Sandbox\SecurityError $e) {
-            $this->di['logger']->setChannel('security')->warning('Email template sandbox violation', [
-                'error' => $e->getMessage(),
-            ]);
-
-            throw new \FOSSBilling\InformationException('Email template contains disallowed Twig syntax: ' . $e->getMessage());
-        } catch (\Twig\Error\SyntaxError $e) {
-            throw new \FOSSBilling\InformationException('Email template syntax error: ' . $e->getMessage());
-        } catch (\Twig\Error\Error $e) {
-            throw new \FOSSBilling\InformationException('Email template rendering error: ' . $e->getMessage());
-        }
+        return SandboxedStringRenderer::render(
+            $twig,
+            $tpl,
+            $vars,
+            'Email template',
+            function (\Twig\Sandbox\SecurityError $e): void {
+                $this->di['logger']->setChannel('security')->warning('Email template sandbox violation', [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        );
     }
 
     public function clearCache(?string $cachePath = null): bool
@@ -543,23 +516,9 @@ class Service
 
     public function getCurrentUrl(): string
     {
-        $pageScheme = Tools::isHTTPS() ? 'https' : 'http';
-        $pageURL = $pageScheme . '://';
+        $request = $this->di['request'];
 
-        $serverPort = $_SERVER['SERVER_PORT'] ?? null;
-        if (isset($serverPort) && $serverPort != '80' && $serverPort != '443') {
-            $pageURL .= $_SERVER['SERVER_NAME'] ?? null . ':' . $serverPort;
-        } else {
-            $pageURL .= $_SERVER['SERVER_NAME'] ?? null;
-        }
-
-        $this_page = $_SERVER['REQUEST_URI'] ?? '';
-        if (str_contains((string) $this_page, '?')) {
-            $a = explode('?', (string) $this_page);
-            $this_page = reset($a);
-        }
-
-        return $pageURL . $this_page;
+        return $request->getSchemeAndHttpHost() . strtok($request->getRequestUri(), '?');
     }
 
     public function getPeriod($code)

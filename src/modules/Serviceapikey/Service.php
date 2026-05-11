@@ -197,12 +197,8 @@ class Service implements InjectionAwareInterface
         }
 
         $client = null;
-        try {
-            if ($this->di['is_client_logged']) {
-                $client = $this->di['loggedin_client'];
-            }
-        } catch (\Exception) {
-            // Ignore when no client session exists (e.g., admin API requests).
+        if ($this->di['auth']->isClientLoggedIn()) {
+            $client = $this->di['loggedin_client'];
         }
 
         if (!is_null($client) && $client->id !== $model->client_id) {

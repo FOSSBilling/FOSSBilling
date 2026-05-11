@@ -15,6 +15,7 @@ namespace Box\Mod\Client;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
+use Symfony\Component\HttpFoundation\Response;
 
 class Service implements InjectionAwareInterface
 {
@@ -777,7 +778,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function exportCSV(array $headers)
+    public function exportCSV(array $headers): Response
     {
         if ($headers) {
             // Prevent the password / salt columns from being exported
@@ -791,7 +792,7 @@ class Service implements InjectionAwareInterface
             $headers = ['id', 'email', 'status', 'first_name', 'last_name', 'phone_cc', 'phone', 'company', 'company_vat', 'company_number', 'address_1', 'address_2', 'city', 'state', 'postcode', 'country', 'currency'];
         }
 
-        return $this->di['table_export_csv']('client', 'clients.csv', $headers);
+        return $this->di['csv_response_factory']->create('client', 'clients.csv', $headers);
     }
 
     /**

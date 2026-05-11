@@ -90,7 +90,7 @@ final class ServiceTransactionTest extends \BBTestCase
             ->method('exec')
             ->with(
                 $this->callback(function (string $sql): bool {
-                    $this->assertStringContainsString('status IN (?, ?)', $sql);
+                    $this->assertStringContainsString('status = ?', $sql);
                     $this->assertStringContainsString('status = ? AND (updated_at IS NULL OR updated_at <= ?)', $sql);
 
                     return true;
@@ -99,11 +99,10 @@ final class ServiceTransactionTest extends \BBTestCase
                     $this->assertSame(\Model_Transaction::STATUS_PROCESSING, $params[0]);
                     $this->assertSame(123, $params[2]);
                     $this->assertSame(\Model_Transaction::STATUS_RECEIVED, $params[3]);
-                    $this->assertSame(\Model_Transaction::STATUS_PROCESSED, $params[4]);
-                    $this->assertSame(\Model_Transaction::STATUS_PROCESSING, $params[5]);
+                    $this->assertSame(\Model_Transaction::STATUS_PROCESSING, $params[4]);
 
                     $claimedAt = strtotime((string) $params[1]);
-                    $retryAfter = strtotime((string) $params[6]);
+                    $retryAfter = strtotime((string) $params[5]);
                     $this->assertNotFalse($claimedAt);
                     $this->assertNotFalse($retryAfter);
                     $this->assertGreaterThanOrEqual(295, $claimedAt - $retryAfter);
@@ -119,6 +118,38 @@ final class ServiceTransactionTest extends \BBTestCase
         $this->service->setDi($di);
 
         $this->assertTrue($this->service->claimForProcessing(123));
+    }
+
+    public function testClaimForProcessingDoesNotAllowProcessedTransactions(): void
+    {
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('exec')
+            ->with(
+                $this->callback(function (string $sql): bool {
+                    $this->assertStringContainsString('status = ? OR (status = ? AND (updated_at IS NULL OR updated_at <= ?))', $sql);
+                    $this->assertStringNotContainsString('status IN (?, ?)', $sql);
+
+                    return true;
+                }),
+                $this->callback(function (array $params): bool {
+                    $this->assertCount(6, $params);
+                    $this->assertSame(\Model_Transaction::STATUS_PROCESSING, $params[0]);
+                    $this->assertSame(456, $params[2]);
+                    $this->assertSame(\Model_Transaction::STATUS_RECEIVED, $params[3]);
+                    $this->assertSame(\Model_Transaction::STATUS_PROCESSING, $params[4]);
+                    $this->assertNotContains(\Model_Transaction::STATUS_PROCESSED, $params);
+
+                    return true;
+                })
+            )
+            ->willReturn(0);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $this->assertFalse($this->service->claimForProcessing(456));
     }
 
     public function testUpdate(): void

@@ -13,43 +13,44 @@ on:
         default: true
         required: false
         type: boolean
+      cache-scope:
+        description: 'The GHA cache scope to read cached layers from (e.g. from a parallel Docker image build).'
+        default: ''
+        required: false
+        type: string
 
 jobs:
-  build-release-tree:
-    name: 'Build Release Tree'
-    permissions:
-      contents: read
-      id-token: write
-    uses: docker/github-builder/.github/workflows/build.yml@c2782c55efa56a01b9c30021db8f5ec3993228a3 # v1.8.0
-    with:
-      output: local
-      target: release-artifact
-      artifact-upload: true
-      artifact-name: ${{ inputs.artifact-name }}-release-tree
-      cache: false
-      sign: false
-      build-args: |
-        FOSSBILLING_VERSION=${{ inputs.preview && github.sha || github.ref_name }}
-        FOSSBILLING_VERSION_TRUNCATE=${{ inputs.preview && '7' || '0' }}
-        SENTRY_DSN=${{ vars.SENTRY_DSN }}
-
   release-build:
     name: 'Build and Prepare Release'
-    needs: [ build-release-tree ]
-    permissions: 
+    permissions:
       actions: write
       contents: read
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     steps:
-      - name: 'Download Release Tree'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          name: ${{ inputs.artifact-name }}-release-tree
-          path: /tmp/release-tree
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: 'Set up Docker Buildx'
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
+
+      - name: 'Build Release Artifact'
+        run: |
+          cache_args=()
+          if [ -n "${{ inputs.cache-scope }}" ]; then
+            cache_args+=(--cache-from "type=gha,scope=${{ inputs.cache-scope }}")
+          fi
+
+          docker buildx build \
+            --target release-artifact \
+            --build-arg FOSSBILLING_VERSION="${{ inputs.preview && github.sha || github.ref_name }}" \
+            --build-arg FOSSBILLING_VERSION_TRUNCATE="${{ inputs.preview && '7' || '0' }}" \
+            --build-arg SENTRY_DSN="${{ vars.SENTRY_DSN }}" \
+            "${cache_args[@]}" \
+            --output type=local,dest=./release-tree \
+            .
 
       - name: 'Create Release Build Archive'
-        run: tar -cf /tmp/build.tar -C /tmp/release-tree ./
+        run: tar -cf /tmp/build.tar -C ./release-tree ./
 
       - name: 'Upload Release Build Archive'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -58,21 +59,3 @@ jobs:
           name: ${{ inputs.artifact-name }}
           path: /tmp/build.tar
           retention-days: 1
-
-      - name: 'Delete Intermediate Release Tree Artifact'
-        if: ${{ always() }}
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-          ARTIFACT_NAME: ${{ inputs.artifact-name }}-release-tree
-        run: |
-          artifact_ids="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts" --paginate --jq '.artifacts[] | select(.name == env.ARTIFACT_NAME) | .id')"
-
-          if [ -z "${artifact_ids}" ]; then
-            echo "No intermediate artifact found for ${ARTIFACT_NAME}"
-            exit 0
-          fi
-
-          while IFS= read -r artifact_id; do
-            gh api --method DELETE "repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}"
-          done <<< "${artifact_ids}"

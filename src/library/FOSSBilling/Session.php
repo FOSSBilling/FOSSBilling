@@ -170,6 +170,6 @@ class Session implements InjectionAwareInterface
 
     private function shouldBeSecure(): bool
     {
-        return Config::getProperty('security.force_https', true) || Tools::isHTTPS();
+        return Config::getProperty('security.force_https', true) || $this->di['request']->isSecure();
     }
 }

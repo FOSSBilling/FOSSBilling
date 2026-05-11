@@ -391,8 +391,8 @@ class ServiceTransaction implements InjectionAwareInterface
      * Uses conditional UPDATE to prevent race conditions when multiple
      * workers attempt to process the same transaction simultaneously.
      *
-     * Accepts 'received' and 'processed' statuses immediately, and allows
-     * stale 'processing' transactions to be reclaimed after the recovery timeout.
+     * Accepts 'received' status immediately, and allows stale 'processing'
+     * transactions to be reclaimed after the recovery timeout.
      *
      * @param int $id Transaction ID
      *
@@ -401,13 +401,12 @@ class ServiceTransaction implements InjectionAwareInterface
     public function claimForProcessing(int $id): bool
     {
         $affectedRows = $this->di['db']->exec(
-            'UPDATE transaction SET status = ?, updated_at = ? WHERE id = ? AND (status IN (?, ?) OR (status = ? AND (updated_at IS NULL OR updated_at <= ?)))',
+            'UPDATE transaction SET status = ?, updated_at = ? WHERE id = ? AND (status = ? OR (status = ? AND (updated_at IS NULL OR updated_at <= ?)))',
             [
                 \Model_Transaction::STATUS_PROCESSING,
                 date('Y-m-d H:i:s'),
                 $id,
                 \Model_Transaction::STATUS_RECEIVED,
-                \Model_Transaction::STATUS_PROCESSED,
                 \Model_Transaction::STATUS_PROCESSING,
                 $this->getProcessingRecoveryThreshold(),
             ]

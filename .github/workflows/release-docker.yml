@@ -10,8 +10,6 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Latest release is identified by branch/tag SemVer,
-  # not the 'Set as the latest release' GitHub option.
   check-latest:
     name: 'Check if Release is Latest'
     permissions: 
@@ -54,7 +52,9 @@ jobs:
       output: image
       push: true
       platforms: linux/amd64,linux/arm64
-      cache: false
+      cache: true
+      cache-mode: max
+      cache-scope: fossbilling-release
       sbom: true
       set-meta-labels: true
       set-meta-annotations: true
@@ -67,3 +67,38 @@ jobs:
       build-args: |
         FOSSBILLING_VERSION=${{ github.ref_name }}
         SENTRY_DSN=${{ vars.SENTRY_DSN }}
+
+  build-release-archive:
+    name: 'Build Release Archive'
+    permissions:
+      actions: write
+      contents: read
+    needs: [ check-latest ]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: 'Set up Docker Buildx'
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
+
+      - name: 'Build Release Artifact'
+        run: |
+          docker buildx build \
+            --target release-artifact \
+            --build-arg FOSSBILLING_VERSION="${{ github.ref_name }}" \
+            --build-arg SENTRY_DSN="${{ vars.SENTRY_DSN }}" \
+            --cache-from type=gha,scope=fossbilling-release \
+            --output type=local,dest=./release-tree \
+            .
+
+      - name: 'Create Release Build Archive'
+        run: tar -cf /tmp/build.tar -C ./release-tree ./
+
+      - name: 'Upload Release Build Archive'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          if-no-files-found: 'error'
+          name: release-build
+          path: /tmp/build.tar
+          retention-days: 1

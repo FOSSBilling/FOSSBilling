@@ -7,6 +7,7 @@ namespace Box\Mod\Api;
 use Box\Mod\Api\Controller\Client;
 use FOSSBilling\InformationException;
 use PHPUnit\Framework\Attributes\Group;
+use Symfony\Component\HttpFoundation\Request;
 
 final readonly class CronStaffServiceDouble
 {
@@ -60,8 +61,8 @@ final class ControllerClientTest extends \BBTestCase
     public function testShouldUseTokenLoginIgnoresNonApiBasicAuthUsernames(): void
     {
         $controller = new Client();
-
         $_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode('upstream:token');
+        $controller->setDi($this->createDiWithRequest());
         $result = $this->invokePrivate($controller, 'shouldUseTokenLogin', ['admin']);
 
         $this->assertFalse($result);
@@ -70,8 +71,8 @@ final class ControllerClientTest extends \BBTestCase
     public function testShouldUseTokenLoginRejectsRouteRoleMismatch(): void
     {
         $controller = new Client();
-
         $_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode('client:token');
+        $controller->setDi($this->createDiWithRequest());
 
         $this->expectException(InformationException::class);
         $this->expectExceptionCode(203);
@@ -120,6 +121,7 @@ final class ControllerClientTest extends \BBTestCase
     {
         $controller = new Client();
         $_SERVER['HTTP_AUTHORIZATION'] = 'Basic invalid###';
+        $controller->setDi($this->createDiWithRequest());
 
         $this->expectException(InformationException::class);
         $this->expectExceptionCode(201);
@@ -146,6 +148,7 @@ final class ControllerClientTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn ($name): ?object => $name === 'staff' ? $staffService : null);
+        $di['request'] = Request::create('/', 'GET', [], [], [], $_SERVER);
         $controller->setDi($di);
 
         $this->expectException(InformationException::class);
@@ -167,6 +170,7 @@ final class ControllerClientTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
+        $di['request'] = Request::create('/', 'GET', [], [], [], $_SERVER);
         $controller->setDi($di);
 
         $this->expectException(InformationException::class);
@@ -188,6 +192,7 @@ final class ControllerClientTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
+        $di['request'] = Request::create('/', 'GET', [], [], [], $_SERVER);
         $controller->setDi($di);
 
         $this->expectException(InformationException::class);
@@ -216,5 +221,13 @@ final class ControllerClientTest extends \BBTestCase
         $reflectionMethod = $reflection->getMethod($method);
 
         return $reflectionMethod->invokeArgs($instance, $args);
+    }
+
+    private function createDiWithRequest(): \Pimple\Container
+    {
+        $di = $this->getDi();
+        $di['request'] = Request::create('/', 'GET', [], [], [], $_SERVER);
+
+        return $di;
     }
 }

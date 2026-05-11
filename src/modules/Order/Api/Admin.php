@@ -19,6 +19,7 @@ namespace Box\Mod\Order\Api;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
+use Symfony\Component\HttpFoundation\Response;
 
 class Admin extends \Api_Abstract
 {
@@ -415,7 +416,7 @@ class Admin extends \Api_Abstract
         return true;
     }
 
-    public function export_csv($data)
+    public function export_csv($data): Response
     {
         $data['headers'] ??= [];
 

@@ -16,12 +16,20 @@ use FOSSBilling\Config;
 use FOSSBilling\Doctrine\DriverManagerFactory;
 use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Environment;
-use League\Csv\Writer;
+use FOSSBilling\Http\RequestFactory;
+use FOSSBilling\Security\AuthenticationRequiredException;
+use FOSSBilling\Security\EmailValidationRequiredException;
 use RedBeanPHP\Facade;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\HttpFoundation\Request;
 
 $di = new Pimple\Container();
+
+global $request;
+
+if (!$request instanceof Request) {
+    throw new LogicException('The request must be initialized before loading the DI container.');
+}
 
 /*
  * Create a new logger instance and configures it based on the settings in the configuration file.
@@ -240,7 +248,7 @@ $di['session'] = function () use ($di) {
  *
  * @return Symfony\Component\HttpFoundation\Request
  */
-$di['request'] = fn (): Request => Request::createFromGlobals();
+$di['request'] = $request;
 
 /*
  * @param void
@@ -285,17 +293,7 @@ $di['is_client_logged'] = function () use ($di) {
     /** @var Box_Authorization $auth */
     $auth = $di['auth'];
     if (!$auth->isClientLoggedIn()) {
-        $api_str = '/api/';
-        $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
-
-        if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
-            // Throw Exception if api request
-            throw new Exception('Client is not logged in');
-        }
-        // Redirect to login page if browser request
-        $di['set_return_uri'];
-        $login_url = $di['url']->link('login');
-        header("Location: $login_url");
+        throw new AuthenticationRequiredException('client');
     }
 
     return true;
@@ -328,16 +326,7 @@ $di['is_admin_logged'] = function () use ($di) {
     /** @var Box_Authorization $auth */
     $auth = $di['auth'];
     if (!$auth->isAdminLoggedIn()) {
-        $url = $_GET['_url'] ?? $_SERVER['PATH_INFO'] ?? '';
-
-        if (str_starts_with((string) $url, '/api/')) {
-            throw new Exception('Admin is not logged in');
-        }
-
-        $di['set_return_uri'];
-
-        header("Location: {$di['url']->adminLink('staff/login')}");
-        exit;
+        throw new AuthenticationRequiredException('admin');
     }
 
     return true;
@@ -366,18 +355,7 @@ $di['loggedin_client'] = function () use ($di) {
     } catch (Exception) {
         // Either the account was deleted or the session is invalid. Either way, remove the ID from the session so the system doesn't consider someone logged in
         $session->delete('client_id');
-
-        // Then either give an appropriate API response or redirect to the login page.
-        $api_str = '/api/';
-        $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
-        if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
-            // Throw Exception if api request
-            throw new Exception('Client is not logged in');
-        }
-        // Redirect to login page if browser request
-        $login_url = $di['url']->link('login');
-        header("Location: $login_url");
-        exit;
+        throw new AuthenticationRequiredException('client');
     }
 };
 
@@ -410,31 +388,22 @@ $di['loggedin_admin'] = function () use ($di) {
     } catch (Exception) {
         // Either the account was deleted or the session is invalid. Either way, remove the ID from the session so the system doesn't consider someone logged in
         $session->delete('admin');
-
-        // Then either give an appropriate API response or redirect to the login page.
-        $api_str = '/api/';
-        $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
-        if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
-            // Throw Exception if api request
-            throw new Exception('Admin is not logged in');
-        }
-        // Redirect to login page if browser request
-        $login_url = $di['url']->adminLink('staff/login');
-        header("Location: $login_url");
-        exit;
+        throw new AuthenticationRequiredException('admin');
     }
 };
 
 $di['set_return_uri'] = function () use ($di): void {
-    $url = $_GET['_url'] ?? $_SERVER['PATH_INFO'] ?? '';
-    unset($_GET['_url']);
+    $request = $di['request'];
+    $url = RequestFactory::getRoutePath($request);
+    $query = $request->query->all();
+    unset($query['_url']);
 
     if (str_starts_with((string) $url, ADMIN_PREFIX)) {
         $url = substr((string) $url, strlen(ADMIN_PREFIX));
     }
 
-    if ($_GET) {
-        $url .= '?' . http_build_query($_GET);
+    if (!empty($query)) {
+        $url .= '?' . http_build_query($query);
     }
 
     /** @var FOSSBilling\Session $session */
@@ -461,18 +430,13 @@ $di['api'] = $di->protect(function ($role) use ($di) {
 
     // Checks to enforce email validation for clients
     if ($role === 'client' && !$di['is_client_email_validated']($identity)) {
-        $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
+        $routePath = RequestFactory::getRoutePath($di['request']);
+        $isApiRequest = str_starts_with($routePath, '/api/');
+        $isAllowedClientApi = str_starts_with($routePath, '/api/client/client/')
+            || str_starts_with($routePath, '/api/client/profile/');
 
-        // If it's an API request, only allow requests to the "client" and "profile" modules so they can change their email address or resend the confirmation email.
-        if (strncasecmp((string) $url, '/api/', strlen('/api/')) === 0) {
-            if (strncasecmp((string) $url, '/api/client/client/', strlen('/api/client/client/')) !== 0 && strncasecmp((string) $url, '/api/client/profile/', strlen('/api/client/profile/')) !== 0) {
-                throw new Exception('Please check your mailbox and confirm your email address.');
-            }
-        } elseif (strncasecmp((string) $url, '/client', strlen('/client')) !== 0) {
-            // If they aren't attempting to access their profile, redirect them to it.
-            $login_url = $di['url']->link('client/profile');
-            header("Location: $login_url");
-            exit;
+        if (($isApiRequest && !$isAllowedClientApi) || (!$isApiRequest && !str_starts_with($routePath, '/client'))) {
+            throw new EmailValidationRequiredException();
         }
     }
 
@@ -695,41 +659,7 @@ $di['translate'] = $di->protect(function ($textDomain = '') {
     return $tr;
 });
 
-/*
- * Creates a CSV export of data from a specified table and sends it to the browser.
- *
- * @param string $table Name of the table to export data from
- * @param string $outputName Name of the exported CSV file
- * @param array $headers Optional array of column headers for the CSV file
- * @param int $limit Optional limit of the number of rows to export from the table
- * @return void
- */
-$di['table_export_csv'] = $di->protect(function (string $table, string $outputName = 'export.csv', array $headers = [], int $limit = 0) use ($di): void {
-    if ($limit > 0) {
-        $beans = $di['db']->findAll($table, 'LIMIT :limit', [':limit' => $limit]);
-    } else {
-        $beans = $di['db']->findAll($table);
-    }
-
-    $rows = array_map(fn ($bean) => $bean->export(), $beans);
-
-    // If we've been provided a list of headers, use that. Otherwise, pull the keys from the rows and use that for the CSV header
-    if ($headers) {
-        $rows = array_map(fn ($row): array => array_intersect_key($row, array_flip($headers)), $rows);
-    } else {
-        $headers = array_keys(reset($rows));
-    }
-
-    $csv = Writer::from(new SplTempFileObject());
-    $csv->addFormatter(new League\Csv\EscapeFormula());
-    $csv->insertOne($headers);
-    $csv->insertAll($rows);
-
-    $csv->download($outputName);
-
-    // Prevent further output from being added to the end of the CSV
-    exit;
-});
+$di['csv_response_factory'] = fn (): FOSSBilling\Http\CsvResponseFactory => new FOSSBilling\Http\CsvResponseFactory($di['db']);
 
 $di['twig_factory'] = fn (): FOSSBilling\Twig\TwigFactory => new FOSSBilling\Twig\TwigFactory($di);
 

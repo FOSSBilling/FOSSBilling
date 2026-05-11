@@ -18,21 +18,19 @@ namespace Box\Mod\Api\Controller;
 
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
+use FOSSBilling\Http\HttpResponseException;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Security\AuthenticationRequiredException;
+use FOSSBilling\Security\EmailValidationRequiredException;
 use FOSSBilling\Security\RateLimitException;
-use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 class Client implements InjectionAwareInterface
 {
     private ?array $apiConfig = null;
-    private readonly Filesystem $filesystem;
     protected ?\Pimple\Container $di = null;
-
-    public function __construct()
-    {
-        $this->filesystem = new Filesystem();
-    }
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -55,58 +53,59 @@ class Client implements InjectionAwareInterface
         $app->post('/api/:page', 'show_error', ['page' => '(.?)+'], static::class);
     }
 
-    public function show_error(\Box_App $app, $page): null
+    public function show_error(\Box_App $app, $page): Response
     {
         $exc = new \FOSSBilling\Exception('Unknown API call :call', [':call' => $page], 879);
 
-        $this->renderJson(null, $exc);
-
-        return null;
+        return $this->renderJson(null, $exc);
     }
 
-    public function get_method(\Box_App $app, $role, $class, $method): null
+    public function get_method(\Box_App $app, $role, $class, $method): Response
     {
         $call = $class . '_' . $method;
 
-        $this->tryCall($role, $class, $call, $_GET);
-
-        return null;
+        return $this->tryCall($role, $class, $call, $app->getRequest()->query->all());
     }
 
-    public function post_method(\Box_App $app, $role, $class, $method): null
+    public function post_method(\Box_App $app, $role, $class, $method): Response
     {
-        $p = $_POST;
+        $request = $app->getRequest();
+        $p = $request->request->all();
 
         // adding support for raw post input with json string
-        $input = file_get_contents('php://input');
+        $input = $request->getContent();
         if (empty($p) && !empty($input)) {
             $p = json_decode($input, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 $exc = new \FOSSBilling\Exception('Malformed JSON input: :error', [':error' => json_last_error_msg()], 400);
-                $this->renderJson(null, $exc);
 
-                return null;
+                return $this->renderJson(null, $exc);
             }
         }
 
         $call = $class . '_' . $method;
 
-        $this->tryCall($role, $class, $call, $p);
-
-        return null;
+        return $this->tryCall($role, $class, $call, $p);
     }
 
     /**
      * @param string $call
      */
-    private function tryCall($role, $class, $call, $p): void
+    private function tryCall($role, $class, $call, $p): Response
     {
         try {
-            $this->_apiCall($role, $class, $call, $p);
+            return $this->_apiCall($role, $class, $call, $p);
+        } catch (HttpResponseException $exc) {
+            return $exc->getResponse();
+        } catch (AuthenticationRequiredException $exc) {
+            return $this->renderJson(null, new \FOSSBilling\InformationException('Authentication Failed', null, 201));
+        } catch (EmailValidationRequiredException $exc) {
+            return $this->renderJson(null, new \FOSSBilling\InformationException($exc->getMessage(), null, 403));
         } catch (\Exception $exc) {
             // Sentry by default only captures unhandled exceptions, so we need to manually capture these.
             \Sentry\captureException($exc);
-            $this->renderJson(null, $exc);
+
+            return $this->renderJson(null, $exc);
         }
     }
 
@@ -154,7 +153,8 @@ class Client implements InjectionAwareInterface
         $check_referer_header = isset($this->apiConfig['require_referrer_header']) && (bool) $this->apiConfig['require_referrer_header'];
         if ($check_referer_header) {
             $url = strtolower(SYSTEM_URL);
-            $referer = isset($_SERVER['HTTP_REFERER']) ? strtolower((string) $_SERVER['HTTP_REFERER']) : null;
+            $referer = $this->di['request']->headers->get('Referer');
+            $referer = is_string($referer) ? strtolower($referer) : null;
             if (!$referer || !str_starts_with($referer, $url)) {
                 throw new \FOSSBilling\InformationException('Invalid request. Make sure request origin is :from', [':from' => SYSTEM_URL], 1004);
             }
@@ -185,7 +185,7 @@ class Client implements InjectionAwareInterface
         return true;
     }
 
-    private function _apiCall($role, $class, $method, $params): null
+    private function _apiCall($role, $class, $method, $params): Response
     {
         $this->_loadConfig();
         $this->checkAllowedIps();
@@ -212,12 +212,10 @@ class Client implements InjectionAwareInterface
         $result = $api->$method($params);
 
         if ($result instanceof Response) {
-            $this->sendResponse($result);
-
-            return null;
+            return $this->sendResponse($result);
         }
 
-        $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower((string) $_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+        $isAjax = $this->di['request']->isXmlHttpRequest();
         $isLoginMethod = ($method === 'login');
         $isStaffLogin = ($class === 'staff');
         $isClientLogin = ($class === 'client');
@@ -231,40 +229,39 @@ class Client implements InjectionAwareInterface
                 $redirectUrl = '/';
             }
 
-            header('Location: ' . $redirectUrl);
-            exit;
+            return new RedirectResponse($redirectUrl);
         }
 
-        $this->renderJson($result);
-
-        return null;
+        return $this->renderJson($result);
     }
 
     private function getAuth(): array
     {
-        if (!isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['HTTP_AUTHORIZATION'])) {
+        $server = $this->di['request']->server;
+
+        if (!$server->has('PHP_AUTH_USER') && $this->di['request']->headers->has('Authorization')) {
             $parsedAuth = $this->tryParseBasicAuthHeader();
             if ($parsedAuth === null) {
                 throw new \FOSSBilling\InformationException('Authentication Failed', null, 201);
             }
 
-            $_SERVER['PHP_AUTH_USER'] = $parsedAuth['username'];
-            $_SERVER['PHP_AUTH_PW'] = $parsedAuth['password'];
+            $server->set('PHP_AUTH_USER', $parsedAuth['username']);
+            $server->set('PHP_AUTH_PW', $parsedAuth['password']);
         }
 
-        if (!isset($_SERVER['PHP_AUTH_USER'])) {
+        if (!$server->has('PHP_AUTH_USER')) {
             throw new \FOSSBilling\InformationException('Authentication Failed', null, 201);
         }
 
-        if (!isset($_SERVER['PHP_AUTH_PW'])) {
+        if (!$server->has('PHP_AUTH_PW')) {
             throw new \FOSSBilling\InformationException('Authentication Failed', null, 202);
         }
 
-        if (empty($_SERVER['PHP_AUTH_PW'])) {
+        if ($server->get('PHP_AUTH_PW') === '') {
             throw new \FOSSBilling\InformationException('Authentication Failed', null, 206);
         }
 
-        return [$_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']];
+        return [(string) $server->get('PHP_AUTH_USER'), (string) $server->get('PHP_AUTH_PW')];
     }
 
     protected function _tryTokenLogin(string $routeRole): void
@@ -357,8 +354,11 @@ class Client implements InjectionAwareInterface
 
     private function getProvidedBasicAuthUsername(): ?string
     {
-        if (isset($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']) && in_array($_SERVER['PHP_AUTH_USER'], ['client', 'admin'], true)) {
-            return (string) $_SERVER['PHP_AUTH_USER'];
+        $server = $this->di['request']->server;
+        $username = $server->get('PHP_AUTH_USER');
+        $password = $server->get('PHP_AUTH_PW');
+        if (is_string($username) && $password !== null && in_array($username, ['client', 'admin'], true)) {
+            return $username;
         }
 
         $parsedAuth = $this->tryParseBasicAuthHeader();
@@ -379,11 +379,12 @@ class Client implements InjectionAwareInterface
      */
     private function tryParseBasicAuthHeader(): ?array
     {
-        if (!isset($_SERVER['HTTP_AUTHORIZATION'])) {
+        $authorization = $this->di['request']->headers->get('Authorization');
+        if ($authorization === null) {
             return null;
         }
 
-        $authorization = trim((string) $_SERVER['HTTP_AUTHORIZATION']);
+        $authorization = trim($authorization);
         if (stripos($authorization, 'Basic ') !== 0) {
             return null;
         }
@@ -410,6 +411,8 @@ class Client implements InjectionAwareInterface
             }
         } catch (\FOSSBilling\InformationException $exception) {
             throw $exception;
+        } catch (AuthenticationRequiredException) {
+            throw new \FOSSBilling\InformationException('Authentication Failed', null, 201);
         } catch (\Exception) {
             throw new \FOSSBilling\InformationException('Authentication Failed', null, 201);
         }
@@ -430,17 +433,15 @@ class Client implements InjectionAwareInterface
         return true;
     }
 
-    public function renderJson($data = null, ?\Exception $e = null): void
+    public function renderJson($data = null, ?\Exception $e = null): Response
     {
-        if (headers_sent()) {
-            return;
-        }
-
         $this->_loadConfig();
 
-        header('Cache-Control: no-cache, must-revalidate');
-        header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
-        header('Content-type: application/json; charset=utf-8');
+        $headers = [
+            'Cache-Control' => 'no-cache, must-revalidate',
+            'Expires' => 'Mon, 26 Jul 1997 05:00:00 GMT',
+        ];
+        $statusCode = 200;
 
         if ($e instanceof \Exception) {
             error_log("{$e->getMessage()} {$e->getCode()}.");
@@ -449,30 +450,29 @@ class Client implements InjectionAwareInterface
             $authFailed = [201, 202, 206, 204, 205, 203, 1004, 1002];
 
             if (in_array($code, $authFailed)) {
-                header('HTTP/1.1 401 Unauthorized');
+                $statusCode = 401;
             } elseif ($code == 403) {
-                header('HTTP/1.1 403 Forbidden');
+                $statusCode = 403;
             } elseif ($code == 740) {
-                header('HTTP/1.1 404 Not Found');
+                $statusCode = 404;
             } elseif ($code == 429) {
-                header('HTTP/1.1 429 Too Many Requests');
+                $statusCode = 429;
                 if ($e instanceof RateLimitException && $e->hasRetryAfter()) {
-                    header('Retry-After: ' . $e->getRetryAfterSeconds());
+                    $headers['Retry-After'] = (string) $e->getRetryAfterSeconds();
                 }
             } elseif ($code == 701 || $code == 879) {
-                header('HTTP/1.1 400 Bad Request');
+                $statusCode = 400;
             }
         } else {
             $result = ['result' => $data, 'error' => null];
         }
-        echo json_encode($result);
-        exit;
+
+        return new JsonResponse($result, $statusCode, $headers);
     }
 
-    protected function sendResponse(Response $response): void
+    protected function sendResponse(Response $response): Response
     {
-        $response->send();
-        exit;
+        return $response;
     }
 
     private function _getIp()
@@ -493,16 +493,20 @@ class Client implements InjectionAwareInterface
             return true;
         }
 
-        $input = $this->filesystem->readFile('php://input');
+        $input = $this->di['request']->getContent();
         $data = json_decode($input);
         if (!is_object($data)) {
             $data = new \stdClass();
         }
 
-        $cookieToken = $_COOKIE['csrf_token'] ?? null;
-        $headerToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
+        $cookieToken = $this->di['request']->cookies->get('csrf_token');
+        $headerToken = $this->di['request']->headers->get('X-CSRF-TOKEN');
 
-        $token = $data->CSRFToken ?? $_POST['CSRFToken'] ?? $_GET['CSRFToken'] ?? $headerToken ?? null;
+        $token = $data->CSRFToken
+            ?? $this->di['request']->request->get('CSRFToken')
+            ?? $this->di['request']->query->get('CSRFToken')
+            ?? $headerToken
+            ?? null;
 
         $sessionToken = $this->di['session']->get('csrf_token');
 

@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedownloadable\Controller;
 
+use Symfony\Component\HttpFoundation\Response;
+
 class Client implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
@@ -31,12 +33,13 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         $app->get('/servicedownloadable/get-file/:id', 'get_download', ['id' => '[0-9]+'], static::class);
     }
 
-    public function get_download(\Box_App $app, $id): void
+    public function get_download(\Box_App $app, $id): Response
     {
         $api = $this->di['api_client'];
         $data = [
             'order_id' => $id,
         ];
-        $api->servicedownloadable_send_file($data);
+
+        return $api->servicedownloadable_send_file($data);
     }
 }

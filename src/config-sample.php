@@ -22,6 +22,15 @@ return [
     'security' => [
         'mode' => 'strict',
         'force_https' => true,
+        /*
+         * Configure trusted reverse proxies when HTTPS is terminated before the PHP backend.
+         * Keep this disabled unless requests arrive through a proxy you control.
+         */
+        'trusted_proxies' => [
+            'enabled' => false,
+            'proxies' => [],
+            'headers' => 'x_forwarded',
+        ],
         'session_lifespan' => 7200,
         'perform_session_fingerprinting' => true,
         'debug_fingerprint' => false,

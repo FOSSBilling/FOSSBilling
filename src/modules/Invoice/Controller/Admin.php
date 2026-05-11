@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Controller;
 
-use FOSSBilling\Environment;
 use Symfony\Component\HttpFoundation\Response;
 
 class Admin implements \FOSSBilling\InjectionAwareInterface
@@ -183,7 +182,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_invoice_gateway', ['gateway' => $gateway]);
     }
 
-    public function get_pdf(\Box_App $app, $hash): string
+    public function get_pdf(\Box_App $app, $hash): Response
     {
         $api = $this->di['api_guest'];
         $data = [
@@ -195,10 +194,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             throw new \FOSSBilling\Exception('Invoice PDF response could not be generated');
         }
 
-        if (!Environment::isTesting()) {
-            $response->send();
-        }
-
-        return '';
+        return $response;
     }
 }

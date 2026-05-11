@@ -107,4 +107,32 @@ final class FOSSBilling_ToolsTest extends PHPUnit\Framework\TestCase
         $this->assertFalse(FOSSBilling\Tools::isValidHttpInterface('12345'));
         $this->assertFalse(FOSSBilling\Tools::isValidHttpInterface("x\"; passthru('id'); //"));
     }
+
+    public function testIsHttpsIgnoresSpoofedForwardedProtoHeader(): void
+    {
+        $server = $_SERVER;
+        $_SERVER = [
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ];
+
+        try {
+            $this->assertFalse(FOSSBilling\Tools::isHTTPS());
+        } finally {
+            $_SERVER = $server;
+        }
+    }
+
+    public function testIsHttpsStillSupportsHttpsServerSignals(): void
+    {
+        $server = $_SERVER;
+        $_SERVER = [
+            'REQUEST_SCHEME' => 'https',
+        ];
+
+        try {
+            $this->assertTrue(FOSSBilling\Tools::isHTTPS());
+        } finally {
+            $_SERVER = $server;
+        }
+    }
 }
