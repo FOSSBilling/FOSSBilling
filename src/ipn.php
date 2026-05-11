@@ -61,7 +61,7 @@ try {
 
 // redirect to invoice if gateways requires
 if (isset($_GET['redirect'], $_GET['invoice_hash'])) {
-    $hash = $_GET['invoice_hash'];
+    $hash = preg_replace('/[^a-zA-Z0-9]/', '', $_GET['invoice_hash']);
     $url = $di['url']->link('invoice/' . $hash);
     header("Location: $url");
     exit;

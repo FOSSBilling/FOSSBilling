@@ -1707,7 +1707,18 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        if (str_ends_with($source, '.svg')) {
+        if (!$remote) {
+            $canonicalPath = Path::canonicalize($source);
+            $canonicalRoot = Path::canonicalize(PATH_ROOT);
+            if (!str_starts_with($canonicalPath, $canonicalRoot)) {
+                $source = $originalUrl;
+                $remote = true;
+            } elseif ($canonicalPath !== $source) {
+                $source = $canonicalPath;
+            }
+        }
+
+        if (!$remote && str_ends_with($source, '.svg')) {
             $source = 'data:image/svg+xml;base64,' . base64_encode($this->filesystem->readFile($source));
             $remote = false; // The contents of the SVG are directly added to the page, so we can safely disable remote files for the PDFs.
         }
