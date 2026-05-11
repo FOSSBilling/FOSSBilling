@@ -85,7 +85,7 @@ class Admin extends \Api_Abstract
      *
      * @param array{id:int|string} $data data required to send the product file, must contain the product ID as `id`
      *
-     * @return bool true if the product file was successfully sent
+     * @return Response the product file download response
      *
      * @throws \FOSSBilling\Exception if the product cannot be found or the file cannot be sent
      */

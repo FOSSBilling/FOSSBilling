@@ -107,7 +107,7 @@ class Admin implements InjectionAwareInterface
         return $app->render('mod_staff_password_reset');
     }
 
-    public function get_updatepassword(\Box_App $app, $hash): string
+    public function get_updatepassword(\Box_App $app, $hash): string|Response
     {
         if ($error = $this->checkPageRateLimit($app, 'staff_password_reset_confirm_ip')) {
             return $error;

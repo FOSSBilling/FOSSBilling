@@ -45,7 +45,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_client_index');
     }
 
-    public function get_client_confirmation(\Box_App $app, $hash): string
+    public function get_client_confirmation(\Box_App $app, $hash): string|Response
     {
         if ($error = $this->checkPageRateLimit($app, 'client_email_confirm_ip')) {
             return $error;
@@ -80,7 +80,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $app->render($template);
     }
 
-    public function get_reset_password_confirm(\Box_App $app, $hash): string
+    public function get_reset_password_confirm(\Box_App $app, $hash): string|Response
     {
         if ($error = $this->checkPageRateLimit($app, 'client_password_reset_confirm_ip')) {
             return $error;
