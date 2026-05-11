@@ -20,6 +20,8 @@
 {% endblock %}
 
 {% block content %}
+    {{ render_widgets('client.order.manage.content.start', { 'order': order }) }}
+
     <div class="row">
         <div class="col-md-12">
             {# Order info #}
@@ -100,6 +102,7 @@
                         {% endif %}
                         </tbody>
                     </table>
+                    {{ render_widgets('client.order.manage.details.after', { 'order': order }) }}
                 </div>
                 <div class="card-footer">
                     {% if order.period and order.status != 'failed_renew' %}
@@ -112,13 +115,16 @@
                     {% if order.status == 'active' %}
                         <button class="btn btn-danger btn-sm" type="button" id="request-cancel" data-bs-toggle="modal" data-bs-target="#cancel-request-modal">{{ 'Request Cancellation'|trans }}</button>
                     {% endif %}
+                    {{ render_widgets('client.order.manage.actions.end', { 'order': order }) }}
                 </div>
             </div>
 
             {# Service management #}
             {% if guest.system_template_exists({ 'file': service_partial }) %}
                 {% set service = client.order_service({ 'id': order.id }) %}
+                {{ render_widgets('client.order.manage.service.before', { 'order': order, 'service': service }) }}
                 {{ include(service_partial, { 'order': order, 'service': service }) }}
+                {{ render_widgets('client.order.manage.service.after', { 'order': order, 'service': service }) }}
             {% endif %}
 
             {# Order addons #}

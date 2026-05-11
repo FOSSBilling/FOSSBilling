@@ -28,6 +28,8 @@
 
 <body class="{% block body_class %}{% endblock %}">
 
+{{ render_widgets('client.theme.body.start') }}
+
 {% block body %}
 {% if not client and settings.require_login %}
     <script>
@@ -58,6 +60,7 @@
     {% set logo_url =  company.logo_url %}
 {% endif %}
 <div class="container">
+    {{ render_widgets('client.theme.header.start') }}
     <header>
         <nav class="navbar navbar-expand-md py-4">
             <div class="container-fluid">
@@ -141,6 +144,7 @@
             </div>
         </nav>
     </header>
+    {{ render_widgets('client.theme.header.end') }}
     <div class="container">
         <div class="row">
         {% if client or not settings.hide_menu %}
@@ -242,6 +246,7 @@
         {{ include('mod_cookieconsent_index.html.twig', ignore_missing: true) }}
     {% endif %}
 </div>
+{{ render_widgets('client.theme.body.end') }}
 {{ debug_bar_render() }}
 </body>
 </html>
