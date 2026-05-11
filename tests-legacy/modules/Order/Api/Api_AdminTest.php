@@ -138,7 +138,7 @@ final class Api_AdminTest extends BBTestCase
                 $this->callback(function (array $data): bool {
                     return $data['gateway_id'] === 5
                         && $data['invoice_option'] === 'issue-invoice'
-                        && $data['mark_invoice_paid'] === 1;
+                        && $data['mark_invoice_paid'] === true;
                 })
             )
             ->willReturn(55);
@@ -156,7 +156,7 @@ final class Api_AdminTest extends BBTestCase
             ->with($this->callback(function (array $data): bool {
                 return $data['gateway_id'] === 5
                     && $data['invoice_option'] === 'issue-invoice'
-                    && $data['mark_invoice_paid'] === 1;
+                    && $data['mark_invoice_paid'] === true;
             }))
             ->willReturn(new Model_PayGateway());
 

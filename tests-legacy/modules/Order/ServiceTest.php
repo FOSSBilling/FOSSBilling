@@ -1668,6 +1668,134 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals(42, $clientOrderModel->form_id, 'Order form_id should be set from product');
     }
 
+    public function testCreateOrderReturnsSuccessWhenInvoiceFollowUpFails(): void
+    {
+        $modelClient = new \Model_Client();
+        $modelClient->loadBean(new \DummyBean());
+        $modelClient->currency = 'USD';
+
+        $modelProduct = new \Model_Product();
+        $modelProduct->loadBean(new \DummyBean());
+        $modelProduct->id = 1;
+        $modelProduct->type = 'custom';
+
+        $currencyModel = $this->getMockBuilder(\Box\Mod\Currency\Entity\Currency::class)->disableOriginalConstructor()->getMock();
+        $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $currencyRepositoryMock->expects($this->atLeastOnce())
+            ->method('findOneByCode')
+            ->willReturn($currencyModel);
+
+        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
+            ->onlyMethods(['getCurrencyRepository'])
+            ->getMock();
+        $currencyServiceMock->expects($this->atLeastOnce())
+            ->method('getCurrencyRepository')
+            ->willReturn($currencyRepositoryMock);
+
+        $cartServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)->getMock();
+        $cartServiceMock->expects($this->atLeastOnce())
+            ->method('isStockAvailable')
+            ->with($modelProduct)
+            ->willReturn(true);
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->atLeastOnce())
+            ->method('fire');
+
+        $productServiceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
+
+        $clientOrderModel = new \Model_ClientOrder();
+        $clientOrderModel->loadBean(new \DummyBean());
+
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        $invoiceModel->id = 10;
+
+        $invoiceServiceMock = $this->getMockBuilder(\Box\Mod\Invoice\Service::class)
+            ->onlyMethods(['generateForOrder', 'approveInvoice', 'markAsPaidByAdmin', 'addNote'])
+            ->getMock();
+        $invoiceServiceMock->expects($this->once())
+            ->method('generateForOrder')
+            ->with($clientOrderModel)
+            ->willReturn($invoiceModel);
+        $invoiceServiceMock->expects($this->once())
+            ->method('approveInvoice')
+            ->with($invoiceModel, ['id' => $invoiceModel->id, 'use_credits' => true])
+            ->willReturn(true);
+        $invoiceServiceMock->expects($this->once())
+            ->method('markAsPaidByAdmin')
+            ->with($invoiceModel, $this->callback(function (array $data): bool {
+                return $data['invoice_option'] === 'issue-invoice'
+                    && $data['mark_invoice_paid'] === true
+                    && $data['gateway_id'] === 7;
+            }))
+            ->willThrowException(new \Exception('Payment follow-up failed'));
+        $invoiceServiceMock->expects($this->once())
+            ->method('addNote')
+            ->with(
+                $invoiceModel,
+                $this->callback(fn (string $note): bool => str_contains($note, 'Order was created, but invoice follow-up failed: Payment follow-up failed'))
+            )
+            ->willReturn(true);
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('transaction')
+            ->willReturnCallback(fn (callable $callback) => $callback());
+        $dbMock->expects($this->atLeastOnce())
+            ->method('dispense')
+            ->with('ClientOrder')
+            ->willReturn($clientOrderModel);
+        $newId = 1;
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->with($clientOrderModel)
+            ->willReturn($newId);
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->with('ClientOrder', $newId, 'Order not found')
+            ->willReturn($clientOrderModel);
+
+        $periodMock = $this->getMockBuilder('\Box_Period')->disableOriginalConstructor()->getMock();
+        $periodMock->expects($this->atLeastOnce())
+            ->method('getCode')
+            ->willReturn('1Y');
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($cartServiceMock, $currencyServiceMock, $invoiceServiceMock, $productServiceMock) {
+            if ($serviceName == 'currency') {
+                return $currencyServiceMock;
+            }
+            if ($serviceName == 'cart') {
+                return $cartServiceMock;
+            }
+            if ($serviceName == 'invoice') {
+                return $invoiceServiceMock;
+            }
+            if ($serviceName == 'servicecustom') {
+                return $productServiceMock;
+            }
+        });
+        $di['events_manager'] = $eventMock;
+        $di['db'] = $dbMock;
+        $di['period'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $periodMock);
+        $di['logger'] = new \Box_Log();
+
+        $this->service->setDi($di);
+
+        $result = $this->service->createOrder($modelClient, $modelProduct, [
+            'period' => '1Y',
+            'price' => '10',
+            'invoice_option' => 'issue-invoice',
+            'mark_invoice_paid' => true,
+            'gateway_id' => 7,
+        ]);
+
+        $this->assertSame($newId, $result);
+    }
+
     public function testGetMasterOrderForClient(): void
     {
         $clientModel = new \Model_Client();

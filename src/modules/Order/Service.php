@@ -684,9 +684,7 @@ class Service implements InjectionAwareInterface
             $generatedOrderTitle = null;
         }
 
-        // Store invoice ID and mark-paid flag for post-transaction processing
-        // These are captured before the transaction to ensure they use the original request data
-        $invoiceId = null;
+        $invoice = null;
         $markInvoicePaid = \FOSSBilling\Tools::normalizeBoolean($data['mark_invoice_paid'] ?? false);
 
         $id = $this->di['db']->transaction(function () use (
@@ -701,7 +699,7 @@ class Service implements InjectionAwareInterface
             $period,
             $product,
             $qty,
-            &$invoiceId
+            &$invoice
         ) {
             $order = $this->di['db']->dispense('ClientOrder');
             $order->client_id = $client->id;
@@ -775,23 +773,27 @@ class Service implements InjectionAwareInterface
             if ($invoiceOption == 'issue-invoice' && $order->price > 0) {
                 $invoiceService = $this->di['mod_service']('invoice');
                 $invoice = $invoiceService->generateForOrder($order);
-                // Store invoice ID for post-transaction processing
-                $invoiceId = $invoice->id;
             }
 
             return $id;
         });
 
-        // Process invoice operations outside transaction to avoid inconsistent side effects
-        // if transaction rolls back (events can trigger emails and other non-rollbackable actions)
-        if ($invoiceId !== null) {
+        if ($invoice instanceof \Model_Invoice) {
             $invoiceService = $this->di['mod_service']('invoice');
-            $invoice = $this->di['db']->getExistingModelById('Invoice', $invoiceId, 'Invoice not found');
+            try {
+                $invoiceService->approveInvoice($invoice, ['id' => $invoice->id, 'use_credits' => true]);
 
-            $invoiceService->approveInvoice($invoice, ['id' => $invoice->id, 'use_credits' => true]);
+                if ($markInvoicePaid) {
+                    $invoiceService->markAsPaidByAdmin($invoice, $data);
+                }
+            } catch (\Exception $e) {
+                error_log($e->getMessage());
 
-            if ($markInvoicePaid) {
-                $invoiceService->markAsPaidByAdmin($invoice, $data);
+                try {
+                    $invoiceService->addNote($invoice, 'Order was created, but invoice follow-up failed: ' . $e->getMessage());
+                } catch (\Exception $noteException) {
+                    error_log($noteException->getMessage());
+                }
             }
         }
 

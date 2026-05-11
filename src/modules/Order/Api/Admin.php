@@ -85,7 +85,6 @@ class Admin extends \Api_Abstract
     public function create($data)
     {
         $markInvoicePaid = Tools::normalizeBoolean($data['mark_invoice_paid'] ?? false);
-        // Normalize back into $data to ensure consistent value throughout the flow
         $data['mark_invoice_paid'] = $markInvoicePaid;
 
         if ($markInvoicePaid) {
