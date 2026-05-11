@@ -96,6 +96,141 @@ final class Api_AdminTest extends BBTestCase
         $this->assertIsInt($result);
     }
 
+    public function testCreateWithMarkInvoicePaidRequiresInvoicePermission(): void
+    {
+        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
+            ->onlyMethods(['createOrder'])->getMock();
+        $serviceMock->expects($this->never())->method('createOrder');
+
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('invoice')
+            ->willThrowException(new \FOSSBilling\InformationException('Denied', [], 403));
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (string $serviceName) => match ($serviceName) {
+            'Staff' => $staffServiceMock,
+            default => throw new \RuntimeException('Unexpected service request'),
+        });
+
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->api->create([
+            'client_id' => 1,
+            'product_id' => 1,
+            'invoice_option' => 'issue-invoice',
+            'mark_invoice_paid' => 1,
+            'gateway_id' => 5,
+        ]);
+    }
+
+    public function testCreateWithMarkInvoicePaidUsesInvoiceService(): void
+    {
+        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
+            ->onlyMethods(['createOrder'])->getMock();
+        $serviceMock->expects($this->once())->method('createOrder')
+            ->with(
+                $this->isInstanceOf(Model_Client::class),
+                $this->isInstanceOf(Model_Product::class),
+                $this->callback(function (array $data): bool {
+                    return $data['gateway_id'] === 5
+                        && $data['invoice_option'] === 'issue-invoice'
+                        && $data['mark_invoice_paid'] === true;
+                })
+            )
+            ->willReturn(55);
+
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('invoice');
+
+        $invoiceServiceMock = $this->getMockBuilder(Box\Mod\Invoice\Service::class)
+            ->onlyMethods(['validateAdminMarkAsPaidRequest'])
+            ->getMock();
+        $invoiceServiceMock->expects($this->once())
+            ->method('validateAdminMarkAsPaidRequest')
+            ->with($this->callback(function (array $data): bool {
+                return $data['gateway_id'] === 5
+                    && $data['invoice_option'] === 'issue-invoice'
+                    && $data['mark_invoice_paid'] === true;
+            }))
+            ->willReturn(new Model_PayGateway());
+
+        $clientModel = new Model_Client();
+        $clientModel->loadBean(new DummyBean());
+        $productModel = new Model_Product();
+        $productModel->loadBean(new DummyBean());
+
+        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
+        $dbMock->expects($this->exactly(2))
+            ->method('getExistingModelById')
+            ->willReturn($clientModel, $productModel);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (string $serviceName) => match ($serviceName) {
+            'Staff' => $staffServiceMock,
+            'Invoice' => $invoiceServiceMock,
+            default => throw new \RuntimeException('Unexpected service request'),
+        });
+
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
+
+        $result = $this->api->create([
+            'client_id' => 1,
+            'product_id' => 1,
+            'invoice_option' => 'issue-invoice',
+            'mark_invoice_paid' => 1,
+            'gateway_id' => 5,
+        ]);
+
+        $this->assertSame(55, $result);
+    }
+
+    public function testCreateWithMarkInvoicePaidRejectsInvalidInvoicePaymentPayloadBeforeOrderCreation(): void
+    {
+        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
+            ->onlyMethods(['createOrder'])->getMock();
+        $serviceMock->expects($this->never())->method('createOrder');
+
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('invoice');
+
+        $invoiceServiceMock = $this->getMockBuilder(Box\Mod\Invoice\Service::class)
+            ->onlyMethods(['validateAdminMarkAsPaidRequest'])
+            ->getMock();
+        $invoiceServiceMock->expects($this->once())
+            ->method('validateAdminMarkAsPaidRequest')
+            ->willThrowException(new \FOSSBilling\InformationException('Transaction ID is required when using the Custom payment gateway.'));
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (string $serviceName) => match ($serviceName) {
+            'Staff' => $staffServiceMock,
+            'Invoice' => $invoiceServiceMock,
+            default => throw new \RuntimeException('Unexpected service request'),
+        });
+
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('Transaction ID is required when using the Custom payment gateway.');
+        $this->api->create([
+            'client_id' => 1,
+            'product_id' => 1,
+            'invoice_option' => 'issue-invoice',
+            'mark_invoice_paid' => 1,
+            'gateway_id' => 5,
+        ]);
+    }
+
     public function testUpdate(): void
     {
         $order = new Model_ClientOrder();

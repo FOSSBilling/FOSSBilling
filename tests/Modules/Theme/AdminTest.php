@@ -16,16 +16,7 @@ final class AdminTest extends TestCase
         $data = $result->getResult();
         $this->assertIsArray($data);
 
-        $this->assertArrayHasKey('name', $data);
-        $this->assertArrayHasKey('version', $data);
-        $this->assertArrayHasKey('author', $data);
-
-        $this->assertIsString($data['name']);
-        $this->assertNotSame('', trim($data['name']), 'Theme name should not be empty.');
-        $this->assertIsString($data['version']);
-        $this->assertNotSame('', trim($data['version']), 'Theme version should not be empty.');
-
-        $this->assertEquals('FOSSBilling', $data['author']);
+        $this->assertValidThemePayload($data);
     }
 
     public function testGetCurrentAdminTheme(): void
@@ -35,16 +26,7 @@ final class AdminTest extends TestCase
         $data = $result->getResult();
         $this->assertIsArray($data);
 
-        $this->assertArrayHasKey('name', $data);
-        $this->assertArrayHasKey('version', $data);
-        $this->assertArrayHasKey('author', $data);
-
-        $this->assertIsString($data['name']);
-        $this->assertNotSame('', trim($data['name']), 'Theme name should not be empty.');
-        $this->assertIsString($data['version']);
-        $this->assertNotSame('', trim($data['version']), 'Theme version should not be empty.');
-
-        $this->assertEquals('FOSSBilling', $data['author']);
+        $this->assertValidThemePayload($data);
     }
 
     public function testInvalidThemeActionReturnsError(): void
@@ -59,5 +41,20 @@ final class AdminTest extends TestCase
         $errorMessage = $result->getErrorMessage();
         $this->assertIsString($errorMessage, 'Error message should be a string.');
         $this->assertNotSame('', trim($errorMessage), 'Error message should not be empty.');
+    }
+
+    private function assertValidThemePayload(array $data): void
+    {
+        $this->assertArrayHasKey('name', $data);
+        $this->assertArrayHasKey('version', $data);
+        $this->assertArrayHasKey('author', $data);
+
+        $this->assertIsString($data['name']);
+        $this->assertNotSame('', trim($data['name']), 'Theme name should not be empty.');
+        $this->assertIsString($data['version']);
+        $this->assertNotSame('', trim($data['version']), 'Theme version should not be empty.');
+        $this->assertIsString($data['author']);
+
+        $this->assertSame('FOSSBilling', $data['author']);
     }
 }

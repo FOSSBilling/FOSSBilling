@@ -71,10 +71,13 @@ class Admin extends \Api_Abstract
      * @optional string $title - Order title. If not passed, product title is used
      * @optional bool $activate - activate immediately
      * @optional string $invoice_option - Options: "no-invoice", "issue-invoice"; Default: no-invoice
+     * @optional bool $mark_invoice_paid - Mark the generated invoice as paid after the order is created
+     * @optional int $gateway_id - Payment gateway to associate with the invoice when mark_invoice_paid is used
+     * @optional string $transactionId - Custom transaction ID to use when the selected gateway is Custom
      * @optional string $created_at - date when order was created. Default: now
      * @optional string $updated_at - date when order was updated. Default: now
      *
-     * @return array
+     * @return int
      */
     #[RequiredParams([
         'client_id' => 'Client ID was not passed',
@@ -82,6 +85,20 @@ class Admin extends \Api_Abstract
     ])]
     public function create($data)
     {
+        $markInvoicePaid = Tools::normalizeBoolean($data['mark_invoice_paid'] ?? false);
+        $data['mark_invoice_paid'] = $markInvoicePaid;
+
+        if ($markInvoicePaid) {
+            $staffService = $this->di['mod_service']('Staff');
+            $staffService->checkPermissionsAndThrowException('invoice');
+
+            if (($data['invoice_option'] ?? 'no-invoice') !== 'issue-invoice') {
+                throw new \FOSSBilling\InformationException('Marking an invoice as paid requires the order to issue an invoice.');
+            }
+
+            $this->di['mod_service']('Invoice')->validateAdminMarkAsPaidRequest($data);
+        }
+
         $client = $this->di['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
         $product = $this->di['db']->getExistingModelById('Product', $data['product_id'], 'Product not found');
 
