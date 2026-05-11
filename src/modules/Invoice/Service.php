@@ -499,7 +499,7 @@ class Service implements InjectionAwareInterface
 
     public function markAsPaidByAdmin(\Model_Invoice $invoice, array $data = []): bool
     {
-        if ($invoice->status == \Model_Invoice::STATUS_PAID) {
+        if ($invoice->status === \Model_Invoice::STATUS_PAID) {
             return true;
         }
 
