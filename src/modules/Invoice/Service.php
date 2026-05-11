@@ -567,24 +567,6 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->find('Invoice', 'id IN (SELECT invoice_id FROM invoice_item WHERE rel_id = :rel_id) AND status = :status', $bindings);
     }
 
-    public function findInvoiceForOrder(\Model_ClientOrder $order): ?\Model_Invoice
-    {
-        $item = $this->di['db']->findOne(
-            'InvoiceItem',
-            'type = :type AND rel_id = :rel_id ORDER BY id DESC',
-            [
-                ':type' => \Model_InvoiceItem::TYPE_ORDER,
-                ':rel_id' => $order->id,
-            ]
-        );
-
-        if (!$item instanceof \Model_InvoiceItem || empty($item->invoice_id)) {
-            return null;
-        }
-
-        return $this->di['db']->getExistingModelById('Invoice', $item->invoice_id, 'Invoice not found');
-    }
-
     public function getNextInvoiceNumber()
     {
         $systemService = $this->di['mod_service']('system');
