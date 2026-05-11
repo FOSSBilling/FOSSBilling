@@ -506,9 +506,11 @@ class Client implements InjectionAwareInterface
 
         $sessionToken = $this->di['session']->get('csrf_token');
 
-        $validTokens = array_filter([$cookieToken, $sessionToken]);
+        if (!is_string($token) || !is_string($sessionToken) || $sessionToken === '' || !hash_equals($sessionToken, $token)) {
+            throw new \FOSSBilling\InformationException('CSRF token invalid', null, 403);
+        }
 
-        if (empty($validTokens) || !in_array($token, $validTokens, true)) {
+        if (is_string($cookieToken) && $cookieToken !== '' && !hash_equals($sessionToken, $cookieToken)) {
             throw new \FOSSBilling\InformationException('CSRF token invalid', null, 403);
         }
     }
