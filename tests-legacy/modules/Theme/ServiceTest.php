@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Theme;
 
+use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -401,6 +402,110 @@ final class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
+    public function testRenderThemeSettingsPageHtmlSupportsSandboxedTwigRendering(): void
+    {
+        $themeMock = $this->getMockBuilder(Model\Theme::class)->disableOriginalConstructor()->getMock();
+        $themeMock->expects($this->once())
+            ->method('getSettingsPageHtml')
+            ->willReturn("{{ 'Hello'|trans }}");
+
+        $di = $this->getDi();
+        $di['twig_factory'] = $this->createTwigFactory($di);
+        $di['logger'] = $this->createMock(\Box_Log::class);
+
+        $this->service->setDi($di);
+
+        $result = $this->service->renderThemeSettingsPageHtml($themeMock, []);
+        $this->assertSame('Hello', $result);
+    }
+
+    public function testRenderThemeSettingsPageHtmlDoesNotExposePrivilegedGlobals(): void
+    {
+        $themeMock = $this->getMockBuilder(Model\Theme::class)->disableOriginalConstructor()->getMock();
+        $themeMock->expects($this->once())
+            ->method('getSettingsPageHtml')
+            ->willReturn('{{ admin is defined ? "yes" : "no" }}|{{ guest is defined ? "yes" : "no" }}|{{ CSRFToken is defined ? "yes" : "no" }}|{{ request is defined ? "yes" : "no" }}');
+
+        $di = $this->getDi();
+        $di['twig_factory'] = $this->createTwigFactory($di);
+        $di['logger'] = $this->createMock(\Box_Log::class);
+
+        $this->service->setDi($di);
+
+        $result = $this->service->renderThemeSettingsPageHtml($themeMock, []);
+        $this->assertSame('no|no|no|no', $result);
+    }
+
+    public function testRenderThemeSettingsPageHtmlBlocksDisallowedFunctions(): void
+    {
+        $themeMock = $this->getMockBuilder(Model\Theme::class)->disableOriginalConstructor()->getMock();
+        $themeMock->expects($this->once())
+            ->method('getSettingsPageHtml')
+            ->willReturn('{{ max(1, 2) }}');
+        $themeMock->expects($this->once())
+            ->method('getName')
+            ->willReturn('huraga');
+
+        $logger = new class {
+            public function setChannel(string $channel): self
+            {
+                return $this;
+            }
+
+            public function warning(string $message, array $context = []): void
+            {
+            }
+        };
+
+        $di = $this->getDi();
+        $di['twig_factory'] = $this->createTwigFactory($di);
+        $di['logger'] = $logger;
+
+        $this->service->setDi($di);
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('Theme settings template contains disallowed Twig syntax');
+        $this->service->renderThemeSettingsPageHtml($themeMock, []);
+    }
+
+    public function testRenderThemeSettingsPageHtmlSanitizesRenderedHtml(): void
+    {
+        $themeMock = $this->getMockBuilder(Model\Theme::class)->disableOriginalConstructor()->getMock();
+        $themeMock->expects($this->once())
+            ->method('getSettingsPageHtml')
+            ->willReturn('<a href="javascript:alert(1)" onclick="steal()">Pay</a>');
+
+        $di = $this->getDi();
+        $di['twig_factory'] = $this->createTwigFactory($di);
+        $di['logger'] = $this->createMock(\Box_Log::class);
+
+        $this->service->setDi($di);
+
+        $result = $this->service->renderThemeSettingsPageHtml($themeMock, []);
+        $this->assertSame('<a>Pay</a>', $result);
+    }
+
+    public function testThemeSettingsSanitizerPreservesSafeHtml(): void
+    {
+        $html = '<fieldset><legend>Safe</legend><a href="https://example.com">link</a></fieldset>';
+        $result = BrowserHtmlSanitizer::sanitizeThemeSettingsHtml($html);
+
+        $this->assertSame($html, $result);
+    }
+
+    public function testThemeSettingsSanitizerPreservesFormControls(): void
+    {
+        $html = '<label for="theme"><input type="checkbox" name="enabled" checked class="toggle"> Theme</label><select name="theme" class="page"><option value="light" selected>Light</option></select><textarea name="notes"></textarea>';
+        $result = BrowserHtmlSanitizer::sanitizeThemeSettingsHtml($html);
+
+        $this->assertStringContainsString('input type="checkbox"', $result);
+        $this->assertStringContainsString('name="enabled"', $result);
+        $this->assertStringContainsString('class="toggle"', $result);
+        $this->assertStringContainsString('select name="theme" class="page"', $result);
+        $this->assertStringContainsString('option value="light" selected', $result);
+        $this->assertStringContainsString('textarea name="notes"', $result);
+    }
+
     public function testGetCurrentAdminAreaTheme(): void
     {
         $dbMock = $this->createMock('\Box_Database');
@@ -450,5 +555,19 @@ final class ServiceTest extends \BBTestCase
         $result = $this->service->getCurrentClientAreaThemeCode();
         $this->assertIsString($result);
         $this->assertEquals('huraga', $result);
+    }
+
+    private function createTwigFactory(\Pimple\Container $di): \FOSSBilling\Twig\TwigFactory
+    {
+        $reflection = new \ReflectionClass(\FOSSBilling\Twig\TwigFactory::class);
+        $twigFactory = $reflection->newInstanceWithoutConstructor();
+
+        $diProperty = $reflection->getProperty('di');
+        $diProperty->setValue($twigFactory, $di);
+
+        $baseConfigProperty = $reflection->getProperty('baseConfig');
+        $baseConfigProperty->setValue($twigFactory, ['cache' => false]);
+
+        return $twigFactory;
     }
 }

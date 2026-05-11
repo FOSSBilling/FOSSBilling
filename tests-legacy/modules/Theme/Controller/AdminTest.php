@@ -37,13 +37,17 @@ final class AdminTest extends \BBTestCase
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->atLeastOnce())
             ->method('render')
-            ->with('mod_theme_preset')
+            ->with(
+                'mod_theme_preset',
+                $this->callback(function (array $data): bool {
+                    $this->assertInstanceOf(\Twig\Markup::class, $data['settings_html']);
+
+                    return true;
+                })
+            )
             ->willReturn('Rendering ...');
 
         $themeMock = $this->getMockBuilder(\Box\Mod\Theme\Model\Theme::class)->disableOriginalConstructor()->getMock();
-        $themeMock->expects($this->atLeastOnce())
-            ->method('getSettingsPageHtml')
-            ->willReturn('');
         $themeMock->expects($this->atLeastOnce())
             ->method('getName');
         $themeMock->expects($this->atLeastOnce())
@@ -60,7 +64,11 @@ final class AdminTest extends \BBTestCase
             ->method('getCurrentThemePreset')
             ->willReturn('default');
         $themeServiceMock->expects($this->atLeastOnce())
-            ->method('getThemeSettings');
+            ->method('renderThemeSettingsPageHtml')
+            ->willReturn('');
+        $themeServiceMock->expects($this->atLeastOnce())
+            ->method('getThemeSettings')
+            ->willReturn([]);
         $themeServiceMock->expects($this->atLeastOnce())
             ->method('getThemePresets');
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\System;
 
+use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -320,7 +321,7 @@ final class ServiceTest extends \BBTestCase
     {
         $html = '<h1>Pay to:</h1><b>Bank XYZ</b><br><i>Account: 12345</i><table><tr><td>Row</td></tr></table>';
         $result = $this->renderAdapterTemplate($html);
-        $this->assertSame($html, $result);
+        $this->assertSame('<h1>Pay to:</h1><b>Bank XYZ</b><br /><i>Account: 12345</i><table><tbody><tr><td>Row</td></tr></tbody></table>', $result);
     }
 
     public function testRenderAdapterTplStringAllowedFiltersWork(): void
@@ -343,56 +344,56 @@ final class ServiceTest extends \BBTestCase
 
     public function testSanitizeAdapterOutputStripsScriptTags(): void
     {
-        $result = $this->service->sanitizeAdapterOutput('<p>Safe</p><script>alert(1)</script>');
+        $result = BrowserHtmlSanitizer::sanitizeAdapterHtml('<p>Safe</p><script>alert(1)</script>');
         $this->assertSame('<p>Safe</p>', $result);
     }
 
     public function testSanitizeAdapterOutputStripsScriptWithAttributes(): void
     {
-        $result = $this->service->sanitizeAdapterOutput('<script type="text/javascript" src="evil.js">alert(1)</script>');
+        $result = BrowserHtmlSanitizer::sanitizeAdapterHtml('<script type="text/javascript" src="evil.js">alert(1)</script>');
         $this->assertSame('', $result);
     }
 
     public function testSanitizeAdapterOutputStripsEventHandlers(): void
     {
-        $result = $this->service->sanitizeAdapterOutput('<img src="x.png" onerror="alert(1)">');
-        $this->assertSame('<img src="x.png">', $result);
+        $result = BrowserHtmlSanitizer::sanitizeAdapterHtml('<img src="x.png" onerror="alert(1)">');
+        $this->assertSame('<img src="x.png" />', $result);
     }
 
     public function testSanitizeAdapterOutputPreservesSafeHtml(): void
     {
         $html = '<h1>Title</h1><p>Text <b>bold</b></p><a href="https://example.com">link</a>';
-        $result = $this->service->sanitizeAdapterOutput($html);
+        $result = BrowserHtmlSanitizer::sanitizeAdapterHtml($html);
         $this->assertSame($html, $result);
     }
 
     public function testSanitizeAdapterOutputStripsJavascriptHref(): void
     {
-        $result = $this->service->sanitizeAdapterOutput('<a href="javascript:alert(1)">Pay</a>');
+        $result = BrowserHtmlSanitizer::sanitizeAdapterHtml('<a href="javascript:alert(1)">Pay</a>');
         $this->assertSame('<a>Pay</a>', $result);
     }
 
     public function testSanitizeAdapterOutputStripsEncodedJavascriptHref(): void
     {
-        $result = $this->service->sanitizeAdapterOutput('<a href="java&#x73;cript:alert(1)">Pay</a>');
+        $result = BrowserHtmlSanitizer::sanitizeAdapterHtml('<a href="java&#x73;cript:alert(1)">Pay</a>');
         $this->assertSame('<a>Pay</a>', $result);
     }
 
     public function testSanitizeAdapterOutputStripsWhitespaceObfuscatedJavascriptHref(): void
     {
-        $result = $this->service->sanitizeAdapterOutput("<a href=\"java\nscript:alert(1)\">Pay</a>");
+        $result = BrowserHtmlSanitizer::sanitizeAdapterHtml("<a href=\"java\nscript:alert(1)\">Pay</a>");
         $this->assertSame('<a>Pay</a>', $result);
     }
 
     public function testSanitizeAdapterOutputStripsDataUriSrc(): void
     {
-        $result = $this->service->sanitizeAdapterOutput('<iframe src="data:text/html,<script>alert(1)</script>"></iframe>');
-        $this->assertSame('<iframe></iframe>', $result);
+        $result = BrowserHtmlSanitizer::sanitizeAdapterHtml('<iframe src="data:text/html,<script>alert(1)</script>"></iframe>');
+        $this->assertSame('', $result);
     }
 
     public function testSanitizeAdapterOutputHandlesEmptyString(): void
     {
-        $result = $this->service->sanitizeAdapterOutput('');
+        $result = BrowserHtmlSanitizer::sanitizeAdapterHtml('');
         $this->assertSame('', $result);
     }
 

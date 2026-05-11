@@ -38,12 +38,14 @@ use Twig\Loader\ArrayLoader;
 use Twig\Profiler\Profile;
 use Twig\RuntimeLoader\FactoryRuntimeLoader;
 use Twig\RuntimeLoader\RuntimeLoaderInterface;
+use Twig\Sandbox\SecurityPolicyInterface;
 
 class TwigFactory
 {
     private readonly array $baseConfig;
     private ?Environment $emailEnvironment = null;
     private ?Environment $adapterEnvironment = null;
+    private ?Environment $themeSettingsEnvironment = null;
 
     public function __construct(private \Pimple\Container $di)
     {
@@ -252,18 +254,43 @@ class TwigFactory
             return $this->adapterEnvironment;
         }
 
+        $twig = $this->createSandboxedFragmentEnvironment(AdapterPolicy::create());
+
+        $apiGuest = $this->di['api_guest'];
+        $twig->addGlobal('guest', [
+            'system_company' => $apiGuest->system_company(),
+        ]);
+
+        $this->adapterEnvironment = $twig;
+
+        return $twig;
+    }
+
+    public function createThemeSettingsEnvironment(): Environment
+    {
+        if ($this->themeSettingsEnvironment !== null) {
+            return $this->themeSettingsEnvironment;
+        }
+
+        $twig = $this->createSandboxedFragmentEnvironment(AdapterPolicy::create());
+
+        $this->themeSettingsEnvironment = $twig;
+
+        return $twig;
+    }
+
+    private function createSandboxedFragmentEnvironment(SecurityPolicyInterface $policy): Environment
+    {
         $locale = i18n::getActiveLocale();
         $timezone = Config::getProperty('i18n.timezone', 'UTC');
         $dateFormat = strtoupper((string) Config::getProperty('i18n.date_format', 'MEDIUM'));
         $timeFormat = strtoupper((string) Config::getProperty('i18n.time_format', 'SHORT'));
         $dateTimePattern = Config::getProperty('i18n.datetime_pattern');
 
-        $loader = new ArrayLoader();
-        $twig = new Environment($loader, $this->baseConfig);
+        $twig = new Environment(new ArrayLoader(), $this->baseConfig);
 
         $twig->getExtension(CoreExtension::class)->setNumberFormat(2, '.', '');
         $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
-
         $twig->addExtension(new StringLoaderExtension());
 
         $dateFormatter = new \IntlDateFormatter(
@@ -275,11 +302,18 @@ class TwigFactory
             $dateTimePattern
         );
         $twig->addExtension(new IntlExtension($dateFormatter));
-
         $twig->addExtension(new AttributeExtension(FOSSBillingExtension::class));
         $twig->addExtension(new AttributeExtension(LegacyExtension::class));
+        $twig->addRuntimeLoader($this->createSandboxedFragmentRuntimeLoader());
+        $twig->addExtension(new SandboxExtension($policy, true));
+        $twig->addGlobal('FOSSBillingVersion', Version::VERSION);
 
-        $runtimeLoader = new readonly class($this->di) implements RuntimeLoaderInterface {
+        return $twig;
+    }
+
+    private function createSandboxedFragmentRuntimeLoader(): RuntimeLoaderInterface
+    {
+        return new readonly class($this->di) implements RuntimeLoaderInterface {
             public function __construct(private \Pimple\Container $di)
             {
             }
@@ -293,21 +327,6 @@ class TwigFactory
                 };
             }
         };
-        $twig->addRuntimeLoader($runtimeLoader);
-
-        $policy = AdapterPolicy::create();
-        $sandbox = new SandboxExtension($policy, true);
-        $twig->addExtension($sandbox);
-
-        $apiGuest = $this->di['api_guest'];
-        $twig->addGlobal('guest', [
-            'system_company' => $apiGuest->system_company(),
-        ]);
-        $twig->addGlobal('FOSSBillingVersion', Version::VERSION);
-
-        $this->adapterEnvironment = $twig;
-
-        return $twig;
     }
 
     private function configureRuntimeLoaders(Environment $twig): void
