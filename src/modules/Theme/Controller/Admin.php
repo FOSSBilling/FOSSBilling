@@ -115,7 +115,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             'error' => $error,
             'theme_code' => $t->getName(),
             'settings_html' => new \Twig\Markup($html, 'UTF-8'),
-            'uploaded' => $t->getUploadedAssets($theme),
+            'uploaded' => $t->getUploadedAssets(),
             'settings' => $settings,
             'current_preset' => $preset,
             'presets' => $service->getThemePresets($t),
