@@ -131,13 +131,13 @@ jobs:
     permissions:
       actions: write
       contents: read
-      id-token: write
     needs: [ php-build-test ]
     if: *normal_ci
     uses: ./.github/workflows/release-build.yml
     with:
       artifact-name: 'preview-build'
       preview: true
+      cache-scope: fossbilling-preview
 
   upload-preview:
     name: 'Upload Preview Release'
@@ -204,7 +204,9 @@ jobs:
       output: image
       push: true
       platforms: linux/amd64,linux/arm64
-      cache: false
+      cache: true
+      cache-mode: max
+      cache-scope: fossbilling-preview
       sbom: true
       set-meta-labels: true
       set-meta-annotations: true
