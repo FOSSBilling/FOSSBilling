@@ -25,7 +25,7 @@ $invoiceID = $request->get('invoice_id');
 if ($invoiceID !== null) {
     $invoiceID = filter_var($invoiceID, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
     if ($invoiceID === false) {
-        new JsonResponse(['error' => ['message' => 'Invalid invoice ID']], 400)->send();
+        (new JsonResponse(['error' => ['message' => 'Invalid invoice ID']], 400))->send();
         exit;
     }
 }
@@ -35,7 +35,7 @@ $gatewayID = $request->get('gateway_id');
 if ($gatewayID !== null) {
     $gatewayID = filter_var($gatewayID, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
     if ($gatewayID === false) {
-        new JsonResponse(['error' => ['message' => 'Invalid gateway ID']], 400)->send();
+        (new JsonResponse(['error' => ['message' => 'Invalid gateway ID']], 400))->send();
         exit;
     }
 }
@@ -64,12 +64,12 @@ if ($request->query->has('redirect') && $request->query->has('invoice_hash')) {
     $invoiceHash = $request->query->get('invoice_hash');
     $hash = preg_replace('/[^a-zA-Z0-9]/', '', is_string($invoiceHash) ? $invoiceHash : '');
     $url = $di['url']->link('invoice/' . $hash);
-    new RedirectResponse($url)->send();
+    (new RedirectResponse($url))->send();
     exit;
 }
 
-new JsonResponse($res, 200, [
+(new JsonResponse($res, 200, [
     'Cache-Control' => 'no-cache, must-revalidate',
     'Expires' => 'Mon, 26 Jul 1997 05:00:00 GMT',
-])->send();
+]))->send();
 exit;

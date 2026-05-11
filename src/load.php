@@ -56,7 +56,7 @@ function checkSSL(): void
 
     if (!empty(Config::getProperty('security.force_https')) && Config::getProperty('security.force_https') && !Environment::isCLI()) {
         if (!$request->isSecure()) {
-            new RedirectResponse('https://' . $request->getHost() . $request->getRequestUri())->send();
+            (new RedirectResponse('https://' . $request->getHost() . $request->getRequestUri()))->send();
             exit;
         }
     }

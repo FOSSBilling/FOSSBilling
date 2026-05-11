@@ -106,7 +106,7 @@ if (!is_null($http_err_code)) {
             break;
         default:
             $e = new FOSSBilling\Exception('HTTP Error :err_code occurred while attempting to load :url', [':err_code' => $http_err_code, ':url' => $url], $http_err_code);
-            new Response($app->render('error', ['exception' => $e]), $http_err_code)->send();
+            (new Response($app->render('error', ['exception' => $e]), $http_err_code))->send();
     }
     exit;
 }
