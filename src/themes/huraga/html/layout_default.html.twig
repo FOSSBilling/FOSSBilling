@@ -60,8 +60,8 @@
     {% set logo_url =  company.logo_url %}
 {% endif %}
 <div class="container">
-    {{ render_widgets('client.theme.header.start') }}
     <header>
+        {{ render_widgets('client.theme.header.start') }}
         <nav class="navbar navbar-expand-md py-4">
             <div class="container-fluid">
                 {% if logo_url and settings.show_company_logo %}
