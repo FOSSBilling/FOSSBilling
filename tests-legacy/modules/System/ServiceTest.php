@@ -321,7 +321,7 @@ final class ServiceTest extends \BBTestCase
     {
         $html = '<h1>Pay to:</h1><b>Bank XYZ</b><br><i>Account: 12345</i><table><tr><td>Row</td></tr></table>';
         $result = $this->renderAdapterTemplate($html);
-        $this->assertSame('<h1>Pay to:</h1><b>Bank XYZ</b><br /><i>Account: 12345</i><table><tbody><tr><td>Row</td></tr></tbody></table>', $result);
+        $this->assertSame('<h1>Pay to:</h1><b>Bank XYZ</b><br /><i>Account: 12345</i><table><tr><td>Row</td></tr></table>', $result);
     }
 
     public function testRenderAdapterTplStringAllowedFiltersWork(): void
