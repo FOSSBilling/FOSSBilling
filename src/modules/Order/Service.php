@@ -1562,6 +1562,6 @@ class Service implements InjectionAwareInterface
             $headers = ['id', 'client_id', 'product_id', 'title', 'currency', 'service_type', 'period', 'quantity', 'price', 'discount', 'status', 'reason', 'notes'];
         }
 
-        return $this->di['table_export_csv']('client_order', 'orders.csv', $headers);
+        return $this->di['csv_response_factory']->create('client_order', 'orders.csv', $headers);
     }
 }

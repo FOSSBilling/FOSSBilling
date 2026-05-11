@@ -184,6 +184,7 @@ function init(): void
     global $filesystem, $request;
     $filesystem = new Filesystem();
     $request = RequestFactory::createFromGlobals();
+    RequestFactory::normalizeRoutePath($request);
 
     // Check config exists, redirecting to installer or throwing an exception if not.
     if (!$filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::join('install', 'install.php'))) {

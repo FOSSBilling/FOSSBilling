@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Box\Mod\Client\Controller;
 
 use FOSSBilling\Security\RandomizedTimeFloor;
+use Symfony\Component\HttpFoundation\Response;
 
 class Client implements \FOSSBilling\InjectionAwareInterface
 {
@@ -106,20 +107,18 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         $app->redirect('/');
     }
 
-    private function checkPageRateLimit(\Box_App $app, string $policy): ?string
+    private function checkPageRateLimit(\Box_App $app, string $policy): ?Response
     {
         $result = $this->di['rate_limiter']->consume($policy, (string) $this->di['request']->getClientIp());
         if (!$result->isLimited()) {
             return null;
         }
 
-        $app->setResponseStatus(429);
+        $headers = [];
         if ($result->hasRetryAfter()) {
-            $app->setResponseHeader('Retry-After', (string) $result->getRetryAfterSeconds());
+            $headers['Retry-After'] = (string) $result->getRetryAfterSeconds();
         }
 
-        return $app->render('error', [
-            'exception' => new \FOSSBilling\Security\RateLimitException($result),
-        ]);
+        return $app->errorResponse(new \FOSSBilling\Security\RateLimitException($result), 429, $headers);
     }
 }

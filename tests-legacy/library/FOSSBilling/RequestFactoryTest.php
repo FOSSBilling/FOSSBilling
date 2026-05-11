@@ -91,4 +91,27 @@ final class RequestFactoryTest extends PHPUnit\Framework\TestCase
             'headers' => 'custom',
         ]);
     }
+
+    public function testNormalizeRoutePathRewritesLegacyCustomPageRoute(): void
+    {
+        $request = Request::create('http://billing.example.com/page/about-us');
+
+        $path = RequestFactory::normalizeRoutePath($request);
+
+        $this->assertSame('/custompages/about-us', $path);
+        $this->assertSame('/custompages/about-us', $request->query->get('_url'));
+        $this->assertSame('/custompages/about-us', RequestFactory::getRoutePath($request));
+    }
+
+    public function testNormalizeRoutePathRejectsInvalidPathAndFallsBackToRoot(): void
+    {
+        $request = Request::create('http://billing.example.com/admin', 'GET', [
+            '_url' => "invalid\x00path",
+        ]);
+
+        $path = RequestFactory::normalizeRoutePath($request);
+
+        $this->assertSame('/', $path);
+        $this->assertSame('/', RequestFactory::getRoutePath($request));
+    }
 }

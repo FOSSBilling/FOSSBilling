@@ -14,6 +14,7 @@ require __DIR__ . DIRECTORY_SEPARATOR . 'load.php';
 global $di;
 
 use DebugBar\DataCollector\TimeDataCollector;
+use FOSSBilling\Http\RequestFactory;
 use Symfony\Component\HttpFoundation\Response;
 
 $config = FOSSBilling\Config::getConfig();
@@ -55,27 +56,7 @@ if ((bool) ($config['debug_and_monitoring']['debug'] ?? false)) {
     $debugBar->addCollector($configCollector);
 }
 
-// Get the request URL
-$rawUrl = $request->query->get('_url');
-if (!is_string($rawUrl)) {
-    $rawUrl = $request->getPathInfo();
-}
-$url = is_string($rawUrl) ? $rawUrl : '/';
-
-// Validate and normalize URL path before using it in routing logic
-if ($url === '') {
-    $url = '/';
-} elseif ($url[0] !== '/' || preg_match('/[\x00-\x1F\x7F]/', $url) === 1) {
-    $url = '/';
-}
-
-// Rewrite for custom pages
-if (str_starts_with($url, '/page/')) {
-    $url = substr_replace($url, '/custompages/', 0, strlen('/page/'));
-}
-
-// Set the final URL
-$request->query->set('_url', $url);
+$url = RequestFactory::normalizeRoutePath($request);
 $http_err_code = $request->query->get('_errcode');
 
 $timeCollector?->startMeasure('session_start', 'Starting / restoring the session');

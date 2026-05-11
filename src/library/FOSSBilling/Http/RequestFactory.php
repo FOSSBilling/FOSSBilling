@@ -16,6 +16,8 @@ use Symfony\Component\HttpFoundation\Request;
 
 final class RequestFactory
 {
+    public const ROUTE_PATH_ATTRIBUTE = '_fossbilling_route_path';
+
     public static function createFromGlobals(array $proxyConfig = []): Request
     {
         return self::configure(Request::createFromGlobals(), $proxyConfig);
@@ -39,6 +41,38 @@ final class RequestFactory
     public static function configureFromConfig(Request $request): Request
     {
         return self::configure($request, self::getProxyConfigFromAppConfig());
+    }
+
+    public static function normalizeRoutePath(Request $request): string
+    {
+        $rawPath = $request->query->get('_url');
+        if (!is_string($rawPath)) {
+            $rawPath = $request->getPathInfo();
+        }
+
+        $path = $rawPath !== '' ? $rawPath : '/';
+        if ($path[0] !== '/' || preg_match('/[\x00-\x1F\x7F]/', $path) === 1) {
+            $path = '/';
+        }
+
+        if (str_starts_with($path, '/page/')) {
+            $path = substr_replace($path, '/custompages/', 0, strlen('/page/'));
+        }
+
+        $request->attributes->set(self::ROUTE_PATH_ATTRIBUTE, $path);
+        $request->query->set('_url', $path);
+
+        return $path;
+    }
+
+    public static function getRoutePath(Request $request): string
+    {
+        $routePath = $request->attributes->get(self::ROUTE_PATH_ATTRIBUTE);
+        if (is_string($routePath) && $routePath !== '') {
+            return $routePath;
+        }
+
+        return self::normalizeRoutePath($request);
     }
 
     private static function getProxyConfigFromAppConfig(): array

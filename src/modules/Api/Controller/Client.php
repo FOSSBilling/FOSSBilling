@@ -20,8 +20,9 @@ use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\Http\HttpResponseException;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Security\AuthenticationRequiredException;
+use FOSSBilling\Security\EmailValidationRequiredException;
 use FOSSBilling\Security\RateLimitException;
-use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -29,13 +30,7 @@ use Symfony\Component\HttpFoundation\Response;
 class Client implements InjectionAwareInterface
 {
     private ?array $apiConfig = null;
-    private readonly Filesystem $filesystem;
     protected ?\Pimple\Container $di = null;
-
-    public function __construct()
-    {
-        $this->filesystem = new Filesystem();
-    }
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -102,6 +97,10 @@ class Client implements InjectionAwareInterface
             return $this->_apiCall($role, $class, $call, $p);
         } catch (HttpResponseException $exc) {
             return $exc->getResponse();
+        } catch (AuthenticationRequiredException $exc) {
+            return $this->renderJson(null, new \FOSSBilling\InformationException('Authentication Failed', null, 201));
+        } catch (EmailValidationRequiredException $exc) {
+            return $this->renderJson(null, new \FOSSBilling\InformationException($exc->getMessage(), null, 403));
         } catch (\Exception $exc) {
             // Sentry by default only captures unhandled exceptions, so we need to manually capture these.
             \Sentry\captureException($exc);
@@ -412,6 +411,8 @@ class Client implements InjectionAwareInterface
             }
         } catch (\FOSSBilling\InformationException $exception) {
             throw $exception;
+        } catch (AuthenticationRequiredException) {
+            throw new \FOSSBilling\InformationException('Authentication Failed', null, 201);
         } catch (\Exception) {
             throw new \FOSSBilling\InformationException('Authentication Failed', null, 201);
         }

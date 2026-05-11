@@ -16,6 +16,7 @@ use Box\Mod\Currency\Entity\Currency;
 use Dompdf\Dompdf;
 use FOSSBilling\Environment;
 use FOSSBilling\Http\HttpResponseException;
+use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Filesystem;
@@ -1602,7 +1603,7 @@ class Service implements InjectionAwareInterface
             $headers = ['id', 'client_id', 'nr', 'currency', 'credit', 'base_income', 'base_refund', 'refund', 'notes', 'status', 'buyer_first_name', 'buyer_last_name', 'buyer_company', 'buyer_company_vat', 'buyer_company_number', 'buyer_address', 'buyer_city', 'buyer_state', 'buyer_country', 'buyer_zip', 'buyer_phone', 'buyer_phone_cc', 'buyer_email', 'approved', 'taxname', 'taxrate', 'due_at', 'reminded_at', 'paid_at'];
         }
 
-        return $this->di['table_export_csv']('invoice', 'invoices.csv', $headers);
+        return $this->di['csv_response_factory']->create('invoice', 'invoices.csv', $headers);
     }
 
     public function checkInvoiceAuth(?int $invoiceClientId): void
@@ -1620,10 +1621,7 @@ class Service implements InjectionAwareInterface
             if ($invoiceClientId != $client->id) {
                 // Then either give an appropriate API response or redirect to the login page.
                 $api_str = '/api/';
-                $url = $this->di['request']->query->get('_url');
-                if (!is_string($url) || $url === '') {
-                    $url = $this->di['request']->getPathInfo();
-                }
+                $url = RequestFactory::getRoutePath($this->di['request']);
                 if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
                     // Throw Exception if api request
                     throw new InformationException('You do not have permission to perform this action', [], 403);

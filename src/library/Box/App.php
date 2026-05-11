@@ -14,7 +14,10 @@ use DebugBar\DataCollector\TimeDataCollector;
 use DebugBar\StandardDebugBar;
 use FOSSBilling\Config;
 use FOSSBilling\Http\HttpResponseException;
+use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Security\AuthenticationRequiredException;
+use FOSSBilling\Security\EmailValidationRequiredException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -30,9 +33,7 @@ class Box_App
     protected string $mod = 'index';
     protected string $url = '/';
     protected StandardDebugBar $debugBar;
-    protected ?Request $request = null;
-    protected int $responseStatusCode = 200;
-    protected array $responseHeaders = [];
+    protected Request $request;
 
     public $uri;
 
@@ -50,12 +51,10 @@ class Box_App
     public function setDi(Pimple\Container $di): void
     {
         $this->di = $di;
-        if (isset($di['request'])) {
-            $this->request = $di['request'];
-        }
+        $this->request = $di['request'];
     }
 
-    public function setUrl($url): void
+    public function setUrl(string $url): void
     {
         $this->url = $url;
     }
@@ -100,9 +99,8 @@ class Box_App
     public function show404(Exception $e): Response
     {
         $this->di['logger']->setChannel('routing')->info($e->getMessage());
-        $this->setResponseStatus(404);
 
-        return $this->normalizeResponse($this->render('error', ['exception' => $e]));
+        return $this->errorResponse($e, 404);
     }
 
     public function get(string $url, string $methodName, ?array $conditions = [], ?string $class = null): void
@@ -127,64 +125,36 @@ class Box_App
 
     public function getRequest(): Request
     {
-        return $this->request ?? $this->di['request'];
+        return $this->request;
     }
 
     protected function getRequestPath(): string
     {
-        $routePath = $this->getRequest()->query->get('_url');
-        if (is_string($routePath) && $routePath !== '') {
-            return $routePath;
-        }
-
-        return $this->getRequest()->getPathInfo();
-    }
-
-    public function setResponseStatus(int $statusCode): void
-    {
-        $this->responseStatusCode = $statusCode;
-    }
-
-    public function setResponseHeader(string $name, string $value, bool $replace = true): void
-    {
-        if ($replace || !array_key_exists($name, $this->responseHeaders)) {
-            $this->responseHeaders[$name] = [$value];
-
-            return;
-        }
-
-        $this->responseHeaders[$name][] = $value;
-    }
-
-    protected function resetResponseMetadata(): void
-    {
-        $this->responseStatusCode = 200;
-        $this->responseHeaders = [];
+        return RequestFactory::getRoutePath($this->getRequest());
     }
 
     protected function normalizeResponse(mixed $result): Response
     {
         if ($result instanceof Response) {
-            $this->resetResponseMetadata();
-
             return $result;
         }
 
-        $content = $result;
-        if ($content === null) {
-            $content = '';
-        }
+        return new Response((string) ($result ?? ''));
+    }
 
-        $response = new Response((string) $content, $this->responseStatusCode);
-        foreach ($this->responseHeaders as $name => $values) {
-            foreach ($values as $value) {
-                $response->headers->set($name, $value, false);
-            }
-        }
-
-        $this->resetResponseMetadata();
+    public function renderResponse(string $fileName, array $variableArray = [], int $statusCode = 200, array $headers = []): Response
+    {
+        $response = new Response($this->render($fileName, $variableArray), $statusCode);
+        $response->headers->add($headers);
 
         return $response;
+    }
+
+    public function errorResponse(Exception $e, ?int $statusCode = null, array $headers = []): Response
+    {
+        $statusCode ??= $e->getCode() > 0 ? $e->getCode() : 500;
+
+        return $this->renderResponse('error', ['exception' => $e], $statusCode, $headers);
     }
 
     public function abortWithResponse(Response $response): never
@@ -211,6 +181,18 @@ class Box_App
             $timeCollector->stopMeasure('checkperm');
 
             return $this->processRequest();
+        } catch (AuthenticationRequiredException $e) {
+            if ($e->getArea() === 'admin') {
+                $this->di['set_return_uri'];
+
+                return new RedirectResponse($this->di['url']->adminLink('staff/login'));
+            }
+
+            $this->di['set_return_uri'];
+
+            return new RedirectResponse($this->di['url']->link('login'));
+        } catch (EmailValidationRequiredException) {
+            return new RedirectResponse($this->di['url']->link('client/profile'));
         } catch (HttpResponseException $e) {
             return $e->getResponse();
         }
@@ -398,7 +380,7 @@ class Box_App
                     return $apiController->renderJson(null, $exc);
                 }
 
-                return new Response($this->render('mod_system_maintenance'), 503);
+                return $this->renderResponse('mod_system_maintenance', [], 503);
             }
         }
 

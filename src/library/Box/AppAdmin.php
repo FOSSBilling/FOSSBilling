@@ -13,7 +13,6 @@ declare(strict_types=1);
 use FOSSBilling\Http\HttpResponseException;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Response;
 
 class Box_AppAdmin extends Box_App
 {
@@ -33,7 +32,7 @@ class Box_AppAdmin extends Box_App
         if ($this->mod !== 'extension' && $this->di['auth']->isAdminLoggedIn() && !$service->hasPermission(null, $this->mod)) {
             $e = new FOSSBilling\InformationException('You do not have permission to access the :mod: module', [':mod:' => $this->mod], 403);
 
-            throw new HttpResponseException(new Response($this->render('error', ['exception' => $e]), 403));
+            throw new HttpResponseException($this->errorResponse($e, 403));
         }
     }
 
