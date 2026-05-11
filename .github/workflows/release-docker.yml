@@ -54,9 +54,7 @@ jobs:
       output: image
       push: true
       platforms: linux/amd64,linux/arm64
-      cache: true
-      cache-mode: max
-      cache-scope: fossbilling-release-image
+      cache: false
       sbom: true
       set-meta-labels: true
       set-meta-annotations: true

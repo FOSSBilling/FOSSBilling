@@ -25,7 +25,7 @@ if ((bool) ($config['debug_and_monitoring']['debug'] ?? false)) {
     $timeCollector = $debugBar->getCollector('time');
 
     if (!$timeCollector instanceof TimeDataCollector) {
-        throw new RuntimeException('Time collector not found in debug bar.');
+        throw new \RuntimeException('Time collector not found in debug bar.');
     }
 
     // PDO collector
@@ -53,11 +53,17 @@ if ((bool) ($config['debug_and_monitoring']['debug'] ?? false)) {
 }
 
 // Get the request URL
-$rawUrl = $_GET['_url'] ?? parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
+if (isset($_GET['_url']) && is_string($_GET['_url'])) {
+    $rawUrl = $_GET['_url'];
+} else {
+    $rawUrl = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?? '/';
+}
 $url = is_string($rawUrl) ? $rawUrl : '/';
 
 // Validate and normalize URL path before using it in routing logic
-if ($url === '' || $url[0] !== '/' || preg_match('/[\x00-\x1F\x7F]/', $url) === 1) {
+if ($url === '') {
+    $url = '/';
+} elseif ($url[0] !== '/' || preg_match('/[\x00-\x1F\x7F]/', $url) === 1) {
     $url = '/';
 }
 
@@ -88,7 +94,7 @@ $timeCollector?->stopMeasure('session_start');
 
 if (strncasecmp((string) $url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
     define('ADMIN_AREA', true);
-    $urlWithoutQueryString = preg_replace('/\?.+/', '', (string) $url);
+    $urlWithoutQueryString = parse_url((string) $url, PHP_URL_PATH) ?? (string) $url;
     $adminRelativeUrl = str_replace(ADMIN_PREFIX, '', (string) $urlWithoutQueryString);
     $appUrl = $adminRelativeUrl;
     $app = new Box_AppAdmin([], $debugBar);

@@ -310,6 +310,7 @@ class UpdatePatcher implements InjectionAwareInterface
             57 => 'patch57',
             58 => 'patch58',
             59 => 'patch59',
+            60 => 'patch60',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1221,5 +1222,15 @@ class UpdatePatcher implements InjectionAwareInterface
         $path = Path::join(PATH_MODS, ucfirst($matches[1]), 'templates/email', "{$code}.html.twig");
 
         return $this->filesystem->exists($path) ? $path : null;
+    }
+
+    private function patch60(): void
+    {
+        $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_hook' AND rel_type = 'mod' AND rel_id = 'Paidsupport' AND meta_key = 'listener'");
+        $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_paidsupport' AND meta_key = 'config'");
+
+        if ($this->di !== null && $this->di->offsetExists('cache')) {
+            $this->di['cache']->deleteItem('config_mod_paidsupport');
+        }
     }
 }

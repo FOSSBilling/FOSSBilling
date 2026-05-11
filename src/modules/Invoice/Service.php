@@ -1771,7 +1771,29 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        if (str_ends_with($source, '.svg')) {
+        if (!$remote) {
+            $canonicalPath = Path::canonicalize($source);
+            $canonicalRoot = Path::canonicalize(PATH_ROOT);
+            if (!Path::isBasePath($canonicalRoot, $canonicalPath)) {
+                $source = $originalUrl;
+                $remote = true;
+            } elseif ($canonicalPath !== $source) {
+                $source = $canonicalPath;
+            }
+        }
+
+        // Only permit http/https remote URLs. Other schemes such as file://, php://, or phar://
+        // could be passed to Dompdf with remote loading enabled, leading to local file disclosure
+        // or other server-side vulnerabilities. Malformed URLs (where parse_url returns non-string)
+        // are also rejected by skipping the logo entirely.
+        if ($remote) {
+            $scheme = parse_url($source, PHP_URL_SCHEME);
+            if (!is_string($scheme) || !in_array(strtolower($scheme), ['http', 'https'], true)) {
+                return ['', false];
+            }
+        }
+
+        if (!$remote && str_ends_with($source, '.svg')) {
             $source = 'data:image/svg+xml;base64,' . base64_encode($this->filesystem->readFile($source));
             $remote = false; // The contents of the SVG are directly added to the page, so we can safely disable remote files for the PDFs.
         }
