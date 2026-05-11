@@ -23,11 +23,6 @@ final class RequestFactory
         return self::configure(Request::createFromGlobals(), $proxyConfig);
     }
 
-    public static function createFromConfig(): Request
-    {
-        return self::createFromGlobals(self::getProxyConfigFromAppConfig());
-    }
-
     public static function configure(Request $request, array $proxyConfig = []): Request
     {
         Request::setTrustedProxies(

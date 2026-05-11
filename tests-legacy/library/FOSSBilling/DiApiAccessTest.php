@@ -49,7 +49,6 @@ final class DiApiAccessTest extends PHPUnit\Framework\TestCase
         $request = Request::create('http://localhost' . $routePath, 'GET', ['_url' => $routePath]);
         RequestFactory::normalizeRoutePath($request);
 
-        /** @var \Pimple\Container $di */
         $di = require PATH_ROOT . '/di.php';
         $di['loggedin_client'] = new Model_Client();
         $di['is_client_email_validated'] = $di->protect(fn (): bool => false);
