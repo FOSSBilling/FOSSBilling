@@ -203,6 +203,43 @@ final class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
+    public function testValidateCustomFormUrlArrayInputThrowsInformationException(): void
+    {
+        $form = [
+            'fields' => [
+                0 => [
+                    'type' => 'url',
+                    'name' => 'website',
+                    'label' => 'Website',
+                    'required' => 0,
+                ],
+            ],
+        ];
+
+        $formbuilderService = $this->createMock(\Box\Mod\Formbuilder\Service::class);
+        $formbuilderService->expects($this->once())
+            ->method('getForm')
+            ->willReturn($form);
+        $formbuilderService->expects($this->never())
+            ->method('validateUrlField');
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $formbuilderService);
+
+        $this->service->setDi($di);
+
+        $product = [
+            'form_id' => 1,
+        ];
+        $data = [
+            'website' => ['x'],
+        ];
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('Field Website must be a valid URL with a TLD (e.g., https://example.com)');
+        $this->service->validateCustomForm($data, $product);
+    }
+
     public function testActionCreate(): void
     {
         $order = new \Model_ClientOrder();

@@ -59,6 +59,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 if (($field['type'] ?? null) === 'url') {
                     $field_name = $field['name'];
                     if (!empty($data[$field_name])) {
+                        if (!is_string($data[$field_name])) {
+                            throw new \FOSSBilling\InformationException('Field ' . $field['label'] . ' must be a valid URL with a TLD (e.g., https://example.com)', null, 1248);
+                        }
+
                         $formbuilderService = $this->di['mod_service']('formbuilder');
                         if (!$formbuilderService->validateUrlField($data[$field_name])) {
                             throw new \FOSSBilling\InformationException('Field ' . $field['label'] . ' must be a valid URL with a TLD (e.g., https://example.com)', null, 1248);
