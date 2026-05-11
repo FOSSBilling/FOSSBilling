@@ -684,7 +684,7 @@ class Service implements InjectionAwareInterface
             $generatedOrderTitle = null;
         }
 
-        $id = \RedBeanPHP\R::transaction(function () use (
+        $id = $this->di['db']->transaction(function () use (
             $client,
             $config,
             $currency,

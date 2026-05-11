@@ -1538,6 +1538,9 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel->loadBean(new \DummyBean());
 
         $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('transaction')
+            ->willReturnCallback(fn (callable $callback) => $callback());
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->with('ClientOrder')
@@ -1547,6 +1550,10 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->with($clientOrderModel)
             ->willReturn($newId);
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->with('ClientOrder', $newId, 'Order not found')
+            ->willReturn($clientOrderModel);
 
         $periodMock = $this->getMockBuilder('\Box_Period')->disableOriginalConstructor()->getMock();
         $periodMock->expects($this->atLeastOnce())
@@ -1616,6 +1623,9 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel->loadBean(new \DummyBean());
 
         $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('transaction')
+            ->willReturnCallback(fn (callable $callback) => $callback());
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->with('ClientOrder')
@@ -1625,6 +1635,10 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->with($clientOrderModel)
             ->willReturn($newId);
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->with('ClientOrder', $newId, 'Order not found')
+            ->willReturn($clientOrderModel);
 
         $periodMock = $this->getMockBuilder('\Box_Period')->disableOriginalConstructor()->getMock();
         $periodMock->expects($this->atLeastOnce())
