@@ -178,6 +178,9 @@
         markInvoicePaidEl.addEventListener('change', syncMarkInvoicePaidControls);
     }
 
+    // Initialize state immediately for AJAX-rendered contexts (DOMContentLoaded may not fire)
+    syncMarkInvoicePaidControls();
+
     // Parse URL parameters for pre-filling form values
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -197,6 +200,7 @@
             }
         }
 
+        // Re-sync state after URL parameters are processed
         syncMarkInvoicePaidControls();
     });
 </script>
