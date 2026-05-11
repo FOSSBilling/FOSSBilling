@@ -143,8 +143,8 @@
                 </div>
             </div>
         </nav>
+        {{ render_widgets('client.theme.header.end') }}
     </header>
-    {{ render_widgets('client.theme.header.end') }}
     <div class="container">
         <div class="row">
         {% if client or not settings.hide_menu %}
