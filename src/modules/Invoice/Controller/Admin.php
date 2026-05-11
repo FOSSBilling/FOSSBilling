@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Controller;
 
-use FOSSBilling\Environment;
 use Symfony\Component\HttpFoundation\Response;
 
 class Admin implements \FOSSBilling\InjectionAwareInterface

@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Controller;
 
-use FOSSBilling\Environment;
 use Symfony\Component\HttpFoundation\Response;
 
 class Client implements \FOSSBilling\InjectionAwareInterface
@@ -87,7 +86,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
     {
         $api = $this->di['api_guest'];
         $data = [
-            'allow_subscription' => $_GET['allow_subscription'] ?? true,
+            'allow_subscription' => $app->getRequest()->query->getBoolean('allow_subscription', true),
             'hash' => $hash,
             'gateway_id' => $id,
             'auto_redirect' => true,

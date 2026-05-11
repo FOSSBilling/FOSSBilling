@@ -15,6 +15,7 @@ namespace Box\Mod\Order;
 use Box\Mod\Currency\Entity\Currency;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\HttpFoundation\Response;
 
 class Service implements InjectionAwareInterface
 {
@@ -1555,7 +1556,7 @@ class Service implements InjectionAwareInterface
             ->executeStatement();
     }
 
-    public function exportCSV(array $headers)
+    public function exportCSV(array $headers): Response
     {
         if (!$headers) {
             $headers = ['id', 'client_id', 'product_id', 'title', 'currency', 'service_type', 'period', 'quantity', 'price', 'discount', 'status', 'reason', 'notes'];

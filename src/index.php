@@ -19,7 +19,7 @@ use Symfony\Component\HttpFoundation\Response;
 $config = FOSSBilling\Config::getConfig();
 $debugBar = null;
 $timeCollector = null;
-/** @var Symfony\Component\HttpFoundation\Request $request */
+/* @var Symfony\Component\HttpFoundation\Request $request */
 global $request;
 
 if ((bool) ($config['debug_and_monitoring']['debug'] ?? false)) {
@@ -28,7 +28,7 @@ if ((bool) ($config['debug_and_monitoring']['debug'] ?? false)) {
     $timeCollector = $debugBar->getCollector('time');
 
     if (!$timeCollector instanceof TimeDataCollector) {
-        throw new \RuntimeException('Time collector not found in debug bar.');
+        throw new RuntimeException('Time collector not found in debug bar.');
     }
 
     // PDO collector
@@ -125,7 +125,7 @@ if (!is_null($http_err_code)) {
             break;
         default:
             $e = new FOSSBilling\Exception('HTTP Error :err_code occurred while attempting to load :url', [':err_code' => $http_err_code, ':url' => $url], $http_err_code);
-            (new Response($app->render('error', ['exception' => $e]), $http_err_code))->send();
+            new Response($app->render('error', ['exception' => $e]), $http_err_code)->send();
     }
     exit;
 }

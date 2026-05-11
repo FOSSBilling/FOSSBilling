@@ -1596,7 +1596,7 @@ class Service implements InjectionAwareInterface
         return false;
     }
 
-    public function exportCSV(array $headers)
+    public function exportCSV(array $headers): Response
     {
         if (!$headers) {
             $headers = ['id', 'client_id', 'nr', 'currency', 'credit', 'base_income', 'base_refund', 'refund', 'notes', 'status', 'buyer_first_name', 'buyer_last_name', 'buyer_company', 'buyer_company_vat', 'buyer_company_number', 'buyer_address', 'buyer_city', 'buyer_state', 'buyer_country', 'buyer_zip', 'buyer_phone', 'buyer_phone_cc', 'buyer_email', 'approved', 'taxname', 'taxrate', 'due_at', 'reminded_at', 'paid_at'];
@@ -1620,13 +1620,17 @@ class Service implements InjectionAwareInterface
             if ($invoiceClientId != $client->id) {
                 // Then either give an appropriate API response or redirect to the login page.
                 $api_str = '/api/';
-                $url = $this->di['request']->getPathInfo();
+                $url = $this->di['request']->query->get('_url');
+                if (!is_string($url) || $url === '') {
+                    $url = $this->di['request']->getPathInfo();
+                }
                 if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
                     // Throw Exception if api request
                     throw new InformationException('You do not have permission to perform this action', [], 403);
                 }
                 // Redirect to login page if browser request
                 $invoiceLink = $this->di['url']->link('invoice');
+
                 throw new HttpResponseException(new RedirectResponse($invoiceLink));
             }
         }

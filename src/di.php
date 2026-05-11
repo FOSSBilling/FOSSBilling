@@ -21,8 +21,10 @@ use FOSSBilling\Http\RequestFactory;
 use League\Csv\Writer;
 use RedBeanPHP\Facade;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 $di = new Pimple\Container();
 
@@ -314,6 +316,7 @@ $di['is_client_logged'] = function () use ($di, $isApiRequest) {
         // Redirect to login page if browser request
         $di['set_return_uri'];
         $login_url = $di['url']->link('login');
+
         throw new HttpResponseException(new RedirectResponse($login_url));
     }
 
@@ -392,6 +395,7 @@ $di['loggedin_client'] = function () use ($di, $isApiRequest) {
         }
         // Redirect to login page if browser request
         $login_url = $di['url']->link('login');
+
         throw new HttpResponseException(new RedirectResponse($login_url));
     }
 };
@@ -433,6 +437,7 @@ $di['loggedin_admin'] = function () use ($di, $isApiRequest) {
         }
         // Redirect to login page if browser request
         $login_url = $di['url']->adminLink('staff/login');
+
         throw new HttpResponseException(new RedirectResponse($login_url));
     }
 };
@@ -486,6 +491,7 @@ $di['api'] = $di->protect(function ($role) use ($di, $resolveRequestUrl, $isApiR
         } elseif (strncasecmp((string) $url, '/client', strlen('/client')) !== 0) {
             // If they aren't attempting to access their profile, redirect them to it.
             $login_url = $di['url']->link('client/profile');
+
             throw new HttpResponseException(new RedirectResponse($login_url));
         }
     }
@@ -716,9 +722,9 @@ $di['translate'] = $di->protect(function ($textDomain = '') {
  * @param string $outputName Name of the exported CSV file
  * @param array $headers Optional array of column headers for the CSV file
  * @param int $limit Optional limit of the number of rows to export from the table
- * @return void
+ * @return Response
  */
-$di['table_export_csv'] = $di->protect(function (string $table, string $outputName = 'export.csv', array $headers = [], int $limit = 0) use ($di): void {
+$di['table_export_csv'] = $di->protect(function (string $table, string $outputName = 'export.csv', array $headers = [], int $limit = 0) use ($di): Response {
     if ($limit > 0) {
         $beans = $di['db']->findAll($table, 'LIMIT :limit', [':limit' => $limit]);
     } else {
@@ -730,19 +736,29 @@ $di['table_export_csv'] = $di->protect(function (string $table, string $outputNa
     // If we've been provided a list of headers, use that. Otherwise, pull the keys from the rows and use that for the CSV header
     if ($headers) {
         $rows = array_map(fn ($row): array => array_intersect_key($row, array_flip($headers)), $rows);
-    } else {
+    } elseif (!empty($rows)) {
         $headers = array_keys(reset($rows));
     }
 
-    $csv = Writer::from(new SplTempFileObject());
+    $csvFile = new SplTempFileObject();
+    $csv = Writer::from($csvFile);
     $csv->addFormatter(new League\Csv\EscapeFormula());
     $csv->insertOne($headers);
     $csv->insertAll($rows);
 
-    $csv->download($outputName);
+    $csvFile->rewind();
+    $content = '';
+    while (!$csvFile->eof()) {
+        $content .= (string) $csvFile->fgets();
+    }
 
-    // Prevent further output from being added to the end of the CSV
-    exit;
+    $response = new Response($content);
+    $response->headers->set('Content-Type', 'text/csv; charset=utf-8');
+    $response->headers->set('Content-Disposition', HeaderUtils::makeDisposition(HeaderUtils::DISPOSITION_ATTACHMENT, $outputName));
+    $response->headers->set('Cache-Control', 'no-cache, must-revalidate');
+    $response->headers->set('Expires', 'Mon, 26 Jul 1997 05:00:00 GMT');
+
+    return $response;
 });
 
 $di['twig_factory'] = fn (): FOSSBilling\Twig\TwigFactory => new FOSSBilling\Twig\TwigFactory($di);

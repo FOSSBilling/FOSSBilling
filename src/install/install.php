@@ -234,6 +234,7 @@ final class FOSSBilling_Installer
                     'admin_site' => URL_ADMIN,
                     'domain' => SYSTEM_URL,
                 ];
+
                 return new Response($this->render(PAGE_INSTALL, $vars));
         }
     }

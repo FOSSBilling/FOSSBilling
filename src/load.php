@@ -18,7 +18,6 @@ use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
 
@@ -57,7 +56,7 @@ function checkSSL(): void
 
     if (!empty(Config::getProperty('security.force_https')) && Config::getProperty('security.force_https') && !Environment::isCLI()) {
         if (!$request->isSecure()) {
-            (new RedirectResponse('https://' . $request->getHost() . $request->getRequestUri()))->send();
+            new RedirectResponse('https://' . $request->getHost() . $request->getRequestUri())->send();
             exit;
         }
     }
@@ -184,7 +183,7 @@ function init(): void
     // Initialize required Symfony components.
     global $filesystem, $request;
     $filesystem = new Filesystem();
-    $request = Request::createFromGlobals();
+    $request = RequestFactory::createFromGlobals();
 
     // Check config exists, redirecting to installer or throwing an exception if not.
     if (!$filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::join('install', 'install.php'))) {

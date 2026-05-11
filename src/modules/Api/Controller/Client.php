@@ -83,6 +83,7 @@ class Client implements InjectionAwareInterface
             $p = json_decode($input, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 $exc = new \FOSSBilling\Exception('Malformed JSON input: :error', [':error' => json_last_error_msg()], 400);
+
                 return $this->renderJson(null, $exc);
             }
         }
@@ -104,6 +105,7 @@ class Client implements InjectionAwareInterface
         } catch (\Exception $exc) {
             // Sentry by default only captures unhandled exceptions, so we need to manually capture these.
             \Sentry\captureException($exc);
+
             return $this->renderJson(null, $exc);
         }
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Box\Tests\Mod\Client\Api;
 
 use PHPUnit\Framework\Attributes\Group;
+use Symfony\Component\HttpFoundation\Response;
 
 #[Group('Core')]
 final class AdminTest extends \BBTestCase
@@ -672,7 +673,7 @@ final class AdminTest extends \BBTestCase
         $serviceMock->expects($this->once())
             ->method('exportCSV')
             ->with([])
-            ->willReturn('csv-data');
+            ->willReturn(new Response('csv-data'));
 
         $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffServiceMock->expects($this->once())
@@ -689,7 +690,8 @@ final class AdminTest extends \BBTestCase
         $admin_Client->setService($serviceMock);
 
         $result = $admin_Client->export_csv([]);
-        $this->assertSame('csv-data', $result);
+        $this->assertInstanceOf(Response::class, $result);
+        $this->assertSame('csv-data', $result->getContent());
     }
 
     public function testBatchExpirePasswordReminders(): void

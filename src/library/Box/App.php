@@ -130,6 +130,16 @@ class Box_App
         return $this->request ?? $this->di['request'];
     }
 
+    protected function getRequestPath(): string
+    {
+        $routePath = $this->getRequest()->query->get('_url');
+        if (is_string($routePath) && $routePath !== '') {
+            return $routePath;
+        }
+
+        return $this->getRequest()->getPathInfo();
+    }
+
     public function setResponseStatus(int $statusCode): void
     {
         $this->responseStatusCode = $statusCode;
@@ -311,7 +321,7 @@ class Box_App
 
     protected function checkAllowedURLs(): bool
     {
-        $requestPath = $this->getRequest()->getPathInfo();
+        $requestPath = $this->getRequestPath();
         $allowedURLs = Config::getProperty('maintenance_mode.allowed_urls', []);
 
         // Allow access to the staff panel all the time
@@ -360,7 +370,7 @@ class Box_App
 
     protected function checkAdminPrefix(): bool
     {
-        $requestPath = $this->getRequest()->getPathInfo();
+        $requestPath = $this->getRequestPath();
         $realAdminUrl = SYSTEM_URL[-1] === '/' ? substr(SYSTEM_URL, 0, -1) . ADMIN_PREFIX : SYSTEM_URL . ADMIN_PREFIX;
         $realAdminPath = parse_url($realAdminUrl)['path'];
 

@@ -803,7 +803,6 @@ class Service implements InjectionAwareInterface
         if (!$staff_service->hasPermission(null, $module)) {
             $e = new \FOSSBilling\InformationException('You do not have permission to access the :mod: module', [':mod:' => $module], 403);
             if (!is_null($app)) {
-                $app->setResponseStatus(403);
                 $app->abortWithResponse(new \Symfony\Component\HttpFoundation\Response(
                     $app->render('error', ['exception' => $e]),
                     403
@@ -819,7 +818,6 @@ class Service implements InjectionAwareInterface
         if (array_key_exists('manage_settings', $module_permissions) && !$staff_service->hasPermission(null, $module, 'manage_settings')) {
             $e = new \FOSSBilling\InformationException('You do not have permission to perform this action', [], 403);
             if (!is_null($app)) {
-                $app->setResponseStatus(403);
                 $app->abortWithResponse(new \Symfony\Component\HttpFoundation\Response(
                     $app->render('error', ['exception' => $e]),
                     403

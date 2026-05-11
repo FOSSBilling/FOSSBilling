@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedownloadable;
 
-use FOSSBilling\Environment;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
