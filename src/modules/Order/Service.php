@@ -684,7 +684,8 @@ class Service implements InjectionAwareInterface
             $generatedOrderTitle = null;
         }
 
-        // Store invoice ID for post-transaction processing
+        // Store invoice ID and mark-paid flag for post-transaction processing
+        // These are captured before the transaction to ensure they use the original request data
         $invoiceId = null;
         $markInvoicePaid = \FOSSBilling\Tools::normalizeBoolean($data['mark_invoice_paid'] ?? false);
 
