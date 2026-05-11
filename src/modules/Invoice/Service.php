@@ -499,6 +499,10 @@ class Service implements InjectionAwareInterface
 
     public function markAsPaidByAdmin(\Model_Invoice $invoice, array $data = []): bool
     {
+        if ($invoice->status == \Model_Invoice::STATUS_PAID) {
+            return true;
+        }
+
         $execute = (bool) ($data['execute'] ?? false);
         $payGateway = $this->validateAdminMarkAsPaidRequest($data, $invoice);
         $transactionId = isset($data['transactionId']) ? trim((string) $data['transactionId']) : null;

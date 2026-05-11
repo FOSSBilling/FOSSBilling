@@ -55,12 +55,12 @@ class Admin extends \Api_Abstract
     /**
      * Sets invoice status to paid. This method differs from invoice update method
      * in a way that it sends notification to Events system, so emails are sent.
-     * Also this will try to automatically apply payment if clients balance is
-     * available.
      *
      * @optional bool $execute - execute related tasks on invoice items. Default false.
+     * @optional int $gateway_id - Payment gateway to associate with the invoice
+     * @optional string $transactionId - Custom transaction ID to use when the selected gateway is Custom
      *
-     * @return array
+     * @return bool
      */
     public function mark_as_paid($data)
     {

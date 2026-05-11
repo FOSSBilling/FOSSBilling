@@ -751,6 +751,37 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->markAsPaidByAdmin($invoiceModel, []);
     }
 
+    public function testMarkAsPaidByAdminReturnsEarlyForAlreadyPaidInvoice(): void
+    {
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        $invoiceModel->id = 42;
+        $invoiceModel->status = \Model_Invoice::STATUS_PAID;
+        $invoiceModel->gateway_id = 5;
+
+        $serviceMock = $this->getMockBuilder(Service::class)
+            ->onlyMethods(['markAsPaid'])
+            ->getMock();
+        $serviceMock->expects($this->never())
+            ->method('markAsPaid');
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->never())
+            ->method('getExistingModelById');
+        $dbMock->expects($this->never())
+            ->method('store');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['logger'] = new \Box_Log();
+
+        $serviceMock->setDi($di);
+
+        $this->assertTrue($serviceMock->markAsPaidByAdmin($invoiceModel, [
+            'gateway_id' => 5,
+        ]));
+    }
+
     public function testPrepareInvoiceCurrencyWasNotDefined(): void
     {
         $serviceMock = $this->getMockBuilder(Service::class)
