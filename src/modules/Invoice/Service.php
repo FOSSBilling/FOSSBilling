@@ -1710,7 +1710,7 @@ class Service implements InjectionAwareInterface
         if (!$remote) {
             $canonicalPath = Path::canonicalize($source);
             $canonicalRoot = Path::canonicalize(PATH_ROOT);
-            if (!str_starts_with($canonicalPath, $canonicalRoot)) {
+            if (!Path::isBasePath($canonicalRoot, $canonicalPath)) {
                 $source = $originalUrl;
                 $remote = true;
             } elseif ($canonicalPath !== $source) {
