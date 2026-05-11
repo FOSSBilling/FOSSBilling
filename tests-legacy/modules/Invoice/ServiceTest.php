@@ -664,6 +664,7 @@ final class ServiceTest extends \BBTestCase
 
         $gatewayModel = new \Model_PayGateway();
         $gatewayModel->loadBean(new \DummyBean());
+        $gatewayModel->id = 5;
         $gatewayModel->gateway = 'Custom';
         $gatewayModel->enabled = 1;
 
@@ -711,6 +712,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertTrue($serviceMock->markAsPaidByAdmin($invoiceModel, [
             'transactionId' => '  manual-txn-1  ',
         ]));
+        $this->assertSame(5, $invoiceModel->gateway_id);
     }
 
     public function testMarkAsPaidByAdminRequiresTransactionIdForCustomGateway(): void

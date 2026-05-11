@@ -76,7 +76,7 @@ class Admin extends \Api_Abstract
      * @optional string $created_at - date when order was created. Default: now
      * @optional string $updated_at - date when order was updated. Default: now
      *
-     * @return array
+     * @return int
      */
     #[RequiredParams([
         'client_id' => 'Client ID was not passed',
