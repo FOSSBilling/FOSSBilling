@@ -382,7 +382,7 @@ class TwigFactory
             'expires' => 0,
             'path' => '/',
             'samesite' => 'Strict',
-            'secure' => Tools::isHTTPS(),
+            'secure' => $this->di['request']->isSecure(),
         ]);
     }
 

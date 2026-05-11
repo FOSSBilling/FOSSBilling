@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
+use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\SentryHelper;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
@@ -55,7 +56,7 @@ function checkSSL(): void
     global $request;
 
     if (!empty(Config::getProperty('security.force_https')) && Config::getProperty('security.force_https') && !Environment::isCLI()) {
-        if (!Tools::isHTTPS()) {
+        if (!$request->isSecure()) {
             header('Location: https://' . $request->getHost() . $request->getRequestUri());
             exit;
         }
@@ -166,6 +167,7 @@ function preInit(): void
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'ErrorPage.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'SentryHelper.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Environment.php');
+    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RequestFactory.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Config.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Tools.php');
 }
@@ -193,6 +195,8 @@ function init(): void
         throw new Exception('The FOSSBilling configuration file is empty or invalid.', 3);
     }
 
+    RequestFactory::configureFromConfig($request);
+
     // Set globals and relevant settings based on the config.
     date_default_timezone_set(Config::getProperty('i18n.timezone', 'UTC'));
     define('ADMIN_PREFIX', Config::getProperty('admin_area_prefix'));
@@ -203,7 +207,7 @@ function init(): void
     define('INSTANCE_ID', Config::getProperty('info.instance_id', 'Unknown'));
 
     // Set the system URL.
-    $scheme = Config::getProperty('security.force_https', true) || Tools::isHTTPS() ? 'https://' : 'http://';
+    $scheme = Config::getProperty('security.force_https', true) || $request->isSecure() ? 'https://' : 'http://';
 
     // Keep the app working correctly if the URL didn't get correctly updated
     $url = str_replace(['https://', 'http://'], '', Config::getProperty('url'));

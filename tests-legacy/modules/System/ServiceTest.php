@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Box\Mod\System;
 
 use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
+use FOSSBilling\Http\RequestFactory;
 use PHPUnit\Framework\Attributes\Group;
+use Symfony\Component\HttpFoundation\Request;
 
 #[Group('Core')]
 final class ServiceTest extends \BBTestCase
@@ -15,6 +17,12 @@ final class ServiceTest extends \BBTestCase
     public function setUp(): void
     {
         $this->service = new Service();
+    }
+
+    protected function tearDown(): void
+    {
+        Request::setTrustedProxies([], 0);
+        parent::tearDown();
     }
 
     public function testGetParamValueMissingKeyParam(): void
@@ -169,6 +177,28 @@ final class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
+    public function testGetCurrentUrlUsesTrustedRequestContext(): void
+    {
+        $request = Request::create('http://internal.example/admin/settings?tab=general', 'GET', [], [], [], [
+            'REMOTE_ADDR' => '198.51.100.10',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+            'HTTP_X_FORWARDED_HOST' => 'billing.example.com',
+        ]);
+        RequestFactory::configure($request, [
+            'enabled' => true,
+            'proxies' => ['198.51.100.10'],
+            'headers' => 'x_forwarded',
+        ]);
+
+        $di = $this->getDi();
+        $di['request'] = $request;
+        $this->service->setDi($di);
+
+        $result = $this->service->getCurrentUrl();
+
+        $this->assertSame('https://billing.example.com/admin/settings', $result);
+    }
+
     public function testTemplateExistsEmptyPaths(): void
     {
         $getThemeResults = ['paths' => []];
@@ -321,7 +351,7 @@ final class ServiceTest extends \BBTestCase
     {
         $html = '<h1>Pay to:</h1><b>Bank XYZ</b><br><i>Account: 12345</i><table><tr><td>Row</td></tr></table>';
         $result = $this->renderAdapterTemplate($html);
-        $this->assertSame('<h1>Pay to:</h1><b>Bank XYZ</b><br /><i>Account: 12345</i><table><tr><td>Row</td></tr></table>', $result);
+        $this->assertSame('<h1>Pay to:</h1><b>Bank XYZ</b><br /><i>Account: 12345</i><table><tbody><tr><td>Row</td></tr></tbody></table>', $result);
     }
 
     public function testRenderAdapterTplStringAllowedFiltersWork(): void

@@ -16,6 +16,7 @@ use FOSSBilling\Config;
 use FOSSBilling\Doctrine\DriverManagerFactory;
 use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Environment;
+use FOSSBilling\Http\RequestFactory;
 use League\Csv\Writer;
 use RedBeanPHP\Facade;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
@@ -240,7 +241,11 @@ $di['session'] = function () use ($di) {
  *
  * @return Symfony\Component\HttpFoundation\Request
  */
-$di['request'] = fn (): Request => Request::createFromGlobals();
+$di['request'] = function (): Request {
+    global $request;
+
+    return $request ?? RequestFactory::createFromConfig();
+};
 
 /*
  * @param void

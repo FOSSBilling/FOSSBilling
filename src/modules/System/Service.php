@@ -516,23 +516,9 @@ class Service
 
     public function getCurrentUrl(): string
     {
-        $pageScheme = Tools::isHTTPS() ? 'https' : 'http';
-        $pageURL = $pageScheme . '://';
+        $request = $this->di['request'];
 
-        $serverPort = $_SERVER['SERVER_PORT'] ?? null;
-        if (isset($serverPort) && $serverPort != '80' && $serverPort != '443') {
-            $pageURL .= $_SERVER['SERVER_NAME'] ?? null . ':' . $serverPort;
-        } else {
-            $pageURL .= $_SERVER['SERVER_NAME'] ?? null;
-        }
-
-        $this_page = $_SERVER['REQUEST_URI'] ?? '';
-        if (str_contains((string) $this_page, '?')) {
-            $a = explode('?', (string) $this_page);
-            $this_page = reset($a);
-        }
-
-        return $pageURL . $this_page;
+        return $request->getSchemeAndHttpHost() . strtok($request->getRequestUri(), '?');
     }
 
     public function getPeriod($code)

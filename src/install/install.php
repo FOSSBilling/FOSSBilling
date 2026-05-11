@@ -12,10 +12,12 @@ declare(strict_types=1);
 
 use Box\Mod\Email\Service;
 use FOSSBilling\Environment;
+use FOSSBilling\Http\RequestFactory;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Uid\Uuid;
 use Twig\Loader\FilesystemLoader;
 
@@ -74,17 +76,8 @@ require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Autoloader.php');
 $loader = new FOSSBilling\AutoLoader();
 $loader->register();
 
-// Check whether using HTTPS or HTTP.
-$protocol = FOSSBilling\Tools::isHTTPS() ? 'https' : 'http';
-
-// Detect if FOSSBilling is behind a proxy server.
-if (!empty($_SERVER['HTTP_X_FORWARDED_HOST'])) {
-    $host = $_SERVER['HTTP_X_FORWARDED_HOST'];
-} else {
-    $host = $_SERVER['HTTP_HOST'];
-}
-
-$url = $protocol . '://' . $host . $_SERVER['REQUEST_URI'];
+$request = RequestFactory::createFromGlobals();
+$url = $request->getSchemeAndHttpHost() . $request->getRequestUri();
 $current_url = Path::getDirectory($url);
 $root_url = str_replace('/install', '', $current_url) . '/';
 define('SYSTEM_URL', $root_url);
@@ -455,7 +448,7 @@ final class FOSSBilling_Installer
         $data = require PATH_CONFIG_SAMPLE;
 
         // Handle dynamic configs
-        $data['security']['force_https'] = FOSSBilling\Tools::isHTTPS();
+        $data['security']['force_https'] = str_starts_with(SYSTEM_URL, 'https://');
         $data['debug_and_monitoring']['report_errors'] = (bool) $this->session->get('error_reporting');
         $data['debug_and_monitoring']['debug'] = $this->isDebug;
         $data['update_branch'] = $updateBranch;
