@@ -436,8 +436,7 @@
         "wordprocessingml",
         "checkip",
         "srclink",
-        "striptags",
-        "Paidsupport"
+        "striptags"
     ],
     "ignorePaths": [
         "tests-legacy/**",
