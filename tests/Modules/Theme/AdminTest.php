@@ -55,6 +55,6 @@ final class AdminTest extends TestCase
         $this->assertNotSame('', trim($data['version']), 'Theme version should not be empty.');
         $this->assertIsString($data['author']);
 
-        $this->assertEquals('FOSSBilling', $data['author']);
+        $this->assertSame('FOSSBilling', $data['author']);
     }
 }
