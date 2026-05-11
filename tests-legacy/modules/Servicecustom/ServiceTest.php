@@ -224,7 +224,13 @@ final class ServiceTest extends \BBTestCase
             ->method('validateUrlField');
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $formbuilderService);
+        $di['mod_service'] = $di->protect(function (string $module) use ($formbuilderService): \PHPUnit\Framework\MockObject\MockObject {
+            if ($module !== 'formbuilder') {
+                throw new \InvalidArgumentException(sprintf('Unexpected module requested: %s', $module));
+            }
+
+            return $formbuilderService;
+        });
 
         $this->service->setDi($di);
 
