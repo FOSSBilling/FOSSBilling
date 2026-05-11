@@ -19,6 +19,12 @@ final class AdminTest extends TestCase
         $this->assertArrayHasKey('name', $data);
         $this->assertArrayHasKey('version', $data);
         $this->assertArrayHasKey('author', $data);
+
+        $this->assertIsString($data['name']);
+        $this->assertNotSame('', trim($data['name']), 'Theme name should not be empty.');
+        $this->assertIsString($data['version']);
+        $this->assertNotSame('', trim($data['version']), 'Theme version should not be empty.');
+
         $this->assertEquals('FOSSBilling', $data['author']);
     }
 
@@ -32,6 +38,12 @@ final class AdminTest extends TestCase
         $this->assertArrayHasKey('name', $data);
         $this->assertArrayHasKey('version', $data);
         $this->assertArrayHasKey('author', $data);
+
+        $this->assertIsString($data['name']);
+        $this->assertNotSame('', trim($data['name']), 'Theme name should not be empty.');
+        $this->assertIsString($data['version']);
+        $this->assertNotSame('', trim($data['version']), 'Theme version should not be empty.');
+
         $this->assertEquals('FOSSBilling', $data['author']);
     }
 
