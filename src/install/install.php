@@ -113,11 +113,9 @@ final class FOSSBilling_Installer
         require_once 'session.php';
         $this->session = new Session();
         $this->filesystem = new Filesystem();
-        $this->isDebug = !Environment::isProduction();
-
-        if (!$this->isDebug && $this->filesystem->exists(PATH_CONFIG)) {
+        if ($this->filesystem->exists(PATH_CONFIG)) {
             $config = require PATH_CONFIG;
-            $this->isDebug = $config['debug_and_monitoring']['debug'] || !Environment::isProduction();
+            $this->isDebug = (bool) ($config['debug_and_monitoring']['debug'] ?? false);
         }
 
         if (getenv('IS_DDEV') === 'true' && ($_GET['a'] ?? 'index') === 'index') {
