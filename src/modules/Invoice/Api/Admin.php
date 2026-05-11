@@ -64,41 +64,9 @@ class Admin extends \Api_Abstract
      */
     public function mark_as_paid($data)
     {
-        $execute = false;
-        if (isset($data['execute']) && $data['execute']) {
-            $execute = true;
-        }
         $invoice = $this->_getInvoice($data);
-        $gateway_id = ['id' => $invoice->gateway_id];
 
-        if (!$gateway_id['id']) {
-            throw new InformationException('You must set the payment gateway in the invoice manage tab before marking it as paid.');
-        }
-
-        $payGateway = $this->gateway_get($gateway_id);
-        $charge = false;
-
-        // Check if the payment type is "Custom Payment", Add the transaction and process it.
-        if (($payGateway['code'] ?? null) == 'Custom' && ($payGateway['enabled'] ?? 0) == 1) {
-            // create transaction
-            $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
-            $newtx = $transactionService->create([
-                'invoice_id' => $invoice->id,
-                'gateway_id' => $invoice->gateway_id,
-                'currency' => $invoice->currency,
-                'status' => 'received',
-                'source' => 'admin',
-                'txn_id' => $data['transactionId'],
-            ]);
-
-            try {
-                return $transactionService->processTransaction($newtx);
-            } catch (\Exception $e) {
-                $this->di['logger']->info("Error processing transaction: {$e->getMessage()}.");
-            }
-        }
-
-        return $this->getService()->markAsPaid($invoice, $charge, $execute);
+        return $this->getService()->markAsPaidByAdmin($invoice, $data);
     }
 
     /**

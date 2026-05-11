@@ -497,6 +497,52 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    public function markAsPaidByAdmin(\Model_Invoice $invoice, array $data = []): bool
+    {
+        $execute = (bool) ($data['execute'] ?? false);
+        $payGateway = $this->validateAdminMarkAsPaidRequest($data, $invoice);
+
+        if ((int) $payGateway->id !== (int) $invoice->gateway_id) {
+            $invoice->gateway_id = (int) $payGateway->id;
+            $invoice->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($invoice);
+        }
+
+        if (($payGateway->gateway ?? null) === 'Custom' && (int) ($payGateway->enabled ?? 0) === 1) {
+            $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+            $newtx = $transactionService->create([
+                'invoice_id' => $invoice->id,
+                'gateway_id' => $invoice->gateway_id,
+                'currency' => $invoice->currency,
+                'status' => 'received',
+                'source' => 'admin',
+                'txn_id' => $data['transactionId'] ?? null,
+            ]);
+
+            return $transactionService->processTransaction($newtx);
+        }
+
+        return $this->markAsPaid($invoice, false, $execute);
+    }
+
+    public function validateAdminMarkAsPaidRequest(array $data, ?\Model_Invoice $invoice = null): \Model_PayGateway
+    {
+        $gatewayId = isset($data['gateway_id']) && !empty($data['gateway_id']) ? (int) $data['gateway_id'] : (int) ($invoice->gateway_id ?? 0);
+        if ($gatewayId <= 0) {
+            throw new InformationException('Payment gateway is required when marking an invoice as paid.');
+        }
+
+        $payGateway = $this->di['db']->getExistingModelById('PayGateway', $gatewayId, 'Payment gateway not found');
+        if (($payGateway->gateway ?? null) === 'Custom' && (int) ($payGateway->enabled ?? 0) === 1) {
+            $transactionId = trim((string) ($data['transactionId'] ?? ''));
+            if ($transactionId === '') {
+                throw new InformationException('Transaction ID is required when using the Custom payment gateway.');
+            }
+        }
+
+        return $payGateway;
+    }
+
     /**
      * Finds all paid invoices associated with a given client order.
      *
@@ -513,6 +559,24 @@ class Service implements InjectionAwareInterface
         ];
 
         return $this->di['db']->find('Invoice', 'id IN (SELECT invoice_id FROM invoice_item WHERE rel_id = :rel_id) AND status = :status', $bindings);
+    }
+
+    public function findInvoiceForOrder(\Model_ClientOrder $order): ?\Model_Invoice
+    {
+        $item = $this->di['db']->findOne(
+            'InvoiceItem',
+            'type = :type AND rel_id = :rel_id ORDER BY id DESC',
+            [
+                ':type' => \Model_InvoiceItem::TYPE_ORDER,
+                ':rel_id' => $order->id,
+            ]
+        );
+
+        if (!$item instanceof \Model_InvoiceItem || empty($item->invoice_id)) {
+            return null;
+        }
+
+        return $this->di['db']->getExistingModelById('Invoice', $item->invoice_id, 'Invoice not found');
     }
 
     public function getNextInvoiceNumber()

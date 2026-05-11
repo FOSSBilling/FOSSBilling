@@ -67,6 +67,35 @@
                 {{ include(product_order) }}
             {% endif %}
 
+            {% if has_permission('invoice') %}
+            <div id="mark-invoice-paid-options" class="d-none">
+                <div class="mb-3 row">
+                    <label class="form-label col-3 col-form-label">{{ 'Mark Invoice as Paid'|trans }}</label>
+                    <div class="col">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="mark_invoice_paid" name="mark_invoice_paid" value="1">
+                            <label class="form-check-label" for="mark_invoice_paid">{{ 'Confirm that the first invoice has already been paid by the client'|trans }}.</label>
+                        </div>
+                    </div>
+                </div>
+                <div id="mark-invoice-paid-fields" class="d-none">
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label" for="gateway_id">{{ 'Payment Gateway'|trans }}</label>
+                        <div class="col">
+                            {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, request.gateway_id, 0, 'Select payment gateway'|trans) }}
+                            <small class="form-hint">{{ 'Required when marking the invoice as paid during order creation.'|trans }}</small>
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label class="form-label col-3 col-form-label" for="transaction-id">{{ 'Transaction ID'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="transactionId" id="transaction-id" value="{{ request.transactionId }}">
+                            <small class="form-hint">{{ 'Required when using the Custom payment gateway.'|trans }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
 
             <input type="hidden" name="client_id" value="{{ client.id }}">
             <input type="hidden" name="product_id" value="{{ product.id }}">
@@ -83,6 +112,38 @@
     }
 
     const periodEl = document.getElementById('period');
+    const invoiceOptionEl = document.querySelector('[name="invoice_option"]');
+    const markInvoicePaidOptionsEl = document.getElementById('mark-invoice-paid-options');
+    const markInvoicePaidEl = document.getElementById('mark_invoice_paid');
+    const markInvoicePaidFieldsEl = document.getElementById('mark-invoice-paid-fields');
+    const gatewayEl = document.querySelector('[name="gateway_id"]');
+    const transactionIdEl = document.getElementById('transaction-id');
+
+    function syncMarkInvoicePaidControls() {
+        if (!markInvoicePaidOptionsEl || !invoiceOptionEl) {
+            return;
+        }
+
+        const invoiceIsIssued = invoiceOptionEl.value === 'issue-invoice';
+        markInvoicePaidOptionsEl.classList.toggle('d-none', !invoiceIsIssued);
+
+        if (!invoiceIsIssued && markInvoicePaidEl) {
+            markInvoicePaidEl.checked = false;
+        }
+
+        const markInvoicePaid = invoiceIsIssued && !!(markInvoicePaidEl && markInvoicePaidEl.checked);
+        if (markInvoicePaidFieldsEl) {
+            markInvoicePaidFieldsEl.classList.toggle('d-none', !markInvoicePaid);
+        }
+        if (gatewayEl) {
+            gatewayEl.required = markInvoicePaid;
+            gatewayEl.disabled = !markInvoicePaid;
+        }
+        if (transactionIdEl) {
+            transactionIdEl.disabled = !markInvoicePaid;
+        }
+    }
+
     if (periodEl) {
         periodEl.addEventListener('change', function() {
             const optionSelected = this.options[this.selectedIndex];
@@ -109,6 +170,14 @@
         });
     }
 
+    if (invoiceOptionEl) {
+        invoiceOptionEl.addEventListener('change', syncMarkInvoicePaidControls);
+    }
+
+    if (markInvoicePaidEl) {
+        markInvoicePaidEl.addEventListener('change', syncMarkInvoicePaidControls);
+    }
+
     // Parse URL parameters for pre-filling form values
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -127,6 +196,8 @@
                 }
             }
         }
+
+        syncMarkInvoicePaidControls();
     });
 </script>
 {% endblock %}
