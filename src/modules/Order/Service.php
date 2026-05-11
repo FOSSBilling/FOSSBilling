@@ -772,8 +772,7 @@ class Service implements InjectionAwareInterface
 
                 $invoiceService->approveInvoice($invoice, ['id' => $invoice->id, 'use_credits' => true]);
 
-                $markInvoicePaid = isset($data['mark_invoice_paid'])
-                    && filter_var($data['mark_invoice_paid'], FILTER_VALIDATE_BOOLEAN);
+                $markInvoicePaid = \FOSSBilling\Tools::normalizeBoolean($data['mark_invoice_paid'] ?? false);
 
                 if ($markInvoicePaid) {
                     $invoiceService->markAsPaidByAdmin($invoice, $data);
