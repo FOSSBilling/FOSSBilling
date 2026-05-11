@@ -132,6 +132,15 @@ final class Api_AdminTest extends BBTestCase
         $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
             ->onlyMethods(['createOrder'])->getMock();
         $serviceMock->expects($this->once())->method('createOrder')
+            ->with(
+                $this->isInstanceOf(Model_Client::class),
+                $this->isInstanceOf(Model_Product::class),
+                $this->callback(function (array $data): bool {
+                    return $data['gateway_id'] === 5
+                        && $data['invoice_option'] === 'issue-invoice'
+                        && $data['mark_invoice_paid'] === 1;
+                })
+            )
             ->willReturn(55);
 
         $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
@@ -139,15 +148,8 @@ final class Api_AdminTest extends BBTestCase
             ->method('checkPermissionsAndThrowException')
             ->with('invoice');
 
-        $invoiceModel = new \Model_Invoice();
-        $invoiceModel->loadBean(new DummyBean());
-
-        $orderModel = new Model_ClientOrder();
-        $orderModel->loadBean(new DummyBean());
-        $orderModel->id = 55;
-
         $invoiceServiceMock = $this->getMockBuilder(Box\Mod\Invoice\Service::class)
-            ->onlyMethods(['validateAdminMarkAsPaidRequest', 'findInvoiceForOrder', 'markAsPaidByAdmin'])
+            ->onlyMethods(['validateAdminMarkAsPaidRequest'])
             ->getMock();
         $invoiceServiceMock->expects($this->once())
             ->method('validateAdminMarkAsPaidRequest')
@@ -157,18 +159,6 @@ final class Api_AdminTest extends BBTestCase
                     && $data['mark_invoice_paid'] === 1;
             }))
             ->willReturn(new Model_PayGateway());
-        $invoiceServiceMock->expects($this->once())
-            ->method('findInvoiceForOrder')
-            ->with($orderModel)
-            ->willReturn($invoiceModel);
-        $invoiceServiceMock->expects($this->once())
-            ->method('markAsPaidByAdmin')
-            ->with($invoiceModel, $this->callback(function (array $data): bool {
-                return $data['gateway_id'] === 5
-                    && $data['invoice_option'] === 'issue-invoice'
-                    && $data['mark_invoice_paid'] === 1;
-            }))
-            ->willReturn(true);
 
         $clientModel = new Model_Client();
         $clientModel->loadBean(new DummyBean());
@@ -176,9 +166,9 @@ final class Api_AdminTest extends BBTestCase
         $productModel->loadBean(new DummyBean());
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
-        $dbMock->expects($this->exactly(3))
+        $dbMock->expects($this->exactly(2))
             ->method('getExistingModelById')
-            ->willReturn($clientModel, $productModel, $orderModel);
+            ->willReturn($clientModel, $productModel);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;

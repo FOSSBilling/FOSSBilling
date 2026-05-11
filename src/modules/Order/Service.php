@@ -684,87 +684,107 @@ class Service implements InjectionAwareInterface
             $generatedOrderTitle = null;
         }
 
-        $order = $this->di['db']->dispense('ClientOrder');
-        $order->client_id = $client->id;
-        $order->product_id = $product->id;
-        $order->form_id = $product->form_id;
-        $order->group_id = ($parent_order) ? $parent_order->group_id : uniqid();
-        $order->group_master = ($parent_order) ? 0 : 1;
-        $order->title = $generatedOrderTitle ?? $data['title'] ?? $product->title;
-        $order->currency = $currency->getCode();
-        $order->service_type = $product->type;
-        $order->unit = $product->unit;
-        $order->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
-        $order->config = json_encode($config);
-        $order->invoice_option = $invoiceOption;
+        $id = \RedBeanPHP\R::transaction(function () use (
+            $client,
+            $config,
+            $currency,
+            $currencyRepository,
+            $data,
+            $generatedOrderTitle,
+            $invoiceOption,
+            $parent_order,
+            $period,
+            $product,
+            $qty
+        ) {
+            $order = $this->di['db']->dispense('ClientOrder');
+            $order->client_id = $client->id;
+            $order->product_id = $product->id;
+            $order->form_id = $product->form_id;
+            $order->group_id = ($parent_order) ? $parent_order->group_id : uniqid();
+            $order->group_master = ($parent_order) ? 0 : 1;
+            $order->title = $generatedOrderTitle ?? $data['title'] ?? $product->title;
+            $order->currency = $currency->getCode();
+            $order->service_type = $product->type;
+            $order->unit = $product->unit;
+            $order->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
+            $order->config = json_encode($config);
+            $order->invoice_option = $invoiceOption;
 
-        if ($period) {
-            $bp = $this->di['period']($data['period']);
-            $order->period = $bp->getCode();
-        }
-
-        $line = null;
-        if (!isset($data['price']) || $product->type === \Model_Product::DOMAIN) {
-            $product->setDi($this->di);
-            $repo = $product->getTable();
-            $line = $repo->getOrderLineConfig($product, array_merge($config, ['quantity' => $qty]));
-            $order->quantity = $line['quantity'];
-        } else {
-            $order->quantity = $qty;
-        }
-
-        if (isset($data['price'])) {
-            $order->price = $data['price'];
-        } else {
-            $rate = $currencyRepository->getRateByCode($currency->getCode());
-            if ($rate === null) {
-                throw new \FOSSBilling\Exception("Currency rate for '{$currency->getCode()}' is not configured");
+            if ($period) {
+                $bp = $this->di['period']($data['period']);
+                $order->period = $bp->getCode();
             }
-            $order->price = $line['price'] * $rate;
-        }
 
-        $order->notes = $data['notes'] ?? $order->notes;
-        if (isset($data['created_at'])) {
-            $order->created_at = date('Y-m-d H:i:s', strtotime($data['created_at']));
-        } else {
-            $order->created_at = date('Y-m-d H:i:s');
-        }
+            $line = null;
+            if (!isset($data['price']) || $product->type === \Model_Product::DOMAIN) {
+                $product->setDi($this->di);
+                $repo = $product->getTable();
+                $line = $repo->getOrderLineConfig($product, array_merge($config, ['quantity' => $qty]));
+                $order->quantity = $line['quantity'];
+            } else {
+                $order->quantity = $qty;
+            }
 
-        if (isset($data['updated_at'])) {
-            $order->updated_at = date('Y-m-d H:i:s', strtotime($data['updated_at']));
-        } else {
-            $order->updated_at = date('Y-m-d H:i:s');
-        }
-
-        $id = $this->di['db']->store($order);
-
-        if (isset($data['meta']) && is_array($data['meta'])) {
-            foreach ($data['meta'] as $k => $v) {
-                $mm = $this->di['db']->findOne('client_order_meta', 'client_order_id = :id AND name = :n', [':id' => $order->id, ':n' => $k]);
-                if (!$mm) {
-                    $mm = $this->di['db']->dispense('ClientOrderMeta');
-                    $mm->client_order_id = $id;
-                    $mm->name = $k;
-                    $mm->created_at = date('Y-m-d H:i:s');
+            if (isset($data['price'])) {
+                $order->price = $data['price'];
+            } else {
+                $rate = $currencyRepository->getRateByCode($currency->getCode());
+                if ($rate === null) {
+                    throw new \FOSSBilling\Exception("Currency rate for '{$currency->getCode()}' is not configured");
                 }
-                $mm->value = $v;
-                $mm->updated_at = date('Y-m-d H:i:s');
-                $this->di['db']->store($mm);
+                $order->price = $line['price'] * $rate;
             }
-        }
+
+            $order->notes = $data['notes'] ?? $order->notes;
+            if (isset($data['created_at'])) {
+                $order->created_at = date('Y-m-d H:i:s', strtotime($data['created_at']));
+            } else {
+                $order->created_at = date('Y-m-d H:i:s');
+            }
+
+            if (isset($data['updated_at'])) {
+                $order->updated_at = date('Y-m-d H:i:s', strtotime($data['updated_at']));
+            } else {
+                $order->updated_at = date('Y-m-d H:i:s');
+            }
+
+            $id = $this->di['db']->store($order);
+
+            if (isset($data['meta']) && is_array($data['meta'])) {
+                foreach ($data['meta'] as $k => $v) {
+                    $mm = $this->di['db']->findOne('client_order_meta', 'client_order_id = :id AND name = :n', [':id' => $order->id, ':n' => $k]);
+                    if (!$mm) {
+                        $mm = $this->di['db']->dispense('ClientOrderMeta');
+                        $mm->client_order_id = $id;
+                        $mm->name = $k;
+                        $mm->created_at = date('Y-m-d H:i:s');
+                    }
+                    $mm->value = $v;
+                    $mm->updated_at = date('Y-m-d H:i:s');
+                    $this->di['db']->store($mm);
+                }
+            }
+
+            if ($invoiceOption == 'issue-invoice' && $order->price > 0) {
+                $invoiceService = $this->di['mod_service']('invoice');
+                $invoice = $invoiceService->generateForOrder($order);
+
+                $invoiceService->approveInvoice($invoice, ['id' => $invoice->id, 'use_credits' => true]);
+
+                if (!empty($data['mark_invoice_paid'])) {
+                    $invoiceService->markAsPaidByAdmin($invoice, $data);
+                }
+            }
+
+            return $id;
+        });
+
+        $order = $this->di['db']->getExistingModelById('ClientOrder', $id, 'Order not found');
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderCreate', 'params' => ['id' => $order->id], 'subject' => $product->type]);
 
         $this->di['logger']->info('Created order #%s', $id);
-
-        // invoice options
-        if ($invoiceOption == 'issue-invoice' && $order->price > 0) {
-            $invoiceService = $this->di['mod_service']('invoice');
-            $invoice = $invoiceService->generateForOrder($order);
-
-            $invoiceService->approveInvoice($invoice, ['id' => $invoice->id, 'use_credits' => true]);
-
-        }
 
         // activate immediately on creation
         if ($activate) {

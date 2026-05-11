@@ -100,37 +100,7 @@ class Admin extends \Api_Abstract
         $client = $this->di['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
         $product = $this->di['db']->getExistingModelById('Product', $data['product_id'], 'Product not found');
 
-        $orderId = $this->getService()->createOrder($client, $product, $data);
-
-        if (!$markInvoicePaid) {
-            return $orderId;
-        }
-
-        try {
-            $order = $this->di['db']->getExistingModelById('ClientOrder', $orderId, 'Order not found');
-            $invoiceService = $this->di['mod_service']('Invoice');
-            $invoice = $invoiceService->findInvoiceForOrder($order);
-
-            if (!$invoice instanceof \Model_Invoice) {
-                throw new \FOSSBilling\InformationException('No invoice was generated for this order.');
-            }
-
-            $invoiceService->markAsPaidByAdmin($invoice, $data);
-        } catch (\Throwable $e) {
-            error_log(sprintf(
-                'Order %d was created, but marking its invoice as paid failed: %s',
-                $orderId,
-                $e->getMessage()
-            ));
-
-            throw new \FOSSBilling\InformationException(sprintf(
-                'Order %d was created, but marking its invoice as paid failed: %s',
-                $orderId,
-                $e->getMessage()
-            ));
-        }
-
-        return $orderId;
+        return $this->getService()->createOrder($client, $product, $data);
     }
 
     /**
