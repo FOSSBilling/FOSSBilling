@@ -39,7 +39,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
 
     public function get_js(\Box_App $app): string
     {
-        header('Content-Type: application/javascript');
+        $app->setResponseHeader('Content-Type', 'application/javascript');
 
         return $app->render('mod_orderbutton_embed_js');
     }

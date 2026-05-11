@@ -17,7 +17,9 @@ use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 use Twig\Loader\FilesystemLoader;
 
@@ -85,12 +87,13 @@ const URL_INSTALL = SYSTEM_URL . 'install/';
 const URL_ADMIN = SYSTEM_URL . 'admin';
 
 // Load action and initialize the installer
-$action = $_GET['a'] ?? 'index';
-$installer = new FOSSBilling_Installer();
+$action = $request->query->get('a', 'index');
+$action = is_string($action) && $action !== '' ? $action : 'index';
+$installer = new FOSSBilling_Installer($request);
 
 // Run the installer only in non-CLI mode
 if (!Environment::isCLI()) {
-    $installer->run($action);
+    $installer->run($action)->send();
 }
 
 // Inline installer class.
@@ -101,7 +104,7 @@ final class FOSSBilling_Installer
     private bool $isDebug = false;
     private readonly Filesystem $filesystem;
 
-    public function __construct()
+    public function __construct(private readonly Request $request)
     {
         require_once 'session.php';
         $this->session = new Session();
@@ -113,7 +116,8 @@ final class FOSSBilling_Installer
             $this->isDebug = $config['debug_and_monitoring']['debug'] || !Environment::isProduction();
         }
 
-        if (getenv('IS_DDEV') === 'true' && ($_GET['a'] ?? 'index') === 'index') {
+        $action = $this->request->query->get('a', 'index');
+        if (getenv('IS_DDEV') === 'true' && $action === 'index') {
             $this->session->set('database_hostname', 'db');
             $this->session->set('database_name', 'db');
             $this->session->set('database_username', 'db');
@@ -126,14 +130,13 @@ final class FOSSBilling_Installer
      *
      * @param string $action
      */
-    public function run($action): void
+    public function run($action): Response
     {
         switch ($action) {
             case 'install':
                 // Make sure this is a POST request
-                if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-                    header('Location: ' . URL_INSTALL);
-                    exit;
+                if (!$this->request->isMethod('POST')) {
+                    return new RedirectResponse(URL_INSTALL);
                 }
 
                 // Installer validation
@@ -144,28 +147,28 @@ final class FOSSBilling_Installer
                     }
 
                     // Set if they've opted into error reporting
-                    $this->session->set('error_reporting', $_POST['error_reporting']);
+                    $this->session->set('error_reporting', $this->request->request->get('error_reporting'));
 
                     // Set up default currency before validation to preserve user selection if validation fails
-                    $this->session->set('currency_code', $_POST['currency_code']);
-                    $this->session->set('currency_title', $_POST['currency_title']);
-                    $this->session->set('currency_format', $_POST['currency_format'] ?? '${{price}}');
+                    $this->session->set('currency_code', $this->request->request->get('currency_code'));
+                    $this->session->set('currency_title', $this->request->request->get('currency_title'));
+                    $this->session->set('currency_format', $this->request->request->get('currency_format', '${{price}}'));
 
                     // Handle database information
-                    $this->session->set('database_hostname', $_POST['database_hostname']);
-                    $this->session->set('database_port', $_POST['database_port']);
-                    $this->session->set('database_name', $_POST['database_name']);
-                    $this->session->set('database_username', $_POST['database_username']);
-                    $this->session->set('database_password', $_POST['database_password']);
+                    $this->session->set('database_hostname', $this->request->request->get('database_hostname'));
+                    $this->session->set('database_port', $this->request->request->get('database_port'));
+                    $this->session->set('database_name', $this->request->request->get('database_name'));
+                    $this->session->set('database_username', $this->request->request->get('database_username'));
+                    $this->session->set('database_password', $this->request->request->get('database_password'));
                     $this->connectDatabase();
 
                     // Handle admin information
-                    $this->session->set('admin_name', $_POST['admin_name']);
-                    $this->session->set('admin_email', $_POST['admin_email']);
-                    $this->session->set('admin_password', $_POST['admin_password']);
+                    $this->session->set('admin_name', $this->request->request->get('admin_name'));
+                    $this->session->set('admin_email', $this->request->request->get('admin_email'));
+                    $this->session->set('admin_password', $this->request->request->get('admin_password'));
 
                     if (Environment::isTesting()) {
-                        $this->session->set('admin_api_token', $_POST['admin_api_token'] ?? null);
+                        $this->session->set('admin_api_token', $this->request->request->get('admin_api_token'));
                     } else {
                         $this->session->set('admin_api_token', null);
                     }
@@ -177,16 +180,6 @@ final class FOSSBilling_Installer
                     $this->generateEmailTemplates();
                     session_destroy();
 
-                    // Installation is successful
-                    echo $this->render(PAGE_RESULT, [
-                        'success' => true,
-                        'config_file_path' => PATH_CONFIG,
-                        'cron_path' => PATH_CRON,
-                        'install_module_path' => PATH_INSTALL,
-                        'url_customer' => SYSTEM_URL,
-                        'url_admin' => URL_ADMIN,
-                    ]);
-
                     // Try to remove install folder
                     try {
                         // Delete install directory only if debug mode is NOT enabled.
@@ -196,15 +189,22 @@ final class FOSSBilling_Installer
                     } catch (Exception) {
                         // Do nothing and fail silently. New warnings are presented on the installation completed page for a leftover install directory.
                     }
+
+                    return new Response($this->render(PAGE_RESULT, [
+                        'success' => true,
+                        'config_file_path' => PATH_CONFIG,
+                        'cron_path' => PATH_CRON,
+                        'install_module_path' => PATH_INSTALL,
+                        'url_customer' => SYSTEM_URL,
+                        'url_admin' => URL_ADMIN,
+                    ]));
                 } catch (Exception $e) {
                     // Route to result page with exception information
-                    echo $this->render(PAGE_RESULT, [
+                    return new Response($this->render(PAGE_RESULT, [
                         'success' => false,
                         'message' => $e->getMessage(),
-                    ]);
+                    ]), 500);
                 }
-
-                break;
             case 'index':
             default:
                 $requirements = new FOSSBilling\Requirements();
@@ -234,9 +234,7 @@ final class FOSSBilling_Installer
                     'admin_site' => URL_ADMIN,
                     'domain' => SYSTEM_URL,
                 ];
-                echo $this->render(PAGE_INSTALL, $vars);
-
-                break;
+                return new Response($this->render(PAGE_INSTALL, $vars));
         }
     }
 
@@ -259,7 +257,7 @@ final class FOSSBilling_Installer
         ];
         $loader = new FilesystemLoader($options['paths']);
         $twig = new Twig\Environment($loader, $options);
-        $twig->addGlobal('request', $_REQUEST);
+        $twig->addGlobal('request', array_merge($this->request->query->all(), $this->request->request->all()));
         $twig->addGlobal('version', FOSSBilling\Version::VERSION);
 
         return $twig->render($name, $vars);

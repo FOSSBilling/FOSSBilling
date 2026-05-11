@@ -53,12 +53,10 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         $target = $service->getRedirectByPath($app->uri);
 
         if ($target === null || !$this->isTargetAllowed($target)) {
-            http_response_code(404);
-            exit;
+            $app->abortWithResponse(new \Symfony\Component\HttpFoundation\Response('', 404));
         }
 
-        header('Location: ' . $target, true, 301);
-        exit;
+        $app->redirectUrl($target, 301);
     }
 
     private function isTargetAllowed(string $target): bool

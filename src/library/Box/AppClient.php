@@ -58,7 +58,7 @@ class Box_AppClient extends Box_App
         $tpl = 'mod_page_' . $page;
 
         try {
-            return $this->render($tpl, ['post' => $_POST], $ext);
+            return $this->render($tpl, ['post' => $this->getRequest()->request->all()], $ext);
         } catch (Exception $e) {
             if (DEBUG) {
                 error_log($e->getMessage());
@@ -67,7 +67,7 @@ class Box_AppClient extends Box_App
         $e = new FOSSBilling\InformationException('Page :url not found', [':url' => $this->url], 404);
 
         $this->di['logger']->setChannel('routing')->info($e->getMessage());
-        http_response_code(404);
+        $this->setResponseStatus(404);
 
         return $this->render('error', ['exception' => $e]);
     }
@@ -82,13 +82,12 @@ class Box_AppClient extends Box_App
             $template = $this->getTwig()->load(Path::changeExtension($fileName, $ext));
         } catch (Twig\Error\LoaderError $e) {
             $this->di['logger']->setChannel('routing')->info($e->getMessage());
-            http_response_code(404);
 
             throw new FOSSBilling\InformationException('Page not found', null, 404);
         }
 
         if ("{$fileName}.{$ext}" == 'mod_page_sitemap.xml') {
-            header('Content-Type: application/xml');
+            $this->setResponseHeader('Content-Type', 'application/xml');
         }
 
         return $template->render($variableArray);

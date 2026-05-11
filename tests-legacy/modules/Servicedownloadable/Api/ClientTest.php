@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Box\Mod\Servicedownloadable\Api;
 
 use PHPUnit\Framework\Attributes\Group;
+use Symfony\Component\HttpFoundation\Response;
 
 #[Group('Core')]
 final class ClientTest extends \BBTestCase
@@ -99,7 +100,7 @@ final class ClientTest extends \BBTestCase
         $serviceMock = $this->createMock(\Box\Mod\Servicedownloadable\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('sendFile')
-            ->willReturn(true);
+            ->willReturn(new Response('file'));
 
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
@@ -124,7 +125,7 @@ final class ClientTest extends \BBTestCase
         $this->api->setService($serviceMock);
 
         $result = $this->api->send_file($data);
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
+        $this->assertInstanceOf(Response::class, $result);
+        $this->assertSame('file', $result->getContent());
     }
 }

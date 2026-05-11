@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Box\Mod\Servicedownloadable\Api;
 
 use PHPUnit\Framework\Attributes\Group;
+use Symfony\Component\HttpFoundation\Response;
 
 #[Group('Core')]
 final class AdminTest extends \BBTestCase
@@ -225,7 +226,7 @@ final class AdminTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('sendProductFile')
             ->with($productModel)
-            ->willReturn(true);
+            ->willReturn(new Response('file'));
 
         $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
         $dbMock->expects($this->atLeastOnce())
@@ -240,7 +241,7 @@ final class AdminTest extends \BBTestCase
         $this->api->setService($serviceMock);
 
         $result = $this->api->send_file($data);
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
+        $this->assertInstanceOf(Response::class, $result);
+        $this->assertSame('file', $result->getContent());
     }
 }

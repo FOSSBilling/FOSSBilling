@@ -153,9 +153,9 @@ class Admin implements InjectionAwareInterface
             return null;
         }
 
-        http_response_code(429);
+        $app->setResponseStatus(429);
         if ($result->hasRetryAfter()) {
-            header('Retry-After: ' . $result->getRetryAfterSeconds());
+            $app->setResponseHeader('Retry-After', (string) $result->getRetryAfterSeconds());
         }
 
         return $app->render('error', [

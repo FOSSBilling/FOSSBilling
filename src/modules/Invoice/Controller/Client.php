@@ -99,7 +99,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_invoice_banklink', ['payment' => $result, 'invoice' => $invoice]);
     }
 
-    public function get_pdf(\Box_App $app, $hash): string
+    public function get_pdf(\Box_App $app, $hash): Response
     {
         $api = $this->di['api_guest'];
         $data = [
@@ -111,10 +111,6 @@ class Client implements \FOSSBilling\InjectionAwareInterface
             throw new \FOSSBilling\Exception('Invoice PDF response could not be generated');
         }
 
-        if (!Environment::isTesting()) {
-            $response->send();
-        }
-
-        return '';
+        return $response;
     }
 }

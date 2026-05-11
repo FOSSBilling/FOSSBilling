@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Box\Mod\Servicedownloadable\Api;
 
 use FOSSBilling\Validation\Api\RequiredParams;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Downloadable service management.
@@ -89,12 +90,12 @@ class Admin extends \Api_Abstract
      * @throws \FOSSBilling\Exception if the product cannot be found or the file cannot be sent
      */
     #[RequiredParams(['id' => 'Product ID was not passed'])]
-    public function send_file($data): bool
+    public function send_file($data): Response
     {
         $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
 
         $service = $this->getService();
 
-        return (bool) $service->sendProductFile($model);
+        return $service->sendProductFile($model);
     }
 }

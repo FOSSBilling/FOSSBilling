@@ -14,10 +14,13 @@ require __DIR__ . DIRECTORY_SEPARATOR . 'load.php';
 global $di;
 
 use DebugBar\DataCollector\TimeDataCollector;
+use Symfony\Component\HttpFoundation\Response;
 
 $config = FOSSBilling\Config::getConfig();
 $debugBar = null;
 $timeCollector = null;
+/** @var Symfony\Component\HttpFoundation\Request $request */
+global $request;
 
 if ((bool) ($config['debug_and_monitoring']['debug'] ?? false)) {
     // Setting up the debug bar
@@ -53,10 +56,9 @@ if ((bool) ($config['debug_and_monitoring']['debug'] ?? false)) {
 }
 
 // Get the request URL
-if (isset($_GET['_url']) && is_string($_GET['_url'])) {
-    $rawUrl = $_GET['_url'];
-} else {
-    $rawUrl = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?? '/';
+$rawUrl = $request->query->get('_url');
+if (!is_string($rawUrl)) {
+    $rawUrl = $request->getPathInfo();
 }
 $url = is_string($rawUrl) ? $rawUrl : '/';
 
@@ -73,8 +75,8 @@ if (str_starts_with($url, '/page/')) {
 }
 
 // Set the final URL
-$_GET['_url'] = $url;
-$http_err_code = $_GET['_errcode'] ?? null;
+$request->query->set('_url', $url);
+$http_err_code = $request->query->get('_errcode');
 
 $timeCollector?->startMeasure('session_start', 'Starting / restoring the session');
 
@@ -82,8 +84,9 @@ $timeCollector?->startMeasure('session_start', 'Starting / restoring the session
  * Workaround: Session IDs get reset when using PGs like PayPal because of the `samesite=strict` cookie attribute, resulting in the client getting logged out.
  * The return and cancel URLs include a signed restore_token that contains the session ID. We validate and extract it here.
  */
-if (!empty($_GET['restore_token'])) {
-    $restoredSessionId = FOSSBilling\Tools::validateSessionRestoreToken($_GET['restore_token']);
+if ($request->query->has('restore_token')) {
+    $restoreToken = $request->query->get('restore_token');
+    $restoredSessionId = is_string($restoreToken) ? FOSSBilling\Tools::validateSessionRestoreToken($restoreToken) : null;
     if ($restoredSessionId !== null) {
         session_id($restoredSessionId);
     }
@@ -117,17 +120,16 @@ if (!is_null($http_err_code)) {
     switch ($http_err_code) {
         case 404:
             $e = new FOSSBilling\Exception('Page :url not found', [':url' => $url], 404);
-            echo $app->show404($e);
+            $app->show404($e)->send();
 
             break;
         default:
-            http_response_code($http_err_code);
             $e = new FOSSBilling\Exception('HTTP Error :err_code occurred while attempting to load :url', [':err_code' => $http_err_code, ':url' => $url], $http_err_code);
-            echo $app->render('error', ['exception' => $e]);
+            (new Response($app->render('error', ['exception' => $e]), $http_err_code))->send();
     }
     exit;
 }
 
 // If no HTTP error passed, run the app.
-echo $app->run();
+$app->run()->send();
 exit;

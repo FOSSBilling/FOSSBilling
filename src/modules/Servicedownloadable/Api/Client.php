@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Box\Mod\Servicedownloadable\Api;
 
 use FOSSBilling\Validation\Api\RequiredParams;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Downloadable service management.
@@ -24,7 +25,7 @@ class Client extends \Api_Abstract
      * Sends file as attachment.
      */
     #[RequiredParams(['order_id' => 'Order ID is required'])]
-    public function send_file($data): bool
+    public function send_file($data): Response
     {
         if (empty($data['order_id'])) {
             throw new \FOSSBilling\Exception('Order ID is required');
@@ -44,6 +45,6 @@ class Client extends \Api_Abstract
 
         $service = $this->getService();
 
-        return (bool) $service->sendFile($s);
+        return $service->sendFile($s);
     }
 }

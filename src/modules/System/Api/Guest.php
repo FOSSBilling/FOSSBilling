@@ -163,7 +163,7 @@ class Guest extends \Api_Abstract
      */
     public function current_url()
     {
-        return $_SERVER['REQUEST_URI'] ?? null;
+        return $this->di['request']->getRequestUri();
     }
 
     /**

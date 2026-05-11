@@ -371,7 +371,7 @@ class Service implements InjectionAwareInterface
         };
     }
 
-    public function sendFile(\Model_ServiceDownloadable $serviceDownloadable): bool
+    public function sendFile(\Model_ServiceDownloadable $serviceDownloadable): Response
     {
         $fileName = $serviceDownloadable->filename;
         $filePath = Path::join(PATH_UPLOADS, md5($fileName));
@@ -384,23 +384,19 @@ class Service implements InjectionAwareInterface
         $serviceDownloadable->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($serviceDownloadable);
 
-        // Send the file for download, unless in testing environment.
-        if (!Environment::isTesting()) {
-            $response = new Response($this->filesystem->readFile($filePath));
+        $response = new Response($this->filesystem->readFile($filePath));
 
-            $disposition = $response->headers->makeDisposition(
-                HeaderUtils::DISPOSITION_ATTACHMENT,
-                $fileName
-            );
+        $disposition = $response->headers->makeDisposition(
+            HeaderUtils::DISPOSITION_ATTACHMENT,
+            $fileName
+        );
 
-            $response->headers->set('Content-Type', 'application/octet-stream');
-            $response->headers->set('Content-Disposition', $disposition);
-            $response->send();
-        }
+        $response->headers->set('Content-Type', 'application/octet-stream');
+        $response->headers->set('Content-Disposition', $disposition);
 
         $this->di['logger']->info('Downloaded service %s file', $serviceDownloadable->id);
 
-        return true;
+        return $response;
     }
 
     public function saveProductConfig(\Model_Product $productModel, $data): bool
@@ -433,7 +429,7 @@ class Service implements InjectionAwareInterface
      *                                cases, the exception is thrown with an HTTP-style error
      *                                code of 404.
      */
-    public function sendProductFile(\Model_Product $product): bool
+    public function sendProductFile(\Model_Product $product): Response
     {
         $config = $product->config;
         $config = json_decode($config ?? '', true) ?: [];
@@ -449,21 +445,18 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
         }
 
-        if (!Environment::isTesting()) {
-            $response = new Response($this->filesystem->readFile($filePath));
+        $response = new Response($this->filesystem->readFile($filePath));
 
-            $disposition = $response->headers->makeDisposition(
-                HeaderUtils::DISPOSITION_ATTACHMENT,
-                $fileName
-            );
+        $disposition = $response->headers->makeDisposition(
+            HeaderUtils::DISPOSITION_ATTACHMENT,
+            $fileName
+        );
 
-            $response->headers->set('Content-Type', 'application/octet-stream');
-            $response->headers->set('Content-Disposition', $disposition);
-            $response->send();
-        }
+        $response->headers->set('Content-Type', 'application/octet-stream');
+        $response->headers->set('Content-Disposition', $disposition);
 
         $this->di['logger']->info('Downloaded product %s file by admin.', $product->id);
 
-        return true;
+        return $response;
     }
 }

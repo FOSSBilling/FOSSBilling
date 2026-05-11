@@ -15,11 +15,13 @@ namespace Box\Mod\Invoice;
 use Box\Mod\Currency\Entity\Currency;
 use Dompdf\Dompdf;
 use FOSSBilling\Environment;
+use FOSSBilling\Http\HttpResponseException;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\HeaderUtils;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Twig\Loader\FilesystemLoader;
 
@@ -1618,16 +1620,14 @@ class Service implements InjectionAwareInterface
             if ($invoiceClientId != $client->id) {
                 // Then either give an appropriate API response or redirect to the login page.
                 $api_str = '/api/';
-                $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
+                $url = $this->di['request']->getPathInfo();
                 if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
                     // Throw Exception if api request
                     throw new InformationException('You do not have permission to perform this action', [], 403);
                 }
                 // Redirect to login page if browser request
                 $invoiceLink = $this->di['url']->link('invoice');
-                header("Location: $invoiceLink");
-                echo __trans('You do not have permission to perform this action');
-                exit;
+                throw new HttpResponseException(new RedirectResponse($invoiceLink));
             }
         }
     }

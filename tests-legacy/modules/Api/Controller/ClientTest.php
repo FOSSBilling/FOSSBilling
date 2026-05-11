@@ -6,6 +6,7 @@ namespace Box\Mod\Api\Controller;
 
 use FOSSBilling\InformationException;
 use PHPUnit\Framework\Attributes\Group;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -65,16 +66,20 @@ final class TestableClient extends Client
     public ?Response $sentResponse = null;
 
     #[\Override]
-    public function renderJson($data = null, ?\Exception $e = null): void
+    public function renderJson($data = null, ?\Exception $e = null): Response
     {
         $this->renderedData = $data;
         $this->renderedException = $e;
+
+        return new JsonResponse(['result' => $data, 'error' => $e?->getMessage()]);
     }
 
     #[\Override]
-    protected function sendResponse(Response $response): void
+    protected function sendResponse(Response $response): Response
     {
         $this->sentResponse = $response;
+
+        return $response;
     }
 
     #[\Override]

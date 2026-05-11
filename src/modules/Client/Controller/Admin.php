@@ -117,8 +117,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             $redirect_to = '/' . trim((string) $r, '/');
         }
 
-        header('HTTP/1.1 301 Moved Permanently');
-        header('Location: ' . $this->di['tools']->url($redirect_to));
-        exit;
+        $app->redirectUrl($this->di['tools']->url($redirect_to), 301);
     }
 }
