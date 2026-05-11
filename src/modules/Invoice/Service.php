@@ -17,6 +17,7 @@ use Dompdf\Dompdf;
 use FOSSBilling\Environment;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\HeaderUtils;
@@ -503,7 +504,7 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
-        $execute = \Tools::normalizeBoolean($data['execute'] ?? false);
+        $execute = Tools::normalizeBoolean($data['execute'] ?? false);
         $payGateway = $this->validateAdminMarkAsPaidRequest($data, $invoice);
         $transactionId = isset($data['transactionId']) ? trim((string) $data['transactionId']) : null;
 
