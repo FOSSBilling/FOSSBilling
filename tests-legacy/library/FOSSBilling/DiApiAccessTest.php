@@ -42,7 +42,7 @@ final class DiApiAccessTest extends PHPUnit\Framework\TestCase
         $di['api']('client');
     }
 
-    private function createContainerForRoute(string $routePath): \Pimple\Container
+    private function createContainerForRoute(string $routePath): Pimple\Container
     {
         global $request;
 

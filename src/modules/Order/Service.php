@@ -743,13 +743,13 @@ class Service implements InjectionAwareInterface
 
             $order->notes = $data['notes'] ?? $order->notes;
             if (isset($data['created_at'])) {
-                $order->created_at = date('Y-m-d H:i:s', strtotime($data['created_at']));
+                $order->created_at = date('Y-m-d H:i:s', strtotime((string) $data['created_at']));
             } else {
                 $order->created_at = date('Y-m-d H:i:s');
             }
 
             if (isset($data['updated_at'])) {
-                $order->updated_at = date('Y-m-d H:i:s', strtotime($data['updated_at']));
+                $order->updated_at = date('Y-m-d H:i:s', strtotime((string) $data['updated_at']));
             } else {
                 $order->updated_at = date('Y-m-d H:i:s');
             }
@@ -781,6 +781,7 @@ class Service implements InjectionAwareInterface
 
         if ($invoice instanceof \Model_Invoice) {
             $invoiceService = $this->di['mod_service']('invoice');
+
             try {
                 $invoiceService->approveInvoice($invoice, ['id' => $invoice->id, 'use_credits' => true]);
 

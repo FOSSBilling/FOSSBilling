@@ -1173,7 +1173,7 @@ class Service implements InjectionAwareInterface
         $orderService = $this->di['mod_service']('Order');
         $orders = $orderService->getSoonExpiringActiveOrders();
 
-        if (\FOSSBilling\Tools::safeCount($orders) == 0) {
+        if (Tools::safeCount($orders) == 0) {
             return true;
         }
 
@@ -1559,7 +1559,7 @@ class Service implements InjectionAwareInterface
                 ->setTax($item['tax'])
                 ->setQuantity($item['quantity']);
             $items[] = $pi;
-            if (is_null($first_title) && \FOSSBilling\Tools::safeCount($proforma['lines']) == 1) {
+            if (is_null($first_title) && Tools::safeCount($proforma['lines']) == 1) {
                 $first_title = $item['title'];
             }
         }
@@ -1674,7 +1674,7 @@ class Service implements InjectionAwareInterface
                 // Then either give an appropriate API response or redirect to the login page.
                 $api_str = '/api/';
                 $url = RequestFactory::getRoutePath($this->di['request']);
-                if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
+                if (strncasecmp($url, $api_str, strlen($api_str)) === 0) {
                     // Throw Exception if api request
                     throw new InformationException('You do not have permission to perform this action', [], 403);
                 }

@@ -1726,11 +1726,9 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(true);
         $invoiceServiceMock->expects($this->once())
             ->method('markAsPaidByAdmin')
-            ->with($invoiceModel, $this->callback(function (array $data): bool {
-                return $data['invoice_option'] === 'issue-invoice'
-                    && $data['mark_invoice_paid'] === true
-                    && $data['gateway_id'] === 7;
-            }))
+            ->with($invoiceModel, $this->callback(fn (array $data): bool => $data['invoice_option'] === 'issue-invoice'
+                && $data['mark_invoice_paid'] === true
+                && $data['gateway_id'] === 7))
             ->willThrowException(new \Exception('Payment follow-up failed'));
         $invoiceServiceMock->expects($this->once())
             ->method('addNote')

@@ -72,7 +72,6 @@ final class Api_GuestTest extends \BBTestCase
         $this->assertEquals(40, strlen($result));
     }
 
-
     public function testTicketCreateMessageArrayException(): void
     {
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
@@ -175,7 +174,6 @@ final class Api_GuestTest extends \BBTestCase
         $this->assertIsString($result);
         $this->assertEquals(40, strlen($result));
     }
-
 
     public function testTicketReplyMessageArrayException(): void
     {

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\System;
 
-use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
 use FOSSBilling\Http\RequestFactory;
+use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
 use PHPUnit\Framework\Attributes\Group;
 use Symfony\Component\HttpFoundation\Request;
 

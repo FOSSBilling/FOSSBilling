@@ -97,7 +97,7 @@ class Client implements InjectionAwareInterface
             return $this->_apiCall($role, $class, $call, $p);
         } catch (HttpResponseException $exc) {
             return $exc->getResponse();
-        } catch (AuthenticationRequiredException $exc) {
+        } catch (AuthenticationRequiredException) {
             return $this->renderJson(null, new \FOSSBilling\InformationException('Authentication Failed', null, 201));
         } catch (EmailValidationRequiredException $exc) {
             return $this->renderJson(null, new \FOSSBilling\InformationException($exc->getMessage(), null, 403));
@@ -411,9 +411,7 @@ class Client implements InjectionAwareInterface
             }
         } catch (\FOSSBilling\InformationException $exception) {
             throw $exception;
-        } catch (AuthenticationRequiredException) {
-            throw new \FOSSBilling\InformationException('Authentication Failed', null, 201);
-        } catch (\Exception) {
+        } catch (AuthenticationRequiredException|\Exception) {
             throw new \FOSSBilling\InformationException('Authentication Failed', null, 201);
         }
     }
@@ -494,7 +492,7 @@ class Client implements InjectionAwareInterface
         }
 
         $input = $this->di['request']->getContent();
-        $data = json_decode($input);
+        $data = json_decode((string) $input);
         if (!is_object($data)) {
             $data = new \stdClass();
         }

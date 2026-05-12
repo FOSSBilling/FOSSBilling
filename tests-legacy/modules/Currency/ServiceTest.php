@@ -583,7 +583,6 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($result, $code);
     }
 
-
     public function testCreateCurrencyWithBlankConversionRateUsesAutoRate(): void
     {
         $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
@@ -650,6 +649,7 @@ final class ServiceTest extends \BBTestCase
         $this->expectExceptionMessage('Currency conversion rate must be a positive number');
         $service->createCurrency('EUR', '€{{price}}', 'Euros', '0');
     }
+
     public function testUpdateCurrency(): void
     {
         $code = 'EUR';

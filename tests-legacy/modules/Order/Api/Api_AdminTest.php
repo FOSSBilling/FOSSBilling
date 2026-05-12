@@ -102,22 +102,22 @@ final class Api_AdminTest extends BBTestCase
             ->onlyMethods(['createOrder'])->getMock();
         $serviceMock->expects($this->never())->method('createOrder');
 
-        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock = $this->createMock(Box\Mod\Staff\Service::class);
         $staffServiceMock->expects($this->once())
             ->method('checkPermissionsAndThrowException')
             ->with('invoice')
-            ->willThrowException(new \FOSSBilling\InformationException('Denied', [], 403));
+            ->willThrowException(new FOSSBilling\InformationException('Denied', [], 403));
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn (string $serviceName) => match ($serviceName) {
+        $di['mod_service'] = $di->protect(fn (string $serviceName): PHPUnit\Framework\MockObject\MockObject => match ($serviceName) {
             'Staff' => $staffServiceMock,
-            default => throw new \RuntimeException('Unexpected service request'),
+            default => throw new RuntimeException('Unexpected service request'),
         });
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
-        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectException(FOSSBilling\InformationException::class);
         $this->api->create([
             'client_id' => 1,
             'product_id' => 1,
@@ -135,15 +135,13 @@ final class Api_AdminTest extends BBTestCase
             ->with(
                 $this->isInstanceOf(Model_Client::class),
                 $this->isInstanceOf(Model_Product::class),
-                $this->callback(function (array $data): bool {
-                    return $data['gateway_id'] === 5
-                        && $data['invoice_option'] === 'issue-invoice'
-                        && $data['mark_invoice_paid'] === true;
-                })
+                $this->callback(fn (array $data): bool => $data['gateway_id'] === 5
+                    && $data['invoice_option'] === 'issue-invoice'
+                    && $data['mark_invoice_paid'] === true)
             )
             ->willReturn(55);
 
-        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock = $this->createMock(Box\Mod\Staff\Service::class);
         $staffServiceMock->expects($this->once())
             ->method('checkPermissionsAndThrowException')
             ->with('invoice');
@@ -153,11 +151,9 @@ final class Api_AdminTest extends BBTestCase
             ->getMock();
         $invoiceServiceMock->expects($this->once())
             ->method('validateAdminMarkAsPaidRequest')
-            ->with($this->callback(function (array $data): bool {
-                return $data['gateway_id'] === 5
-                    && $data['invoice_option'] === 'issue-invoice'
-                    && $data['mark_invoice_paid'] === true;
-            }))
+            ->with($this->callback(fn (array $data): bool => $data['gateway_id'] === 5
+                && $data['invoice_option'] === 'issue-invoice'
+                && $data['mark_invoice_paid'] === true))
             ->willReturn(new Model_PayGateway());
 
         $clientModel = new Model_Client();
@@ -172,10 +168,10 @@ final class Api_AdminTest extends BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn (string $serviceName) => match ($serviceName) {
+        $di['mod_service'] = $di->protect(fn (string $serviceName): PHPUnit\Framework\MockObject\MockObject => match ($serviceName) {
             'Staff' => $staffServiceMock,
             'Invoice' => $invoiceServiceMock,
-            default => throw new \RuntimeException('Unexpected service request'),
+            default => throw new RuntimeException('Unexpected service request'),
         });
 
         $this->api->setDi($di);
@@ -198,7 +194,7 @@ final class Api_AdminTest extends BBTestCase
             ->onlyMethods(['createOrder'])->getMock();
         $serviceMock->expects($this->never())->method('createOrder');
 
-        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock = $this->createMock(Box\Mod\Staff\Service::class);
         $staffServiceMock->expects($this->once())
             ->method('checkPermissionsAndThrowException')
             ->with('invoice');
@@ -208,19 +204,19 @@ final class Api_AdminTest extends BBTestCase
             ->getMock();
         $invoiceServiceMock->expects($this->once())
             ->method('validateAdminMarkAsPaidRequest')
-            ->willThrowException(new \FOSSBilling\InformationException('Transaction ID is required when using the Custom payment gateway.'));
+            ->willThrowException(new FOSSBilling\InformationException('Transaction ID is required when using the Custom payment gateway.'));
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn (string $serviceName) => match ($serviceName) {
+        $di['mod_service'] = $di->protect(fn (string $serviceName): PHPUnit\Framework\MockObject\MockObject => match ($serviceName) {
             'Staff' => $staffServiceMock,
             'Invoice' => $invoiceServiceMock,
-            default => throw new \RuntimeException('Unexpected service request'),
+            default => throw new RuntimeException('Unexpected service request'),
         });
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
-        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectException(FOSSBilling\InformationException::class);
         $this->expectExceptionMessage('Transaction ID is required when using the Custom payment gateway.');
         $this->api->create([
             'client_id' => 1,
