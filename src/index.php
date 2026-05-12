@@ -76,9 +76,9 @@ if ($request->query->has('restore_token')) {
 $di['session'];
 $timeCollector?->stopMeasure('session_start');
 
-if (strncasecmp((string) $url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
+if (strncasecmp($url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
     define('ADMIN_AREA', true);
-    $urlWithoutQueryString = parse_url((string) $url, PHP_URL_PATH) ?? (string) $url;
+    $urlWithoutQueryString = parse_url($url, PHP_URL_PATH) ?? $url;
     $adminRelativeUrl = str_replace(ADMIN_PREFIX, '', (string) $urlWithoutQueryString);
     $appUrl = $adminRelativeUrl;
     $app = new Box_AppAdmin([], $debugBar);

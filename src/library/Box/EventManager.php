@@ -56,7 +56,6 @@ class Box_EventManager implements FOSSBilling\InjectionAwareInterface
     /**
      * @param Box_EventDispatcher $disp
      * @param string              $event
-     * @param string|null         $dispatchEventName
      */
     private function _connectDatabaseHooks(&$disp, $event, ?string $dispatchEventName = null): void
     {

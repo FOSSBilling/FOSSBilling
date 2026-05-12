@@ -16,7 +16,7 @@ use Symfony\Component\HttpFoundation\Request;
 
 final class RequestFactory
 {
-    public const ROUTE_PATH_ATTRIBUTE = '_fossbilling_route_path';
+    public const string ROUTE_PATH_ATTRIBUTE = '_fossbilling_route_path';
 
     public static function createFromGlobals(array $proxyConfig = []): Request
     {
@@ -87,7 +87,7 @@ final class RequestFactory
 
         $trustedProxies = $proxyConfig['proxies'] ?? [];
         if (is_string($trustedProxies)) {
-            $trustedProxies = array_filter(array_map('trim', explode(',', $trustedProxies)));
+            $trustedProxies = array_filter(array_map(trim(...), explode(',', $trustedProxies)));
         }
 
         if (!is_array($trustedProxies)) {

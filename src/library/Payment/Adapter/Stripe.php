@@ -248,7 +248,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         if ($clientId > 0) {
             try {
                 return $this->di['db']->getExistingModelById('Client', $clientId);
-            } catch (\FOSSBilling\Exception $e) {
+            } catch (FOSSBilling\Exception $e) {
                 throw new Payment_Exception('Unable to load client for transaction: :msg', [':msg' => $e->getMessage()]);
             }
         }

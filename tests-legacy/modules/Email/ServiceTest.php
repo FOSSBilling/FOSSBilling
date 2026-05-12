@@ -401,7 +401,7 @@ final class ServiceTest extends \BBTestCase
             ->method('renderEmailTplString')
             ->willReturn('rendered');
         $systemService->method('getParamValue')
-            ->willReturnCallback(fn ($param) => match ($param) {
+            ->willReturnCallback(fn ($param): string => match ($param) {
                 'company_email' => 'company@example.com',
                 'company_name' => 'Test Company',
                 default => 'value',

@@ -702,7 +702,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
-        $di['mod_service'] = $di->protect(fn (string $serviceName, string $sub = '') => match ([$serviceName, $sub]) {
+        $di['mod_service'] = $di->protect(fn (string $serviceName, string $sub = ''): \PHPUnit\Framework\MockObject\MockObject => match ([$serviceName, $sub]) {
             ['Invoice', 'Transaction'] => $transactionServiceMock,
             default => throw new \RuntimeException('Unexpected service request'),
         });
@@ -2338,7 +2338,6 @@ final class ServiceTest extends \BBTestCase
     {
         $reflection = new \ReflectionClass($this->service);
         $method = $reflection->getMethod('createPdfResponse');
-        $method->setAccessible(true);
 
         /** @var Response $response */
         $response = $method->invoke($this->service, '%PDF-test', 'INV/2026/Å');

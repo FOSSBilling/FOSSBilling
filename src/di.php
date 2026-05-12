@@ -355,6 +355,7 @@ $di['loggedin_client'] = function () use ($di) {
     } catch (Exception) {
         // Either the account was deleted or the session is invalid. Either way, remove the ID from the session so the system doesn't consider someone logged in
         $session->delete('client_id');
+
         throw new AuthenticationRequiredException('client');
     }
 };
@@ -388,6 +389,7 @@ $di['loggedin_admin'] = function () use ($di) {
     } catch (Exception) {
         // Either the account was deleted or the session is invalid. Either way, remove the ID from the session so the system doesn't consider someone logged in
         $session->delete('admin');
+
         throw new AuthenticationRequiredException('admin');
     }
 };
@@ -398,8 +400,8 @@ $di['set_return_uri'] = function () use ($di): void {
     $query = $request->query->all();
     unset($query['_url']);
 
-    if (str_starts_with((string) $url, ADMIN_PREFIX)) {
-        $url = substr((string) $url, strlen(ADMIN_PREFIX));
+    if (str_starts_with($url, ADMIN_PREFIX)) {
+        $url = substr($url, strlen(ADMIN_PREFIX));
     }
 
     if (!empty($query)) {

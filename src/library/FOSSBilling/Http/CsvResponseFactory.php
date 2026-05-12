@@ -11,16 +11,14 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Http;
 
-use Box_Database;
 use League\Csv\EscapeFormula;
 use League\Csv\Writer;
-use SplTempFileObject;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Response;
 
-final class CsvResponseFactory
+final readonly class CsvResponseFactory
 {
-    public function __construct(private readonly Box_Database $database)
+    public function __construct(private \Box_Database $database)
     {
     }
 
@@ -40,7 +38,7 @@ final class CsvResponseFactory
             $headers = array_keys(reset($rows));
         }
 
-        $csvFile = new SplTempFileObject();
+        $csvFile = new \SplTempFileObject();
         $csv = Writer::from($csvFile);
         $escapeFormula = new EscapeFormula();
         $csv->addFormatter($escapeFormula->escapeRecord(...));
@@ -50,7 +48,7 @@ final class CsvResponseFactory
         $csvFile->rewind();
         $content = '';
         while (!$csvFile->eof()) {
-            $content .= (string) $csvFile->fgets();
+            $content .= $csvFile->fgets();
         }
 
         $response = new Response($content);

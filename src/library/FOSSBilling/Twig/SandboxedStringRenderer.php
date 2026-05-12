@@ -20,7 +20,7 @@ final class SandboxedStringRenderer
         string $template,
         array $vars,
         string $errorPrefix,
-        ?callable $onSecurityError = null
+        ?callable $onSecurityError = null,
     ): string {
         try {
             return $twig->createTemplate($template)->render($vars);

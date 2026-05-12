@@ -82,7 +82,7 @@ final class RequestFactoryTest extends PHPUnit\Framework\TestCase
     {
         $request = Request::create('http://billing.example.com/admin');
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid trusted proxy header configuration.');
 
         RequestFactory::configure($request, [

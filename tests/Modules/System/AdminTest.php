@@ -194,10 +194,11 @@ final class AdminTest extends TestCase
                 int $severity,
                 string $message,
                 string $file = '',
-                int $line = 0
+                int $line = 0,
             ) use (&$lookupErrorMessage, &$previousErrorHandler): bool {
                 if ($severity === E_WARNING) {
                     $lookupErrorMessage = $message;
+
                     return true;
                 }
 

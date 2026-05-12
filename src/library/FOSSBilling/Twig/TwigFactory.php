@@ -15,7 +15,6 @@ use DebugBar\Bridge\Twig\NamespacedTwigProfileCollector;
 use DebugBar\StandardDebugBar;
 use FOSSBilling\Config;
 use FOSSBilling\i18n;
-use FOSSBilling\Tools;
 use FOSSBilling\Twig\Enum\AppArea;
 use FOSSBilling\Twig\Extension\ApiExtension;
 use FOSSBilling\Twig\Extension\DebugBarExtension;

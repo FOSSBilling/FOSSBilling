@@ -74,6 +74,7 @@ class Box_AppClient extends Box_App
         $e = new FOSSBilling\InformationException('Page :url not found', [':url' => $this->url], 404);
 
         $this->di['logger']->setChannel('routing')->info($e->getMessage());
+
         return $this->errorResponse($e, 404);
     }
 
