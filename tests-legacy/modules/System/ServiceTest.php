@@ -244,6 +244,24 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals('Invoice #1 - 100', $result);
     }
 
+    public function testCreateBaseEnvironmentProvidesNormalizedRequestUrl(): void
+    {
+        $di = $this->getDi();
+        $request = \Symfony\Component\HttpFoundation\Request::create('/admin/product', 'GET', [
+            'search' => 'query',
+        ]);
+        \FOSSBilling\Http\RequestFactory::normalizeRoutePath($request);
+        $di['request'] = $request;
+        $di['session'] = $this->mockSession();
+        $di['api_guest'] = new class {
+        };
+
+        $twig = $this->createBaseTwigEnvironment($di);
+
+        $result = $twig->createTemplate('{{ request._url }}|{{ request.search }}')->render();
+        $this->assertSame('/admin/product|query', $result);
+    }
+
     public function testRenderAdapterTplStringSandboxViolation(): void
     {
         $apiGuest = new class {

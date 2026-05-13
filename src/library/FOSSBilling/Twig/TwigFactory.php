@@ -14,6 +14,7 @@ namespace FOSSBilling\Twig;
 use DebugBar\Bridge\Twig\NamespacedTwigProfileCollector;
 use DebugBar\StandardDebugBar;
 use FOSSBilling\Config;
+use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\i18n;
 use FOSSBilling\Twig\Enum\AppArea;
 use FOSSBilling\Twig\Extension\ApiExtension;
@@ -352,11 +353,22 @@ class TwigFactory
 
     private function configureGlobals(Environment $twig): void
     {
-        if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
-            $_GET['ajax'] = true;
-        }
-
         $csrfToken = $this->getCsrfToken();
+        $requestData = $_GET;
+
+        if ($this->di->offsetExists('request')) {
+            $request = $this->di['request'];
+            if ($request instanceof \Symfony\Component\HttpFoundation\Request) {
+                $requestData = $request->query->all();
+                $requestData['_url'] = RequestFactory::getRoutePath($request);
+
+                if ($request->isXmlHttpRequest()) {
+                    $requestData['ajax'] = true;
+                }
+            }
+        } elseif (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+            $requestData['ajax'] = true;
+        }
 
         $session = $this->di['session'];
         $redirectUri = $session->get('redirect_uri');
@@ -365,7 +377,7 @@ class TwigFactory
         }
 
         $twig->addGlobal('CSRFToken', $csrfToken);
-        $twig->addGlobal('request', $_GET);
+        $twig->addGlobal('request', $requestData);
         $twig->addGlobal('guest', $this->di['api_guest']);
         $twig->addGlobal('FOSSBillingVersion', Version::VERSION);
     }
