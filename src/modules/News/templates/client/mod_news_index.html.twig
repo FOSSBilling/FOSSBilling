@@ -1,5 +1,7 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
 
+{% import "macro_functions.html.twig" as mf %}
+
 {% block meta_title %}{{ 'News'|trans }}{% endblock %}
 
 {% block body_class %}news-index{% endblock %}
@@ -40,7 +42,7 @@
                             </div>
                         </div>
                     {% else %}
-                        {{ 'No news or announcements'|trans }}
+                        {{ mf.empty_state('No news or announcements', 'Announcements and service updates will appear here when published.') }}
                     {% endfor %}
                 </div>
             </div>

@@ -1,5 +1,7 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
 
+{% import "macro_functions.html.twig" as mf %}
+
 {% block meta_title %}{{ 'Emails'|trans }}{% endblock %}
 {% block breadcrumb %}
     <li class="active breadcrumb-item" aria-current="page">{{ 'Emails'|trans }}</li>{% endblock %}
@@ -21,8 +23,9 @@
                 </div>
                 <div class="card-body p-0">
                     {% if emails.list is empty %}
-                    <div class="m-2 alert alert-info"
-                         id="information-block">{{ 'There are no emails to display'|trans }}</div>
+                        <div class="p-3">
+                            {{ mf.empty_state('No emails yet', 'Messages sent by the system will appear here for your records.') }}
+                        </div>
                     {% else %}
                     <div class="d-flex">
                         <div class="nav nav-tabs flex-column col-md-4 border-0">

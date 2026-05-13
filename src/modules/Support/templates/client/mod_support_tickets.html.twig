@@ -64,9 +64,7 @@
                 </table>
                 {{ include('partial_pagination.html.twig', { 'list': tickets }) }}
                 {% else %}
-                    <div class="d-flex justify-content-center my-2 py-4">
-                        <span class="blockquote m-0">{{ 'No Support Tickets'|trans }}</span>
-                    </div>
+                    {{ mf.empty_state('No support tickets', 'When you contact support, your tickets and replies will appear here.', 'support'|url(query: { 'ticket': 1 }), 'Open ticket') }}
                 {% endif %}
             </div>
         </div>

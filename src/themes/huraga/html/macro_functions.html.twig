@@ -142,3 +142,20 @@
 {% macro empty_list(colspan, message) %}
 <td class="text-muted" colspan="{{ colspan|default(5) }}">{{ (message|default('The list is empty'))|trans }}</td>
 {% endmacro %}
+
+{% macro empty_state(title, subtitle, action_url, action_label) %}
+<div class="empty-state">
+    <div class="empty-state-icon" aria-hidden="true">
+        <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3M19 19H5V5H19V19M17 17H7V15H17V17M17 13H7V11H17V13M14 9H7V7H14V9Z" />
+        </svg>
+    </div>
+    <h3>{{ title|trans }}</h3>
+    {% if subtitle %}
+        <p>{{ subtitle|trans }}</p>
+    {% endif %}
+    {% if action_url and action_label %}
+        <a class="btn btn-primary btn-sm" href="{{ action_url }}">{{ action_label|trans }}</a>
+    {% endif %}
+</div>
+{% endmacro %}

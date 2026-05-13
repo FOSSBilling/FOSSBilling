@@ -43,7 +43,7 @@
                             </tr>
                         {% else %}
                             <tr>
-                                <td colspan="3">{{ 'The list is empty'|trans }}</td>
+                                <td colspan="3">{{ mf.empty_state('No wallet transactions', 'Payments, refunds, and account balance changes will appear here.') }}</td>
                             </tr>
                         {% endfor %}
                         </tbody>

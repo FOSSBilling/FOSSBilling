@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 {% import "macro_functions.html.twig" as mf %}
-<html lang="en" data-bs-theme="{{ settings.theme|default('light') }}">
+<html lang="{{ settings.locale|default('en') }}" data-bs-theme="{{ settings.theme|default('light') }}">
 <head>
     <meta charset="utf-8">
     <title>{{ settings.meta_title_prefix }} {% block meta_title %}{% endblock %} {{ settings.meta_title_suffix }}</title>
