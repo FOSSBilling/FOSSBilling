@@ -1,6 +1,7 @@
 .vscode
 ._*
 .DS_Store
+.opencode
 /cache
 /src/config.php
 /src/data/log/*
