@@ -250,7 +250,6 @@ final class ServiceTest extends \BBTestCase
         $request = \Symfony\Component\HttpFoundation\Request::create('/admin/product', 'GET', [
             'search' => 'query',
         ]);
-        \FOSSBilling\Http\RequestFactory::normalizeRoutePath($request);
         $di['request'] = $request;
         $di['session'] = $this->mockSession();
         $di['api_guest'] = new class {
