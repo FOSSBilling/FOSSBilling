@@ -42,13 +42,18 @@ class Admin extends \Api_Abstract
      */
     public function get_current(array $data): array
     {
-        if (array_key_exists('client', $data) && is_string($data['client']) && filter_var($data['client'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === null) {
+        if ($this->isInvalidClientParameter($data['client'] ?? null)) {
             throw new \FOSSBilling\InformationException('Invalid "client" parameter.');
         }
 
         $client = Tools::normalizeBoolean($data['client'] ?? true, true);
 
         return $this->getService()->getThemeConfig($client, null);
+    }
+
+    private function isInvalidClientParameter(mixed $client): bool
+    {
+        return is_string($client) && filter_var($client, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === null;
     }
 
     /**

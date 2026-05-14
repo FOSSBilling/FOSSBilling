@@ -79,10 +79,6 @@ final class AdminTest extends TestCase
         sort($actualKeys);
         $this->assertSame($expectedKeys, $actualKeys, 'Theme payload should contain only expected keys.');
 
-        $this->assertArrayHasKey('name', $data);
-        $this->assertArrayHasKey('version', $data);
-        $this->assertArrayHasKey('author', $data);
-
         $this->assertIsString($data['name']);
         $this->assertNotSame('', trim($data['name']), 'Theme name should not be empty.');
         $this->assertIsString($data['version']);

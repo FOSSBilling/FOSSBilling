@@ -20,7 +20,7 @@
 
     <script>
         (function (docEl) {
-            var cls = docEl.className || '';
+            const cls = docEl.className || '';
             if (/\bno-js\b/.test(cls)) {
                 docEl.className = cls.replace(/\bno-js\b/, 'js').trim();
             } else if (!/\bjs\b/.test(cls)) {

@@ -55,16 +55,17 @@ class RunPatcher extends Command implements \FOSSBilling\InjectionAwareInterface
         $version = Version::VERSION;
         $latestPatchLevel = $patcher->latestPatchLevel();
         $cacheItem = $this->di['cache']->getItem('updatePatcher');
-        $cachedState = $cacheItem->get();
-        if (
-            $cacheItem->isHit()
-            && is_array($cachedState)
-            && ($cachedState[self::CACHE_VERSION_KEY] ?? null) === $version
-            && ($cachedState[self::CACHE_LATEST_PATCH_LEVEL_KEY] ?? null) === $latestPatchLevel
-        ) {
-            $output->writeln('<info>The update patcher has already been run for this version.</info>');
+        if ($cacheItem->isHit()) {
+            $cachedState = $cacheItem->get();
+            if (
+                is_array($cachedState)
+                && ($cachedState[self::CACHE_VERSION_KEY] ?? null) === $version
+                && ($cachedState[self::CACHE_LATEST_PATCH_LEVEL_KEY] ?? null) === $latestPatchLevel
+            ) {
+                $output->writeln('<info>The update patcher has already been run for this version.</info>');
 
-            return Command::SUCCESS;
+                return Command::SUCCESS;
+            }
         }
 
         try {

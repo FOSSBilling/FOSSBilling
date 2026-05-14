@@ -70,7 +70,7 @@ final class ServiceTest extends \BBTestCase
                 'value' => 'work@example.eu',
             ],
         ];
-        $dbalStub = new class($multParamsResults) {
+        $dbalConnectionStub = new class($multParamsResults) {
             public function __construct(private readonly array $rows)
             {
             }
@@ -120,7 +120,7 @@ final class ServiceTest extends \BBTestCase
         };
 
         $di = $this->getDi();
-        $di['dbal'] = $dbalStub;
+        $di['dbal'] = $dbalConnectionStub;
 
         $this->service->setDi($di);
 
