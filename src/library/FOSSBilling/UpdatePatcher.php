@@ -46,6 +46,14 @@ class UpdatePatcher implements InjectionAwareInterface
         return count($patches);
     }
 
+    public function latestPatchLevel(): int
+    {
+        $patches = $this->getPatches();
+        $latestPatchLevel = array_key_last($patches);
+
+        return is_int($latestPatchLevel) ? $latestPatchLevel : 0;
+    }
+
     /**
      * Apply configuration file patches.
      */
