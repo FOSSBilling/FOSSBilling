@@ -11,7 +11,6 @@ declare(strict_types=1);
 
 namespace Box\Mod\System\Commands;
 
-use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\UpdatePatcher;
 use FOSSBilling\Version;
@@ -19,8 +18,6 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Filesystem\Path;
 
 #[AsCommand(
     name: 'system:run-patcher',
@@ -54,7 +51,7 @@ class RunPatcher extends Command implements \FOSSBilling\InjectionAwareInterface
 
         $version = Version::VERSION;
         $cacheItem = $this->di['cache']->getItem('updatePatcher');
-        if ($cacheItem->isHit() && $version === $cacheItem->get() && $patcher->availablePatches() === 0) {
+        if ($cacheItem->isHit() && $version === $cacheItem->get()) {
             $output->writeln('<info>The update patcher has already been run for this version.</info>');
 
             return Command::SUCCESS;
@@ -67,12 +64,10 @@ class RunPatcher extends Command implements \FOSSBilling\InjectionAwareInterface
             $output->writeln('Applying core patches...');
             $patcher->applyCorePatches();
 
-            $filesystem = new Filesystem();
-            $cachePath = Path::normalize(Config::getProperty('path_data') . '/cache');
-            $filesystem->remove($cachePath);
-            $filesystem->mkdir($cachePath);
+            $this->di['cache']->clear();
 
-            $this->di['cache']->getItem('updatePatcher')->set(Version::VERSION);
+            $cacheItem->set(Version::VERSION);
+            $this->di['cache']->save($cacheItem);
 
             $output->writeln('<info>All patches have been applied and the cache has been cleared.</info>');
 

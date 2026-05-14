@@ -18,6 +18,16 @@
 
     <link rel="shortcut icon" href="{{ guest.system_company.favicon_url }}">
 
+    <script>
+        (function (docEl) {
+            var cls = docEl.className || '';
+            if (/\bno-js\b/.test(cls)) {
+                docEl.className = cls.replace(/\bno-js\b/, 'js').trim();
+            } else if (!/\bjs\b/.test(cls)) {
+                docEl.className = (cls + ' js').trim();
+            }
+        }(document.documentElement));
+    </script>
     {{ "Api/API.js" | library_url | script_tag }}
     <script src="{{ 'build/js/huraga.js' | asset_url }}"></script>
     {% block head %}{% endblock %}
@@ -26,7 +36,7 @@
 <body class="{% block body_class %}{% endblock %}">
     {{ render_widgets('client.theme.body.start') }}
     {% block body %}{% endblock %}
-    <div class="toast-container position-fixed bottom-0 end-0 p-3 toast-container-zindex" aria-live="polite" aria-atomic="true"></div>
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;" aria-live="polite" aria-atomic="true"></div>
     {{ include('partial_pending_messages.html.twig', ignore_missing: true) }}
     {{ render_widgets('client.theme.body.end') }}
 </body>
