@@ -247,6 +247,10 @@ class Admin extends \Api_Abstract
             $this->di['validator']->isBirthdayValid($data['birthday']);
         }
 
+        if($data['birthday'] === ""){
+            unset($data['birthday']);
+        }
+
         if (($data['currency'] ?? null) && $service->canChangeCurrency($client, $data['currency'] ?? null)) {
             $client->currency = $data['currency'] ?? $client->currency;
         }
