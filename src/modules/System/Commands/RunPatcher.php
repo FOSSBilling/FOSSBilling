@@ -50,8 +50,15 @@ class RunPatcher extends Command implements \FOSSBilling\InjectionAwareInterface
         $patcher->setDi($this->di);
 
         $version = Version::VERSION;
+        $latestPatchLevel = $patcher->latestPatchLevel();
         $cacheItem = $this->di['cache']->getItem('updatePatcher');
-        if ($cacheItem->isHit() && $version === $cacheItem->get()) {
+        $cachedState = $cacheItem->get();
+        if (
+            $cacheItem->isHit()
+            && is_array($cachedState)
+            && ($cachedState['version'] ?? null) === $version
+            && ($cachedState['latest_patch_level'] ?? null) === $latestPatchLevel
+        ) {
             $output->writeln('<info>The update patcher has already been run for this version.</info>');
 
             return Command::SUCCESS;
@@ -66,7 +73,10 @@ class RunPatcher extends Command implements \FOSSBilling\InjectionAwareInterface
 
             $this->di['cache']->clear();
 
-            $cacheItem->set(Version::VERSION);
+            $cacheItem->set([
+                'version' => $version,
+                'latest_patch_level' => $latestPatchLevel,
+            ]);
             $this->di['cache']->save($cacheItem);
 
             $output->writeln('<info>All patches have been applied and the cache has been cleared.</info>');
