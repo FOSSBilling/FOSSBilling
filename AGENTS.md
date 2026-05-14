@@ -240,7 +240,7 @@ tests-legacy/                  # Legacy PHPUnit tests
 
 ## Additional Resources
 
-* **Documentation:** [fossbilling.org/docs](https://fossbilling.org/docs)
+* **Documentation:** [FOSSBilling Docs](https://docs.fossbilling.org/)
 * **Issues:** [GitHub Issues](https://github.com/FOSSBilling/FOSSBilling/issues)
 
 ## Important Notes
