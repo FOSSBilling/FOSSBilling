@@ -59,8 +59,10 @@ class Admin extends \Api_Abstract
         $blocked_ips = isset($config['blocked_ips']) && !empty($config['blocked_ips'])
             ? explode(PHP_EOL, (string) $config['blocked_ips'])
             : [];
+        $trimmed_ips = array_map(trim(...), $blocked_ips);
+        $filtered_ips = array_filter($trimmed_ips, static fn (string $value): bool => $value !== '');
 
-        return array_values(array_filter(array_map(trim(...), $blocked_ips), static fn (string $value): bool => $value !== ''));
+        return array_values($filtered_ips);
     }
 
     private function saveBlockedIpsConfig(array $blocked_ips, bool $enabled): void
