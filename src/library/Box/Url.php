@@ -66,7 +66,7 @@ class Box_Url implements FOSSBilling\InjectionAwareInterface
         }
 
         $uri = ltrim($uri, '/');
-        $adminPrefix = trim((string) ADMIN_PREFIX, '/');
+        $adminPrefix = defined('ADMIN_PREFIX') ? trim((string) ADMIN_PREFIX, '/') : '';
         if ($adminPrefix !== '' && str_starts_with($uri, $adminPrefix . '/')) {
             return substr($uri, strlen($adminPrefix) + 1);
         }

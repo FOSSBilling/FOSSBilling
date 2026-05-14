@@ -360,6 +360,7 @@ class TwigFactory
         $requestHasFilters = count(array_diff_key($requestData, [
             '_url' => true,
             'page' => true,
+            'search' => true,
         ])) > 0;
 
         if ($this->di->offsetExists('request')) {
@@ -372,6 +373,7 @@ class TwigFactory
                 $requestHasFilters = count(array_diff_key($requestData, [
                     '_url' => true,
                     'page' => true,
+                    'search' => true,
                 ])) > 0;
 
                 if ($request->isXmlHttpRequest()) {
