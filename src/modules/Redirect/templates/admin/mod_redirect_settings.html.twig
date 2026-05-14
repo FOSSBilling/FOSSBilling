@@ -30,7 +30,7 @@
             <h3 class="card-title">{{ 'Create New Redirect'|trans }}</h3>
             <form method="post" action="{{ 'redirect/create'|api_url }}" {{ fb_api_form({reload: true}) }}>
                 <div class="row row-cards">
-                    <div class="col-sm-5 col-md-4 mb-3">
+                    <div class="col-md-5 mb-3">
                         <label class="form-label required" for="path">{{ 'Path'|trans }}</label>
                         <div class="col-auto">
                             <div class="input-group input-group-flat">
@@ -41,7 +41,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-sm-5 col-md-4 mb-3">
+                    <div class="col-md-5 mb-3">
                         <label class="form-label required" for="target">{{ 'Target'|trans }}</label>
                         <div class="col-auto">
                             <div class="input-group input-group-flat">
@@ -52,7 +52,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-sm-2 col-md-4 mb-3 d-flex align-items-end">
+                    <div class="col-sm-2 col-md-1 mb-3 d-flex align-items-end">
                         <button type="submit" class="btn btn-primary">
                             <svg class="icon me-2">
                                 <use xlink:href="#plus" />

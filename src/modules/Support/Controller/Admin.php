@@ -52,13 +52,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 ],
                 [
                     'location' => 'support',
-                    'label' => __trans('Advanced Ticket Search'),
-                    'uri' => $this->di['url']->adminLink('support', ['show_filter' => 1]),
-                    'index' => 300,
-                    'class' => '',
-                ],
-                [
-                    'location' => 'support',
                     'label' => __trans('Canned Responses'),
                     'uri' => $this->di['url']->adminLink('support/canned-responses'),
                     'index' => 400,

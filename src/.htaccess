@@ -1,5 +1,5 @@
 # BEGIN FOSSBilling
-# Read documentation https://fossbilling.org/docs for more information.
+# Read documentation https://docs.fossbilling.org/ for more information.
 Options -Indexes +SymLinksIfOwnerMatch
 <IfModule !mod_rewrite.c>
     DirectoryIndex rewrite-missing.html

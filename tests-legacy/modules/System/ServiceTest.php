@@ -301,8 +301,26 @@ final class ServiceTest extends \BBTestCase
 
         $twig = $this->createBaseTwigEnvironment($di);
 
-        $result = $twig->createTemplate('{{ request._url }}|{{ request.search }}')->render();
-        $this->assertSame('/admin/product|query', $result);
+        $result = $twig->createTemplate('{{ request_path }}|{{ request.search }}|{{ request_query.search }}|{{ request_has_filters ? "1" : "0" }}')->render();
+        $this->assertSame('product|query|query|0', $result);
+    }
+
+    public function testCreateBaseEnvironmentTreatsAdvancedFiltersSeparatelyFromSearch(): void
+    {
+        $di = $this->getDi();
+        $request = \Symfony\Component\HttpFoundation\Request::create('/admin/product', 'GET', [
+            'search' => 'query',
+            'status' => 'active',
+        ]);
+        $di['request'] = $request;
+        $di['session'] = $this->mockSession();
+        $di['api_guest'] = new class {
+        };
+
+        $twig = $this->createBaseTwigEnvironment($di);
+
+        $result = $twig->createTemplate('{{ request_path }}|{{ request_query.search }}|{{ request_query.status }}|{{ request_has_filters ? "1" : "0" }}')->render();
+        $this->assertSame('product|query|active|1', $result);
     }
 
     public function testRenderAdapterTplStringSandboxViolation(): void
@@ -827,6 +845,10 @@ final class ServiceTest extends \BBTestCase
 
     private function createBaseTwigEnvironment(\Pimple\Container $di): \Twig\Environment
     {
+        if (!$di->offsetExists('request')) {
+            $di['request'] = \Symfony\Component\HttpFoundation\Request::create('/');
+        }
+
         $reflection = new \ReflectionClass(\FOSSBilling\Twig\TwigFactory::class);
         $twigFactory = $reflection->newInstanceWithoutConstructor();
 

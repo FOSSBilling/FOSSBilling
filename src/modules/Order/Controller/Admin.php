@@ -44,13 +44,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                     'uri' => $this->di['url']->adminLink('order'),
                     'class' => '',
                 ],
-                [
-                    'location' => 'order',
-                    'index' => 200,
-                    'label' => __trans('Advanced Search'),
-                    'uri' => $this->di['url']->adminLink('order', ['show_filter' => 1]),
-                    'class' => '',
-                ],
             ],
         ];
     }

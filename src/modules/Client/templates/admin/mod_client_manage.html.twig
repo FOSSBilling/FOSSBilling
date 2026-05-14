@@ -82,11 +82,11 @@
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Name'|trans }}:</td>
-                            <td><strong class="text-danger">{{ client.first_name }} {{ client.last_name }}</strong></td>
+                            <td>{{ client.first_name }} {{ client.last_name }}</td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Company'|trans }}:</td>
-                            <td><strong class="text-success">{{ client.company|default('-') }}</strong></td>
+                            <td>{{ client.company|default('-') }}</td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Email'|trans }}:</td>
@@ -116,8 +116,12 @@
                             <td>{{ client.currency|default('-') }}</td>
                         </tr>
                         <tr>
-                            <td class="text-end">{{ 'Fund balance'|trans }}:</td>
-                            <td class="text-danger fw-bold">{{ client.balance|format_currency(client.currency) }}</td>
+                            <td class="text-end">{{ 'Balance'|trans }}:</td>
+                            {% if client.currency is not null %}
+                                <td>{{ client.balance|format_currency(client.currency) }}</td>
+                            {% else %}
+                                <td>-</td>
+                            {% endif %}
                         </tr>
                         {% if client.notes %}
                         <tr>

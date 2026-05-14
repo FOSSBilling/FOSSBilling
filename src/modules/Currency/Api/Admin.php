@@ -93,7 +93,7 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
-    #[RequiredParams(['code' => 'Currency code is missing', 'format' => 'Currency format is missing'])]
+    #[RequiredParams(['code' => 'Currency code is missing'])]
     public function create($data = []): string
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'create');
@@ -114,14 +114,13 @@ class Admin extends \Api_Abstract
         $title = $data['title'] ?? null;
         $conversionRate = $data['conversion_rate'] ?? null;
 
-        return $service->createCurrency($data['code'] ?? null, $data['format'] ?? null, $title, $conversionRate);
+        return $service->createCurrency($data['code'] ?? null, $title, $conversionRate);
     }
 
     /**
      * Updates system currency settings.
      *
      * @optional string $title - new currency title
-     * @optional string $format - new currency format
      * @optional float $conversion_rate - new currency conversion rate
      *
      * @throws \FOSSBilling\Exception
@@ -131,12 +130,10 @@ class Admin extends \Api_Abstract
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'edit');
 
-        $format = $data['format'] ?? null;
         $title = $data['title'] ?? null;
-        $priceFormat = $data['price_format'] ?? null;
         $conversionRate = $data['conversion_rate'] ?? null;
 
-        return $this->getService()->updateCurrency($data['code'], $format, $title, $priceFormat, $conversionRate);
+        return $this->getService()->updateCurrency($data['code'], $title, $conversionRate);
     }
 
     /**

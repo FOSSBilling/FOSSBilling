@@ -13,8 +13,11 @@ declare(strict_types=1);
 namespace Box\Mod\Currency\Api;
 
 use Box\Mod\Currency\Entity\Currency;
+use FOSSBilling\Config;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
+use NumberFormatter;
+use PrinsFrank\Standards\Currency\CurrencyAlpha3;
 
 class Guest extends \Api_Abstract
 {
@@ -60,7 +63,7 @@ class Guest extends \Api_Abstract
     }
 
     /**
-     * Format price by currency settings.
+     * Format price by currency code.
      *
      * @optional bool $convert - convert to default currency rate. Default - true;
      * @optional bool $without_currency - Show only number. No symbols are attached Default - false;
@@ -83,28 +86,38 @@ class Guest extends \Api_Abstract
         }
 
         if ($without_currency) {
-            return $this->select_format($p, $c['price_format']);
+            return $this->formatNumber($p, $c['code']);
         }
 
-        // Price is negative, so we place a negative symbol at the start of the format
-        if ($p < 0) {
-            $c['format'] = '-' . $c['format'];
-        }
-
-        // Get the absolute value of the price so it displays normally for both positive and negative prices and then properly format it
-        $p = $this->select_format(abs($p), $c['price_format']);
-
-        return str_replace('{{price}}', $p, $c['format']);
+        return $this->formatCurrency($p, $c['code']);
     }
 
-    private function select_format($p, $format): string
+    private function formatCurrency(float $amount, string $currencyCode): string
     {
-        return match (intval($format)) {
-            2 => number_format($p, 2, '.', ','),
-            3 => number_format($p, 2, ',', '.'),
-            4 => number_format($p, 0, '', ','),
-            5 => number_format($p, 0, '', ''),
-            default => number_format($p, 2, '.', ''),
-        };
+        $formatter = new NumberFormatter($this->getLocale(), NumberFormatter::CURRENCY);
+
+        return $formatter->formatCurrency($amount, $currencyCode);
+    }
+
+    private function formatNumber(float $amount, string $currencyCode): string
+    {
+        $formatter = new NumberFormatter($this->getLocale(), NumberFormatter::DECIMAL);
+        $formatter->setAttribute(NumberFormatter::FRACTION_DIGITS, $this->getMinorUnits($currencyCode));
+
+        return $formatter->format($amount);
+    }
+
+    private function getMinorUnits(string $currencyCode): int
+    {
+        try {
+            return CurrencyAlpha3::from($currencyCode)->getMinorUnits() ?? 2;
+        } catch (\ValueError) {
+            return 2;
+        }
+    }
+
+    private function getLocale(): string
+    {
+        return Config::getProperty('i18n.locale', 'en_US');
     }
 }

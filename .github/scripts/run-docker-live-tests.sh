@@ -78,6 +78,26 @@ done
 
 docker run --rm --network "${network}" "${image}" curl -fsS "http://${app_container}/install/" >/dev/null
 
+install_payload=(
+  -H 'Content-type: multipart/form-data'
+  -F error_reporting=0
+  -F "database_hostname=${db_container}"
+  -F "database_port=${db_port}"
+  -F "database_name=${db_name}"
+  -F "database_username=${db_user}"
+  -F "database_password=${db_pass}"
+  -F admin_name=test
+  -F "admin_email=${test_email}"
+  -F "admin_password=${test_pass}"
+  -F currency_code=USD
+  -F 'currency_title=US Dollar'
+  -F "admin_api_token=${test_api_key}"
+  -X POST
+  "http://${app_container}/install/install.php?a=install"
+)
+
+docker run --rm --network "${network}" "${image}" curl -fsS "${install_payload[@]}" >/dev/null
+
 docker run --rm \
   --network "${network}" \
   --env APP_ENV=test \
@@ -85,22 +105,5 @@ docker run --rm \
   --env TEST_API_KEY="${test_api_key}" \
   "${image}" \
   sh -euxc "
-    curl -fsS \
-      -H 'Content-type: multipart/form-data' \
-      -F error_reporting=0 \
-      -F database_hostname='${db_container}' \
-      -F database_port='${db_port}' \
-      -F database_name='${db_name}' \
-      -F database_username='${db_user}' \
-      -F database_password='${db_pass}' \
-      -F admin_name='test' \
-      -F admin_email='${test_email}' \
-      -F admin_password='${test_pass}' \
-      -F currency_code='USD' \
-      -F currency_title='US Dollar' \
-      -F admin_api_token='${test_api_key}' \
-      -X POST \
-      'http://${app_container}/install/install.php?a=install'
-
     ./src/vendor/bin/phpunit --configuration phpunit-live.xml
   "

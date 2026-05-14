@@ -238,8 +238,7 @@ final class Api_AdminTest extends \BBTestCase
                 'code' => 'EUR',
                 'title' => 'Euro',
                 'conversion_rate' => 1.0,
-                'format' => '€{{price}}',
-                'price_format' => '€{{price}}',
+                'default' => false,
             ]);
 
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
@@ -274,8 +273,6 @@ final class Api_AdminTest extends \BBTestCase
             'code' => 'EUR',
             'title' => 'Euro',
             'conversion_rate' => 3.4528,
-            'format' => '',
-            'price_format' => '',
             'default' => true,
         ];
 
@@ -307,8 +304,6 @@ final class Api_AdminTest extends \BBTestCase
         $this->assertEquals('Euro', $returnArr['title']);
         $this->assertIsFloat($returnArr['conversion_rate']);
         $this->assertEquals(3.4528, $returnArr['conversion_rate']);
-        $this->assertEquals('', $returnArr['format']);
-        $this->assertEquals('', $returnArr['price_format']);
         $this->assertTrue($returnArr['default']);
     }
 
@@ -318,7 +313,6 @@ final class Api_AdminTest extends \BBTestCase
             [
                 [
                     'code' => 'EUR',
-                    'format' => '€{{price}}',
                 ],
                 'atLeastOnce',
                 'currency_exists', // use string flag instead of mock
@@ -327,7 +321,6 @@ final class Api_AdminTest extends \BBTestCase
             [
                 [
                     'code' => 'NON', // Non existing currency
-                    'format' => '€{{price}}',
                 ],
                 'atLeastOnce',
                 null,
@@ -386,7 +379,6 @@ final class Api_AdminTest extends \BBTestCase
 
         $data = [
             'code' => 'EUR',
-            'format' => '€{{price}}',
         ];
 
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
@@ -432,9 +424,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $data = [
             'code' => 'EUR',
-            'format' => '€{{price}}',
             'title' => 'Euros',
-            'price_format' => '€{{Price}}',
             'conversion_rate' => 0.6,
         ];
 
@@ -491,7 +481,6 @@ final class Api_AdminTest extends \BBTestCase
 
         $data = [
             'code' => 'EUR',
-            'format' => '€{{price}}',
         ];
 
         $service = $this->getMockBuilder(\Box\Mod\Currency\Service::class)->onlyMethods(['deleteCurrencyByCode'])->getMock();
@@ -574,7 +563,6 @@ final class Api_AdminTest extends \BBTestCase
 
         $data = [
             'code' => 'EUR',
-            'format' => '€{{price}}',
         ];
 
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)

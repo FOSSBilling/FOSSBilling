@@ -134,3 +134,18 @@ body {
 .toast {
     position: relative;
   }
+
+.activity-log-filters .form-label {
+    margin-bottom: 0.5rem;
+}
+
+.activity-log-table .activity-message-cell {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+@media (min-width: 992px) {
+    .activity-log-filters .form-label {
+        margin-bottom: 0;
+    }
+}

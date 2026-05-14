@@ -44,11 +44,11 @@
 
 ### Requirements
 
-FOSSBilling runs on standard LAMP/LEMP stacks. For the latest system requirements (PHP version, extensions, database, etc.), see the official [requirements](https://fossbilling.org/docs/getting-started/requirements).
+FOSSBilling runs on standard LAMP/LEMP stacks. For the latest system requirements (PHP version, extensions, database, etc.), see the official [requirements](https://docs.fossbilling.org/getting-started/requirements/).
 
 ### Installation
 
-Follow the step-by-step [Getting Started guide](https://fossbilling.org/docs/getting-started).
+Follow the step-by-step [Getting Started guide](https://docs.fossbilling.org/getting-started/).
 
 **Just exploring?** Try the public [demo](https://fossbilling.org/demo).
 
@@ -79,7 +79,6 @@ This project includes third-party work:
 ## Links
 
 - Website: https://www.fossbilling.org/  
-- Documentation: https://fossbilling.org/docs  
-- Forum: https://forum.fossbilling.org  
+- Documentation: https://docs.fossbilling.org/
 - Discord: https://fossbilling.org/discord  
 - Twitter/X: https://twitter.com/FOSSBilling
