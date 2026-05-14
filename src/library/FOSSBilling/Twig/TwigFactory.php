@@ -355,12 +355,24 @@ class TwigFactory
     {
         $csrfToken = $this->getCsrfToken();
         $requestData = $_GET;
+        $requestQuery = $requestData;
+        $requestPath = $requestData['_url'] ?? '/';
+        $requestHasFilters = count(array_diff_key($requestData, [
+            '_url' => true,
+            'page' => true,
+        ])) > 0;
 
         if ($this->di->offsetExists('request')) {
             $request = $this->di['request'];
             if ($request instanceof \Symfony\Component\HttpFoundation\Request) {
                 $requestData = $request->query->all();
+                $requestQuery = $requestData;
                 $requestData['_url'] = RequestFactory::getRoutePath($request);
+                $requestPath = $requestData['_url'];
+                $requestHasFilters = count(array_diff_key($requestData, [
+                    '_url' => true,
+                    'page' => true,
+                ])) > 0;
 
                 if ($request->isXmlHttpRequest()) {
                     $requestData['ajax'] = true;
@@ -370,6 +382,8 @@ class TwigFactory
             $requestData['ajax'] = true;
         }
 
+        unset($requestQuery['_url']);
+
         $session = $this->di['session'];
         $redirectUri = $session->get('redirect_uri');
         if (!empty($redirectUri)) {
@@ -378,6 +392,9 @@ class TwigFactory
 
         $twig->addGlobal('CSRFToken', $csrfToken);
         $twig->addGlobal('request', $requestData);
+        $twig->addGlobal('request_query', $requestQuery);
+        $twig->addGlobal('request_path', $requestPath);
+        $twig->addGlobal('request_has_filters', $requestHasFilters);
         $twig->addGlobal('guest', $this->di['api_guest']);
         $twig->addGlobal('FOSSBillingVersion', Version::VERSION);
     }

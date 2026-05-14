@@ -5,87 +5,12 @@
 {% block meta_title %}{{ 'Transactions'|trans }}{% endblock %}
 
 {% set active_menu = 'invoice' %}
+{% set has_filter_panel = true %}
+{% set filter_panel_id = 'page-search-filters' %}
+{% set filter_panel_open = request_has_filters %}
 
 {% block top_content %}
-{% if request.show_filter %}
-<section class="card mb-3">
-    <div class="card-body">
-        <h5>{{ 'Filter Transactions'|trans }}</h5>
-        <form method="get">
-
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'ID'|trans }}</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="id" value="{{ request.id }}">
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'ID on payment gateway'|trans }}</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="txn_id" value="{{ request.txn_id }}">
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Invoice ID'|trans }}</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="invoice_id" value="{{ request.invoice_id }}">
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Currency'|trans }}</label>
-                <div class="col">
-                    {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'All currencies'|trans) }}
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}</label>
-                <div class="col">
-                    {{ mf.selectbox('status', admin.invoice_transaction_get_statuses_pairs, request.status, 0, 'All statuses'|trans) }}
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Payment Gateway'|trans }}:</label>
-                <div class="col">
-                    {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, request.gateway_id, 0, 'All payment gateways'|trans) }}
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label" for="received_at">{{ 'Received at'|trans }}</label>
-                <div class="col">
-                    <div class="input-group">
-                        <div class="input-icon w-100">
-                            <input class="form-control datepicker"
-                                   id="received_at"
-                                   value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
-                                   data-name-from="date_from"
-                                   data-name-to="date_to"
-                            >
-                            <span class="input-icon-addon">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                    <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
-                                    <path d="M16 3l0 4"></path>
-                                    <path d="M8 3l0 4"></path>
-                                    <path d="M4 11l16 0"></path>
-                                    <path d="M11 15l1 0"></path>
-                                    <path d="M12 15l0 3"></path>
-                                </svg>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <input type="hidden" name="_url" value="{{ request._url }}">
-            <input type="hidden" name="show_filter" value="1">
-            <div class="d-flex gap-2">
-                <input type="submit" value="{{ 'Filter'|trans }}" class="btn btn-primary w-75">
-                <a class="btn btn-danger w-25" href="{{ request._url }}?show_filter=1">{{ 'Reset'|trans }}</a>
-            </div>
-        </form>
-    </div>
-</section>
-{% else %}
+{% if not filter_panel_open %}
 
 {% set statuses = admin.invoice_transaction_get_statuses %}
     <section class="row row-cards mb-3">
@@ -156,6 +81,77 @@
     </div>
 
     {{ include('partial_search.html.twig') }}
+    <section id="{{ filter_panel_id }}" class="card-body border-bottom collapse{% if filter_panel_open %} show{% endif %}">
+        <h5>{{ 'Filter Transactions'|trans }}</h5>
+        <form method="get">
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'ID'|trans }}</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="id" value="{{ request.id }}">
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'ID on Payment Gateway'|trans }}</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="txn_id" value="{{ request.txn_id }}">
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Invoice ID'|trans }}</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="invoice_id" value="{{ request.invoice_id }}">
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Currency'|trans }}</label>
+                <div class="col">
+                    {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'All Currencies'|trans) }}
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}</label>
+                <div class="col">
+                    {{ mf.selectbox('status', admin.invoice_transaction_get_statuses_pairs, request.status, 0, 'All Statuses'|trans) }}
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Payment Gateway'|trans }}:</label>
+                <div class="col">
+                    {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, request.gateway_id, 0, 'All Payment Gateways'|trans) }}
+                </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label" for="received_at">{{ 'Received At'|trans }}</label>
+                <div class="col">
+                    <div class="input-group">
+                        <div class="input-icon w-100">
+                            <input class="form-control datepicker"
+                                   id="received_at"
+                                   value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
+                                   data-name-from="date_from"
+                                   data-name-to="date_to"
+                            >
+                            <span class="input-icon-addon">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                                    <path d="M16 3l0 4"></path>
+                                    <path d="M8 3l0 4"></path>
+                                    <path d="M4 11l16 0"></path>
+                                    <path d="M11 15l1 0"></path>
+                                    <path d="M12 15l0 3"></path>
+                                </svg>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <input type="submit" value="{{ 'Filter'|trans }}" class="btn btn-primary w-75">
+                <a class="btn btn-danger w-25" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
+            </div>
+        </form>
+    </section>
     <table class="table card-table table-vcenter table-striped text-nowrap">
         <thead>
             <tr>
