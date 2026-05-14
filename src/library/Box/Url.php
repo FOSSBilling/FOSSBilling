@@ -57,4 +57,24 @@ class Box_Url implements FOSSBilling\InjectionAwareInterface
 
         return $this->link($uri, $params);
     }
+
+    public static function normalizeLinkPath(?string $uri = null): string
+    {
+        $uri = trim((string) $uri);
+        if ($uri === '' || $uri === '/') {
+            return '';
+        }
+
+        $uri = ltrim($uri, '/');
+        $adminPrefix = trim((string) ADMIN_PREFIX, '/');
+        if ($adminPrefix !== '' && str_starts_with($uri, $adminPrefix . '/')) {
+            return substr($uri, strlen($adminPrefix) + 1);
+        }
+
+        if ($uri === $adminPrefix) {
+            return '';
+        }
+
+        return $uri;
+    }
 }

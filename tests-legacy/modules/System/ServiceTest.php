@@ -258,7 +258,7 @@ final class ServiceTest extends \BBTestCase
         $twig = $this->createBaseTwigEnvironment($di);
 
         $result = $twig->createTemplate('{{ request._url }}|{{ request_path }}|{{ request.search }}|{{ request_query.search }}|{{ request_has_filters ? "1" : "0" }}')->render();
-        $this->assertSame('/admin/product|/admin/product|query|query|1', $result);
+        $this->assertSame('/admin/product|product|query|query|1', $result);
     }
 
     public function testRenderAdapterTplStringSandboxViolation(): void

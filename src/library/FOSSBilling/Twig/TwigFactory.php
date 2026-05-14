@@ -356,7 +356,7 @@ class TwigFactory
         $csrfToken = $this->getCsrfToken();
         $requestData = $_GET;
         $requestQuery = $requestData;
-        $requestPath = $requestData['_url'] ?? '/';
+        $requestPath = \Box_Url::normalizeLinkPath($requestData['_url'] ?? '/');
         $requestHasFilters = count(array_diff_key($requestData, [
             '_url' => true,
             'page' => true,
@@ -368,7 +368,7 @@ class TwigFactory
                 $requestData = $request->query->all();
                 $requestQuery = $requestData;
                 $requestData['_url'] = RequestFactory::getRoutePath($request);
-                $requestPath = $requestData['_url'];
+                $requestPath = \Box_Url::normalizeLinkPath($requestData['_url']);
                 $requestHasFilters = count(array_diff_key($requestData, [
                     '_url' => true,
                     'page' => true,
