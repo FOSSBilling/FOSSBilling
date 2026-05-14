@@ -70,6 +70,7 @@ jobs:
     if: &normal_ci ${{ (github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
     steps:
       - &checkout_step
+        name: 'Checkout Repository'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: 'Perform Spellcheck'
@@ -80,8 +81,8 @@ jobs:
   php-build-test:
     name: 'PHP Build and Test (${{ matrix.php }})'
     permissions:
-      actions: write
       contents: read
+      packages: write
     needs: [ spellcheck ]
     if: *normal_ci
     runs-on: ubuntu-latest
@@ -93,20 +94,36 @@ jobs:
     steps:
       - *checkout_step
 
-      - name: 'Set up Docker Buildx'
+      - &lowercase_repo
+        name: 'Lowercase github.repository'
+        run: |
+          echo "IMAGE_NAME=${GITHUB_REPOSITORY@L}" >> ${GITHUB_ENV}
+
+      - &login_ghcr
+        name: 'Login to GitHub Container Registry'
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - &setup_buildx
+        name: 'Set up Docker Buildx'
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
 
       - name: 'Build Docker Test Image'
-        run: |
-          docker buildx build \
-            --target test \
-            --build-arg PHP_VERSION=${{ matrix.php }} \
-            --build-arg INSTALL_TRANSLATIONS=false \
-            --cache-from type=gha,scope=fossbilling-test-${{ matrix.php }} \
-            --cache-to type=gha,scope=fossbilling-test-${{ matrix.php }},mode=max \
-            --load \
-            --tag fossbilling:test-${{ matrix.php }} \
-            .
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
+        with:
+          build-args: |
+            PHP_VERSION=${{ matrix.php }}
+            INSTALL_TRANSLATIONS=false
+          cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:cache-ci-${{ matrix.php }}
+          cache-to: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:cache-ci-${{ matrix.php }},mode=max
+          context: .
+          load: true
+          tags: |
+            fossbilling:test-${{ matrix.php }}
+          target: test
 
       - name: 'PHPStan'
         run: |
@@ -127,22 +144,74 @@ jobs:
         run: bash ./.github/scripts/run-docker-live-tests.sh fossbilling:test-${{ matrix.php }}
 
   preview-build:
-    name: 'Create Preview Release'
+    name: 'Create Preview Build'
     permissions:
-      actions: write
       contents: read
+      packages: write
     needs: [ php-build-test ]
-    if: *normal_ci
-    uses: ./.github/workflows/release-build.yml
+    if: ${{ (github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || (github.event_name == 'push' && github.ref != 'refs/heads/main') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - *checkout_step
+      - *lowercase_repo
+      - *login_ghcr
+      - *setup_buildx
+
+      - name: 'Build Release Artifact'
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
+        with:
+          build-args: |
+            FOSSBILLING_VERSION=${{ github.sha }}
+            FOSSBILLING_VERSION_TRUNCATE=7
+            SENTRY_DSN=${{ vars.SENTRY_DSN }}
+          cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:cache-preview
+          cache-to: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:cache-preview,mode=max
+          context: .
+          target: release-artifact
+          outputs: type=local,dest=./release-tree
+
+      - name: 'Create Preview Build Archive'
+        run: tar -cf /tmp/build.tar -C ./release-tree ./
+
+      - name: 'Upload Preview Build Archive'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          if-no-files-found: 'error'
+          name: preview-build
+          path: /tmp/build.tar
+          retention-days: 1
+
+  preview-docker:
+    name: 'Build and Push Preview Docker Image'
+    permissions:
+      contents: read
+      packages: write
+    needs: [ php-build-test ]
+    if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+    uses: ./.github/workflows/docker-build.yml
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
     with:
-      artifact-name: 'preview-build'
-      preview: true
-      cache-scope: fossbilling-preview
+      target: runtime
+      cache-scope: cache-preview
+      extract-release-tree: true
+      release-tree-artifact-name: preview-build
+      meta-images: fossbilling/fossbilling
+      meta-tags: |
+        type=raw,value=preview
+      meta-flavor: |
+        latest=false
+      build-args: |
+        FOSSBILLING_VERSION=${{ github.sha }}
+        FOSSBILLING_VERSION_TRUNCATE=7
+        SENTRY_DSN=${{ vars.SENTRY_DSN }}
 
   upload-preview:
     name: 'Upload Preview Release'
-    needs: [ preview-build ]
-    if: *normal_ci
+    needs: [ preview-build, preview-docker ]
+    if: ${{ !cancelled() && (needs.preview-build.result == 'success' || needs.preview-docker.result == 'success') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -178,7 +247,7 @@ jobs:
           AWS_S3_ENDPOINT: ${{ secrets.AWS_S3_ENDPOINT }}
           AWS_REGION: 'auto'
           SOURCE_DIR: './dist'
-    
+
       - name: 'Upload Downloadable Preview to GitHub'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -186,36 +255,3 @@ jobs:
           name: 'FOSSBilling Preview'
           path: './src/*'
           retention-days: 14
-
-  deploy-preview-docker:
-    name: 'Build and Push Preview to Docker Hub'
-    permissions:
-      contents: read
-      id-token: write
-    needs: [ preview-build ]
-    if: ${{ github.ref == 'refs/heads/main' }}
-    uses: docker/github-builder/.github/workflows/build.yml@c2782c55efa56a01b9c30021db8f5ec3993228a3 # v1.8.0
-    secrets:
-      registry-auths: |
-        - registry: docker.io
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-    with:
-      output: image
-      push: true
-      platforms: linux/amd64,linux/arm64
-      cache: true
-      cache-mode: max
-      cache-scope: fossbilling-preview
-      sbom: true
-      set-meta-labels: true
-      set-meta-annotations: true
-      meta-images: fossbilling/fossbilling
-      meta-flavor: |
-        latest=false
-      meta-tags: |
-        type=raw,value=preview
-      build-args: |
-        FOSSBILLING_VERSION=${{ github.sha }}
-        FOSSBILLING_VERSION_TRUNCATE=7
-        SENTRY_DSN=${{ vars.SENTRY_DSN }}
