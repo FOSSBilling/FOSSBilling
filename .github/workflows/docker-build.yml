@@ -107,6 +107,7 @@ jobs:
           context: .
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,push-by-digest=true,name=${{ inputs.meta-images }}
+          provenance: false
           target: ${{ inputs.target }}
 
       - name: 'Extract Release Tree'
