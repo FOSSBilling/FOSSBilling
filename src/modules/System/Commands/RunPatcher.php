@@ -68,7 +68,7 @@ class RunPatcher extends Command implements \FOSSBilling\InjectionAwareInterface
             $patcher->applyCorePatches();
 
             $filesystem = new Filesystem();
-            $cachePath = Path::normalize($this->di['config']['path_data'] . '/cache');
+            $cachePath = Path::normalize(Config::getProperty('path_data') . '/cache');
             $filesystem->remove($cachePath);
             $filesystem->mkdir($cachePath);
 
