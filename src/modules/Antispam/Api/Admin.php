@@ -68,6 +68,10 @@ class Admin extends \Api_Abstract
             throw new \FOSSBilling\InformationException(':ip is already blocked.', [':ip' => $ip]);
         }
 
+        if ((string) $this->di['request']->getClientIp() === $ip) {
+            throw new \FOSSBilling\InformationException('You cannot block :ip as it is the IP you are making requests from.', [':ip' => $ip]);
+        }
+
         $blocked_ips[] = $ip;
         $blocked_ips_string = implode(PHP_EOL, $blocked_ips);
 
