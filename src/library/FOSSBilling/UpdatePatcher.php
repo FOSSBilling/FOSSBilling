@@ -316,6 +316,7 @@ class UpdatePatcher implements InjectionAwareInterface
             58 => 'patch58',
             59 => 'patch59',
             60 => 'patch60',
+            61 => 'patch61',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1236,6 +1237,24 @@ class UpdatePatcher implements InjectionAwareInterface
 
         if ($this->di !== null && $this->di->offsetExists('cache')) {
             $this->di['cache']->deleteItem('config_mod_paidsupport');
+        }
+    }
+
+    private function patch61(): void
+    {
+        $table = $this->di['dbal']->createSchemaManager()->introspectTable('currency');
+        $columns = [];
+
+        if ($table->hasColumn('format')) {
+            $columns[] = 'DROP COLUMN format';
+        }
+
+        if ($table->hasColumn('price_format')) {
+            $columns[] = 'DROP COLUMN price_format';
+        }
+
+        if ($columns !== []) {
+            $this->executeSql('ALTER TABLE currency ' . implode(', ', $columns));
         }
     }
 }

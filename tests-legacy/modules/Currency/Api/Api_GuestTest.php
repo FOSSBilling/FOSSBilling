@@ -46,8 +46,6 @@ final class Api_GuestTest extends \BBTestCase
             'code' => 'EUR',
             'title' => 'Euro',
             'conversion_rate' => 1.0,
-            'format' => '{{price}}',
-            'price_format' => '1',
             'default' => true,
         ];
 
@@ -77,8 +75,6 @@ final class Api_GuestTest extends \BBTestCase
             'code' => 'EUR',
             'title' => 'Euro',
             'conversion_rate' => 1,
-            'format' => '{{price}}',
-            'price_format' => 1,
             'default' => 1,
         ];
 
@@ -143,65 +139,6 @@ final class Api_GuestTest extends \BBTestCase
         $result = $guestApi->get([]); // Expecting \FOSSBilling\Exception
     }
 
-    public static function formatPriceFormatProvider(): array
-    {
-        return [
-            [
-                1,
-                '€ 60000.00',
-            ],
-            [
-                2,
-                '€ 60,000.00',
-            ],
-            [
-                3,
-                '€ 60.000,00',
-            ],
-            [
-                4,
-                '€ 60,000',
-            ],
-            [
-                5,
-                '€ 60000',
-            ],
-        ];
-    }
-
-    #[DataProvider('formatPriceFormatProvider')]
-    public function testFormatPriceFormat(int $price_format, string $expectedResult): void
-    {
-        $willReturn = [
-            'code' => 'EUR',
-            'title' => 'Euro',
-            'conversion_rate' => 0.6,
-            'format' => '€ {{price}}',
-            'price_format' => $price_format,
-            'default' => 1,
-        ];
-
-        $data = [
-            'code' => 'EUR',
-            'price' => 100000,
-            'without_currency' => false,
-        ];
-        $guestApi = $this->getMockBuilder(\Box\Mod\Currency\Api\Guest::class)->onlyMethods(['get'])->getMock();
-        $guestApi->expects($this->atLeastOnce())
-            ->method('get')
-            ->willReturn($willReturn);
-
-        $service = $this->createMock(\Box\Mod\Currency\Service::class);
-
-        $di = $this->getDi();
-
-        $guestApi->setDi($di);
-        $guestApi->setService($service);
-
-        $result = $guestApi->format($data);
-        $this->assertEquals($result, $expectedResult);
-    }
-
     public static function formatProvider(): array
     {
         return [
@@ -209,23 +146,40 @@ final class Api_GuestTest extends \BBTestCase
                 [
                     'code' => 'EUR',
                 ],
-                '€ 0.00', // price is not set, so result should be 0
+                '€0.00',
             ],
             [
                 [
                     'code' => 'EUR',
                     'price' => 100000,
-                    'convert' => false, // Should not convert
+                    'convert' => false,
                 ],
-                '€ 100000.00',
+                '€100,000.00',
             ],
             [
                 [
                     'code' => 'EUR',
                     'price' => 100000,
-                    'without_currency' => true, // Should return number only
+                    'without_currency' => true,
                 ],
-                '60000.00',
+                '60,000.00',
+            ],
+            [
+                [
+                    'code' => 'EUR',
+                    'price' => -100000,
+                    'convert' => false,
+                ],
+                '-€100,000.00',
+            ],
+            [
+                [
+                    'code' => 'JPY',
+                    'price' => 100000,
+                    'without_currency' => true,
+                    'convert' => false,
+                ],
+                '100,000',
             ],
         ];
     }
@@ -234,11 +188,9 @@ final class Api_GuestTest extends \BBTestCase
     public function testFormat(array $data, string $expectedResult): void
     {
         $willReturn = [
-            'code' => 'EUR',
-            'title' => 'Euro',
+            'code' => $data['code'],
+            'title' => 'Currency',
             'conversion_rate' => 0.6,
-            'format' => '€ {{price}}',
-            'price_format' => 1,
             'default' => 1,
         ];
 

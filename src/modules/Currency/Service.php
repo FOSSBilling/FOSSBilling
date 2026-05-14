@@ -61,7 +61,7 @@ class Service implements InjectionAwareInterface
             'edit' => [
                 'type' => 'bool',
                 'display_name' => __trans('Edit currencies'),
-                'description' => __trans('Allows the staff member to update currency titles, formats, and conversion rates.'),
+                'description' => __trans('Allows the staff member to update currency titles and conversion rates.'),
             ],
             'delete' => [
                 'type' => 'bool',
@@ -290,12 +290,11 @@ class Service implements InjectionAwareInterface
         return ($config['sync_rate'] ?? 'auto') !== 'never';
     }
 
-    public function createCurrency(string $code, string $format, ?string $title = null, string|float|null $conversionRate = 1.0): string
+    public function createCurrency(string $code, ?string $title = null, string|float|null $conversionRate = 1.0): string
     {
         $systemService = $this->di['mod_service']('system');
         $systemService->checkLimits('Currency', 2);
 
-        $this->validateCurrencyFormat($format);
         $defaults = $this->getCurrencyDefaults($code);
 
         // Automatically set the correct title
@@ -324,7 +323,7 @@ class Service implements InjectionAwareInterface
             $conversionRate = (float) $conversionRate;
         }
 
-        $model = new Currency($code, $format);
+        $model = new Currency($code);
         $model->setTitle($title);
         $model->setConversionRate($conversionRate);
 
@@ -338,32 +337,16 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Validate that a currency format string contains the required {{price}} placeholder.
-     *
-     * @param string $format The format string to validate
-     *
-     * @throws \FOSSBilling\Exception If format is invalid
-     */
-    public function validateCurrencyFormat(string $format): void
-    {
-        if (!str_contains($format, '{{price}}')) {
-            throw new \FOSSBilling\Exception('Currency format must include {{price}} tag', null, 3569);
-        }
-    }
-
-    /**
      * Update an existing currency with new values.
      *
      * @param string            $code           The currency code to update
-     * @param string|null       $format         The display format (optional)
      * @param string|null       $title          The currency title (optional)
-     * @param string|null       $priceFormat    The price format (optional)
      * @param string|float|null $conversionRate The conversion rate (optional)
      *
      * @throws \FOSSBilling\Exception If currency not found
      * @throws InformationException   If conversion rate is invalid
      */
-    public function updateCurrency(string $code, ?string $format = null, ?string $title = null, ?string $priceFormat = null, string|float|null $conversionRate = null): bool
+    public function updateCurrency(string $code, ?string $title = null, string|float|null $conversionRate = null): bool
     {
         $model = $this->currencyRepository->findOneByCode($code);
         if (!$model instanceof Currency) {
@@ -372,15 +355,6 @@ class Service implements InjectionAwareInterface
 
         if ($title !== null) {
             $model->setTitle($title);
-        }
-
-        if ($format !== null) {
-            $this->validateCurrencyFormat($format);
-            $model->setFormat($format);
-        }
-
-        if ($priceFormat !== null) {
-            $model->setPriceFormat($priceFormat);
         }
 
         if ($conversionRate !== null) {

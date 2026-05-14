@@ -530,8 +530,6 @@ final class ServiceTest extends \BBTestCase
             'code' => 'EUR',
             'title' => 'Euro',
             'conversion_rate' => 3.4528,
-            'format' => '',
-            'price_format' => '',
             'default' => true,
         ];
 
@@ -546,7 +544,6 @@ final class ServiceTest extends \BBTestCase
     public function testCreateCurrency(): void
     {
         $code = 'EUR';
-        $format = '€{{price}}';
 
         $systemService = $this->getMockBuilder(\Box\Mod\System\Service::class)->onlyMethods(['checkLimits'])->getMock();
         $systemService->expects($this->atLeastOnce())
@@ -576,7 +573,7 @@ final class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Currency\Service();
         $service->setDi($di);
 
-        $result = $service->createCurrency($code, $format, 'Euros', 0.6);
+        $result = $service->createCurrency($code, 'Euros', 0.6);
 
         $this->assertIsString($result);
         $this->assertEquals(strlen($result), 3);
@@ -616,7 +613,7 @@ final class ServiceTest extends \BBTestCase
 
         $service->setDi($di);
 
-        $result = $service->createCurrency('EUR', '€{{price}}', 'Euros', '');
+        $result = $service->createCurrency('EUR', 'Euros', '');
 
         $this->assertSame('EUR', $result);
     }
@@ -647,15 +644,13 @@ final class ServiceTest extends \BBTestCase
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Currency conversion rate must be a positive number');
-        $service->createCurrency('EUR', '€{{price}}', 'Euros', '0');
+        $service->createCurrency('EUR', 'Euros', '0');
     }
 
     public function testUpdateCurrency(): void
     {
         $code = 'EUR';
-        $format = '€{{price}}';
         $title = 'Euros';
-        $price_format = '€{{Price}}';
         $conversion_rate = 0.6;
 
         $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
@@ -687,7 +682,7 @@ final class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Currency\Service();
         $service->setDi($di);
 
-        $result = $service->updateCurrency($code, $format, $title, $price_format, $conversion_rate);
+        $result = $service->updateCurrency($code, $title, $conversion_rate);
 
         $this->assertIsBool($result);
         $this->assertTrue($result);
@@ -696,9 +691,7 @@ final class ServiceTest extends \BBTestCase
     public function testUpdateCurrencyNotFoundException(): void
     {
         $code = 'EUR';
-        $format = '€{{price}}';
         $title = 'Euros';
-        $price_format = '€{{Price}}';
         $conversion_rate = 0.6;
 
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
@@ -722,15 +715,13 @@ final class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $service->updateCurrency($code, $format, $title, $price_format, $conversion_rate); // Expecting \FOSSBilling\Exception every time
+        $service->updateCurrency($code, $title, $conversion_rate); // Expecting \FOSSBilling\Exception every time
     }
 
     public function testUpdateConversionRateException(): void
     {
         $code = 'EUR';
-        $format = '€{{price}}';
         $title = 'Euros';
-        $price_format = '€{{Price}}';
         $conversion_rate = 0;
 
         $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
@@ -758,7 +749,7 @@ final class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $service->updateCurrency($code, $format, $title, $price_format, $conversion_rate); // Expecting \FOSSBilling\Exception every time
+        $service->updateCurrency($code, $title, $conversion_rate); // Expecting \FOSSBilling\Exception every time
     }
 
     public function testUpdateCurrencyRates(): void
@@ -951,11 +942,4 @@ final class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testValidateCurrencyFormatPriceTagMissing(): void
-    {
-        $service = new \Box\Mod\Currency\Service();
-
-        $this->expectException(\Exception::class);
-        $service->validateCurrencyFormat('$$$');
-    }
 }

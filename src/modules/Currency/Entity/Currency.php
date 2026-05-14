@@ -37,9 +37,6 @@ class Currency implements ApiArrayInterface, TimestampInterface
 
     private ?float $conversionRateFloat = null;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 50, nullable: true, options: ['default' => '${{price}}'])]
-    private ?string $priceFormat = '${{price}}';
-
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTime $createdAt = null;
 
@@ -49,8 +46,6 @@ class Currency implements ApiArrayInterface, TimestampInterface
     public function __construct(
         #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 3, unique: true)]
         private string $code,
-        #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 30, nullable: true)]
-        private ?string $format,
     ) {
     }
 
@@ -60,8 +55,6 @@ class Currency implements ApiArrayInterface, TimestampInterface
             'code' => $this->getCode(),
             'title' => $this->getTitle(),
             'conversion_rate' => $this->getConversionRate(),
-            'format' => $this->getFormat(),
-            'price_format' => $this->getPriceFormat(),
             'default' => $this->isDefault(),
         ];
     }
@@ -114,16 +107,6 @@ class Currency implements ApiArrayInterface, TimestampInterface
         return $this->conversionRate;
     }
 
-    public function getFormat(): ?string
-    {
-        return $this->format;
-    }
-
-    public function getPriceFormat(): ?string
-    {
-        return $this->priceFormat;
-    }
-
     public function getCreatedAt(): ?\DateTime
     {
         return $this->createdAt;
@@ -174,20 +157,6 @@ class Currency implements ApiArrayInterface, TimestampInterface
         }
         // Invalidate cached float value so it will be recalculated on next access
         $this->conversionRateFloat = null;
-
-        return $this;
-    }
-
-    public function setFormat(?string $format): self
-    {
-        $this->format = $format;
-
-        return $this;
-    }
-
-    public function setPriceFormat(?string $priceFormat): self
-    {
-        $this->priceFormat = $priceFormat;
 
         return $this;
     }
