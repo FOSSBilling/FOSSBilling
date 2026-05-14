@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\System;
 
+use Doctrine\DBAL\ArrayParameterType;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\GeoIP\Reader;
@@ -30,6 +31,8 @@ use Symfony\Contracts\Cache\ItemInterface;
 
 class Service
 {
+    private const MYSQL_DUPLICATE_ENTRY_ERROR = 23000;
+
     protected ?Container $di = null;
     private readonly Filesystem $filesystem;
 
@@ -145,7 +148,7 @@ class Service
                     ->setParameter('updated_at', date('Y-m-d H:i:s'))
                     ->executeStatement();
             } catch (\Exception $e) {
-                if ($e->getCode() != 23000) {
+                if ($e->getCode() != self::MYSQL_DUPLICATE_ENTRY_ERROR) {
                     throw $e;
                 }
             }
@@ -169,23 +172,27 @@ class Service
     }
 
     /**
+     * Fetch setting values for the provided setting keys.
+     *
+     * @param string[] $params
+     *
      * @return mixed[]
      */
-    private function _getMultipleParams($params): array
+    private function getSettingsByParams(array $params): array
     {
-        if (!is_array($params)) {
-            return [];
-        }
         foreach ($params as $param) {
             if (!preg_match('/^[a-z0-9_]+$/', (string) $param)) {
                 throw new \FOSSBilling\InformationException('Invalid parameter name, received: param_', ['param_' => $param]);
             }
         }
-        $query = "SELECT param, value
-                FROM setting
-                WHERE param IN('" . implode("', '", $params) . "')
-                ";
-        $rows = $this->di['db']->getAll($query);
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->select('param', 'value')
+            ->from('setting')
+            ->where('param IN (:params)')
+            ->setParameter('params', $params, ArrayParameterType::STRING);
+
+        $rows = $query->executeQuery()->fetchAllAssociative();
         $result = [];
         foreach ($rows as $row) {
             $result[$row['param']] = $row['value'];
@@ -218,7 +225,7 @@ class Service
             'company_tos',
             'company_vat_number',
         ];
-        $results = $this->_getMultipleParams($c);
+        $results = $this->getSettingsByParams($c);
 
         $logoUrl = $results['company_logo'] ?? null;
         if ($logoUrl !== null && !str_contains((string) $logoUrl, 'http')) {
@@ -333,7 +340,7 @@ class Service
                 $cronService->runCrons();
             }
 
-            // And now return the correctly message for the given situation
+            // And now return the correct message for the given situation
             if (!$last_exec) {
                 $msgs['danger'][] = [
                     'text' => __trans('Cron was never executed, please ensure you have configured the cronjob or else scheduled tasks within FOSSBilling will not behave correctly.'),
@@ -497,9 +504,9 @@ class Service
         return true;
     }
 
-    public function getEnv($ip = null)
+    public function getEnv(bool $fetchExternalIp = false)
     {
-        if ($ip) {
+        if ($fetchExternalIp) {
             try {
                 return Tools::getExternalIP();
             } catch (\Exception) {

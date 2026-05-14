@@ -42,9 +42,29 @@ class Admin extends \Api_Abstract
      */
     public function get_current(array $data): array
     {
+        if ($this->isInvalidClientParameter($data['client'] ?? null)) {
+            throw new \FOSSBilling\InformationException('Invalid "client" parameter.');
+        }
+
         $client = Tools::normalizeBoolean($data['client'] ?? true, true);
 
         return $this->getService()->getThemeConfig($client, null);
+    }
+
+    /**
+     * Determine whether the client selector contains a boolean-compatible value.
+     */
+    private function isInvalidClientParameter(mixed $client): bool
+    {
+        if ($client === null || is_bool($client) || is_int($client) || is_float($client)) {
+            return false;
+        }
+
+        if (!is_string($client)) {
+            return true;
+        }
+
+        return filter_var($client, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === null;
     }
 
     /**

@@ -11,7 +11,6 @@ declare(strict_types=1);
 
 namespace Box\Mod\System\Commands;
 
-use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\UpdatePatcher;
 use FOSSBilling\Version;
@@ -19,8 +18,6 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Filesystem\Path;
 
 #[AsCommand(
     name: 'system:run-patcher',
@@ -29,6 +26,9 @@ use Symfony\Component\Filesystem\Path;
 )]
 class RunPatcher extends Command implements \FOSSBilling\InjectionAwareInterface
 {
+    private const CACHE_VERSION_KEY = 'version';
+    private const CACHE_LATEST_PATCH_LEVEL_KEY = 'latest_patch_level';
+
     protected $di;
 
     public function setDi($di): void
@@ -53,11 +53,19 @@ class RunPatcher extends Command implements \FOSSBilling\InjectionAwareInterface
         $patcher->setDi($this->di);
 
         $version = Version::VERSION;
+        $latestPatchLevel = $patcher->latestPatchLevel();
         $cacheItem = $this->di['cache']->getItem('updatePatcher');
-        if ($cacheItem->isHit() && $version === $cacheItem->get() && $patcher->availablePatches() === 0) {
-            $output->writeln('<info>The update patcher has already been run for this version.</info>');
+        if ($cacheItem->isHit()) {
+            $cachedState = $cacheItem->get();
+            if (
+                is_array($cachedState)
+                && ($cachedState[self::CACHE_VERSION_KEY] ?? null) === $version
+                && ($cachedState[self::CACHE_LATEST_PATCH_LEVEL_KEY] ?? null) === $latestPatchLevel
+            ) {
+                $output->writeln('<info>The update patcher has already been run for this version.</info>');
 
-            return Command::SUCCESS;
+                return Command::SUCCESS;
+            }
         }
 
         try {
@@ -67,12 +75,13 @@ class RunPatcher extends Command implements \FOSSBilling\InjectionAwareInterface
             $output->writeln('Applying core patches...');
             $patcher->applyCorePatches();
 
-            $filesystem = new Filesystem();
-            $cachePath = Path::normalize(Config::getProperty('path_data') . '/cache');
-            $filesystem->remove($cachePath);
-            $filesystem->mkdir($cachePath);
+            $this->di['cache']->clear();
 
-            $this->di['cache']->getItem('updatePatcher')->set(Version::VERSION);
+            $cacheItem->set([
+                self::CACHE_VERSION_KEY => $version,
+                self::CACHE_LATEST_PATCH_LEVEL_KEY => $latestPatchLevel,
+            ]);
+            $this->di['cache']->save($cacheItem);
 
             $output->writeln('<info>All patches have been applied and the cache has been cleared.</info>');
 

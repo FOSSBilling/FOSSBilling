@@ -70,13 +70,57 @@ final class ServiceTest extends \BBTestCase
                 'value' => 'work@example.eu',
             ],
         ];
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getAll')
-            ->willReturn($multParamsResults);
+        $dbalConnectionStub = new class($multParamsResults) {
+            public function __construct(private readonly array $rows)
+            {
+            }
+
+            public function createQueryBuilder(): object
+            {
+                return new class($this->rows) {
+                    public function __construct(private readonly array $rows)
+                    {
+                    }
+
+                    public function select(string ...$columns): self
+                    {
+                        return $this;
+                    }
+
+                    public function from(string $table, ?string $alias = null): self
+                    {
+                        return $this;
+                    }
+
+                    public function where(string $predicate): self
+                    {
+                        return $this;
+                    }
+
+                    public function setParameter(string $key, mixed $value, mixed $type = null): self
+                    {
+                        return $this;
+                    }
+
+                    public function executeQuery(): object
+                    {
+                        return new class($this->rows) {
+                            public function __construct(private readonly array $rows)
+                            {
+                            }
+
+                            public function fetchAllAssociative(): array
+                            {
+                                return $this->rows;
+                            }
+                        };
+                    }
+                };
+            }
+        };
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['dbal'] = $dbalConnectionStub;
 
         $this->service->setDi($di);
 
@@ -819,18 +863,12 @@ final class ServiceTest extends \BBTestCase
         // Call clearCache with the temp directory
         $result = $this->service->clearCache($cacheDir);
 
-        // Restore .gitkeep file after clearCache removes it
-        file_put_contents($gitkeepFile, '');
-
         $this->assertIsBool($result);
         $this->assertTrue($result);
+        $this->assertFileDoesNotExist($gitkeepFile);
 
         // Cleanup temp directory
-        if (is_dir($cacheDir)) {
-            // Remove .gitkeep file first, then the directory
-            if (file_exists($gitkeepFile)) {
-                unlink($gitkeepFile);
-            }
+        if (is_dir($cacheDir) && !(new \FilesystemIterator($cacheDir))->valid()) {
             rmdir($cacheDir);
         }
     }
