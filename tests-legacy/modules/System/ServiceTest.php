@@ -845,6 +845,10 @@ final class ServiceTest extends \BBTestCase
 
     private function createBaseTwigEnvironment(\Pimple\Container $di): \Twig\Environment
     {
+        if (!$di->offsetExists('request')) {
+            $di['request'] = \Symfony\Component\HttpFoundation\Request::create('/');
+        }
+
         $reflection = new \ReflectionClass(\FOSSBilling\Twig\TwigFactory::class);
         $twigFactory = $reflection->newInstanceWithoutConstructor();
 
