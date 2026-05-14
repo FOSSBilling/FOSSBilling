@@ -172,6 +172,10 @@ class Service
     }
 
     /**
+     * Fetch setting values for the provided setting keys.
+     *
+     * @param string[] $params
+     *
      * @return mixed[]
      */
     private function getSettingsByParams(array $params): array

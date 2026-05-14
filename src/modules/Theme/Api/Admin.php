@@ -51,6 +51,9 @@ class Admin extends \Api_Abstract
         return $this->getService()->getThemeConfig($client, null);
     }
 
+    /**
+     * Determine whether the client selector contains a boolean-compatible value.
+     */
     private function isInvalidClientParameter(mixed $client): bool
     {
         if ($client === null || is_bool($client) || is_int($client) || is_float($client)) {
