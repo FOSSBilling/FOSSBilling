@@ -353,38 +353,25 @@ class TwigFactory
 
     private function configureGlobals(Environment $twig): void
     {
+        if (!$this->di->offsetExists('request') || !$this->di['request'] instanceof \Symfony\Component\HttpFoundation\Request) {
+            throw new \LogicException('TwigFactory requires a Symfony request in the container.');
+        }
+
         $csrfToken = $this->getCsrfToken();
-        $requestData = $_GET;
+        $request = $this->di['request'];
+        $requestData = $request->query->all();
+        unset($requestData['_url']);
+
         $requestQuery = $requestData;
-        $requestPath = \Box_Url::normalizeLinkPath($requestData['_url'] ?? '/');
+        $requestPath = \Box_Url::normalizeLinkPath(RequestFactory::getRoutePath($request));
         $requestHasFilters = count(array_diff_key($requestData, [
-            '_url' => true,
             'page' => true,
             'search' => true,
         ])) > 0;
 
-        if ($this->di->offsetExists('request')) {
-            $request = $this->di['request'];
-            if ($request instanceof \Symfony\Component\HttpFoundation\Request) {
-                $requestData = $request->query->all();
-                $requestQuery = $requestData;
-                $requestData['_url'] = RequestFactory::getRoutePath($request);
-                $requestPath = \Box_Url::normalizeLinkPath($requestData['_url']);
-                $requestHasFilters = count(array_diff_key($requestData, [
-                    '_url' => true,
-                    'page' => true,
-                    'search' => true,
-                ])) > 0;
-
-                if ($request->isXmlHttpRequest()) {
-                    $requestData['ajax'] = true;
-                }
-            }
-        } elseif (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+        if ($request->isXmlHttpRequest()) {
             $requestData['ajax'] = true;
         }
-
-        unset($requestQuery['_url']);
 
         $session = $this->di['session'];
         $redirectUri = $session->get('redirect_uri');

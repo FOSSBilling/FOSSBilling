@@ -96,18 +96,7 @@ install_payload=(
   "http://${app_container}/install/install.php?a=install"
 )
 
-installed=false
-for _ in {1..5}; do
-  if docker run --rm --network "${network}" "${image}" curl -fsS "${install_payload[@]}" >/dev/null; then
-    installed=true
-    break
-  fi
-  sleep 2
-done
-
-if [[ "${installed}" != true ]]; then
-  docker run --rm --network "${network}" "${image}" curl -fsS "${install_payload[@]}" >/dev/null
-fi
+docker run --rm --network "${network}" "${image}" curl -fsS "${install_payload[@]}" >/dev/null
 
 docker run --rm \
   --network "${network}" \

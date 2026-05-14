@@ -152,8 +152,6 @@ final class FOSSBilling_Installer
                     // Set up default currency before validation to preserve user selection if validation fails
                     $this->session->set('currency_code', $this->request->request->get('currency_code'));
                     $this->session->set('currency_title', $this->request->request->get('currency_title'));
-                    $this->session->set('currency_format', $this->request->request->get('currency_format', '${{price}}'));
-
                     // Handle database information
                     $this->session->set('database_hostname', $this->request->request->get('database_hostname'));
                     $this->session->set('database_port', $this->request->request->get('database_port'));
@@ -226,7 +224,6 @@ final class FOSSBilling_Installer
                     'admin_password' => $this->session->get('admin_password'),
                     'currency_code' => $this->session->get('currency_code') ?: 'USD',
                     'currency_title' => $this->session->get('currency_title') ?: 'US Dollar',
-                    'currency_format' => $this->session->get('currency_format') ?: '${{price}}',
                     'install_module_path' => PATH_INSTALL,
                     'cron_path' => PATH_CRON,
                     'config_file_path' => PATH_CONFIG,
@@ -394,11 +391,10 @@ final class FOSSBilling_Installer
         // Delete default currency from content file and use currency passed in the installer
         $stmt = $this->pdo->prepare("DELETE FROM currency WHERE code='USD'");
         $stmt->execute();
-        $stmt = $this->pdo->prepare('INSERT INTO currency (id, title, code, is_default, conversion_rate, format, price_format, created_at, updated_at) VALUES(1, :currency_title, :currency_code, 1, 1.000000, :currency_format, 1,  NOW(), NOW());');
+        $stmt = $this->pdo->prepare('INSERT INTO currency (id, title, code, is_default, conversion_rate, created_at, updated_at) VALUES(1, :currency_title, :currency_code, 1, 1.000000, NOW(), NOW());');
         $stmt->execute([
             'currency_title' => $this->session->get('currency_title'),
             'currency_code' => $this->session->get('currency_code'),
-            'currency_format' => $this->session->get('currency_format'),
         ]);
 
         $stmt = $this->pdo->prepare('INSERT INTO setting (param, value, created_at, updated_at) VALUES (:param, :value, NOW(), NOW())');
