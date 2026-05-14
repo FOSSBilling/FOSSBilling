@@ -89,9 +89,9 @@ class Admin extends \Api_Abstract
      */
     public function env($data)
     {
-        $ip = $data['ip'] ?? null;
+        $fetchExternalIp = Tools::normalizeBoolean($data['ip'] ?? false);
 
-        return $this->getService()->getEnv($ip);
+        return $this->getService()->getEnv($fetchExternalIp);
     }
 
     /**

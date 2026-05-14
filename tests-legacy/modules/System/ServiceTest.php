@@ -70,13 +70,57 @@ final class ServiceTest extends \BBTestCase
                 'value' => 'work@example.eu',
             ],
         ];
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getAll')
-            ->willReturn($multParamsResults);
+        $dbalConnectionStub = new class($multParamsResults) {
+            public function __construct(private readonly array $rows)
+            {
+            }
+
+            public function createQueryBuilder(): object
+            {
+                return new class($this->rows) {
+                    public function __construct(private readonly array $rows)
+                    {
+                    }
+
+                    public function select(string ...$columns): self
+                    {
+                        return $this;
+                    }
+
+                    public function from(string $table, ?string $alias = null): self
+                    {
+                        return $this;
+                    }
+
+                    public function where(string $predicate): self
+                    {
+                        return $this;
+                    }
+
+                    public function setParameter(string $key, mixed $value, mixed $type = null): self
+                    {
+                        return $this;
+                    }
+
+                    public function executeQuery(): object
+                    {
+                        return new class($this->rows) {
+                            public function __construct(private readonly array $rows)
+                            {
+                            }
+
+                            public function fetchAllAssociative(): array
+                            {
+                                return $this->rows;
+                            }
+                        };
+                    }
+                };
+            }
+        };
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['dbal'] = $dbalConnectionStub;
 
         $this->service->setDi($di);
 
@@ -242,6 +286,23 @@ final class ServiceTest extends \BBTestCase
         $vars = ['invoice' => ['id' => 1, 'total' => 100]];
         $result = $this->service->renderAdapterTplString('Invoice #{{ invoice.id }} - {{ invoice.total }}', $vars);
         $this->assertEquals('Invoice #1 - 100', $result);
+    }
+
+    public function testCreateBaseEnvironmentProvidesNormalizedRequestUrl(): void
+    {
+        $di = $this->getDi();
+        $request = Request::create('/admin/product', 'GET', [
+            'search' => 'query',
+        ]);
+        $di['request'] = $request;
+        $di['session'] = $this->mockSession();
+        $di['api_guest'] = new class {
+        };
+
+        $twig = $this->createBaseTwigEnvironment($di);
+
+        $result = $twig->createTemplate('{{ request._url }}|{{ request.search }}')->render();
+        $this->assertSame('/admin/product|query', $result);
     }
 
     public function testRenderAdapterTplStringSandboxViolation(): void
@@ -802,18 +863,12 @@ final class ServiceTest extends \BBTestCase
         // Call clearCache with the temp directory
         $result = $this->service->clearCache($cacheDir);
 
-        // Restore .gitkeep file after clearCache removes it
-        file_put_contents($gitkeepFile, '');
-
         $this->assertIsBool($result);
         $this->assertTrue($result);
+        $this->assertFileDoesNotExist($gitkeepFile);
 
         // Cleanup temp directory
-        if (is_dir($cacheDir)) {
-            // Remove .gitkeep file first, then the directory
-            if (file_exists($gitkeepFile)) {
-                unlink($gitkeepFile);
-            }
+        if (is_dir($cacheDir) && !(new \FilesystemIterator($cacheDir))->valid()) {
             rmdir($cacheDir);
         }
     }

@@ -18,6 +18,16 @@
 
     <link rel="shortcut icon" href="{{ guest.system_company.favicon_url }}">
 
+    <script>
+        (function (docEl) {
+            const cls = docEl.className || '';
+            if (/\bno-js\b/.test(cls)) {
+                docEl.className = cls.replace(/\bno-js\b/, 'js').trim();
+            } else if (!/\bjs\b/.test(cls)) {
+                docEl.className = (cls + ' js').trim();
+            }
+        }(document.documentElement));
+    </script>
     {{ "Api/API.js" | library_url | script_tag }}
     <script src="{{ 'build/js/huraga.js' | asset_url }}"></script>
     {% block head %}{% endblock %}
