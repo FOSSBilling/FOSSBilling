@@ -99,7 +99,6 @@ final class RequestFactoryTest extends PHPUnit\Framework\TestCase
         $path = RequestFactory::normalizeRoutePath($request);
 
         $this->assertSame('/custompages/about-us', $path);
-        $this->assertSame('/custompages/about-us', $request->query->get('_url'));
         $this->assertSame('/custompages/about-us', RequestFactory::getRoutePath($request));
     }
 

@@ -48,13 +48,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 ],
                 [
                     'location' => 'invoice',
-                    'label' => __trans('Advanced Search'),
-                    'uri' => $this->di['url']->adminLink('invoice', ['show_filter' => 1]),
-                    'index' => 200,
-                    'class' => '',
-                ],
-                [
-                    'location' => 'invoice',
                     'label' => __trans('Subscriptions'),
                     'uri' => $this->di['url']->adminLink('invoice/subscriptions'),
                     'index' => 300,
@@ -65,13 +58,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                     'label' => __trans('Transaction Overview'),
                     'uri' => $this->di['url']->adminLink('invoice/transactions'),
                     'index' => 400,
-                    'class' => '',
-                ],
-                [
-                    'location' => 'invoice',
-                    'label' => __trans('Transaction Search'),
-                    'uri' => $this->di['url']->adminLink('invoice/transactions', ['show_filter' => 1]),
-                    'index' => 500,
                     'class' => '',
                 ],
                 [

@@ -353,20 +353,23 @@ class TwigFactory
 
     private function configureGlobals(Environment $twig): void
     {
+        if (!$this->di->offsetExists('request') || !$this->di['request'] instanceof \Symfony\Component\HttpFoundation\Request) {
+            throw new \LogicException('TwigFactory requires a Symfony request in the container.');
+        }
+
         $csrfToken = $this->getCsrfToken();
-        $requestData = $_GET;
+        $request = $this->di['request'];
+        $requestData = $request->query->all();
+        unset($requestData['_url']);
 
-        if ($this->di->offsetExists('request')) {
-            $request = $this->di['request'];
-            if ($request instanceof \Symfony\Component\HttpFoundation\Request) {
-                $requestData = $request->query->all();
-                $requestData['_url'] = RequestFactory::getRoutePath($request);
+        $requestQuery = $requestData;
+        $requestPath = \Box_Url::normalizeLinkPath(RequestFactory::getRoutePath($request));
+        $requestHasFilters = count(array_diff_key($requestData, [
+            'page' => true,
+            'search' => true,
+        ])) > 0;
 
-                if ($request->isXmlHttpRequest()) {
-                    $requestData['ajax'] = true;
-                }
-            }
-        } elseif (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+        if ($request->isXmlHttpRequest()) {
             $requestData['ajax'] = true;
         }
 
@@ -378,6 +381,9 @@ class TwigFactory
 
         $twig->addGlobal('CSRFToken', $csrfToken);
         $twig->addGlobal('request', $requestData);
+        $twig->addGlobal('request_query', $requestQuery);
+        $twig->addGlobal('request_path', $requestPath);
+        $twig->addGlobal('request_has_filters', $requestHasFilters);
         $twig->addGlobal('guest', $this->di['api_guest']);
         $twig->addGlobal('FOSSBillingVersion', Version::VERSION);
     }

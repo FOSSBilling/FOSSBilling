@@ -8,108 +8,14 @@
 {% set can_delete_client = has_permission('client', 'delete') %}
 {% set can_bulk_delete_clients = has_permission('client', 'bulk_delete') and can_delete_client %}
 {% set can_export_clients = has_permission('client', 'export') %}
+{% set has_filter_panel = true %}
+{% set filter_panel_id = 'page-search-filters' %}
+{% set filter_panel_open = request_has_filters %}
 
 {% block meta_title %}{{ 'Clients'|trans }}{% endblock %}
 
 {% block top_content %}
-{% if request.show_filter %}
-    <section class="card mb-3">
-        <div class="card-body">
-            <h5>{{ 'Filter Clients'|trans }}</h5>
-            <form method="get">
-                <div class="form-group mb-3 row">
-                    <label class="form-label col-3 col-form-label">{{ 'Client ID'|trans }}</label>
-                    <div class="col">
-                        <input class="form-control" type="text" name="id" value="{{ request.id }}">
-                    </div>
-                </div>
-                <div class="form-group mb-3 row">
-                    <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}</label>
-                    <div class="col">
-                        <input class="form-control" type="text" name="name" value="{{ request.name }}">
-                    </div>
-                </div>
-
-                <div class="form-group mb-3 row">
-                    <label class="form-label col-3 col-form-label">{{ 'Company name'|trans }}</label>
-                    <div class="col">
-                        <input class="form-control" type="text" name="company" value="{{ request.company }}">
-                    </div>
-                </div>
-
-                <div class="form-group mb-3 row">
-                    <label class="form-label col-3 col-form-label">{{ 'Email'|trans }}</label>
-                    <div class="col">
-                        <input class="form-control" type="text" name="email" value="{{ request.email }}">
-                    </div>
-                </div>
-
-                <div class="form-group mb-3 row">
-                    <label class="form-label col-3 col-form-label">{{ 'Group'|trans }}:</label>
-                    <div class="col">
-                        {{ mf.selectbox('group_id', admin.client_group_get_pairs, request.group_id, 0, 'All Groups'|trans) }}
-                    </div>
-                </div>
-
-                <div class="form-group mb-3 row">
-                    <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
-                    <div class="col">
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" id="statusAll" name="status" value=""{% if not request.status %} checked{% endif %}>
-                            <label class="form-check-label" for="statusAll">{{ 'All'|trans }}</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" id="statusActive" name="status" value="active"{% if request.status == 'active' %} checked{% endif %}>
-                            <label class="form-check-label" for="statusActive">{{ 'Active'|trans }}</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" id="statusSuspended" name="status" value="suspended"{% if request.status == 'suspended' %} checked{% endif %}>
-                            <label class="form-check-label" for="statusSuspended">{{ 'Suspended'|trans }}</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" id="statusCanceled" name="status" value="canceled"{% if request.status == 'canceled' %} checked{% endif %}>
-                            <label class="form-check-label" for="statusCanceled">{{ 'Canceled'|trans }}</label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group mb-3 row">
-                    <label class="form-label col-3 col-form-label" for="reg_date">{{ 'Registration date'|trans }}</label>
-                    <div class="col">
-                        <div class="input-group">
-                            <div class="input-icon w-100">
-                                <input class="form-control datepicker"
-                                       id="reg_date"
-                                       value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
-                                       data-name-from="date_from"
-                                       data-name-to="date_to"
-                                >
-                                <span class="input-icon-addon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                        <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
-                                        <path d="M16 3l0 4"></path>
-                                        <path d="M8 3l0 4"></path>
-                                        <path d="M4 11l16 0"></path>
-                                        <path d="M11 15l1 0"></path>
-                                        <path d="M12 15l0 3"></path>
-                                    </svg>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <input type="hidden" name="_url" value="{{ request._url }}">
-                <input type="hidden" name="show_filter" value="1">
-                <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary w-75">{{ 'Filter'|trans }}</button>
-                    <a class="btn btn-danger w-25" href="{{ request._url }}?show_filter=1">{{ 'Reset'|trans }}</a>
-                </div>
-            </form>
-        </div>
-    </section>
-{% else %}
+{% if not filter_panel_open %}
     {% set count_clients = admin.client_get_statuses %}
     <section class="row row-cards mb-3">
         <div class="col-sm-6 col-lg-3">
@@ -169,7 +75,7 @@
             </a>
         </div>
     </section>
-    {% endif %}
+{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -206,6 +112,92 @@
         <div class="tab-content">
             <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
                 {{ include('partial_search.html.twig') }}
+                <section id="{{ filter_panel_id }}" class="card-body border-bottom collapse{% if filter_panel_open %} show{% endif %}">
+                    <h5>{{ 'Filter Clients'|trans }}</h5>
+                    <form method="get">
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Client ID'|trans }}</label>
+                            <div class="col">
+                                <input class="form-control" type="text" name="id" value="{{ request.id }}">
+                            </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}</label>
+                            <div class="col">
+                                <input class="form-control" type="text" name="name" value="{{ request.name }}">
+                            </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Company Name'|trans }}</label>
+                            <div class="col">
+                                <input class="form-control" type="text" name="company" value="{{ request.company }}">
+                            </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Email'|trans }}</label>
+                            <div class="col">
+                                <input class="form-control" type="text" name="email" value="{{ request.email }}">
+                            </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Group'|trans }}:</label>
+                            <div class="col">
+                                {{ mf.selectbox('group_id', admin.client_group_get_pairs, request.group_id, 0, 'All Groups'|trans) }}
+                            </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
+                            <div class="col">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" id="statusAll" name="status" value=""{% if not request.status %} checked{% endif %}>
+                                    <label class="form-check-label" for="statusAll">{{ 'All'|trans }}</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" id="statusActive" name="status" value="active"{% if request.status == 'active' %} checked{% endif %}>
+                                    <label class="form-check-label" for="statusActive">{{ 'Active'|trans }}</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" id="statusSuspended" name="status" value="suspended"{% if request.status == 'suspended' %} checked{% endif %}>
+                                    <label class="form-check-label" for="statusSuspended">{{ 'Suspended'|trans }}</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" id="statusCanceled" name="status" value="canceled"{% if request.status == 'canceled' %} checked{% endif %}>
+                                    <label class="form-check-label" for="statusCanceled">{{ 'Canceled'|trans }}</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label" for="reg_date">{{ 'Registration Date'|trans }}</label>
+                            <div class="col">
+                                <div class="input-group">
+                                    <div class="input-icon w-100">
+                                        <input class="form-control datepicker"
+                                               id="reg_date"
+                                               value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
+                                               data-name-from="date_from"
+                                               data-name-to="date_to"
+                                        >
+                                        <span class="input-icon-addon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                                                <path d="M16 3l0 4"></path>
+                                                <path d="M8 3l0 4"></path>
+                                                <path d="M4 11l16 0"></path>
+                                                <path d="M11 15l1 0"></path>
+                                                <path d="M12 15l0 3"></path>
+                                            </svg>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary w-75">{{ 'Filter'|trans }}</button>
+                            <a class="btn btn-danger w-25" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
+                        </div>
+                    </form>
+                </section>
                 <div class="table-responsive">
                     <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                         <thead>

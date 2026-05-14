@@ -11,7 +11,7 @@ declare(strict_types=1);
  * Open browser https://www.yourdomain.com/admin to create a new admin account.
  * Remove /install directory
  *
- * For more information, see the documentation: https://fossbilling.org/docs/customizing-fossbilling/config
+ * For more information, see the documentation: https://docs.fossbilling.org/customizing-fossbilling/config/
  */
 
 return [

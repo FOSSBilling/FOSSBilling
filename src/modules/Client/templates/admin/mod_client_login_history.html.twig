@@ -8,59 +8,61 @@
 {% set active_menu = 'activity' %}
 
 {% block content %}
-<div class="card overflow-auto">
+<div class="card">
     <div class="card-body">
         <h5>{{ 'Client Login History'|trans }}</h5>
     </div>
 
     {% if can_view_client_login_history %}
     {{ include('partial_search.html.twig') }}
-    <table class="table card-table table-vcenter table-striped text-nowrap">
-        <thead>
-            <tr>
-                <th>{{ '#'|trans }}</th>
-                <th class="w-1 no-sort"></th>
-                <th>{{ 'User'|trans }}</th>
-                <th>{{ 'IP'|trans }}</th>
-                <th>{{ 'Country'|trans }}</th>
-                <th>{{ 'Date'|trans }}</th>
-            </tr>
-        </thead>
+    <div class="table-responsive">
+        <table class="table card-table table-vcenter table-striped text-nowrap">
+            <thead>
+                <tr>
+                    <th>{{ '#'|trans }}</th>
+                    <th class="w-1 no-sort"></th>
+                    <th>{{ 'User'|trans }}</th>
+                    <th>{{ 'IP'|trans }}</th>
+                    <th>{{ 'Country'|trans }}</th>
+                    <th>{{ 'Date'|trans }}</th>
+                </tr>
+            </thead>
 
-        <tbody>
-        {% set history = admin.client_login_history_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
-        {% for i, event in history.list %}
-        <tr>
-            <td>{{ event.id }}</td>
-            <td>
-                <a href='{{ "client/manage/#{event.client.id}"|url }}'>
-                    {{ mf.avatar(event.client.email, 24, 'db-avatar avatar avatar-xs d-none d-md-inline-block') }}
-                </a>
-            </td>
-            <td>
-                <a href='{{ "client/manage/#{event.client.id}"|url }}'>{{ event.client.first_name }} {{ event.client.last_name }}</a>
-            </td>
-            <td>
-                {{ mf.ip_lookup_link(event.ip) }}
-                {% if event.ip %}
-                <a href="{{ 'antispam/block_ip'|api_url(query: { 'ip': event.ip }) }}" {{ fb_api_link({ modal: {type: 'confirm', title: 'Block IP'|trans, content: ('Are you sure you want to block IP address %ip%?'|trans({'%ip%': event.ip}))}, reload: true }) }} title="{{ 'Block IP'|trans }}">
-                    <svg class="icon icon-xs text-danger" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
-                    </svg>
-                </a>
-                {% endif %}
-            </td>
-            <td>{{ event.ip|ip_country_name|default('Unknown'|trans) }}</td>
-            <td>{{ event.created_at|format_datetime }}</td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="6">{{ 'The list is empty'|trans }}</td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+            <tbody>
+            {% set history = admin.client_login_history_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+            {% for i, event in history.list %}
+            <tr>
+                <td>{{ event.id }}</td>
+                <td>
+                    <a href='{{ "client/manage/#{event.client.id}"|url }}'>
+                        {{ mf.avatar(event.client.email, 24, 'db-avatar avatar avatar-xs d-none d-md-inline-block') }}
+                    </a>
+                </td>
+                <td>
+                    <a href='{{ "client/manage/#{event.client.id}"|url }}'>{{ event.client.first_name }} {{ event.client.last_name }}</a>
+                </td>
+                <td>
+                    {{ mf.ip_lookup_link(event.ip) }}
+                    {% if event.ip %}
+                    <a href="{{ 'antispam/block_ip'|api_url(query: { 'ip': event.ip }) }}" {{ fb_api_link({ modal: {type: 'confirm', title: 'Block IP'|trans, content: ('Are you sure you want to block IP address %ip%?'|trans({'%ip%': event.ip}))}, reload: true }) }} title="{{ 'Block IP'|trans }}">
+                        <svg class="icon icon-xs text-danger" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                        </svg>
+                    </a>
+                    {% endif %}
+                </td>
+                <td>{{ event.ip|ip_country_name|default('Unknown'|trans) }}</td>
+                <td>{{ event.created_at|format_datetime }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6">{{ 'The list is empty'|trans }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
     <div class="card-footer d-flex align-items-center justify-content-between">
         {{ include('partial_pagination.html.twig', { 'list': history, 'url': 'client/logins' }) }}

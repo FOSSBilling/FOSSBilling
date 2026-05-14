@@ -55,7 +55,6 @@ final class RequestFactory
         }
 
         $request->attributes->set(self::ROUTE_PATH_ATTRIBUTE, $path);
-        $request->query->set('_url', $path);
 
         return $path;
     }
