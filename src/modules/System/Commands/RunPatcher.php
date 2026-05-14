@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\System\Commands;
 
+use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\UpdatePatcher;
 use FOSSBilling\Version;
