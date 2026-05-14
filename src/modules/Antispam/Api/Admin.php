@@ -54,15 +54,32 @@ class Admin extends \Api_Abstract
         return $ip;
     }
 
+    private function getBlockedIpsFromConfig(array $config): array
+    {
+        $blocked_ips = isset($config['blocked_ips']) && !empty($config['blocked_ips'])
+            ? explode(PHP_EOL, (string) $config['blocked_ips'])
+            : [];
+        $trimmed_ips = array_map(trim(...), $blocked_ips);
+        $filtered_ips = array_filter($trimmed_ips, static fn (string $value): bool => $value !== '');
+
+        return array_values($filtered_ips);
+    }
+
+    private function saveBlockedIpsConfig(array $blocked_ips, bool $enabled): void
+    {
+        $config = $this->di['mod_config']('Antispam');
+        $config['block_ips'] = $enabled;
+        $config['blocked_ips'] = implode(PHP_EOL, $blocked_ips);
+        $config['ext'] = 'mod_antispam';
+        $this->di['mod_service']('extension')->setConfig($config);
+    }
+
     public function block_ip($data): array
     {
         $ip = $this->normalizeIp($data['ip'] ?? null);
 
         $config = $this->di['mod_config']('Antispam');
-        $blocked_ips = isset($config['blocked_ips']) && !empty($config['blocked_ips'])
-            ? explode(PHP_EOL, (string) $config['blocked_ips'])
-            : [];
-        $blocked_ips = array_map(trim(...), $blocked_ips);
+        $blocked_ips = $this->getBlockedIpsFromConfig($config);
 
         if (in_array($ip, $blocked_ips, true)) {
             throw new \FOSSBilling\InformationException(':ip is already blocked.', [':ip' => $ip]);
@@ -73,12 +90,7 @@ class Admin extends \Api_Abstract
         }
 
         $blocked_ips[] = $ip;
-        $blocked_ips_string = implode(PHP_EOL, $blocked_ips);
-
-        $config['block_ips'] = true;
-        $config['blocked_ips'] = $blocked_ips_string;
-        $config['ext'] = 'mod_antispam';
-        $this->di['mod_service']('extension')->setConfig($config);
+        $this->saveBlockedIpsConfig($blocked_ips, true);
 
         return ['result' => true, 'ip' => $ip];
     }
@@ -88,10 +100,7 @@ class Admin extends \Api_Abstract
         $ip = $this->normalizeIp($data['ip'] ?? null);
 
         $config = $this->di['mod_config']('Antispam');
-        $blocked_ips = isset($config['blocked_ips']) && !empty($config['blocked_ips'])
-            ? explode(PHP_EOL, (string) $config['blocked_ips'])
-            : [];
-        $blocked_ips = array_map(trim(...), $blocked_ips);
+        $blocked_ips = $this->getBlockedIpsFromConfig($config);
 
         $key = array_search($ip, $blocked_ips, true);
         if ($key === false) {
@@ -99,12 +108,7 @@ class Admin extends \Api_Abstract
         }
 
         unset($blocked_ips[$key]);
-        $blocked_ips_string = implode(PHP_EOL, $blocked_ips);
-
-        $config['block_ips'] = !empty($blocked_ips);
-        $config['blocked_ips'] = $blocked_ips_string;
-        $config['ext'] = 'mod_antispam';
-        $this->di['mod_service']('extension')->setConfig($config);
+        $this->saveBlockedIpsConfig($blocked_ips, !empty($blocked_ips));
 
         return ['result' => true, 'ip' => $ip];
     }
@@ -112,13 +116,11 @@ class Admin extends \Api_Abstract
     public function get_blocked_ips($data): array
     {
         $config = $this->di['mod_config']('Antispam');
-        $blocked_ips = isset($config['blocked_ips']) && !empty($config['blocked_ips'])
-            ? explode(PHP_EOL, (string) $config['blocked_ips'])
-            : [];
+        $blocked_ips = $this->getBlockedIpsFromConfig($config);
 
         return [
             'enabled' => $config['block_ips'] ?? false,
-            'ips' => array_map(trim(...), $blocked_ips),
+            'ips' => $blocked_ips,
         ];
     }
 }
