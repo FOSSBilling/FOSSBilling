@@ -147,10 +147,6 @@ class Service implements InjectionAwareInterface
             $client->phone = Tools::validatePhoneNumber($data['phone']);
         }
 
-        if ($data['birthday'] === "") {
-            //unset($data['birthday']);
-        }
-
         $client->first_name = $data['first_name'] ?? $client->first_name;
         $client->last_name = $data['last_name'] ?? $client->last_name;
         $client->gender = ClientValidator::validateGender($data['gender'] ?? $client->gender);
