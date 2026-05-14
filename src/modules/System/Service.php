@@ -174,11 +174,8 @@ class Service
     /**
      * @return mixed[]
      */
-    private function getMultipleParams($params): array
+    private function getMultipleParams(array $params): array
     {
-        if (!is_array($params)) {
-            return [];
-        }
         foreach ($params as $param) {
             if (!preg_match('/^[a-z0-9_]+$/', (string) $param)) {
                 throw new \FOSSBilling\InformationException('Invalid parameter name, received: param_', ['param_' => $param]);

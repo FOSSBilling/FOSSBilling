@@ -26,6 +26,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 class RunPatcher extends Command implements \FOSSBilling\InjectionAwareInterface
 {
+    private const CACHE_VERSION_KEY = 'version';
+    private const CACHE_LATEST_PATCH_LEVEL_KEY = 'latest_patch_level';
+
     protected $di;
 
     public function setDi($di): void
@@ -56,8 +59,8 @@ class RunPatcher extends Command implements \FOSSBilling\InjectionAwareInterface
         if (
             $cacheItem->isHit()
             && is_array($cachedState)
-            && ($cachedState['version'] ?? null) === $version
-            && ($cachedState['latest_patch_level'] ?? null) === $latestPatchLevel
+            && ($cachedState[self::CACHE_VERSION_KEY] ?? null) === $version
+            && ($cachedState[self::CACHE_LATEST_PATCH_LEVEL_KEY] ?? null) === $latestPatchLevel
         ) {
             $output->writeln('<info>The update patcher has already been run for this version.</info>');
 
@@ -74,8 +77,8 @@ class RunPatcher extends Command implements \FOSSBilling\InjectionAwareInterface
             $this->di['cache']->clear();
 
             $cacheItem->set([
-                'version' => $version,
-                'latest_patch_level' => $latestPatchLevel,
+                self::CACHE_VERSION_KEY => $version,
+                self::CACHE_LATEST_PATCH_LEVEL_KEY => $latestPatchLevel,
             ]);
             $this->di['cache']->save($cacheItem);
 

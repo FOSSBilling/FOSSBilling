@@ -9,6 +9,8 @@ use PHPUnit\Framework\TestCase;
 
 final class AdminTest extends TestCase
 {
+    private const string SEMVER_PATTERN = '/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/';
+
     public function testGetCurrentClientTheme(): void
     {
         $result = Request::makeRequest('admin/theme/get_current');
@@ -86,7 +88,7 @@ final class AdminTest extends TestCase
         $this->assertIsString($data['version']);
         $this->assertNotSame('', trim($data['version']), 'Theme version should not be empty.');
         $this->assertMatchesRegularExpression(
-            '/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/',
+            self::SEMVER_PATTERN,
             $data['version'],
             'Theme version should follow semantic versioning (e.g., 1.2.3).'
         );
