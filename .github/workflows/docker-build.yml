@@ -53,8 +53,10 @@ jobs:
         include:
           - platform: linux/amd64
             runner: ubuntu-24.04
+            suffix: amd64
           - platform: linux/arm64
             runner: ubuntu-24.04-arm
+            suffix: arm64
       fail-fast: false
     outputs:
       release-tree-artifact: ${{ steps.release-tree-output.outputs.artifact-name || '' }}
@@ -140,7 +142,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           if-no-files-found: 'error'
-          name: digest-${{ matrix.platform }}
+          name: digest-${{ matrix.suffix }}
           path: /tmp/digests/*
           retention-days: 1
 
