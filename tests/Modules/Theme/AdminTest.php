@@ -72,11 +72,10 @@ final class AdminTest extends TestCase
 
     private function assertValidThemePayload(array $data): void
     {
-        $expectedKeys = ['author', 'name', 'version'];
-        $actualKeys = array_keys($data);
-        sort($expectedKeys);
-        sort($actualKeys);
-        $this->assertSame($expectedKeys, $actualKeys, 'Theme payload should contain only expected keys.');
+        $requiredKeys = ['author', 'name', 'version', 'code', 'paths', 'hasSettings', 'url'];
+        foreach ($requiredKeys as $requiredKey) {
+            $this->assertArrayHasKey($requiredKey, $data, sprintf('Theme payload should contain the "%s" key.', $requiredKey));
+        }
 
         $this->assertIsString($data['name']);
         $this->assertNotSame('', trim($data['name']), 'Theme name should not be empty.');
@@ -89,5 +88,33 @@ final class AdminTest extends TestCase
         );
         $this->assertIsString($data['author']);
         $this->assertNotSame('', trim($data['author']), 'Theme author should not be empty.');
+        $this->assertIsString($data['code']);
+        $this->assertNotSame('', trim($data['code']), 'Theme code should not be empty.');
+        $this->assertIsString($data['url']);
+        $this->assertNotSame('', trim($data['url']), 'Theme URL should not be empty.');
+        $this->assertIsBool($data['hasSettings']);
+        $this->assertIsArray($data['paths']);
+        $this->assertNotEmpty($data['paths'], 'Theme paths should not be empty.');
+        foreach ($data['paths'] as $path) {
+            $this->assertIsString($path);
+            $this->assertNotSame('', trim($path), 'Theme paths should contain non-empty strings.');
+        }
+
+        if (array_key_exists('author_url', $data)) {
+            $this->assertIsString($data['author_url']);
+            $this->assertNotSame('', trim($data['author_url']), 'Theme author URL should not be empty when present.');
+        }
+
+        if (array_key_exists('description', $data)) {
+            $this->assertIsString($data['description']);
+        }
+
+        if (array_key_exists('icon', $data)) {
+            $this->assertIsString($data['icon']);
+        }
+
+        if (array_key_exists('markdown_attributes', $data)) {
+            $this->assertIsArray($data['markdown_attributes']);
+        }
     }
 }
