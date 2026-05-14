@@ -53,7 +53,15 @@ class Admin extends \Api_Abstract
 
     private function isInvalidClientParameter(mixed $client): bool
     {
-        return is_string($client) && filter_var($client, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === null;
+        if ($client === null || is_bool($client) || is_int($client) || is_float($client)) {
+            return false;
+        }
+
+        if (!is_string($client)) {
+            return true;
+        }
+
+        return filter_var($client, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === null;
     }
 
     /**

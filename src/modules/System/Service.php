@@ -174,7 +174,7 @@ class Service
     /**
      * @return mixed[]
      */
-    private function getMultipleParams(array $params): array
+    private function getSettingsByParams(array $params): array
     {
         foreach ($params as $param) {
             if (!preg_match('/^[a-z0-9_]+$/', (string) $param)) {
@@ -221,7 +221,7 @@ class Service
             'company_tos',
             'company_vat_number',
         ];
-        $results = $this->getMultipleParams($c);
+        $results = $this->getSettingsByParams($c);
 
         $logoUrl = $results['company_logo'] ?? null;
         if ($logoUrl !== null && !str_contains((string) $logoUrl, 'http')) {
