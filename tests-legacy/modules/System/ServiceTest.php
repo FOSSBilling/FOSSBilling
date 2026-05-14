@@ -247,7 +247,7 @@ final class ServiceTest extends \BBTestCase
     public function testCreateBaseEnvironmentProvidesNormalizedRequestUrl(): void
     {
         $di = $this->getDi();
-        $request = \Symfony\Component\HttpFoundation\Request::create('/admin/product', 'GET', [
+        $request = Request::create('/admin/product', 'GET', [
             'search' => 'query',
         ]);
         $di['request'] = $request;
