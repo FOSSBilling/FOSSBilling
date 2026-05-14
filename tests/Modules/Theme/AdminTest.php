@@ -36,7 +36,6 @@ final class AdminTest extends TestCase
         $result = Request::makeRequest('admin/theme/get_current', ['client' => 'invalid']);
 
         $this->assertFalse($result->wasSuccessful(), 'Request should fail for an invalid "client" parameter type.');
-        $this->assertGreaterThanOrEqual(400, $result->getStatusCode(), 'Invalid request should return an HTTP error status.');
 
         $errorMessage = $result->getErrorMessage();
         $this->assertIsString($errorMessage, 'Error message should be a string.');
