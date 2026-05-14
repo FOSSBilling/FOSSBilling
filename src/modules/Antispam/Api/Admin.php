@@ -32,7 +32,7 @@ class Admin extends \Api_Abstract
             'sfs' => $config['sfs'] ?? false,
             'check_temp_emails' => $config['check_temp_emails'] ?? true,
             'honeypot_enabled' => $config['honeypot_enabled'] ?? true,
-            'honeypot_field' => $config['honeypot_field'] ?? 'honeypot_field',
+            'honeypot_field' => $config['honeypot_field'] ?? 'bio',
         ];
     }
 

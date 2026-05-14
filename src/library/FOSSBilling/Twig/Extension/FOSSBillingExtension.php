@@ -161,13 +161,13 @@ class FOSSBillingExtension
 
             return [
                 'enabled' => $config['honeypot_enabled'] ?? true,
-                'field' => $config['honeypot_field'] ?? 'honeypot_field',
+                'field' => $config['honeypot_field'] ?? 'bio',
             ];
         }
 
         return [
             'enabled' => false,
-            'field' => 'honeypot_field',
+            'field' => 'bio',
         ];
     }
 
