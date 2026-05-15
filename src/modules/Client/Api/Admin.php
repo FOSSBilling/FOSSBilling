@@ -247,7 +247,7 @@ class Admin extends \Api_Abstract
             $this->di['validator']->isBirthdayValid($data['birthday']);
         }
 
-        if($data['birthday'] === ""){
+        if (($data['birthday'] ?? null) === '') {
             unset($data['birthday']);
         }
 
