@@ -106,7 +106,7 @@ jobs:
           cache-to: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:${{ inputs.cache-scope }},mode=max
           context: .
           labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,push-by-digest=true,name=${{ inputs.meta-images }}
+          outputs: type=image,push-by-digest=true,name=docker.io/${{ inputs.meta-images }}
           provenance: false
           target: ${{ inputs.target }}
 
@@ -182,9 +182,9 @@ jobs:
         run: |
           docker buildx imagetools create \
             $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ inputs.meta-images }}@sha256:%s ' *)
+            $(printf 'docker.io/${{ inputs.meta-images }}@sha256:%s ' *)
 
       - name: 'Inspect Image'
         run: |
           docker buildx imagetools inspect \
-            '${{ inputs.meta-images }}:${{ steps.meta.outputs.version }}'
+            'docker.io/${{ inputs.meta-images }}:${{ steps.meta.outputs.version }}'
