@@ -168,7 +168,20 @@ class Session implements InjectionAwareInterface
         if ($invalid) {
             $this->di['db']->trash($session);
             if ($sessionName !== '') {
-                setcookie($sessionName, '', time() - 3600, '/');
+                $cookieParams = session_get_cookie_params();
+                $cookieOptions = [
+                    'expires' => time() - 3600,
+                    'path' => $cookieParams['path'] ?? '/',
+                    'domain' => $cookieParams['domain'] ?? '',
+                    'secure' => (bool) ($cookieParams['secure'] ?? false),
+                    'httponly' => (bool) ($cookieParams['httponly'] ?? false),
+                ];
+
+                if (!empty($cookieParams['samesite'])) {
+                    $cookieOptions['samesite'] = $cookieParams['samesite'];
+                }
+
+                setcookie($sessionName, '', $cookieOptions);
                 unset($_COOKIE[$sessionName]);
             }
         }
