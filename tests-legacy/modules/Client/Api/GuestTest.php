@@ -126,7 +126,7 @@ final class GuestTest extends \BBTestCase
         $client->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('New registrations are temporarily disabled');
+        $this->expectExceptionMessage('New registrations are temporary disabled');
         $client->create($data);
     }
 
