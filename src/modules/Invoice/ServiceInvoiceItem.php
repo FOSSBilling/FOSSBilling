@@ -129,8 +129,8 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         }
 
         $period = $this->normalizePeriod($data['period'] ?? null);
-        if ($period) {
-            $periodCheck = $this->di['period']($period);
+        if ($period !== null) {
+            $period = $this->di['period']($period)->getCode();
         }
 
         $type = $data['type'] ?? \Model_InvoiceItem::TYPE_CUSTOM;
@@ -287,7 +287,10 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $taxed = $clientService->isClientTaxable($client);
         $quantity = $line['quantity'] ?? $order->quantity;
         $unit = $line['unit'] ?? $order->unit;
-        $period = $line['period'] ?? $order->period;
+        $period = $this->normalizePeriod($line['period'] ?? $order->period);
+        if ($period !== null) {
+            $period = $this->di['period']($period)->getCode();
+        }
 
         $pi = $this->di['db']->dispense('InvoiceItem');
         $pi->invoice_id = $proforma->id;
