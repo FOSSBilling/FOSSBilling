@@ -1,0 +1,30 @@
+name: GHCR Package Cleanup
+
+permissions:
+  contents: read
+  packages: write
+
+on:
+  schedule:
+    - cron: '37 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ghcr-package-cleanup
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    name: 'Delete Untagged GHCR Versions'
+    if: ${{ github.repository == 'FOSSBilling/FOSSBilling' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 'Delete Untagged GHCR Versions'
+        uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55 # v5
+        with:
+          owner: FOSSBilling
+          package-name: fossbilling
+          package-type: container
+          delete-only-untagged-versions: 'true'
+          min-versions-to-keep: 20
