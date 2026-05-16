@@ -78,6 +78,7 @@ jobs:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+          scope: 'fossbilling/fossbilling@push'
 
       - name: 'Login to GitHub Container Registry'
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4
@@ -158,6 +159,7 @@ jobs:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+          scope: 'fossbilling/fossbilling@push'
 
       - name: 'Login to GitHub Container Registry'
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4
