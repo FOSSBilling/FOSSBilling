@@ -229,26 +229,14 @@ class Session implements InjectionAwareInterface
         if ($sessionName !== '' && $sessionId !== '') {
             $params = session_get_cookie_params();
 
-            if (PHP_VERSION_ID >= 70300) {
-                setcookie($sessionName, $sessionId, [
-                    'expires' => 0,
-                    'path' => $params['path'] ?? '/',
-                    'domain' => $params['domain'] ?? '',
-                    'secure' => (bool) ($params['secure'] ?? false),
-                    'httponly' => (bool) ($params['httponly'] ?? true),
-                    'samesite' => $params['samesite'] ?? 'Lax',
-                ]);
-            } else {
-                setcookie(
-                    $sessionName,
-                    $sessionId,
-                    0,
-                    $params['path'] ?? '/',
-                    $params['domain'] ?? '',
-                    (bool) ($params['secure'] ?? false),
-                    (bool) ($params['httponly'] ?? true)
-                );
-            }
+            setcookie($sessionName, $sessionId, [
+                'expires' => 0,
+                'path' => $params['path'] ?? '/',
+                'domain' => $params['domain'] ?? '',
+                'secure' => (bool) ($params['secure'] ?? false),
+                'httponly' => (bool) ($params['httponly'] ?? true),
+                'samesite' => $params['samesite'] ?? 'Lax',
+            ]);
 
             $_COOKIE[$sessionName] = $sessionId;
         }
