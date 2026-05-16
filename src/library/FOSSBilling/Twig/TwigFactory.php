@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Twig;
 
+use Box\Mod\Currency\Entity\Currency;
 use DebugBar\Bridge\Twig\NamespacedTwigProfileCollector;
 use DebugBar\StandardDebugBar;
 use FOSSBilling\Config;
@@ -241,6 +242,7 @@ class TwigFactory
         $twig->addGlobal('guest', [
             'system_company' => $apiGuest->system_company(),
         ]);
+        $twig->addGlobal('default_currency', $this->getDefaultCurrencyCode());
         $twig->addGlobal('FOSSBillingVersion', Version::VERSION);
 
         $this->emailEnvironment = $twig;
@@ -379,6 +381,8 @@ class TwigFactory
             $twig->addGlobal('redirect_uri', $redirectUri);
         }
 
+        $twig->addGlobal('default_currency', $this->getDefaultCurrencyCode());
+
         $twig->addGlobal('CSRFToken', $csrfToken);
         $twig->addGlobal('request', $requestData);
         $twig->addGlobal('request_query', $requestQuery);
@@ -386,6 +390,23 @@ class TwigFactory
         $twig->addGlobal('request_has_filters', $requestHasFilters);
         $twig->addGlobal('guest', $this->di['api_guest']);
         $twig->addGlobal('FOSSBillingVersion', Version::VERSION);
+    }
+
+    private function getDefaultCurrencyCode(): string
+    {
+        if ($this->di->offsetExists('em')) {
+            try {
+                $repository = $this->di['em']->getRepository(Currency::class);
+                $currency = $repository->findDefault();
+
+                if ($currency instanceof Currency && $currency->getCode() !== '') {
+                    return $currency->getCode();
+                }
+            } catch (\Throwable) {
+            }
+        }
+
+        return 'USD';
     }
 
     /**
