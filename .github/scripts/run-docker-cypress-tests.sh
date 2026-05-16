@@ -7,6 +7,7 @@ repo_root="$(cd "${script_dir}/../.." && pwd)"
 compose_file="${repo_root}/.github/docker/live-tests.compose.yml"
 project="fossbilling-cypress-${GITHUB_RUN_ID:-local}-$$"
 cypress_image="${CYPRESS_DOCKER_IMAGE:-cypress/included:15.15.0}"
+cypress_browser="${CYPRESS_BROWSER:-electron}"
 
 db_name="fossbilling"
 db_user="root"
@@ -88,9 +89,9 @@ fi
 
 set_commit_info
 
-cypress_args=(run --browser chrome)
+cypress_args=(run --browser "${cypress_browser}")
 if [[ -n "${CYPRESS_RECORD_KEY:-}" ]]; then
-  cypress_args+=(--record --group "PHP 8.5 / Chrome")
+  cypress_args+=(--record --group "PHP 8.5 / ${cypress_browser}")
   if [[ -n "${GITHUB_RUN_ID:-}" ]]; then
     cypress_args+=(--ci-build-id "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT:-1}")
   fi
@@ -136,7 +137,7 @@ install_payload=(
 
 compose exec -T app curl -fsS "${install_payload[@]}" >/dev/null
 
-# Chrome is sensitive to Docker's default 64 MB /dev/shm size.
+# Chromium-based browsers are sensitive to Docker's default 64 MB /dev/shm size.
 docker run --rm \
   --network "${project}_default" \
   --shm-size=2g \
