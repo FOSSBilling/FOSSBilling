@@ -629,8 +629,6 @@ class Service implements InjectionAwareInterface
 
     public function getConfig(string $ext): array
     {
-        $this->hasManagePermission($ext);
-
         return $this->di['cache']->get("config_{$ext}", function (ItemInterface $item) use ($ext) {
             $item->expiresAfter(60 * 60);
 

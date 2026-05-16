@@ -230,7 +230,9 @@ class Admin extends \Api_Abstract
     public function config_get($data)
     {
         $service = $this->getService();
-        $ext = $data['ext'] ?? null;
+        $ext = $data['ext'];
+
+        $service->hasManagePermission($ext);
 
         return $service->getConfig($ext);
     }
