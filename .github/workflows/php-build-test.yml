@@ -25,6 +25,7 @@ jobs:
       - name: 'Lowercase github.repository'
         run: |
           echo "IMAGE_NAME=${GITHUB_REPOSITORY@L}" >> "${GITHUB_ENV}"
+          echo "CACHE_IMAGE=ghcr.io/${GITHUB_REPOSITORY@L}-build-cache" >> "${GITHUB_ENV}"
 
       - name: 'Login to GitHub Container Registry'
         if: inputs.write-cache
@@ -45,7 +46,7 @@ jobs:
           build-args: |
             PHP_VERSION=${{ matrix.php }}
             INSTALL_TRANSLATIONS=false
-          cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:cache-ci-${{ matrix.php }}
+          cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}:cache-ci-${{ matrix.php }}
           context: .
           load: true
           tags: |
@@ -60,8 +61,8 @@ jobs:
           build-args: |
             PHP_VERSION=${{ matrix.php }}
             INSTALL_TRANSLATIONS=false
-          cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:cache-ci-${{ matrix.php }}
-          cache-to: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:cache-ci-${{ matrix.php }},mode=max
+          cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}:cache-ci-${{ matrix.php }}
+          cache-to: type=registry,ref=${{ env.CACHE_IMAGE }}:cache-ci-${{ matrix.php }},mode=max
           context: .
           load: true
           tags: |
@@ -94,7 +95,7 @@ jobs:
           | --- | --- |
           | PHP version | `${{ matrix.php }}` |
           | Test image | `fossbilling:test-${{ matrix.php }}` |
-          | Registry cache | `ghcr.io/${{ env.IMAGE_NAME }}:cache-ci-${{ matrix.php }}` |
+          | Registry cache | `${{ env.CACHE_IMAGE }}:cache-ci-${{ matrix.php }}` |
           | Cache mode | `${{ inputs.write-cache && 'read/write' || 'read-only' }}` |
           | Docker build | `${{ inputs.write-cache && steps.build_write_cache.outcome || steps.build_read_cache.outcome }}` |
           | PHPStan | `${{ steps.phpstan.outcome }}` |

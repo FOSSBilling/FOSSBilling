@@ -67,7 +67,7 @@ jobs:
           persist-credentials: false
 
       - name: 'Lowercase github.repository'
-        run: echo "IMAGE_NAME=${GITHUB_REPOSITORY@L}" >> "${GITHUB_ENV}"
+        run: echo "CACHE_IMAGE=ghcr.io/${GITHUB_REPOSITORY@L}-build-cache" >> "${GITHUB_ENV}"
 
       - name: 'Set Release Tree Artifact Output'
         id: release-tree-output
@@ -104,8 +104,8 @@ jobs:
         uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
         with:
           build-args: ${{ inputs.build-args }}
-          cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:${{ inputs.cache-scope }}
-          cache-to: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:${{ inputs.cache-scope }},mode=max
+          cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}:${{ inputs.cache-scope }}
+          cache-to: type=registry,ref=${{ env.CACHE_IMAGE }}:${{ inputs.cache-scope }},mode=max
           context: .
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=docker.io/${{ inputs.meta-images }},name-canonical=true,push=true,push-by-digest=true
@@ -117,7 +117,7 @@ jobs:
         uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
         with:
           build-args: ${{ inputs.build-args }}
-          cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:${{ inputs.cache-scope }}
+          cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}:${{ inputs.cache-scope }}
           context: .
           outputs: type=local,dest=./release-tree
           target: release-artifact
@@ -202,7 +202,24 @@ jobs:
 
           docker buildx imagetools create "${tag_args[@]}" "${digest_args[@]}"
 
+      - name: 'Mirror Manifest List to GHCR'
+        run: |
+          mapfile -t docker_tags < <(jq -r '.tags[]' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          ghcr_tag_args=()
+          for tag in "${docker_tags[@]}"; do
+            ghcr_tag_args+=(-t "ghcr.io/${tag#docker.io/}")
+          done
+
+          docker buildx imagetools create \
+            "${ghcr_tag_args[@]}" \
+            "docker.io/${{ inputs.meta-images }}:${{ steps.meta.outputs.version }}"
+
       - name: 'Inspect Image'
         run: |
           docker buildx imagetools inspect \
             'docker.io/${{ inputs.meta-images }}:${{ steps.meta.outputs.version }}'
+
+      - name: 'Inspect GHCR Image'
+        run: |
+          docker buildx imagetools inspect \
+            'ghcr.io/${{ inputs.meta-images }}:${{ steps.meta.outputs.version }}'

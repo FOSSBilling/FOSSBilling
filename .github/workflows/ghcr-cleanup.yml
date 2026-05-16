@@ -20,11 +20,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: 'Delete Untagged GHCR Versions'
+      - name: 'Delete Untagged Runtime Image Versions'
         uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55 # v5
         with:
           owner: FOSSBilling
           package-name: fossbilling
+          package-type: container
+          delete-only-untagged-versions: 'true'
+          min-versions-to-keep: 20
+
+      - name: 'Delete Untagged Build Cache Versions'
+        uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55 # v5
+        with:
+          owner: FOSSBilling
+          package-name: fossbilling-build-cache
           package-type: container
           delete-only-untagged-versions: 'true'
           min-versions-to-keep: 20

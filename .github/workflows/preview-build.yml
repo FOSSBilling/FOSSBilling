@@ -21,6 +21,7 @@ jobs:
       - name: 'Lowercase github.repository'
         run: |
           echo "IMAGE_NAME=${GITHUB_REPOSITORY@L}" >> "${GITHUB_ENV}"
+          echo "CACHE_IMAGE=ghcr.io/${GITHUB_REPOSITORY@L}-build-cache" >> "${GITHUB_ENV}"
 
       - name: 'Login to GitHub Container Registry'
         if: inputs.write-cache
@@ -42,7 +43,7 @@ jobs:
             FOSSBILLING_VERSION=${{ github.sha }}
             FOSSBILLING_VERSION_TRUNCATE=7
             SENTRY_DSN=${{ vars.SENTRY_DSN }}
-          cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:cache-preview
+          cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}:cache-preview
           context: .
           target: release-artifact
           outputs: type=local,dest=./release-tree
@@ -56,8 +57,8 @@ jobs:
             FOSSBILLING_VERSION=${{ github.sha }}
             FOSSBILLING_VERSION_TRUNCATE=7
             SENTRY_DSN=${{ vars.SENTRY_DSN }}
-          cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:cache-preview
-          cache-to: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:cache-preview,mode=max
+          cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}:cache-preview
+          cache-to: type=registry,ref=${{ env.CACHE_IMAGE }}:cache-preview,mode=max
           context: .
           target: release-artifact
           outputs: type=local,dest=./release-tree
@@ -84,7 +85,7 @@ jobs:
           | Item | Value |
           | --- | --- |
           | Release version | `${{ github.sha }}` |
-          | Registry cache | `ghcr.io/${{ env.IMAGE_NAME }}:cache-preview` |
+          | Registry cache | `${{ env.CACHE_IMAGE }}:cache-preview` |
           | Cache mode | `${{ inputs.write-cache && 'read/write' || 'read-only' }}` |
           | Build target | `release-artifact` |
           | Build output | `./release-tree` |
