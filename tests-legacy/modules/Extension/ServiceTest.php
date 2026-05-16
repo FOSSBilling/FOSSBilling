@@ -717,6 +717,8 @@ final class ServiceTest extends \BBTestCase
             'ext' => 'extensionName',
         ];
 
+        $serviceMock = $this->getMockBuilder(Service::class)->onlyMethods(['hasManagePermission'])->getMock();
+
         $model = new \Model_ExtensionMeta();
         $model->loadBean(new \DummyBean());
 
@@ -734,9 +736,9 @@ final class ServiceTest extends \BBTestCase
         $di['crypt'] = $cryptMock;
         $di['cache'] = new \Symfony\Component\Cache\Adapter\ArrayAdapter();
 
-        $this->service->setDi($di);
+        $serviceMock->setDi($di);
 
-        $result = $this->service->getConfig($data['ext']);
+        $result = $serviceMock->getConfig($data['ext']);
         $this->assertIsArray($result);
     }
 
@@ -745,6 +747,8 @@ final class ServiceTest extends \BBTestCase
         $data = [
             'ext' => 'extensionName',
         ];
+
+        $serviceMock = $this->getMockBuilder(Service::class)->onlyMethods(['hasManagePermission'])->getMock();
 
         $model = new \Model_ExtensionMeta();
         $model->loadBean(new \DummyBean());
@@ -764,11 +768,11 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['cache'] = new \Symfony\Component\Cache\Adapter\ArrayAdapter();
 
-        $this->service->setDi($di);
-        $result = $this->service->getConfig($data['ext']);
+        $serviceMock->setDi($di);
+        $result = $serviceMock->getConfig($data['ext']);
 
         $this->assertIsArray($result);
-        $this->assertEquals(['ext' => 'extensionName'], $result);
+        $this->assertEquals(['ext' => 'extensionname'], $result);
     }
 
     public function testSetConfig(): void
