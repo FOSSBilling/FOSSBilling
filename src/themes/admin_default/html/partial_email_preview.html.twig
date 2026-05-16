@@ -36,9 +36,6 @@ function escapeHtml(str) {
  */
 function escapeHtmlAttribute(str) {
     return str
-        .replace(/\\/g, '\\\\')
-        .replace(/`/g, '\\`')
-        .replace(/\$/g, '\\$')
         .replace(/&/g, '&amp;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;')
