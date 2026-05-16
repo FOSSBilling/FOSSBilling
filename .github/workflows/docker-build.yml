@@ -106,7 +106,7 @@ jobs:
           cache-to: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:${{ inputs.cache-scope }},mode=max
           context: .
           labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,push-by-digest=true,name=docker.io/${{ inputs.meta-images }}
+          outputs: type=image,name=docker.io/${{ inputs.meta-images }},name-canonical=true,push=true,push-by-digest=true
           provenance: false
           target: ${{ inputs.target }}
 
