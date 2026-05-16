@@ -45,10 +45,46 @@ cleanup() {
   exit "$status"
 }
 
+set_commit_info() {
+  if ! command -v git >/dev/null 2>&1 || ! git -C "${project_root}" rev-parse --git-dir >/dev/null 2>&1; then
+    return
+  fi
+
+  if [[ -z "${COMMIT_INFO_BRANCH:-}" ]]; then
+    COMMIT_INFO_BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-}}"
+    if [[ -z "${COMMIT_INFO_BRANCH}" ]]; then
+      COMMIT_INFO_BRANCH="$(git -C "${project_root}" rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+      if [[ "${COMMIT_INFO_BRANCH}" == "HEAD" ]]; then
+        COMMIT_INFO_BRANCH=""
+      fi
+    fi
+  fi
+
+  if [[ -z "${COMMIT_INFO_MESSAGE:-}" ]]; then
+    COMMIT_INFO_MESSAGE="$(git -C "${project_root}" show -s --pretty=%B 2>/dev/null || true)"
+  fi
+  if [[ -z "${COMMIT_INFO_EMAIL:-}" ]]; then
+    COMMIT_INFO_EMAIL="$(git -C "${project_root}" show -s --pretty=%ae 2>/dev/null || true)"
+  fi
+  if [[ -z "${COMMIT_INFO_AUTHOR:-}" ]]; then
+    COMMIT_INFO_AUTHOR="$(git -C "${project_root}" show -s --pretty=%an 2>/dev/null || true)"
+  fi
+  if [[ -z "${COMMIT_INFO_SHA:-}" ]]; then
+    COMMIT_INFO_SHA="$(git -C "${project_root}" rev-parse HEAD 2>/dev/null || true)"
+  fi
+  if [[ -z "${COMMIT_INFO_REMOTE:-}" ]]; then
+    COMMIT_INFO_REMOTE="$(git -C "${project_root}" config --get remote.origin.url 2>/dev/null || true)"
+  fi
+
+  export COMMIT_INFO_BRANCH COMMIT_INFO_MESSAGE COMMIT_INFO_EMAIL COMMIT_INFO_AUTHOR COMMIT_INFO_SHA COMMIT_INFO_REMOTE
+}
+
 if ! docker image inspect "${image}" >/dev/null 2>&1; then
   echo "Docker image '${image}' was not found. Build the test image before running Cypress tests."
   exit 1
 fi
+
+set_commit_info
 
 cypress_args=(run --browser chrome)
 if [[ -n "${CYPRESS_RECORD_KEY:-}" ]]; then
@@ -125,6 +161,12 @@ docker run --rm \
   --env CYPRESS_ADMIN_PASSWORD="${test_pass}" \
   --env CYPRESS_PROJECT_ID \
   --env CYPRESS_RECORD_KEY \
+  --env COMMIT_INFO_AUTHOR \
+  --env COMMIT_INFO_BRANCH \
+  --env COMMIT_INFO_EMAIL \
+  --env COMMIT_INFO_MESSAGE \
+  --env COMMIT_INFO_REMOTE \
+  --env COMMIT_INFO_SHA \
   --env GITHUB_ACTIONS \
   --env GITHUB_API_URL \
   --env GITHUB_BASE_REF \
@@ -132,6 +174,7 @@ docker run --rm \
   --env GITHUB_HEAD_REF \
   --env GITHUB_JOB \
   --env GITHUB_REF \
+  --env GITHUB_REF_NAME \
   --env GITHUB_REPOSITORY \
   --env GITHUB_RUN_ATTEMPT \
   --env GITHUB_RUN_ID \
