@@ -160,14 +160,14 @@ value="{{ params.captcha_recaptcha_privatekey }}">
 <div class="col-md-6 pt-2 ps-0">
 <label class="form-check form-check-single form-switch ps-0">
 <input id="honeypot_enabled" class="form-check-input" name="honeypot_enabled" type="checkbox"
-{% if params.honeypot_enabled %} checked="checked" {% endif %}>
+{% if params.honeypot_enabled is defined ? params.honeypot_enabled : true %} checked="checked" {% endif %}>
 </label>
 </div>
 </div>
 <div class="mb-3 row">
 <label class="col-md-3 col-form-label" for="honeypot_field">{{ 'Honeypot Field Name'|trans }}</label>
 <div class="col-md-6 row">
-<input class="form-control" type="text" id="honeypot_field" name="honeypot_field" value="{{ params.honeypot_field|default('honeypot_field') }}">
+<input class="form-control" type="text" id="honeypot_field" name="honeypot_field" value="{{ params.honeypot_field|default('bio') }}">
 <small class="form-hint">{{ 'The name of the hidden form field. Change this if you suspect bots are bypassing the honeypot.'|trans }}</small>
 </div>
 </div>

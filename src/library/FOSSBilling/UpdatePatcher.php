@@ -976,7 +976,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 $newConfig = array_merge($spamcheckerSettings, $existingAntispamSettings);
                 $newConfig['ext'] = 'mod_antispam';
                 $newConfig['honeypot_enabled'] ??= true;
-                $newConfig['honeypot_field'] ??= 'honeypot_field';
+                $newConfig['honeypot_field'] ??= 'bio';
                 $extService->setConfig($newConfig);
             }
 
