@@ -195,6 +195,36 @@ final class ServiceInvoiceItemTest extends \BBTestCase
         $result = $this->service->addNew($invoiceModel, $data);
         $this->assertIsInt($result);
         $this->assertEquals($newId, $result);
+        $this->assertNull($invoiceItemModel->period);
+    }
+
+    public function testAddNewNormalizesLegacyZeroPeriodSentinel(): void
+    {
+        $data = [
+            'title' => 'Guacamole',
+            'period' => '0',
+        ];
+        $invoiceItemModel = new \Model_InvoiceItem();
+        $invoiceItemModel->loadBean(new \DummyBean());
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('dispense')
+            ->willReturn($invoiceItemModel);
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->willReturn(1);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+
+        $this->service->setDi($di);
+
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        $this->service->addNew($invoiceModel, $data);
+
+        $this->assertNull($invoiceItemModel->period);
     }
 
     public function testGetTotal(): void
