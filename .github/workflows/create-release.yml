@@ -38,9 +38,17 @@ jobs:
     timeout-minutes: 45
     steps:
       - name: 'Validate Release Inputs'
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          TARGET_REF: ${{ inputs.target_ref }}
         run: |
-          if [[ ! "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+          if [[ ! "${RELEASE_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
             echo "Release version must be valid SemVer without a leading v."
+            exit 1
+          fi
+
+          if [[ ! "${TARGET_REF}" =~ ^[A-Za-z0-9._/-]+$ ]] || ! git check-ref-format --branch "${TARGET_REF}" >/dev/null 2>&1; then
+            echo "Target ref must be a valid branch name containing only letters, numbers, dots, underscores, slashes, or hyphens."
             exit 1
           fi
 
@@ -70,40 +78,47 @@ jobs:
 
       - name: 'Create Release Archive'
         id: archive
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
         run: |
           mkdir -p ../dist
-          zip -qr "../dist/FOSSBilling-${{ inputs.version }}.zip" .
+          zip -qr "../dist/FOSSBilling-${RELEASE_VERSION}.zip" .
         working-directory: ./release-tree
 
       - name: 'Create or Update GitHub Release'
         id: release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          TARGET_REF: ${{ inputs.target_ref }}
+          IS_DRAFT: ${{ inputs.draft }}
+          IS_PRERELEASE: ${{ inputs.prerelease }}
+          REPOSITORY: ${{ github.repository }}
         run: |
-          asset="./dist/FOSSBilling-${{ inputs.version }}.zip"
+          asset="./dist/FOSSBilling-${RELEASE_VERSION}.zip"
 
-          if gh release view "${{ inputs.version }}" --repo "${{ github.repository }}" >/dev/null 2>&1; then
-            gh release upload "${{ inputs.version }}" "${asset}" \
-              --repo "${{ github.repository }}" \
+          if gh release view "${RELEASE_VERSION}" --repo "${REPOSITORY}" >/dev/null 2>&1; then
+            gh release upload "${RELEASE_VERSION}" "${asset}" \
+              --repo "${REPOSITORY}" \
               --clobber
             echo "operation=updated" >> "${GITHUB_OUTPUT}"
             exit 0
           fi
 
           release_args=(
-            "${{ inputs.version }}"
+            "${RELEASE_VERSION}"
             "${asset}"
-            --repo "${{ github.repository }}"
-            --title "${{ inputs.version }}"
-            --target "${{ inputs.target_ref }}"
+            --repo "${REPOSITORY}"
+            --title "${RELEASE_VERSION}"
+            --target "${TARGET_REF}"
             --generate-notes
           )
 
-          if [[ "${{ inputs.draft }}" == "true" ]]; then
+          if [[ "${IS_DRAFT}" == "true" ]]; then
             release_args+=(--draft)
           fi
 
-          if [[ "${{ inputs.prerelease }}" == "true" ]]; then
+          if [[ "${IS_PRERELEASE}" == "true" ]]; then
             release_args+=(--prerelease)
           fi
 
