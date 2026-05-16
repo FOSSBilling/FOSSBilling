@@ -16,7 +16,6 @@ use Box\Mod\Currency\Entity\Currency;
 use FOSSBilling\Config;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
-use NumberFormatter;
 use PrinsFrank\Standards\Currency\CurrencyAlpha3;
 
 class Guest extends \Api_Abstract
@@ -94,15 +93,15 @@ class Guest extends \Api_Abstract
 
     private function formatCurrency(float $amount, string $currencyCode): string
     {
-        $formatter = new NumberFormatter($this->getLocale(), NumberFormatter::CURRENCY);
+        $formatter = new \NumberFormatter($this->getLocale(), \NumberFormatter::CURRENCY);
 
         return $formatter->formatCurrency($amount, $currencyCode);
     }
 
     private function formatNumber(float $amount, string $currencyCode): string
     {
-        $formatter = new NumberFormatter($this->getLocale(), NumberFormatter::DECIMAL);
-        $formatter->setAttribute(NumberFormatter::FRACTION_DIGITS, $this->getMinorUnits($currencyCode));
+        $formatter = new \NumberFormatter($this->getLocale(), \NumberFormatter::DECIMAL);
+        $formatter->setAttribute(\NumberFormatter::FRACTION_DIGITS, $this->getMinorUnits($currencyCode));
 
         return $formatter->format($amount);
     }

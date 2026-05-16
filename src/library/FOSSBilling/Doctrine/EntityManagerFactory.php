@@ -16,7 +16,6 @@ use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Proxy\ProxyFactory;
 use FOSSBilling\Environment;
-use SplFileInfo;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 
@@ -27,7 +26,7 @@ class EntityManagerFactory
         $finder = new Finder();
         $finder->directories()->in(PATH_MODS . '/*/Entity')->depth('== 0');
         $moduleEntityPaths = array_map(
-            static fn (SplFileInfo $directory): string => $directory->getPathname(),
+            static fn (\SplFileInfo $directory): string => $directory->getPathname(),
             iterator_to_array($finder)
         );
 

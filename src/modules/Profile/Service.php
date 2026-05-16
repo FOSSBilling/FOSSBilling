@@ -139,11 +139,11 @@ class Service implements InjectionAwareInterface
             $client->email = $email;
         }
 
-        if (isset($data['phone_cc']) && $data['phone_cc'] !== "") {
+        if (isset($data['phone_cc']) && $data['phone_cc'] !== '') {
             $client->phone_cc = Tools::validatePhoneCC($data['phone_cc']);
         }
 
-        if (isset($data['phone']) && is_string($data['phone']) && $data['phone'] !== "") {
+        if (isset($data['phone']) && is_string($data['phone']) && $data['phone'] !== '') {
             $client->phone = Tools::validatePhoneNumber($data['phone']);
         }
 

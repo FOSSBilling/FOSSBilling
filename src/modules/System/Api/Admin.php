@@ -55,6 +55,8 @@ class Admin extends \Api_Abstract
      */
     public function messages($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_settings');
+
         $type = $data['type'] ?? 'info';
 
         return $this->getService()->getMessages($type);
@@ -91,6 +93,8 @@ class Admin extends \Api_Abstract
      */
     public function env($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_settings');
+
         $fetchExternalIp = Tools::normalizeBoolean($data['ip'] ?? false);
 
         return $this->getService()->getEnv($fetchExternalIp);

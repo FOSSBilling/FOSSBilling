@@ -332,19 +332,10 @@ class Service
             error_log($e->getMessage());
         }
 
-        $last_exec = $this->getParamValue('last_cron_exec');
-        $disableAutoCron = Config::getProperty('disable_auto_cron', true);
-
         if (Environment::isProduction()) {
-            $cronService = $this->di['mod_service']('cron');
+            $last_exec = $this->getParamValue('last_cron_exec');
             $cronUrl = $this->di['url']->adminLink('extension/settings/cron');
 
-            // Perform the fallback behavior if enabled
-            if (!$disableAutoCron && (!$last_exec || (time() - strtotime((string) $last_exec)) / 60 >= 15)) {
-                $cronService->runCrons();
-            }
-
-            // And now return the correct message for the given situation
             if (!$last_exec) {
                 $msgs['danger'][] = [
                     'text' => __trans('Cron was never executed, please ensure you have configured the cronjob or else scheduled tasks within FOSSBilling will not behave correctly.'),
@@ -508,7 +499,7 @@ class Service
         return true;
     }
 
-    public function getEnv(bool $fetchExternalIp = false)
+    public function getEnv(bool $fetchExternalIp = false): array
     {
         if ($fetchExternalIp) {
             try {

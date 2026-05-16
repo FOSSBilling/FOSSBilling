@@ -14,11 +14,11 @@ namespace Box\Mod\System\Commands;
 use FOSSBilling\Environment;
 use FOSSBilling\UpdatePatcher;
 use FOSSBilling\Version;
-use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Filesystem\Exception\IOException;
 
 #[AsCommand(
     name: 'system:run-patcher',
