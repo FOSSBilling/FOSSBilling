@@ -259,7 +259,7 @@ final class GuestTest extends \BBTestCase
 
     public function testResetPasswordEmailNotFound(): void
     {
-        $data['email'] = 'joghn@example.eu';
+        $data['email'] = 'john@example.eu';
 
         $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())->method('fire');
