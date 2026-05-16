@@ -116,6 +116,16 @@ final class GuestTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
+    public function testPeriodTitleLegacyZeroCodeReturnsDash(): void
+    {
+        $di = $this->getDi();
+
+        $this->api->setDi($di);
+        $result = $this->api->period_title(['code' => '0']);
+
+        $this->assertSame('-', $result);
+    }
+
     public function testGetPendingMessages(): void
     {
         $serviceMock = $this->createMock(\Box\Mod\System\Service::class);

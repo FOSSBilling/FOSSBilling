@@ -152,10 +152,11 @@ final class ServiceTest extends \BBTestCase
 
         $subscriptionServiceMock = $this->createMock(ServiceSubscription::class);
         $subscriptionServiceMock->expects($this->atLeastOnce())
-            ->method('isSubscribable')
-            ->willReturn(true);
+            ->method('getSubscriptionPeriod')
+            ->with($invoiceModel)
+            ->willReturn('1W');
 
-        $invoiceItemServiceMock = $this->createMock(ServiceInvoiceItem::class);
+        $invoiceItemServiceMock = $this->createStub(ServiceInvoiceItem::class);
 
         $modelToArrayResult = [
             'id' => 1,
@@ -199,10 +200,6 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
             ->willReturn([$invoiceItemModel]);
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getCell')
-            ->willReturn('1W');
-
         $periodMock = $this->getMockBuilder('\Box_Period')
             ->disableOriginalConstructor()
             ->getMock();
@@ -227,7 +224,7 @@ final class ServiceTest extends \BBTestCase
 
             return $service;
         });
-        $di['period'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $periodMock);
+        $di['period'] = $di->protect(fn (string $code): \PHPUnit\Framework\MockObject\MockObject => $periodMock);
 
         $this->service->setDi($di);
 

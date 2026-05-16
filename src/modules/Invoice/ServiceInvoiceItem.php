@@ -128,9 +128,9 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Invoice item title is missing');
         }
 
-        $period = $data['period'] ?? 0;
-        if ($period) {
-            $periodCheck = $this->di['period']($period);
+        $period = $this->normalizePeriod($data['period'] ?? null);
+        if ($period !== null) {
+            $period = $this->di['period']($period)->getCode();
         }
 
         $type = $data['type'] ?? \Model_InvoiceItem::TYPE_CUSTOM;
@@ -156,6 +156,15 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $itemId = $this->di['db']->store($pi);
 
         return (int) $itemId;
+    }
+
+    private function normalizePeriod(mixed $period): ?string
+    {
+        if ($period === null || $period === '' || $period === 0 || $period === '0') {
+            return null;
+        }
+
+        return (string) $period;
     }
 
     public function getTotal(\Model_InvoiceItem $item): float
@@ -278,7 +287,10 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $taxed = $clientService->isClientTaxable($client);
         $quantity = $line['quantity'] ?? $order->quantity;
         $unit = $line['unit'] ?? $order->unit;
-        $period = $line['period'] ?? $order->period;
+        $period = $this->normalizePeriod($line['period'] ?? $order->period);
+        if ($period !== null) {
+            $period = $this->di['period']($period)->getCode();
+        }
 
         $pi = $this->di['db']->dispense('InvoiceItem');
         $pi->invoice_id = $proforma->id;

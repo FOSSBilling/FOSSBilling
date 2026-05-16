@@ -530,6 +530,10 @@ class Service
 
     public function getPeriod($code)
     {
+        if ($code === null || $code === '' || $code === 0 || $code === '0') {
+            return '-';
+        }
+
         $p = \Box_Period::getPredefined();
         if (isset($p[$code])) {
             return $p[$code];

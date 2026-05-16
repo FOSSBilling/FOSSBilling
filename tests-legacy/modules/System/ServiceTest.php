@@ -968,6 +968,13 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
+    public function testGetPeriodLegacyZeroSentinelReturnsDash(): void
+    {
+        $result = $this->service->getPeriod('0');
+
+        $this->assertSame('-', $result);
+    }
+
     public function testGetCountries(): void
     {
         $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
