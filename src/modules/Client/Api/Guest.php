@@ -129,9 +129,7 @@ class Guest extends \Api_Abstract
             $this->di['events_manager']->fire(['event' => 'onAfterClientLogin', 'params' => ['id' => $client->id, 'ip' => $this->ip]]);
 
             $oldSession = $this->di['session']->getId();
-            if (session_status() === PHP_SESSION_ACTIVE) {
-                session_regenerate_id(true);
-            }
+            $this->di['session']->regenerateId();
             $result = $service->toSessionArray($client);
             $this->di['session']->set('client_id', $client->id);
 

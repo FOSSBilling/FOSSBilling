@@ -179,6 +179,8 @@ final class GuestTest extends \BBTestCase
             ->disableOriginalConstructor()
             ->getMock();
 
+        $sessionMock->expects($this->once())
+            ->method('regenerateId');
         $sessionMock->expects($this->atLeastOnce())
             ->method('set');
 

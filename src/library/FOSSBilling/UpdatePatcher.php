@@ -74,6 +74,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['security']['trusted_proxies']['proxies'] ??= [];
         $newConfig['security']['trusted_proxies']['headers'] ??= 'x_forwarded';
         $newConfig['security']['session_lifespan'] ??= $newConfig['security']['cookie_lifespan'] ?? 7200;
+        $newConfig['security']['session_regeneration_grace_period'] ??= 300;
         $newConfig['security']['perform_session_fingerprinting'] ??= true;
         $newConfig['security']['debug_fingerprint'] ??= false;
         $newConfig['update_branch'] ??= 'release';
