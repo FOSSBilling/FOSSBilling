@@ -175,9 +175,7 @@ final class GuestTest extends \BBTestCase
         $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $sessionMock = $this->getMockBuilder(\FOSSBilling\Session::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $sessionMock = $this->createMock(\FOSSBilling\Session::class);
 
         $sessionMock->expects($this->once())
             ->method('regenerateId');
