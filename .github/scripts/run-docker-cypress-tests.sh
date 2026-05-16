@@ -8,6 +8,7 @@ compose_file="${repo_root}/.github/docker/live-tests.compose.yml"
 project="fossbilling-cypress-${GITHUB_RUN_ID:-local}-$$"
 cypress_image="${CYPRESS_DOCKER_IMAGE:-cypress/included:15.15.0}"
 cypress_browser="${CYPRESS_BROWSER:-electron}"
+app_url="http://fossbilling-app/"
 
 db_name="fossbilling"
 db_user="root"
@@ -142,7 +143,7 @@ docker run --rm \
   --network "${project}_default" \
   --shm-size=2g \
   --env CI \
-  --env CYPRESS_BASE_URL="http://app/" \
+  --env CYPRESS_BASE_URL="${app_url}" \
   --env CYPRESS_ADMIN_EMAIL="${test_email}" \
   --env CYPRESS_ADMIN_PASSWORD="${test_pass}" \
   --env CYPRESS_PROJECT_ID \
