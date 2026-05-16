@@ -101,11 +101,27 @@ jobs:
     with:
       write-cache: true
 
+  live-tests-pr:
+    name: 'Live Tests (PR)'
+    permissions:
+      contents: read
+    needs: [ php-build-test-pr ]
+    if: ${{ github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id }}
+    uses: ./.github/workflows/live-tests.yml
+
+  live-tests-push:
+    name: 'Live Tests (Push)'
+    permissions:
+      contents: read
+    needs: [ php-build-test-push ]
+    if: ${{ github.event_name == 'push' }}
+    uses: ./.github/workflows/live-tests.yml
+
   preview-build-pr:
     name: 'Create Preview Build (PR)'
     permissions:
       contents: read
-    needs: [ php-build-test-pr ]
+    needs: [ live-tests-pr ]
     if: ${{ github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id }}
     uses: ./.github/workflows/preview-build.yml
     with:
@@ -116,7 +132,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    needs: [ php-build-test-push ]
+    needs: [ live-tests-push ]
     if: ${{ github.event_name == 'push' && github.ref != 'refs/heads/main' }}
     uses: ./.github/workflows/preview-build.yml
     with:
@@ -127,7 +143,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    needs: [ php-build-test-push ]
+    needs: [ live-tests-push ]
     if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
     uses: ./.github/workflows/docker-build.yml
     secrets:

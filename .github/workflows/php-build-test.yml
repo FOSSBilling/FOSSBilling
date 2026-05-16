@@ -79,7 +79,3 @@ jobs:
             --env APP_ENV=test \
             fossbilling:test-${{ matrix.php }} \
             ./src/vendor/bin/phpunit --configuration phpunit.xml.dist
-
-      - name: 'Run Live Tests'
-        if: ${{ matrix.php == '8.5' }}
-        run: bash ./.github/scripts/run-docker-live-tests.sh fossbilling:test-${{ matrix.php }}
