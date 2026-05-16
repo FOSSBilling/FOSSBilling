@@ -58,7 +58,7 @@ class Session implements InjectionAwareInterface
             'httponly' => $currentCookieParams['httponly'],
         ];
 
-        if (Config::getProperty('security.mode', 'strict') == 'strict') {
+        if (Config::getProperty('security.mode', 'strict') === 'strict') {
             $cookieParams['samesite'] = 'Strict';
         }
 
@@ -168,6 +168,7 @@ class Session implements InjectionAwareInterface
         if ($invalid) {
             $this->di['db']->trash($session);
             if ($sessionName !== '') {
+                setcookie($sessionName, '', time() - 3600, '/');
                 unset($_COOKIE[$sessionName]);
             }
         }
@@ -224,8 +225,32 @@ class Session implements InjectionAwareInterface
         session_regenerate_id(false);
 
         $sessionName = session_name();
-        if ($sessionName !== '') {
-            $_COOKIE[$sessionName] = session_id();
+        $sessionId = session_id();
+        if ($sessionName !== '' && $sessionId !== '') {
+            $params = session_get_cookie_params();
+
+            if (PHP_VERSION_ID >= 70300) {
+                setcookie($sessionName, $sessionId, [
+                    'expires' => 0,
+                    'path' => $params['path'] ?? '/',
+                    'domain' => $params['domain'] ?? '',
+                    'secure' => (bool) ($params['secure'] ?? false),
+                    'httponly' => (bool) ($params['httponly'] ?? true),
+                    'samesite' => $params['samesite'] ?? 'Lax',
+                ]);
+            } else {
+                setcookie(
+                    $sessionName,
+                    $sessionId,
+                    0,
+                    $params['path'] ?? '/',
+                    $params['domain'] ?? '',
+                    (bool) ($params['secure'] ?? false),
+                    (bool) ($params['httponly'] ?? true)
+                );
+            }
+
+            $_COOKIE[$sessionName] = $sessionId;
         }
     }
 
