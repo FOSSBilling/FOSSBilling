@@ -80,7 +80,7 @@ jobs:
           incremental_files_only: true
 
   php-build-test-pr:
-    name: 'PHP Build and Test (PR)'
+    name: 'PHP Build and Test'
     # Keep PR and push callers separate because job permissions cannot be conditional.
     permissions:
       contents: read
@@ -91,7 +91,7 @@ jobs:
       write-cache: false
 
   php-build-test-push:
-    name: 'PHP Build and Test (Push)'
+    name: 'PHP Build and Test'
     permissions:
       contents: read
       packages: write
@@ -101,22 +101,38 @@ jobs:
     with:
       write-cache: true
 
-  preview-build-pr:
-    name: 'Create Preview Build (PR)'
+  live-tests-pr:
+    name: 'Live Tests'
     permissions:
       contents: read
     needs: [ php-build-test-pr ]
+    if: ${{ github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id }}
+    uses: ./.github/workflows/live-tests.yml
+
+  live-tests-push:
+    name: 'Live Tests'
+    permissions:
+      contents: read
+    needs: [ php-build-test-push ]
+    if: ${{ github.event_name == 'push' }}
+    uses: ./.github/workflows/live-tests.yml
+
+  preview-build-pr:
+    name: 'Create Preview Build'
+    permissions:
+      contents: read
+    needs: [ live-tests-pr ]
     if: ${{ github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id }}
     uses: ./.github/workflows/preview-build.yml
     with:
       write-cache: false
 
   preview-build-push:
-    name: 'Create Preview Build (Push)'
+    name: 'Create Preview Build'
     permissions:
       contents: read
       packages: write
-    needs: [ php-build-test-push ]
+    needs: [ live-tests-push ]
     if: ${{ github.event_name == 'push' && github.ref != 'refs/heads/main' }}
     uses: ./.github/workflows/preview-build.yml
     with:
@@ -127,7 +143,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    needs: [ php-build-test-push ]
+    needs: [ live-tests-push ]
     if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
     uses: ./.github/workflows/docker-build.yml
     secrets:
