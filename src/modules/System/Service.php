@@ -50,7 +50,11 @@ class Service
     {
         return [
             'can_always_access' => true,
-            'manage_settings' => [],
+            'manage_settings' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage system settings'),
+                'description' => __trans('Allows the staff member to view and manage general system settings.'),
+            ],
             'manage_company_details' => [
                 'type' => 'bool',
                 'display_name' => __trans('Manage company details'),

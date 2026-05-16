@@ -105,6 +105,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['locale_id' => 'Locale ID was not passed'])]
     public function toggle_language(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
+
         return \FOSSBilling\i18n::toggleLocale($data['locale_id']);
     }
 

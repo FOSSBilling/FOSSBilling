@@ -29,6 +29,8 @@ class Admin extends \Api_Abstract
      */
     public function get_params($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_settings');
+
         return $this->getService()->getParams($data);
     }
 
