@@ -499,7 +499,7 @@ class Service
         return true;
     }
 
-    public function getEnv(bool $fetchExternalIp = false): array
+    public function getEnv(bool $fetchExternalIp = false)
     {
         if ($fetchExternalIp) {
             try {
