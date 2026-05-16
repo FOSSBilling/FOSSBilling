@@ -112,8 +112,6 @@ class Admin extends \Api_Abstract
      * @optional string $group_id - client group id
      * @optional string $status - client status: "active, suspended, canceled"
      * @optional string $created_at - ISO 8601 date for client creation date
-     * @optional string $last_name - last name
-     * @optional string $aid - Alternative id. Usually used by import tools.
      * @optional string $gender - Gender - values: male|female|nonbinary|other
      * @optional string $country - Country
      * @optional string $city - city
@@ -195,7 +193,6 @@ class Admin extends \Api_Abstract
      * @optional string $first_name - client first_name
      * @optional string $last_name - client last_name
      * @optional string $status - client status
-     * @optional string $last_name - last name
      * @optional string $aid - Alternative id. Usually used by import tools.
      * @optional string $gender - Gender - values: male|female|nonbinary|other
      * @optional string $country - Country
