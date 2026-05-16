@@ -539,6 +539,7 @@ final class ServiceInvoiceItemTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
+        $di['period'] = $di->protect(fn (string $code): \Box_Period => new \Box_Period($code));
         $di['api_guest'] = new class {
             public function currency_format(array $data): string
             {
