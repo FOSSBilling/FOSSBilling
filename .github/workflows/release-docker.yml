@@ -21,11 +21,11 @@ jobs:
     steps:
       - name: 'Get Latest Release Version Tag'
         id: get-latest
-        uses: pozetroninc/github-action-get-latest-release@53d33d213ee71c72360e3c829caf7cee94ec21e2 # master
-        with:
-          excludes: 'prerelease,draft'
-          repository: 'FOSSBilling/FOSSBilling'
-          token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          latest_release="$(gh api repos/${{ github.repository }}/releases/latest --jq '.tag_name')"
+          echo "release=${latest_release}" >> "${GITHUB_OUTPUT}"
 
       - name: 'Check if Current Release Version is Latest'
         id: compare-latest

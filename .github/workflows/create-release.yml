@@ -1,0 +1,129 @@
+name: Create Release
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version, for example 0.7.3'
+        required: true
+        type: string
+      target_ref:
+        description: 'Git ref to build and tag'
+        required: true
+        default: main
+        type: string
+      draft:
+        description: 'Create as a draft release'
+        required: true
+        default: true
+        type: boolean
+      prerelease:
+        description: 'Mark as a prerelease'
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: create-release-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  create-release:
+    name: 'Create Release'
+    if: ${{ github.repository == 'FOSSBilling/FOSSBilling' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: 'Validate Release Inputs'
+        run: |
+          if [[ ! "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Release version must be valid SemVer without a leading v."
+            exit 1
+          fi
+
+      - name: 'Checkout Repository'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ inputs.target_ref }}
+          persist-credentials: false
+
+      - name: 'Lowercase github.repository'
+        run: echo "IMAGE_NAME=${GITHUB_REPOSITORY@L}" >> "${GITHUB_ENV}"
+
+      - name: 'Set up Docker Buildx'
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
+
+      - name: 'Build Release Artifact'
+        id: build
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
+        with:
+          build-args: |
+            FOSSBILLING_VERSION=${{ inputs.version }}
+            SENTRY_DSN=${{ vars.SENTRY_DSN }}
+          cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:cache-release
+          context: .
+          target: release-artifact
+          outputs: type=local,dest=./release-tree
+
+      - name: 'Create Release Archive'
+        id: archive
+        run: |
+          mkdir -p ../dist
+          zip -qr "../dist/FOSSBilling-${{ inputs.version }}.zip" .
+        working-directory: ./release-tree
+
+      - name: 'Create or Update GitHub Release'
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          asset="./dist/FOSSBilling-${{ inputs.version }}.zip"
+
+          if gh release view "${{ inputs.version }}" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release upload "${{ inputs.version }}" "${asset}" \
+              --repo "${{ github.repository }}" \
+              --clobber
+            echo "operation=updated" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          release_args=(
+            "${{ inputs.version }}"
+            "${asset}"
+            --repo "${{ github.repository }}"
+            --title "${{ inputs.version }}"
+            --target "${{ inputs.target_ref }}"
+            --generate-notes
+          )
+
+          if [[ "${{ inputs.draft }}" == "true" ]]; then
+            release_args+=(--draft)
+          fi
+
+          if [[ "${{ inputs.prerelease }}" == "true" ]]; then
+            release_args+=(--prerelease)
+          fi
+
+          gh release create "${release_args[@]}"
+          echo "operation=created" >> "${GITHUB_OUTPUT}"
+
+      - name: 'Write Job Summary'
+        if: always()
+        run: |
+          cat >> "${GITHUB_STEP_SUMMARY}" <<'EOF'
+          ## Create Release
+
+          | Item | Value |
+          | --- | --- |
+          | Version | `${{ inputs.version }}` |
+          | Target ref | `${{ inputs.target_ref }}` |
+          | Draft | `${{ inputs.draft }}` |
+          | Prerelease | `${{ inputs.prerelease }}` |
+          | Archive | `FOSSBilling-${{ inputs.version }}.zip` |
+          | Docker build | `${{ steps.build.outcome }}` |
+          | Archive creation | `${{ steps.archive.outcome }}` |
+          | Release operation | `${{ steps.release.outputs.operation || steps.release.outcome }}` |
+          EOF
