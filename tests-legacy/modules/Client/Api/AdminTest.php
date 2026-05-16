@@ -577,8 +577,16 @@ final class AdminTest extends \BBTestCase
         $model = new \Model_ClientBalance();
         $model->loadBean(new \DummyBean());
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'manage_balance');
+
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+            'staff' => $staffServiceMock,
+            default => $serviceMock,
+        });
         $di['pager'] = $pagerMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -586,6 +594,32 @@ final class AdminTest extends \BBTestCase
 
         $result = $admin_Client->balance_get_list($data);
         $this->assertIsArray($result);
+    }
+
+    public function testBalanceGetListRequiresPermission(): void
+    {
+        $data = [];
+
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'manage_balance')
+            ->willThrowException(new \FOSSBilling\InformationException('denied'));
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {
+            if ($serviceName == 'Staff') {
+                return $staffServiceMock;
+            }
+
+            return false;
+        });
+
+        $admin_Client = new \Box\Mod\Client\Api\Admin();
+        $admin_Client->setDi($di);
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $admin_Client->balance_get_list($data);
     }
 
     public function testBalanceDelete(): void
