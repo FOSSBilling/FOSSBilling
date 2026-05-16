@@ -190,7 +190,6 @@ final class GuestTest extends \BBTestCase
             ->willReturn(true);
 
         $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
-        // $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;

@@ -58,7 +58,7 @@ class Session implements InjectionAwareInterface
             'httponly' => $currentCookieParams['httponly'],
         ];
 
-        if (Config::getProperty('security.mode', 'strict') == 'strict') {
+        if (Config::getProperty('security.mode', 'strict') === 'strict') {
             $cookieParams['samesite'] = 'Strict';
         }
 
@@ -168,6 +168,20 @@ class Session implements InjectionAwareInterface
         if ($invalid) {
             $this->di['db']->trash($session);
             if ($sessionName !== '') {
+                $cookieParams = session_get_cookie_params();
+                $cookieOptions = [
+                    'expires' => time() - 3600,
+                    'path' => $cookieParams['path'] ?? '/',
+                    'domain' => $cookieParams['domain'] ?? '',
+                    'secure' => (bool) ($cookieParams['secure'] ?? false),
+                    'httponly' => (bool) ($cookieParams['httponly'] ?? false),
+                ];
+
+                if (!empty($cookieParams['samesite'])) {
+                    $cookieOptions['samesite'] = $cookieParams['samesite'];
+                }
+
+                setcookie($sessionName, '', $cookieOptions);
                 unset($_COOKIE[$sessionName]);
             }
         }
@@ -224,8 +238,20 @@ class Session implements InjectionAwareInterface
         session_regenerate_id(false);
 
         $sessionName = session_name();
-        if ($sessionName !== '') {
-            $_COOKIE[$sessionName] = session_id();
+        $sessionId = session_id();
+        if ($sessionName !== '' && $sessionId !== '') {
+            $params = session_get_cookie_params();
+
+            setcookie($sessionName, $sessionId, [
+                'expires' => 0,
+                'path' => $params['path'] ?? '/',
+                'domain' => $params['domain'] ?? '',
+                'secure' => (bool) ($params['secure'] ?? false),
+                'httponly' => (bool) ($params['httponly'] ?? true),
+                'samesite' => $params['samesite'] ?? 'Lax',
+            ]);
+
+            $_COOKIE[$sessionName] = $sessionId;
         }
     }
 
