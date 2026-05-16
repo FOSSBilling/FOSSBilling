@@ -195,7 +195,6 @@ class Admin extends \Api_Abstract
      * @optional string $first_name - client first_name
      * @optional string $last_name - client last_name
      * @optional string $status - client status
-     * @optional string $last_name - last name
      * @optional string $aid - Alternative id. Usually used by import tools.
      * @optional string $gender - Gender - values: male|female|nonbinary|other
      * @optional string $country - Country
