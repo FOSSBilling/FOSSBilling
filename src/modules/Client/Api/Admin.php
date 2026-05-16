@@ -252,7 +252,7 @@ class Admin extends \Api_Abstract
 
         $currency = $data['currency'] ?? null;
         if ($currency && $service->canChangeCurrency($client, $currency)) {
-            $client->currency = $currency ?? $client->currency;
+            $client->currency = $currency;
         }
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientUpdate', 'params' => $data]);
