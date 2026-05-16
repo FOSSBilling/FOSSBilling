@@ -20,23 +20,24 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: PHP Build
         uses: FOSSBilling/.workflows/.github/actions/php-build@76b4af76fb2a1a2b553ec1c2839044984299a271
         with:
           php-version: 8.3
 
-      - name: Setup PHP
+      - name: Set up PHP
         uses: shivammathur/setup-php@7c071dfe9dc99bdf297fa79cb49ea005b9fcadbc # v2
         with:
           php-version: 8.3
           extensions: intl, xml, dom, curl, iconv, json
-    
+
       - name: Create Cache Directories
         run: |
           echo "MONTH=$(date '+%h')" >> "${GITHUB_ENV}"
-          mkdir cache
-          mkdir cache/rector
+          mkdir -p cache/rector
 
       - name: Restore Rector Cache
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
@@ -44,7 +45,7 @@ jobs:
           path: ./cache/rector
           key: ${{ env.MONTH }}-rector
           restore-keys: ${{ env.MONTH }}-rector
-          
+
       - name: Restore CS-Fixer Cache
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
@@ -53,12 +54,15 @@ jobs:
           restore-keys: ${{ env.MONTH }}-csfixer
 
       - name: Run Rector
+        id: rector
         run: php src/vendor/bin/rector
-          
+
       - name: Run PHP-CS-Fixer
+        id: php_cs_fixer
         run: php src/vendor/bin/php-cs-fixer fix
-        
-      - name: Create a Pull Request
+
+      - name: Create Pull Request
+        id: create_pr
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
         with:
           title: Apply PHP Code Styling & Quality Changes
@@ -70,3 +74,18 @@ jobs:
           committer: FOSSBilling Bot <fossbilling-bot>
           author: FOSSBilling Bot <fossbilling-bot>
           labels: skip-changelog
+
+      - name: Write Job Summary
+        if: always()
+        run: |
+          cat >> "${GITHUB_STEP_SUMMARY}" <<'EOF'
+          ## Code Quality and Styling
+
+          | Item | Value |
+          | --- | --- |
+          | PHP version | `8.3` |
+          | Rector | `${{ steps.rector.outcome }}` |
+          | PHP-CS-Fixer | `${{ steps.php_cs_fixer.outcome }}` |
+          | Pull request action | `${{ steps.create_pr.outcome }}` |
+          | Pull request | `${{ steps.create_pr.outputs.pull-request-url || 'No changes' }}` |
+          EOF

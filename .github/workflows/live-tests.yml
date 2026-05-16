@@ -14,9 +14,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: 'Lowercase github.repository'
-        run: |
-          echo "IMAGE_NAME=${GITHUB_REPOSITORY@L}" >> "${GITHUB_ENV}"
+      - name: 'Set Registry Cache Image'
+        run: echo "CACHE_IMAGE=ghcr.io/${GITHUB_REPOSITORY@L}-build-cache" >> "${GITHUB_ENV}"
 
       - name: 'Set up Docker Compose'
         uses: docker/setup-compose-action@8cccb8c14b6500aaffebff1aa49c502c34d2e5e6 # v2.1.0
@@ -26,12 +25,13 @@ jobs:
 
       # This job runs checked-out live-test code, so it only reads the registry cache.
       - name: 'Build Docker Test Image'
+        id: build
         uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
         with:
           build-args: |
             PHP_VERSION=8.5
             INSTALL_TRANSLATIONS=false
-          cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:cache-ci-8.5
+          cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}:cache-ci-8.5
           context: .
           load: true
           tags: |
@@ -39,4 +39,22 @@ jobs:
           target: test
 
       - name: 'Run Live Tests'
+        id: live_tests
         run: bash ./.github/scripts/run-docker-live-tests.sh fossbilling:live-test
+
+      - name: 'Write Job Summary'
+        if: always()
+        run: |
+          cat >> "${GITHUB_STEP_SUMMARY}" <<'EOF'
+          ## Live Tests
+
+          | Item | Value |
+          | --- | --- |
+          | Test image | `fossbilling:live-test` |
+          | PHP version | `8.5` |
+          | Registry cache | `${{ env.CACHE_IMAGE }}:cache-ci-8.5` |
+          | Cache mode | `read-only` |
+          | Compose file | `.github/docker/live-tests.compose.yml` |
+          | Docker build | `${{ steps.build.outcome }}` |
+          | Live tests | `${{ steps.live_tests.outcome }}` |
+          EOF
