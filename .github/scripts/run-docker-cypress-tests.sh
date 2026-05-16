@@ -136,8 +136,10 @@ install_payload=(
 
 compose exec -T app curl -fsS "${install_payload[@]}" >/dev/null
 
+# Chrome is sensitive to Docker's default 64 MB /dev/shm size.
 docker run --rm \
   --network "${project}_default" \
+  --shm-size=2g \
   --env CI \
   --env CYPRESS_BASE_URL="http://app/" \
   --env CYPRESS_ADMIN_EMAIL="${test_email}" \
