@@ -1266,4 +1266,12 @@ class UpdatePatcher implements InjectionAwareInterface
             $this->executeSql('ALTER TABLE currency ' . implode(', ', $columns));
         }
     }
+
+    private function patch62(): void
+    {
+        $this->executeSql("UPDATE invoice_item SET period = NULL WHERE period IN ('0', '')");
+        $this->executeSql("UPDATE client_order SET period = NULL WHERE period IN ('0', '')");
+        $this->executeSql("UPDATE subscription SET period = NULL WHERE period IN ('0', '')");
+        $this->executeSql("UPDATE transaction SET s_period = NULL WHERE s_period IN ('0', '')");
+    }
 }
