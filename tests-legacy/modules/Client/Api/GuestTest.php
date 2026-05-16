@@ -172,12 +172,10 @@ final class GuestTest extends \BBTestCase
             ->method('toSessionArray')
             ->willReturn([]);
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Box_EventManager::class);
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $sessionMock = $this->getMockBuilder(\FOSSBilling\Session::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $sessionMock = $this->createMock(\FOSSBilling\Session::class);
 
         $sessionMock->expects($this->once())
             ->method('regenerateId');
@@ -212,7 +210,7 @@ final class GuestTest extends \BBTestCase
     {
         $data['email'] = 'John@example.com';
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Box_EventManager::class);
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
         $modelClient = new \Model_Client();
@@ -222,7 +220,7 @@ final class GuestTest extends \BBTestCase
         $modelPasswordReset = new \Model_ClientPasswordReset();
         $modelPasswordReset->loadBean(new \DummyBean());
 
-        $dbMock = $this->createMock('\Box_Database');
+        $dbMock = $this->createMock(\Box_Database::class);
 
         // Specify that 'findOne' will be called exactly twice
         $dbMock->expects($this->exactly(2))->method('findOne')
@@ -260,7 +258,7 @@ final class GuestTest extends \BBTestCase
     {
         $data['email'] = 'john@example.eu';
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Box_EventManager::class);
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
         $dbMock = $this->createMock('\Box_Database');
