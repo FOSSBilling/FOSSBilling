@@ -206,7 +206,7 @@
                                     <a href='{{ "order/manage/#{order.id}"|url }}'>{{ order.title }}</a>
                                 </td>
                                 <td class="text-center">{{ order.period|period_title }}</td>
-                                <td class="text-center">{{ order.total|format_currency(order.currency) }}</td>
+                                <td class="text-center">{{ order.total|format_currency(order.currency ?? default_currency) }}</td>
                                 <td>
                                     {% if order.status == 'pending_setup' %}
                                         <span class="badge bg-warning me-1"></span>

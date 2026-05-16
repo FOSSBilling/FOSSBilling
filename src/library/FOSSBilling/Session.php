@@ -13,6 +13,10 @@ namespace FOSSBilling;
 
 class Session implements InjectionAwareInterface
 {
+    private const OBSOLETE_FLAG = 'fb_session_obsolete';
+    private const OBSOLETE_EXPIRES_AT = 'fb_session_obsolete_expires_at';
+    private const DEFAULT_REGENERATION_GRACE_PERIOD = 300;
+
     private ?\Pimple\Container $di = null;
 
     public function setDi(?\Pimple\Container $di): void
@@ -61,6 +65,7 @@ class Session implements InjectionAwareInterface
         session_set_cookie_params($cookieParams);
         session_start();
 
+        $this->handleObsoleteSession();
         $this->updateFingerprint();
     }
 
@@ -82,6 +87,22 @@ class Session implements InjectionAwareInterface
     public function set(string $key, mixed $value): void
     {
         $_SESSION[$key] = $value;
+    }
+
+    public function regenerateId(?int $gracePeriod = null): void
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            return;
+        }
+
+        $gracePeriod ??= (int) Config::getProperty('security.session_regeneration_grace_period', self::DEFAULT_REGENERATION_GRACE_PERIOD);
+        $gracePeriod = max(0, $gracePeriod);
+        $_SESSION[self::OBSOLETE_FLAG] = true;
+        $_SESSION[self::OBSOLETE_EXPIRES_AT] = time() + $gracePeriod;
+
+        $this->rotateSessionId();
+
+        unset($_SESSION[self::OBSOLETE_FLAG], $_SESSION[self::OBSOLETE_EXPIRES_AT]);
     }
 
     public function destroy(string $type = ''): bool
@@ -108,11 +129,15 @@ class Session implements InjectionAwareInterface
     private function canUseSession(): void
     {
         $invalid = false;
-        if (empty($_COOKIE['PHPSESSID'])) {
-            return;
+        $sessionName = session_name();
+        $sessionID = session_id();
+        if ($sessionID === '') {
+            $sessionID = $sessionName !== '' ? ($_COOKIE[$sessionName] ?? '') : '';
         }
 
-        $sessionID = $_COOKIE['PHPSESSID'];
+        if ($sessionID === '') {
+            return;
+        }
         $maxAge = time() - Config::getProperty('security.session_lifespan', 7200);
 
         $fingerprint = new Fingerprint();
@@ -142,7 +167,9 @@ class Session implements InjectionAwareInterface
 
         if ($invalid) {
             $this->di['db']->trash($session);
-            unset($_COOKIE['PHPSESSID']);
+            if ($sessionName !== '') {
+                unset($_COOKIE[$sessionName]);
+            }
         }
     }
 
@@ -151,7 +178,16 @@ class Session implements InjectionAwareInterface
      */
     private function updateFingerprint(): void
     {
-        $sessionID = $_COOKIE['PHPSESSID'] ?? session_id();
+        $sessionID = session_id();
+        if ($sessionID === '') {
+            $sessionName = session_name();
+            $sessionID = $sessionName !== '' ? ($_COOKIE[$sessionName] ?? '') : '';
+        }
+
+        if ($sessionID === '') {
+            return;
+        }
+
         $session = $this->di['db']->findOne('session', 'id = :id', [':id' => $sessionID]);
         $fingerprint = new Fingerprint();
 
@@ -166,6 +202,59 @@ class Session implements InjectionAwareInterface
             $session->fingerprint = json_encode($updatedFingerprint);
             $this->di['db']->store($session);
         }
+    }
+
+    private function handleObsoleteSession(): void
+    {
+        if (!$this->isObsoleteSession($_SESSION)) {
+            return;
+        }
+
+        if ($this->isObsoleteSessionExpired($_SESSION)) {
+            $this->clearAuthenticationData();
+            unset($_SESSION[self::OBSOLETE_FLAG], $_SESSION[self::OBSOLETE_EXPIRES_AT]);
+            $this->rotateSessionId();
+
+            return;
+        }
+
+        // Do not regenerate the ID for obsolete sessions that are still within
+        // the grace period. Emitting a fresh session cookie from an older,
+        // unauthenticated request can overwrite a newer authenticated cookie
+        // if the responses race.
+        unset($_SESSION[self::OBSOLETE_FLAG], $_SESSION[self::OBSOLETE_EXPIRES_AT]);
+    }
+
+    private function rotateSessionId(): void
+    {
+        session_regenerate_id(false);
+
+        $sessionName = session_name();
+        if ($sessionName !== '') {
+            $_COOKIE[$sessionName] = session_id();
+        }
+    }
+
+    private function clearAuthenticationData(): void
+    {
+        unset($_SESSION['admin'], $_SESSION['client'], $_SESSION['client_id']);
+    }
+
+    private function isObsoleteSession(array $sessionData): bool
+    {
+        return !empty($sessionData[self::OBSOLETE_FLAG]);
+    }
+
+    private function isObsoleteSessionExpired(array $sessionData, ?int $now = null): bool
+    {
+        $expiresAt = $sessionData[self::OBSOLETE_EXPIRES_AT] ?? null;
+        if (!is_int($expiresAt)) {
+            return true;
+        }
+
+        $now ??= time();
+
+        return $expiresAt < $now;
     }
 
     private function shouldBeSecure(): bool

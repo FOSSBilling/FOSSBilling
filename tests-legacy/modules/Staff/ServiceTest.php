@@ -52,6 +52,8 @@ final class ServiceTest extends \BBTestCase
         $sessionMock = $this->getMockBuilder(\FOSSBilling\Session::class)
             ->disableOriginalConstructor()
             ->getMock();
+        $sessionMock->expects($this->once())
+            ->method('regenerateId');
         $sessionMock->expects($this->atLeastOnce())
             ->method('set');
 

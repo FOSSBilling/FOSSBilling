@@ -285,7 +285,7 @@
                             <td>
                                 <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>{{ invoice.buyer.first_name }} {{ invoice.buyer.last_name }}</a>
                             </td>
-                            <td class="text-center">{{ invoice.total|format_currency(invoice.currency) }}</td>
+                            <td class="text-center">{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
                             <td class="text-center">{{ invoice.created_at|format_date }}</td>
                             <td>
                                 {% if invoice.status == 'paid' %}

@@ -66,7 +66,7 @@
                                 <dd class="col-sm-8">{{ profile.email }}</dd>
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'Balance'|trans }}</dt>
                                 {% if profile.currency is not null %}
-                                    <dd class="col-sm-8">{{ profile.balance|format_currency(profile.currency) }}</dd>
+                                    <dd class="col-sm-8">{{ profile.balance|format_currency(profile.currency ?? default_currency) }}</dd>
                                 {% else %}
                                     <dd class="col-sm-8">-</dd>
                                 {% endif %}

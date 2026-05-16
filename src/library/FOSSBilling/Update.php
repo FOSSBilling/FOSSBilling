@@ -196,11 +196,27 @@ class Update implements InjectionAwareInterface
      */
     public function performManualUpdate(): void
     {
+        try {
+            $this->filesystem->remove(PATH_CACHE);
+            $this->filesystem->mkdir(PATH_CACHE, 0o755);
+        } catch (IOException) {
+            // Best effort: continue with patching even if the pre-clear fails.
+        }
+
         // Apply system patches and migrate configuration file.
         $patcher = new UpdatePatcher();
         $patcher->setDi($this->di);
         $patcher->applyConfigPatches();
         $patcher->applyCorePatches();
+
+        try {
+            $this->filesystem->remove(PATH_CACHE);
+            $this->filesystem->mkdir(PATH_CACHE, 0o755);
+        } catch (IOException $e) {
+            error_log($e->getMessage());
+
+            throw new Exception('Unable to clear the cache after applying manual update patches. Further details are available in the error log.');
+        }
     }
 
     /**
