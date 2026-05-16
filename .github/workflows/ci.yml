@@ -143,6 +143,10 @@ jobs:
         if: ${{ matrix.php == '8.5' }}
         run: bash ./.github/scripts/run-docker-live-tests.sh fossbilling:test-${{ matrix.php }}
 
+      - name: 'Run Cypress Tests'
+        if: ${{ matrix.php == '8.5' }}
+        run: bash ./.github/scripts/run-docker-cypress-tests.sh fossbilling:test-${{ matrix.php }}
+
   preview-build:
     name: 'Create Preview Build'
     permissions:
