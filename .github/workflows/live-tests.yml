@@ -26,6 +26,7 @@ jobs:
 
       # This job runs checked-out live-test code, so it only reads the registry cache.
       - name: 'Build Docker Test Image'
+        id: build
         uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
         with:
           build-args: |
@@ -39,4 +40,22 @@ jobs:
           target: test
 
       - name: 'Run Live Tests'
+        id: live_tests
         run: bash ./.github/scripts/run-docker-live-tests.sh fossbilling:live-test
+
+      - name: 'Write Job Summary'
+        if: always()
+        run: |
+          cat >> "${GITHUB_STEP_SUMMARY}" <<'EOF'
+          ## Live Tests
+
+          | Item | Value |
+          | --- | --- |
+          | Test image | `fossbilling:live-test` |
+          | PHP version | `8.5` |
+          | Registry cache | `ghcr.io/${{ env.IMAGE_NAME }}:cache-ci-8.5` |
+          | Cache mode | `read-only` |
+          | Compose file | `.github/docker/live-tests.compose.yml` |
+          | Docker build | `${{ steps.build.outcome }}` |
+          | Live tests | `${{ steps.live_tests.outcome }}` |
+          EOF
