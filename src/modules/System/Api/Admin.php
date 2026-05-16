@@ -55,7 +55,11 @@ class Admin extends \Api_Abstract
      */
     public function messages($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_settings');
+        try {
+            $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_settings');
+        } catch (\Throwable $e) {
+            return [];
+        }
 
         $type = $data['type'] ?? 'info';
 
