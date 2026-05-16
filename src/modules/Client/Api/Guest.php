@@ -63,7 +63,7 @@ class Guest extends \Api_Abstract
         $config = $this->di['mod_config']('client');
 
         if (isset($config['disable_signup']) && $config['disable_signup']) {
-            throw new \FOSSBilling\InformationException('New registrations are temporary disabled');
+            throw new \FOSSBilling\InformationException('New registrations are temporarily disabled');
         }
 
         $this->di['validator']->passwordsMatch($data);
