@@ -18,8 +18,8 @@ final class GuestTest extends \BBTestCase
         $data = [
             'email' => 'test@email.com',
             'first_name' => 'John',
-            'password' => 'testpaswword',
-            'password_confirm' => 'testpaswword',
+            'password' => 'testpassword',
+            'password_confirm' => 'testpassword',
         ];
 
         $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
@@ -69,8 +69,8 @@ final class GuestTest extends \BBTestCase
         $data = [
             'email' => 'test@email.com',
             'first_name' => 'John',
-            'password' => 'testpaswword',
-            'password_confirm' => 'testpaswword',
+            'password' => 'testpassword',
+            'password_confirm' => 'testpassword',
         ];
 
         $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
@@ -115,8 +115,8 @@ final class GuestTest extends \BBTestCase
         $data = [
             'email' => 'test@email.com',
             'first_name' => 'John',
-            'password' => 'testpaswword',
-            'password_confirm' => 'testpaswword',
+            'password' => 'testpassword',
+            'password_confirm' => 'testpassword',
         ];
 
         $client = new Guest();
@@ -138,8 +138,8 @@ final class GuestTest extends \BBTestCase
         $data = [
             'email' => 'test@email.com',
             'first_name' => 'John',
-            'password' => 'testpaswword',
-            'password_confirm' => 'wrongpaswword',
+            'password' => 'testpassword',
+            'password_confirm' => 'wrongpassword',
         ];
 
         $client = new Guest();
@@ -172,13 +172,13 @@ final class GuestTest extends \BBTestCase
             ->method('toSessionArray')
             ->willReturn([]);
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Box_EventManager::class);
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $sessionMock = $this->getMockBuilder(\FOSSBilling\Session::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $sessionMock = $this->createMock(\FOSSBilling\Session::class);
 
+        $sessionMock->expects($this->once())
+            ->method('regenerateId');
         $sessionMock->expects($this->atLeastOnce())
             ->method('set');
 
@@ -188,7 +188,6 @@ final class GuestTest extends \BBTestCase
             ->willReturn(true);
 
         $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
-        // $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
@@ -209,9 +208,9 @@ final class GuestTest extends \BBTestCase
 
     public function testResetPasswordNewFlow(): void
     {
-        $data['email'] = 'John@exmaple.com';
+        $data['email'] = 'John@example.com';
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Box_EventManager::class);
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
         $modelClient = new \Model_Client();
@@ -221,7 +220,7 @@ final class GuestTest extends \BBTestCase
         $modelPasswordReset = new \Model_ClientPasswordReset();
         $modelPasswordReset->loadBean(new \DummyBean());
 
-        $dbMock = $this->createMock('\Box_Database');
+        $dbMock = $this->createMock(\Box_Database::class);
 
         // Specify that 'findOne' will be called exactly twice
         $dbMock->expects($this->exactly(2))->method('findOne')
@@ -257,9 +256,9 @@ final class GuestTest extends \BBTestCase
 
     public function testResetPasswordEmailNotFound(): void
     {
-        $data['email'] = 'joghn@example.eu';
+        $data['email'] = 'john@example.eu';
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Box_EventManager::class);
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
         $dbMock = $this->createMock('\Box_Database');
@@ -522,8 +521,8 @@ final class GuestTest extends \BBTestCase
         $client = new Guest();
         $client->setDi($di);
 
-        // Expect a FOSSBilling\Exception to be thrown with a specific message
-        $this->expectException(\FOSSBilling\Exception::class);
+        // Expect a FOSSBilling\InformationException to be thrown with a specific message
+        $this->expectException(\FOSSBilling\InformationException::class);
         $this->expectExceptionMessage('The link has expired or you have already reset your password.');
         $client->update_password($data);
     }

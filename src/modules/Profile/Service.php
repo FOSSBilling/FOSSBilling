@@ -139,11 +139,11 @@ class Service implements InjectionAwareInterface
             $client->email = $email;
         }
 
-        if (isset($data['phone_cc'])) {
+        if (isset($data['phone_cc']) && $data['phone_cc'] !== '') {
             $client->phone_cc = Tools::validatePhoneCC($data['phone_cc']);
         }
 
-        if (isset($data['phone']) && is_string($data['phone'])) {
+        if (isset($data['phone']) && is_string($data['phone']) && $data['phone'] !== '') {
             $client->phone = Tools::validatePhoneNumber($data['phone']);
         }
 
@@ -164,7 +164,7 @@ class Service implements InjectionAwareInterface
         $client->document_type = $data['document_type'] ?? $client->document_type;
         $client->document_nr = $data['document_nr'] ?? $client->document_nr;
 
-        if (isset($client->document_nr)) {
+        if (isset($data['document_nr'])) {
             $client->document_type = ClientValidator::validateDocument(
                 $data['document_type'] ?? \Model_Client::DOC_PASSPORT,
             );

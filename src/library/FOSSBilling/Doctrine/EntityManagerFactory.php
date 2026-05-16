@@ -25,11 +25,15 @@ class EntityManagerFactory
     {
         $finder = new Finder();
         $finder->directories()->in(PATH_MODS . '/*/Entity')->depth('== 0');
-        $moduleEntityPaths = iterator_to_array($finder);
+        $moduleEntityPaths = array_map(
+            static fn (\SplFileInfo $directory): string => $directory->getPathname(),
+            iterator_to_array($finder)
+        );
 
-        $config = ORMSetup::createAttributeMetadataConfiguration(
+        $config = ORMSetup::createAttributeMetadataConfig(
             paths: $moduleEntityPaths,
-            isDevMode: Environment::isDevelopment()
+            isDevMode: Environment::isDevelopment(),
+            cacheNamespaceSeed: self::getCacheNamespaceSeed($moduleEntityPaths)
         );
 
         $config->setNamingStrategy(new UnderscoreNamingStrategy(CASE_LOWER)); // Consistency with already existing RedBean tables
@@ -51,5 +55,28 @@ class EntityManagerFactory
         $connection = DriverManagerFactory::getConnection();
 
         return new EntityManager($connection, $config);
+    }
+
+    /**
+     * Build a cache namespace seed that changes when local entity definitions change.
+     * This prevents stale production metadata caches from surviving reinstalls/upgrades.
+     *
+     * @param list<string> $entityDirectories
+     */
+    private static function getCacheNamespaceSeed(array $entityDirectories): string
+    {
+        if ($entityDirectories === []) {
+            return PATH_ROOT;
+        }
+
+        $finder = new Finder();
+        $finder->files()->in($entityDirectories)->name('*.php')->sortByName();
+
+        $seed = [PATH_ROOT];
+        foreach ($finder as $file) {
+            $seed[] = sprintf('%s:%d:%d', $file->getPathname(), $file->getMTime(), $file->getSize());
+        }
+
+        return implode('|', $seed);
     }
 }

@@ -112,9 +112,7 @@ class Service implements InjectionAwareInterface
             'role' => $model->role,
         ];
 
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_regenerate_id(true);
-        }
+        $this->di['session']->regenerateId();
         $this->di['session']->set('admin', $result);
 
         $this->di['logger']->info(sprintf('Staff member %s logged in', $model->id));

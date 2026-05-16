@@ -47,7 +47,7 @@
         <li><strong>Registration Date:</strong> {{order.created_at|format_date}}</li>
         <li><strong>Registration Period:</strong> {{service.period}} Year(s)</li>
         {% if order.expires_at %}<li><strong>Expires On:</strong> {{ order.expires_at|format_date }}</li>{% endif %}
-        {% if order.period %}<li><strong>Billing Period:</strong> {{ order.total|format_currency(order.currency) }} every {{ order.period|period_title }}</li>{% endif %}
+        {% if order.period %}<li><strong>Billing Period:</strong> {{ order.total|format_currency(order.currency ?? default_currency) }} every {{ order.period|period_title }}</li>{% endif %}
     </ul>
 
     <p>Nameserver details:</p>

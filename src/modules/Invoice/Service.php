@@ -273,14 +273,14 @@ class Service implements InjectionAwareInterface
         $result['credit'] = $row['credit'] ?? 0;
 
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
-        $result['subscribable'] = $subscriptionService->isSubscribable($row['id']);
+        $subscriptionPeriod = $subscriptionService->getSubscriptionPeriod($invoice);
+        $result['subscribable'] = $subscriptionPeriod !== null;
         if ($deep && $result['subscribable']) {
-            $ip = $this->di['db']->getCell('SELECT period FROM invoice_item WHERE invoice_id = :id', ['id' => $row['id']]);
-            $period = $this->di['period']($ip);
+            $period = $this->di['period']($subscriptionPeriod);
             $result['subscription'] = [
                 'unit' => $period->getUnit(),
                 'cycle' => $period->getQty(),
-                'period' => $ip,
+                'period' => $subscriptionPeriod,
             ];
         }
 
@@ -941,7 +941,18 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceUpdate', 'params' => $data]);
 
-        $model->gateway_id = empty($data['gateway_id']) ? (empty($model->gateway_id) ? null : $model->gateway_id) : intval($data['gateway_id']);
+        if (!empty($data['gateway_id'])) {
+            $gateway = $this->di['db']->load('PayGateway', $data['gateway_id']);
+            if (!$gateway instanceof \Model_PayGateway) {
+                throw new InformationException('Payment gateway not found');
+            }
+            if (!$gateway->enabled) {
+                throw new InformationException('Payment gateway is not enabled');
+            }
+            $model->gateway_id = intval($data['gateway_id']);
+        } elseif (array_key_exists('gateway_id', $data) && $data['gateway_id'] === null) {
+            $model->gateway_id = null;
+        }
         $model->text_1 = $data['text_1'] ?? (empty($model->text_1) ? null : $model->text_1);
         $model->text_2 = $data['text_2'] ?? (empty($model->text_2) ? null : $model->text_2);
         $model->seller_company = $data['seller_company'] ?? (empty($model->seller_company) ? null : $model->seller_company);
@@ -1337,7 +1348,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Invoice not found', null, 812);
         }
 
-        $this->checkInvoiceAuth($invoice->client_id);
+        $this->checkInvoiceAuth($invoice->client_id, InvoiceOperation::PAYMENT);
 
         $gtw = $this->di['db']->load('PayGateway', $data['gateway_id']);
         if (!$gtw instanceof \Model_PayGateway) {
@@ -1408,7 +1419,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Invoice not found');
         }
 
-        $this->checkInvoiceAuth($invoice->client_id);
+        $this->checkInvoiceAuth($invoice->client_id, InvoiceOperation::READ);
 
         if (isset($invoice->currency)) {
             $currencyCode = $invoice->currency;
@@ -1658,7 +1669,7 @@ class Service implements InjectionAwareInterface
         return $this->di['csv_response_factory']->create('invoice', 'invoices.csv', $headers);
     }
 
-    public function checkInvoiceAuth(?int $invoiceClientId): void
+    public function checkInvoiceAuth(?int $invoiceClientId, InvoiceOperation $operation = InvoiceOperation::READ): void
     {
         if ($invoiceClientId === null) {
             return;
@@ -1667,18 +1678,17 @@ class Service implements InjectionAwareInterface
         $systemService = $this->di['mod_service']('system');
         $hash_access = $systemService->getParamValue('invoice_accessible_from_hash', '0');
 
-        // If hash_access is not 0 or if a client is logged in, get the logged-in client
-        if (!$this->di['auth']->isAdminLoggedIn() && $hash_access === '0' && !Environment::isCLI()) {
+        $hashAccessAllowed = $hash_access === '1' && in_array($operation, [InvoiceOperation::READ, InvoiceOperation::PAYMENT], true);
+
+        if (!$this->di['auth']->isAdminLoggedIn() && !$hashAccessAllowed && !Environment::isCLI()) {
             $client = $this->di['loggedin_client'];
             if ($invoiceClientId != $client->id) {
                 // Then either give an appropriate API response or redirect to the login page.
                 $api_str = '/api/';
                 $url = RequestFactory::getRoutePath($this->di['request']);
                 if (strncasecmp($url, $api_str, strlen($api_str)) === 0) {
-                    // Throw Exception if api request
                     throw new InformationException('You do not have permission to perform this action', [], 403);
                 }
-                // Redirect to login page if browser request
                 $invoiceLink = $this->di['url']->link('invoice');
 
                 throw new HttpResponseException(new RedirectResponse($invoiceLink));

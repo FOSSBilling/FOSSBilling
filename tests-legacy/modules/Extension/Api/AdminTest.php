@@ -287,7 +287,11 @@ final class AdminTest extends \BBTestCase
 
         $serviceMock = $this->createMock(\Box\Mod\Extension\Service::class);
         $serviceMock->expects($this->atLeastOnce())
+            ->method('hasManagePermission')
+            ->with($data['ext']);
+        $serviceMock->expects($this->atLeastOnce())
             ->method('getConfig')
+            ->with($data['ext'])
             ->willReturn([]);
 
         $di = $this->getDi();
@@ -297,6 +301,27 @@ final class AdminTest extends \BBTestCase
         $result = $this->api->config_get($data);
 
         $this->assertIsArray($result);
+    }
+
+    public function testConfigGetRequiresPermission(): void
+    {
+        $data = [
+            'ext' => 'extensionName',
+        ];
+
+        $serviceMock = $this->createMock(\Box\Mod\Extension\Service::class);
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('hasManagePermission')
+            ->with($data['ext'])
+            ->willThrowException(new \FOSSBilling\InformationException('Denied', [], 403));
+
+        $serviceMock->expects($this->never())
+            ->method('getConfig');
+
+        $this->api->setService($serviceMock);
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->api->config_get($data);
     }
 
     public function testConfigSave(): void

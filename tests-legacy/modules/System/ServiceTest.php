@@ -199,8 +199,7 @@ final class ServiceTest extends \BBTestCase
         $type = 'info';
 
         $systemServiceMock = $this->getMockBuilder(Service::class)->onlyMethods(['getParamValue'])->getMock();
-        $systemServiceMock->expects($this->atLeastOnce())
-            ->method('getParamValue')
+        $systemServiceMock->method('getParamValue')
             ->willReturn(false);
 
         $updaterMock = $this->createMock(\FOSSBilling\Update::class);
@@ -308,7 +307,7 @@ final class ServiceTest extends \BBTestCase
     public function testCreateBaseEnvironmentTreatsAdvancedFiltersSeparatelyFromSearch(): void
     {
         $di = $this->getDi();
-        $request = \Symfony\Component\HttpFoundation\Request::create('/admin/product', 'GET', [
+        $request = Request::create('/admin/product', 'GET', [
             'search' => 'query',
             'status' => 'active',
         ]);
@@ -321,6 +320,21 @@ final class ServiceTest extends \BBTestCase
 
         $result = $twig->createTemplate('{{ request_path }}|{{ request_query.search }}|{{ request_query.status }}|{{ request_has_filters ? "1" : "0" }}')->render();
         $this->assertSame('product|query|active|1', $result);
+    }
+
+    public function testCreateBaseEnvironmentProvidesDefaultCurrencyGlobal(): void
+    {
+        $di = $this->getDi();
+        $di['request'] = Request::create('/');
+        $di['session'] = $this->mockSession();
+        $di['api_guest'] = new class {
+        };
+        $di['em'] = $this->createEntityManagerWithDefaultCurrency('EUR');
+
+        $twig = $this->createBaseTwigEnvironment($di);
+        $result = $twig->createTemplate('{{ default_currency }}')->render();
+
+        $this->assertSame('EUR', $result);
     }
 
     public function testRenderAdapterTplStringSandboxViolation(): void
@@ -580,6 +594,27 @@ final class ServiceTest extends \BBTestCase
 
         $this->assertStringContainsString('<strong>Bolded</strong>', $result);
         $this->assertStringContainsString('2026-03-02', $result);
+    }
+
+    public function testRenderEmailTemplateFallsBackToDefaultCurrencyInSandbox(): void
+    {
+        $di = $this->getDi();
+        $di['api_guest'] = new class {
+            public function system_company(): array
+            {
+                return ['name' => 'FOSSBilling'];
+            }
+        };
+        $di['em'] = $this->createEntityManagerWithDefaultCurrency('EUR');
+
+        $result = $this->renderEmailTemplateWithSandbox(
+            '{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}',
+            ['invoice' => ['total' => 10]],
+            $di
+        );
+
+        $this->assertNotSame('', $result);
+        $this->assertStringContainsString('10', $result);
     }
 
     public function testBaseTwigEnvironmentSupportsHasPermissionFunction(): void
@@ -846,7 +881,7 @@ final class ServiceTest extends \BBTestCase
     private function createBaseTwigEnvironment(\Pimple\Container $di): \Twig\Environment
     {
         if (!$di->offsetExists('request')) {
-            $di['request'] = \Symfony\Component\HttpFoundation\Request::create('/');
+            $di['request'] = Request::create('/');
         }
 
         $reflection = new \ReflectionClass(\FOSSBilling\Twig\TwigFactory::class);
@@ -859,6 +894,33 @@ final class ServiceTest extends \BBTestCase
         $baseConfigProperty->setValue($twigFactory, ['cache' => false]);
 
         return $twigFactory->createBaseEnvironment();
+    }
+
+    private function createEntityManagerWithDefaultCurrency(string $code): object
+    {
+        $defaultCurrency = new \Box\Mod\Currency\Entity\Currency($code);
+
+        $repository = new class($defaultCurrency) {
+            public function __construct(private readonly \Box\Mod\Currency\Entity\Currency $currency)
+            {
+            }
+
+            public function findDefault(): \Box\Mod\Currency\Entity\Currency
+            {
+                return $this->currency;
+            }
+        };
+
+        return new class($repository) {
+            public function __construct(private readonly object $repository)
+            {
+            }
+
+            public function getRepository(string $class): object
+            {
+                return $this->repository;
+            }
+        };
     }
 
     private function mockSession(): \FOSSBilling\Session
@@ -903,6 +965,27 @@ final class ServiceTest extends \BBTestCase
 
         $this->assertIsString($result);
         $this->assertEquals($expected, $result);
+    }
+
+    public function testGetPeriodLegacyZeroSentinelReturnsDash(): void
+    {
+        $result = $this->service->getPeriod('0');
+
+        $this->assertSame('-', $result);
+    }
+
+    public function testGetPeriodBooleanFalseReturnsDash(): void
+    {
+        $result = $this->service->getPeriod(false);
+
+        $this->assertSame('-', $result);
+    }
+
+    public function testGetPeriodArrayReturnsDash(): void
+    {
+        $result = $this->service->getPeriod([]);
+
+        $this->assertSame('-', $result);
     }
 
     public function testGetCountries(): void

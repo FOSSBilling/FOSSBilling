@@ -18,6 +18,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Filesystem\Exception\IOException;
 
 #[AsCommand(
     name: 'system:run-patcher',
@@ -69,13 +70,17 @@ class RunPatcher extends Command implements \FOSSBilling\InjectionAwareInterface
         }
 
         try {
+            $output->writeln('Clearing runtime cache...');
+            $this->di['mod_service']('system')->clearCache();
+
             $output->writeln('Applying config patches...');
             $patcher->applyConfigPatches();
 
             $output->writeln('Applying core patches...');
             $patcher->applyCorePatches();
 
-            $this->di['cache']->clear();
+            $output->writeln('Clearing runtime cache...');
+            $this->di['mod_service']('system')->clearCache();
 
             $cacheItem->set([
                 self::CACHE_VERSION_KEY => $version,
@@ -86,6 +91,10 @@ class RunPatcher extends Command implements \FOSSBilling\InjectionAwareInterface
             $output->writeln('<info>All patches have been applied and the cache has been cleared.</info>');
 
             return Command::SUCCESS;
+        } catch (IOException $e) {
+            $output->writeln("<error>Unable to clear the runtime cache: {$e->getMessage()}</error>");
+
+            return Command::FAILURE;
         } catch (\Exception $e) {
             $output->writeln("<error>An error occurred while applying patches: {$e->getMessage()}</error>");
 

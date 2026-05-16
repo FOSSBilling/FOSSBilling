@@ -941,5 +941,4 @@ final class ServiceTest extends \BBTestCase
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }
-
 }

@@ -74,6 +74,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['security']['trusted_proxies']['proxies'] ??= [];
         $newConfig['security']['trusted_proxies']['headers'] ??= 'x_forwarded';
         $newConfig['security']['session_lifespan'] ??= $newConfig['security']['cookie_lifespan'] ?? 7200;
+        $newConfig['security']['session_regeneration_grace_period'] ??= 300;
         $newConfig['security']['perform_session_fingerprinting'] ??= true;
         $newConfig['security']['debug_fingerprint'] ??= false;
         $newConfig['update_branch'] ??= 'release';
@@ -325,6 +326,7 @@ class UpdatePatcher implements InjectionAwareInterface
             59 => 'patch59',
             60 => 'patch60',
             61 => 'patch61',
+            62 => 'patch62',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1264,5 +1266,13 @@ class UpdatePatcher implements InjectionAwareInterface
         if ($columns !== []) {
             $this->executeSql('ALTER TABLE currency ' . implode(', ', $columns));
         }
+    }
+
+    private function patch62(): void
+    {
+        $this->executeSql("UPDATE invoice_item SET period = NULL WHERE period IN ('0', '')");
+        $this->executeSql("UPDATE client_order SET period = NULL WHERE period IN ('0', '')");
+        $this->executeSql("UPDATE subscription SET period = NULL WHERE period IN ('0', '')");
+        $this->executeSql("UPDATE transaction SET s_period = NULL WHERE s_period IN ('0', '')");
     }
 }

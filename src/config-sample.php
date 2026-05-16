@@ -32,6 +32,7 @@ return [
             'headers' => 'x_forwarded',
         ],
         'session_lifespan' => 7200,
+        'session_regeneration_grace_period' => 300,
         'perform_session_fingerprinting' => true,
         'debug_fingerprint' => false,
     ],

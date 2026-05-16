@@ -125,19 +125,11 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Used to destroy / invalidate all existing sessions for a given user.
-     *
-     * @param array $data An array with the options.
-     *                    The array can contain the following sub-keys:
-     *                    - string|null $data['type'] The user type (admin or staff) (optional).
-     *                    - id|null $data['id'] The session ID (optional).
+     * Destroy / invalidate all existing sessions for the currently logged in user.
      */
-    public function destroy_sessions(array $data): bool
+    public function destroy_sessions(): bool
     {
-        $data['type'] ??= null;
-        $id = isset($data['id']) ? (int) $data['id'] : null;
-
-        return $this->getService()->invalidateSessions($data['type'], $id);
+        return $this->getService()->invalidateSessions();
     }
 
     /**

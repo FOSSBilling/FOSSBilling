@@ -1,8 +1,8 @@
-name: Upload Release to Docker Hub
+name: Upload Release to Docker Registries
 
 on:
   release:
-    types: 
+    types:
       - published
 
 concurrency:
@@ -12,7 +12,7 @@ concurrency:
 jobs:
   check-latest:
     name: 'Check if Release is Latest'
-    permissions: 
+    permissions:
       contents: read
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -21,11 +21,11 @@ jobs:
     steps:
       - name: 'Get Latest Release Version Tag'
         id: get-latest
-        uses: pozetroninc/github-action-get-latest-release@53d33d213ee71c72360e3c829caf7cee94ec21e2 # master
-        with:
-          excludes: 'prerelease,draft'
-          repository: 'FOSSBilling/FOSSBilling'
-          token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          latest_release="$(gh api repos/${{ github.repository }}/releases/latest --jq '.tag_name')"
+          echo "release=${latest_release}" >> "${GITHUB_OUTPUT}"
 
       - name: 'Check if Current Release Version is Latest'
         id: compare-latest
@@ -37,68 +37,26 @@ jobs:
           fi
 
   deploy-release-docker:
-    name: 'Build and Push Release to Docker Hub'
-    permissions: 
+    name: 'Build and Push Release Image'
+    permissions:
       contents: read
-      id-token: write
+      packages: write
     needs: [ check-latest ]
-    uses: docker/github-builder/.github/workflows/build.yml@c2782c55efa56a01b9c30021db8f5ec3993228a3 # v1.8.0
+    uses: ./.github/workflows/docker-build.yml
     secrets:
-      registry-auths: |
-        - registry: docker.io
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
     with:
-      output: image
-      push: true
-      platforms: linux/amd64,linux/arm64
-      cache: true
-      cache-mode: max
-      cache-scope: fossbilling-release
-      sbom: true
-      set-meta-labels: true
-      set-meta-annotations: true
+      target: runtime
+      cache-scope: cache-release
+      extract-release-tree: true
+      release-tree-artifact-name: release-build
       meta-images: fossbilling/fossbilling
-      meta-flavor: |
-        latest=false
       meta-tags: |
         type=semver,pattern={{version}}
         type=raw,value=latest,enable=${{ needs.check-latest.outputs.is_latest == 'true' }}
+      meta-flavor: |
+        latest=false
       build-args: |
         FOSSBILLING_VERSION=${{ github.ref_name }}
         SENTRY_DSN=${{ vars.SENTRY_DSN }}
-
-  build-release-archive:
-    name: 'Build Release Archive'
-    permissions:
-      actions: write
-      contents: read
-    needs: [ check-latest ]
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-
-      - name: 'Set up Docker Buildx'
-        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
-
-      - name: 'Build Release Artifact'
-        run: |
-          docker buildx build \
-            --target release-artifact \
-            --build-arg FOSSBILLING_VERSION="${{ github.ref_name }}" \
-            --build-arg SENTRY_DSN="${{ vars.SENTRY_DSN }}" \
-            --cache-from type=gha,scope=fossbilling-release \
-            --output type=local,dest=./release-tree \
-            .
-
-      - name: 'Create Release Build Archive'
-        run: tar -cf /tmp/build.tar -C ./release-tree ./
-
-      - name: 'Upload Release Build Archive'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          if-no-files-found: 'error'
-          name: release-build
-          path: /tmp/build.tar
-          retention-days: 1

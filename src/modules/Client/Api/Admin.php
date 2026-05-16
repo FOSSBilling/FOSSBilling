@@ -47,11 +47,11 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get a list of clients.
+     * Get client ID/name pairs.
      *
      * @param array $data Filtering options
      *
-     * @return array List of clients in a paginated manner
+     * @return array List of client ID/name pairs
      */
     public function get_pairs($data)
     {
@@ -112,8 +112,6 @@ class Admin extends \Api_Abstract
      * @optional string $group_id - client group id
      * @optional string $status - client status: "active, suspended, canceled"
      * @optional string $created_at - ISO 8601 date for client creation date
-     * @optional string $last_name - last name
-     * @optional string $aid - Alternative id. Usually used by import tools.
      * @optional string $gender - Gender - values: male|female|nonbinary|other
      * @optional string $country - Country
      * @optional string $city - city
@@ -158,7 +156,9 @@ class Admin extends \Api_Abstract
             throw new InformationException('This email address is already registered.');
         }
 
-        $validator->isPasswordStrong($data['password']);
+        if (isset($data['password']) && $data['password'] !== '') {
+            $validator->isPasswordStrong($data['password']);
+        }
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientCreate', 'params' => $data]);
         $id = $service->adminCreateClient($data);
@@ -195,7 +195,6 @@ class Admin extends \Api_Abstract
      * @optional string $first_name - client first_name
      * @optional string $last_name - client last_name
      * @optional string $status - client status
-     * @optional string $last_name - last name
      * @optional string $aid - Alternative id. Usually used by import tools.
      * @optional string $gender - Gender - values: male|female|nonbinary|other
      * @optional string $country - Country
@@ -247,16 +246,21 @@ class Admin extends \Api_Abstract
             $this->di['validator']->isBirthdayValid($data['birthday']);
         }
 
-        if (($data['currency'] ?? null) && $service->canChangeCurrency($client, $data['currency'] ?? null)) {
-            $client->currency = $data['currency'] ?? $client->currency;
+        if (($data['birthday'] ?? null) === '') {
+            unset($data['birthday']);
+        }
+
+        $currency = $data['currency'] ?? null;
+        if ($currency && $service->canChangeCurrency($client, $currency)) {
+            $client->currency = $currency;
         }
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientUpdate', 'params' => $data]);
 
         // Special handling for the phone country codes
-        $phoneCC = $data['phone_cc'] ?? $client->phone_cc;
-        if (!empty($phoneCC)) {
-            $client->phone_cc = Tools::validatePhoneCC($phoneCC);
+        $phoneCountryCode = $data['phone_cc'] ?? $client->phone_cc;
+        if (!empty($phoneCountryCode)) {
+            $client->phone_cc = Tools::validatePhoneCC($phoneCountryCode);
         }
 
         // Special handling for the phone number itself
@@ -338,6 +342,8 @@ class Admin extends \Api_Abstract
      */
     public function balance_get_list($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_balance');
+
         $service = $this->di['mod_service']('Client', 'Balance');
         [$q, $params] = $service->getSearchQuery($data);
         $pager = $this->di['pager']->getPaginatedResultSet($q, $params, PaginationOptions::fromArray($data));

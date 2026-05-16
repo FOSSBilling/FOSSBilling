@@ -1,0 +1,144 @@
+name: Create Release
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version, for example 0.7.3'
+        required: true
+        type: string
+      target_ref:
+        description: 'Git ref to build and tag'
+        required: true
+        default: main
+        type: string
+      draft:
+        description: 'Create as a draft release'
+        required: true
+        default: true
+        type: boolean
+      prerelease:
+        description: 'Mark as a prerelease'
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: create-release-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  create-release:
+    name: 'Create Release'
+    if: ${{ github.repository == 'FOSSBilling/FOSSBilling' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: 'Validate Release Inputs'
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          TARGET_REF: ${{ inputs.target_ref }}
+        run: |
+          if [[ ! "${RELEASE_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Release version must be valid SemVer without a leading v."
+            exit 1
+          fi
+
+          if [[ ! "${TARGET_REF}" =~ ^[A-Za-z0-9._/-]+$ ]] || ! git check-ref-format --branch "${TARGET_REF}" >/dev/null 2>&1; then
+            echo "Target ref must be a valid branch name containing only letters, numbers, dots, underscores, slashes, or hyphens."
+            exit 1
+          fi
+
+      - name: 'Checkout Repository'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ inputs.target_ref }}
+          persist-credentials: false
+
+      - name: 'Set Registry Cache Image'
+        run: echo "CACHE_IMAGE=ghcr.io/${GITHUB_REPOSITORY@L}-build-cache" >> "${GITHUB_ENV}"
+
+      - name: 'Set up Docker Buildx'
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
+
+      - name: 'Build Release Artifact'
+        id: build
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
+        with:
+          build-args: |
+            FOSSBILLING_VERSION=${{ inputs.version }}
+            SENTRY_DSN=${{ vars.SENTRY_DSN }}
+          cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}:cache-release
+          context: .
+          target: release-artifact
+          outputs: type=local,dest=./release-tree
+
+      - name: 'Create Release Archive'
+        id: archive
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          mkdir -p ../dist
+          zip -qr "../dist/FOSSBilling-${RELEASE_VERSION}.zip" .
+        working-directory: ./release-tree
+
+      - name: 'Create or Update GitHub Release'
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          TARGET_REF: ${{ inputs.target_ref }}
+          IS_DRAFT: ${{ inputs.draft }}
+          IS_PRERELEASE: ${{ inputs.prerelease }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          asset="./dist/FOSSBilling-${RELEASE_VERSION}.zip"
+
+          if gh release view "${RELEASE_VERSION}" --repo "${REPOSITORY}" >/dev/null 2>&1; then
+            gh release upload "${RELEASE_VERSION}" "${asset}" \
+              --repo "${REPOSITORY}" \
+              --clobber
+            echo "operation=updated" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          release_args=(
+            "${RELEASE_VERSION}"
+            "${asset}"
+            --repo "${REPOSITORY}"
+            --title "${RELEASE_VERSION}"
+            --target "${TARGET_REF}"
+            --generate-notes
+          )
+
+          if [[ "${IS_DRAFT}" == "true" ]]; then
+            release_args+=(--draft)
+          fi
+
+          if [[ "${IS_PRERELEASE}" == "true" ]]; then
+            release_args+=(--prerelease)
+          fi
+
+          gh release create "${release_args[@]}"
+          echo "operation=created" >> "${GITHUB_OUTPUT}"
+
+      - name: 'Write Job Summary'
+        if: always()
+        run: |
+          cat >> "${GITHUB_STEP_SUMMARY}" <<'EOF'
+          ## Create Release
+
+          | Item | Value |
+          | --- | --- |
+          | Version | `${{ inputs.version }}` |
+          | Target ref | `${{ inputs.target_ref }}` |
+          | Draft | `${{ inputs.draft }}` |
+          | Prerelease | `${{ inputs.prerelease }}` |
+          | Archive | `FOSSBilling-${{ inputs.version }}.zip` |
+          | Docker build | `${{ steps.build.outcome }}` |
+          | Archive creation | `${{ steps.archive.outcome }}` |
+          | Release operation | `${{ steps.release.outputs.operation || steps.release.outcome }}` |
+          EOF
