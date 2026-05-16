@@ -325,36 +325,12 @@ final class ServiceTest extends \BBTestCase
 
     public function testCreateBaseEnvironmentProvidesDefaultCurrencyGlobal(): void
     {
-        $defaultCurrency = new \Box\Mod\Currency\Entity\Currency('EUR');
-
-        $repository = new class($defaultCurrency) {
-            public function __construct(private readonly \Box\Mod\Currency\Entity\Currency $currency)
-            {
-            }
-
-            public function findDefault(): \Box\Mod\Currency\Entity\Currency
-            {
-                return $this->currency;
-            }
-        };
-
-        $entityManager = new class($repository) {
-            public function __construct(private readonly object $repository)
-            {
-            }
-
-            public function getRepository(string $class): object
-            {
-                return $this->repository;
-            }
-        };
-
         $di = $this->getDi();
         $di['request'] = Request::create('/');
         $di['session'] = $this->mockSession();
         $di['api_guest'] = new class {
         };
-        $di['em'] = $entityManager;
+        $di['em'] = $this->createEntityManagerWithDefaultCurrency('EUR');
 
         $twig = $this->createBaseTwigEnvironment($di);
         $result = $twig->createTemplate('{{ default_currency }}')->render();
@@ -623,30 +599,6 @@ final class ServiceTest extends \BBTestCase
 
     public function testRenderEmailTemplateFallsBackToDefaultCurrencyInSandbox(): void
     {
-        $defaultCurrency = new \Box\Mod\Currency\Entity\Currency('EUR');
-
-        $repository = new class($defaultCurrency) {
-            public function __construct(private readonly \Box\Mod\Currency\Entity\Currency $currency)
-            {
-            }
-
-            public function findDefault(): \Box\Mod\Currency\Entity\Currency
-            {
-                return $this->currency;
-            }
-        };
-
-        $entityManager = new class($repository) {
-            public function __construct(private readonly object $repository)
-            {
-            }
-
-            public function getRepository(string $class): object
-            {
-                return $this->repository;
-            }
-        };
-
         $di = $this->getDi();
         $di['api_guest'] = new class {
             public function system_company(): array
@@ -654,7 +606,7 @@ final class ServiceTest extends \BBTestCase
                 return ['name' => 'FOSSBilling'];
             }
         };
-        $di['em'] = $entityManager;
+        $di['em'] = $this->createEntityManagerWithDefaultCurrency('EUR');
 
         $result = $this->renderEmailTemplateWithSandbox(
             '{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}',
@@ -943,6 +895,33 @@ final class ServiceTest extends \BBTestCase
         $baseConfigProperty->setValue($twigFactory, ['cache' => false]);
 
         return $twigFactory->createBaseEnvironment();
+    }
+
+    private function createEntityManagerWithDefaultCurrency(string $code): object
+    {
+        $defaultCurrency = new \Box\Mod\Currency\Entity\Currency($code);
+
+        $repository = new class($defaultCurrency) {
+            public function __construct(private readonly \Box\Mod\Currency\Entity\Currency $currency)
+            {
+            }
+
+            public function findDefault(): \Box\Mod\Currency\Entity\Currency
+            {
+                return $this->currency;
+            }
+        };
+
+        return new class($repository) {
+            public function __construct(private readonly object $repository)
+            {
+            }
+
+            public function getRepository(string $class): object
+            {
+                return $this->repository;
+            }
+        };
     }
 
     private function mockSession(): \FOSSBilling\Session

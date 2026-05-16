@@ -392,21 +392,16 @@ class TwigFactory
         $twig->addGlobal('FOSSBillingVersion', Version::VERSION);
     }
 
-    private function getDefaultCurrencyCode(): string
+    private function getDefaultCurrencyCode(): ?string
     {
-        if ($this->di->offsetExists('em')) {
-            try {
-                $repository = $this->di['em']->getRepository(Currency::class);
-                $currency = $repository->findDefault();
-
-                if ($currency instanceof Currency && $currency->getCode() !== '') {
-                    return $currency->getCode();
-                }
-            } catch (\Throwable) {
-            }
+        if (!$this->di->offsetExists('em')) {
+            return null;
         }
 
-        return 'USD';
+        $repository = $this->di['em']->getRepository(Currency::class);
+        $currency = $repository->findDefault();
+
+        return $currency instanceof Currency ? $currency->getCode() : null;
     }
 
     /**

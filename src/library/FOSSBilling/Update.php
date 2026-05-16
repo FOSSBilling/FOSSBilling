@@ -199,7 +199,7 @@ class Update implements InjectionAwareInterface
         try {
             $this->filesystem->remove(PATH_CACHE);
             $this->filesystem->mkdir(PATH_CACHE, 0o755);
-        } catch (\Exception) {
+        } catch (IOException) {
             // Best effort: continue with patching even if the pre-clear fails.
         }
 
