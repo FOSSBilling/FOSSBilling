@@ -222,7 +222,7 @@ final class GuestTest extends \BBTestCase
         $modelPasswordReset = new \Model_ClientPasswordReset();
         $modelPasswordReset->loadBean(new \DummyBean());
 
-        $dbMock = $this->createMock('\Box_Database');
+        $dbMock = $this->createMock(\Box_Database::class);
 
         // Specify that 'findOne' will be called exactly twice
         $dbMock->expects($this->exactly(2))->method('findOne')
