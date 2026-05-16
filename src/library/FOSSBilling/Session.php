@@ -222,7 +222,8 @@ class Session implements InjectionAwareInterface
         // the grace period. Emitting a fresh session cookie from an older,
         // unauthenticated request can overwrite a newer authenticated cookie
         // if the responses race.
-        unset($_SESSION[self::OBSOLETE_FLAG], $_SESSION[self::OBSOLETE_EXPIRES_AT]);
+        // Keep obsolete metadata until the grace period expires so this session
+        // can still be invalidated and have authentication cleared.
     }
 
     private function rotateSessionId(): void
