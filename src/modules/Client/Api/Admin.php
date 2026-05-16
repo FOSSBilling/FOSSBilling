@@ -47,11 +47,11 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get a list of clients.
+     * Get client ID/name pairs.
      *
      * @param array $data Filtering options
      *
-     * @return array List of clients in a paginated manner
+     * @return array List of client ID/name pairs
      */
     public function get_pairs($data)
     {
@@ -156,7 +156,9 @@ class Admin extends \Api_Abstract
             throw new InformationException('This email address is already registered.');
         }
 
-        $validator->isPasswordStrong($data['password']);
+        if (isset($data['password']) && $data['password'] !== '') {
+            $validator->isPasswordStrong($data['password']);
+        }
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientCreate', 'params' => $data]);
         $id = $service->adminCreateClient($data);
@@ -248,16 +250,17 @@ class Admin extends \Api_Abstract
             unset($data['birthday']);
         }
 
-        if (($data['currency'] ?? null) && $service->canChangeCurrency($client, $data['currency'] ?? null)) {
-            $client->currency = $data['currency'] ?? $client->currency;
+        $currency = $data['currency'] ?? null;
+        if ($currency && $service->canChangeCurrency($client, $currency)) {
+            $client->currency = $currency ?? $client->currency;
         }
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientUpdate', 'params' => $data]);
 
         // Special handling for the phone country codes
-        $phoneCC = $data['phone_cc'] ?? $client->phone_cc;
-        if (!empty($phoneCC)) {
-            $client->phone_cc = Tools::validatePhoneCC($phoneCC);
+        $phoneCountryCode = $data['phone_cc'] ?? $client->phone_cc;
+        if (!empty($phoneCountryCode)) {
+            $client->phone_cc = Tools::validatePhoneCC($phoneCountryCode);
         }
 
         // Special handling for the phone number itself

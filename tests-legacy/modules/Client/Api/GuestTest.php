@@ -18,8 +18,8 @@ final class GuestTest extends \BBTestCase
         $data = [
             'email' => 'test@email.com',
             'first_name' => 'John',
-            'password' => 'testpaswword',
-            'password_confirm' => 'testpaswword',
+            'password' => 'testpassword',
+            'password_confirm' => 'testpassword',
         ];
 
         $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
@@ -69,8 +69,8 @@ final class GuestTest extends \BBTestCase
         $data = [
             'email' => 'test@email.com',
             'first_name' => 'John',
-            'password' => 'testpaswword',
-            'password_confirm' => 'testpaswword',
+            'password' => 'testpassword',
+            'password_confirm' => 'testpassword',
         ];
 
         $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
@@ -115,8 +115,8 @@ final class GuestTest extends \BBTestCase
         $data = [
             'email' => 'test@email.com',
             'first_name' => 'John',
-            'password' => 'testpaswword',
-            'password_confirm' => 'testpaswword',
+            'password' => 'testpassword',
+            'password_confirm' => 'testpassword',
         ];
 
         $client = new Guest();
@@ -138,8 +138,8 @@ final class GuestTest extends \BBTestCase
         $data = [
             'email' => 'test@email.com',
             'first_name' => 'John',
-            'password' => 'testpaswword',
-            'password_confirm' => 'wrongpaswword',
+            'password' => 'testpassword',
+            'password_confirm' => 'wrongpassword',
         ];
 
         $client = new Guest();
@@ -211,7 +211,7 @@ final class GuestTest extends \BBTestCase
 
     public function testResetPasswordNewFlow(): void
     {
-        $data['email'] = 'John@exmaple.com';
+        $data['email'] = 'John@example.com';
 
         $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())->method('fire');
