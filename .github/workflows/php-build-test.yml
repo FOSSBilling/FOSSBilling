@@ -22,10 +22,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: 'Lowercase github.repository'
-        run: |
-          echo "IMAGE_NAME=${GITHUB_REPOSITORY@L}" >> "${GITHUB_ENV}"
-          echo "CACHE_IMAGE=ghcr.io/${GITHUB_REPOSITORY@L}-build-cache" >> "${GITHUB_ENV}"
+      - name: 'Set Registry Cache Image'
+        run: echo "CACHE_IMAGE=ghcr.io/${GITHUB_REPOSITORY@L}-build-cache" >> "${GITHUB_ENV}"
 
       - name: 'Login to GitHub Container Registry'
         if: inputs.write-cache

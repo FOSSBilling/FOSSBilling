@@ -50,7 +50,7 @@ jobs:
           ref: ${{ inputs.target_ref }}
           persist-credentials: false
 
-      - name: 'Lowercase github.repository'
+      - name: 'Set Registry Cache Image'
         run: echo "CACHE_IMAGE=ghcr.io/${GITHUB_REPOSITORY@L}-build-cache" >> "${GITHUB_ENV}"
 
       - name: 'Set up Docker Buildx'

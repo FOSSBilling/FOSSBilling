@@ -28,7 +28,7 @@ jobs:
         with:
           php-version: 8.3
 
-      - name: Setup PHP
+      - name: Set up PHP
         uses: shivammathur/setup-php@7c071dfe9dc99bdf297fa79cb49ea005b9fcadbc # v2
         with:
           php-version: 8.3
@@ -45,7 +45,7 @@ jobs:
           path: ./cache/rector
           key: ${{ env.MONTH }}-rector
           restore-keys: ${{ env.MONTH }}-rector
-          
+
       - name: Restore CS-Fixer Cache
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
@@ -61,7 +61,7 @@ jobs:
         id: php_cs_fixer
         run: php src/vendor/bin/php-cs-fixer fix
 
-      - name: Create a Pull Request
+      - name: Create Pull Request
         id: create_pr
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
         with:

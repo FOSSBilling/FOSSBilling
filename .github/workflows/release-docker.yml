@@ -1,4 +1,4 @@
-name: Upload Release to Docker Hub
+name: Upload Release to Docker Registries
 
 on:
   release:
@@ -37,7 +37,7 @@ jobs:
           fi
 
   deploy-release-docker:
-    name: 'Build and Push Release to Docker Hub'
+    name: 'Build and Push Release Image'
     permissions:
       contents: read
       packages: write
