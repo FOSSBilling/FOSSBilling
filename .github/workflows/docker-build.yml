@@ -63,6 +63,8 @@ jobs:
     steps:
       - name: 'Checkout Repository'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: 'Lowercase github.repository'
         run: echo "IMAGE_NAME=${GITHUB_REPOSITORY@L}" >> "${GITHUB_ENV}"
@@ -187,9 +189,18 @@ jobs:
       - name: 'Create Manifest List and Push'
         working-directory: /tmp/digests
         run: |
-          docker buildx imagetools create \
-            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf 'docker.io/${{ inputs.meta-images }}@sha256:%s ' *)
+          mapfile -t metadata_tags < <(jq -r '.tags[]' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          tag_args=()
+          for tag in "${metadata_tags[@]}"; do
+            tag_args+=(-t "$tag")
+          done
+
+          digest_args=()
+          for digest in *; do
+            digest_args+=("docker.io/${{ inputs.meta-images }}@sha256:${digest}")
+          done
+
+          docker buildx imagetools create "${tag_args[@]}" "${digest_args[@]}"
 
       - name: 'Inspect Image'
         run: |

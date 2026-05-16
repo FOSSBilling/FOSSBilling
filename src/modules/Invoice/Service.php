@@ -273,14 +273,14 @@ class Service implements InjectionAwareInterface
         $result['credit'] = $row['credit'] ?? 0;
 
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
-        $result['subscribable'] = $subscriptionService->isSubscribable($row['id']);
+        $subscriptionPeriod = $subscriptionService->getSubscriptionPeriod($invoice);
+        $result['subscribable'] = $subscriptionPeriod !== null;
         if ($deep && $result['subscribable']) {
-            $ip = $this->di['db']->getCell('SELECT period FROM invoice_item WHERE invoice_id = :id', ['id' => $row['id']]);
-            $period = $this->di['period']($ip);
+            $period = $this->di['period']($subscriptionPeriod);
             $result['subscription'] = [
                 'unit' => $period->getUnit(),
                 'cycle' => $period->getQty(),
-                'period' => $ip,
+                'period' => $subscriptionPeriod,
             ];
         }
 

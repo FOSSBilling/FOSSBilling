@@ -131,7 +131,7 @@ class Guest extends \Api_Abstract
     public function period_title($data)
     {
         $code = $data['code'] ?? null;
-        if ($code == null) {
+        if ($code === null || $code === '' || $code === 0 || $code === '0') {
             return '-';
         }
 

@@ -67,134 +67,83 @@ jobs:
     name: 'Spellcheck'
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    if: &normal_ci ${{ (github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
+    if: ${{ (github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
     steps:
-      - &checkout_step
-        name: 'Checkout Repository'
+      - name: 'Checkout Repository'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: 'Perform Spellcheck'
         uses: streetsidesoftware/cspell-action@de2a73e963e7443969755b648a1008f77033c5b2 # v8
         with:
           incremental_files_only: true
 
-  php-build-test:
-    name: 'PHP Build and Test (${{ matrix.php }})'
+  php-build-test-pr:
+    name: 'PHP Build and Test'
+    # Keep PR and push callers separate because job permissions cannot be conditional.
+    permissions:
+      contents: read
+    needs: [ spellcheck ]
+    if: ${{ github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id }}
+    uses: ./.github/workflows/php-build-test.yml
+    with:
+      write-cache: false
+
+  php-build-test-push:
+    name: 'PHP Build and Test'
     permissions:
       contents: read
       packages: write
     needs: [ spellcheck ]
-    if: *normal_ci
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    strategy:
-      matrix:
-        php: ['8.3', '8.4', '8.5']
-      fail-fast: true
-    steps:
-      - *checkout_step
+    if: ${{ github.event_name == 'push' }}
+    uses: ./.github/workflows/php-build-test.yml
+    with:
+      write-cache: true
 
-      - &lowercase_repo
-        name: 'Lowercase github.repository'
-        run: |
-          echo "IMAGE_NAME=${GITHUB_REPOSITORY@L}" >> ${GITHUB_ENV}
+  live-tests-pr:
+    name: 'Live Tests'
+    permissions:
+      contents: read
+    needs: [ php-build-test-pr ]
+    if: ${{ github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id }}
+    uses: ./.github/workflows/live-tests.yml
 
-      - &login_ghcr
-        name: 'Login to GitHub Container Registry'
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+  live-tests-push:
+    name: 'Live Tests'
+    permissions:
+      contents: read
+    needs: [ php-build-test-push ]
+    if: ${{ github.event_name == 'push' }}
+    uses: ./.github/workflows/live-tests.yml
 
-      - &setup_buildx
-        name: 'Set up Docker Buildx'
-        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
+  preview-build-pr:
+    name: 'Create Preview Build'
+    permissions:
+      contents: read
+    needs: [ live-tests-pr ]
+    if: ${{ github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id }}
+    uses: ./.github/workflows/preview-build.yml
+    with:
+      write-cache: false
 
-      - name: 'Build Docker Test Image'
-        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
-        with:
-          build-args: |
-            PHP_VERSION=${{ matrix.php }}
-            INSTALL_TRANSLATIONS=false
-          cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:cache-ci-${{ matrix.php }}
-          cache-to: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:cache-ci-${{ matrix.php }},mode=max
-          context: .
-          load: true
-          tags: |
-            fossbilling:test-${{ matrix.php }}
-          target: test
-
-      - name: 'PHPStan'
-        run: |
-          docker run --rm \
-            --env APP_ENV=test \
-            fossbilling:test-${{ matrix.php }} \
-            ./src/vendor/bin/phpstan analyse --configuration phpstan.neon --memory-limit=512M
-
-      - name: 'PHPUnit'
-        run: |
-          docker run --rm \
-            --env APP_ENV=test \
-            fossbilling:test-${{ matrix.php }} \
-            ./src/vendor/bin/phpunit --configuration phpunit.xml.dist
-
-      - name: 'Run Live Tests'
-        if: ${{ matrix.php == '8.5' }}
-        run: bash ./.github/scripts/run-docker-live-tests.sh fossbilling:test-${{ matrix.php }}
-
-      - name: 'Run Cypress Tests'
-        if: ${{ matrix.php == '8.5' }}
-        env:
-          CYPRESS_PROJECT_ID: ${{ vars.CYPRESS_PROJECT_ID }}
-          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-        run: bash ./.github/scripts/run-docker-cypress-tests.sh fossbilling:test-${{ matrix.php }}
-
-  preview-build:
+  preview-build-push:
     name: 'Create Preview Build'
     permissions:
       contents: read
       packages: write
-    needs: [ php-build-test ]
-    if: ${{ (github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || (github.event_name == 'push' && github.ref != 'refs/heads/main') }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - *checkout_step
-      - *lowercase_repo
-      - *login_ghcr
-      - *setup_buildx
-
-      - name: 'Build Release Artifact'
-        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
-        with:
-          build-args: |
-            FOSSBILLING_VERSION=${{ github.sha }}
-            FOSSBILLING_VERSION_TRUNCATE=7
-            SENTRY_DSN=${{ vars.SENTRY_DSN }}
-          cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:cache-preview
-          cache-to: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:cache-preview,mode=max
-          context: .
-          target: release-artifact
-          outputs: type=local,dest=./release-tree
-
-      - name: 'Create Preview Build Archive'
-        run: tar -cf /tmp/build.tar -C ./release-tree ./
-
-      - name: 'Upload Preview Build Archive'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          if-no-files-found: 'error'
-          name: preview-build
-          path: /tmp/build.tar
-          retention-days: 1
+    needs: [ live-tests-push ]
+    if: ${{ github.event_name == 'push' && github.ref != 'refs/heads/main' }}
+    uses: ./.github/workflows/preview-build.yml
+    with:
+      write-cache: true
 
   preview-docker:
     name: 'Build and Push Preview Docker Image'
     permissions:
       contents: read
       packages: write
-    needs: [ php-build-test ]
+    needs: [ live-tests-push ]
     if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
     uses: ./.github/workflows/docker-build.yml
     secrets:
@@ -217,8 +166,8 @@ jobs:
 
   upload-preview:
     name: 'Upload Preview Release'
-    needs: [ preview-build, preview-docker ]
-    if: ${{ !cancelled() && (needs.preview-build.result == 'success' || needs.preview-docker.result == 'success') }}
+    needs: [ preview-build-pr, preview-build-push, preview-docker ]
+    if: ${{ !cancelled() && (needs['preview-build-pr'].result == 'success' || needs['preview-build-push'].result == 'success' || needs['preview-docker'].result == 'success') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
