@@ -260,7 +260,7 @@ final class GuestTest extends \BBTestCase
     {
         $data['email'] = 'john@example.eu';
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Box_EventManager::class);
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
         $dbMock = $this->createMock('\Box_Database');
