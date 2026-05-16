@@ -80,7 +80,7 @@ jobs:
           incremental_files_only: true
 
   php-build-test-pr:
-    name: 'PHP Build and Test (PR)'
+    name: 'PHP Build and Test'
     # Keep PR and push callers separate because job permissions cannot be conditional.
     permissions:
       contents: read
@@ -91,7 +91,7 @@ jobs:
       write-cache: false
 
   php-build-test-push:
-    name: 'PHP Build and Test (Push)'
+    name: 'PHP Build and Test'
     permissions:
       contents: read
       packages: write
@@ -102,7 +102,7 @@ jobs:
       write-cache: true
 
   live-tests-pr:
-    name: 'Live Tests (PR)'
+    name: 'Live Tests'
     permissions:
       contents: read
     needs: [ php-build-test-pr ]
@@ -110,7 +110,7 @@ jobs:
     uses: ./.github/workflows/live-tests.yml
 
   live-tests-push:
-    name: 'Live Tests (Push)'
+    name: 'Live Tests'
     permissions:
       contents: read
     needs: [ php-build-test-push ]
@@ -118,7 +118,7 @@ jobs:
     uses: ./.github/workflows/live-tests.yml
 
   preview-build-pr:
-    name: 'Create Preview Build (PR)'
+    name: 'Create Preview Build'
     permissions:
       contents: read
     needs: [ live-tests-pr ]
@@ -128,7 +128,7 @@ jobs:
       write-cache: false
 
   preview-build-push:
-    name: 'Create Preview Build (Push)'
+    name: 'Create Preview Build'
     permissions:
       contents: read
       packages: write
