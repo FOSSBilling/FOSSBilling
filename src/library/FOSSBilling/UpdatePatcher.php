@@ -326,6 +326,7 @@ class UpdatePatcher implements InjectionAwareInterface
             59 => 'patch59',
             60 => 'patch60',
             61 => 'patch61',
+            62 => 'patch62'
         ];
         ksort($patches, SORT_NATURAL);
 
