@@ -127,7 +127,7 @@ class Admin extends \Api_Abstract
     /**
      * Destroy / invalidate all existing sessions for the currently logged in user.
      */
-    public function destroy_sessions(array $data): bool
+    public function destroy_sessions(): bool
     {
         return $this->getService()->invalidateSessions();
     }
