@@ -50,6 +50,16 @@ if ! docker image inspect "${image}" >/dev/null 2>&1; then
   exit 1
 fi
 
+cypress_args=(run --browser chrome)
+if [[ -n "${CYPRESS_RECORD_KEY:-}" ]]; then
+  cypress_args+=(--record --group "PHP 8.5 / Chrome")
+  if [[ -n "${GITHUB_RUN_ID:-}" ]]; then
+    cypress_args+=(--ci-build-id "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT:-1}")
+  fi
+else
+  echo "CYPRESS_RECORD_KEY is not set. Running Cypress without Cloud recording."
+fi
+
 trap cleanup EXIT
 
 docker network create "${network}" >/dev/null
@@ -109,11 +119,27 @@ docker run --rm --network "${network}" "${image}" curl -fsS "${install_payload[@
 
 docker run --rm \
   --network "${network}" \
+  --env CI \
   --env CYPRESS_BASE_URL="http://${app_container}/" \
   --env CYPRESS_ADMIN_EMAIL="${test_email}" \
   --env CYPRESS_ADMIN_PASSWORD="${test_pass}" \
+  --env CYPRESS_PROJECT_ID \
+  --env CYPRESS_RECORD_KEY \
+  --env GITHUB_ACTIONS \
+  --env GITHUB_API_URL \
+  --env GITHUB_BASE_REF \
+  --env GITHUB_EVENT_NAME \
+  --env GITHUB_HEAD_REF \
+  --env GITHUB_JOB \
+  --env GITHUB_REF \
+  --env GITHUB_REPOSITORY \
+  --env GITHUB_RUN_ATTEMPT \
+  --env GITHUB_RUN_ID \
+  --env GITHUB_SERVER_URL \
+  --env GITHUB_SHA \
+  --env GITHUB_WORKFLOW \
   --volume "${project_root}:/workspace" \
   --workdir /workspace \
   --entrypoint cypress \
   "${cypress_image}" \
-  run --browser chrome
+  "${cypress_args[@]}"

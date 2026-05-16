@@ -145,6 +145,9 @@ jobs:
 
       - name: 'Run Cypress Tests'
         if: ${{ matrix.php == '8.5' }}
+        env:
+          CYPRESS_PROJECT_ID: ${{ vars.CYPRESS_PROJECT_ID }}
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
         run: bash ./.github/scripts/run-docker-cypress-tests.sh fossbilling:test-${{ matrix.php }}
 
   preview-build:

@@ -10,7 +10,9 @@
     "build-admin_default": "npm run build -w admin_default",
     "cy:open": "cypress open",
     "cy:run": "cypress run",
-    "test:e2e": "npm run cy:run"
+    "cy:run:record": "cypress run --record",
+    "test:e2e": "npm run cy:run",
+    "test:e2e:record": "npm run cy:run:record"
   },
   "devDependencies": {
     "cypress": "15.15.0"
