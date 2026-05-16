@@ -217,12 +217,6 @@ class Session implements InjectionAwareInterface
 
             return;
         }
-
-        // Do not regenerate the ID for obsolete sessions that are still within
-        // the grace period. Emitting a fresh session cookie from an older,
-        // unauthenticated request can overwrite a newer authenticated cookie
-        // if the responses race.
-        unset($_SESSION[self::OBSOLETE_FLAG], $_SESSION[self::OBSOLETE_EXPIRES_AT]);
     }
 
     private function rotateSessionId(): void
