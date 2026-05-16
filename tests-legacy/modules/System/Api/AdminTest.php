@@ -26,6 +26,20 @@ final class AdminTest extends \BBTestCase
             ->method('getParams')
             ->willReturn([]);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('system', 'manage_settings');
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {
+            if ($serviceName == 'Staff') {
+                return $staffServiceMock;
+            }
+
+            return false;
+        });
+        $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
         $result = $this->api->get_params($data);
@@ -69,15 +83,25 @@ final class AdminTest extends \BBTestCase
         $data = [
         ];
 
-        $di = $this->getDi();
-
-        $this->api->setDi($di);
-
         $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('getMessages')
             ->willReturn([]);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('system', 'manage_settings');
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {
+            if ($serviceName == 'Staff') {
+                return $staffServiceMock;
+            }
+
+            return false;
+        });
+        $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
         $result = $this->api->messages($data);
@@ -111,8 +135,19 @@ final class AdminTest extends \BBTestCase
             ->method('getEnv')
             ->willReturn([]);
 
-        $di = $this->getDi();
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('system', 'manage_settings');
 
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {
+            if ($serviceName == 'Staff') {
+                return $staffServiceMock;
+            }
+
+            return false;
+        });
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 

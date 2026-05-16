@@ -20,20 +20,40 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: 'Delete Untagged Runtime Image Versions'
-        uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55 # v5
-        with:
-          owner: FOSSBilling
-          package-name: fossbilling
-          package-type: container
-          delete-only-untagged-versions: 'true'
-          min-versions-to-keep: 20
+      - name: 'Delete Untagged GHCR Versions'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OWNER: FOSSBilling
+          MIN_VERSIONS_TO_KEEP: 20
+        run: |
+          set -euo pipefail
 
-      - name: 'Delete Untagged Build Cache Versions'
-        uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55 # v5
-        with:
-          owner: FOSSBilling
-          package-name: fossbilling-build-cache
-          package-type: container
-          delete-only-untagged-versions: 'true'
-          min-versions-to-keep: 20
+          cleanup_package() {
+            local package_name="$1"
+            local versions_to_delete
+
+            echo "Finding untagged versions for ${OWNER}/${package_name}"
+            versions_to_delete="$(
+              gh api --paginate "/orgs/${OWNER}/packages/container/${package_name}/versions?per_page=100" \
+                --jq '.[] | select((.metadata.container.tags | length) == 0) | [.created_at, .id] | @tsv' \
+                | sort -r \
+                | tail -n +"$((MIN_VERSIONS_TO_KEEP + 1))" \
+                | cut -f2
+            )"
+
+            if [ -z "${versions_to_delete}" ]; then
+              echo "No untagged versions to delete for ${package_name}"
+              return
+            fi
+
+            while IFS= read -r version_id; do
+              [ -n "${version_id}" ] || continue
+              echo "Deleting ${package_name} package version ${version_id}"
+              gh api \
+                --method DELETE \
+                "/orgs/${OWNER}/packages/container/${package_name}/versions/${version_id}"
+            done <<< "${versions_to_delete}"
+          }
+
+          cleanup_package fossbilling
+          cleanup_package fossbilling-build-cache

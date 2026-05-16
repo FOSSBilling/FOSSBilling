@@ -342,6 +342,8 @@ class Admin extends \Api_Abstract
      */
     public function balance_get_list($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_balance');
+
         $service = $this->di['mod_service']('Client', 'Balance');
         [$q, $params] = $service->getSearchQuery($data);
         $pager = $this->di['pager']->getPaginatedResultSet($q, $params, PaginationOptions::fromArray($data));

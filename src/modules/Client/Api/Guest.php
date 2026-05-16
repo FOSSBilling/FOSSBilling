@@ -192,41 +192,29 @@ class Guest extends \Api_Abstract
                 return true;
             }
 
-            // Check if a password reset request exists
-            $reset = $this->di['db']->findOne('ClientPasswordReset', 'client_id = ?', [$c->id]);
-
-            // If no recent reset request exists, create a new one
-            if (!$reset instanceof \Model_ClientPasswordReset) {
-                $hash = hash('sha256', random_bytes(32));
-                $reset = $this->di['db']->dispense('ClientPasswordReset');
-                $reset->client_id = $c->id;
-                $reset->ip = $this->ip;
-                $reset->hash = $hash;
-                $reset->created_at = date('Y-m-d H:i:s');
-                $reset->updated_at = date('Y-m-d H:i:s');
-                $this->di['db']->store($reset);
+            $existing = $this->di['db']->findOne('ClientPasswordReset', 'client_id = ?', [$c->id]);
+            if ($existing instanceof \Model_ClientPasswordReset) {
+                $this->di['db']->trash($existing);
             }
 
-            // prepare reset email
+            $hash = hash('sha256', random_bytes(32));
+            $reset = $this->di['db']->dispense('ClientPasswordReset');
+            $reset->client_id = $c->id;
+            $reset->ip = $this->ip;
+            $reset->hash = $hash;
+            $reset->created_at = date('Y-m-d H:i:s');
+            $reset->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($reset);
+
             $email = [
                 'to_client' => $c->id,
                 'code' => 'mod_client_password_reset_request',
-                'hash' => $reset->hash,
+                'hash' => $hash,
                 'send_now' => true,
             ];
 
             $emailService = $this->di['mod_service']('email');
-
-            // Send the email if the reset request has the same created_at and updated_at or if at least 1 full minute has passed since the last request.
-            if ($reset->created_at == $reset->updated_at) {
-                $emailService->sendTemplate($email);
-            } elseif (strtotime((string) $reset->updated_at) - time() + 60 < 0) {
-                $emailService->sendTemplate($email);
-            }
-
-            // update the client password reset time
-            $reset->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($reset);
+            $emailService->sendTemplate($email);
 
             $this->di['logger']->setChannel('security')->info('Client password reset email queued for client #%s from IP %s: email %s', $c->id, $this->getIp(), $data['email']);
 

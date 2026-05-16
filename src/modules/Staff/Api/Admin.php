@@ -163,6 +163,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'ID was not passed'])]
     public function permissions_get($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
+
         $model = $this->di['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
 
         return $this->getService()->getPermissions($model->id);
@@ -278,6 +280,8 @@ class Admin extends \Api_Abstract
      */
     public function login_history_get_list($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_settings');
+
         [$sql, $params] = $this->getService()->getActivityAdminHistorySearchQuery($data);
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
@@ -299,6 +303,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Event ID was not passed'])]
     public function login_history_get($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_settings');
+
         $model = $this->di['db']->getExistingModelById('ActivityAdminHistory', $data['id'], 'Event not found');
 
         return $this->getService()->toActivityAdminHistoryApiArray($model);

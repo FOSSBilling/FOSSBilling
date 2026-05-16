@@ -228,6 +228,11 @@ final class AdminTest extends \BBTestCase
             ->method('getPermissions')
             ->willReturn([]);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('staff', 'create_and_edit_staff');
+
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -235,12 +240,43 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {
+            if ($serviceName == 'Staff') {
+                return $staffServiceMock;
+            }
+
+            return false;
+        });
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
         $result = $this->api->permissions_get($data);
         $this->assertIsArray($result);
+    }
+
+    public function testPermissionsGetRequiresPermission(): void
+    {
+        $data['id'] = 1;
+
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('staff', 'create_and_edit_staff')
+            ->willThrowException(new \FOSSBilling\InformationException('denied'));
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {
+            if ($serviceName == 'Staff') {
+                return $staffServiceMock;
+            }
+
+            return false;
+        });
+        $this->api->setDi($di);
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->api->permissions_get($data);
     }
 
     public function testPermissionsUpdate(): void
@@ -422,6 +458,11 @@ final class AdminTest extends \BBTestCase
             ->method('toActivityAdminHistoryApiArray')
             ->willReturn([]);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('staff', 'manage_settings');
+
         $resultSet = [
             'list' => ['id' => 1],
         ];
@@ -442,12 +483,41 @@ final class AdminTest extends \BBTestCase
         $di = $this->getDi();
         $di['pager'] = $pagerMock;
         $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {
+            if ($serviceName == 'Staff') {
+                return $staffServiceMock;
+            }
+
+            return false;
+        });
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
         $result = $this->api->login_history_get_list($data);
         $this->assertIsArray($result);
+    }
+
+    public function testLoginHistoryGetListRequiresPermission(): void
+    {
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('staff', 'manage_settings')
+            ->willThrowException(new \FOSSBilling\InformationException('denied'));
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {
+            if ($serviceName == 'Staff') {
+                return $staffServiceMock;
+            }
+
+            return false;
+        });
+        $this->api->setDi($di);
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->api->login_history_get_list([]);
     }
 
     public function testLoginHistoryGet(): void
@@ -458,6 +528,11 @@ final class AdminTest extends \BBTestCase
         $serviceMock->method('toActivityAdminHistoryApiArray')
             ->willReturn([]);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('staff', 'manage_settings');
+
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('getExistingModelById')
@@ -465,6 +540,13 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {
+            if ($serviceName == 'Staff') {
+                return $staffServiceMock;
+            }
+
+            return false;
+        });
 
         $this->api->setIdentity(new \Model_Admin());
         $this->api->setDi($di);
@@ -472,5 +554,29 @@ final class AdminTest extends \BBTestCase
 
         $result = $this->api->login_history_get($data);
         $this->assertIsArray($result);
+    }
+
+    public function testLoginHistoryGetRequiresPermission(): void
+    {
+        $data['id'] = '1';
+
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('staff', 'manage_settings')
+            ->willThrowException(new \FOSSBilling\InformationException('denied'));
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {
+            if ($serviceName == 'Staff') {
+                return $staffServiceMock;
+            }
+
+            return false;
+        });
+        $this->api->setDi($di);
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->api->login_history_get($data);
     }
 }

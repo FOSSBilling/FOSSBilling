@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Api;
 
+use Box\Mod\Invoice\InvoiceOperation;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Guest extends \Api_Abstract
@@ -35,39 +36,9 @@ class Guest extends \Api_Abstract
             throw new \FOSSBilling\Exception('Invoice was not found');
         }
         $service = $this->getService();
-        $service->checkInvoiceAuth($model->client_id);
+        $service->checkInvoiceAuth($model->client_id, InvoiceOperation::READ);
 
         return $service->toApiArray($model, true, $this->getIdentity());
-    }
-
-    /**
-     * Update Invoice details. Only unpaid invoice details can be updated.
-     *
-     * @optional int $gateway_id - selected payment gateway id
-     *
-     * @return bool
-     *
-     * @throws \FOSSBilling\Exception
-     */
-    #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
-    public function update($data)
-    {
-        $invoice = $this->di['db']->findOne('Invoice', 'hash = :hash', ['hash' => $data['hash']]);
-        if (!$invoice) {
-            throw new \FOSSBilling\Exception('Invoice was not found');
-        }
-
-        $service = $this->getService();
-        $service->checkInvoiceAuth($invoice->client_id);
-
-        if ($invoice->status == 'paid') {
-            throw new \FOSSBilling\InformationException('Paid Invoice cannot be modified');
-        }
-
-        $updateParams = [];
-        $updateParams['gateway_id'] = $data['gateway_id'] ?? null;
-
-        return $service->updateInvoice($invoice, $updateParams);
     }
 
     /**

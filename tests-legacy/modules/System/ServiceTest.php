@@ -199,8 +199,7 @@ final class ServiceTest extends \BBTestCase
         $type = 'info';
 
         $systemServiceMock = $this->getMockBuilder(Service::class)->onlyMethods(['getParamValue'])->getMock();
-        $systemServiceMock->expects($this->atLeastOnce())
-            ->method('getParamValue')
+        $systemServiceMock->method('getParamValue')
             ->willReturn(false);
 
         $updaterMock = $this->createMock(\FOSSBilling\Update::class);
@@ -308,7 +307,7 @@ final class ServiceTest extends \BBTestCase
     public function testCreateBaseEnvironmentTreatsAdvancedFiltersSeparatelyFromSearch(): void
     {
         $di = $this->getDi();
-        $request = \Symfony\Component\HttpFoundation\Request::create('/admin/product', 'GET', [
+        $request = Request::create('/admin/product', 'GET', [
             'search' => 'query',
             'status' => 'active',
         ]);
@@ -882,7 +881,7 @@ final class ServiceTest extends \BBTestCase
     private function createBaseTwigEnvironment(\Pimple\Container $di): \Twig\Environment
     {
         if (!$di->offsetExists('request')) {
-            $di['request'] = \Symfony\Component\HttpFoundation\Request::create('/');
+            $di['request'] = Request::create('/');
         }
 
         $reflection = new \ReflectionClass(\FOSSBilling\Twig\TwigFactory::class);
