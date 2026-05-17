@@ -1,8 +1,9 @@
 {% extends "layout_default.html.twig" %}
 
-{% block meta_title %}{{ 'Terms and Conditions'|trans }}{% endblock %}
-
 {% set company = guest.system_company %}
+
+{% block meta_title %}{{ 'Terms and Conditions'|trans }}{% endblock %}
+{% block meta_description %}{{ 'Review the terms and conditions that apply to your use of %company% services.'|trans({'%company%': company.name}) }}{% endblock %}
 
 {% block body_class %}tos{% endblock %}
 {% block breadcrumb %}
