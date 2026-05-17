@@ -126,7 +126,7 @@ final class GuestTest extends \BBTestCase
         $client->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('New registrations are temporary disabled');
+        $this->expectExceptionMessage('New registrations are temporarily disabled');
         $client->create($data);
     }
 
@@ -261,7 +261,7 @@ final class GuestTest extends \BBTestCase
         $eventMock = $this->createMock(\Box_EventManager::class);
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $dbMock = $this->createMock('\Box_Database');
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')->willReturn(null);
 
@@ -293,7 +293,7 @@ final class GuestTest extends \BBTestCase
         ];
 
         // Mocks for dependent services and classes
-        $dbMock = $this->createMock('\Box_Database');
+        $dbMock = $this->createMock(\Box_Database::class);
 
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
@@ -315,7 +315,7 @@ final class GuestTest extends \BBTestCase
         $dbMock->expects($this->once())
             ->method('trash');
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Box_EventManager::class);
         $eventMock->expects($this->exactly(2))
             ->method('fire');
 
@@ -346,7 +346,7 @@ final class GuestTest extends \BBTestCase
     {
         $data['email'] = 'john@example.com';
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Box_EventManager::class);
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
         $modelClient = new \Model_Client();
