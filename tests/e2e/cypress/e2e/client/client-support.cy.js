@@ -9,7 +9,7 @@ describe('client support tickets', () => {
 
   it('opens, replies to, and closes a support ticket', () => {
     const suffix = `${Date.now()}-${Cypress._.random(100000, 999999)}`;
-    const maxSubjectLength = 18;
+    const maxSubjectLength = 16;
     const subject = `Cypress ticket ${Cypress._.random(100, 999)}`;
     const initialMessage = `Initial support request from Cypress ${suffix}.`;
     const replyMessage = `Follow-up support reply from Cypress ${suffix}.`;
