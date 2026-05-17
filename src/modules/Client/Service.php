@@ -695,10 +695,15 @@ class Service implements InjectionAwareInterface
             $this->di['db']->trash($existingReset);
         }
 
+        $requestIp = null;
+        if (isset($this->di['request']) && is_object($this->di['request']) && method_exists($this->di['request'], 'getClientIp')) {
+            $requestIp = $this->di['request']->getClientIp();
+        }
+
         $hash = hash('sha256', random_bytes(32));
         $reset = $this->di['db']->dispense('ClientPasswordReset');
         $reset->client_id = $client->id;
-        $reset->ip = $client->ip;
+        $reset->ip = $requestIp ?? $client->ip;
         $reset->hash = $hash;
         $reset->created_at = date('Y-m-d H:i:s');
         $reset->updated_at = date('Y-m-d H:i:s');

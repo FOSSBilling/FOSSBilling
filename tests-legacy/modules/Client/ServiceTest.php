@@ -982,6 +982,49 @@ final class ServiceTest extends \BBTestCase
         $this->assertSame(1, $result);
     }
 
+    public function testCreatePasswordResetRequestForClientStoresRequestIp(): void
+    {
+        $clientModel = new \Model_Client();
+        $clientModel->loadBean(new \DummyBean());
+        $clientModel->id = 123;
+        $clientModel->ip = '198.51.100.10';
+
+        $passwordReset = new \Model_ClientPasswordReset();
+        $passwordReset->loadBean(new \DummyBean());
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('findOne')
+            ->with('ClientPasswordReset', 'client_id = ?', [$clientModel->id])
+            ->willReturn(null);
+        $dbMock->expects($this->once())
+            ->method('dispense')
+            ->with('ClientPasswordReset')
+            ->willReturn($passwordReset);
+        $dbMock->expects($this->once())
+            ->method('store')
+            ->with($this->callback(static function (\Model_ClientPasswordReset $reset): bool {
+                return $reset->ip === '203.0.113.42';
+            }));
+
+        $request = new class {
+            public function getClientIp(): string
+            {
+                return '203.0.113.42';
+            }
+        };
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['request'] = $request;
+
+        $service = new \Box\Mod\Client\Service();
+        $service->setDi($di);
+
+        $hash = $service->createPasswordResetRequestForClient($clientModel);
+        $this->assertSame(64, strlen($hash));
+    }
+
     public function testDeleteGroup(): void
     {
         $dbMock = $this->createMock('\Box_Database');
