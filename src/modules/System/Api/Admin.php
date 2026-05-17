@@ -43,7 +43,7 @@ class Admin extends \Api_Abstract
 
         return [
             'locale' => (string) Config::getProperty('i18n.locale', 'en_US'),
-            'auto_detect_locale' => (bool) Config::getProperty('i18n.auto_detect_locale', true),
+            'auto_detect_locale' => Tools::normalizeBoolean(Config::getProperty('i18n.auto_detect_locale', true), true),
         ];
     }
 
