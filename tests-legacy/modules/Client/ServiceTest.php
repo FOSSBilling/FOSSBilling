@@ -97,10 +97,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testOnAfterClientSignUp(): void
     {
-        $eventParams = [
-            'password' => 'testPassword',
-            'id' => 1,
-        ];
+        $eventParams = ['id' => 1];
 
         $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
         $eventMock->expects($this->atLeastOnce())->
@@ -109,6 +106,11 @@ final class ServiceTest extends \BBTestCase
         $service = $this->createMock(\Box\Mod\Email\Service::class);
         $service->expects($this->atLeastOnce())
             ->method('sendTemplate')
+            ->with($this->callback(function (array $email): bool {
+                $this->assertArrayNotHasKey('password', $email);
+
+                return $email['to_client'] === 1 && $email['code'] === 'mod_client_signup';
+            }))
             ->willReturn(true);
 
         $di = $this->getDi();
@@ -130,7 +132,6 @@ final class ServiceTest extends \BBTestCase
     {
         $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
         $eventParams = [
-            'password' => 'testPassword',
             'id' => 1,
             'require_email_confirmation' => true,
         ];
@@ -141,6 +142,14 @@ final class ServiceTest extends \BBTestCase
         $service = $this->createMock(\Box\Mod\Email\Service::class);
         $service->expects($this->atLeastOnce())
             ->method('sendTemplate')
+            ->with($this->callback(function (array $email): bool {
+                $this->assertArrayNotHasKey('password', $email);
+
+                return $email['to_client'] === 1
+                    && $email['code'] === 'mod_client_signup'
+                    && $email['require_email_confirmation'] === true
+                    && $email['email_confirmation_link'] === 'Link_string';
+            }))
             ->willReturn(true);
 
         $clientServiceMock = $this->getMockBuilder(\Box\Mod\Client\Service::class)->onlyMethods(['generateEmailConfirmationLink'])->getMock();
@@ -169,10 +178,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testExceptiononAfterClientSignUp(): void
     {
-        $eventParams = [
-            'password' => 'testPassword',
-            'id' => 1,
-        ];
+        $eventParams = ['id' => 1];
 
         $eventMock = $this->getMockBuilder('\Box_Event')->disableOriginalConstructor()->getMock();
         $eventMock->expects($this->atLeastOnce())->

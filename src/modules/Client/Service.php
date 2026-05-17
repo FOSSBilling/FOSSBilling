@@ -143,7 +143,6 @@ class Service implements InjectionAwareInterface
             $email = [];
             $email['to_client'] = $params['id'];
             $email['code'] = 'mod_client_signup';
-            $email['password'] = __trans('The password you chose when creating your account.');
             $email['require_email_confirmation'] = false;
             if (isset($config['require_email_confirmation']) && $config['require_email_confirmation']) {
                 $clientService = $di['mod_service']('client');
@@ -632,9 +631,11 @@ class Service implements InjectionAwareInterface
 
     public function adminCreateClient(array $data)
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminCreateClient', 'params' => $data]);
+        $eventParams = $data;
+        unset($eventParams['password'], $eventParams['password_confirm']);
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminCreateClient', 'params' => $eventParams]);
         $client = $this->createClient($data);
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminCreateClient', 'params' => ['id' => $client->id, 'password' => $data['password']]]);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminCreateClient', 'params' => ['id' => $client->id]]);
         $this->di['logger']->info('Created new client #%s', $client->id);
 
         return $client->id;
@@ -644,6 +645,7 @@ class Service implements InjectionAwareInterface
     {
         $event_params = $data;
         $event_params['ip'] = $this->di['request']->getClientIp();
+        unset($event_params['password'], $event_params['password_confirm']);
         $this->di['events_manager']->fire(['event' => 'onBeforeClientSignUp', 'params' => $event_params]);
 
         $allowedFields = [
@@ -668,7 +670,13 @@ class Service implements InjectionAwareInterface
 
         $client = $this->createClient($safeData);
 
-        $event_params['id'] = $client->id;
+        $event_params = [
+            'id' => $client->id,
+            'email' => $client->email,
+            'first_name' => $client->first_name,
+            'last_name' => $client->last_name,
+            'ip' => $safeData['ip'],
+        ];
         $this->di['events_manager']->fire(['event' => 'onAfterClientSignUp', 'params' => $event_params]);
         $this->di['logger']->info('Client #%s signed up', $client->id);
 

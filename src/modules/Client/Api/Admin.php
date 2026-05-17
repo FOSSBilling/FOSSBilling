@@ -319,7 +319,7 @@ class Admin extends \Api_Abstract
 
         $client = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientPasswordChange', 'params' => $data]);
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientPasswordChange', 'params' => ['id' => $client->id]]);
 
         $client->pass = $this->di['password']->hashIt($data['password']);
         $client->updated_at = date('Y-m-d H:i:s');
@@ -328,7 +328,7 @@ class Admin extends \Api_Abstract
         $profileService = $this->di['mod_service']('profile');
         $profileService->invalidateSessions('client', (int) $data['id']);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminClientPasswordChange', 'params' => ['id' => $client->id, 'password' => $data['password']]]);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminClientPasswordChange', 'params' => ['id' => $client->id]]);
 
         $this->di['logger']->info('Changed client #%s password', $client->id);
 
