@@ -870,6 +870,7 @@ final class ServiceTest extends \BBTestCase
             'password' => uniqid(),
             'email' => 'test@unit.vm',
             'first_name' => 'test',
+            'send_welcome_email' => false,
         ];
 
         $dbMock = $this->createMock('\Box_Database');
@@ -897,7 +898,7 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
-        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
+        $di['mod'] = $di->protect(fn () => $modMock);
         $di['password'] = $passwordMock;
 
         $service = new \Box\Mod\Client\Service();
@@ -905,6 +906,80 @@ final class ServiceTest extends \BBTestCase
 
         $result = $service->adminCreateClient($data);
         $this->assertIsInt($result);
+    }
+
+    public function testAdminCreateClientSendsWelcomeEmail(): void
+    {
+        $clientModel = new \Model_Client();
+        $clientModel->loadBean(new \DummyBean());
+        $clientModel->id = 1;
+        $clientModel->status = \Model_Client::ACTIVE;
+
+        $passwordReset = new \Model_ClientPasswordReset();
+        $passwordReset->loadBean(new \DummyBean());
+
+        $data = [
+            'password' => 'StrongPass123',
+            'email' => 'test@unit.vm',
+            'first_name' => 'test',
+            'status' => \Model_Client::ACTIVE,
+            'send_welcome_email' => true,
+        ];
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->exactly(2))
+            ->method('dispense')
+            ->willReturnOnConsecutiveCalls($clientModel, $passwordReset);
+        $dbMock->expects($this->exactly(2))
+            ->method('store');
+        $dbMock->expects($this->once())
+            ->method('findOne')
+            ->with('ClientPasswordReset', 'client_id = ?', [$clientModel->id])
+            ->willReturn(null);
+
+        $eventManagerMock = $this->createMock('\Box_EventManager');
+        $eventManagerMock->expects($this->exactly(2))
+            ->method('fire');
+
+        $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
+        $passwordMock->expects($this->once())
+            ->method('hashIt')
+            ->with($data['password']);
+
+        $modMock = $this->getMockBuilder(\FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
+        $modMock->expects($this->once())
+            ->method('getConfig')
+            ->willReturn([]);
+
+        $emailService = $this->createMock(\Box\Mod\Email\Service::class);
+        $emailService->expects($this->once())
+            ->method('sendTemplate')
+            ->with($this->callback(function (array $email): bool {
+                return $email['to_client'] === 1
+                    && $email['code'] === 'mod_client_signup_admin'
+                    && is_string($email['hash'])
+                    && strlen($email['hash']) === 64
+                    && $email['send_now'] === true
+                    && $email['require_email_confirmation'] === false;
+            }));
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['events_manager'] = $eventManagerMock;
+        $di['logger'] = new \Box_Log();
+        $di['mod'] = $di->protect(fn () => $modMock);
+        $di['mod_config'] = $di->protect(fn (): array => []);
+        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($name)) {
+            'email' => $emailService,
+        });
+        $di['password'] = $passwordMock;
+        $di['tools'] = new \FOSSBilling\Tools();
+
+        $service = new \Box\Mod\Client\Service();
+        $service->setDi($di);
+
+        $result = $service->adminCreateClient($data);
+        $this->assertSame(1, $result);
     }
 
     public function testDeleteGroup(): void
@@ -1194,7 +1269,7 @@ final class ServiceTest extends \BBTestCase
             'custom_1' => 'value',
         ];
 
-        $requestMock = $this->createMock(\Symfony\Component\HttpFoundation\Request::class);
+        $requestMock = $this->createStub(\Symfony\Component\HttpFoundation\Request::class);
         $requestMock->method('getClientIp')->willReturn('127.0.0.1');
 
         $dbMock = $this->createMock('\Box_Database');
@@ -1214,17 +1289,17 @@ final class ServiceTest extends \BBTestCase
         $eventManagerMock->expects($this->exactly(2))
             ->method('fire');
 
-        $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
+        $passwordMock = $this->createStub(\FOSSBilling\PasswordManager::class);
         $passwordMock->method('hashIt')->willReturn('hashed');
 
-        $modMock = $this->getMockBuilder(\FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
+        $modMock = $this->createStub(\FOSSBilling\Module::class);
         $modMock->method('getConfig')->willReturn([]);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
-        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
+        $di['mod'] = $di->protect(fn () => $modMock);
         $di['password'] = $passwordMock;
         $di['request'] = $requestMock;
 

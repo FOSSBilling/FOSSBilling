@@ -150,13 +150,24 @@ class Admin extends \Api_Abstract
 
         $validator = $this->di['validator'];
         $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        $data['send_welcome_email'] = Tools::normalizeBoolean($data['send_welcome_email'] ?? true, true);
 
         $service = $this->getService();
         if ($service->emailAlreadyRegistered($data['email'])) {
             throw new InformationException('This email address is already registered.');
         }
 
-        if (isset($data['password']) && $data['password'] !== '') {
+        $password = trim((string) ($data['password'] ?? ''));
+        $status = $data['status'] ?? \Model_Client::ACTIVE;
+        if (!$data['send_welcome_email'] && $password === '') {
+            throw new InformationException('A password is required when the welcome email is disabled.');
+        }
+
+        if ($data['send_welcome_email'] && $status !== \Model_Client::ACTIVE) {
+            throw new InformationException('Welcome email can only be sent for active clients.');
+        }
+
+        if ($password !== '') {
             $validator->isPasswordStrong($data['password']);
         }
 

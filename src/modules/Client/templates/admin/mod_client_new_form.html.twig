@@ -28,9 +28,21 @@
 						</div>
 					</div>
 					<div class="mb-3 row">
-						<label class="col-3 col-form-label required">{{ 'Password'|trans }}</label>
+						<label class="col-3 col-form-label">{{ 'Password'|trans }}</label>
 						<div class="col">
-							<input type="password" name="password" class="form-control" required>
+							<input type="password" name="password" class="form-control" placeholder="{{ 'Optional initial password'|trans }}">
+							<div class="form-text">{{ 'Leave blank to let the client set a password from the welcome email.'|trans }}</div>
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'Welcome Email'|trans }}</label>
+						<div class="col">
+							<input type="hidden" name="send_welcome_email" value="0">
+							<label class="form-check">
+								<input class="form-check-input" type="checkbox" name="send_welcome_email" value="1" checked>
+								<span class="form-check-label">{{ 'Send client welcome email'|trans }}</span>
+							</label>
+							<div class="form-text">{{ 'Includes a secure password reset link instead of sending account credentials.'|trans }}</div>
 						</div>
 					</div>
 					<div class="mb-3 row">

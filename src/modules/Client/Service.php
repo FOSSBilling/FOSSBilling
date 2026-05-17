@@ -152,7 +152,9 @@ class Service implements InjectionAwareInterface
 
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            if (!\FOSSBilling\Environment::isTesting()) {
+                error_log($exc->getMessage());
+            }
         }
 
         return true;
@@ -562,7 +564,7 @@ class Service implements InjectionAwareInterface
 
     private function createClient(array $data)
     {
-        $password = $data['password'] ?? uniqid();
+        $password = $data['password'] ?? $this->di['tools']->generatePassword(32, true);
 
         $client = $this->di['db']->dispense('Client');
 
@@ -635,6 +637,9 @@ class Service implements InjectionAwareInterface
         unset($eventParams['password'], $eventParams['password_confirm']);
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminCreateClient', 'params' => $eventParams]);
         $client = $this->createClient($data);
+        if (Tools::normalizeBoolean($data['send_welcome_email'] ?? true, true)) {
+            $this->sendAdminCreatedWelcomeEmailForClient($client);
+        }
         $this->di['events_manager']->fire(['event' => 'onAfterAdminCreateClient', 'params' => ['id' => $client->id]]);
         $this->di['logger']->info('Created new client #%s', $client->id);
 
@@ -681,6 +686,63 @@ class Service implements InjectionAwareInterface
         $this->di['logger']->info('Client #%s signed up', $client->id);
 
         return $client;
+    }
+
+    public function createPasswordResetRequestForClient(\Model_Client $client): string
+    {
+        $existingReset = $this->di['db']->findOne('ClientPasswordReset', 'client_id = ?', [$client->id]);
+        if ($existingReset instanceof \Model_ClientPasswordReset) {
+            $this->di['db']->trash($existingReset);
+        }
+
+        $hash = hash('sha256', random_bytes(32));
+        $reset = $this->di['db']->dispense('ClientPasswordReset');
+        $reset->client_id = $client->id;
+        $reset->ip = $client->ip;
+        $reset->hash = $hash;
+        $reset->created_at = date('Y-m-d H:i:s');
+        $reset->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($reset);
+
+        return $hash;
+    }
+
+    public function sendPasswordResetRequestEmailForClient(\Model_Client $client, string $hash, bool $sendNow = true): void
+    {
+        $email = [
+            'to_client' => $client->id,
+            'code' => 'mod_client_password_reset_request',
+            'hash' => $hash,
+            'send_now' => $sendNow,
+        ];
+
+        $emailService = $this->di['mod_service']('email');
+        $emailService->sendTemplate($email);
+    }
+
+    public function sendAdminCreatedWelcomeEmailForClient(\Model_Client $client): void
+    {
+        try {
+            $email = [];
+            $email['to_client'] = $client->id;
+            $email['code'] = 'mod_client_signup_admin';
+            $email['hash'] = $this->createPasswordResetRequestForClient($client);
+            $email['send_now'] = true;
+            $email['require_email_confirmation'] = false;
+
+            $config = $this->di['mod_config']('client');
+            if (isset($config['require_email_confirmation']) && $config['require_email_confirmation']) {
+                $email['require_email_confirmation'] = true;
+                $email['email_confirmation_link'] = $this->generateEmailConfirmationLink($client->id);
+            }
+
+            $emailService = $this->di['mod_service']('email');
+            $emailService->sendTemplate($email);
+        } catch (\Exception $exc) {
+            if (!\FOSSBilling\Environment::isTesting()) {
+                error_log($exc->getMessage());
+            }
+        }
     }
 
     public function remove(\Model_Client $model): void
@@ -737,7 +799,9 @@ class Service implements InjectionAwareInterface
             $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            if (!\FOSSBilling\Environment::isTesting()) {
+                error_log($exc->getMessage());
+            }
         }
     }
 
@@ -846,7 +910,9 @@ class Service implements InjectionAwareInterface
             $db = $di['db'];
             $db->exec($sql);
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            if (!\FOSSBilling\Environment::isTesting()) {
+                error_log($e->getMessage());
+            }
         }
     }
 }
