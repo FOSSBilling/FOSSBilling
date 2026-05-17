@@ -62,33 +62,6 @@ class Client extends \Api_Abstract
     }
 
     /**
-     * Update Invoice details. Only unpaid invoice details can be updated.
-     *
-     * @optional int $gateway_id - selected payment gateway id
-     *
-     * @return bool
-     *
-     * @throws \FOSSBilling\Exception
-     */
-    #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
-    public function update($data)
-    {
-        $identity = $this->getIdentity();
-        $invoice = $this->di['db']->findOne('Invoice', 'hash = :hash AND client_id = :client_id', ['hash' => $data['hash'], 'client_id' => $identity->id]);
-        if (!$invoice) {
-            throw new \FOSSBilling\Exception('Invoice was not found');
-        }
-        if ($invoice->status == 'paid') {
-            throw new \FOSSBilling\InformationException('Paid Invoice cannot be modified');
-        }
-
-        $updateParams = [];
-        $updateParams['gateway_id'] = $data['gateway_id'] ?? null;
-
-        return $this->getService()->updateInvoice($invoice, $updateParams);
-    }
-
-    /**
      * Generates new invoice for selected order. If unpaid invoice for selected order
      * already exists, new invoice will not be generated, and old invoice hash
      * is returned.

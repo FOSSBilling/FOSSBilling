@@ -25,6 +25,7 @@
 {% block content %}
     {% set new_params = admin.extension_config_get({ 'ext': 'mod_system' }) %}
     {% set params = admin.system_get_params %}
+    {% set localization = admin.system_localization_settings %}
     {% set can_update_params = has_permission('system', 'update_params') %}
     {% set can_invalidate_cache = has_permission('system', 'invalidate_cache') %}
     {% set can_toggle_error_reporting = has_permission('system', 'toggle_error_reporting') %}
@@ -36,6 +37,9 @@
             </li>
             <li class="nav-item" role="presentation">
                 <a class="nav-link" href="#company-legal" data-bs-toggle="tab" role="tab">{{ 'Company Legal'|trans }}</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#tab-localization" data-bs-toggle="tab" role="tab">{{ 'Localization'|trans }}</a>
             </li>
             <li class="nav-item" role="presentation">
                 <a class="nav-link" href="#tab-countries" data-bs-toggle="tab" role="tab">{{ 'Countries'|trans }}</a>
@@ -207,6 +211,37 @@
                             <div class="mb-3">
                                 <h3>{{ 'Notes'|trans }}</h3>
                                 <textarea class="form-control editor-textarea" name="company_note" rows="5">{{ params.company_note }}</textarea>
+                            </div>
+                        </div>
+                        <div class="card-footer text-end">
+                            <button class="btn btn-primary" type="submit"{% if not can_update_params %} disabled aria-disabled="true"{% endif %}>{{ 'Update Settings'|trans }}</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="tab-pane fade" id="tab-localization" role="tabpanel">
+                    <form method="post" action="{{ 'system/update_localization_settings'|api_url }}" {{ fb_api_form({ message: 'Localization settings updated'|trans }) }}>
+                        <div class="card-body">
+                            <div class="mb-3 row">
+                                <label class="col-md-3 col-form-label">{{ 'Default Locale'|trans }}</label>
+                                <div class="col-md-6">
+                                    <input class="form-control" type="text" value="{{ localization.locale }}" readonly disabled>
+                                    <div class="form-hint">{{ 'Used when browser language detection is disabled or no suitable browser language match is found.'|trans }}</div>
+                                </div>
+                            </div>
+                            <div class="mb-3 row">
+                                <label class="col-md-3 col-form-label">{{ 'Automatic Browser Language Detection'|trans }}</label>
+                                <div class="col-md-6">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="auto_detect_locale" id="auto_detect_locale_yes" value="1" {% if localization.auto_detect_locale %}checked{% endif %}>
+                                        <label class="form-check-label" for="auto_detect_locale_yes">{{ 'Enabled'|trans }}</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="auto_detect_locale" id="auto_detect_locale_no" value="0" {% if not localization.auto_detect_locale %}checked{% endif %}>
+                                        <label class="form-check-label" for="auto_detect_locale_no">{{ 'Disabled'|trans }}</label>
+                                    </div>
+                                    <div class="form-hint">{{ 'When enabled, guests without a saved language preference start in the best match from their browser. When disabled, FOSSBilling uses the configured default locale until the user explicitly selects a language.'|trans }}</div>
+                                </div>
                             </div>
                         </div>
                         <div class="card-footer text-end">

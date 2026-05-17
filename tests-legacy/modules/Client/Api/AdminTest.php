@@ -153,9 +153,7 @@ final class AdminTest extends \BBTestCase
         });
         $di['session'] = $sessionMock;
         $di['logger'] = new \Box_Log();
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
-        $di['validator'] = $validatorMock;
+        $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -204,6 +202,41 @@ final class AdminTest extends \BBTestCase
         $result = $admin_Client->create($data);
 
         $this->assertIsInt($result, 'create() returned: ' . $result);
+    }
+
+    public function testCreateRequiresPasswordWhenWelcomeEmailDisabled(): void
+    {
+        $data = [
+            'email' => 'email@example.com',
+            'first_name' => 'John',
+            'send_welcome_email' => false,
+        ];
+
+        $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $serviceMock->expects($this->once())->method('emailAlreadyRegistered')->willReturn(false);
+        $serviceMock->expects($this->never())->method('adminCreateClient');
+
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'create');
+
+        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
+        $toolsMock->expects($this->once())->method('validateAndSanitizeEmail');
+
+        $di = $this->getDi();
+        $di['tools'] = $toolsMock;
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+            'staff' => $staffServiceMock,
+        });
+
+        $admin_Client = new \Box\Mod\Client\Api\Admin();
+        $admin_Client->setDi($di);
+        $admin_Client->setService($serviceMock);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('A password is required when the welcome email is disabled.');
+        $admin_Client->create($data);
     }
 
     public function testCreateEmailRegisteredException(): void
@@ -271,9 +304,7 @@ final class AdminTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
             'staff' => $staffServiceMock,
         });
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
-        $di['validator'] = $validatorMock;
+        $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -492,6 +523,9 @@ final class AdminTest extends \BBTestCase
             ->with($data['password']);
 
         $profileService = $this->createMock(\Box\Mod\Profile\Service::class);
+        $profileService->expects($this->once())
+            ->method('invalidateSessions')
+            ->with('client', $data['id']);
         $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffServiceMock->expects($this->once())
             ->method('checkPermissionsAndThrowException')
@@ -502,10 +536,8 @@ final class AdminTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
         $di['password'] = $passwordMock;
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
-        $di['validator'] = $validatorMock;
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+        $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
+        $di['mod_service'] = $di->protect(fn ($name) => match (strtolower((string) $name)) {
             'profile' => $profileService,
             'staff' => $staffServiceMock,
         });
@@ -531,10 +563,14 @@ final class AdminTest extends \BBTestCase
             ->method('checkPermissionsAndThrowException')
             ->with('client', 'change_password');
 
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
+        $validatorMock->expects($this->once())
+            ->method('passwordsMatch')
+            ->with($data)
+            ->willThrowException(new \FOSSBilling\Exception('Passwords do not match'));
 
         $di = $this->getDi();
+        $di['validator'] = $validatorMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
             'staff' => $staffServiceMock,
         });
@@ -577,8 +613,16 @@ final class AdminTest extends \BBTestCase
         $model = new \Model_ClientBalance();
         $model->loadBean(new \DummyBean());
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'manage_balance');
+
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+            'staff' => $staffServiceMock,
+            default => $serviceMock,
+        });
         $di['pager'] = $pagerMock;
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
@@ -586,6 +630,32 @@ final class AdminTest extends \BBTestCase
 
         $result = $admin_Client->balance_get_list($data);
         $this->assertIsArray($result);
+    }
+
+    public function testBalanceGetListRequiresPermission(): void
+    {
+        $data = [];
+
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'manage_balance')
+            ->willThrowException(new \FOSSBilling\InformationException('denied'));
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {
+            if ($serviceName == 'Staff') {
+                return $staffServiceMock;
+            }
+
+            return false;
+        });
+
+        $admin_Client = new \Box\Mod\Client\Api\Admin();
+        $admin_Client->setDi($di);
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $admin_Client->balance_get_list($data);
     }
 
     public function testBalanceDelete(): void
@@ -615,9 +685,7 @@ final class AdminTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
             'staff' => $staffServiceMock,
         });
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
-        $di['validator'] = $validatorMock;
+        $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -656,9 +724,7 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
-        $di['validator'] = $validatorMock;
+        $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -840,9 +906,7 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
-        $di['validator'] = $validatorMock;
+        $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -884,9 +948,7 @@ final class AdminTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
             'staff' => $staffServiceMock,
         });
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
-        $di['validator'] = $validatorMock;
+        $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -913,9 +975,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
-        $di['validator'] = $validatorMock;
+        $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();
         $admin_Client->setDi($di);
@@ -935,10 +995,8 @@ final class AdminTest extends \BBTestCase
             ->method('checkPermissionsAndThrowException')
             ->with('client', 'bulk_delete');
 
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
-
         $di = $this->getDi();
+        $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
             'staff' => $staffServiceMock,
         });

@@ -1,8 +1,9 @@
 {% extends "layout_default.html.twig" %}
 
-{% block meta_title %}{{ 'Privacy Policy'|trans }}{% endblock %}
-
 {% set company = guest.system_company %}
+
+{% block meta_title %}{{ 'Privacy Policy'|trans }}{% endblock %}
+{% block meta_description %}{{ 'Learn how %company% collects, uses, and protects personal information.'|trans({'%company%': company.name}) }}{% endblock %}
 
 {% block body_class %}privacy-policy{% endblock %}
 {% block breadcrumb %}

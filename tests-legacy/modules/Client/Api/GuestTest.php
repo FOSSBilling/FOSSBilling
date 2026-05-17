@@ -126,7 +126,7 @@ final class GuestTest extends \BBTestCase
         $client->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('New registrations are temporary disabled');
+        $this->expectExceptionMessage('New registrations are temporarily disabled');
         $client->create($data);
     }
 
@@ -172,12 +172,10 @@ final class GuestTest extends \BBTestCase
             ->method('toSessionArray')
             ->willReturn([]);
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Box_EventManager::class);
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $sessionMock = $this->getMockBuilder(\FOSSBilling\Session::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $sessionMock = $this->createMock(\FOSSBilling\Session::class);
 
         $sessionMock->expects($this->once())
             ->method('regenerateId');
@@ -189,8 +187,7 @@ final class GuestTest extends \BBTestCase
             ->method('transferFromOtherSession')
             ->willReturn(true);
 
-        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
-        // $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
+        $toolsMock = $this->createStub(\FOSSBilling\Tools::class);
 
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
@@ -213,7 +210,7 @@ final class GuestTest extends \BBTestCase
     {
         $data['email'] = 'John@example.com';
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Box_EventManager::class);
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
         $modelClient = new \Model_Client();
@@ -223,7 +220,7 @@ final class GuestTest extends \BBTestCase
         $modelPasswordReset = new \Model_ClientPasswordReset();
         $modelPasswordReset->loadBean(new \DummyBean());
 
-        $dbMock = $this->createMock('\Box_Database');
+        $dbMock = $this->createMock(\Box_Database::class);
 
         // Specify that 'findOne' will be called exactly twice
         $dbMock->expects($this->exactly(2))->method('findOne')
@@ -259,12 +256,12 @@ final class GuestTest extends \BBTestCase
 
     public function testResetPasswordEmailNotFound(): void
     {
-        $data['email'] = 'joghn@example.eu';
+        $data['email'] = 'john@example.eu';
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Box_EventManager::class);
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
-        $dbMock = $this->createMock('\Box_Database');
+        $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')->willReturn(null);
 
@@ -296,7 +293,7 @@ final class GuestTest extends \BBTestCase
         ];
 
         // Mocks for dependent services and classes
-        $dbMock = $this->createMock('\Box_Database');
+        $dbMock = $this->createMock(\Box_Database::class);
 
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
@@ -318,7 +315,7 @@ final class GuestTest extends \BBTestCase
         $dbMock->expects($this->once())
             ->method('trash');
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Box_EventManager::class);
         $eventMock->expects($this->exactly(2))
             ->method('fire');
 
@@ -349,7 +346,7 @@ final class GuestTest extends \BBTestCase
     {
         $data['email'] = 'john@example.com';
 
-        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock = $this->createMock(\Box_EventManager::class);
         $eventMock->expects($this->atLeastOnce())->method('fire');
 
         $modelClient = new \Model_Client();
@@ -524,8 +521,8 @@ final class GuestTest extends \BBTestCase
         $client = new Guest();
         $client->setDi($di);
 
-        // Expect a FOSSBilling\Exception to be thrown with a specific message
-        $this->expectException(\FOSSBilling\Exception::class);
+        // Expect a FOSSBilling\InformationException to be thrown with a specific message
+        $this->expectException(\FOSSBilling\InformationException::class);
         $this->expectExceptionMessage('The link has expired or you have already reset your password.');
         $client->update_password($data);
     }
@@ -627,6 +624,42 @@ final class GuestTest extends \BBTestCase
 
     private function registerPasswordResetModService(\Pimple\Container $di, ?object $emailService = null): void
     {
+        $clientService = new class($di, $emailService) {
+            public function __construct(private \Pimple\Container $di, private ?object $emailService)
+            {
+            }
+
+            public function createPasswordResetRequestForClient(\Model_Client $client): string
+            {
+                $existing = $this->di['db']->findOne('ClientPasswordReset', 'client_id = ?', [$client->id]);
+                if ($existing instanceof \Model_ClientPasswordReset) {
+                    $this->di['db']->trash($existing);
+                }
+
+                $hash = hash('sha256', random_bytes(32));
+                $reset = $this->di['db']->dispense('ClientPasswordReset');
+                $reset->client_id = $client->id;
+                $reset->hash = $hash;
+                $this->di['db']->store($reset);
+
+                return $hash;
+            }
+
+            public function sendPasswordResetRequestEmailForClient(\Model_Client $client, string $hash): void
+            {
+                if ($this->emailService === null) {
+                    return;
+                }
+
+                $this->emailService->sendTemplate([
+                    'to_client' => $client->id,
+                    'code' => 'mod_client_password_reset_request',
+                    'hash' => $hash,
+                    'send_now' => true,
+                ]);
+            }
+        };
+
         $extensionService = new class {
             public function isExtensionActive(string $type, string $id): bool
             {
@@ -635,7 +668,12 @@ final class GuestTest extends \BBTestCase
         };
 
         $di['mod_service'] = $di->protect(
-            fn (string $name): object => strtolower($name) === 'extension' ? $extensionService : ($emailService ?? new \stdClass())
+            fn (string $name): object => match (strtolower($name)) {
+                'extension' => $extensionService,
+                'client' => $clientService,
+                'email' => $emailService ?? new \stdClass(),
+                default => new \stdClass(),
+            }
         );
     }
 

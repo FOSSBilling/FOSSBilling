@@ -36,7 +36,7 @@ class Exception extends \Exception
             $message = strtr($message, $variables);
         }
 
-        if (DEBUG && $logStack) {
+        if (DEBUG && $logStack && !Environment::isTesting()) {
             error_log("Exception: $message");
             error_log('Stack trace:');
             error_log($this->stackTrace($stackLength, $protected));

@@ -85,6 +85,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['maintenance_mode']['allowed_ips'] ??= [];
         $newConfig['disable_auto_cron'] = !Version::isPreviewVersion() && !Environment::isDevelopment();
         $newConfig['i18n']['locale'] ??= $currentConfig['locale'] ?? 'en_US';
+        $newConfig['i18n']['auto_detect_locale'] ??= true;
         $newConfig['i18n']['timezone'] ??= $currentConfig['timezone'] ?? 'UTC';
         $newConfig['i18n']['date_format'] ??= 'medium';
         $newConfig['i18n']['time_format'] ??= 'short';
@@ -326,7 +327,7 @@ class UpdatePatcher implements InjectionAwareInterface
             59 => 'patch59',
             60 => 'patch60',
             61 => 'patch61',
-            62 => 'patch62'
+            62 => 'patch62',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -976,7 +977,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 $newConfig = array_merge($spamcheckerSettings, $existingAntispamSettings);
                 $newConfig['ext'] = 'mod_antispam';
                 $newConfig['honeypot_enabled'] ??= true;
-                $newConfig['honeypot_field'] ??= 'honeypot_field';
+                $newConfig['honeypot_field'] ??= 'bio';
                 $extService->setConfig($newConfig);
             }
 

@@ -29,7 +29,22 @@ class Admin extends \Api_Abstract
      */
     public function get_params($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_settings');
+
         return $this->getService()->getParams($data);
+    }
+
+    /**
+     * Returns localization settings stored in the FOSSBilling config file.
+     */
+    public function localization_settings(): array
+    {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_settings');
+
+        return [
+            'locale' => (string) Config::getProperty('i18n.locale', 'en_US'),
+            'auto_detect_locale' => Tools::normalizeBoolean(Config::getProperty('i18n.auto_detect_locale', true), true),
+        ];
     }
 
     /**
@@ -47,13 +62,33 @@ class Admin extends \Api_Abstract
     }
 
     /**
+     * Updates localization settings stored in the FOSSBilling config file.
+     *
+     * @throws \FOSSBilling\Exception
+     */
+    public function update_localization_settings($data): bool
+    {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'update_params');
+
+        Config::setProperty('i18n.auto_detect_locale', Tools::normalizeBoolean($data['auto_detect_locale'] ?? true, true));
+
+        return true;
+    }
+
+    /**
      * System messages about working environment.
      *
      * @return array
      */
     public function messages($data)
     {
-        $type = $data['type'] ?? 'info';
+        try {
+            $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_settings');
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        $type = $data['type'] ?? null;
 
         return $this->getService()->getMessages($type);
     }
@@ -89,6 +124,8 @@ class Admin extends \Api_Abstract
      */
     public function env($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_settings');
+
         $fetchExternalIp = Tools::normalizeBoolean($data['ip'] ?? false);
 
         return $this->getService()->getEnv($fetchExternalIp);

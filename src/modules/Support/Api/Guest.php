@@ -90,6 +90,14 @@ class Guest extends \Api_Abstract
         return $this->getService()->publicTicketReplyForGuest($publicTicket, $data['message']);
     }
 
+    /**
+     * Get whether public tickets are enabled for guests.
+     */
+    public function public_tickets_enabled(): bool
+    {
+        return $this->getService()->publicTicketsEnabled();
+    }
+
     /*
      * Support Knowledge Base Functions.
      */

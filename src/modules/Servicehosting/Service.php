@@ -153,10 +153,9 @@ class Service implements InjectionAwareInterface
         // Save the service
         $this->di['db']->store($model);
 
-        // Return the username and password
+        // Return the username for post-activation flows without exposing the password.
         return [
             'username' => $username,
-            'password' => $pass,
         ];
     }
 

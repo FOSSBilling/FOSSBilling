@@ -94,7 +94,7 @@ class Service implements InjectionAwareInterface
         $antispamService->isBlockedIp($event);
     }
 
-    public function isBlockedIp($event): void
+    public function isBlockedIp(\Box_Event $event): void
     {
         $di = $event->getDi();
         $config = $di['mod_config']('Antispam');
@@ -233,9 +233,10 @@ class Service implements InjectionAwareInterface
         $enabled = $config['honeypot_enabled'] ?? true;
         if ($enabled) {
             $params = $event->getParameters();
-            $honeypotField = $config['honeypot_field'] ?? 'honeypot_field';
+            $honeypotField = $config['honeypot_field'] ?? 'bio';
 
             if (!empty($params[$honeypotField])) {
+                $this->di['logger']->info("Potential spam registration blocked. Reason: honeypot field was not empty.");
                 throw new \FOSSBilling\InformationException('Registration failed.');
             }
         }

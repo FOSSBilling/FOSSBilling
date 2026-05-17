@@ -50,7 +50,11 @@ class Service
     {
         return [
             'can_always_access' => true,
-            'manage_settings' => [],
+            'manage_settings' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage system settings'),
+                'description' => __trans('Allows the staff member to view and manage general system settings.'),
+            ],
             'manage_company_details' => [
                 'type' => 'bool',
                 'display_name' => __trans('Manage company details'),
@@ -309,9 +313,32 @@ class Service
         return true;
     }
 
-    public function getMessages($type)
+    private function createAdminAlert(
+        string $type,
+        string $message,
+        ?string $title = null,
+        array $buttons = [],
+        bool $dismissible = true,
+    ): array {
+        $defaultTitles = [
+            'danger' => __trans('Danger!'),
+            'warning' => __trans('Warning'),
+            'info' => __trans('Information'),
+            'success' => __trans('Success'),
+        ];
+
+        return [
+            'type' => $type,
+            'title' => $title ?? ($defaultTitles[$type] ?? __trans('Notice')),
+            'message' => $message,
+            'buttons' => $buttons,
+            'dismissible' => $dismissible,
+        ];
+    }
+
+    public function getMessages($type = null)
     {
-        $msgs = [];
+        $messages = [];
 
         // Check if there's an update available
         try {
@@ -319,38 +346,45 @@ class Service
             if ($updater->isUpdateAvailable()) {
                 $version = $updater->getLatestVersion();
                 $updateUrl = $this->di['url']->adminLink('system/update');
-                $msgs['info'][] = [
-                    'text' => "FOSSBilling {$version} is available for download.",
-                    'url' => $updateUrl,
-                ];
+                $messages[] = $this->createAdminAlert(
+                    'info',
+                    __trans('FOSSBilling :version is available for download.', [':version' => $version]),
+                    __trans('Update Available'),
+                    [[
+                        'link' => $updateUrl,
+                        'text' => __trans('Review Update'),
+                        'type' => 'primary',
+                    ]]
+                );
             }
         } catch (\Exception $e) {
             error_log($e->getMessage());
         }
 
-        $last_exec = $this->getParamValue('last_cron_exec');
-        $disableAutoCron = Config::getProperty('disable_auto_cron', true);
-
         if (Environment::isProduction()) {
-            $cronService = $this->di['mod_service']('cron');
+            $last_exec = $this->getParamValue('last_cron_exec');
             $cronUrl = $this->di['url']->adminLink('extension/settings/cron');
 
-            // Perform the fallback behavior if enabled
-            if (!$disableAutoCron && (!$last_exec || (time() - strtotime((string) $last_exec)) / 60 >= 15)) {
-                $cronService->runCrons();
-            }
-
-            // And now return the correct message for the given situation
             if (!$last_exec) {
-                $msgs['danger'][] = [
-                    'text' => __trans('Cron was never executed, please ensure you have configured the cronjob or else scheduled tasks within FOSSBilling will not behave correctly.'),
-                    'url' => $cronUrl,
-                ];
+                $messages[] = $this->createAdminAlert(
+                    'danger',
+                    __trans('Cron was never executed, please ensure you have configured the cronjob or else scheduled tasks within FOSSBilling will not behave correctly.'),
+                    buttons: [[
+                        'link' => $cronUrl,
+                        'text' => __trans('Open Cron Settings'),
+                        'type' => 'danger',
+                    ]]
+                );
             } elseif ((time() - strtotime((string) $last_exec)) / 60 >= 15) {
-                $msgs['danger'][] = [
-                    'text' => __trans("FOSSBilling has detected that cron hasn't been run in an abnormal time period. Please ensure the cronjob is configured to be run every 5 minutes."),
-                    'url' => $cronUrl,
-                ];
+                $messages[] = $this->createAdminAlert(
+                    'danger',
+                    __trans("FOSSBilling has detected that cron hasn't been run in an abnormal time period. Please ensure the cronjob is configured to be run every 5 minutes."),
+                    buttons: [[
+                        'link' => $cronUrl,
+                        'text' => __trans('Open Cron Settings'),
+                        'type' => 'danger',
+                    ]]
+                );
             }
         }
 
@@ -389,24 +423,41 @@ class Service
             });
 
             if ($result) {
-                $msgs['info'][] = $result;
+                $messages[] = $this->createAdminAlert(
+                    'info',
+                    $result['text'],
+                    buttons: [[
+                        'link' => $result['url'],
+                        'text' => __trans('Review Settings'),
+                        'type' => 'primary',
+                    ]]
+                );
             }
         }
 
         $install = Path::join(PATH_ROOT, 'install');
         if ($this->filesystem->exists($install)) {
-            $msgs['danger'][] = [
-                'text' => sprintf('Install module "%s" still exists. Please remove it for security reasons.', $install),
-            ];
+            $messages[] = $this->createAdminAlert(
+                'danger',
+                __trans('Install module ":path" still exists. Please remove it for security reasons.', [':path' => $install])
+            );
         }
 
         if (!extension_loaded('openssl')) {
-            $msgs['warning'][] = [
-                'text' => sprintf('FOSSBilling requires %s extension to be enabled on this server for security reasons.', 'php openssl'),
-            ];
+            $messages[] = $this->createAdminAlert(
+                'warning',
+                __trans('FOSSBilling requires :extension extension to be enabled on this server for security reasons.', [':extension' => 'php openssl'])
+            );
         }
 
-        return $msgs[$type] ?? [];
+        if ($type === null || $type === '') {
+            return $messages;
+        }
+
+        return array_values(array_filter(
+            $messages,
+            static fn (array $message): bool => ($message['type'] ?? null) === $type
+        ));
     }
 
     /**
@@ -420,10 +471,7 @@ class Service
             return $this->di['central_alerts']->filterAlerts();
         } catch (\FOSSBilling\Exception $e) {
             return [
-                [
-                    'type' => 'warning',
-                    'message' => "Warning: {$e->getMessage()}",
-                ],
+                $this->createAdminAlert('warning', $e->getMessage()),
             ];
         }
     }

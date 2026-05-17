@@ -176,7 +176,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $logMock = $this->createMock('\Box_Log');
+        $logMock = $this->createStub('\Box_Log');
 
         $systemServiceMock = $this->getMockBuilder(Service::class)->onlyMethods(['setParamValue'])->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
@@ -196,12 +196,13 @@ final class ServiceTest extends \BBTestCase
     public function testGetMessages(): void
     {
         $latestVersion = '1.0.0';
-        $type = 'info';
 
-        $systemServiceMock = $this->getMockBuilder(Service::class)->onlyMethods(['getParamValue'])->getMock();
-        $systemServiceMock->expects($this->atLeastOnce())
-            ->method('getParamValue')
-            ->willReturn(false);
+        $systemServiceMock = new class extends Service {
+            public function getParamValue(string $param, $default = null)
+            {
+                return false;
+            }
+        };
 
         $updaterMock = $this->createMock(\FOSSBilling\Update::class);
         $updaterMock->expects($this->atLeastOnce())
@@ -211,14 +212,67 @@ final class ServiceTest extends \BBTestCase
             ->method('getLatestVersion')
             ->willReturn($latestVersion);
 
+        $urlStub = new class {
+            public function adminLink(string $path): string
+            {
+                return '/admin/' . ltrim($path, '/');
+            }
+        };
+
         $di = $this->getDi();
         $di['updater'] = $updaterMock;
+        $di['url'] = $urlStub;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
 
         $systemServiceMock->setDi($di);
 
-        $result = $systemServiceMock->getMessages($type);
+        $result = $systemServiceMock->getMessages('info');
         $this->assertIsArray($result);
+        $this->assertCount(1, $result);
+        $this->assertSame('info', $result[0]['type']);
+        $this->assertSame('Update Available', $result[0]['title']);
+        $this->assertSame("FOSSBilling {$latestVersion} is available for download.", $result[0]['message']);
+        $this->assertSame('Review Update', $result[0]['buttons'][0]['text']);
+        $this->assertArrayHasKey('link', $result[0]['buttons'][0]);
+        $this->assertTrue($result[0]['dismissible']);
+    }
+
+    public function testGetMessagesReturnsAllTypesWhenNoFilterProvided(): void
+    {
+        $latestVersion = '1.0.0';
+
+        $systemServiceMock = new class extends Service {
+            public function getParamValue(string $param, $default = null)
+            {
+                return false;
+            }
+        };
+
+        $updaterMock = $this->createMock(\FOSSBilling\Update::class);
+        $updaterMock->expects($this->atLeastOnce())
+            ->method('isUpdateAvailable')
+            ->willReturn(true);
+        $updaterMock->expects($this->atLeastOnce())
+            ->method('getLatestVersion')
+            ->willReturn($latestVersion);
+
+        $urlStub = new class {
+            public function adminLink(string $path): string
+            {
+                return '/admin/' . ltrim($path, '/');
+            }
+        };
+
+        $di = $this->getDi();
+        $di['updater'] = $updaterMock;
+        $di['url'] = $urlStub;
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
+
+        $systemServiceMock->setDi($di);
+
+        $result = $systemServiceMock->getMessages();
+        $this->assertIsArray($result);
+        $this->assertContains('info', array_column($result, 'type'));
     }
 
     public function testGetCurrentUrlUsesTrustedRequestContext(): void
@@ -308,7 +362,7 @@ final class ServiceTest extends \BBTestCase
     public function testCreateBaseEnvironmentTreatsAdvancedFiltersSeparatelyFromSearch(): void
     {
         $di = $this->getDi();
-        $request = \Symfony\Component\HttpFoundation\Request::create('/admin/product', 'GET', [
+        $request = Request::create('/admin/product', 'GET', [
             'search' => 'query',
             'status' => 'active',
         ]);
@@ -765,7 +819,7 @@ final class ServiceTest extends \BBTestCase
             }
         };
 
-        $urlMock = $this->createMock(\Box_Url::class);
+        $urlMock = $this->createStub(\Box_Url::class);
         $urlMock->method('link')
             ->willReturn('http://example.com/login?email=test%40example.com');
 
@@ -822,7 +876,7 @@ final class ServiceTest extends \BBTestCase
             };
         }
         if (!isset($di['logger'])) {
-            $di['logger'] = $this->createMock(\Box_Log::class);
+            $di['logger'] = $this->createStub(\Box_Log::class);
         }
 
         $reflection = new \ReflectionClass(\FOSSBilling\Twig\TwigFactory::class);
@@ -882,7 +936,7 @@ final class ServiceTest extends \BBTestCase
     private function createBaseTwigEnvironment(\Pimple\Container $di): \Twig\Environment
     {
         if (!$di->offsetExists('request')) {
-            $di['request'] = \Symfony\Component\HttpFoundation\Request::create('/');
+            $di['request'] = Request::create('/');
         }
 
         $reflection = new \ReflectionClass(\FOSSBilling\Twig\TwigFactory::class);
@@ -926,7 +980,7 @@ final class ServiceTest extends \BBTestCase
 
     private function mockSession(): \FOSSBilling\Session
     {
-        $sessionMock = $this->createMock(\FOSSBilling\Session::class);
+        $sessionMock = $this->createStub(\FOSSBilling\Session::class);
         $sessionMock->method('get')->willReturn('test_csrf_token');
 
         return $sessionMock;
