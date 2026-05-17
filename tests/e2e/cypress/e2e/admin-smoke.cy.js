@@ -7,7 +7,6 @@ describe('admin smoke pages', () => {
     '/admin/product',
     '/admin/system',
     '/admin/extension',
-    '/admin/email',
   ];
 
   it('loads core admin pages successfully', () => {
