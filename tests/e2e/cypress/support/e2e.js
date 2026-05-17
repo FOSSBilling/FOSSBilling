@@ -185,3 +185,31 @@ Cypress.Commands.add('setEditorContent', (selector, content) => {
       field.dispatchEvent(new Event('change', { bubbles: true }));
     });
 });
+
+Cypress.Commands.add('openBootstrapModal', (triggerSelector, modalSelector) => {
+  let modalShown;
+
+  cy.window().then((win) => {
+    const modal = win.document.querySelector(modalSelector);
+
+    expect(modal, `${modalSelector} modal`).to.exist;
+    modalShown = modal.classList.contains('show')
+      ? Cypress.Promise.resolve()
+      : new Cypress.Promise((resolve) => {
+        modal.addEventListener('shown.bs.modal', resolve, { once: true });
+      });
+  });
+
+  cy.get(triggerSelector).should('be.visible').click();
+  cy.then(() => modalShown);
+  cy.get(modalSelector).should('be.visible').and('have.class', 'show');
+});
+
+Cypress.Commands.add('typeAndVerify', (selector, value, options = {}) => {
+  cy.get(selector)
+    .should('be.visible')
+    .and('not.be.disabled')
+    .clear()
+    .type(value, { delay: 0, ...options })
+    .should('have.value', value);
+});

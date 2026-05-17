@@ -19,14 +19,16 @@ describe('client support tickets', () => {
     cy.contains('body', 'Support Tickets').should('be.visible');
 
     cy.intercept('POST', '**/api/client/support/ticket_create*').as('ticketCreate');
-    cy.contains('button', 'New Ticket').click();
-    cy.get('#open-ticket-modal').should('be.visible');
+    cy.openBootstrapModal('[data-bs-target="#open-ticket-modal"]', '#open-ticket-modal');
     cy.get('#open-ticket-modal select[name="support_helpdesk_id"]').invoke('val').should('not.be.empty');
     cy.setEditorContent('#open-ticket-modal textarea[name="content"]', initialMessage);
-    cy.get('#open-ticket-modal input[name="subject"]').clear().type(subject);
+    cy.typeAndVerify('#open-ticket-modal input[name="subject"]', subject);
     cy.get('#ticket-submit').submit();
 
-    cy.wait('@ticketCreate').then(({ response }) => {
+    cy.wait('@ticketCreate').then(({ request, response }) => {
+      const requestBody = typeof request.body === 'string' ? JSON.parse(request.body) : request.body;
+
+      expect(requestBody.subject).to.eq(subject);
       expect(response.statusCode).to.eq(200);
       expect(response.body.error).to.eq(null);
       expect(response.body.result, 'ticket id').to.exist;
