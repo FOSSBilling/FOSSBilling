@@ -8,7 +8,9 @@ compose_file="${repo_root}/.github/docker/live-tests.compose.yml"
 project="fossbilling-cypress-${GITHUB_RUN_ID:-local}-$$"
 cypress_image="${CYPRESS_DOCKER_IMAGE:-cypress/included:15.15.0}"
 cypress_browser="${CYPRESS_BROWSER:-electron}"
-app_url="http://fossbilling-app/"
+app_host="fossbilling-app"
+app_url="http://${app_host}/"
+install_url="${app_url}install/"
 
 db_name="fossbilling"
 db_user="root"
@@ -110,13 +112,13 @@ compose up --detach
 compose exec -T app rm -f /var/www/html/config.php
 
 for _ in {1..60}; do
-  if compose exec -T app curl -fsS "http://127.0.0.1/install/" >/dev/null; then
+  if compose exec -T app curl -fsS "${install_url}" >/dev/null; then
     break
   fi
   sleep 2
 done
 
-compose exec -T app curl -fsS "http://127.0.0.1/install/" >/dev/null
+compose exec -T app curl -fsS "${install_url}" >/dev/null
 
 install_payload=(
   -H 'Content-type: multipart/form-data'
@@ -133,7 +135,7 @@ install_payload=(
   -F 'currency_title=US Dollar'
   -F "admin_api_token=${test_api_key}"
   -X POST
-  "http://127.0.0.1/install/install.php?a=install"
+  "${install_url}install.php?a=install"
 )
 
 compose exec -T app curl -fsS "${install_payload[@]}" >/dev/null
