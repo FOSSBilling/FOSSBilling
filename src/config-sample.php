@@ -113,6 +113,8 @@ return [
      */
     'i18n' => [
         'locale' => 'en_US',
+        // Set to false to always use the configured locale unless the user manually selects another language.
+        'auto_detect_locale' => true,
         'timezone' => 'UTC',
 
         // Short names for formats (none, short, medium, long).
