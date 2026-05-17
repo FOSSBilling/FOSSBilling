@@ -91,8 +91,13 @@ Cypress.Commands.add('fillClientSignupForm', (client) => {
     $form.find('input[required], textarea[required]').each((index, field) => {
       const $field = Cypress.$(field);
       const type = ($field.attr('type') || '').toLowerCase();
+      const name = $field.attr('name');
 
-      if (!$field.val() && !['checkbox', 'radio', 'hidden'].includes(type)) {
+      if (!name || Object.prototype.hasOwnProperty.call(values, name) || ['checkbox', 'radio', 'hidden', 'password'].includes(type)) {
+        return;
+      }
+
+      if (!$field.val()) {
         cy.wrap(field).clear().type('Cypress test value');
       }
     });

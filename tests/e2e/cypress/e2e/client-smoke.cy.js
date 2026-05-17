@@ -3,7 +3,7 @@ describe('client smoke pages', () => {
 
   const pages = [
     { path: '/', text: 'Dashboard' },
-    { path: '/client/profile', text: 'User Profile Settings' },
+    { path: '/client/profile', text: 'Update Details' },
     { path: '/order/service', text: 'Services' },
     { path: '/invoice', text: 'Invoices' },
     { path: '/support', text: 'Support Tickets' },

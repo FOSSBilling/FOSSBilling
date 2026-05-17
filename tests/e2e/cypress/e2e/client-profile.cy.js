@@ -22,7 +22,7 @@ describe('client profile', () => {
     };
 
     cy.visit('/client/profile');
-    cy.contains('body', 'User Profile Settings').should('be.visible');
+    cy.contains('body', 'Update Details').should('be.visible');
     cy.intercept('POST', '**/api/client/profile/update*').as('profileUpdate');
 
     cy.get('form#profile-update').within(() => {
