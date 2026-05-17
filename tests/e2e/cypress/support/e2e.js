@@ -69,7 +69,7 @@ Cypress.Commands.add('fillClientSignupForm', (client) => {
     birthday: client.birthday || '1990-01-01',
     address_1: client.address_1 || '1 Cypress Street',
     address_2: client.address_2 || 'Suite 2',
-    city: client.city || 'Testville',
+    city: client.city || 'Test City',
     state: client.state || 'Test State',
     postcode: client.postcode || '12345',
     phone_cc: client.phone_cc || '1',
