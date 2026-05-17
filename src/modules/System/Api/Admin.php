@@ -88,7 +88,7 @@ class Admin extends \Api_Abstract
             return [];
         }
 
-        $type = $data['type'] ?? 'info';
+        $type = $data['type'] ?? null;
 
         return $this->getService()->getMessages($type);
     }

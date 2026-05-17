@@ -227,9 +227,6 @@ final class AdminTest extends \BBTestCase
             ->method('hasPermission')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
-
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {
             if ($serviceName == 'Staff') {
