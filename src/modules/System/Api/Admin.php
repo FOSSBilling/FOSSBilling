@@ -35,6 +35,19 @@ class Admin extends \Api_Abstract
     }
 
     /**
+     * Returns localization settings stored in the FOSSBilling config file.
+     */
+    public function localization_settings(): array
+    {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_settings');
+
+        return [
+            'locale' => (string) Config::getProperty('i18n.locale', 'en_US'),
+            'auto_detect_locale' => Tools::normalizeBoolean(Config::getProperty('i18n.auto_detect_locale', true), true),
+        ];
+    }
+
+    /**
      * Updated parameters array with new values. Creates new setting if it was
      * not defined earlier. You can create new parameters using this method.
      * This method accepts any number of parameters you pass.
@@ -46,6 +59,20 @@ class Admin extends \Api_Abstract
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'update_params');
 
         return $this->getService()->updateParams($data);
+    }
+
+    /**
+     * Updates localization settings stored in the FOSSBilling config file.
+     *
+     * @throws \FOSSBilling\Exception
+     */
+    public function update_localization_settings($data): bool
+    {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'update_params');
+
+        Config::setProperty('i18n.auto_detect_locale', Tools::normalizeBoolean($data['auto_detect_locale'] ?? true, true));
+
+        return true;
     }
 
     /**
@@ -61,7 +88,7 @@ class Admin extends \Api_Abstract
             return [];
         }
 
-        $type = $data['type'] ?? 'info';
+        $type = $data['type'] ?? null;
 
         return $this->getService()->getMessages($type);
     }

@@ -200,9 +200,23 @@ final class Api_GuestTest extends \BBTestCase
         $this->guestApi->ticket_reply($data);
     }
 
+    public function testPublicTicketsEnabled(): void
+    {
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
+            ->onlyMethods(['publicTicketsEnabled'])->getMock();
+        $serviceMock->expects($this->once())->method('publicTicketsEnabled')
+            ->willReturn(true);
+
+        $this->guestApi->setService($serviceMock);
+
+        $result = $this->guestApi->public_tickets_enabled();
+
+        $this->assertTrue($result);
+    }
+
     /*
     * Knowledge Base Tests.
-    */
+     */
 
     public function testKbArticleGetList(): void
     {

@@ -39,8 +39,9 @@
 	<p>Thank you for signing up with us. Your new account has been setup and you can now login to our client area using the details below:</p>
     <ul>
         <li><strong>Email:</strong> {{ c.email }}</li>
-        <li><strong>Password:</strong> {{ password }}</li>
     </ul>
+
+    <p>Please use the password you chose during signup when logging in.</p>
 
     {% if require_email_confirmation %}
         <p>Please verify your email by clicking on the link below:</p>

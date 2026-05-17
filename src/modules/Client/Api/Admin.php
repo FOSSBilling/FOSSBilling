@@ -150,13 +150,24 @@ class Admin extends \Api_Abstract
 
         $validator = $this->di['validator'];
         $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        $data['send_welcome_email'] = Tools::normalizeBoolean($data['send_welcome_email'] ?? true, true);
 
         $service = $this->getService();
         if ($service->emailAlreadyRegistered($data['email'])) {
             throw new InformationException('This email address is already registered.');
         }
 
-        if (isset($data['password']) && $data['password'] !== '') {
+        $password = trim((string) ($data['password'] ?? ''));
+        $status = $data['status'] ?? \Model_Client::ACTIVE;
+        if (!$data['send_welcome_email'] && $password === '') {
+            throw new InformationException('A password is required when the welcome email is disabled.');
+        }
+
+        if ($data['send_welcome_email'] && $status !== \Model_Client::ACTIVE) {
+            throw new InformationException('Welcome email can only be sent for active clients.');
+        }
+
+        if ($password !== '') {
             $validator->isPasswordStrong($data['password']);
         }
 
@@ -319,7 +330,7 @@ class Admin extends \Api_Abstract
 
         $client = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientPasswordChange', 'params' => $data]);
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientPasswordChange', 'params' => ['id' => $client->id]]);
 
         $client->pass = $this->di['password']->hashIt($data['password']);
         $client->updated_at = date('Y-m-d H:i:s');
@@ -328,7 +339,7 @@ class Admin extends \Api_Abstract
         $profileService = $this->di['mod_service']('profile');
         $profileService->invalidateSessions('client', (int) $data['id']);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminClientPasswordChange', 'params' => ['id' => $client->id, 'password' => $data['password']]]);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminClientPasswordChange', 'params' => ['id' => $client->id]]);
 
         $this->di['logger']->info('Changed client #%s password', $client->id);
 

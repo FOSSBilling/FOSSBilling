@@ -156,6 +156,7 @@ class Guest extends \Api_Abstract
 
         try {
             $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetClient']);
+            $service = $this->di['mod_service']('client');
 
             // Sanitize email
             $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
@@ -192,29 +193,8 @@ class Guest extends \Api_Abstract
                 return true;
             }
 
-            $existing = $this->di['db']->findOne('ClientPasswordReset', 'client_id = ?', [$c->id]);
-            if ($existing instanceof \Model_ClientPasswordReset) {
-                $this->di['db']->trash($existing);
-            }
-
-            $hash = hash('sha256', random_bytes(32));
-            $reset = $this->di['db']->dispense('ClientPasswordReset');
-            $reset->client_id = $c->id;
-            $reset->ip = $this->ip;
-            $reset->hash = $hash;
-            $reset->created_at = date('Y-m-d H:i:s');
-            $reset->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($reset);
-
-            $email = [
-                'to_client' => $c->id,
-                'code' => 'mod_client_password_reset_request',
-                'hash' => $hash,
-                'send_now' => true,
-            ];
-
-            $emailService = $this->di['mod_service']('email');
-            $emailService->sendTemplate($email);
+            $hash = $service->createPasswordResetRequestForClient($c);
+            $service->sendPasswordResetRequestEmailForClient($c, $hash);
 
             $this->di['logger']->setChannel('security')->info('Client password reset email queued for client #%s from IP %s: email %s', $c->id, $this->getIp(), $data['email']);
 

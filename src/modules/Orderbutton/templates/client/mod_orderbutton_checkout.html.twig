@@ -163,14 +163,25 @@
                                 {% set enough_in_balance = client.client_balance_get_total >= cart.total %}
                                 {% if cart.total and not enough_in_balance %}
                                     <div class="control-group">
+                                        <p class="small text-muted mb-2">{{ 'Choose a payment method to continue with your order.'|trans }}</p>
+                                        <div class="d-flex flex-wrap gap-3">
                                         {% for gtw in guest.invoice_gateways %}
                                             {% if cart.currency.code in gtw.accepted_currencies %}
-                                                <label class="radio" for="{{gtw.id}}">
-                                                    <input type="radio" name="gateway_id" id={{gtw.id}} value="{{gtw.id}}" {{ loop.first ? 'checked' : '' }}/>
-                                                    {{ 'Pay by'|trans }} {{ gtw.title }}
-                                                </label>
+                                                {% set gateway_input_id = 'order-gateway-' ~ gtw.id %}
+                                                <div class="invoice-gateway rounded-2 p-2">
+                                                    <input type="radio" class="btn-check border-0" name="gateway_id" id="{{ gateway_input_id }}" value="{{ gtw.id }}" autocomplete="off" {{ loop.first ? 'checked' : '' }}/>
+                                                    {% if gtw.logo.logo %}
+                                                        <label class="btn" for="{{ gateway_input_id }}"
+                                                            style="background: transparent url('{{ gtw.logo.logo }}') no-repeat center center; background-size: contain; height:{{ gtw.logo.height }}; width:{{ gtw.logo.width }};"
+                                                            data-bs-toggle="tooltip" data-bs-title="{{ gtw.title }}"
+                                                            aria-label="{{ gtw.title }}"></label>
+                                                    {% else %}
+                                                        <label class="btn text-nowrap" for="{{ gateway_input_id }}">{{ gtw.title }}</label>
+                                                    {% endif %}
+                                                </div>
                                             {% endif %}
                                         {% endfor %}
+                                        </div>
                                     </div>
                                 {% endif %}
                                 <div class="control-group">

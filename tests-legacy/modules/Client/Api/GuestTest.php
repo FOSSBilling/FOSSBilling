@@ -187,7 +187,7 @@ final class GuestTest extends \BBTestCase
             ->method('transferFromOtherSession')
             ->willReturn(true);
 
-        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
+        $toolsMock = $this->createStub(\FOSSBilling\Tools::class);
 
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
@@ -624,6 +624,42 @@ final class GuestTest extends \BBTestCase
 
     private function registerPasswordResetModService(\Pimple\Container $di, ?object $emailService = null): void
     {
+        $clientService = new class($di, $emailService) {
+            public function __construct(private \Pimple\Container $di, private ?object $emailService)
+            {
+            }
+
+            public function createPasswordResetRequestForClient(\Model_Client $client): string
+            {
+                $existing = $this->di['db']->findOne('ClientPasswordReset', 'client_id = ?', [$client->id]);
+                if ($existing instanceof \Model_ClientPasswordReset) {
+                    $this->di['db']->trash($existing);
+                }
+
+                $hash = hash('sha256', random_bytes(32));
+                $reset = $this->di['db']->dispense('ClientPasswordReset');
+                $reset->client_id = $client->id;
+                $reset->hash = $hash;
+                $this->di['db']->store($reset);
+
+                return $hash;
+            }
+
+            public function sendPasswordResetRequestEmailForClient(\Model_Client $client, string $hash): void
+            {
+                if ($this->emailService === null) {
+                    return;
+                }
+
+                $this->emailService->sendTemplate([
+                    'to_client' => $client->id,
+                    'code' => 'mod_client_password_reset_request',
+                    'hash' => $hash,
+                    'send_now' => true,
+                ]);
+            }
+        };
+
         $extensionService = new class {
             public function isExtensionActive(string $type, string $id): bool
             {
@@ -632,7 +668,12 @@ final class GuestTest extends \BBTestCase
         };
 
         $di['mod_service'] = $di->protect(
-            fn (string $name): object => strtolower($name) === 'extension' ? $extensionService : ($emailService ?? new \stdClass())
+            fn (string $name): object => match (strtolower($name)) {
+                'extension' => $extensionService,
+                'client' => $clientService,
+                'email' => $emailService ?? new \stdClass(),
+                default => new \stdClass(),
+            }
         );
     }
 

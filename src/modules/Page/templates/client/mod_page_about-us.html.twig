@@ -1,8 +1,9 @@
 {% extends "layout_default.html.twig" %}
 
-{% block meta_title %}{{ 'About Us'|trans }}{% endblock %}
-
 {% set company = guest.system_company %}
+
+{% block meta_title %}{{ 'About Us'|trans }}{% endblock %}
+{% block meta_description %}{{ (company.note ?? company.signature ?? company.name)|markdown_to_html|striptags|trim|truncate(160) }}{% endblock %}
 
 {% block body_class %}about-us{% endblock %}
 {% block breadcrumb %}

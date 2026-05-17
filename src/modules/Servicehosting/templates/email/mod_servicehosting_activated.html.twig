@@ -64,9 +64,10 @@
     <p>Control panel login details:<p>
     <ul>
         <li><strong>Username:</strong> {{ service.username }}</li>
-        <li><strong>Password:</strong> {{ password }}</li>
         <li><strong>Control Panel URL:</strong> {{ service.server.cpanel_url }}</li>
     </ul>
+
+    <p>For security reasons, hosting passwords are not included in email. You can log in to the client area to open the control panel directly or set a new hosting password there.</p>
 
     <p>Server information:<p>
     <ul>
@@ -84,7 +85,6 @@
         <li><strong>Temporary FTP Hostname:</strong> {{ service.server.ip }}  </li>
         <li><strong>Full FTP Hostname:</strong> {{ service.domain }}</li>
         <li><strong>FTP Username:</strong> {{ service.username }}</li>
-        <li><strong>FTP Password:</strong> {{ password }}</li>
     </ul>
 
     <p>You may <a href="{{ 'login'|url(query: { 'email': c.email }, area: 'client') }}" target="_blank">login</a> or <a href='{{ "servicedownloadable/get-file/#{order.id}"|url(area: 'client') }}' target="_blank">download your order now.</a>

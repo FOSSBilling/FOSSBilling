@@ -40,7 +40,7 @@ class i18n
                 setcookie('fb_locale', (string) $locale, ['expires' => strtotime('+1 month'), 'path' => '/']);
                 setcookie('BBLANG', '', ['expires' => time() - 3600, 'path' => '/']);
             }
-        } elseif ($autoDetect) {
+        } elseif ($autoDetect && self::isBrowserLocaleDetectionEnabled()) {
             $locale = self::getBrowserLocale();
         }
 
@@ -50,6 +50,11 @@ class i18n
         }
 
         return $locale;
+    }
+
+    private static function isBrowserLocaleDetectionEnabled(): bool
+    {
+        return Tools::normalizeBoolean(Config::getProperty('i18n.auto_detect_locale', true), true);
     }
 
     /**
