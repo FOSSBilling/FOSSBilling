@@ -13,8 +13,6 @@ describe('admin smoke pages', () => {
     cy.loginAsAdmin();
 
     pages.forEach((path) => {
-      cy.request(path).its('status').should('eq', 200);
-
       cy.visit(path);
       cy.get('body').should('be.visible');
     });

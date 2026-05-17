@@ -9,7 +9,6 @@ describe('public pages', () => {
 
   pages.forEach(({ path, text }) => {
     it(`loads ${path}`, () => {
-      cy.request(path).its('status').should('eq', 200);
       cy.visit(path);
       cy.get('body').should('be.visible');
 

@@ -1,5 +1,5 @@
 module.exports = {
-  projectId: process.env.CYPRESS_PROJECT_ID || 'zap1kb',
+  projectId: 'zap1kb',
   e2e: {
     baseUrl: process.env.CYPRESS_BASE_URL || 'http://localhost',
     specPattern: 'tests/e2e/cypress/e2e/**/*.cy.js',
