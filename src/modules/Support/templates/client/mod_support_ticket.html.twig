@@ -171,7 +171,7 @@
                 )
             });
 
-            closeTicketBtn.addEventListener('click', (e) => {
+            closeTicketBtn?.addEventListener('click', (e) => {
                 e.preventDefault();
                 toggleLoader();
                 API.client.post('support/ticket_close', Tools.serializeFormDataToObject(new FormData(ticketReplyForm)),
@@ -185,7 +185,7 @@
                 )
             });
 
-            postReplyBtn.addEventListener('click', () => {
+            postReplyBtn?.addEventListener('click', () => {
                 if (document.getElementById('ticket-reply-text').value.length > 0) {
                     toggleLoader();
                 }
@@ -206,7 +206,7 @@
                 });
             })
 
-            document.getElementById('reply-to-btn').addEventListener('click', () => {
+            document.getElementById('reply-to-btn')?.addEventListener('click', () => {
                 if (ticketReplyTextArea.editor) {
                     ticketReplyTextArea.editor.editing.view.focus();
                 } else {
