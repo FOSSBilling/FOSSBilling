@@ -78,6 +78,21 @@ final class GuestTest extends TestCase
         $this->assertEquals("We currently aren't accepting support tickets from unregistered users. Please use another contact method.", $result->getErrorMessage());
     }
 
+    public function testPublicTicketsEnabledReflectsConfiguration(): void
+    {
+        $enabledResult = Request::makeRequest('guest/support/public_tickets_enabled');
+        $this->assertTrue($enabledResult->wasSuccessful(), $enabledResult->generatePHPUnitMessage());
+        $this->assertTrue($enabledResult->getResult());
+
+        $configResult = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_support', 'disable_public_tickets' => true]);
+        $this->assertTrue($configResult->wasSuccessful(), $configResult->generatePHPUnitMessage());
+        $this->restoreDisablePublicTickets = true;
+
+        $disabledResult = Request::makeRequest('guest/support/public_tickets_enabled');
+        $this->assertTrue($disabledResult->wasSuccessful(), $disabledResult->generatePHPUnitMessage());
+        $this->assertFalse($disabledResult->getResult());
+    }
+
     public function testTicketCreateForGuestMissingName(): void
     {
         $result = Request::makeRequest('guest/support/ticket_create', [

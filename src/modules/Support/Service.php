@@ -1014,10 +1014,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function ticketCreateForGuest(array $data): string
     {
-        $extensionService = $this->di['mod_service']('extension');
-        $config = $extensionService->getConfig('mod_support');
-
-        if (isset($config['disable_public_tickets']) && $config['disable_public_tickets']) {
+        if (!$this->publicTicketsEnabled()) {
             throw new InformationException("We currently aren't accepting support tickets from unregistered users. Please use another contact method.");
         }
 
@@ -1060,6 +1057,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['logger']->info('"%s" opened public ticket "%s"', $ticket->author_email, $ticketId);
 
         return $ticket->hash;
+    }
+
+    public function publicTicketsEnabled(): bool
+    {
+        $extensionService = $this->di['mod_service']('extension');
+        $config = $extensionService->getConfig('mod_support');
+
+        return !(isset($config['disable_public_tickets']) && $config['disable_public_tickets']);
     }
 
     public function canClientSubmitNewTicket(\Model_Client $client, array $config): bool
