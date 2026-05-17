@@ -171,3 +171,17 @@ Cypress.Commands.add('loginAsClient', (client) => {
   cy.visit('/');
   cy.contains('body', client.email).should('be.visible');
 });
+
+Cypress.Commands.add('setEditorContent', (selector, content) => {
+  cy.get(selector)
+    .should(($field) => {
+      expect($field[0].editor, `${selector} editor`).to.exist;
+    })
+    .then(($field) => {
+      const field = $field[0];
+      field.editor.setData(content);
+      field.value = content;
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+      field.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+});
