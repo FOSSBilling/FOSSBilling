@@ -140,6 +140,13 @@ install_payload=(
 
 compose exec -T app curl -fsS "${install_payload[@]}" >/dev/null
 
+compose exec -T app php -r '
+$configPath = "/var/www/html/config.php";
+$config = require $configPath;
+$config["security"]["perform_session_fingerprinting"] = false;
+file_put_contents($configPath, "<?php\n\nreturn " . var_export($config, true) . ";\n");
+'
+
 # Chromium-based browsers are sensitive to Docker's default 64 MB /dev/shm size.
 docker run --rm \
   --network "${project}_default" \
