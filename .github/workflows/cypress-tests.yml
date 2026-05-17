@@ -39,7 +39,7 @@ jobs:
           build-args: |
             PHP_VERSION=8.5
             INSTALL_TRANSLATIONS=false
-          cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:cache-ci-8.5
+          cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}-build-cache:cache-ci-8.5
           context: .
           load: true
           tags: |
