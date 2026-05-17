@@ -9,13 +9,10 @@ describe('client support tickets', () => {
 
   it('opens, replies to, and closes a support ticket', () => {
     const suffix = `${Date.now()}-${Cypress._.random(100000, 999999)}`;
-    const maxSubjectLength = 16;
-    const subject = `Cypress ticket ${Cypress._.random(100, 999)}`;
+    const subject = `Cypress support lifecycle ${suffix}`;
     const initialMessage = `Initial support request from Cypress ${suffix}.`;
     const replyMessage = `Follow-up support reply from Cypress ${suffix}.`;
     let ticketId;
-
-    expect(subject.length).to.be.at.most(maxSubjectLength);
 
     cy.loginAsClient(client);
     cy.visit('/support');
@@ -25,8 +22,8 @@ describe('client support tickets', () => {
     cy.contains('button', 'New Ticket').click();
     cy.get('#open-ticket-modal').should('be.visible');
     cy.get('#open-ticket-modal select[name="support_helpdesk_id"]').invoke('val').should('not.be.empty');
-    cy.get('#open-ticket-modal input[name="subject"]').type(subject);
     cy.setEditorContent('#open-ticket-modal textarea[name="content"]', initialMessage);
+    cy.get('#open-ticket-modal input[name="subject"]').clear().type(subject);
     cy.get('#ticket-submit').submit();
 
     cy.wait('@ticketCreate').then(({ response }) => {
