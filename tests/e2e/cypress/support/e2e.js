@@ -20,7 +20,8 @@ Cypress.Commands.add('loginAsAdmin', () => {
   }, {
     cacheAcrossSpecs: true,
     validate() {
-      cy.request({ url: '/admin', followRedirect: false }).its('status').should('eq', 200);
+      cy.visit('/admin');
+      cy.location('pathname', { timeout: 10000 }).should('match', /^\/admin\/?$/);
     },
   });
 
