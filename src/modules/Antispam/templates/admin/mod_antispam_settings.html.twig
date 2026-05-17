@@ -85,7 +85,7 @@ value="{{ params.captcha_recaptcha_publickey }}">
 </div>
 <div class="mb-3 row">
 <label class="col-md-3 col-form-label" for="captcha_recaptcha_privatekey">{{ 'reCAPTCHA Secret Key'|trans }}</label>
-<div class="col-md-6 pt-2 row">
+<div class="col-md-6 row">
 <input class="form-control" type="text" id="captcha_recaptcha_privatekey" name="captcha_recaptcha_privatekey"
 value="{{ params.captcha_recaptcha_privatekey }}">
 </div>
@@ -142,7 +142,7 @@ value="{{ params.captcha_recaptcha_privatekey }}">
 <p class="card-subtitle">{{ 'If enabled, email addresses will be checked against a database of disposable email domains.'|trans }}</p>
 <p class="card-subtitle">{{ 'This database is updated daily and provided free of charge by the FakeFilter project under the BSD 3-Clause License.'|trans }}</p>
 <div class="mb-3 row">
-<label class="col-md-3 col-form-label" for="check_temp_emails">{{ 'Check for Temporary / Disposable Email Addresses.'|trans }}</label>
+<label class="col-md-3 col-form-label" for="check_temp_emails">{{ 'Check for Temporary / Disposable Email Addresses'|trans }}</label>
 <div class="col-md-6 pt-2 ps-0">
 <label class="form-check form-check-single form-switch ps-0">
 <input id="check_temp_emails" class="form-check-input" name="check_temp_emails" type="checkbox"
@@ -160,7 +160,7 @@ value="{{ params.captcha_recaptcha_privatekey }}">
 <div class="col-md-6 pt-2 ps-0">
 <label class="form-check form-check-single form-switch ps-0">
 <input id="honeypot_enabled" class="form-check-input" name="honeypot_enabled" type="checkbox"
-{% if params.honeypot_enabled is defined ? params.honeypot_enabled : true %} checked="checked" {% endif %}>
+{% if params.honeypot_enabled|default(true) %} checked="checked" {% endif %}>
 </label>
 </div>
 </div>
