@@ -283,16 +283,17 @@ final class AdminTest extends \BBTestCase
     {
         $data = [
             'id' => '1',
-            'permissions' => 'default',
+            'permissions' => ['client' => ['access' => 1]],
         ];
+
+        $staffModel = new \Model_Admin();
+        $staffModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('setPermissions')
+            ->with($staffModel, $data['permissions'])
             ->willReturn(true);
-
-        $staffModel = new \Model_Admin();
-        $staffModel->loadBean(new \DummyBean());
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
