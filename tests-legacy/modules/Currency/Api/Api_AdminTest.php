@@ -451,9 +451,6 @@ final class Api_AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    /**
-     * @expectedException \FOSSBilling\Exception
-     */
     public function testDeleteException(): void
     {
         $adminApi = new \Box\Mod\Currency\Api\Admin();

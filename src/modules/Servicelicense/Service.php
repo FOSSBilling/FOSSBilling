@@ -372,7 +372,9 @@ class Service implements InjectionAwareInterface
                 return new $class_name();
             }
         }
-        error_log("License #{$model->id} plugin {$model->plugin} is invalid.");
+        if (isset($this->di['logger'])) {
+            $this->di['logger']->info('License #%s plugin %s is invalid.', $model->id, $model->plugin);
+        }
 
         return null;
     }

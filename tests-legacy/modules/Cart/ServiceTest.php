@@ -738,9 +738,6 @@ final class ServiceTest extends \BBTestCase
         $this->assertArrayHasKey('orders', $result);
     }
 
-    /**
-     * @expectedException \FOSSBilling\Exception
-     */
     public function testCheckoutCartClientIsNotAbleToUsePromoException(): void
     {
         $cart = new \Model_Cart();

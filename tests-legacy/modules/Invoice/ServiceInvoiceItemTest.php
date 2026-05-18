@@ -519,7 +519,7 @@ final class ServiceInvoiceItemTest extends \BBTestCase
                 \Box\Mod\Product\Entity\PromoRedemption::PHASE_RENEWAL,
                 10.0,
                 'EUR',
-                $this->isType('string'),
+                $this->isString(),
                 \Box\Mod\Product\Entity\PromoRedemption::STATUS_RESERVED,
             );
 

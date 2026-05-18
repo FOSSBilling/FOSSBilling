@@ -612,7 +612,9 @@ class Service implements InjectionAwareInterface
             $currencyCode = $currency->getCode();
             $client->currency = $currencyCode;
             $this->di['db']->store($client);
-            error_log("Client #{$client->id} currency was not defined. Set default currency {$currencyCode}.");
+            if (isset($this->di['logger'])) {
+                $this->di['logger']->info('Client #%s currency was not defined. Set default currency %s.', $client->id, $currencyCode);
+            }
         }
 
         $model = $this->di['db']->dispense('Invoice');
