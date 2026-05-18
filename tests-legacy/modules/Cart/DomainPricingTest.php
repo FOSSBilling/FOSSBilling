@@ -13,35 +13,6 @@ final class DomainPricingTest extends \BBTestCase
     {
         $service = new \Box\Mod\Cart\Service();
 
-        $productTable = $this->getMockBuilder(\Model_ProductTable::class)
-            ->onlyMethods(['getOrderLineConfig', 'getUnit'])
-            ->getMock();
-        $productTable->expects($this->once())
-            ->method('getOrderLineConfig')
-            ->willReturn([
-                'price' => 33.0,
-                'quantity' => 1,
-                'setup_price' => 0.0,
-            ]);
-        $productTable->expects($this->once())
-            ->method('getUnit')
-            ->willReturn('year');
-
-        $product = $this->getMockBuilder(\Model_Product::class)
-            ->onlyMethods(['getTable', 'getService'])
-            ->getMock();
-        $product->loadBean(new \DummyBean());
-        $product->id = 1;
-        $product->form_id = 2;
-        $product->type = 'domain';
-        $product->title = 'Domain example.com registration';
-        $product->expects($this->exactly(2))
-            ->method('getTable')
-            ->willReturn($productTable);
-        $product->expects($this->once())
-            ->method('getService')
-            ->willReturn(new \stdClass());
-
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
 
@@ -59,12 +30,56 @@ final class DomainPricingTest extends \BBTestCase
         ]);
 
         $db = $this->createMock('Box_Database');
-        $db->expects($this->atLeast(4))
+        $db->expects($this->once())
             ->method('load')
-            ->willReturnCallback(static fn (string $model): \Model_Cart|\PHPUnit\Framework\MockObject\MockObject => $model === 'Cart' ? $cart : $product);
+            ->with('Cart', $cartProduct->cart_id)
+            ->willReturn($cart);
+        $db->expects($this->once())
+            ->method('find')
+            ->with('CartProduct', 'cart_id = :cart_id ORDER BY id ASC', [':cart_id' => $cart->id])
+            ->willReturn([]);
+
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('getCartProductViewData')
+            ->with($cartProduct)
+            ->willReturn([
+                'product_id' => 1,
+                'form_id' => 2,
+                'type' => 'domain',
+                'quantity' => 1,
+                'unit' => 'year',
+                'price' => 33.0,
+                'setup_price' => 0.0,
+                'title' => 'Domain example.com registration',
+                'config' => [
+                    'action' => 'register',
+                    'register_sld' => 'example',
+                    'register_tld' => '.com',
+                    'register_years' => 2,
+                    'period' => '2Y',
+                ],
+            ]);
+        $productService->expects($this->once())
+            ->method('getRelatedProductDiscountByProductId')
+            ->with(1, [], [
+                'action' => 'register',
+                'register_sld' => 'example',
+                'register_tld' => '.com',
+                'register_years' => 2,
+                'period' => '2Y',
+            ])
+            ->willReturn(0.0);
 
         $di = $this->getDi();
         $di['db'] = $db;
+        $di['mod_service'] = $di->protect(function (string $serviceName) use ($productService) {
+            if ($serviceName === 'Product') {
+                return $productService;
+            }
+
+            throw new \RuntimeException('Unexpected service request');
+        });
         $service->setDi($di);
 
         $result = $service->cartProductToApiArray($cartProduct);
@@ -72,5 +87,7 @@ final class DomainPricingTest extends \BBTestCase
         $this->assertSame(1, $result['quantity']);
         $this->assertSame(33.0, $result['price']);
         $this->assertSame(33.0, $result['total']);
+        $this->assertSame('Domain example.com registration', $result['title']);
+        $this->assertSame('year', $result['unit']);
     }
 }

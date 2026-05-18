@@ -307,19 +307,8 @@ class Service implements InjectionAwareInterface
             // Ensure product IDs are safe integers before using in SQL
             $productIds = array_values(array_filter($productIds, static fn ($id): bool => $id > 0));
 
-            $productsById = [];
-            if (!empty($productIds)) {
-                // Use parameter placeholders instead of directly interpolating IDs into the SQL string
-                $placeholders = implode(',', array_fill(0, count($productIds), '?'));
-                $products = $this->di['db']->find('Product', 'id IN (' . $placeholders . ')', $productIds);
-
-                // Re-index products by their ID for efficient lookup
-                foreach ($products as $product) {
-                    if (isset($product->id)) {
-                        $productsById[(int) $product->id] = $product;
-                    }
-                }
-            }
+            $productService = $this->di['mod_service']('product');
+            $productsById = !empty($productIds) ? $productService->getProductSnapshotMap($productIds) : [];
 
             foreach ($orders as $order) {
                 $productId = isset($order->product_id) ? (int) $order->product_id : 0;
@@ -331,8 +320,8 @@ class Service implements InjectionAwareInterface
                 ];
 
                 if ($product) {
-                    $orderData['product_name'] = $product->title;
-                    $orderData['product_type'] = $product->type;
+                    $orderData['product_name'] = $product['title'];
+                    $orderData['product_type'] = $product['type'];
                 }
 
                 $result['orders'][] = $orderData;
@@ -483,6 +472,8 @@ class Service implements InjectionAwareInterface
         $this->di['db']->store($invoice);
 
         $this->countIncome($invoice);
+        $productService = $this->di['mod_service']('Product');
+        $productService->commitReservedPromoRedemptionsForInvoice($invoice);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoicePaymentReceived', 'params' => ['id' => $invoice->id]]);
 
@@ -940,6 +931,7 @@ class Service implements InjectionAwareInterface
     public function updateInvoice(\Model_Invoice $model, array $data): bool
     {
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
+        $previousStatus = $model->status;
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceUpdate', 'params' => $data]);
 
@@ -1020,6 +1012,11 @@ class Service implements InjectionAwareInterface
 
         $this->di['db']->store($model);
 
+        if ($previousStatus === \Model_Invoice::STATUS_UNPAID && $model->status === \Model_Invoice::STATUS_CANCELED) {
+            $productService = $this->di['mod_service']('Product');
+            $productService->releaseReservedPromoRedemptionsForInvoice($model, 'invoice_canceled');
+        }
+
         $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceUpdate', 'params' => $this->toApiArray($model)]);
 
         $this->di['logger']->info("Updated invoice {$model->id}.");
@@ -1029,6 +1026,9 @@ class Service implements InjectionAwareInterface
 
     public function rmInvoice(\Model_Invoice $model): bool
     {
+        $productService = $this->di['mod_service']('Product');
+        $productService->releaseReservedPromoRedemptionsForInvoice($model, 'invoice_deleted');
+
         // remove related invoice from orders
         $sql = '
             UPDATE client_order
@@ -1144,12 +1144,11 @@ class Service implements InjectionAwareInterface
             \Model_ClientOrder::STATUS_FAILED_RENEW,
             \Model_ClientOrder::STATUS_SUSPENDED,
         ], true)) {
-            $product = $this->di['db']->getExistingModelById('Product', $order->product_id, 'Product not found');
-            $product->setDi($this->di);
-            $repo = $product->getTable();
+            $productService = $this->di['mod_service']('Product');
+            $product = $productService->findProductById((int) $order->product_id);
             $config = json_decode($order->config ?? '', true) ?? [];
 
-            if (method_exists($repo, 'getRenewalLineConfig')) {
+            if ($productService instanceof \Box\Mod\Product\Service) {
                 $currencyService = $this->di['mod_service']('Currency');
                 $currencyRepository = $currencyService->getCurrencyRepository();
                 $rate = $currencyRepository->getRateByCode($order->currency);
@@ -1157,7 +1156,7 @@ class Service implements InjectionAwareInterface
                     throw new \FOSSBilling\Exception("Currency rate for '{$order->currency}' is not configured");
                 }
 
-                $renewalLine = $repo->getRenewalLineConfig($product, $config);
+                $renewalLine = $productService->getProductRenewalLineConfig($product, $config);
                 $price = $renewalLine['price'] * $rate;
                 $line = [
                     'price' => $price,
@@ -1639,13 +1638,9 @@ class Service implements InjectionAwareInterface
     {
         $invoices = $this->di['db']->find('Invoice', 'client_id = ?', [$client->id]);
         foreach ($invoices as $invoice) {
-            $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$invoice->id]);
-
-            foreach ($invoiceItems as $invoiceItem) {
-                $this->di['db']->trash($invoiceItem);
+            if ($invoice instanceof \Model_Invoice) {
+                $this->rmInvoice($invoice);
             }
-
-            $this->di['db']->trash($invoice);
         }
     }
 

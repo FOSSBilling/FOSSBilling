@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Product\Api;
 
+use Box\Mod\Product\Entity\Product;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
@@ -22,9 +23,7 @@ final class GuestTest extends \BBTestCase
             'id' => 1,
         ];
 
-        $model = new \Model_Product();
-        $model->loadBean(new \DummyBean());
-        $model->config = json_encode(['server_id' => 1, 'allow_domain_register' => true]);
+        $model = new Product();
 
         $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -48,9 +47,7 @@ final class GuestTest extends \BBTestCase
             'slug' => 'product/1',
         ];
 
-        $model = new \Model_Product();
-        $model->loadBean(new \DummyBean());
-        $model->config = json_encode(['server_id' => 1, 'allow_domain_register' => true]);
+        $model = new Product();
 
         $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -93,40 +90,32 @@ final class GuestTest extends \BBTestCase
     public function testCategoryGetList(): void
     {
         $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getProductCategorySearchQuery')
-            ->willReturn(['sqlString', []]);
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('toProductCategoryApiArray')
-            ->willReturn(['products' => [$this->getApiProductArray()]]);
-
-        $pager = [
-            'list' => [
-                0 => ['id' => 1],
-            ],
-        ];
-        $pagerMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
-        ->onlyMethods(['getPaginatedResultSet'])
-        ->disableOriginalConstructor()
-        ->getMock();
-        $pagerMock->expects($this->atLeastOnce())
-            ->method('getPaginatedResultSet')
-            ->willReturn($pager);
-
-        $modelProductCategory = new \Model_ProductCategory();
-        $modelProductCategory->loadBean(new \DummyBean());
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->willReturn($modelProductCategory);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-        $di['pager'] = $pagerMock;
+        $serviceMock->expects($this->once())
+            ->method('getPaginatedProductCategories')
+            ->with(['status' => 'enabled'])
+            ->willReturn([
+                'list' => [
+                    ['products' => [$this->getApiProductArray()]],
+                ],
+            ]);
 
         $this->api->setService($serviceMock);
-        $this->api->setDi($di);
+        $this->api->setDi($this->getDi());
         $result = $this->api->category_get_list([]);
+        $this->assertIsArray($result);
+    }
+
+    public function testGetList(): void
+    {
+        $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
+        $serviceMock->expects($this->once())
+            ->method('getPaginatedProducts')
+            ->with(['status' => 'enabled', 'show_hidden' => false])
+            ->willReturn(['list' => []]);
+
+        $this->api->setService($serviceMock);
+        $this->api->setDi($this->getDi());
+        $result = $this->api->get_list([]);
         $this->assertIsArray($result);
     }
 

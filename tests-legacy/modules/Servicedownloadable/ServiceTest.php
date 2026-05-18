@@ -16,15 +16,28 @@ final class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
+    private function createProductEntity(?int $id = null, ?string $config = null): \Box\Mod\Product\Entity\Product
+    {
+        $product = new \Box\Mod\Product\Entity\Product();
+        if ($id !== null) {
+            $reflection = new \ReflectionProperty($product, 'id');
+            $reflection->setAccessible(true);
+            $reflection->setValue($product, $id);
+        }
+        if ($config !== null) {
+            $product->setConfig($config);
+        }
+
+        return $product;
+    }
+
     public function testAttachOrderConfig(): void
     {
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $productModel->config = '{"filename" : "temp/asdcxTest.txt"}';
+        $productModel = $this->createProductEntity(config: '{"filename" : "temp/asdcxTest.txt"}');
 
         $data = [];
 
-        $expected = array_merge(json_decode($productModel->config ?? '', true), $data);
+        $expected = array_merge(json_decode($productModel->getConfig() ?? '', true) ?? [], $data);
 
         $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
 
@@ -91,18 +104,13 @@ final class ServiceTest extends \BBTestCase
             'update_orders' => true,
         ];
 
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $productModel->config = '{"filename": "test.txt"}';
-
-        $dbMock = $this->createMock(\Box_Database::class);
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store')
-            ->with($productModel)
-            ->willReturn(1);
+        $productModel = $this->createProductEntity(config: '{"filename": "test.txt"}');
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManagerInterface::class);
+        $emMock->expects($this->once())
+            ->method('flush');
 
         $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
 
         $this->service->setDi($di);
         $result = $this->service->saveProductConfig($productModel, $data);
@@ -111,11 +119,11 @@ final class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
 
         // Verify the config was updated correctly
-        $updatedConfig = json_decode($productModel->config, true);
+        $updatedConfig = json_decode($productModel->getConfig() ?? '', true);
         $this->assertIsArray($updatedConfig);
         $this->assertEquals('test.txt', $updatedConfig['filename']);
         $this->assertTrue($updatedConfig['update_orders']);
-        $this->assertNotNull($productModel->updated_at);
+        $this->assertNotNull($productModel->getUpdatedAt());
     }
 
     public function testSaveProductConfigWithExistingConfig(): void
@@ -124,18 +132,13 @@ final class ServiceTest extends \BBTestCase
             'update_orders' => false,
         ];
 
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $productModel->config = '{"filename": "existing.txt", "update_orders": true}';
-
-        $dbMock = $this->createMock(\Box_Database::class);
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store')
-            ->with($productModel)
-            ->willReturn(1);
+        $productModel = $this->createProductEntity(config: '{"filename": "existing.txt", "update_orders": true}');
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManagerInterface::class);
+        $emMock->expects($this->once())
+            ->method('flush');
 
         $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
 
         $this->service->setDi($di);
         $result = $this->service->saveProductConfig($productModel, $data);
@@ -144,11 +147,11 @@ final class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
 
         // Verify the config was updated correctly
-        $updatedConfig = json_decode($productModel->config, true);
+        $updatedConfig = json_decode($productModel->getConfig() ?? '', true);
         $this->assertIsArray($updatedConfig);
         $this->assertEquals('existing.txt', $updatedConfig['filename']);
         $this->assertFalse($updatedConfig['update_orders']);
-        $this->assertNotNull($productModel->updated_at);
+        $this->assertNotNull($productModel->getUpdatedAt());
     }
 
     public function testSaveProductConfigWithNoExistingConfig(): void
@@ -157,18 +160,13 @@ final class ServiceTest extends \BBTestCase
             'update_orders' => true,
         ];
 
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $productModel->config = null;
-
-        $dbMock = $this->createMock(\Box_Database::class);
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store')
-            ->with($productModel)
-            ->willReturn(1);
+        $productModel = $this->createProductEntity();
+        $emMock = $this->createMock(\Doctrine\ORM\EntityManagerInterface::class);
+        $emMock->expects($this->once())
+            ->method('flush');
 
         $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
+        $di['em'] = $emMock;
 
         $this->service->setDi($di);
         $result = $this->service->saveProductConfig($productModel, $data);
@@ -177,11 +175,11 @@ final class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
 
         // Verify the config was created correctly
-        $updatedConfig = json_decode($productModel->config ?? '', true);
+        $updatedConfig = json_decode($productModel->getConfig() ?? '', true);
         $this->assertIsArray($updatedConfig);
         $this->assertArrayHasKey('update_orders', $updatedConfig);
         $this->assertTrue($updatedConfig['update_orders']);
-        $this->assertNotNull($productModel->updated_at);
+        $this->assertNotNull($productModel->getUpdatedAt());
     }
 
     public function testValidateFileUploadAllowsKnownExtensionWithOctetStreamMime(): void

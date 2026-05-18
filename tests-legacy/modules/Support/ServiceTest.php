@@ -1513,17 +1513,8 @@ final class ServiceTest extends \BBTestCase
         $ticket = new \Model_SupportTicket();
         $ticket->loadBean(new \DummyBean());
 
-        $currentProduct = new \Model_Product();
-        $currentProduct->loadBean(new \DummyBean());
-        $currentProduct->title = 'Starter';
-        $currentProduct->upgrades = '[2]';
-
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()
-            ->onlyMethods(['getExistingModelById', 'dispense', 'store'])->getMock();
-        $dbMock->expects($this->once())
-            ->method('getExistingModelById')
-            ->with('Product', 1)
-            ->willReturn($currentProduct);
+            ->onlyMethods(['dispense', 'store'])->getMock();
         $dbMock->expects($this->once())
             ->method('dispense')
             ->with('SupportTicket')
@@ -1542,6 +1533,14 @@ final class ServiceTest extends \BBTestCase
         $orderServiceMock->expects($this->once())
             ->method('findForClientById')
             ->willReturn($order);
+
+        $productServiceMock = $this->getMockBuilder(\Box\Mod\Product\Service::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['assertUpgradeAllowedByIds'])
+            ->getMock();
+        $productServiceMock->expects($this->once())
+            ->method('assertUpgradeAllowedByIds')
+            ->with(1, 2);
 
         $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)
             ->disableOriginalConstructor()->onlyMethods(['getConfig'])->getMock();
@@ -1562,6 +1561,7 @@ final class ServiceTest extends \BBTestCase
         $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
         $di['mod_service'] = $di->protect(fn (string $serviceName): ?\PHPUnit\Framework\MockObject\MockObject => match ($serviceName) {
             'order' => $orderServiceMock,
+            'product' => $productServiceMock,
             default => null,
         });
         $serviceMock->setDi($di);

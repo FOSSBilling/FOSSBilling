@@ -16,7 +16,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Product\Api;
 
-use FOSSBilling\PaginationOptions;
+use Box\Mod\Product\Entity\Product;
 
 class Guest extends \Api_Abstract
 {
@@ -30,15 +30,7 @@ class Guest extends \Api_Abstract
         $data['status'] = 'enabled';
         $data['show_hidden'] = false;
 
-        [$sql, $params] = $this->getService()->getProductSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
-
-        foreach ($pager['list'] as $key => $item) {
-            $model = $this->di['db']->getExistingModelById('Product', $item['id'], 'Post not found');
-            $pager['list'][$key] = $this->getService()->toApiArray($model, false);
-        }
-
-        return $pager;
+        return $this->getService()->getPaginatedProducts($data);
     }
 
     /**
@@ -78,7 +70,7 @@ class Guest extends \Api_Abstract
             $model = $service->findOneActiveBySlug($slug);
         }
 
-        if (!$model instanceof \Model_Product) {
+        if (!$model instanceof Product) {
             throw new \FOSSBilling\Exception('Product not found');
         }
 
@@ -93,17 +85,8 @@ class Guest extends \Api_Abstract
     public function category_get_list($data)
     {
         $data['status'] = 'enabled';
-        $service = $this->getService();
 
-        [$sql, $params] = $service->getProductCategorySearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
-
-        foreach ($pager['list'] as $key => $item) {
-            $category = $this->di['db']->getExistingModelById('ProductCategory', $item['id'], 'Product category not found');
-            $pager['list'][$key] = $this->getService()->toProductCategoryApiArray($category);
-        }
-
-        return $pager;
+        return $this->getService()->getPaginatedProductCategories($data);
     }
 
     /**

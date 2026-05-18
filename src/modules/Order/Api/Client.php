@@ -93,10 +93,9 @@ class Client extends \Api_Abstract
     public function upgradables($data)
     {
         $model = $this->_getOrder($data);
-        $product = $this->di['db']->getExistingModelById('Product', $model->product_id);
         $productService = $this->di['mod_service']('product');
 
-        return $productService->getUpgradablePairs($product);
+        return $productService->getUpgradablePairsByProductId((int) $model->product_id);
     }
 
     /**

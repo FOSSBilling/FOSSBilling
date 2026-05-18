@@ -77,13 +77,27 @@ final class Api_AdminTest extends BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('createOrder')
             ->willReturn(1);
 
+        $productModel = new Box\Mod\Product\Entity\Product();
+        $productServiceMock = $this->createMock(Box\Mod\Product\Service::class);
+        $productServiceMock->expects($this->once())
+            ->method('findProductById')
+            ->with(1)
+            ->willReturn($productModel);
+
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
-        $dbMock->expects($this->exactly(2))
+        $dbMock->expects($this->once())
             ->method('getExistingModelById')
-            ->willReturn(new Model_Client(), new Model_Product());
+            ->willReturn(new Model_Client());
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function (string $serviceName) use ($productServiceMock) {
+            if ($serviceName === 'product') {
+                return $productServiceMock;
+            }
+
+            throw new RuntimeException('Unexpected service request');
+        });
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
 
@@ -134,7 +148,7 @@ final class Api_AdminTest extends BBTestCase
         $serviceMock->expects($this->once())->method('createOrder')
             ->with(
                 $this->isInstanceOf(Model_Client::class),
-                $this->isInstanceOf(Model_Product::class),
+                $this->isInstanceOf(Box\Mod\Product\Entity\Product::class),
                 $this->callback(fn (array $data): bool => $data['gateway_id'] === 5
                     && $data['invoice_option'] === 'issue-invoice'
                     && $data['mark_invoice_paid'] === true)
@@ -158,19 +172,24 @@ final class Api_AdminTest extends BBTestCase
 
         $clientModel = new Model_Client();
         $clientModel->loadBean(new DummyBean());
-        $productModel = new Model_Product();
-        $productModel->loadBean(new DummyBean());
+        $productModel = new Box\Mod\Product\Entity\Product();
+        $productServiceMock = $this->createMock(Box\Mod\Product\Service::class);
+        $productServiceMock->expects($this->once())
+            ->method('findProductById')
+            ->with(1)
+            ->willReturn($productModel);
 
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
-        $dbMock->expects($this->exactly(2))
+        $dbMock->expects($this->once())
             ->method('getExistingModelById')
-            ->willReturn($clientModel, $productModel);
+            ->willReturn($clientModel);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (string $serviceName): PHPUnit\Framework\MockObject\MockObject => match ($serviceName) {
             'Staff' => $staffServiceMock,
             'Invoice' => $invoiceServiceMock,
+            'product' => $productServiceMock,
             default => throw new RuntimeException('Unexpected service request'),
         });
 

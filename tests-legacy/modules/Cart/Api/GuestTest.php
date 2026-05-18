@@ -230,6 +230,7 @@ final class GuestTest extends \BBTestCase
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
         $cart->currency_id = 1;
+        $promo = new \Box\Mod\Product\Entity\Promo();
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['getSessionCart', 'applyPromo', 'findActivePromoByCode', 'promoCanBeApplied', 'isPromoAvailableForClientGroup'])->getMock();
@@ -238,7 +239,7 @@ final class GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('applyPromo')
             ->willReturn(true);
         $serviceMock->expects($this->atLeastOnce())->method('findActivePromoByCode')
-            ->willReturn(new \Model_Promo());
+            ->willReturn($promo);
         $serviceMock->expects($this->atLeastOnce())->method('promoCanBeApplied')
             ->willReturn(true);
         $serviceMock->expects($this->atLeastOnce())->method('isPromoAvailableForClientGroup')
@@ -303,6 +304,7 @@ final class GuestTest extends \BBTestCase
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
         $cart->currency_id = 1;
+        $promo = new \Box\Mod\Product\Entity\Promo();
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['getSessionCart', 'applyPromo', 'findActivePromoByCode', 'promoCanBeApplied', 'isPromoAvailableForClientGroup'])->getMock();
@@ -311,7 +313,7 @@ final class GuestTest extends \BBTestCase
         $serviceMock->expects($this->never())->method('applyPromo')
             ->willReturn(true);
         $serviceMock->expects($this->atLeastOnce())->method('findActivePromoByCode')
-            ->willReturn(new \Model_Promo());
+            ->willReturn($promo);
         $serviceMock->expects($this->atLeastOnce())->method('isPromoAvailableForClientGroup')
             ->willReturn(true);
         $serviceMock->expects($this->atLeastOnce())->method('promoCanBeApplied')
@@ -340,6 +342,7 @@ final class GuestTest extends \BBTestCase
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
         $cart->currency_id = 1;
+        $promo = new \Box\Mod\Product\Entity\Promo();
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['getSessionCart', 'applyPromo', 'findActivePromoByCode', 'isPromoAvailableForClientGroup'])->getMock();
@@ -348,7 +351,7 @@ final class GuestTest extends \BBTestCase
         $serviceMock->expects($this->never())->method('applyPromo')
             ->willReturn(true);
         $serviceMock->expects($this->atLeastOnce())->method('findActivePromoByCode')
-            ->willReturn(new \Model_Promo());
+            ->willReturn($promo);
         $serviceMock->expects($this->atLeastOnce())->method('isPromoAvailableForClientGroup')
             ->willReturn(false);
 
@@ -425,6 +428,8 @@ final class GuestTest extends \BBTestCase
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
         $cart->currency_id = 1;
+        $product = new \Box\Mod\Product\Entity\Product();
+        $product->setIsAddon(false);
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['getSessionCart', 'addItem'])->getMock();
@@ -432,17 +437,14 @@ final class GuestTest extends \BBTestCase
             ->willReturn($cart);
         $serviceMock->expects($this->atLeastOnce())->method('addItem')
             ->willReturn(true);
-
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->willReturn(new \Model_Product());
+        $productServiceMock = $this->createMock(\Box\Mod\Product\Service::class);
+        $productServiceMock->expects($this->once())
+            ->method('findOneActiveById')
+            ->with(1)
+            ->willReturn($product);
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productServiceMock);
 
         $this->guestApi->setDi($di);
 
@@ -463,6 +465,8 @@ final class GuestTest extends \BBTestCase
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
         $cart->currency_id = 1;
+        $product = new \Box\Mod\Product\Entity\Product();
+        $product->setIsAddon(false);
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['getSessionCart', 'addItem'])->getMock();
@@ -475,17 +479,14 @@ final class GuestTest extends \BBTestCase
             ->onlyMethods(['reset'])->getMock();
         $apiMock->expects($this->atLeastOnce())->method('reset')
             ->willReturn(true);
-
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->willReturn(new \Model_Product());
+        $productServiceMock = $this->createMock(\Box\Mod\Product\Service::class);
+        $productServiceMock->expects($this->once())
+            ->method('findOneActiveById')
+            ->with(1)
+            ->willReturn($product);
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productServiceMock);
         $apiMock->setDi($di);
 
         $apiMock->setService($serviceMock);

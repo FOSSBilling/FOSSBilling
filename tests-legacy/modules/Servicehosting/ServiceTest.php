@@ -17,6 +17,16 @@ final class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
+    private function createProductEntity(?string $config = null): \Box\Mod\Product\Entity\Product
+    {
+        $product = new \Box\Mod\Product\Entity\Product();
+        if ($config !== null) {
+            $product->setConfig($config);
+        }
+
+        return $product;
+    }
+
     public static function validateOrdertDataProvider(): array
     {
         return [
@@ -1249,8 +1259,7 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
-        $model = new \Model_Product();
-        $model->loadBean(new \DummyBean());
+        $model = $this->createProductEntity();
         $result = $this->service->getFreeTlds($model);
         $this->assertIsArray($result);
     }
@@ -1263,9 +1272,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
 
         $this->service->setDi($di);
-        $model = new \Model_Product();
-        $model->loadBean(new \DummyBean());
-        $model->config = json_encode($config);
+        $model = $this->createProductEntity(json_encode($config));
 
         $result = $this->service->getFreeTlds($model);
         $this->assertIsArray($result);

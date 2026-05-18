@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicecustom;
 
+use Box\Mod\Product\Entity\Product;
 use FOSSBilling\Environment;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -78,12 +79,15 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      */
     public function action_create(\Model_ClientOrder $order)
     {
-        $product = $this->di['db']->getExistingModelById('Product', $order->product_id, 'Product not found');
+        $product = $this->di['mod_service']('product')->findProductById((int) $order->product_id);
+        if (!$product instanceof Product) {
+            throw new \FOSSBilling\Exception('Product not found');
+        }
 
         $model = $this->di['db']->dispense('ServiceCustom');
         $model->client_id = $order->client_id;
-        $model->plugin = $product->plugin;
-        $model->plugin_config = $product->plugin_config;
+        $model->plugin = $product->getPlugin();
+        $model->plugin_config = $product->getPluginConfig();
         $model->config = $order->config;
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');

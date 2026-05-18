@@ -468,15 +468,10 @@ final class ServiceInvoiceItemTest extends \BBTestCase
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
 
-        $product = new \Model_Product();
-        $product->loadBean(new \DummyBean());
-        $product->type = \Model_ProductTable::DOMAIN;
-
-        $promo = new \Model_Promo();
-        $promo->loadBean(new \DummyBean());
-        $promo->code = 'PROMO';
-        $promo->type = \Model_Promo::ABSOLUTE;
-        $promo->value = 5.0;
+        $promo = new \Box\Mod\Product\Entity\Promo();
+        $promo->setCode('PROMO');
+        $promo->setType(\Box\Mod\Product\Entity\Promo::ABSOLUTE);
+        $promo->setValue(5.0);
 
         $invoiceItem = new \Model_InvoiceItem();
         $invoiceItem->loadBean(new \DummyBean());
@@ -486,19 +481,12 @@ final class ServiceInvoiceItemTest extends \BBTestCase
             ->method('dispense')
             ->with('InvoiceItem')
             ->willReturn($invoiceItem);
-        $dbMock->expects($this->exactly(2))
+        $dbMock->expects($this->once())
             ->method('store');
         $dbMock->expects($this->once())
             ->method('load')
             ->with('Client', $order->client_id)
             ->willReturn($client);
-        $dbMock->expects($this->exactly(2))
-            ->method('getExistingModelById')
-            ->willReturnOnConsecutiveCalls($product, $promo);
-        $dbMock->expects($this->once())
-            ->method('findOne')
-            ->with('Promo', 'id = ?', [$order->promo_id])
-            ->willReturn($promo);
 
         $orderService = $this->createMock(\Box\Mod\Order\Service::class);
         $orderService->expects($this->once())
@@ -513,20 +501,27 @@ final class ServiceInvoiceItemTest extends \BBTestCase
 
         $productService = $this->createMock(\Box\Mod\Product\Service::class);
         $productService->expects($this->once())
-            ->method('getRenewalProductDiscount')
-            ->with($product, $promo, ['period' => '1Y'])
-            ->willReturn(5.0);
-
-        $currencyRepository = $this->createMock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
-        $currencyRepository->expects($this->once())
-            ->method('getRateByCode')
-            ->with('EUR')
-            ->willReturn(2.0);
-
-        $currencyService = $this->createMock(\Box\Mod\Currency\Service::class);
-        $currencyService->expects($this->once())
-            ->method('getCurrencyRepository')
-            ->willReturn($currencyRepository);
+            ->method('getRenewalPromoAdjustment')
+            ->with($order, 20.0, 1.0)
+            ->willReturn([
+                'promo' => $promo,
+                'discount_amount' => 10.0,
+                'title' => 'Promotional Code: PROMO - EUR 5 Discount',
+                'currency' => 'EUR',
+            ]);
+        $productService->expects($this->once())
+            ->method('createPromoRedemption')
+            ->with(
+                $promo,
+                $client,
+                $order,
+                $proforma,
+                \Box\Mod\Product\Entity\PromoRedemption::PHASE_RENEWAL,
+                10.0,
+                'EUR',
+                $this->isType('string'),
+                \Box\Mod\Product\Entity\PromoRedemption::STATUS_RESERVED,
+            );
 
         $serviceMock->expects($this->once())
             ->method('addNew')
@@ -550,7 +545,6 @@ final class ServiceInvoiceItemTest extends \BBTestCase
             'Order' => $orderService,
             'client' => $clientService,
             'Product' => $productService,
-            'Currency' => $currencyService,
             default => throw new \RuntimeException('Unexpected service request: ' . $serviceName),
         });
 

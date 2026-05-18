@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Box\Tests\Mod\Cart;
 
+use Box\Mod\Product\Entity\Promo;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,6 +17,39 @@ final class ServiceTest extends \BBTestCase
     public function setUp(): void
     {
         $this->service = new \Box\Mod\Cart\Service();
+    }
+
+    private function createProductEntity(?int $id = null, ?string $type = null, ?string $config = null): \Box\Mod\Product\Entity\Product
+    {
+        $product = new \Box\Mod\Product\Entity\Product();
+        if ($id !== null) {
+            $reflection = new \ReflectionProperty($product, 'id');
+            $reflection->setAccessible(true);
+            $reflection->setValue($product, $id);
+        }
+        if ($type !== null) {
+            $product->setType($type);
+        }
+        if ($config !== null) {
+            $product->setConfig($config);
+        }
+
+        return $product;
+    }
+
+    private function createPromoEntity(int $id): Promo
+    {
+        return self::createPromoEntityStatic($id);
+    }
+
+    private static function createPromoEntityStatic(int $id): Promo
+    {
+        $promo = new Promo();
+        $reflection = new \ReflectionProperty($promo, 'id');
+        $reflection->setAccessible(true);
+        $reflection->setValue($promo, $id);
+
+        return $promo;
     }
 
     public function testDi(): void
@@ -164,37 +198,49 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsStockAvailable(): void
     {
-        $product = new \Model_Product();
-        $product->loadBean(new \DummyBean());
-        $product->stock_control = true;
-        $product->quantity_in_stock = 5;
+        $product = $this->createProductEntity();
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('isStockAvailable')
+            ->with($product, 6)
+            ->willReturn(false);
 
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(static fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
+        $this->service->setDi($di);
         $result = $this->service->isStockAvailable($product, 6);
         $this->assertFalse($result);
     }
 
     public function testIsStockAvailableNoStockControl(): void
     {
-        $product = new \Model_Product();
-        $product->loadBean(new \DummyBean());
-        $product->stock_control = false;
-        $product->quantity_in_stock = 5;
+        $product = $this->createProductEntity();
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('isStockAvailable')
+            ->with($product, 6)
+            ->willReturn(true);
 
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(static fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
+        $this->service->setDi($di);
         $result = $this->service->isStockAvailable($product, 6);
         $this->assertTrue($result);
     }
 
     public function testIsRecurrentPricing(): void
     {
-        $productTable = $this->createMock('\Model_ProductTable');
-        $productTable->expects($this->atLeastOnce())->method('getPricingArray')
-            ->willReturn(['type' => \Model_ProductPayment::RECURRENT]);
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('isRecurrentProductPricing')
+            ->with($this->isInstanceOf(\Box\Mod\Product\Entity\Product::class))
+            ->willReturn(true);
 
-        $productModelMock = $this->getMockBuilder('\Model_Product')
-            ->onlyMethods(['getTable'])->getMock();
-        $productModelMock->expects($this->atLeastOnce())
-            ->method('getTable')
-            ->willReturn($productTable);
+        $productModelMock = $this->createProductEntity();
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(static fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
+        $this->service->setDi($di);
 
         $result = $this->service->isRecurrentPricing($productModelMock);
 
@@ -204,23 +250,17 @@ final class ServiceTest extends \BBTestCase
     public function testIsPeriodEnabledForProduct(): void
     {
         $enabled = false;
-        $pricingArray = [
-            'type' => \Model_ProductPayment::RECURRENT,
-            'recurrent' => [
-                'monthly' => [
-                    'enabled' => $enabled,
-                ],
-            ],
-        ];
-        $productTable = $this->createMock('\Model_ProductTable');
-        $productTable->expects($this->atLeastOnce())->method('getPricingArray')
-            ->willReturn($pricingArray);
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('isProductPeriodEnabled')
+            ->with($this->isInstanceOf(\Box\Mod\Product\Entity\Product::class), 'monthly')
+            ->willReturn($enabled);
 
-        $productModelMock = $this->getMockBuilder('\Model_Product')
-            ->onlyMethods(['getTable'])->getMock();
-        $productModelMock->expects($this->atLeastOnce())
-            ->method('getTable')
-            ->willReturn($productTable);
+        $productModelMock = $this->createProductEntity();
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(static fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
+        $this->service->setDi($di);
 
         $result = $this->service->isPeriodEnabledForProduct($productModelMock, 'monthly');
 
@@ -230,24 +270,17 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsPeriodEnabledForProductNotRecurrent(): void
     {
-        $enabled = false;
-        $pricingArray = [
-            'type' => \Model_ProductPayment::FREE,
-            'recurrent' => [
-                'monthly' => [
-                    'enabled' => $enabled,
-                ],
-            ],
-        ];
-        $productTable = $this->createMock('\Model_ProductTable');
-        $productTable->expects($this->atLeastOnce())->method('getPricingArray')
-            ->willReturn($pricingArray);
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('isProductPeriodEnabled')
+            ->with($this->isInstanceOf(\Box\Mod\Product\Entity\Product::class), 'monthly')
+            ->willReturn(true);
 
-        $productModelMock = $this->getMockBuilder('\Model_Product')
-            ->onlyMethods(['getTable'])->getMock();
-        $productModelMock->expects($this->atLeastOnce())
-            ->method('getTable')
-            ->willReturn($productTable);
+        $productModelMock = $this->createProductEntity();
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(static fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
+        $this->service->setDi($di);
 
         $result = $this->service->isPeriodEnabledForProduct($productModelMock, 'monthly');
 
@@ -332,7 +365,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
-            ->willReturn([new \Model_Product(), new \Model_Product()]);
+            ->willReturn([new \Model_CartProduct(), new \Model_CartProduct()]);
         $dbMock->expects($this->atLeastOnce())
             ->method('trash')
             ->willReturn(null);
@@ -381,9 +414,7 @@ final class ServiceTest extends \BBTestCase
             ->method('find')
             ->willReturn([new \Model_CartProduct(), new \Model_CartProduct()]);
 
-        $promo = new \Model_Promo();
-        $promo->loadBean(new \DummyBean());
-        $promo->id = 2;
+        $promo = $this->createPromoEntity(2);
 
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
@@ -410,9 +441,7 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->never())->method('isEmptyCart')
             ->willReturn(false);
 
-        $promo = new \Model_Promo();
-        $promo->loadBean(new \DummyBean());
-        $promo->id = 5;
+        $promo = $this->createPromoEntity(5);
 
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
@@ -439,9 +468,7 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('isEmptyCart')
             ->willReturn(true);
 
-        $promo = new \Model_Promo();
-        $promo->loadBean(new \DummyBean());
-        $promo->id = 2;
+        $promo = $this->createPromoEntity(2);
 
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
@@ -481,22 +508,23 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsClientAbleToUsePromo(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
-            ->onlyMethods(['promoCanBeApplied', 'clientHadUsedPromo'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('promoCanBeApplied')
-            ->willReturn(true);
-        $serviceMock->expects($this->atLeastOnce())->method('clientHadUsedPromo')
-            ->willReturn(true);
-
-        $promo = new \Model_Promo();
-        $promo->loadBean(new \DummyBean());
-        $promo->once_per_client = true;
+        $promo = $this->createPromoEntity(1)
+            ->setOncePerClient(true);
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
 
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('canClientUsePromo')
+            ->with($client, $promo)
+            ->willReturn(false);
+
         $di = $this->getDi();
         $di['logger'] = $this->createMock('Box_Log');
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
+
+        $serviceMock = new \Box\Mod\Cart\Service();
         $serviceMock->setDi($di);
 
         $result = $serviceMock->isClientAbleToUsePromo($client, $promo);
@@ -505,49 +533,48 @@ final class ServiceTest extends \BBTestCase
 
     public function testClientHadUsedPromo(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
-            ->onlyMethods(['promoCanBeApplied'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('promoCanBeApplied')
-            ->willReturn(true);
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getCell')
-            ->willReturn(1);
-
-        $promo = new \Model_Promo();
-        $promo->loadBean(new \DummyBean());
-        $promo->once_per_client = true;
+        $promo = $this->createPromoEntity(1);
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
 
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('clientHasActivePromoApplication')
+            ->with($client, $promo)
+            ->willReturn(true);
+
         $di = $this->getDi();
         $di['logger'] = $this->createMock('Box_Log');
-        $di['db'] = $dbMock;
-        $serviceMock->setDi($di);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
+        $service = new \Box\Mod\Cart\Service();
+        $service->setDi($di);
 
-        $result = $serviceMock->isClientAbleToUsePromo($client, $promo);
-        $this->assertFalse($result);
+        $reflection = new \ReflectionObject($service);
+        $method = $reflection->getMethod('clientHadUsedPromo');
+        $result = $method->invoke($service, $client, $promo);
+
+        $this->assertTrue($result);
     }
 
     public function testIsClientAbleToUsePromoOncePerClient(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
-            ->onlyMethods(['promoCanBeApplied', 'clientHadUsedPromo'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('promoCanBeApplied')
-            ->willReturn(true);
-        $serviceMock->expects($this->never())->method('clientHadUsedPromo')
-            ->willReturn(true);
-
-        $promo = new \Model_Promo();
-        $promo->loadBean(new \DummyBean());
+        $promo = $this->createPromoEntity(1);
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
 
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('canClientUsePromo')
+            ->with($client, $promo)
+            ->willReturn(true);
+
         $di = $this->getDi();
         $di['logger'] = $this->createMock('Box_Log');
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
+
+        $serviceMock = new \Box\Mod\Cart\Service();
         $serviceMock->setDi($di);
 
         $result = $serviceMock->isClientAbleToUsePromo($client, $promo);
@@ -556,21 +583,22 @@ final class ServiceTest extends \BBTestCase
 
     public function testIsClientAbleToUsePromoCanNotBeApplied(): void
     {
-        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
-            ->onlyMethods(['promoCanBeApplied', 'clientHadUsedPromo'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('promoCanBeApplied')
-            ->willReturn(false);
-        $serviceMock->expects($this->never())->method('clientHadUsedPromo')
-            ->willReturn(true);
-
-        $promo = new \Model_Promo();
-        $promo->loadBean(new \DummyBean());
+        $promo = $this->createPromoEntity(1);
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
 
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('canClientUsePromo')
+            ->with($client, $promo)
+            ->willReturn(false);
+
         $di = $this->getDi();
         $di['logger'] = $this->createMock('Box_Log');
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
+
+        $serviceMock = new \Box\Mod\Cart\Service();
         $serviceMock->setDi($di);
 
         $result = $serviceMock->isClientAbleToUsePromo($client, $promo);
@@ -579,38 +607,33 @@ final class ServiceTest extends \BBTestCase
 
     public static function promoCanBeAppliedProvider(): array
     {
-        $promo1 = new \Model_Promo();
-        $promo1->loadBean(new \DummyBean());
-        $promo1->active = false;
+        $promo1 = self::createPromoEntityStatic(1)
+            ->setActive(false);
 
-        $promo2 = new \Model_Promo();
-        $promo2->loadBean(new \DummyBean());
-        $promo2->active = true;
-        $promo2->maxuses = 5;
-        $promo2->used = 5;
+        $promo2 = self::createPromoEntityStatic(2)
+            ->setActive(true)
+            ->setMaxUses(5)
+            ->setUsed(5);
 
-        $promo3 = new \Model_Promo();
-        $promo3->loadBean(new \DummyBean());
-        $promo3->active = true;
-        $promo3->maxuses = 10;
-        $promo3->used = 5;
-        $promo3->start_at = date('c', strtotime('tomorrow'));
+        $promo3 = self::createPromoEntityStatic(3)
+            ->setActive(true)
+            ->setMaxUses(10)
+            ->setUsed(5)
+            ->setStartAt(new \DateTime('tomorrow'));
 
-        $promo4 = new \Model_Promo();
-        $promo4->loadBean(new \DummyBean());
-        $promo4->active = true;
-        $promo4->maxuses = 10;
-        $promo4->used = 5;
-        $promo4->start_at = date('c', strtotime('yesterday'));
-        $promo4->end_at = date('c', strtotime('yesterday'));
+        $promo4 = self::createPromoEntityStatic(4)
+            ->setActive(true)
+            ->setMaxUses(10)
+            ->setUsed(5)
+            ->setStartAt(new \DateTime('yesterday'))
+            ->setEndAt(new \DateTime('yesterday'));
 
-        $promo5 = new \Model_Promo();
-        $promo5->loadBean(new \DummyBean());
-        $promo5->active = true;
-        $promo5->maxuses = 10;
-        $promo5->used = 5;
-        $promo5->start_at = date('c', strtotime('yesterday'));
-        $promo5->end_at = date('c', strtotime('tomorrow'));
+        $promo5 = self::createPromoEntityStatic(5)
+            ->setActive(true)
+            ->setMaxUses(10)
+            ->setUsed(5)
+            ->setStartAt(new \DateTime('yesterday'))
+            ->setEndAt(new \DateTime('tomorrow'));
 
         return [
             [$promo1, false],
@@ -622,16 +645,17 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('promoCanBeAppliedProvider')]
-    public function testPromoCanBeApplied(\Model_Promo $promo, bool $expectedResult): void
+    public function testPromoCanBeApplied(Promo $promo, bool $expectedResult): void
     {
-        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
-        $dbMock->expects($this->never())
-            ->method('store')
-            ->willReturn(1);
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('promoCanBeApplied')
+            ->with($promo)
+            ->willReturn($expectedResult);
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
         $this->service->setDi($di);
 
         $result = $this->service->promoCanBeApplied($promo);
@@ -684,22 +708,25 @@ final class ServiceTest extends \BBTestCase
         $invoice->loadBean(new \DummyBean());
         $invoice->hash = sha1('str');
 
-        $promo = new \Model_Promo();
-        $promo->loadBean(new \DummyBean());
+        $promo = new \Box\Mod\Product\Entity\Promo();
 
         $dbMock = $this->createMock('Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->willReturn($promo);
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
+
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('findPromoById')
+            ->with(1)
+            ->willReturn($promo);
 
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
         $di['request'] = new Request();
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
 
         $serviceMock->setDi($di);
         $result = $serviceMock->checkoutCart($cart, $client);
@@ -729,10 +756,12 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(false);
 
         $dbMock = $this->createMock('Box_Database');
-
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->willReturn(new \Model_Promo());
+        $promo = new \Box\Mod\Product\Entity\Promo();
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('findPromoById')
+            ->with(1)
+            ->willReturn($promo);
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
@@ -740,6 +769,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
         $serviceMock->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -754,17 +784,15 @@ final class ServiceTest extends \BBTestCase
 
     public function testUsePromo(): void
     {
-        $promo = new \Model_Promo();
-        $promo->loadBean(new \DummyBean());
-        $promo->id = 1;
+        $promo = $this->createPromoEntity(1);
 
-        $dbMock = $this->createMock('Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('exec')
-            ->willReturn(1);
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('usePromo')
+            ->with($promo);
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
         $this->service->setDi($di);
 
         $result = $this->service->usePromo($promo);
@@ -772,19 +800,271 @@ final class ServiceTest extends \BBTestCase
         $this->assertNull($result);
     }
 
-    public function testUsePromoLimitReached(): void
+    public function testCreateFromCartUsesDatabaseTransaction(): void
     {
-        $promo = new \Model_Promo();
-        $promo->loadBean(new \DummyBean());
-        $promo->id = 1;
+        $cart = new \Model_Cart();
+        $cart->loadBean(new \DummyBean());
+        $cart->currency_id = 2;
 
-        $dbMock = $this->createMock('Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('exec')
-            ->willReturn(0);
+        $client = new \Model_Client();
+        $client->loadBean(new \DummyBean());
+        $client->currency = 'USD';
+
+        $currency = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $currency->expects($this->once())
+            ->method('getCode')
+            ->willReturn('USD');
+
+        $currencyRepository = $this->createMock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+        $currencyRepository->expects($this->once())
+            ->method('find')
+            ->with(2)
+            ->willReturn($currency);
+        $currencyRepository->expects($this->never())
+            ->method('findDefault');
+
+        $currencyService = $this->createMock(\Box\Mod\Currency\Service::class);
+        $currencyService->expects($this->once())
+            ->method('getCurrencyRepository')
+            ->willReturn($currencyRepository);
+
+        $clientService = $this->createMock(\Box\Mod\Client\Service::class);
+        $clientService->expects($this->once())
+            ->method('isClientTaxable')
+            ->with($client)
+            ->willReturn(false);
+
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+        $order->id = 99;
+
+        $dbMock = $this->getMockBuilder('Box_Database')
+            ->onlyMethods(['transaction'])
+            ->getMock();
+        $dbMock->expects($this->once())
+            ->method('transaction')
+            ->with($this->isInstanceOf(\Closure::class))
+            ->willReturn([$order, null, [99]]);
+
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
+            ->onlyMethods(['getSessionCart', 'toApiArray'])
+            ->getMock();
+        $serviceMock->expects($this->once())
+            ->method('getSessionCart')
+            ->willReturn($cart);
+        $serviceMock->expects($this->once())
+            ->method('toApiArray')
+            ->with($cart)
+            ->willReturn([
+                'items' => [['id' => 1]],
+                'total' => 0,
+            ]);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($currencyService, $clientService) {
+            if ($serviceName === 'currency') {
+                return $currencyService;
+            }
+            if ($serviceName === 'client') {
+                return $clientService;
+            }
+        });
+
+        $serviceMock->setDi($di);
+        $result = $serviceMock->createFromCart($client);
+
+        $this->assertSame([$order, null, [99]], $result);
+    }
+
+    public function testCreateFromCartWithPromoEntityUsesProductPromoService(): void
+    {
+        $cart = new \Model_Cart();
+        $cart->loadBean(new \DummyBean());
+        $cart->id = 3;
+        $cart->currency_id = 2;
+        $cart->promo_id = 7;
+
+        $client = new \Model_Client();
+        $client->loadBean(new \DummyBean());
+        $client->id = 9;
+        $client->currency = 'USD';
+
+        $currency = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $currency->expects($this->once())
+            ->method('getCode')
+            ->willReturn('USD');
+        $currency->expects($this->atLeastOnce())
+            ->method('getConversionRate')
+            ->willReturn(1.0);
+
+        $currencyRepository = $this->createMock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+        $currencyRepository->expects($this->once())
+            ->method('find')
+            ->with(2)
+            ->willReturn($currency);
+
+        $currencyService = $this->createMock(\Box\Mod\Currency\Service::class);
+        $currencyService->expects($this->once())
+            ->method('getCurrencyRepository')
+            ->willReturn($currencyRepository);
+
+        $clientService = $this->createMock(\Box\Mod\Client\Service::class);
+        $clientService->expects($this->once())
+            ->method('isClientTaxable')
+            ->with($client)
+            ->willReturn(false);
+
+        $promo = new \Box\Mod\Product\Entity\Promo();
+        $promo->setCode('PROMO');
+        $promoIdReflection = new \ReflectionProperty($promo, 'id');
+        $promoIdReflection->setAccessible(true);
+        $promoIdReflection->setValue($promo, 7);
+
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('findPromoById')
+            ->with(7)
+            ->willReturn($promo);
+        $productService->expects($this->once())
+            ->method('reservePromoForOrder')
+            ->with($promo, $this->isInstanceOf(\Model_ClientOrder::class));
+        $productService->expects($this->once())
+            ->method('createCheckoutPromoRedemptions')
+            ->with(
+                $promo,
+                $client,
+                $this->callback(function (array $orders): bool {
+                    return count($orders) === 1 && $orders[0] instanceof \Model_ClientOrder;
+                }),
+                null,
+                \Box\Mod\Product\Entity\PromoRedemption::STATUS_COMMITTED
+            );
+
+        $product = new \Box\Mod\Product\Entity\Product();
+        $productIdReflection = new \ReflectionProperty($product, 'id');
+        $productIdReflection->setAccessible(true);
+        $productIdReflection->setValue($product, 5);
+        $product->setStatus('enabled');
+        $product->setType('service');
+        $product->setSetup('manual');
+
+        $cartProduct = new \Model_CartProduct();
+        $cartProduct->loadBean(new \DummyBean());
+        $cartProduct->id = 13;
+
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+        $order->id = 42;
+
+        $orderService = $this->getMockBuilder(\Box\Mod\Order\Service::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['saveStatusChange', 'toApiArray'])
+            ->getMock();
+        $orderService->expects($this->once())
+            ->method('saveStatusChange')
+            ->with($this->isInstanceOf(\Model_ClientOrder::class), 'Order Created');
+        $orderService->expects($this->once())
+            ->method('toApiArray')
+            ->with($this->isInstanceOf(\Model_ClientOrder::class), false, $client)
+            ->willReturn([
+                'product_id' => 5,
+                'total' => 0,
+                'discount' => 0,
+            ]);
+
+        $dbMock = $this->getMockBuilder('Box_Database')
+            ->onlyMethods(['transaction', 'dispense', 'store'])
+            ->getMock();
+        $dbMock->expects($this->once())
+            ->method('transaction')
+            ->with($this->isInstanceOf(\Closure::class))
+            ->willReturnCallback(fn (\Closure $callback) => $callback());
+        $dbMock->expects($this->once())
+            ->method('dispense')
+            ->with('ClientOrder')
+            ->willReturn($order);
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store');
+
+        $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
+            ->onlyMethods(['getSessionCart', 'toApiArray', 'getCartProducts', 'cartProductToApiArray', 'isStockAvailable'])
+            ->getMock();
+        $serviceMock->expects($this->once())
+            ->method('getSessionCart')
+            ->willReturn($cart);
+        $serviceMock->expects($this->once())
+            ->method('toApiArray')
+            ->with($cart)
+            ->willReturn([
+                'items' => [['id' => 1]],
+                'total' => 0,
+            ]);
+        $serviceMock->expects($this->once())
+            ->method('getCartProducts')
+            ->with($cart)
+            ->willReturn([$cartProduct]);
+        $serviceMock->expects($this->once())
+            ->method('cartProductToApiArray')
+            ->with($cartProduct)
+            ->willReturn([
+                'product_id' => 5,
+                'form_id' => null,
+                'title' => 'Example product',
+                'type' => 'service',
+                'unit' => 'service',
+                'period' => '1M',
+                'quantity' => 1,
+                'price' => 0,
+                'discount_price' => 0,
+                'setup_price' => 0,
+                'discount_setup' => 0,
+                'notes' => null,
+            ]);
+        $serviceMock->expects($this->once())
+            ->method('isStockAvailable')
+            ->with($product, 1)
+            ->willReturn(true);
+
+        $productService->expects($this->exactly(2))
+            ->method('findProductById')
+            ->with(5)
+            ->willReturn($product);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($currencyService, $clientService, $productService, $orderService) {
+            return match ($serviceName) {
+                'currency' => $currencyService,
+                'client' => $clientService,
+                'Product' => $productService,
+                'order', 'Order' => $orderService,
+                default => null,
+            };
+        });
+
+        $serviceMock->setDi($di);
+        $result = $serviceMock->createFromCart($client);
+
+        $this->assertSame([$order, null, [42]], $result);
+    }
+
+    public function testUsePromoLimitReached(): void
+    {
+        $promo = $this->createPromoEntity(1);
+
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('usePromo')
+            ->with($promo)
+            ->willThrowException(new \FOSSBilling\InformationException('This promo code has reached its maximum number of uses.'));
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
         $this->service->setDi($di);
 
         $this->expectException(\FOSSBilling\InformationException::class);
@@ -793,21 +1073,21 @@ final class ServiceTest extends \BBTestCase
 
     public function testFindActivePromoByCode(): void
     {
-        $promo = new \Model_Promo();
-        $promo->loadBean(new \DummyBean());
+        $promo = new \Box\Mod\Product\Entity\Promo();
 
-        $dbMock = $this->createMock('Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('findOne')
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('findActivePromoByCode')
+            ->with('CODE')
             ->willReturn($promo);
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
         $this->service->setDi($di);
 
         $result = $this->service->findActivePromoByCode('CODE');
 
-        $this->assertInstanceOf('Model_Promo', $result);
+        $this->assertInstanceOf(\Box\Mod\Product\Entity\Promo::class, $result);
     }
 
     public function testAddItemmRecurringPaymentPeriodParamMissing(): void
@@ -815,9 +1095,7 @@ final class ServiceTest extends \BBTestCase
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
 
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $productModel->type = 'Custom';
+        $productModel = $this->createProductEntity(type: 'Custom');
 
         $data = [];
 
@@ -833,16 +1111,22 @@ final class ServiceTest extends \BBTestCase
             ->method('isRecurrentPricing')
             ->willReturn(true);
 
+        $productService = new \Box\Mod\Product\Service();
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
+        $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productService) {
+            if ($name === 'Product') {
+                return $productService;
+            }
+
+            return $serviceHostingServiceMock;
+        });
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
             ->willThrowException(new \FOSSBilling\Exception('Period parameter not passed'));
         $di['validator'] = $validatorMock;
+        $productService->setDi($di);
         $serviceMock->setDi($di);
-        $productModel->setDi($di);
-
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Period parameter not passed');
         $serviceMock->addItem($cartModel, $productModel, $data);
@@ -853,9 +1137,7 @@ final class ServiceTest extends \BBTestCase
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
 
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $productModel->type = 'hosting';
+        $productModel = $this->createProductEntity(type: 'hosting');
 
         $data = ['period' => '1W'];
 
@@ -875,16 +1157,22 @@ final class ServiceTest extends \BBTestCase
             ->method('isPeriodEnabledForProduct')
             ->willReturn(false);
 
+        $productService = new \Box\Mod\Product\Service();
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
+        $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productService) {
+            if ($name === 'Product') {
+                return $productService;
+            }
+
+            return $serviceHostingServiceMock;
+        });
         $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
         $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
         ;
         $di['validator'] = $validatorMock;
+        $productService->setDi($di);
         $serviceMock->setDi($di);
-        $productModel->setDi($di);
-
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Selected billing period is invalid');
         $serviceMock->addItem($cartModel, $productModel, $data);
@@ -895,9 +1183,7 @@ final class ServiceTest extends \BBTestCase
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
 
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $productModel->type = 'hosting';
+        $productModel = $this->createProductEntity(type: 'hosting');
 
         $data = [];
 
@@ -922,14 +1208,20 @@ final class ServiceTest extends \BBTestCase
             ->method('find')
             ->willReturn([]);
 
+        $productService = new \Box\Mod\Product\Service();
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
+        $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productService) {
+            if ($name === 'Product') {
+                return $productService;
+            }
 
+            return $serviceHostingServiceMock;
+        });
+
+        $productService->setDi($di);
         $serviceMock->setDi($di);
-        $productModel->setDi($di);
-
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('This item is currently out of stock');
         $serviceMock->addItem($cartModel, $productModel, $data);
@@ -941,12 +1233,9 @@ final class ServiceTest extends \BBTestCase
         $cartModel->loadBean(new \DummyBean());
         $cartModel->id = 10;
 
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $productModel->id = 7;
-        $productModel->type = 'hosting';
-        $productModel->stock_control = true;
-        $productModel->quantity_in_stock = 1;
+        $productModel = $this->createProductEntity(id: 7, type: 'hosting');
+        $productModel->setStockControl(true);
+        $productModel->setQuantityInStock(1);
 
         $existingCartProduct = new \Model_CartProduct();
         $existingCartProduct->loadBean(new \DummyBean());
@@ -958,6 +1247,11 @@ final class ServiceTest extends \BBTestCase
             ->method('fire');
 
         $serviceHostingServiceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)->getMock();
+        $productServiceMock = $this->createMock(\Box\Mod\Product\Service::class);
+        $productServiceMock->expects($this->once())
+            ->method('isStockAvailable')
+            ->with($productModel, 2)
+            ->willReturn(false);
 
         $dbMock = $this->createMock('Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -977,11 +1271,15 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
+        $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productServiceMock) {
+            if ($name === 'Product') {
+                return $productServiceMock;
+            }
+
+            return $serviceHostingServiceMock;
+        });
 
         $serviceMock->setDi($di);
-        $productModel->setDi($di);
-
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('This item is currently out of stock');
         $serviceMock->addItem($cartModel, $productModel, ['quantity' => 1]);
@@ -993,9 +1291,7 @@ final class ServiceTest extends \BBTestCase
         $cartModel->loadBean(new \DummyBean());
         $cartModel->id = 1;
 
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $productModel->type = 'domain';
+        $productModel = $this->createProductEntity(type: 'domain');
 
         // An existing cart item already holds example.com via register keys.
         $existingCartProduct = new \Model_CartProduct();
@@ -1021,13 +1317,19 @@ final class ServiceTest extends \BBTestCase
 
         $serviceHostingServiceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)->getMock();
 
+        $productService = new \Box\Mod\Product\Service();
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
-        $serviceMock->setDi($di);
-        $productModel->setDi($di);
+        $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productService) {
+            if ($name === 'Product') {
+                return $productService;
+            }
 
+            return $serviceHostingServiceMock;
+        });
+        $productService->setDi($di);
+        $serviceMock->setDi($di);
         $this->expectException(\FOSSBilling\InformationException::class);
         $this->expectExceptionMessage('This domain is already in the cart.');
         $serviceMock->addItem($cartModel, $productModel, ['register_sld' => 'example', 'register_tld' => '.com']);
@@ -1039,9 +1341,7 @@ final class ServiceTest extends \BBTestCase
         $cartModel->loadBean(new \DummyBean());
         $cartModel->id = 2;
 
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $productModel->type = 'domain';
+        $productModel = $this->createProductEntity(type: 'domain');
 
         // An existing cart item holds example.net via transfer keys.
         $existingCartProduct = new \Model_CartProduct();
@@ -1067,13 +1367,19 @@ final class ServiceTest extends \BBTestCase
 
         $serviceHostingServiceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)->getMock();
 
+        $productService = new \Box\Mod\Product\Service();
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
-        $serviceMock->setDi($di);
-        $productModel->setDi($di);
+        $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productService) {
+            if ($name === 'Product') {
+                return $productService;
+            }
 
+            return $serviceHostingServiceMock;
+        });
+        $productService->setDi($di);
+        $serviceMock->setDi($di);
         $this->expectException(\FOSSBilling\InformationException::class);
         $this->expectExceptionMessage('This domain is already in the cart.');
         // Incoming uses transfer keys too, same domain.
@@ -1086,9 +1392,7 @@ final class ServiceTest extends \BBTestCase
         $cartModel->loadBean(new \DummyBean());
         $cartModel->id = 3;
 
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $productModel->type = 'hosting';
+        $productModel = $this->createProductEntity(type: 'hosting');
 
         // An existing hosting cart item stores the domain under the nested 'domain' key.
         $existingCartProduct = new \Model_CartProduct();
@@ -1116,13 +1420,19 @@ final class ServiceTest extends \BBTestCase
 
         $serviceHostingServiceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)->getMock();
 
+        $productService = new \Box\Mod\Product\Service();
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
-        $serviceMock->setDi($di);
-        $productModel->setDi($di);
+        $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productService) {
+            if ($name === 'Product') {
+                return $productService;
+            }
 
+            return $serviceHostingServiceMock;
+        });
+        $productService->setDi($di);
+        $serviceMock->setDi($di);
         $this->expectException(\FOSSBilling\InformationException::class);
         $this->expectExceptionMessage('This domain is already in the cart.');
         // New hosting order bundles the same domain under the 'domain' key.
@@ -1136,9 +1446,7 @@ final class ServiceTest extends \BBTestCase
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
 
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $productModel->type = 'hosting';
+        $productModel = $this->createProductEntity(type: 'hosting');
 
         $data = [];
 
@@ -1146,8 +1454,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $productDomainModel = new \Model_ProductDomain();
-        $productDomainModel->loadBean(new \DummyBean());
+        $productDomainModel = $this->createProductEntity(type: 'domain');
         $domainProduct = ['config' => [], 'product' => $productDomainModel];
 
         $serviceHostingServiceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
@@ -1175,16 +1482,21 @@ final class ServiceTest extends \BBTestCase
             ->method('find')
             ->willReturn([]);
 
+        $productService = new \Box\Mod\Product\Service();
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceHostingServiceMock);
+        $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productService) {
+            if ($name === 'Product') {
+                return $productService;
+            }
+
+            return $serviceHostingServiceMock;
+        });
         $di['logger'] = new \Box_Log();
 
+        $productService->setDi($di);
         $serviceMock->setDi($di);
-        $productModel->setDi($di);
-        $productDomainModel->setDi($di);
-
         $result = $serviceMock->addItem($cartModel, $productModel, $data);
         $this->assertTrue($result);
     }
@@ -1194,9 +1506,7 @@ final class ServiceTest extends \BBTestCase
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
 
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $productModel->type = 'license';
+        $productModel = $this->createProductEntity(type: 'license');
 
         $data = [];
 
@@ -1228,19 +1538,22 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
             ->willReturn([]);
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->willReturn($productModel);
 
+        $productService = new \Box\Mod\Product\Service();
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceLicenseServiceMock);
+        $di['mod_service'] = $di->protect(function ($name) use ($serviceLicenseServiceMock, $productService) {
+            if ($name === 'Product') {
+                return $productService;
+            }
+
+            return $serviceLicenseServiceMock;
+        });
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
 
+        $productService->setDi($di);
         $serviceMock->setDi($di);
-        $productModel->setDi($di);
-
         $result = $serviceMock->addItem($cartModel, $productModel, $data);
         $this->assertTrue($result);
     }
@@ -1250,9 +1563,7 @@ final class ServiceTest extends \BBTestCase
         $cartModel = new \Model_Cart();
         $cartModel->loadBean(new \DummyBean());
 
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $productModel->type = 'custom';
+        $productModel = $this->createProductEntity(type: 'custom');
 
         $data = [];
 
@@ -1278,9 +1589,6 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
             ->willReturn([]);
-        $dbMock->expects($this->atLeastOnce())
-            ->method('toArray')
-            ->willReturn([]);
         $cartProduct = new \Model_CartProduct();
         $cartProduct->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
@@ -1289,15 +1597,21 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store');
 
+        $productService = new \Box\Mod\Product\Service();
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceCustomServiceMock);
+        $di['mod_service'] = $di->protect(function ($name) use ($serviceCustomServiceMock, $productService) {
+            if ($name === 'Product') {
+                return $productService;
+            }
+
+            return $serviceCustomServiceMock;
+        });
         $di['logger'] = new \Box_Log();
         $di['db'] = $dbMock;
 
+        $productService->setDi($di);
         $serviceMock->setDi($di);
-        $productModel->setDi($di);
-
         $result = $serviceMock->addItem($cartModel, $productModel, $data);
         $this->assertTrue($result);
     }
@@ -1377,8 +1691,7 @@ final class ServiceTest extends \BBTestCase
         $modelCart->loadBean(new \DummyBean());
         $modelCart->promo_id = 1;
 
-        $promoModel = new \Model_Promo();
-        $promoModel->loadBean(new \DummyBean());
+        $promoModel = new \Box\Mod\Product\Entity\Promo();
 
         $discountPrice = 25;
 
@@ -1387,13 +1700,15 @@ final class ServiceTest extends \BBTestCase
             ->method('load')
             ->with('Cart')
             ->willReturn($modelCart);
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->with('Promo')
-            ->willReturn($promoModel);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('findPromoById')
+            ->with(1)
+            ->willReturn($promoModel);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['getRelatedItemsDiscount', 'getItemPromoDiscount', 'getItemConfig'])
@@ -1422,9 +1737,6 @@ final class ServiceTest extends \BBTestCase
 
         $modelCart = new \Model_Cart();
         $modelCart->loadBean(new \DummyBean());
-
-        $promoModel = new \Model_Promo();
-        $promoModel->loadBean(new \DummyBean());
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -1460,9 +1772,8 @@ final class ServiceTest extends \BBTestCase
         $modelCart->loadBean(new \DummyBean());
         $modelCart->promo_id = 1;
 
-        $promoModel = new \Model_Promo();
-        $promoModel->loadBean(new \DummyBean());
-        $promoModel->freesetup = 1;
+        $promoModel = new \Box\Mod\Product\Entity\Promo();
+        $promoModel->setFreeSetup(true);
 
         $discountPrice = 25;
 
@@ -1471,13 +1782,14 @@ final class ServiceTest extends \BBTestCase
             ->method('load')
             ->with('Cart')
             ->willReturn($modelCart);
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->with('Promo')
-            ->willReturn($promoModel);
-
         $di = $this->getDi();
         $di['db'] = $dbMock;
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('findPromoById')
+            ->with(1)
+            ->willReturn($promoModel);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['getRelatedItemsDiscount', 'getItemPromoDiscount', 'getItemConfig'])
@@ -1501,46 +1813,40 @@ final class ServiceTest extends \BBTestCase
 
     public static function isPromoAvailableForClientGroupProvider(): array
     {
-        $promo1 = new \Model_Promo();
-        $promo1->loadBean(new \DummyBean());
-        $promo1->client_groups = json_encode([]);
+        $promo1 = self::createPromoEntityStatic(1)
+            ->setClientGroups(json_encode([]));
 
         $client1 = new \Model_Client();
         $client1->loadBean(new \DummyBean());
 
-        $promo2 = new \Model_Promo();
-        $promo2->loadBean(new \DummyBean());
-        $promo2->client_groups = json_encode([1, 2]);
+        $promo2 = self::createPromoEntityStatic(2)
+            ->setClientGroups(json_encode([1, 2]));
 
         $client2 = new \Model_Client();
         $client2->loadBean(new \DummyBean());
         $client2->client_group_id = null;
 
-        $promo3 = new \Model_Promo();
-        $promo3->loadBean(new \DummyBean());
-        $promo3->client_groups = json_encode([1, 2]);
+        $promo3 = self::createPromoEntityStatic(3)
+            ->setClientGroups(json_encode([1, 2]));
 
         $client3 = new \Model_Client();
         $client3->loadBean(new \DummyBean());
         $client3->client_group_id = 3;
 
-        $promo4 = new \Model_Promo();
-        $promo4->loadBean(new \DummyBean());
-        $promo4->client_groups = json_encode([1, 2]);
+        $promo4 = self::createPromoEntityStatic(4)
+            ->setClientGroups(json_encode([1, 2]));
 
         $client4 = new \Model_Client();
         $client4->loadBean(new \DummyBean());
         $client4->client_group_id = 2;
 
-        $promo5 = new \Model_Promo();
-        $promo5->loadBean(new \DummyBean());
-        $promo5->client_groups = json_encode([]);
+        $promo5 = self::createPromoEntityStatic(5)
+            ->setClientGroups(json_encode([]));
 
         $client5 = null;
 
-        $promo6 = new \Model_Promo();
-        $promo6->loadBean(new \DummyBean());
-        $promo6->client_groups = json_encode([1, 2]);
+        $promo6 = self::createPromoEntityStatic(6)
+            ->setClientGroups(json_encode([1, 2]));
 
         $client6 = null;
 
@@ -1555,10 +1861,17 @@ final class ServiceTest extends \BBTestCase
     }
 
     #[DataProvider('isPromoAvailableForClientGroupProvider')]
-    public function testIsPromoAvailableForClientGroup(\Model_Promo $promo, ?\Model_Client $client, bool $expectedResult): void
+    public function testIsPromoAvailableForClientGroup(Promo $promo, ?\Model_Client $client, bool $expectedResult): void
     {
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('isPromoAvailableForClientGroup')
+            ->with($promo)
+            ->willReturn($expectedResult);
+
         $di = $this->getDi();
         $di['loggedin_client'] = $client;
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
         $this->service->setDi($di);
 
         $result = $this->service->isPromoAvailableForClientGroup($promo);

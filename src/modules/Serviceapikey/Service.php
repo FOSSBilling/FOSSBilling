@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Serviceapikey;
 
+use Box\Mod\Product\Entity\Product;
 use FOSSBilling\InjectionAwareInterface;
 use RedBeanPHP\OODBBean;
 
@@ -29,9 +30,9 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function attachOrderConfig(\Model_Product $product, array $data): array
+    public function attachOrderConfig(Product $product, array $data): array
     {
-        $config = json_decode($product->config ?? '', true) ?? [];
+        $config = json_decode($product->getConfig() ?? '', true) ?? [];
 
         return array_merge($config, $data);
     }

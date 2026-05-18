@@ -17,6 +17,16 @@ final class ServiceTest extends \BBTestCase
         $this->service = new \Box\Mod\Servicedomain\Service();
     }
 
+    private function createProductEntity(?string $title = null): \Box\Mod\Product\Entity\Product
+    {
+        $product = new \Box\Mod\Product\Entity\Product();
+        if ($title !== null) {
+            $product->setTitle($title);
+        }
+
+        return $product;
+    }
+
     public function testDi(): void
     {
         $di = $this->getDi();
@@ -54,9 +64,8 @@ final class ServiceTest extends \BBTestCase
     #[DataProvider('getCartProductTitleProvider')]
     public function testGetCartProductTitle(array $data, string $expected): void
     {
-        $product = new \Model_CartProduct();
-        $product->loadBean(new \DummyBean());
-        $product->title = 'Example.com Registration';
+        $product = new \Box\Mod\Product\Entity\Product();
+        $product->setTitle('Example.com Registration');
 
         $result = $this->service->getCartProductTitle($product, $data);
 

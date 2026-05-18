@@ -27,6 +27,102 @@
 <div class="card">
     <div class="card-body">
         <h3>{{ 'Manage Promotion'|trans }}</h3>
+        {% if not promo.can_be_deleted %}
+            <div class="alert alert-info" role="alert">
+                {{ 'This promotion has redemption history and can no longer be deleted. Disable it to archive it.'|trans }}
+            </div>
+        {% endif %}
+        {% set stats = promo.usage_stats %}
+        <div class="row row-cards mb-4">
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Recorded Applications'|trans }}</div>
+                        <div class="h2 m-0">{{ stats.recorded_applications }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Checkout Applications'|trans }}</div>
+                        <div class="h2 m-0">{{ stats.checkout_applications }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Renewal Applications'|trans }}</div>
+                        <div class="h2 m-0">{{ stats.renewal_applications }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Reserved Applications'|trans }}</div>
+                        <div class="h2 m-0">{{ stats.reserved_applications }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Committed Applications'|trans }}</div>
+                        <div class="h2 m-0">{{ stats.committed_applications }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Released Applications'|trans }}</div>
+                        <div class="h2 m-0">{{ stats.released_applications }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Distinct Clients'|trans }}</div>
+                        <div class="h2 m-0">{{ stats.distinct_clients }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Orders Using Promo'|trans }}</div>
+                        <div class="h2 m-0">{{ stats.orders_using_promo }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Operational Counter'|trans }}</div>
+                        <div class="h2 m-0">
+                            {{ stats.operational_use_count }}
+                            {% if stats.max_uses is not null %}/ {{ stats.max_uses }}{% else %}/ &#8734;{% endif %}
+                        </div>
+                        <div class="text-secondary small">
+                            {{ 'Used only for max-use enforcement, not historical reporting.'|trans }}
+                        </div>
+                        <div class="text-secondary small">
+                            {{ 'Active checkout applications'|trans }}: {{ stats.active_checkout_applications }}
+                        </div>
+                        <div class="text-secondary small">
+                            {% if stats.remaining_operational_uses is null %}
+                                {{ 'Remaining operational uses'|trans }}: {{ 'Unlimited'|trans }}
+                            {% else %}
+                                {{ 'Remaining operational uses'|trans }}: {{ stats.remaining_operational_uses }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <form method="post" action="{{ 'product/promo_update'|api_url }}" {{ fb_api_form({redirect: 'product/promos'|url}) }}>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Promo Code'|trans }}</label>
@@ -176,6 +272,89 @@
             <input type="hidden" name="id" value="{{ promo.id }}">
             <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
         </form>
+    </div>
+</div>
+
+{% set redemptions = admin.product_promo_redemption_get_list({ 'promo_id': promo.id, 'per_page': 20, 'page': request.page }) %}
+<div class="card mt-3">
+    <div class="card-header">
+        <h3 class="card-title">{{ 'Redemptions'|trans }}</h3>
+        <div class="card-actions">
+            <a class="btn btn-outline-secondary btn-sm" href="{{ 'order'|url(query: { 'promo_id': promo.id }) }}">{{ 'View Orders'|trans }}</a>
+            <span class="badge bg-secondary-lt">{{ redemptions.total }}</span>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table card-table table-vcenter table-striped text-nowrap">
+            <thead>
+                <tr>
+                    <th>{{ 'Date'|trans }}</th>
+                    <th>{{ 'Phase'|trans }}</th>
+                    <th>{{ 'Status'|trans }}</th>
+                    <th>{{ 'Client'|trans }}</th>
+                    <th>{{ 'Order'|trans }}</th>
+                    <th>{{ 'Invoice'|trans }}</th>
+                    <th class="text-end">{{ 'Discount'|trans }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for redemption in redemptions.list %}
+                    <tr>
+                        <td>{{ redemption.created_at|format_date }}</td>
+                        <td>{{ redemption.phase|title }}</td>
+                        <td>
+                            {% if redemption.status == 'committed' %}
+                                <span class="badge bg-success-lt">{{ redemption.status|title }}</span>
+                            {% elseif redemption.status == 'released' %}
+                                <span class="badge bg-secondary-lt">{{ redemption.status|title }}</span>
+                            {% else %}
+                                <span class="badge bg-warning-lt">{{ redemption.status|title }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if redemption.client %}
+                                <a href='{{ "client/manage/#{redemption.client.id}"|url }}'>
+                                    {{ redemption.client.first_name }} {{ redemption.client.last_name }}
+                                </a>
+                                <div class="text-secondary small">{{ redemption.client.email }}</div>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if redemption.order %}
+                                <a href='{{ "order/manage/#{redemption.order.id}"|url }}'>#{{ redemption.order.id }}</a>
+                                <div class="text-secondary small">{{ redemption.order.title }}</div>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if redemption.invoice %}
+                                <a href='{{ "invoice/#{redemption.invoice.id}"|url }}'>#{{ redemption.invoice.serie_nr ?: redemption.invoice.id }}</a>
+                                <div class="text-secondary small">{{ redemption.invoice.status|capitalize }}</div>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if redemption.discount_amount is not null %}
+                                {{ redemption.discount_amount|format_currency(redemption.currency) }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td class="text-muted" colspan="7">{{ 'No redemption history has been recorded for this promotion yet.'|trans }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer">
+        {{ include('partial_pagination.html.twig', { 'list': redemptions, 'url': "product/promo/#{promo.id}" }) }}
     </div>
 </div>
 {% endblock %}
