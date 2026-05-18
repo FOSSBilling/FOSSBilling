@@ -66,9 +66,15 @@ final class GuestTest extends TestCase
         ]);
 
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsString($result->getResult());
-        $this->assertGreaterThanOrEqual(self::MIN_TICKET_ID_LENGTH, strlen($result->getResult()));
-        $this->assertLessThanOrEqual(self::MAX_TICKET_ID_LENGTH, strlen($result->getResult()));
+        $ticketId = $result->getResult();
+        $this->assertIsString($ticketId);
+        $this->assertGreaterThanOrEqual(self::MIN_TICKET_ID_LENGTH, strlen($ticketId));
+        $this->assertLessThanOrEqual(self::MAX_TICKET_ID_LENGTH, strlen($ticketId));
+        $this->assertMatchesRegularExpression(
+            '/^[A-Za-z0-9_-]+$/',
+            $ticketId,
+            'Ticket ID should contain only alphanumeric characters, underscores, or hyphens.'
+        );
     }
 
     public function testTicketCreateForGuestDisabled(): void
