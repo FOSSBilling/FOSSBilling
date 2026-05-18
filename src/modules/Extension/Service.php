@@ -279,8 +279,6 @@ class Service implements InjectionAwareInterface
     public function getAdminNavigation($admin, $url = null)
     {
         $staff_service = $this->di['mod_service']('staff');
-        $current_mod = null;
-        $current_url = null;
         $nav = [];
         $subpages = [];
 
@@ -301,6 +299,7 @@ class Service implements InjectionAwareInterface
                     $l = $n['group']['location'];
                     unset($n['group']['location']);
                     $n['group']['active'] = false;
+                    $n['group']['uri'] = $this->normalizeNavigationUri($n['group']['uri'] ?? null);
                     $nav[$l] = $n['group'];
                 }
 
@@ -331,15 +330,52 @@ class Service implements InjectionAwareInterface
 
             $l = $page['location'];
             unset($page['location']);
+            $page['uri'] = $this->normalizeNavigationUri($page['uri'] ?? null);
             $nav[$l]['subpages'][] = $page;
         }
 
         // submenu sorting
         foreach ($nav as &$group) {
             $group['subpages'] = $this->di['tools']->sortByOneKey($group['subpages'], 'index');
+            $group['uri'] = $this->resolveNavigationGroupUri($group);
         }
 
         return $nav;
+    }
+
+    private function resolveNavigationGroupUri(array $group): ?string
+    {
+        $groupUri = $this->normalizeNavigationUri($group['uri'] ?? null);
+        if (!empty($groupUri)) {
+            return $groupUri;
+        }
+
+        foreach ($group['subpages'] ?? [] as $subpage) {
+            $subpageUri = $this->normalizeNavigationUri($subpage['uri'] ?? null);
+            if (!empty($subpageUri)) {
+                return $subpageUri;
+            }
+        }
+
+        return null;
+    }
+
+    private function normalizeNavigationUri(?string $uri): ?string
+    {
+        if (is_null($uri)) {
+            return null;
+        }
+
+        $uri = trim($uri);
+        if ($uri === '') {
+            return null;
+        }
+
+        if (preg_match('/^(?:[a-z][a-z0-9+.-]*:|\/|#|\?)/i', $uri) === 1) {
+            return $uri;
+        }
+
+        return $this->di['url']->adminLink(ltrim($uri, '/'));
     }
 
     /**
