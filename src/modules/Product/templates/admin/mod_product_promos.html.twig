@@ -96,13 +96,17 @@
                         </td>
                         <td>
                             {{ promo.used }} / {% if promo.maxuses %}{{ promo.maxuses }}{% else %}&#8734;{% endif %}
-                            <div class="text-secondary small">{{ 'Operational counter for max-use enforcement'|trans }}</div>
                             <div class="text-secondary small">{{ promo.redemption_count }} {{ 'recorded applications'|trans }}</div>
                         </td>
                         <td>
                             <a class="btn btn-icon" href='{{ "product/promo/#{promo.id}"|url }}'>
                                 <svg class="icon">
                                     <use xlink:href="#edit" />
+                                </svg>
+                            </a>
+                            <a class="btn btn-icon" href='{{ "product/promo/#{promo.id}"|url }}#promo-redemptions' title="{{ 'View Redemption History'|trans }}">
+                                <svg class="icon">
+                                    <use xlink:href="#eye" />
                                 </svg>
                             </a>
                             {% if promo.can_be_deleted %}

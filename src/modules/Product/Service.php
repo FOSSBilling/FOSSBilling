@@ -1361,7 +1361,11 @@ class Service implements InjectionAwareInterface
 
     public function toPromoApiArray(Promo $model, $deep = false, $identity = null)
     {
-        $result = $this->getPromoApiSourceArray($model);
+        return $this->enrichPromoApiArray($this->getPromoApiSourceArray($model), $deep, $identity);
+    }
+
+    public function enrichPromoApiArray(array $result, $deep = false, $identity = null): array
+    {
         $products = !empty($result['products']) ? $this->getProductTitlesByIds($this->decodePromoSelection($result['products'])) : null;
         $clientGroups = !empty($result['client_groups']) ? $this->di['tools']->getPairsForTableByIds('client_group', $this->decodePromoSelection($result['client_groups'])) : null;
         $usageStats = $deep ? $this->getPromoUsageStatsByValues((int) $result['id'], (int) ($result['used'] ?? 0), isset($result['maxuses']) ? (int) $result['maxuses'] : null) : null;

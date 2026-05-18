@@ -373,7 +373,7 @@ class Admin extends \Api_Abstract
         $pager = $this->di['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
-            $pager['list'][$key] = $this->getService()->toPromoApiArray($item);
+            $pager['list'][$key] = $this->getService()->enrichPromoApiArray($item);
         }
 
         return $pager;

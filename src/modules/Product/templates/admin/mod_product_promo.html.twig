@@ -275,14 +275,48 @@
     </div>
 </div>
 
-{% set redemptions = admin.product_promo_redemption_get_list({ 'promo_id': promo.id, 'per_page': 20, 'page': request.page }) %}
-<div class="card mt-3">
+{% set redemption_filters = {
+    'promo_id': promo.id,
+    'per_page': 20,
+    'page': request.page,
+    'phase': request.phase,
+    'status': request.status,
+} %}
+{% set redemptions = admin.product_promo_redemption_get_list(redemption_filters) %}
+<div class="card mt-3" id="promo-redemptions">
     <div class="card-header">
         <h3 class="card-title">{{ 'Redemptions'|trans }}</h3>
         <div class="card-actions">
             <a class="btn btn-outline-secondary btn-sm" href="{{ 'order'|url(query: { 'promo_id': promo.id }) }}">{{ 'View Orders'|trans }}</a>
             <span class="badge bg-secondary-lt">{{ redemptions.total }}</span>
         </div>
+    </div>
+    <div class="card-body border-bottom">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label" for="redemption-phase">{{ 'Phase'|trans }}</label>
+                <select class="form-select" id="redemption-phase" name="phase">
+                    <option value="">{{ 'All Phases'|trans }}</option>
+                    <option value="checkout"{% if request.phase == 'checkout' %} selected{% endif %}>{{ 'Checkout'|trans }}</option>
+                    <option value="renewal"{% if request.phase == 'renewal' %} selected{% endif %}>{{ 'Renewal'|trans }}</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="redemption-status">{{ 'Status'|trans }}</label>
+                <select class="form-select" id="redemption-status" name="status">
+                    <option value="">{{ 'All Statuses'|trans }}</option>
+                    <option value="reserved"{% if request.status == 'reserved' %} selected{% endif %}>{{ 'Reserved'|trans }}</option>
+                    <option value="committed"{% if request.status == 'committed' %} selected{% endif %}>{{ 'Committed'|trans }}</option>
+                    <option value="released"{% if request.status == 'released' %} selected{% endif %}>{{ 'Released'|trans }}</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary" type="submit">{{ 'Apply Filters'|trans }}</button>
+                    <a class="btn btn-secondary" href="{{ "product/promo/#{promo.id}"|url }}#promo-redemptions">{{ 'Clear'|trans }}</a>
+                </div>
+            </div>
+        </form>
     </div>
     <div class="table-responsive">
         <table class="table card-table table-vcenter table-striped text-nowrap">
@@ -309,6 +343,9 @@
                                 <span class="badge bg-secondary-lt">{{ redemption.status|title }}</span>
                             {% else %}
                                 <span class="badge bg-warning-lt">{{ redemption.status|title }}</span>
+                            {% endif %}
+                            {% if redemption.release_reason %}
+                                <div class="text-secondary small">{{ redemption.release_reason|replace({'_': ' '})|title }}</div>
                             {% endif %}
                         </td>
                         <td>

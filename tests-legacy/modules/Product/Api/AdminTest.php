@@ -473,10 +473,7 @@ final class AdminTest extends \BBTestCase
     {
         $qbMock = $this->createStub(\Doctrine\ORM\QueryBuilder::class);
 
-        $promo = new \Box\Mod\Product\Entity\Promo();
-        $reflection = new \ReflectionProperty($promo, 'id');
-        $reflection->setAccessible(true);
-        $reflection->setValue($promo, 1);
+        $promo = ['id' => 1];
 
         $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
 
@@ -484,7 +481,7 @@ final class AdminTest extends \BBTestCase
             ->method('getPromoSearchQueryBuilder')
             ->willReturn($qbMock);
         $serviceMock->expects($this->once())
-            ->method('toPromoApiArray')
+            ->method('enrichPromoApiArray')
             ->with($promo)
             ->willReturn(['id' => 1]);
 
