@@ -588,9 +588,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testCountIncome(): void
     {
-        $serviceMock = $this->getMockBuilder(Service::class)
-            ->onlyMethods(['getTotal'])
-            ->getMock();
+        $serviceMock = new Service();
 
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -864,12 +862,9 @@ final class ServiceTest extends \BBTestCase
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
 
-        $currencyModel = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $currencyModel = $this->createStub('\\' . \Box\Mod\Currency\Entity\Currency::class);
         $defaultCurrencyCode = 'USD';
-        $currencyModel->expects($this->any())
-            ->method('getCode')
+        $currencyModel->method('getCode')
             ->willReturn($defaultCurrencyCode);
 
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
@@ -1253,7 +1248,7 @@ final class ServiceTest extends \BBTestCase
         $eventManagerMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $itemInvoiceServiceMock = $this->createMock(ServiceInvoiceItem::class);
+        $itemInvoiceServiceMock = $this->createStub(ServiceInvoiceItem::class);
         $productServiceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $productServiceMock->expects($this->once())
             ->method('releaseReservedPromoRedemptionsForInvoice')
@@ -2463,7 +2458,7 @@ final class ServiceTest extends \BBTestCase
         $service->method('getPdfTemplate')
             ->willReturn('default-invoice.twig');
 
-        $twigFactory = $this->createMock(TwigFactory::class);
+        $twigFactory = $this->createStub(TwigFactory::class);
         $twigFactory->method('createBaseEnvironment')->willReturn($twig);
 
         $di = $this->getDi();

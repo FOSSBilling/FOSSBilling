@@ -129,10 +129,10 @@ final class ServiceInvoiceItemTest extends \BBTestCase
         $clientModel->loadBean(new \DummyBean());
 
         $di = $this->getDi();
-        $dbMock = $this->createMock('\Box_Database');
+        $dbMock = $this->createStub('\Box_Database');
         $di['db'] = $dbMock;
 
-        $clientServiceMock = $this->createMock(\Box\Mod\Client\Service::class);
+        $clientServiceMock = $this->createStub(\Box\Mod\Client\Service::class);
         $di['mod_service'] = $di->protect(function ($serviceName) use ($clientServiceMock) {
             if ($serviceName == 'Client') {
                 return $clientServiceMock;
@@ -180,10 +180,6 @@ final class ServiceInvoiceItemTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->willReturn($newId);
-
-        $periodMock = $this->getMockBuilder('\Box_Period')
-            ->disableOriginalConstructor()
-            ->getMock();
 
         $di = $this->getDi();
         $di['db'] = $dbMock;

@@ -86,7 +86,7 @@ final class ServiceTest extends \BBTestCase
     #[DataProvider('validateOrderDataExceptionsProvider')]
     public function testValidateOrderDataExceptions(array $data): void
     {
-        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
+        $validatorMock = $this->createStub(\FOSSBilling\Validate::class);
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
@@ -704,7 +704,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $serviceMock->setDi($di);
 
         $data = [
@@ -759,12 +759,11 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->willReturn(1);
-        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
+        $validatorMock = $this->createStub(\FOSSBilling\Validate::class);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $di['validator'] = $validatorMock;
         $serviceMock->setDi($di);
 
@@ -832,7 +831,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $serviceMock->setDi($di);
 
         $serviceDomainModel = new \Model_ServiceDomain();
@@ -861,7 +860,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $serviceMock->setDi($di);
 
         $serviceDomainModel = new \Model_ServiceDomain();
@@ -890,7 +889,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $serviceMock->setDi($di);
 
         $serviceDomainModel = new \Model_ServiceDomain();
@@ -919,7 +918,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $serviceMock->setDi($di);
 
         $serviceDomainModel = new \Model_ServiceDomain();
@@ -1251,7 +1250,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['db'] = $dbMock;
-        $di['logger'] = $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $di['logger'] = $this->createStub('Box_Log');
         $serviceMock->setDi($di);
 
         $result = $serviceMock->batchSyncExpirationDates();
@@ -1435,7 +1434,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $this->service->setDi($di);
 
         $model = new \Model_Tld();
@@ -1677,7 +1676,7 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('registrarGetConfiguration')
             ->willReturn([]);
         $di = $this->getDi();
-        $di['logger'] = $this->createMock(\Box_Log::class);
+        $di['logger'] = $this->createStub(\Box_Log::class);
         $serviceMock->setDi($di);
         $model = new \Model_TldRegistrar();
         $model->loadBean(new \DummyBean());
@@ -1716,7 +1715,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $this->service->setDi($di);
 
         $model = new \Model_TldRegistrar();
@@ -1805,7 +1804,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $this->service->setDi($di);
 
         $result = $this->service->tldCreate($data);
@@ -1838,7 +1837,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
 
         $this->service->setDi($di);
 
@@ -1866,7 +1865,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $this->service->setDi($di);
 
         $result = $this->service->registrarCreate('ResellerClub');
@@ -1890,7 +1889,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $this->service->setDi($di);
 
         $model = new \Model_TldRegistrar();
@@ -1914,7 +1913,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
 
         $this->service->setDi($di);
 
@@ -1944,7 +1943,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
 
         $this->service->setDi($di);
 
@@ -2017,7 +2016,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $serviceMock->setDi($di);
 
         $domainModel = new \Model_ServiceDomain();
@@ -2079,7 +2078,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $serviceMock->setDi($di);
 
         $domainModel = new \Model_ServiceDomain();
@@ -2140,7 +2139,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $serviceMock->setDi($di);
 
         $domainModel = new \Model_ServiceDomain();

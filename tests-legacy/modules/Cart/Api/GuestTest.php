@@ -57,12 +57,9 @@ final class GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('changeCartCurrency')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
+        $validatorMock = $this->createStub(\FOSSBilling\Validate::class);
 
-        $currencyMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $currencyMock = $this->createStub('\\' . \Box\Mod\Currency\Entity\Currency::class);
 
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
@@ -100,8 +97,7 @@ final class GuestTest extends \BBTestCase
         $serviceMock->expects($this->never())->method('changeCartCurrency')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
+        $validatorMock = $this->createStub(\FOSSBilling\Validate::class);
 
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
@@ -245,8 +241,7 @@ final class GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('isPromoAvailableForClientGroup')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
+        $validatorMock = $this->createStub(\FOSSBilling\Validate::class);
 
         $di = $this->getDi();
         $di['rate_limiter'] = $this->getAllowedRateLimiter();
@@ -281,8 +276,7 @@ final class GuestTest extends \BBTestCase
         $serviceMock->expects($this->never())->method('isPromoAvailableForClientGroup')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
+        $validatorMock = $this->createStub(\FOSSBilling\Validate::class);
 
         $di = $this->getDi();
         $di['rate_limiter'] = $this->getAllowedRateLimiter();
@@ -319,8 +313,7 @@ final class GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('promoCanBeApplied')
             ->willReturn(false);
 
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
+        $validatorMock = $this->createStub(\FOSSBilling\Validate::class);
 
         $di = $this->getDi();
         $di['rate_limiter'] = $this->getAllowedRateLimiter();
@@ -355,8 +348,7 @@ final class GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('isPromoAvailableForClientGroup')
             ->willReturn(false);
 
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
+        $validatorMock = $this->createStub(\FOSSBilling\Validate::class);
 
         $di = $this->getDi();
         $di['rate_limiter'] = $this->getAllowedRateLimiter();
@@ -406,8 +398,7 @@ final class GuestTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('removeProduct')
             ->willReturn(true);
 
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray');
+        $validatorMock = $this->createStub(\FOSSBilling\Validate::class);
 
         $di = $this->getDi();
         $this->guestApi->setDi($di);

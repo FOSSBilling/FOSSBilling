@@ -31,7 +31,7 @@ final class AdminTest extends \BBTestCase
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService');
 
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->createStub(\FOSSBilling\Validate::class);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;

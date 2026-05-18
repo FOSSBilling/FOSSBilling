@@ -43,6 +43,13 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    private function logInfo(string $message): void
+    {
+        if ($this->di !== null && isset($this->di['logger'])) {
+            $this->di['logger']->info($message);
+        }
+    }
+
     public function getCartProductTitle(Product $product, array $data)
     {
         try {
@@ -51,7 +58,7 @@ class Service implements InjectionAwareInterface
             return __trans(':hosting for :domain', [':hosting' => $product->getTitle(), ':domain' => $sld . $tld]);
         } catch (\Exception $e) {
             // should never occur, but in case
-            error_log($e->getMessage());
+            $this->logInfo($e->getMessage());
         }
 
         return $product->getTitle();
@@ -1029,7 +1036,7 @@ class Service implements InjectionAwareInterface
 
             return [$m->getLoginUrl(null), $m->getResellerLoginUrl(null)];
         } catch (\Exception $e) {
-            error_log("Error while retrieving control panel url: {$e->getMessage()}.");
+            $this->logInfo("Error while retrieving control panel url: {$e->getMessage()}.");
         }
 
         return [false, false];

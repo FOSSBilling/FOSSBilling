@@ -39,7 +39,7 @@ final class ServiceTest extends \BBTestCase
 
         $expected = array_merge(json_decode($productModel->getConfig() ?? '', true) ?? [], $data);
 
-        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
+        $validatorMock = $this->createStub(\FOSSBilling\Validate::class);
 
         $di = $this->getDi();
         $di['validator'] = $validatorMock;
@@ -66,7 +66,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->willReturn(1);
-        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
+        $validatorMock = $this->createStub(\FOSSBilling\Validate::class);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -186,7 +186,7 @@ final class ServiceTest extends \BBTestCase
     {
         $this->service->setDi($this->getDi());
 
-        $file = $this->createMock(\Symfony\Component\HttpFoundation\File\UploadedFile::class);
+        $file = $this->createStub(\Symfony\Component\HttpFoundation\File\UploadedFile::class);
         $file->method('getClientOriginalExtension')->willReturn('exe');
         $file->method('getClientOriginalName')->willReturn('installer.exe');
         $file->method('getMimeType')->willReturn('application/octet-stream');
@@ -200,7 +200,7 @@ final class ServiceTest extends \BBTestCase
     {
         $this->service->setDi($this->getDi());
 
-        $file = $this->createMock(\Symfony\Component\HttpFoundation\File\UploadedFile::class);
+        $file = $this->createStub(\Symfony\Component\HttpFoundation\File\UploadedFile::class);
         $file->method('getClientOriginalExtension')->willReturn('php');
         $file->method('getClientOriginalName')->willReturn('shell.php');
         $file->method('getMimeType')->willReturn('application/x-httpd-php');

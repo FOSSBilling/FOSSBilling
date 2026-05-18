@@ -790,9 +790,7 @@ final class Api_AdminTest extends BBTestCase
 
     public function testGetOrder(): void
     {
-        $validatorMock = $this->getMockBuilder(FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-        ;
+        $validatorMock = $this->createStub(FOSSBilling\Validate::class);
 
         $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
             ->onlyMethods(['toApiArray'])->getMock();

@@ -471,9 +471,7 @@ final class AdminTest extends \BBTestCase
 
     public function testPromoGetList(): void
     {
-        $qbMock = $this->getMockBuilder(\Doctrine\ORM\QueryBuilder::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $qbMock = $this->createStub(\Doctrine\ORM\QueryBuilder::class);
 
         $promo = new \Box\Mod\Product\Entity\Promo();
         $reflection = new \ReflectionProperty($promo, 'id');
@@ -567,9 +565,7 @@ final class AdminTest extends \BBTestCase
 
     public function testPromoRedemptionGetList(): void
     {
-        $qbMock = $this->getMockBuilder(\Doctrine\ORM\QueryBuilder::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $qbMock = $this->createStub(\Doctrine\ORM\QueryBuilder::class);
 
         $repoMock = $this->getMockBuilder(\Box\Mod\Product\Repository\PromoRedemptionRepository::class)
             ->disableOriginalConstructor()

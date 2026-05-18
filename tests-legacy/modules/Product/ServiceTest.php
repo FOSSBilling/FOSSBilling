@@ -760,7 +760,7 @@ final class ServiceTest extends \BBTestCase
     {
         $newProductId = 1;
 
-        $dbMock = $this->createMock('\Box_Database');
+        $dbMock = $this->createStub('\Box_Database');
 
         $toolMock = $this->createMock(\FOSSBilling\Tools::class);
         $toolMock->expects($this->atLeastOnce())
@@ -981,7 +981,7 @@ final class ServiceTest extends \BBTestCase
         };
 
         $di = $this->getDi();
-        $di['tools'] = $this->createMock(\FOSSBilling\Tools::class);
+        $di['tools'] = $this->createStub(\FOSSBilling\Tools::class);
         $di['em'] = $emMock;
 
         $this->service->setDi($di);
@@ -1034,7 +1034,7 @@ final class ServiceTest extends \BBTestCase
         };
 
         $di = $this->getDi();
-        $di['tools'] = $this->createMock(\FOSSBilling\Tools::class);
+        $di['tools'] = $this->createStub(\FOSSBilling\Tools::class);
         $di['em'] = $emMock;
 
         $this->service->setDi($di);
@@ -1416,7 +1416,7 @@ final class ServiceTest extends \BBTestCase
 
         $product = $this->createProductEntity(17)->setType(Service::DOMAIN);
 
-        $dbMock = $this->createMock('\Box_Database');
+        $dbMock = $this->createStub('\Box_Database');
 
         $promoEntity = $this->createPromoEntity(15)
             ->setCode('PROMO')
@@ -1769,7 +1769,7 @@ final class ServiceTest extends \BBTestCase
         };
 
         $di = $this->getDi();
-        $di['db'] = $this->createMock('\Box_Database');
+        $di['db'] = $this->createStub('\Box_Database');
         $di['logger'] = new \Box_Log();
         $di['em'] = $emMock;
 
@@ -1809,7 +1809,7 @@ final class ServiceTest extends \BBTestCase
         };
 
         $di = $this->getDi();
-        $di['db'] = $this->createMock('\Box_Database');
+        $di['db'] = $this->createStub('\Box_Database');
         $di['em'] = $emMock;
 
         $this->service->setDi($di);
@@ -1929,7 +1929,7 @@ final class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $repo = $this->createMock(ProductRepository::class);
-        $qb = $this->createMock(\Doctrine\ORM\QueryBuilder::class);
+        $qb = $this->createStub(\Doctrine\ORM\QueryBuilder::class);
         $repo->expects($this->once())
             ->method('getSearchQueryBuilder')
             ->with($data)
@@ -2087,7 +2087,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetProductCategorySearchQueryBuilder(): void
     {
-        $qb = $this->createMock(\Doctrine\ORM\QueryBuilder::class);
+        $qb = $this->createStub(\Doctrine\ORM\QueryBuilder::class);
         $categoryRepo = $this->createMock(ProductCategoryRepository::class);
         $categoryRepo->expects($this->once())
             ->method('getEnabledVisibleSearchQueryBuilder')

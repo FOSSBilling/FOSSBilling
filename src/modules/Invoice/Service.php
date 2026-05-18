@@ -42,6 +42,18 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    private static function logInfoToContainer(?\Pimple\Container $di, string $message): void
+    {
+        if ($di !== null && isset($di['logger'])) {
+            $di['logger']->info($message);
+        }
+    }
+
+    private function logInfo(string $message): void
+    {
+        self::logInfoToContainer($this->di, $message);
+    }
+
     public function __construct()
     {
         $this->filesystem = new Filesystem();
@@ -349,7 +361,7 @@ class Service implements InjectionAwareInterface
                 $emailService->sendTemplate($email);
             }
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            self::logInfoToContainer($di, $exc->getMessage());
         }
 
         return true;
@@ -373,7 +385,7 @@ class Service implements InjectionAwareInterface
                 $emailService->sendTemplate($email);
             }
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            self::logInfoToContainer($di, $exc->getMessage());
         }
 
         return true;
@@ -395,7 +407,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            self::logInfoToContainer($di, $exc->getMessage());
         }
     }
 
@@ -435,7 +447,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            self::logInfoToContainer($di, $exc->getMessage());
         }
     }
 
@@ -482,7 +494,7 @@ class Service implements InjectionAwareInterface
                 try {
                     $invoiceItemService->executeTask($item);
                 } catch (\Exception $e) {
-                    error_log($e->getMessage());
+                    $this->logInfo($e->getMessage());
                 }
             }
         }
@@ -646,7 +658,7 @@ class Service implements InjectionAwareInterface
                 $this->approveInvoice($model, ['id' => $invoiceId]);
                 $this->di['logger']->info("Approved invoice {$invoiceId} instantly.");
             } catch (\Exception $e) {
-                error_log($e->getMessage());
+                $this->logInfo($e->getMessage());
             }
         }
 
@@ -812,7 +824,7 @@ class Service implements InjectionAwareInterface
     public function getTotal(\Model_Invoice $invoice): float
     {
         $total = 0;
-        $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$invoice->id]);
+        $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$invoice->id]) ?? [];
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
         foreach ($invoiceItems as $item) {
             $total += $invoiceItemService->getTotal($item);
@@ -915,7 +927,7 @@ class Service implements InjectionAwareInterface
 
             case 'manual':
                 if (DEBUG) {
-                    error_log('Refunds are managed manually. No actions performed.');
+                    $this->logInfo('Refunds are managed manually. No actions performed.');
                 }
 
                 break;
@@ -1085,7 +1097,7 @@ class Service implements InjectionAwareInterface
                 $this->tryPayWithCredits($model);
             } catch (\Exception $e) {
                 if (DEBUG) {
-                    error_log($e->getMessage());
+                    $this->logInfo($e->getMessage());
                 }
             }
         }
@@ -1197,7 +1209,7 @@ class Service implements InjectionAwareInterface
                 $invoice = $this->generateForOrder($model);
                 $this->approveInvoice($invoice, ['id' => $invoice->id, 'use_credits' => true]);
             } catch (\Exception $e) {
-                error_log($e->getMessage());
+                $this->logInfo($e->getMessage());
             }
         }
 
@@ -1216,7 +1228,7 @@ class Service implements InjectionAwareInterface
                 $model = $this->di['db']->getExistingModelById('InvoiceItem', $item['id'] ?? 0);
                 $invoiceItemService->executeTask($model);
             } catch (\Exception $e) {
-                error_log($e->getMessage());
+                $this->logInfo($e->getMessage());
             }
         }
         $this->di['logger']->info('Executed action to activate paid invoices.');
@@ -1959,7 +1971,7 @@ class Service implements InjectionAwareInterface
 
             return $invoice;
         } catch (\Exception $e) {
-            error_log('Failed to generate renewal invoice for subscription payment: ' . $e->getMessage());
+            $this->logInfo('Failed to generate renewal invoice for subscription payment: ' . $e->getMessage());
 
             return null;
         }

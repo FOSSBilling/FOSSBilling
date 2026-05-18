@@ -1353,7 +1353,7 @@ final class ServiceTest extends \BBTestCase
 
         $modelProduct = $this->createProductEntity(1);
 
-        $currencyModel = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)->disableOriginalConstructor()->getMock();
+        $currencyModel = $this->createStub('\\' . \Box\Mod\Currency\Entity\Currency::class);
 
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
@@ -1407,7 +1407,7 @@ final class ServiceTest extends \BBTestCase
         $modelProduct = $this->createProductEntity(1);
         $modelProduct->setIsAddon(true);
 
-        $currencyModel = $this->getMockBuilder(\Box\Mod\Currency\Entity\Currency::class)->disableOriginalConstructor()->getMock();
+        $currencyModel = $this->createStub(\Box\Mod\Currency\Entity\Currency::class);
 
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
@@ -1460,7 +1460,7 @@ final class ServiceTest extends \BBTestCase
 
         $modelProduct = $this->createProductEntity(1);
 
-        $currencyModel = $this->getMockBuilder(\Box\Mod\Currency\Entity\Currency::class)->disableOriginalConstructor()->getMock();
+        $currencyModel = $this->createStub(\Box\Mod\Currency\Entity\Currency::class);
 
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
@@ -1519,7 +1519,7 @@ final class ServiceTest extends \BBTestCase
 
         $modelProduct = $this->createProductEntity(1, 'custom');
 
-        $currencyModel = $this->getMockBuilder(\Box\Mod\Currency\Entity\Currency::class)->disableOriginalConstructor()->getMock();
+        $currencyModel = $this->createStub(\Box\Mod\Currency\Entity\Currency::class);
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
@@ -1542,7 +1542,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $productServiceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
+        $productServiceMock = $this->createStub(\Box\Mod\Servicecustom\Service::class);
         $pricingServiceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $pricingServiceMock->expects($this->never())
             ->method('getProductOrderLineConfig');
@@ -1607,7 +1607,7 @@ final class ServiceTest extends \BBTestCase
         $modelProduct = $this->createProductEntity(1, 'custom');
         $modelProduct->setFormId(42);
 
-        $currencyModel = $this->getMockBuilder(\Box\Mod\Currency\Entity\Currency::class)->disableOriginalConstructor()->getMock();
+        $currencyModel = $this->createStub(\Box\Mod\Currency\Entity\Currency::class);
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
@@ -1630,7 +1630,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $productServiceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
+        $productServiceMock = $this->createStub(\Box\Mod\Servicecustom\Service::class);
         $pricingServiceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $pricingServiceMock->expects($this->never())
             ->method('getProductOrderLineConfig');
@@ -1695,7 +1695,7 @@ final class ServiceTest extends \BBTestCase
 
         $modelProduct = $this->createProductEntity(1, 'custom');
 
-        $currencyModel = $this->getMockBuilder(\Box\Mod\Currency\Entity\Currency::class)->disableOriginalConstructor()->getMock();
+        $currencyModel = $this->createStub(\Box\Mod\Currency\Entity\Currency::class);
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
@@ -1720,7 +1720,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $productServiceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
+        $productServiceMock = $this->createStub(\Box\Mod\Servicecustom\Service::class);
         $pricingServiceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $pricingServiceMock->expects($this->never())
             ->method('getProductOrderLineConfig');
@@ -1825,11 +1825,8 @@ final class ServiceTest extends \BBTestCase
         $modelProduct = $this->createProductEntity(10, \Box\Mod\Product\Service::DOMAIN);
         $modelProduct->setUnit('year');
 
-        $currencyModel = $this->getMockBuilder(\Box\Mod\Currency\Entity\Currency::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $currencyModel->expects($this->atLeastOnce())
-            ->method('getCode')
+        $currencyModel = $this->createStub(\Box\Mod\Currency\Entity\Currency::class);
+        $currencyModel->method('getCode')
             ->willReturn('USD');
 
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
@@ -1861,9 +1858,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $domainServiceMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Service::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $domainServiceMock = $this->createStub(\Box\Mod\Servicedomain\Service::class);
 
         $pricingServiceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $pricingServiceMock->expects($this->once())

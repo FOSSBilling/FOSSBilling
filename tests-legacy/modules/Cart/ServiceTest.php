@@ -57,7 +57,7 @@ final class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Cart\Service();
 
         $di = $this->getDi();
-        $db = $this->createMock('Box_Database');
+        $db = $this->createStub('Box_Database');
 
         $di['db'] = $db;
         $service->setDi($di);
@@ -128,12 +128,9 @@ final class ServiceTest extends \BBTestCase
     {
         $service = new \Box\Mod\Cart\Service();
 
-        $currencyModel = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $currencyModel = $this->createStub('\\' . \Box\Mod\Currency\Entity\Currency::class);
         $currencyId = random_int(0, 1000);
-        $currencyModel->expects($this->any())
-            ->method('getId')
+        $currencyModel->method('getId')
             ->willReturn($currencyId);
 
         $session_id = 'rrcpqo7tkjh14d2vmf0car64k7';
@@ -306,7 +303,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $this->service->setDi($di);
 
         $cart = new \Model_Cart();
@@ -327,7 +324,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $this->service->setDi($di);
 
         $cart = new \Model_Cart();
@@ -347,13 +344,11 @@ final class ServiceTest extends \BBTestCase
         $cart = new \Model_Cart();
         $cart->loadBean(new \DummyBean());
 
-        $currency = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $currency = $this->createStub('\\' . \Box\Mod\Currency\Entity\Currency::class);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $this->service->setDi($di);
 
         $result = $this->service->changeCartCurrency($cart, $currency);
@@ -378,7 +373,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $this->service->setDi($di);
 
         $result = $this->service->resetCart($cart);
@@ -397,7 +392,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $this->service->setDi($di);
 
         $result = $this->service->removePromo($cart);
@@ -422,7 +417,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $this->service->setDi($di);
 
         $result = $this->service->applyPromo($cart, $promo);
@@ -449,7 +444,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $serviceMock->setDi($di);
 
         $result = $serviceMock->applyPromo($cart, $promo);
@@ -476,7 +471,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $serviceMock->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -499,7 +494,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $this->service->setDi($di);
 
         $result = $this->service->rm($cart);
@@ -521,7 +516,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(false);
 
         $di = $this->getDi();
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
 
         $serviceMock = new \Box\Mod\Cart\Service();
@@ -545,7 +540,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(true);
 
         $di = $this->getDi();
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
         $service = new \Box\Mod\Cart\Service();
         $service->setDi($di);
@@ -571,7 +566,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(true);
 
         $di = $this->getDi();
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
 
         $serviceMock = new \Box\Mod\Cart\Service();
@@ -595,7 +590,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn(false);
 
         $di = $this->getDi();
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
 
         $serviceMock = new \Box\Mod\Cart\Service();
@@ -654,7 +649,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn($expectedResult);
 
         $di = $this->getDi();
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
         $this->service->setDi($di);
 
@@ -710,7 +705,7 @@ final class ServiceTest extends \BBTestCase
 
         $promo = new \Box\Mod\Product\Entity\Promo();
 
-        $dbMock = $this->createMock('Box_Database');
+        $dbMock = $this->createStub('Box_Database');
 
         $client = new \Model_Client();
         $client->loadBean(new \DummyBean());
@@ -724,7 +719,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $di['request'] = new Request();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
 
@@ -752,7 +747,7 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())->method('isClientAbleToUsePromo')
             ->willReturn(false);
 
-        $dbMock = $this->createMock('Box_Database');
+        $dbMock = $this->createStub('Box_Database');
         $promo = new \Box\Mod\Product\Entity\Promo();
         $productService = $this->createMock(\Box\Mod\Product\Service::class);
         $productService->expects($this->once())
@@ -765,7 +760,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createStub('Box_Log');
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productService);
         $serviceMock->setDi($di);
 
@@ -1099,7 +1094,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock = $this->createMock('\Box_EventManager');
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
-        $serviceHostingServiceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceHostingServiceMock = $this->createStub(\Box\Mod\Servicehosting\Service::class);
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['isRecurrentPricing'])
@@ -1118,8 +1113,8 @@ final class ServiceTest extends \BBTestCase
 
             return $serviceHostingServiceMock;
         });
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
+        $validatorMock = $this->createStub(\FOSSBilling\Validate::class);
+        $validatorMock->method('checkRequiredParamsForArray')
             ->willThrowException(new \FOSSBilling\Exception('Period parameter not passed'));
         $di['validator'] = $validatorMock;
         $productService->setDi($di);
@@ -1142,7 +1137,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $serviceHostingServiceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceHostingServiceMock = $this->createStub(\Box\Mod\Servicehosting\Service::class);
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['isRecurrentPricing', 'isPeriodEnabledForProduct'])
@@ -1164,9 +1159,7 @@ final class ServiceTest extends \BBTestCase
 
             return $serviceHostingServiceMock;
         });
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-        ;
+        $validatorMock = $this->createStub(\FOSSBilling\Validate::class);
         $di['validator'] = $validatorMock;
         $productService->setDi($di);
         $serviceMock->setDi($di);
@@ -1188,7 +1181,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $serviceHostingServiceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceHostingServiceMock = $this->createStub(\Box\Mod\Servicehosting\Service::class);
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)
             ->onlyMethods(['isRecurrentPricing', 'isStockAvailable'])
@@ -1243,7 +1236,7 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $serviceHostingServiceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceHostingServiceMock = $this->createStub(\Box\Mod\Servicehosting\Service::class);
         $productServiceMock = $this->createMock(\Box\Mod\Product\Service::class);
         $productServiceMock->expects($this->once())
             ->method('isStockAvailable')
@@ -1312,7 +1305,7 @@ final class ServiceTest extends \BBTestCase
             ->method('isRecurrentPricing')
             ->willReturn(false);
 
-        $serviceHostingServiceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceHostingServiceMock = $this->createStub(\Box\Mod\Servicehosting\Service::class);
 
         $productService = new \Box\Mod\Product\Service();
         $di = $this->getDi();
@@ -1362,7 +1355,7 @@ final class ServiceTest extends \BBTestCase
             ->method('isRecurrentPricing')
             ->willReturn(false);
 
-        $serviceHostingServiceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceHostingServiceMock = $this->createStub(\Box\Mod\Servicehosting\Service::class);
 
         $productService = new \Box\Mod\Product\Service();
         $di = $this->getDi();
@@ -1415,7 +1408,7 @@ final class ServiceTest extends \BBTestCase
             ->method('isRecurrentPricing')
             ->willReturn(false);
 
-        $serviceHostingServiceMock = $this->getMockBuilder(\Box\Mod\Servicehosting\Service::class)->getMock();
+        $serviceHostingServiceMock = $this->createStub(\Box\Mod\Servicehosting\Service::class);
 
         $productService = new \Box\Mod\Product\Service();
         $di = $this->getDi();
@@ -1639,13 +1632,9 @@ final class ServiceTest extends \BBTestCase
         $currencyService = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
             ->getMock();
 
-        $dbMock = $this->getMockBuilder('\Box_Database')
-            ->getMock();
-        $currencyModel = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $currencyModel->expects($this->atLeastOnce())
-            ->method('toApiArray')
+        $dbMock = $this->createStub('\Box_Database');
+        $currencyModel = $this->createStub('\\' . \Box\Mod\Currency\Entity\Currency::class);
+        $currencyModel->method('toApiArray')
             ->willReturn([]);
 
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)

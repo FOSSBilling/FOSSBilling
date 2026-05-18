@@ -174,9 +174,7 @@ final class Api_AdminTest extends \BBTestCase
             'list' => ['id' => 1],
         ];
 
-        $qbMock = $this->getMockBuilder(\Doctrine\ORM\QueryBuilder::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $qbMock = $this->createStub(\Doctrine\ORM\QueryBuilder::class);
 
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
@@ -229,9 +227,7 @@ final class Api_AdminTest extends \BBTestCase
     {
         $adminApi = new \Box\Mod\Currency\Api\Admin();
 
-        $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $model = $this->createMock('\\' . \Box\Mod\Currency\Entity\Currency::class);
         $model->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn([
@@ -340,9 +336,7 @@ final class Api_AdminTest extends \BBTestCase
 
         // Create mock if needed
         if ($findOneByCodeReturn === 'currency_exists') {
-            $findOneByCodeReturn = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
-                ->disableOriginalConstructor()
-                ->getMock();
+            $findOneByCodeReturn = $this->createStub('\\' . \Box\Mod\Currency\Entity\Currency::class);
         }
 
         $repositoryMock->expects($this->$findOneByCodeCalled())
@@ -554,9 +548,7 @@ final class Api_AdminTest extends \BBTestCase
     {
         $adminApi = new \Box\Mod\Currency\Api\Admin();
 
-        $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $model = $this->createStub('\\' . \Box\Mod\Currency\Entity\Currency::class);
 
         $data = [
             'code' => 'EUR',

@@ -61,7 +61,7 @@ final class GuestTest extends \BBTestCase
             ->with(1)
             ->willReturn($model);
 
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->createStub(\FOSSBilling\Validate::class);
 
         $di['validator'] = $validatorMock;
         $di['mod_service'] = $di->protect(function (string $service) use ($productService) {
