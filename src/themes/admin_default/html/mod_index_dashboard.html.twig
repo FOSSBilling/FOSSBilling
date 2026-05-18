@@ -259,7 +259,7 @@
                     <thead>
                         <tr>
                             <th>{{ 'Invoice #'|trans }}</th>
-                            <th>{{ 'Client Name'|trans }}</th>
+                            <th>{{ 'Client'|trans }}</th>
                             <th class="text-center">{{ 'Amount'|trans }}</th>
                             <th class="text-center">{{ 'Created At'|trans }}</th>
                             <th>{{ 'Status'|trans }}</th>
@@ -274,7 +274,7 @@
                             <td>
                                 <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>
                                     {{ mf.avatar(invoice.buyer.email, 24, 'db-avatar avatar avatar-xs') }}
-                                </a>
+                                </a>&nbsp;
                                 <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>{{ invoice.buyer.first_name }} {{ invoice.buyer.last_name }}</a>
                             </td>
                             <td class="text-center">{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
@@ -325,7 +325,7 @@
                     <table class="table card-table table-vcenter table-striped text-nowrap">
                         <thead>
                             <tr>
-                                <th>{{ 'Client Name'|trans }}</th>
+                                <th>{{ 'Client'|trans }}</th>
                                 <th>{{ 'Order Title'|trans }}</th>
                             </tr>
                         </thead>
@@ -333,6 +333,9 @@
                         {% for order in orders.list %}
                             <tr title="{{ order.created_at|timeago }} {{ 'ago'|trans }}">
                                 <td>
+                                    <a href='{{ "client/manage/#{order.client.id}"|url }}'>
+                                        {{ mf.avatar(order.client.email, 24, 'db-avatar avatar avatar-xs') }}
+                                    </a>&nbsp;
                                     <a href='{{ "client/manage/#{order.client_id}"|url }}'>{{ order.client.first_name }} {{ order.client.last_name }}</a>
                                 </td>
                                 <td>
@@ -465,21 +468,25 @@
             <div class="tab-content" id="tabs">
                 <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
                     <table class="table table-vcenter card-table table-striped">
+                        <thead>
+                            <tr>
+                                <th>{{ 'Client'|trans }}</th>
+                                <th>{{ 'Message'|trans }}</th>
+                                <th class="text-center">{{ 'Date/Time'|trans }}</th>
+                            </tr>
+                        </thead>
                         <tbody>
                             {% set events = admin.activity_log_get_list({ 'per_page': 10, 'user_filter': 'only_clients' }) %}
                             {% for i, event in events.list %}
                             <tr>
-                                <td class="w-1">
+                                <td>
                                     <a href='{{ "client/manage/#{event.client.id}"|url }}'>
                                         {{ mf.avatar(event.client.email, 24, 'db-avatar avatar avatar-xs') }}
-                                    </a>
-                                </td>
-                                <td>
+                                    </a>&nbsp;
                                     <a href='{{ "client/manage/#{event.client.id}"|url }}'>{{ event.client.name|truncate(40) }}</a>
                                 </td>
                                 <td>{{ event.message|truncate(50) }}</td>
-                                <td>{{ event.created_at|format_datetime }}</td>
-                                <td>{{ event.created_at|timeago }} {{ 'ago'|trans }}</td>
+                                <td class="text-center">{{ event.created_at|format_datetime }} ({{ event.created_at|timeago }} {{ 'ago'|trans }})</td>
                             </tr>
                             {% else %}
                             <tr>
@@ -493,20 +500,24 @@
                 <div class="tab-pane fade" id="tab-staff" role="tabpanel">
                     <table class="table table-vcenter card-table table-striped">
                         <tbody>
+                            <thead>
+                                <tr>
+                                    <th>{{ 'Staff Member'|trans }}</th>
+                                    <th>{{ 'Message'|trans }}</th>
+                                    <th class="text-center">{{ 'Date/Time'|trans }}</th>
+                                </tr>
+                            </thead>
                             {% set events = admin.activity_log_get_list({ 'per_page': 10, 'user_filter': 'only_staff' }) %}
                             {% for i, event in events.list %}
                             <tr>
-                                <td class="w-1">
+                                <td>
                                     <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>
                                         {{ mf.avatar(event.staff.email, 24, 'db-avatar avatar avatar-xs') }}
-                                    </a>
-                                </td>
-                                <td>
+                                    </a>&nbsp;
                                     <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>{{ event.staff.name }}</a>
                                 </td>
                                 <td>{{ event.message|truncate(50) }}</td>
-                                <td>{{ event.created_at|format_datetime }}</td>
-                                <td>{{ event.created_at|timeago }} {{ 'ago'|trans }}</td>
+                                <td class="text-center">{{ event.created_at|format_datetime }} ({{ event.created_at|timeago }} {{ 'ago'|trans }})</td>
                             </tr>
                             {% else %}
                             <tr>
