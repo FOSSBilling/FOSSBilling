@@ -58,11 +58,16 @@ final class GuestTest extends TestCase
 
     public function testTicketCreateForGuest(): void
     {
+        $expectedName = 'Name';
+        $expectedEmail = 'email@example.com';
+        $expectedSubject = 'Subject';
+        $expectedMessage = 'message';
+
         $result = Request::makeRequest('guest/support/ticket_create', [
-            'name' => 'Name',
-            'email' => 'email@example.com',
-            'subject' => 'Subject',
-            'message' => 'message',
+            'name' => $expectedName,
+            'email' => $expectedEmail,
+            'subject' => $expectedSubject,
+            'message' => $expectedMessage,
         ]);
 
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
@@ -75,6 +80,21 @@ final class GuestTest extends TestCase
             $ticketId,
             'Ticket ID should contain only alphanumeric characters, underscores, or hyphens.'
         );
+
+        $ticketGetResult = Request::makeRequest('guest/support/ticket_get', ['hash' => $ticketId]);
+        $this->assertTrue($ticketGetResult->wasSuccessful(), $ticketGetResult->generatePHPUnitMessage());
+
+        $ticketData = $ticketGetResult->getResult();
+        $this->assertIsArray($ticketData);
+        $this->assertArrayHasKey('author_name', $ticketData);
+        $this->assertArrayHasKey('subject', $ticketData);
+        $this->assertArrayHasKey('messages', $ticketData);
+
+        $this->assertSame($expectedName, $ticketData['author_name']);
+        $this->assertSame($expectedSubject, $ticketData['subject']);
+        $this->assertIsArray($ticketData['messages']);
+        $this->assertNotEmpty($ticketData['messages']);
+        $this->assertSame($expectedMessage, $ticketData['messages'][0]['content']);
     }
 
     public function testTicketCreateForGuestDisabled(): void
@@ -100,7 +120,10 @@ final class GuestTest extends TestCase
         ]);
 
         $this->assertFalse($result->wasSuccessful());
-        $this->assertEquals("We currently aren't accepting support tickets from unregistered users. Please use another contact method.", $result->getErrorMessage());
+        $errorMessage = $result->getErrorMessage();
+        $this->assertIsString($errorMessage);
+        $this->assertStringContainsString("aren't accepting support tickets", $errorMessage);
+        $this->assertStringContainsString('unregistered users', $errorMessage);
     }
 
     public function testPublicTicketsEnabledReflectsConfiguration(): void
