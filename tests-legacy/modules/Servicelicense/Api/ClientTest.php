@@ -45,6 +45,10 @@ final class ClientTest extends \BBTestCase
     {
         $data['order_id'] = 1;
 
+        $orderModel = new \Model_ClientOrder();
+        $orderModel->loadBean(new \DummyBean());
+        $orderModel->status = \Model_ClientOrder::STATUS_ACTIVE;
+
         $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService')
@@ -54,7 +58,7 @@ final class ClientTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->with('ClientOrder')
-            ->willReturn(new \Model_ClientOrder());
+            ->willReturn($orderModel);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -74,20 +78,18 @@ final class ClientTest extends \BBTestCase
     {
         $data['order_id'] = 1;
 
-        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
-        $orderServiceMock->expects($this->atLeastOnce())
-            ->method('getOrderService')
-            ->willReturn(null);
+        $orderModel = new \Model_ClientOrder();
+        $orderModel->loadBean(new \DummyBean());
+        $orderModel->status = \Model_ClientOrder::STATUS_SUSPENDED;
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->with('ClientOrder')
-            ->willReturn(new \Model_ClientOrder());
+            ->willReturn($orderModel);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
         $this->api->setDi($di);
 
@@ -95,7 +97,7 @@ final class ClientTest extends \BBTestCase
         $clientModel->loadBean(new \DummyBean());
         $this->api->setIdentity($clientModel);
 
-        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectException(\FOSSBilling\InformationException::class);
         $this->expectExceptionMessage('Order is not activated');
         $this->api->_getService($data);
     }

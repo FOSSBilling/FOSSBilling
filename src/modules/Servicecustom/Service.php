@@ -248,6 +248,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             if (!$order instanceof \Model_ClientOrder) {
                 throw new \FOSSBilling\Exception('Order not found');
             }
+
+            if ($order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+                throw new \FOSSBilling\InformationException('Order is not activated');
+            }
         } else {
             $order = $this->di['db']->getExistingModelById('ClientOrder', $orderId, 'Order not found');
         }
