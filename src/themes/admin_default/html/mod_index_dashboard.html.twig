@@ -499,14 +499,14 @@
 
                 <div class="tab-pane fade" id="tab-staff" role="tabpanel">
                     <table class="table table-vcenter card-table table-striped">
+                        <thead>
+                            <tr>
+                                <th>{{ 'Staff Member'|trans }}</th>
+                                <th>{{ 'Message'|trans }}</th>
+                                <th class="text-center">{{ 'Date/Time'|trans }}</th>
+                            </tr>
+                        </thead>
                         <tbody>
-                            <thead>
-                                <tr>
-                                    <th>{{ 'Staff Member'|trans }}</th>
-                                    <th>{{ 'Message'|trans }}</th>
-                                    <th class="text-center">{{ 'Date/Time'|trans }}</th>
-                                </tr>
-                            </thead>
                             {% set events = admin.activity_log_get_list({ 'per_page': 10, 'user_filter': 'only_staff' }) %}
                             {% for i, event in events.list %}
                             <tr>
