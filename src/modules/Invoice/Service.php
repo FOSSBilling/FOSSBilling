@@ -528,7 +528,9 @@ class Service implements InjectionAwareInterface
                 'txn_id' => $transactionId,
             ]);
 
-            return $transactionService->processTransaction($newtx);
+            $transactionService->processTransaction($newtx);
+
+            return true;
         }
 
         return $this->markAsPaid($invoice, false, $execute);
