@@ -13,10 +13,12 @@ final class GuestTest extends TestCase
     private const MAX_TICKET_ID_LENGTH = 60;
 
     /**
-     * Snapshot of the initial "disable_public_tickets" value captured in setUp().
-     * Null means the value could not be determined and therefore cannot be safely restored.
+     * Snapshot of the initial Support extension config captured in setUp().
+     * Null means the config could not be determined and therefore cannot be safely restored.
+     *
+     * @var array<string, mixed>|null
      */
-    private ?bool $initialDisablePublicTickets = null;
+    private ?array $initialSupportConfig = null;
 
     protected function setUp(): void
     {
@@ -29,27 +31,26 @@ final class GuestTest extends TestCase
 
         $configData = $configGetResult->getResult();
         $this->assertIsArray($configData);
-        $this->assertArrayHasKey('disable_public_tickets', $configData);
-        $this->initialDisablePublicTickets = (bool) $configData['disable_public_tickets'];
+        $this->initialSupportConfig = $configData;
     }
 
     protected function tearDown(): void
     {
-        if ($this->initialDisablePublicTickets !== null) {
-            // Always restore the original public tickets configuration captured in setUp().
+        if ($this->initialSupportConfig !== null) {
+            // Always restore the original Support configuration captured in setUp().
             $configResetResult = Request::makeRequest(
                 'admin/extension/config_save',
-                ['ext' => 'mod_support', 'disable_public_tickets' => $this->initialDisablePublicTickets]
+                array_merge(['ext' => 'mod_support'], $this->initialSupportConfig)
             );
             if (!$configResetResult->wasSuccessful()) {
                 // Fail explicitly if configuration restoration fails to avoid test pollution.
                 $this->fail(
                     method_exists($configResetResult, 'generatePHPUnitMessage')
                         ? $configResetResult->generatePHPUnitMessage()
-                        : 'Failed to restore disable_public_tickets configuration in tearDown().'
+                        : 'Failed to restore Support configuration in tearDown().'
                 );
             }
-            $this->initialDisablePublicTickets = null;
+            $this->initialSupportConfig = null;
         }
 
         parent::tearDown();
