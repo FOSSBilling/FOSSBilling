@@ -1349,8 +1349,23 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         $table = $schemaManager->introspectTable('promo_redemption');
-        if (!$table->hasIndex('status_idx')) {
-            $this->executeSql('ALTER TABLE promo_redemption ADD INDEX `status_idx` (`status`)');
+        $expectedIndexes = [
+            'promo_id_idx' => 'promo_id',
+            'client_id_idx' => 'client_id',
+            'client_order_id_idx' => 'client_order_id',
+            'invoice_id_idx' => 'invoice_id',
+            'phase_idx' => 'phase',
+            'status_idx' => 'status',
+        ];
+
+        foreach ($expectedIndexes as $indexName => $columnName) {
+            if (!$table->hasIndex($indexName)) {
+                $this->executeSql(sprintf(
+                    'ALTER TABLE promo_redemption ADD INDEX `%s` (`%s`)',
+                    $indexName,
+                    $columnName
+                ));
+            }
         }
 
         $existingRedemptions = (int) $this->di['dbal']->executeQuery('SELECT COUNT(id) FROM promo_redemption')->fetchOne();
