@@ -973,12 +973,12 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    private function getPeriods(Promo|array $model): array
+    private function getPeriods(Promo $model): array
     {
         return $this->decodePromoSelection($this->getPromoSourceArray($model)['periods'] ?? null);
     }
 
-    private function getProducts(Promo|array $model): array
+    private function getProducts(Promo $model): array
     {
         return $this->decodePromoSelection($this->getPromoSourceArray($model)['products'] ?? null);
     }
@@ -1043,7 +1043,7 @@ class Service implements InjectionAwareInterface
         return $this->getCartProductTitle($this->findProductById($productId), $config);
     }
 
-    public function getProductDiscountById(int $productId, Promo|array $promo, ?array $config = null)
+    public function getProductDiscountById(int $productId, Promo $promo, ?array $config = null)
     {
         return $this->getProductDiscount($this->findProductById($productId), $promo, $config);
     }
@@ -1176,7 +1176,7 @@ class Service implements InjectionAwareInterface
         return $promo;
     }
 
-    public function promoCanBeApplied(Promo|array $promo): bool
+    public function promoCanBeApplied(Promo $promo): bool
     {
         $promoData = $this->getPromoSourceArray($promo);
 
@@ -1201,7 +1201,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function isPromoAvailableForClientGroup(Promo|array $promo, ?\Model_Client $client = null): bool
+    public function isPromoAvailableForClientGroup(Promo $promo, ?\Model_Client $client = null): bool
     {
         $promoData = $this->getPromoSourceArray($promo);
         $clientGroups = $this->decodePromoSelection($promoData['client_groups'] ?? null);
@@ -1229,7 +1229,7 @@ class Service implements InjectionAwareInterface
         return in_array($client->client_group_id, $clientGroups);
     }
 
-    public function canClientUsePromo(\Model_Client $client, Promo|array $promo): bool
+    public function canClientUsePromo(\Model_Client $client, Promo $promo): bool
     {
         if (!$this->promoCanBeApplied($promo)) {
             return false;
@@ -1243,7 +1243,7 @@ class Service implements InjectionAwareInterface
         return !$this->clientHasActivePromoApplication($client, $promo);
     }
 
-    public function usePromo(Promo|array $promo): void
+    public function usePromo(Promo $promo): void
     {
         $promoId = (int) ($this->getPromoSourceArray($promo)['id'] ?? 0);
         $affectedRows = $this->getPromoRepository()->incrementUsageIfAvailable($promoId, new \DateTimeImmutable());
@@ -1252,7 +1252,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function reservePromoForOrder(Promo|array $promo, \Model_ClientOrder $order): void
+    public function reservePromoForOrder(Promo $promo, \Model_ClientOrder $order): void
     {
         $this->usePromo($promo);
         $promoData = $this->getPromoSourceArray($promo);
@@ -1262,7 +1262,7 @@ class Service implements InjectionAwareInterface
         $this->di['db']->store($order);
     }
 
-    public function getPromoDiscountTitle(Promo|array $promo, string $currency): string
+    public function getPromoDiscountTitle(Promo $promo, string $currency): string
     {
         $api_guest = $this->di['api_guest'];
         $promoData = $this->getPromoSourceArray($promo);
@@ -1284,7 +1284,7 @@ class Service implements InjectionAwareInterface
      * @param list<\Model_ClientOrder> $orders
      */
     public function createCheckoutPromoRedemptions(
-        Promo|array $promo,
+        Promo $promo,
         \Model_Client $client,
         array $orders,
         ?\Model_Invoice $invoice,
@@ -1363,7 +1363,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function toPromoApiArray(Promo|array $model, $deep = false, $identity = null)
+    public function toPromoApiArray(Promo $model, $deep = false, $identity = null)
     {
         $result = $this->getPromoApiSourceArray($model);
         $products = !empty($result['products']) ? $this->getProductTitlesByIds($this->decodePromoSelection($result['products'])) : null;
@@ -1437,7 +1437,7 @@ class Service implements InjectionAwareInterface
     }
 
     public function createPromoRedemption(
-        Promo|array $promo,
+        Promo $promo,
         \Model_Client $client,
         ?\Model_ClientOrder $order,
         ?\Model_Invoice $invoice,
@@ -1454,7 +1454,7 @@ class Service implements InjectionAwareInterface
         return (int) $redemption->getId();
     }
 
-    public function clientHasActivePromoApplication(\Model_Client $client, Promo|array $promo): bool
+    public function clientHasActivePromoApplication(\Model_Client $client, Promo $promo): bool
     {
         $promoId = (int) ($this->getPromoSourceArray($promo)['id'] ?? 0);
 
@@ -1542,7 +1542,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function isPromoLinkedToProduct(Promo|array $promo, Product $product)
+    public function isPromoLinkedToProduct(Promo $promo, Product $product)
     {
         if ($product->isAddon()) {
             return false;
@@ -2042,7 +2042,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function getProductDiscount(Product $product, Promo|array $promo, ?array $config = null)
+    public function getProductDiscount(Product $product, Promo $promo, ?array $config = null)
     {
         if (!$this->isPromoLinkedToProduct($promo, $product)) {
             return 0;
@@ -2085,7 +2085,7 @@ class Service implements InjectionAwareInterface
         return $discount;
     }
 
-    public function getRenewalProductDiscount(Product $product, Promo|array $promo, ?array $config = null): float
+    public function getRenewalProductDiscount(Product $product, Promo $promo, ?array $config = null): float
     {
         if (!$this->isPromoLinkedToProduct($promo, $product)) {
             return 0;
@@ -2114,7 +2114,7 @@ class Service implements InjectionAwareInterface
         };
     }
 
-    public function isPromoLinkedToTld(Promo|array $promo, \Model_Tld $tld): bool
+    public function isPromoLinkedToTld(Promo $promo, \Model_Tld $tld): bool
     {
         unset($tld);
 
@@ -2202,7 +2202,7 @@ class Service implements InjectionAwareInterface
     }
 
     private function newPromoRedemption(
-        Promo|array $promo,
+        Promo $promo,
         \Model_Client $client,
         ?\Model_ClientOrder $order,
         ?\Model_Invoice $invoice,
@@ -2234,16 +2234,12 @@ class Service implements InjectionAwareInterface
         return $redemption;
     }
 
-    private function getPromoApiSourceArray(Promo|array $model): array
+    private function getPromoApiSourceArray(Promo $model): array
     {
-        if (is_array($model)) {
-            return $model;
-        }
-
         return $model->toApiArray();
     }
 
-    private function getPromoSourceArray(Promo|array $model): array
+    private function getPromoSourceArray(Promo $model): array
     {
         return $this->getPromoApiSourceArray($model);
     }

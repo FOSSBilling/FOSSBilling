@@ -475,6 +475,11 @@ final class AdminTest extends \BBTestCase
             ->disableOriginalConstructor()
             ->getMock();
 
+        $promo = new \Box\Mod\Product\Entity\Promo();
+        $reflection = new \ReflectionProperty($promo, 'id');
+        $reflection->setAccessible(true);
+        $reflection->setValue($promo, 1);
+
         $serviceMock = $this->createMock(\Box\Mod\Product\Service::class);
 
         $serviceMock->expects($this->atLeastOnce())
@@ -482,7 +487,7 @@ final class AdminTest extends \BBTestCase
             ->willReturn($qbMock);
         $serviceMock->expects($this->once())
             ->method('toPromoApiArray')
-            ->with(['id' => 1])
+            ->with($promo)
             ->willReturn(['id' => 1]);
 
         $pagerMock = $this->getMockBuilder(\FOSSBilling\Pagination::class)
@@ -491,7 +496,7 @@ final class AdminTest extends \BBTestCase
         ->getMock();
         $pagerMock->expects($this->atLeastOnce())
             ->method('paginateDoctrineQuery')
-            ->willReturn(['list' => [['id' => 1]]]);
+            ->willReturn(['list' => [$promo]]);
 
         $di = $this->getDi();
         $di['pager'] = $pagerMock;
