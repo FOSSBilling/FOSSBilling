@@ -539,17 +539,30 @@
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 const charts = [
-                    ['chart-income', {{ admin.stats_get_income({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Income'|trans }}"],
-                    ['chart-orders', {{ admin.stats_get_orders({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Orders'|trans }}"],
-                    ['chart-invoices', {{ admin.stats_get_invoices({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Invoices'|trans }}"],
-                    ['chart-clients', {{ admin.stats_get_clients({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Clients'|trans }}"],
-                    ['chart-tickets', {{ admin.stats_get_tickets({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Tickets'|trans }}"],
+                    ['chart-income', {{ admin.stats_get_income({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, {
+                        label: "{{ 'Income'|trans }}",
+                        valueFormat: 'currency',
+                        currency: "{{ currency.code ?: default_currency }}",
+                    }],
+                    ['chart-orders', {{ admin.stats_get_orders({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, {
+                        label: "{{ 'Orders'|trans }}",
+                    }],
+                    ['chart-invoices', {{ admin.stats_get_invoices({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, {
+                        label: "{{ 'Invoices'|trans }}",
+                    }],
+                    ['chart-clients', {{ admin.stats_get_clients({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, {
+                        label: "{{ 'Clients'|trans }}",
+                    }],
+                    ['chart-tickets', {{ admin.stats_get_tickets({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, {
+                        label: "{{ 'Tickets'|trans }}",
+                    }],
                 ];
 
-                charts.forEach(function([elementId, data, label]) {
+                charts.forEach(function([elementId, data, chartOptions]) {
                     FOSSBilling.charts.renderTimeSeriesSparkline(elementId, data, {
-                        label: label,
                         height: 140,
+                        showTooltip: true,
+                        ...chartOptions,
                     });
                 });
             });

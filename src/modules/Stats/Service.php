@@ -239,7 +239,7 @@ class Service implements InjectionAwareInterface
 
         $results = $result->fetchAllKeyValue();
 
-        return $this->_genFlotArray($results, $time_from, $time_to);
+        return $this->_genFlotArray($results, $time_from, $time_to, false);
     }
 
     public function getIncome($data)
@@ -272,7 +272,7 @@ class Service implements InjectionAwareInterface
 
         $results = $result->fetchAllKeyValue();
 
-        return $this->_genFlotArray($results, $time_from, $time_to);
+        return $this->_genFlotArray($results, $time_from, $time_to, false);
     }
 
     public function getClientCountries($data)
@@ -362,9 +362,9 @@ class Service implements InjectionAwareInterface
      * @param int $time_from
      * @param int $time_to
      *
-     * @return int[][]
+     * @return array<int, array{0:int, 1:int|float}>
      */
-    private function _genFlotArray($results, $time_from, $time_to): array
+    private function _genFlotArray($results, $time_from, $time_to, bool $castToInt = true): array
     {
         $data = [];
         // Loop between timestamps, 1 day at a time
@@ -372,7 +372,8 @@ class Service implements InjectionAwareInterface
             $time_from = strtotime('+1 day', $time_from);
             $dom = date('Y-m-d', $time_from);
             $c = $results[$dom] ?? 0;
-            $data[] = [$time_from * 1000, (int) $c];
+            $value = $castToInt ? (int) $c : round((float) $c, 2);
+            $data[] = [$time_from * 1000, $value];
         } while ($time_to > $time_from);
         array_pop($data);
 

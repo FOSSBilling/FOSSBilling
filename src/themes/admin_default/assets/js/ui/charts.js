@@ -45,6 +45,37 @@ function normalizeTimeSeriesData(data) {
     .filter(point => Number.isFinite(point.x) && Number.isFinite(point.y));
 }
 
+function formatTooltipDate(timestamp) {
+  return new Intl.DateTimeFormat(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(timestamp));
+}
+
+function formatTooltipValue(value, options) {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) {
+    return String(value);
+  }
+
+  if (options.valueFormat === 'currency' && options.currency) {
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: 'currency',
+        currency: options.currency,
+        currencyDisplay: 'narrowSymbol',
+      }).format(numericValue);
+    } catch (error) {
+      // Ignore invalid currency codes and fall back to numeric formatting.
+    }
+  }
+
+  return new Intl.NumberFormat(undefined, {
+    maximumFractionDigits: 0,
+  }).format(numericValue);
+}
+
 export function renderTimeSeriesSparkline(target, data, options = {}) {
   const container = getChartElement(target);
   if (!container) {
@@ -87,8 +118,8 @@ export function renderTimeSeriesSparkline(target, data, options = {}) {
         cubicInterpolationMode: 'monotone',
         fill: true,
         pointRadius: 0,
-        pointHoverRadius: 0,
-        pointHitRadius: 8,
+        pointHoverRadius: options.showTooltip ? 3 : 0,
+        pointHitRadius: options.showTooltip ? 16 : 8,
         borderCapStyle: 'round',
       }],
     },
@@ -97,6 +128,11 @@ export function renderTimeSeriesSparkline(target, data, options = {}) {
       maintainAspectRatio: false,
       animation: false,
       normalized: true,
+      interaction: {
+        mode: 'nearest',
+        axis: 'x',
+        intersect: false,
+      },
       layout: {
         padding: 0,
       },
@@ -105,7 +141,18 @@ export function renderTimeSeriesSparkline(target, data, options = {}) {
           display: false,
         },
         tooltip: {
-          enabled: false,
+          enabled: Boolean(options.showTooltip),
+          displayColors: false,
+          callbacks: {
+            title(items) {
+              const timestamp = items[0]?.raw?.x;
+              return Number.isFinite(timestamp) ? formatTooltipDate(timestamp) : '';
+            },
+            label(context) {
+              const formattedValue = formatTooltipValue(context.raw?.y, options);
+              return `${label}: ${formattedValue}`;
+            },
+          },
         },
       },
       scales: {
