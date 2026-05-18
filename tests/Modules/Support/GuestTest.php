@@ -9,26 +9,47 @@ use PHPUnit\Framework\TestCase;
 
 final class GuestTest extends TestCase
 {
+    private const MIN_TICKET_ID_LENGTH = 30;
+    private const MAX_TICKET_ID_LENGTH = 60;
+
     /**
-     * Indicates whether this test class modified the "disable_public_tickets" setting
-     * and therefore needs it to be reset in tearDown().
+     * Snapshot of the initial "disable_public_tickets" value captured in setUp().
+     * Null means the value could not be determined and therefore cannot be safely restored.
      */
-    private bool $restoreDisablePublicTickets = false;
+    private ?bool $initialDisablePublicTickets = null;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $configGetResult = Request::makeRequest('admin/extension/config_get', ['ext' => 'mod_support']);
+        if (!$configGetResult->wasSuccessful()) {
+            $this->fail($configGetResult->generatePHPUnitMessage());
+        }
+
+        $configData = $configGetResult->getResult();
+        $this->assertIsArray($configData);
+        $this->assertArrayHasKey('disable_public_tickets', $configData);
+        $this->initialDisablePublicTickets = (bool) $configData['disable_public_tickets'];
+    }
 
     protected function tearDown(): void
     {
-        if ($this->restoreDisablePublicTickets) {
-            // Ensure that public tickets configuration is reset after tests that modify it.
-            $configResetResult = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_support', 'disable_public_tickets' => false]);
+        if ($this->initialDisablePublicTickets !== null) {
+            // Always restore the original public tickets configuration captured in setUp().
+            $configResetResult = Request::makeRequest(
+                'admin/extension/config_save',
+                ['ext' => 'mod_support', 'disable_public_tickets' => $this->initialDisablePublicTickets]
+            );
             if (!$configResetResult->wasSuccessful()) {
-                // Fail the test explicitly if configuration restoration fails to avoid test pollution.
+                // Fail explicitly if configuration restoration fails to avoid test pollution.
                 $this->fail(
                     method_exists($configResetResult, 'generatePHPUnitMessage')
                         ? $configResetResult->generatePHPUnitMessage()
                         : 'Failed to restore disable_public_tickets configuration in tearDown().'
                 );
             }
-            $this->restoreDisablePublicTickets = false;
+            $this->initialDisablePublicTickets = null;
         }
 
         parent::tearDown();
@@ -45,8 +66,8 @@ final class GuestTest extends TestCase
 
         $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
         $this->assertIsString($result->getResult());
-        $this->assertGreaterThanOrEqual(30, strlen($result->getResult()));
-        $this->assertLessThanOrEqual(60, strlen($result->getResult()));
+        $this->assertGreaterThanOrEqual(self::MIN_TICKET_ID_LENGTH, strlen($result->getResult()));
+        $this->assertLessThanOrEqual(self::MAX_TICKET_ID_LENGTH, strlen($result->getResult()));
     }
 
     public function testTicketCreateForGuestDisabled(): void
@@ -62,9 +83,6 @@ final class GuestTest extends TestCase
         $this->assertIsArray($configData);
         $this->assertArrayHasKey('disable_public_tickets', $configData);
         $this->assertTrue((bool) $configData['disable_public_tickets']);
-
-        // Mark that we need to restore this configuration in tearDown()
-        $this->restoreDisablePublicTickets = true;
 
         // Now ensure that guest ticket creation fails when public tickets are disabled
         $result = Request::makeRequest('guest/support/ticket_create', [
@@ -86,7 +104,6 @@ final class GuestTest extends TestCase
 
         $configResult = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_support', 'disable_public_tickets' => true]);
         $this->assertTrue($configResult->wasSuccessful(), $configResult->generatePHPUnitMessage());
-        $this->restoreDisablePublicTickets = true;
 
         $disabledResult = Request::makeRequest('guest/support/public_tickets_enabled');
         $this->assertTrue($disabledResult->wasSuccessful(), $disabledResult->generatePHPUnitMessage());
