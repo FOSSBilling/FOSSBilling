@@ -829,16 +829,16 @@ class Service implements InjectionAwareInterface
     public function hasManagePermission(string $module, ?\Box_App $app = null): void
     {
         $staff_service = $this->di['mod_service']('Staff');
-        $permissionModule = str_starts_with($module, 'mod_') ? substr($module, 4) : $module;
+        $permission_module = str_starts_with($module, 'mod_') ? substr($module, 4) : $module;
 
         // The module isn't active or has no permissions if this is the case, so continue as normal
-        if (!$this->isExtensionActive('mod', $permissionModule)) {
+        if (!$this->isExtensionActive('mod', $permission_module)) {
             return;
         }
 
         // First check if any access is allowed to the module for this person
-        if (!$staff_service->hasPermission(null, $permissionModule)) {
-            $e = new \FOSSBilling\InformationException('You do not have permission to access the :mod: module', [':mod:' => $permissionModule], 403);
+        if (!$staff_service->hasPermission(null, $permission_module)) {
+            $e = new \FOSSBilling\InformationException('You do not have permission to access the :mod: module', [':mod:' => $permission_module], 403);
             if (!is_null($app)) {
                 $app->abortWithResponse(new \Symfony\Component\HttpFoundation\Response(
                     $app->render('error', ['exception' => $e]),
@@ -849,10 +849,10 @@ class Service implements InjectionAwareInterface
             throw $e;
         }
 
-        $module_permissions = $this->getSpecificModulePermissions($permissionModule);
+        $module_permissions = $this->getSpecificModulePermissions($permission_module);
 
         // If they have access, let's see if that module has a permission specifically for managing settings and check if they have that permission.
-        if (array_key_exists('manage_settings', $module_permissions) && !$staff_service->hasPermission(null, $permissionModule, 'manage_settings')) {
+        if (array_key_exists('manage_settings', $module_permissions) && !$staff_service->hasPermission(null, $permission_module, 'manage_settings')) {
             $e = new \FOSSBilling\InformationException('You do not have permission to perform this action', [], 403);
             if (!is_null($app)) {
                 $app->abortWithResponse(new \Symfony\Component\HttpFoundation\Response(
