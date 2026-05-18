@@ -438,7 +438,8 @@
         "srclink",
         "striptags",
         "Paidsupport",
-        "paidsupport"
+        "paidsupport",
+        "Sparkline"
     ],
     "ignorePaths": [
         "tests-legacy/**",
