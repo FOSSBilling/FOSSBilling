@@ -354,7 +354,7 @@ final class ServiceTest extends \BBTestCase
             ]);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $staffService);
+        $di['mod_service'] = $di->protect(fn (string $module, ...$args): \PHPUnit\Framework\MockObject\MockObject => $staffService);
 
         $service->setDi($di);
         $service->hasManagePermission('mod_client');
