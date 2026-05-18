@@ -303,6 +303,12 @@ class Service
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminSettingsUpdate', 'params' => $data]);
 
         foreach ($data as $key => $val) {
+            if (!$this->canUpdateParam($key)) {
+                throw new \FOSSBilling\InformationException('You do not have permission to update the parameter :param', [':param' => $key]);
+            }
+        }
+
+        foreach ($data as $key => $val) {
             $this->setParamValue($key, $val, true);
         }
 
@@ -1112,6 +1118,10 @@ class Service
             'company_number',
             'company_vat_number',
             'company_account_number',
+            'company_bank_name',
+            'company_bic',
+            'company_display_bank_info',
+            'company_bank_info_pagebottom',
             'hide_company_public',
             'company_signature',
         ];
