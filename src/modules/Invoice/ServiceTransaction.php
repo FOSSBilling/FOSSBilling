@@ -199,7 +199,7 @@ class ServiceTransaction implements InjectionAwareInterface
                 $this->di['logger']->warn('Could not determine whether transaction.ipn_hash exists; disabling IPN hash dedupe: %s', $e->getMessage());
             }
 
-            return $this->transactionIpnHashColumnExists = false;
+            return false;
         }
 
         return $this->transactionIpnHashColumnExists = in_array('ipn_hash', $columns, true) && in_array('transaction_ipn_hash_idx', $indexes, true);
