@@ -256,18 +256,25 @@
 
             <div class="table-responsive">
                 <table class="table card-table table-vcenter table-striped text-nowrap">
+                    <thead>
+                        <tr>
+                            <th>{{ 'Invoice #'|trans }}</th>
+                            <th>{{ 'Client Name'|trans }}</th>
+                            <th class="text-center">{{ 'Amount'|trans }}</th>
+                            <th class="text-center">{{ 'Created At'|trans }}</th>
+                            <th>{{ 'Status'|trans }}</th>
+                        </tr>
+                    </thead>
                     <tbody>
                         {% for invoice in invoicesUnpaid.list %}
                         <tr>
                             <td class="w-1">
                                 <a href='{{ "invoice/manage/#{invoice.id}"|url }}'>{{ invoice.serie_nr }}</a>
                             </td>
-                            <td class="w-1">
+                            <td>
                                 <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>
                                     {{ mf.avatar(invoice.buyer.email, 24, 'db-avatar avatar avatar-xs') }}
                                 </a>
-                            </td>
-                            <td>
                                 <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>{{ invoice.buyer.first_name }} {{ invoice.buyer.last_name }}</a>
                             </td>
                             <td class="text-center">{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
@@ -316,6 +323,12 @@
 
                 <div class="table-responsive">
                     <table class="table card-table table-vcenter table-striped text-nowrap">
+                        <thead>
+                            <tr>
+                                <th>{{ 'Client Name'|trans }}</th>
+                                <th>{{ 'Order Title'|trans }}</th>
+                            </tr>
+                        </thead>
                         <tbody>
                         {% for order in orders.list %}
                             <tr title="{{ order.created_at|timeago }} {{ 'ago'|trans }}">
@@ -337,37 +350,37 @@
             </div>
         </div>
 
-        {# <div class="col-lg-6">
-            <div class="widget card">
-                <div class="head">
-                    <h5 class="iGraph">{{ 'Product sales'|trans }}</h5>
+        {% if admin.system_is_allowed({ 'mod': 'stats' }) %}
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">{{ 'Product Sales'|trans }}</h3>
                 </div>
-                <div>
-                    <table class="tableStatic wide">
+                <div class="table-responsive">
+                    <table class="table card-table table-vcenter table-striped text-nowrap">
                         <thead>
                             <tr>
-                                <td>{{ 'Product/Service'|trans }}</td>
-                                <td>{{ 'Orders'|trans }}</td>
+                                <th>{{ 'Product/Service'|trans }}</th>
+                                <th>{{ 'Orders'|trans }}</th>
                             </tr>
                         </thead>
                         <tbody>
                         {% for p in admin.stats_get_product_summary %}
                             <tr>
-                                <td><a href='{{ "product/manage/#{p.id}"|url }}' title="{{ p.title }}">{{ p.title|truncate(35) }}</a></td>
+                                <td>
+                                    <a href='{{ "product/manage/#{p.id}"|url }}' title="{{ p.title }}">{{ p.title|truncate(35) }}</a>
+                                </td>
                                 <td align="center">
-                                    <a href='{{ 'order'|url(query: { 'product_id': p.id }) }}' class="webStatsLink">{{ p.orders }}</a>
+                                    <a href='{{ 'order'|url(query: { 'product_id': p.id }) }}'>{{ p.orders }}</a>
                                 </td>
                             </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="2" align="center">{{ 'No active orders available'|trans }}</td>
-                        </tr>
                         {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </div>
-        </div> #}
+        </div>
+        {% endif %}
     {% endif %}
 
     {% if admin.system_is_allowed({ 'mod': 'stats' }) %}
