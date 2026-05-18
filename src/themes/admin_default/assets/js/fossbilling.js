@@ -1,4 +1,5 @@
 import backToTop from "./ui/backToTop";
+import { renderTimeSeriesSparkline } from "./ui/charts";
 
 globalThis.FOSSBilling = {
   message: (message, type = "info") => {
@@ -87,6 +88,10 @@ globalThis.FOSSBilling = {
       if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
     }
     return null;
+  },
+
+  charts: {
+    renderTimeSeriesSparkline,
   }
 };
 

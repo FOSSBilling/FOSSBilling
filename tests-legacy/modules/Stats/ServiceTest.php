@@ -232,6 +232,37 @@ final class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
+    public function testGetIncomePreservesDecimals(): void
+    {
+        $resultMock = $this->createMock(\Doctrine\DBAL\Result::class);
+        $resultMock->expects($this->once())
+            ->method('fetchAllKeyValue')
+            ->willReturn([
+                '2026-05-14' => '11.99',
+                '2026-05-15' => '0.50',
+            ]);
+
+        $dbalMock = $this->createMock(\Doctrine\DBAL\Connection::class);
+        $dbalMock->expects($this->once())
+            ->method('executeQuery')
+            ->willReturn($resultMock);
+
+        $di = $this->getDi();
+        $di['dbal'] = $dbalMock;
+
+        $this->service->setDi($di);
+
+        $result = $this->service->getIncome([
+            'date_from' => '2026-05-13',
+            'date_to' => '2026-05-16',
+        ]);
+
+        $this->assertSame([
+            [strtotime('2026-05-14') * 1000, 11.99],
+            [strtotime('2026-05-15') * 1000, 0.5],
+        ], $result);
+    }
+
     public function testGetClientCountries(): void
     {
         $resultMock = $this->createMock(\Doctrine\DBAL\Result::class);
@@ -272,6 +303,37 @@ final class ServiceTest extends \BBTestCase
 
         $result = $this->service->getSalesByCountry([]);
         $this->assertIsArray($result);
+    }
+
+    public function testGetTableStatsKeepsCountsAsIntegers(): void
+    {
+        $resultMock = $this->createMock(\Doctrine\DBAL\Result::class);
+        $resultMock->expects($this->once())
+            ->method('fetchAllKeyValue')
+            ->willReturn([
+                '2026-05-14' => '3',
+                '2026-05-15' => '1',
+            ]);
+
+        $dbalMock = $this->createMock(\Doctrine\DBAL\Connection::class);
+        $dbalMock->expects($this->once())
+            ->method('executeQuery')
+            ->willReturn($resultMock);
+
+        $di = $this->getDi();
+        $di['dbal'] = $dbalMock;
+
+        $this->service->setDi($di);
+
+        $result = $this->service->getTableStats('invoice', [
+            'date_from' => '2026-05-13',
+            'date_to' => '2026-05-16',
+        ]);
+
+        $this->assertSame([
+            [strtotime('2026-05-14') * 1000, 3],
+            [strtotime('2026-05-15') * 1000, 1],
+        ], $result);
     }
 
     public function testGetTableStats(): void

@@ -271,11 +271,17 @@ final class ServiceTest extends \BBTestCase
         };
 
         $link = 'extension';
-
         $urlMock = $this->createMock('Box_Url');
         $urlMock->expects($this->atLeastOnce())
             ->method('adminLink')
-            ->willReturn('http://fossbilling.org/index.php?_url=/' . $link);
+            ->willReturnCallback(static function (string $path, array $query = []): string {
+                $url = 'http://fossbilling.org/index.php?_url=/' . ltrim($path, '/');
+                if (!empty($query)) {
+                    $url .= '&' . http_build_query($query);
+                }
+
+                return $url;
+            });
 
         $di = $this->getDi();
         $di['mod'] = $di->protect(function ($name) use ($di) {
@@ -298,6 +304,9 @@ final class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
         $result = $this->service->getAdminNavigation(new \Model_Admin());
         $this->assertIsArray($result);
+        $this->assertSame('http://fossbilling.org/index.php?_url=/' . $link, $result['extensions']['uri']);
+        $this->assertSame('http://fossbilling.org/index.php?_url=/system', $result['system']['uri']);
+        $this->assertSame('http://fossbilling.org/index.php?_url=/invoice', $result['invoice']['uri']);
     }
 
     public function testFindExtension(): void
