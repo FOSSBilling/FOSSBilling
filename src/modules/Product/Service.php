@@ -17,11 +17,14 @@ use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\ProductCategory;
 use Box\Mod\Product\Entity\ProductPayment;
 use Box\Mod\Product\Entity\PromoRedemption;
+use Box\Mod\Product\Repository\DomainPricingRepository;
 use Box\Mod\Product\Repository\ProductCategoryRepository;
+use Box\Mod\Product\Repository\ProductOrderRepository;
 use Box\Mod\Product\Repository\ProductRepository;
 use Box\Mod\Product\Repository\ProductPaymentRepository;
 use Box\Mod\Product\Repository\PromoRepository;
 use Box\Mod\Product\Repository\PromoRedemptionRepository;
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
 use FOSSBilling\PaginationOptions;
@@ -47,6 +50,8 @@ class Service implements InjectionAwareInterface
     protected ?ProductPaymentRepository $productPaymentRepository = null;
     protected ?PromoRepository $promoRepository = null;
     protected ?PromoRedemptionRepository $promoRedemptionRepository = null;
+    protected ?DomainPricingRepository $domainPricingRepository = null;
+    protected ?ProductOrderRepository $productOrderRepository = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -121,6 +126,24 @@ class Service implements InjectionAwareInterface
         }
 
         return $this->productPaymentRepository;
+    }
+
+    public function getDomainPricingRepository(): DomainPricingRepository
+    {
+        if ($this->domainPricingRepository === null) {
+            $this->domainPricingRepository = new DomainPricingRepository($this->getDbalConnection());
+        }
+
+        return $this->domainPricingRepository;
+    }
+
+    public function getProductOrderRepository(): ProductOrderRepository
+    {
+        if ($this->productOrderRepository === null) {
+            $this->productOrderRepository = new ProductOrderRepository($this->getDbalConnection());
+        }
+
+        return $this->productOrderRepository;
     }
 
     /**
@@ -294,35 +317,7 @@ class Service implements InjectionAwareInterface
      */
     public function getDomainPricingArray(): array
     {
-        $pricing = [];
-
-        $query = $this->di['dbal']->createQueryBuilder();
-        $query
-            ->select('t.*', 'r.name')
-            ->from('tld', 't')
-            ->leftJoin('t', 'tld_registrar', 'r', 'r.id = t.tld_registrar_id')
-            ->where('t.active = 1')
-            ->orderBy('t.id', 'ASC');
-
-        $results = $query->executeQuery()->fetchAllAssociative();
-        foreach ($results as $tld) {
-            $pricing[$tld['tld']] = [
-                'tld' => $tld['tld'],
-                'price_registration' => $tld['price_registration'],
-                'price_renew' => $tld['price_renew'],
-                'price_transfer' => $tld['price_transfer'],
-                'active' => $tld['active'],
-                'allow_register' => $tld['allow_register'],
-                'allow_transfer' => $tld['allow_transfer'],
-                'min_years' => $tld['min_years'],
-                'registrar' => [
-                    'id' => $tld['tld_registrar_id'],
-                    'title' => $tld['name'],
-                ],
-            ];
-        }
-
-        return $pricing;
+        return $this->getDomainPricingRepository()->getActivePricingByTld();
     }
 
     public function getProductPricingArray(Product $product): array
@@ -1680,6 +1675,19 @@ class Service implements InjectionAwareInterface
         return $productPayment;
     }
 
+    private function getDbalConnection(): Connection
+    {
+        if ($this->di === null) {
+            throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
+        }
+
+        if (isset($this->di['dbal']) && $this->di['dbal'] instanceof Connection) {
+            return $this->di['dbal'];
+        }
+
+        return $this->di['em']->getConnection();
+    }
+
     private function createDefaultProductPayment(): ProductPayment
     {
         $productPayment = new ProductPayment();
@@ -2125,7 +2133,7 @@ class Service implements InjectionAwareInterface
     // Function to get all orders for a product
     public function getOrdersForProduct(Product $product)
     {
-        return $this->getProductRepository()->getOrderRowsByProductId((int) $this->getProductId($product));
+        return $this->getProductOrderRepository()->getRowsByProductId((int) $this->getProductId($product));
     }
 
     private function getPromoRedemptionCount(Promo $model): int

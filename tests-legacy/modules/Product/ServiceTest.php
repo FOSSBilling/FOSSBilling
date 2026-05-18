@@ -520,6 +520,22 @@ final class ServiceTest extends \BBTestCase
         $this->assertSame(['price' => 20.0, 'quantity' => 2], $line);
     }
 
+    public function testGetOrdersForProductUsesProductOrderRepository(): void
+    {
+        $connection = $this->createProductOrderDbalConnection();
+
+        $di = $this->getDi();
+        $di['dbal'] = $connection;
+        $this->service->setDi($di);
+
+        $product = $this->createProductEntity(7);
+        $rows = $this->service->getOrdersForProduct($product);
+
+        $this->assertCount(1, $rows);
+        $this->assertSame(11, (int) $rows[0]['id']);
+        $this->assertSame(7, (int) $rows[0]['product_id']);
+    }
+
     public function testGetPaymentTypes(): void
     {
         $expected = [
@@ -2322,6 +2338,20 @@ final class ServiceTest extends \BBTestCase
         $connection->executeStatement("INSERT INTO tld_registrar (id, name) VALUES (1, 'Registrar A')");
         $connection->executeStatement("INSERT INTO tld (id, tld_registrar_id, tld, price_registration, price_renew, price_transfer, allow_register, allow_transfer, active, min_years) VALUES (1, 1, '.com', 10.00, 12.00, 14.00, 1, 1, 1, 1)");
         $connection->executeStatement("INSERT INTO tld (id, tld_registrar_id, tld, price_registration, price_renew, price_transfer, allow_register, allow_transfer, active, min_years) VALUES (2, 1, '.net', 11.00, 13.00, 15.00, 1, 1, 0, 1)");
+
+        return $connection;
+    }
+
+    private function createProductOrderDbalConnection(): Connection
+    {
+        $connection = DriverManager::getConnection([
+            'driver' => 'pdo_sqlite',
+            'memory' => true,
+        ]);
+
+        $connection->executeStatement('CREATE TABLE client_order (id INTEGER PRIMARY KEY, product_id INTEGER)');
+        $connection->executeStatement('INSERT INTO client_order (id, product_id) VALUES (11, 7)');
+        $connection->executeStatement('INSERT INTO client_order (id, product_id) VALUES (12, 8)');
 
         return $connection;
     }

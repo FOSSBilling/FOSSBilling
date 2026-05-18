@@ -190,15 +190,4 @@ class ProductRepository extends EntityRepository
             'status' => 'enabled',
         ]);
     }
-
-    /**
-     * @return list<array<string, mixed>>
-     */
-    public function getOrderRowsByProductId(int $productId): array
-    {
-        return $this->getEntityManager()->getConnection()->fetchAllAssociative(
-            'SELECT * FROM client_order WHERE product_id = ?',
-            [$productId]
-        );
-    }
 }
