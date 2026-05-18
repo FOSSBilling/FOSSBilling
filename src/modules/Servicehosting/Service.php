@@ -1083,7 +1083,7 @@ class Service implements InjectionAwareInterface
     {
         $action = $data['domain']['action'];
 
-        // Settings default to true for backward compatibility
+        // When unset, hosting products allow all domain actions.
         $allowRegister = $productConfig['allow_domain_register'] ?? true;
         $allowTransfer = $productConfig['allow_domain_transfer'] ?? true;
         $allowOwn = $productConfig['allow_domain_own'] ?? true;
