@@ -324,6 +324,44 @@ final class ServiceTest extends \BBTestCase
         $this->assertInstanceOf('\Model_Extension', $result);
     }
 
+    public function testHasManagePermissionNormalizesPrefixedModuleNames(): void
+    {
+        $staffService = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffService->expects($this->exactly(2))
+            ->method('hasPermission')
+            ->willReturnMap([
+                [null, 'client', null, null, true],
+                [null, 'client', 'manage_settings', null, true],
+            ]);
+
+        $service = $this->getMockBuilder(Service::class)
+            ->setConstructorArgs([$this->filesystemMock])
+            ->onlyMethods(['isExtensionActive', 'getSpecificModulePermissions'])
+            ->getMock();
+
+        $service->expects($this->once())
+            ->method('isExtensionActive')
+            ->with('mod', 'client')
+            ->willReturn(true);
+
+        $service->expects($this->once())
+            ->method('getSpecificModulePermissions')
+            ->with('client')
+            ->willReturn([
+                'manage_settings' => [
+                    'type' => 'bool',
+                ],
+            ]);
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $staffService);
+
+        $service->setDi($di);
+        $service->hasManagePermission('mod_client');
+
+        $this->addToAssertionCount(1);
+    }
+
     public function testUpdate(): void
     {
         $model = new \Model_Extension();
