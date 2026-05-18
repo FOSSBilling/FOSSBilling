@@ -183,17 +183,7 @@ class ServiceTransaction implements InjectionAwareInterface
             $columns = array_map(static fn ($column) => $column->getName(), $schemaManager->listTableColumns('transaction'));
             $indexes = array_map(static fn ($index) => $index->getName(), $schemaManager->listTableIndexes('transaction'));
 
-            if (!in_array('ipn_hash', $columns, true)) {
-                $this->repairTransactionIpnHashSchema();
-
-                $columns = array_map(static fn ($column) => $column->getName(), $schemaManager->listTableColumns('transaction'));
-                $indexes = array_map(static fn ($index) => $index->getName(), $schemaManager->listTableIndexes('transaction'));
-            }
-
-            if (in_array('ipn_hash', $columns, true) && !in_array('transaction_ipn_hash_idx', $indexes, true)) {
-                $this->di['dbal']->executeStatement('ALTER TABLE `transaction` ADD INDEX `transaction_ipn_hash_idx` (`gateway_id`, `ipn_hash`(64));');
-                $indexes = array_map(static fn ($index) => $index->getName(), $schemaManager->listTableIndexes('transaction'));
-            }
+            $supported = in_array('ipn_hash', $columns, true) && in_array('transaction_ipn_hash_idx', $indexes, true);
         } catch (\Throwable $e) {
             if (isset($this->di['logger'])) {
                 $this->di['logger']->warn('Could not determine whether transaction.ipn_hash exists; disabling IPN hash dedupe: %s', $e->getMessage());
@@ -202,17 +192,9 @@ class ServiceTransaction implements InjectionAwareInterface
             return false;
         }
 
-        return $this->transactionIpnHashColumnExists = in_array('ipn_hash', $columns, true) && in_array('transaction_ipn_hash_idx', $indexes, true);
-    }
+        $this->transactionIpnHashColumnExists = $supported;
 
-    private function repairTransactionIpnHashSchema(): void
-    {
-        $this->di['dbal']->executeStatement('ALTER TABLE `transaction` ADD COLUMN `ipn_hash` VARCHAR(64) DEFAULT NULL;');
-        $this->di['dbal']->executeStatement('ALTER TABLE `transaction` ADD INDEX `transaction_ipn_hash_idx` (`gateway_id`, `ipn_hash`(64));');
-
-        if (isset($this->di['logger'])) {
-            $this->di['logger']->warn('Detected missing transaction.ipn_hash schema and applied the repair patch automatically.');
-        }
+        return $this->transactionIpnHashColumnExists;
     }
 
     public function delete(\Model_Transaction $model): bool

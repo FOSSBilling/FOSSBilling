@@ -710,40 +710,19 @@ final class ServiceTransactionTest extends \BBTestCase
 
         $schemaManager = new class()
         {
-            public bool $hasColumn = false;
-            public bool $hasIndex = false;
-
             public function listTableColumns(string $table): array
             {
-                return $this->hasColumn ? [
-                    new class()
-                    {
-                        public function getName(): string
-                        {
-                            return 'ipn_hash';
-                        }
-                    },
-                ] : [];
+                return [];
             }
 
             public function listTableIndexes(string $table): array
             {
-                return $this->hasIndex ? [
-                    new class()
-                    {
-                        public function getName(): string
-                        {
-                            return 'transaction_ipn_hash_idx';
-                        }
-                    },
-                ] : [];
+                return [];
             }
         };
 
         $dbal = new class($schemaManager)
         {
-            public array $queries = [];
-
             public function __construct(private object $schemaManager)
             {
             }
@@ -755,38 +734,19 @@ final class ServiceTransactionTest extends \BBTestCase
 
             public function executeStatement(string $sql): void
             {
-                $this->queries[] = $sql;
-
-                if (str_contains($sql, 'ADD COLUMN `ipn_hash`')) {
-                    $this->schemaManager->hasColumn = true;
-                }
-
-                if (str_contains($sql, 'ADD INDEX `transaction_ipn_hash_idx`')) {
-                    $this->schemaManager->hasIndex = true;
-                }
+                throw new \RuntimeException('No SQL statements should be executed during transaction creation: ' . $sql);
             }
         };
 
         $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->exactly(2))
+        $dbMock->expects($this->once())
             ->method('findOne')
             ->willReturnCallback(function (string $model, string $sql, array $bindings) {
                 $this->assertSame('Transaction', $model);
+                $this->assertSame('txn_id = ? AND gateway_id = ?', $sql);
+                $this->assertSame(['manual-txn-1', 5], $bindings);
 
-                if ($sql === 'txn_id = ? AND gateway_id = ?') {
-                    $this->assertSame(['manual-txn-1', 5], $bindings);
-
-                    return null;
-                }
-
-                if ($sql === 'gateway_id = ? AND ipn_hash = ?') {
-                    $this->assertSame(5, $bindings[0]);
-                    $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $bindings[1]);
-
-                    return null;
-                }
-
-                $this->fail('Unexpected findOne lookup: ' . $sql);
+                return null;
             });
         $dbMock->expects($this->once())
             ->method('dispense')
@@ -798,7 +758,7 @@ final class ServiceTransactionTest extends \BBTestCase
                 $this->assertSame(5, $transaction->gateway_id);
                 $this->assertSame(42, $transaction->invoice_id);
                 $this->assertSame('manual-txn-1', $transaction->txn_id);
-                $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $transaction->ipn_hash);
+                $this->assertNull($transaction->ipn_hash);
 
                 return true;
             }))
@@ -865,10 +825,6 @@ final class ServiceTransactionTest extends \BBTestCase
         ]);
 
         $this->assertSame(99, $resultId);
-        $this->assertSame([
-            'ALTER TABLE `transaction` ADD COLUMN `ipn_hash` VARCHAR(64) DEFAULT NULL;',
-            'ALTER TABLE `transaction` ADD INDEX `transaction_ipn_hash_idx` (`gateway_id`, `ipn_hash`(64));',
-        ], $dbal->queries);
     }
 
     public function testCreateUsesIpnHashLookupWhenSchemaSupportsColumn(): void
