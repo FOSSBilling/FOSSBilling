@@ -1056,7 +1056,7 @@ class Service implements InjectionAwareInterface
         return $adapter->getLoginUrl($account);
     }
 
-    public function prependOrderConfig(Product $product, array $data): array
+    public function attachOrderConfig(Product $product, array $data): array
     {
         $c = json_decode($product instanceof Product ? $product->getConfig() ?? '' : $product->config ?? '', true) ?? [];
 
@@ -1098,7 +1098,7 @@ class Service implements InjectionAwareInterface
 
     public function getDomainProductFromConfig(Product $product, array &$data): bool|array
     {
-        $data = $this->prependOrderConfig($product, $data);
+        $data = $this->attachOrderConfig($product, $data);
         $this->validateOrderData($data);
 
         $c = json_decode($product->getConfig() ?? '', true) ?? [];

@@ -1452,7 +1452,7 @@ final class ServiceTest extends \BBTestCase
             ->method('getDomainProductFromConfig')
             ->willReturn($domainProduct);
         $serviceHostingServiceMock->expects($this->atLeastOnce())
-            ->method('prependOrderConfig')
+            ->method('attachOrderConfig')
             ->willReturn([]);
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Cart\Service::class)

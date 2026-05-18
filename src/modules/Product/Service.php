@@ -293,10 +293,6 @@ class Service implements InjectionAwareInterface
     {
         $service = $this->getProductModuleService($product);
 
-        if (method_exists($service, 'prependOrderConfig')) {
-            $config = $service->prependOrderConfig($product, $config);
-        }
-
         if (method_exists($service, 'attachOrderConfig')) {
             $config = $service->attachOrderConfig($product, $config);
         }

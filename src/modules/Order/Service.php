@@ -222,16 +222,14 @@ class Service implements InjectionAwareInterface
     public function getOrderService(\Model_ClientOrder $order)
     {
         if ($order->service_id !== null) {
-            // @deprecated
-            // @todo remove this when doctrine is removed
-            $core_services = [
+            $builtInServiceTypes = [
                 \Box\Mod\Product\Service::CUSTOM,
                 \Box\Mod\Product\Service::LICENSE,
                 \Box\Mod\Product\Service::DOWNLOADABLE,
                 \Box\Mod\Product\Service::HOSTING,
                 \Box\Mod\Product\Service::DOMAIN,
             ];
-            if (in_array($order->service_type, $core_services)) {
+            if (in_array($order->service_type, $builtInServiceTypes, true)) {
                 $repo_class = $this->_getServiceClassName($order);
 
                 return $this->di['db']->load($repo_class, $order->service_id);
@@ -671,12 +669,6 @@ class Service implements InjectionAwareInterface
             $config['period'] = $period;
         }
         $se = $this->di['mod_service']('service' . $this->getProductType($product));
-        // @deprecated logic
-        if (method_exists($se, 'prependOrderConfig')) {
-            $config = $se->prependOrderConfig($product, $config);
-        }
-
-        // @migration script
         $se = $this->di['mod_service']('service' . $this->getProductType($product));
         if (method_exists($se, 'attachOrderConfig')) {
             $config = $se->attachOrderConfig($product, $config);
@@ -951,9 +943,7 @@ class Service implements InjectionAwareInterface
     protected function _callOnService(\Model_ClientOrder $order, $action)
     {
         $repo = $this->di['mod_service']('service' . $order->service_type);
-        // @deprecated
-        // @todo remove this when doctrine is removed
-        $core_services = [
+        $builtInServiceTypes = [
             \Box\Mod\Product\Service::CUSTOM,
             \Box\Mod\Product\Service::LICENSE,
             \Box\Mod\Product\Service::DOWNLOADABLE,
@@ -961,7 +951,7 @@ class Service implements InjectionAwareInterface
             \Box\Mod\Product\Service::DOMAIN,
         ];
 
-        if (in_array($order->service_type, $core_services)) {
+        if (in_array($order->service_type, $builtInServiceTypes, true)) {
             $m = 'action_' . $action;
             if (!method_exists($repo, $m) || !is_callable([$repo, $m])) {
                 throw new \FOSSBilling\Exception('Service ' . $order->service_type . ' do not support ' . $m);
@@ -969,7 +959,7 @@ class Service implements InjectionAwareInterface
 
             return $repo->$m($order);
         }
-        // @new logic for services
+
         $o = $this->di['db']->findOne(
             'client_order',
             'id = :id',
