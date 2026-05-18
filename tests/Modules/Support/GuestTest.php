@@ -81,20 +81,20 @@ final class GuestTest extends TestCase
             'Ticket ID should contain only alphanumeric characters, underscores, or hyphens.'
         );
 
-        $ticketGetResult = Request::makeRequest('guest/support/ticket_get', ['id' => $ticketId]);
+        $ticketGetResult = Request::makeRequest('guest/support/ticket_get', ['hash' => $ticketId]);
         $this->assertTrue($ticketGetResult->wasSuccessful(), $ticketGetResult->generatePHPUnitMessage());
 
         $ticketData = $ticketGetResult->getResult();
         $this->assertIsArray($ticketData);
-        $this->assertArrayHasKey('name', $ticketData);
-        $this->assertArrayHasKey('email', $ticketData);
+        $this->assertArrayHasKey('author_name', $ticketData);
         $this->assertArrayHasKey('subject', $ticketData);
-        $this->assertArrayHasKey('message', $ticketData);
+        $this->assertArrayHasKey('messages', $ticketData);
 
-        $this->assertSame($expectedName, $ticketData['name']);
-        $this->assertSame($expectedEmail, $ticketData['email']);
+        $this->assertSame($expectedName, $ticketData['author_name']);
         $this->assertSame($expectedSubject, $ticketData['subject']);
-        $this->assertSame($expectedMessage, $ticketData['message']);
+        $this->assertIsArray($ticketData['messages']);
+        $this->assertNotEmpty($ticketData['messages']);
+        $this->assertSame($expectedMessage, $ticketData['messages'][0]['content']);
     }
 
     public function testTicketCreateForGuestDisabled(): void
