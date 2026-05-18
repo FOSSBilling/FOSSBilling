@@ -4,12 +4,10 @@ import { coloris, init } from '@melloware/coloris';
 import * as tabler from '@tabler/core/js/tabler.js';
 import './js/tomselect';
 import './js/datepicker';
-import ApexCharts from 'apexcharts';
 import './js/ui/theme_settings';
 import './js/fossbilling';
 import 'sortable-tablesort/dist/sortable.min.js';
 
-globalThis.ApexCharts = ApexCharts;
 globalThis.bootstrap = tabler.bootstrap;
 
 init();

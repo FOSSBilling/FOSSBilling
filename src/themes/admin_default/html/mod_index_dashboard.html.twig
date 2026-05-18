@@ -538,75 +538,21 @@
     {% if admin.system_is_allowed({ 'mod': 'stats' }) %}
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                setPlotDataData('chart-income', {{ admin.stats_get_income({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Income'|trans }}" );
-                setPlotDataData('chart-orders', {{ admin.stats_get_orders({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Orders'|trans }}" );
-                setPlotDataData('chart-invoices', {{ admin.stats_get_invoices({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }},"{{ 'Invoices'|trans }}" );
-                setPlotDataData('chart-clients', {{ admin.stats_get_clients({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Clients'|trans }}" );
-                setPlotDataData('chart-tickets', {{ admin.stats_get_tickets({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Tickets'|trans }}");
-            });
+                const charts = [
+                    ['chart-income', {{ admin.stats_get_income({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Income'|trans }}"],
+                    ['chart-orders', {{ admin.stats_get_orders({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Orders'|trans }}"],
+                    ['chart-invoices', {{ admin.stats_get_invoices({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Invoices'|trans }}"],
+                    ['chart-clients', {{ admin.stats_get_clients({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Clients'|trans }}"],
+                    ['chart-tickets', {{ admin.stats_get_tickets({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Tickets'|trans }}"],
+                ];
 
-            function setPlotDataData(elementId, data, displayName="Name Placeholder") {
-                new ApexCharts(document.getElementById(elementId), {
-                    chart: {
-                        type: 'area',
-                        fontFamily: 'inherit',
+                charts.forEach(function([elementId, data, label]) {
+                    FOSSBilling.charts.renderTimeSeriesSparkline(elementId, data, {
+                        label: label,
                         height: 140,
-                        parentHeightOffset: 0,
-                        toolbar: {
-                            show: false,
-                        },
-                        animations: {
-                            enabled: false
-                        },
-                    },
-                    dataLabels: {
-                        enabled: false,
-                    },
-                    fill: {
-                        opacity: .16,
-                        type: 'solid'
-                    },
-                    stroke: {
-                        width: 2,
-                        lineCap: "round",
-                        curve: "smooth",
-                    },
-                    series: [{
-                        name: displayName,
-                        data: data
-                    }],
-                    grid: {
-                        padding: {
-                            top: -20,
-                            right: 0,
-                            left: -4,
-                            bottom: -4
-                        },
-                        strokeDashArray: 4,
-                    },
-                    xaxis: {
-                        labels: {
-                            show: false
-                        },
-                        type: 'datetime',
-                    },
-                    yaxis: {
-                        labels: {
-                            show: false
-                        },
-                    },
-                    labels: {
-                        show: false,
-                    },
-                    colors:  (localStorage.getItem('theme') === 'dark') ? ["#91bbed"] : ["#206bc4"],
-                    theme : {
-                        mode: (localStorage.getItem('theme') === 'dark') ? 'dark' : 'light',
-                        monochrome: {
-                            enabled: false,
-                        }
-                    }
-                }).render();
-            }
+                    });
+                });
+            });
         </script>
     {% endif %}
 {% endblock %}
