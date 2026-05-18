@@ -160,7 +160,7 @@ value="{{ params.captcha_recaptcha_privatekey }}">
 <div class="col-md-6 pt-2 ps-0">
 <label class="form-check form-check-single form-switch ps-0">
 <input id="honeypot_enabled" class="form-check-input" name="honeypot_enabled" type="checkbox"
-{% if params.honeypot_enabled is defined ? params.honeypot_enabled : true %} checked="checked" {% endif %}>
+{% if params.honeypot_enabled ?? true %} checked="checked" {% endif %}>
 </label>
 </div>
 </div>
@@ -184,7 +184,7 @@ value="{{ params.captcha_recaptcha_privatekey }}">
 <script>
 document.addEventListener("DOMContentLoaded", function() {
 function toggleProviderSettings() {
-var selectedProvider = document.getElementById("provider-select").value;
+const selectedProvider = document.getElementById("provider-select").value;
 
 if (selectedProvider === 'recaptcha_v2') {
 document.getElementById("recaptcha_v2_settings").style.display = "block";
@@ -201,13 +201,15 @@ document.getElementById("hcaptcha_settings").style.display = "block";
 }
 }
 
+function handleProviderChange() {
+toggleProviderSettings();
+}
+
 // Run on page load
 toggleProviderSettings();
 
 // Run when the dropdown changes
-document.getElementById("provider-select").addEventListener("change", () => {
-toggleProviderSettings();
-});
+document.getElementById("provider-select").addEventListener("change", handleProviderChange);
 });
 </script>
 {% endblock %}
