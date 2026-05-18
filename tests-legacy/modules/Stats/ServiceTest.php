@@ -9,11 +9,11 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class ServiceTest extends \BBTestCase
 {
-    protected ?Service $service;
+    protected ?Service $statsService;
 
     public function setUp(): void
     {
-        $this->service = new Service();
+        $this->statsService = new Service();
     }
 
     public function testGetOrdersStatuses(): void
@@ -26,9 +26,9 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
 
-        $this->service->setDi($di);
+        $this->statsService->setDi($di);
 
-        $result = $this->service->getOrdersStatuses([]);
+        $result = $this->statsService->getOrdersStatuses([]);
         $this->assertIsArray($result);
     }
 
@@ -49,8 +49,8 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['dbal'] = $dbalMock;
 
-        $this->service->setDi($di);
-        $result = $this->service->getProductSummary($data);
+        $this->statsService->setDi($di);
+        $result = $this->statsService->getProductSummary($data);
         $this->assertIsArray($result);
     }
 
@@ -68,7 +68,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['dbal'] = $dbalMock;
-        $this->service->setDi($di);
+        $this->statsService->setDi($di);
 
         $expected = [
             'clients_total' => null,
@@ -96,7 +96,7 @@ final class ServiceTest extends \BBTestCase
             'tickets_last_month' => null,
         ];
 
-        $result = $this->service->getSummary();
+        $result = $this->statsService->getSummary();
         $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
@@ -115,7 +115,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['dbal'] = $dbalMock;
-        $this->service->setDi($di);
+        $this->statsService->setDi($di);
 
         $expected = [
             'total' => null,
@@ -125,7 +125,7 @@ final class ServiceTest extends \BBTestCase
             'last_month' => null,
         ];
 
-        $result = $this->service->getSummaryIncome();
+        $result = $this->statsService->getSummaryIncome();
         $this->assertIsArray($result);
         $this->assertEquals($expected, $result);
     }
@@ -145,13 +145,13 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['dbal'] = $dbalMock;
-        $this->service->setDi($di);
+        $this->statsService->setDi($di);
 
         $data = [
             'date_from' => 'yesterday',
             'date_to' => 'now',
         ];
-        $result = $this->service->getProductSales($data);
+        $result = $this->statsService->getProductSales($data);
         $this->assertIsArray($result);
     }
 
@@ -175,9 +175,9 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['dbal'] = $dbalMock;
-        $this->service->setDi($di);
+        $this->statsService->setDi($di);
 
-        $result = $this->service->incomeAndRefundStats([]);
+        $result = $this->statsService->incomeAndRefundStats([]);
         $this->assertIsArray($result);
         $this->assertEquals($res[0], $result);
     }
@@ -197,13 +197,13 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['dbal'] = $dbalMock;
 
-        $this->service->setDi($di);
+        $this->statsService->setDi($di);
 
         $data = [
             'date_from' => 'yesterday',
             'date_to' => 'now',
         ];
-        $result = $this->service->getRefunds($data);
+        $result = $this->statsService->getRefunds($data);
         $this->assertIsArray($result);
     }
 
@@ -222,13 +222,13 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['dbal'] = $dbalMock;
 
-        $this->service->setDi($di);
+        $this->statsService->setDi($di);
 
         $data = [
             'date_from' => 'yesterday',
             'date_to' => 'now',
         ];
-        $result = $this->service->getIncome($data);
+        $result = $this->statsService->getIncome($data);
         $this->assertIsArray($result);
     }
 
@@ -250,9 +250,9 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['dbal'] = $dbalMock;
 
-        $this->service->setDi($di);
+        $this->statsService->setDi($di);
 
-        $result = $this->service->getIncome([
+        $result = $this->statsService->getIncome([
             'date_from' => '2026-05-13',
             'date_to' => '2026-05-16',
         ]);
@@ -278,9 +278,9 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['dbal'] = $dbalMock;
 
-        $this->service->setDi($di);
+        $this->statsService->setDi($di);
 
-        $result = $this->service->getClientCountries([]);
+        $result = $this->statsService->getClientCountries([]);
         $this->assertIsArray($result);
     }
 
@@ -299,9 +299,9 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['dbal'] = $dbalMock;
 
-        $this->service->setDi($di);
+        $this->statsService->setDi($di);
 
-        $result = $this->service->getSalesByCountry([]);
+        $result = $this->statsService->getSalesByCountry([]);
         $this->assertIsArray($result);
     }
 
@@ -323,9 +323,9 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['dbal'] = $dbalMock;
 
-        $this->service->setDi($di);
+        $this->statsService->setDi($di);
 
-        $result = $this->service->getTableStats('invoice', [
+        $result = $this->statsService->getTableStats('invoice', [
             'date_from' => '2026-05-13',
             'date_to' => '2026-05-16',
         ]);
@@ -351,13 +351,13 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['dbal'] = $dbalMock;
 
-        $this->service->setDi($di);
+        $this->statsService->setDi($di);
 
         $data = [
             'date_from' => 'yesterday',
             'date_to' => 'now',
         ];
-        $result = $this->service->getTableStats('client', $data);
+        $result = $this->statsService->getTableStats('client', $data);
         $this->assertIsArray($result);
     }
 }
