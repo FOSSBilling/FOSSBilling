@@ -94,7 +94,7 @@ final class GuestTest extends TestCase
         ]);
 
         $this->assertFalse($result->wasSuccessful());
-        $this->assertEquals("We currently aren't accepting support tickets from unregistered users. Please use another contact method.", $result->getErrorMessage());
+        $this->assertEquals("We currently are not accepting support tickets from unregistered users. Please use another contact method.", $result->getErrorMessage());
     }
 
     public function testPublicTicketsEnabledReflectsConfiguration(): void
