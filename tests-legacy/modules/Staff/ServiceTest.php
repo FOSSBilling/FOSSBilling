@@ -999,7 +999,7 @@ final class ServiceTest extends \BBTestCase
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $logMock = $this->createMock('\Box_Log');
+        $logMock = $this->createStub('\Box_Log');
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -1031,7 +1031,7 @@ final class ServiceTest extends \BBTestCase
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $logMock = $this->createMock('\Box_Log');
+        $logMock = $this->createStub('\Box_Log');
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -1077,7 +1077,7 @@ final class ServiceTest extends \BBTestCase
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $logMock = $this->createMock('\Box_Log');
+        $logMock = $this->createStub('\Box_Log');
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -1088,7 +1088,7 @@ final class ServiceTest extends \BBTestCase
             ->method('hashIt')
             ->with($plainTextPassword);
 
-        $profileService = $this->createMock(\Box\Mod\Profile\Service::class);
+        $profileService = $this->createStub(\Box\Mod\Profile\Service::class);
 
         $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
@@ -1101,7 +1101,7 @@ final class ServiceTest extends \BBTestCase
         $di['logger'] = $logMock;
         $di['db'] = $dbMock;
         $di['password'] = $passwordMock;
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $profileService);
+        $di['mod_service'] = $di->protect(fn () => $profileService);
 
         $serviceMock->setDi($di);
 
@@ -1140,7 +1140,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn($newId);
 
-        $logMock = $this->createMock('\Box_Log');
+        $logMock = $this->createStub('\Box_Log');
 
         $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
         $passwordMock->expects($this->atLeastOnce())
@@ -1199,7 +1199,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willThrowException(new \RedBeanPHP\RedException());
 
-        $logMock = $this->createMock('\Box_Log');
+        $logMock = $this->createStub('\Box_Log');
 
         $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
         $passwordMock->expects($this->atLeastOnce())
@@ -1570,8 +1570,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testSetPermissionsSelfEditThrows(): void
     {
-        $serviceMock = $this->getMockBuilder(Service::class)
-            ->onlyMethods(['hasPermission'])->getMock();
+        $service = new Service();
 
         $callerModel = new \Model_Admin();
         $callerModel->loadBean(new \DummyBean());
@@ -1580,11 +1579,11 @@ final class ServiceTest extends \BBTestCase
 
         $di = new \Pimple\Container();
         $di['loggedin_admin'] = $callerModel;
-        $serviceMock->setDi($di);
+        $service->setDi($di);
 
         $this->expectException(\FOSSBilling\InformationException::class);
         $this->expectExceptionMessage('You cannot modify your own permissions');
-        $serviceMock->setPermissions($callerModel, []);
+        $service->setPermissions($callerModel, []);
     }
 
     public function testSetPermissionsCeilingEnforced(): void

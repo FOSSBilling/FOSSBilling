@@ -477,7 +477,7 @@ final class AdminTest extends \BBTestCase
 
         $model = new \Model_ActivityAdminHistory();
         $model->loadBean(new \DummyBean());
-        $dbMock = $this->createMock('\Box_Database');
+        $dbMock = $this->createStub('\Box_Database');
         $dbMock->method('getExistingModelById')
             ->willReturn($model);
 
@@ -525,7 +525,7 @@ final class AdminTest extends \BBTestCase
     {
         $data['id'] = '1';
 
-        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $serviceMock = $this->createStub(\Box\Mod\Staff\Service::class);
         $serviceMock->method('toActivityAdminHistoryApiArray')
             ->willReturn([]);
 
