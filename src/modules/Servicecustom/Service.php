@@ -42,14 +42,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $formbuilderService = $this->di['mod_service']('formbuilder');
             $form = $formbuilderService->getForm((int) $product['form_id']);
             foreach ($form['fields'] as $field) {
-                if ($field['required'] == 1) {
+                if (($field['required'] ?? 0) == 1) {
                     $field_name = $field['name'];
                     if (!isset($data[$field_name]) || empty($data[$field_name])) {
                         throw new \FOSSBilling\InformationException('You must fill in all required fields. ' . $field['label'] . ' is missing', null, 9684);
                     }
                 }
 
-                if ($field['readonly'] == 1) {
+                if (($field['readonly'] ?? 0) == 1) {
                     $field_name = $field['name'];
                     if ($data[$field_name] != $field['default_value']) {
                         throw new \FOSSBilling\InformationException('Field ' . $field['label'] . ' is read only. You cannot change its value', null, 5468);
