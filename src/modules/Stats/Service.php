@@ -359,9 +359,6 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @param int $time_from
-     * @param int $time_to
-     *
      * @return array<int, array{0:int, 1:int}>
      */
     private function _genFlotArrayInt(array $results, int $time_from, int $time_to): array
@@ -378,9 +375,6 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @param int $time_from
-     * @param int $time_to
-     *
      * @return array<int, array{0:int, 1:float}>
      */
     private function _genFlotArrayFloat(array $results, int $time_from, int $time_to): array

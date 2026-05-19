@@ -84,7 +84,7 @@ class Admin extends \Api_Abstract
     {
         try {
             $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_settings');
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             return [];
         }
 

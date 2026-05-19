@@ -70,15 +70,15 @@ final class ServiceTest extends \BBTestCase
                 'value' => 'work@example.eu',
             ],
         ];
-        $dbalConnectionStub = new class($multParamsResults) {
-            public function __construct(private readonly array $rows)
+        $dbalConnectionStub = new readonly class($multParamsResults) {
+            public function __construct(private array $rows)
             {
             }
 
             public function createQueryBuilder(): object
             {
-                return new class($this->rows) {
-                    public function __construct(private readonly array $rows)
+                return new readonly class($this->rows) {
+                    public function __construct(private array $rows)
                     {
                     }
 
@@ -104,8 +104,8 @@ final class ServiceTest extends \BBTestCase
 
                     public function executeQuery(): object
                     {
-                        return new class($this->rows) {
-                            public function __construct(private readonly array $rows)
+                        return new readonly class($this->rows) {
+                            public function __construct(private array $rows)
                             {
                             }
 
@@ -205,7 +205,7 @@ final class ServiceTest extends \BBTestCase
         $latestVersion = '1.0.0';
 
         $systemServiceMock = new class extends Service {
-            public function getParamValue(string $param, $default = null)
+            public function getParamValue(string $param, $default = null): bool
             {
                 return false;
             }
@@ -249,7 +249,7 @@ final class ServiceTest extends \BBTestCase
         $latestVersion = '1.0.0';
 
         $systemServiceMock = new class extends Service {
-            public function getParamValue(string $param, $default = null)
+            public function getParamValue(string $param, $default = null): bool
             {
                 return false;
             }
@@ -962,8 +962,8 @@ final class ServiceTest extends \BBTestCase
     {
         $defaultCurrency = new \Box\Mod\Currency\Entity\Currency($code);
 
-        $repository = new class($defaultCurrency) {
-            public function __construct(private readonly \Box\Mod\Currency\Entity\Currency $currency)
+        $repository = new readonly class($defaultCurrency) {
+            public function __construct(private \Box\Mod\Currency\Entity\Currency $currency)
             {
             }
 
@@ -973,8 +973,8 @@ final class ServiceTest extends \BBTestCase
             }
         };
 
-        return new class($repository) {
-            public function __construct(private readonly object $repository)
+        return new readonly class($repository) {
+            public function __construct(private object $repository)
             {
             }
 

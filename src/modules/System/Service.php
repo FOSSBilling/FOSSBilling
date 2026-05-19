@@ -31,7 +31,7 @@ use Symfony\Contracts\Cache\ItemInterface;
 
 class Service
 {
-    private const MYSQL_DUPLICATE_ENTRY_ERROR = 23000;
+    private const int MYSQL_DUPLICATE_ENTRY_ERROR = 23000;
 
     protected ?Container $di = null;
     private readonly Filesystem $filesystem;
@@ -342,7 +342,10 @@ class Service
         ];
     }
 
-    public function getMessages($type = null)
+    /**
+     * @return mixed[][]
+     */
+    public function getMessages($type = null): array
     {
         $messages = [];
 
