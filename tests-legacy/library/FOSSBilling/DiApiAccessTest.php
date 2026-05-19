@@ -42,6 +42,32 @@ final class DiApiAccessTest extends PHPUnit\Framework\TestCase
         $di['api']('client');
     }
 
+    public function testClientPageAllowsUnvalidatedClientProfilePage(): void
+    {
+        $di = $this->createContainerForRoute('/client/profile');
+
+        $api = $di['api']('client');
+
+        $this->assertInstanceOf(Api_Handler::class, $api);
+    }
+
+    public function testClientPageAllowsUnvalidatedClientLogoutPage(): void
+    {
+        $di = $this->createContainerForRoute('/client/logout');
+
+        $api = $di['api']('client');
+
+        $this->assertInstanceOf(Api_Handler::class, $api);
+    }
+
+    public function testClientPageBlocksUnvalidatedClientBalancePage(): void
+    {
+        $di = $this->createContainerForRoute('/client/balance');
+
+        $this->expectException(EmailValidationRequiredException::class);
+        $di['api']('client');
+    }
+
     private function createContainerForRoute(string $routePath): Pimple\Container
     {
         global $request;
