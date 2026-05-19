@@ -188,15 +188,33 @@ class Service implements InjectionAwareInterface
                 continue;
             }
 
+            if (!is_array($modulePerms)) {
+                continue;
+            }
+
+            $hasGrantedPermissions = false;
+            foreach ($modulePerms as $value) {
+                if (!empty($value)) {
+                    $hasGrantedPermissions = true;
+                    break;
+                }
+            }
+
+            if (!$hasGrantedPermissions) {
+                continue;
+            }
+
             if (!isset($callerPerms[$module])) {
                 throw new \FOSSBilling\InformationException('You cannot grant permissions for a module you do not have access to');
             }
 
-            if (is_array($modulePerms)) {
-                foreach ($modulePerms as $key => $value) {
-                    if (!isset($callerPerms[$module][$key]) || !$callerPerms[$module][$key]) {
-                        throw new \FOSSBilling\InformationException('You cannot grant a permission that you do not have');
-                    }
+            foreach ($modulePerms as $key => $value) {
+                if (empty($value)) {
+                    continue;
+                }
+
+                if (!isset($callerPerms[$module][$key]) || !$callerPerms[$module][$key]) {
+                    throw new \FOSSBilling\InformationException('You cannot grant a permission that you do not have');
                 }
             }
         }
