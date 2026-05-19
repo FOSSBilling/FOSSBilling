@@ -162,6 +162,7 @@ final class Api_ClientTest extends \BBTestCase
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
+        $order->status = \Model_ClientOrder::STATUS_ACTIVE;
 
         $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
