@@ -537,7 +537,7 @@ final class AdminTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
         $di['password'] = $passwordMock;
         $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
-        $di['mod_service'] = $di->protect(fn ($name) => match (strtolower((string) $name)) {
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
             'profile' => $profileService,
             'staff' => $staffServiceMock,
         });

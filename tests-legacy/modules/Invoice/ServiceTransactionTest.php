@@ -621,13 +621,11 @@ final class ServiceTransactionTest extends \BBTestCase
         $existing->id = 123;
         $existing->status = \Model_Transaction::STATUS_PROCESSED;
 
-        $schemaManager = new class()
-        {
+        $schemaManager = new class {
             public function listTableColumns(string $table): array
             {
                 return [
-                    new class()
-                    {
+                    new class {
                         public function getName(): string
                         {
                             return 'ipn_hash';
@@ -639,8 +637,7 @@ final class ServiceTransactionTest extends \BBTestCase
             public function listTableIndexes(string $table): array
             {
                 return [
-                    new class()
-                    {
+                    new class {
                         public function getName(): string
                         {
                             return 'transaction_ipn_hash_idx';
@@ -650,8 +647,7 @@ final class ServiceTransactionTest extends \BBTestCase
             }
         };
 
-        $dbal = new class($schemaManager)
-        {
+        $dbal = new readonly class($schemaManager) {
             public function __construct(private object $schemaManager)
             {
             }
@@ -661,7 +657,7 @@ final class ServiceTransactionTest extends \BBTestCase
                 return $this->schemaManager;
             }
 
-            public function executeStatement(string $sql): void
+            public function executeStatement(string $sql): never
             {
                 throw new \RuntimeException('Unexpected schema repair query: ' . $sql);
             }
@@ -708,8 +704,7 @@ final class ServiceTransactionTest extends \BBTestCase
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
 
-        $schemaManager = new class()
-        {
+        $schemaManager = new class {
             public function listTableColumns(string $table): array
             {
                 return [];
@@ -721,8 +716,7 @@ final class ServiceTransactionTest extends \BBTestCase
             }
         };
 
-        $dbal = new class($schemaManager)
-        {
+        $dbal = new readonly class($schemaManager) {
             public function __construct(private object $schemaManager)
             {
             }
@@ -732,7 +726,7 @@ final class ServiceTransactionTest extends \BBTestCase
                 return $this->schemaManager;
             }
 
-            public function executeStatement(string $sql): void
+            public function executeStatement(string $sql): never
             {
                 throw new \RuntimeException('No SQL statements should be executed during transaction creation: ' . $sql);
             }
@@ -767,7 +761,7 @@ final class ServiceTransactionTest extends \BBTestCase
             ->method('getExistingModelById')
             ->willReturnCallback(function (string $modelName, int $id, string $message) use ($payGatewayModel, $invoiceModel) {
                 static $calls = 0;
-                $calls++;
+                ++$calls;
 
                 if ($calls === 1) {
                     $this->assertSame('PayGateway', $modelName);
@@ -796,8 +790,7 @@ final class ServiceTransactionTest extends \BBTestCase
                 $this->fail('Unexpected getExistingModelById call');
             });
 
-        $requestMock = new class()
-        {
+        $requestMock = new class {
             public function getClientIp(): string
             {
                 return '127.0.0.1';
@@ -833,13 +826,11 @@ final class ServiceTransactionTest extends \BBTestCase
         $existing->loadBean(new \DummyBean());
         $existing->id = 321;
 
-        $schemaManager = new class()
-        {
+        $schemaManager = new class {
             public function listTableColumns(string $table): array
             {
                 return [
-                    new class()
-                    {
+                    new class {
                         public function getName(): string
                         {
                             return 'ipn_hash';
@@ -851,8 +842,7 @@ final class ServiceTransactionTest extends \BBTestCase
             public function listTableIndexes(string $table): array
             {
                 return [
-                    new class()
-                    {
+                    new class {
                         public function getName(): string
                         {
                             return 'transaction_ipn_hash_idx';
@@ -862,8 +852,7 @@ final class ServiceTransactionTest extends \BBTestCase
             }
         };
 
-        $dbal = new class($schemaManager)
-        {
+        $dbal = new readonly class($schemaManager) {
             public function __construct(private object $schemaManager)
             {
             }
@@ -873,7 +862,7 @@ final class ServiceTransactionTest extends \BBTestCase
                 return $this->schemaManager;
             }
 
-            public function executeStatement(string $sql): void
+            public function executeStatement(string $sql): never
             {
                 throw new \RuntimeException('Unexpected schema repair query: ' . $sql);
             }
