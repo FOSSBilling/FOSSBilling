@@ -179,7 +179,7 @@ class Admin extends \Api_Abstract
         $model = $this->di['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
 
         if (!is_array($data['permissions'])) {
-            throw new \FOSSBilling\Exception\InformationException('Parameter "permissions" must be an array');
+            throw new \FOSSBilling\InformationException('Parameter "permissions" must be an array');
         }
 
         $this->getService()->setPermissions($model, $data['permissions']);
