@@ -999,7 +999,7 @@ final class ServiceTest extends \BBTestCase
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $logMock = $this->createMock('\Box_Log');
+        $logMock = $this->createStub('\Box_Log');
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -1031,7 +1031,7 @@ final class ServiceTest extends \BBTestCase
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $logMock = $this->createMock('\Box_Log');
+        $logMock = $this->createStub('\Box_Log');
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -1077,7 +1077,7 @@ final class ServiceTest extends \BBTestCase
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $logMock = $this->createMock('\Box_Log');
+        $logMock = $this->createStub('\Box_Log');
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -1088,7 +1088,7 @@ final class ServiceTest extends \BBTestCase
             ->method('hashIt')
             ->with($plainTextPassword);
 
-        $profileService = $this->createMock(\Box\Mod\Profile\Service::class);
+        $profileService = $this->createStub(\Box\Mod\Profile\Service::class);
 
         $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['hasPermission'])->getMock();
@@ -1101,7 +1101,7 @@ final class ServiceTest extends \BBTestCase
         $di['logger'] = $logMock;
         $di['db'] = $dbMock;
         $di['password'] = $passwordMock;
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $profileService);
+        $di['mod_service'] = $di->protect(fn () => $profileService);
 
         $serviceMock->setDi($di);
 
@@ -1140,7 +1140,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn($newId);
 
-        $logMock = $this->createMock('\Box_Log');
+        $logMock = $this->createStub('\Box_Log');
 
         $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
         $passwordMock->expects($this->atLeastOnce())
@@ -1199,7 +1199,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willThrowException(new \RedBeanPHP\RedException());
 
-        $logMock = $this->createMock('\Box_Log');
+        $logMock = $this->createStub('\Box_Log');
 
         $passwordMock = $this->createMock(\FOSSBilling\PasswordManager::class);
         $passwordMock->expects($this->atLeastOnce())
@@ -1549,13 +1549,112 @@ final class ServiceTest extends \BBTestCase
             }
         };
 
+        $callerModel = new \Model_Admin();
+        $callerModel->loadBean(new \DummyBean());
+        $callerModel->id = 1;
+        $callerModel->role = \Model_Admin::ROLE_ADMIN;
+
+        $targetModel = new \Model_Admin();
+        $targetModel->loadBean(new \DummyBean());
+        $targetModel->id = 2;
+        $targetModel->role = \Model_Admin::ROLE_STAFF;
+
         $di = new \Pimple\Container();
         $di['dbal'] = $dbalMock;
+        $di['loggedin_admin'] = $callerModel;
         $serviceMock->setDi($di);
 
-        $member_id = 1;
-        $result = $serviceMock->setPermissions($member_id, []);
+        $result = $serviceMock->setPermissions($targetModel, []);
         $this->assertTrue($result);
+    }
+
+    public function testSetPermissionsSelfEditThrows(): void
+    {
+        $service = new Service();
+
+        $callerModel = new \Model_Admin();
+        $callerModel->loadBean(new \DummyBean());
+        $callerModel->id = 1;
+        $callerModel->role = \Model_Admin::ROLE_STAFF;
+
+        $di = new \Pimple\Container();
+        $di['loggedin_admin'] = $callerModel;
+        $service->setDi($di);
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('You cannot modify your own permissions');
+        $service->setPermissions($callerModel, []);
+    }
+
+    public function testSetPermissionsCeilingEnforced(): void
+    {
+        $serviceMock = $this->getMockBuilder(Service::class)
+            ->onlyMethods(['hasPermission', 'getPermissions'])->getMock();
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('hasPermission')->willReturn(true);
+
+        $callerPerms = [
+            'client' => ['access' => 1, 'view' => 1],
+        ];
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getPermissions')->willReturn($callerPerms);
+
+        $callerModel = new \Model_Admin();
+        $callerModel->loadBean(new \DummyBean());
+        $callerModel->id = 1;
+        $callerModel->role = \Model_Admin::ROLE_STAFF;
+
+        $targetModel = new \Model_Admin();
+        $targetModel->loadBean(new \DummyBean());
+        $targetModel->id = 2;
+        $targetModel->role = \Model_Admin::ROLE_STAFF;
+
+        $di = new \Pimple\Container();
+        $di['loggedin_admin'] = $callerModel;
+        $serviceMock->setDi($di);
+
+        $submitted = [
+            'client' => ['access' => 1, 'view' => 1, 'manage_balance' => 1],
+        ];
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('You cannot grant a permission that you do not have');
+        $serviceMock->setPermissions($targetModel, $submitted);
+    }
+
+    public function testSetPermissionsWildcardCeilingEnforced(): void
+    {
+        $serviceMock = $this->getMockBuilder(Service::class)
+            ->onlyMethods(['hasPermission', 'getPermissions'])->getMock();
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('hasPermission')->willReturn(true);
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getPermissions')->willReturn([]);
+
+        $callerModel = new \Model_Admin();
+        $callerModel->loadBean(new \DummyBean());
+        $callerModel->id = 1;
+        $callerModel->role = \Model_Admin::ROLE_STAFF;
+
+        $targetModel = new \Model_Admin();
+        $targetModel->loadBean(new \DummyBean());
+        $targetModel->id = 2;
+        $targetModel->role = \Model_Admin::ROLE_STAFF;
+
+        $di = new \Pimple\Container();
+        $di['loggedin_admin'] = $callerModel;
+        $serviceMock->setDi($di);
+
+        $submitted = [
+            'default' => ['all' => 1],
+        ];
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('You cannot grant wildcard access that you do not have');
+        $serviceMock->setPermissions($targetModel, $submitted);
     }
 
     public function testGetPermissionsPermAreEmpty(): void

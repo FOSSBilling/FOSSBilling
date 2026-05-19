@@ -47,6 +47,10 @@ class Client extends \Api_Abstract
             throw new \FOSSBilling\Exception('Order not found');
         }
 
+        if ($order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+            throw new \FOSSBilling\InformationException('Order is not activated');
+        }
+
         $orderService = $this->di['mod_service']('order');
         $s = $orderService->getOrderService($order);
         if (!$s instanceof \Model_ServiceLicense) {

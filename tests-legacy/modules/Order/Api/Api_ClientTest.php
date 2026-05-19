@@ -162,6 +162,7 @@ final class Api_ClientTest extends \BBTestCase
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
+        $order->status = \Model_ClientOrder::STATUS_ACTIVE;
 
         $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
@@ -185,6 +186,25 @@ final class Api_ClientTest extends \BBTestCase
         $result = $apiMock->service($data);
 
         $this->assertIsArray($result);
+    }
+
+    public function testServiceNotActiveException(): void
+    {
+        $order = new \Model_ClientOrder();
+        $order->loadBean(new \DummyBean());
+        $order->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
+
+        $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock->expects($this->atLeastOnce())
+            ->method('_getOrder')
+            ->willReturn($order);
+
+        $data = [
+            'id' => 1,
+        ];
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $apiMock->service($data);
     }
 
     public function testUpgradables(): void

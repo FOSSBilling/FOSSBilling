@@ -178,6 +178,9 @@ final class ServiceTest extends \BBTestCase
 
         $logMock = $this->createStub('\Box_Log');
 
+        $staffServiceMock = $this->createStub(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->method('hasPermission')->willReturn(true);
+
         $systemServiceMock = $this->getMockBuilder(Service::class)->onlyMethods(['setParamValue'])->getMock();
         $systemServiceMock->expects($this->atLeastOnce())
             ->method('setParamValue')
@@ -186,6 +189,10 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['logger'] = $logMock;
+        $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+            'Staff' => $staffServiceMock,
+            default => throw new \RuntimeException("Unexpected mod_service request: $name"),
+        });
 
         $systemServiceMock->setDi($di);
         $result = $systemServiceMock->updateParams($data);
@@ -1156,6 +1163,94 @@ final class ServiceTest extends \BBTestCase
         $di['session'] = $sessionMock;
         $this->service->setDi($di);
         $result = $this->service->clearPendingMessages();
+        $this->assertTrue($result);
+    }
+
+    public function testUpdateParamsRejectsBankFieldsWithoutPermission(): void
+    {
+        $data = [
+            'company_bank_name' => 'Malicious Bank',
+        ];
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->atLeastOnce())
+            ->method('fire');
+
+        $staffServiceMock = $this->createStub(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->method('hasPermission')->willReturn(false);
+
+        $di = $this->getDi();
+        $di['events_manager'] = $eventMock;
+        $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+            'Staff' => $staffServiceMock,
+            default => throw new \RuntimeException("Unexpected mod_service request: $name"),
+        });
+
+        $this->service->setDi($di);
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('You do not have permission to update the parameter company_bank_name');
+        $this->service->updateParams($data);
+    }
+
+    public function testUpdateParamsRejectsBicWithoutPermission(): void
+    {
+        $data = [
+            'company_bic' => 'MALICUS33',
+        ];
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->atLeastOnce())
+            ->method('fire');
+
+        $staffServiceMock = $this->createStub(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->method('hasPermission')->willReturn(false);
+
+        $di = $this->getDi();
+        $di['events_manager'] = $eventMock;
+        $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+            'Staff' => $staffServiceMock,
+            default => throw new \RuntimeException("Unexpected mod_service request: $name"),
+        });
+
+        $this->service->setDi($di);
+
+        $this->expectException(\FOSSBilling\InformationException::class);
+        $this->expectExceptionMessage('You do not have permission to update the parameter company_bic');
+        $this->service->updateParams($data);
+    }
+
+    public function testUpdateParamsAllowsBankFieldsWithPermission(): void
+    {
+        $data = [
+            'company_bank_name' => 'Safe Bank',
+            'company_bic' => 'SAFEUS33',
+        ];
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->atLeastOnce())
+            ->method('fire');
+
+        $logMock = $this->createStub('\Box_Log');
+
+        $staffServiceMock = $this->createStub(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->method('hasPermission')->willReturn(true);
+
+        $systemServiceMock = $this->getMockBuilder(Service::class)->onlyMethods(['setParamValue'])->getMock();
+        $systemServiceMock->expects($this->exactly(2))
+            ->method('setParamValue')
+            ->willReturn(true);
+
+        $di = $this->getDi();
+        $di['events_manager'] = $eventMock;
+        $di['logger'] = $logMock;
+        $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+            'Staff' => $staffServiceMock,
+            default => throw new \RuntimeException("Unexpected mod_service request: $name"),
+        });
+
+        $systemServiceMock->setDi($di);
+        $result = $systemServiceMock->updateParams($data);
         $this->assertTrue($result);
     }
 }
