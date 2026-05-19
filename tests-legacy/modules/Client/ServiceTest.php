@@ -898,7 +898,7 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
-        $di['mod'] = $di->protect(fn () => $modMock);
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
         $di['password'] = $passwordMock;
 
         $service = new \Box\Mod\Client\Service();
@@ -954,20 +954,18 @@ final class ServiceTest extends \BBTestCase
         $emailService = $this->createMock(\Box\Mod\Email\Service::class);
         $emailService->expects($this->once())
             ->method('sendTemplate')
-            ->with($this->callback(function (array $email): bool {
-                return $email['to_client'] === 1
-                    && $email['code'] === 'mod_client_signup_admin'
-                    && is_string($email['hash'])
-                    && strlen($email['hash']) === 64
-                    && $email['send_now'] === true
-                    && $email['require_email_confirmation'] === false;
-            }));
+            ->with($this->callback(fn (array $email): bool => $email['to_client'] === 1
+                && $email['code'] === 'mod_client_signup_admin'
+                && is_string($email['hash'])
+                && strlen($email['hash']) === 64
+                && $email['send_now'] === true
+                && $email['require_email_confirmation'] === false));
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
-        $di['mod'] = $di->protect(fn () => $modMock);
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
         $di['mod_config'] = $di->protect(fn (): array => []);
         $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($name)) {
             'email' => $emailService,
@@ -1003,9 +1001,7 @@ final class ServiceTest extends \BBTestCase
             ->willReturn($passwordReset);
         $dbMock->expects($this->once())
             ->method('store')
-            ->with($this->callback(static function (\Model_ClientPasswordReset $reset): bool {
-                return $reset->ip === '203.0.113.42';
-            }));
+            ->with($this->callback(static fn (\Model_ClientPasswordReset $reset): bool => $reset->ip === '203.0.113.42'));
 
         $request = new class {
             public function getClientIp(): string
@@ -1342,7 +1338,7 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['events_manager'] = $eventManagerMock;
         $di['logger'] = new \Box_Log();
-        $di['mod'] = $di->protect(fn () => $modMock);
+        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\Stub => $modMock);
         $di['password'] = $passwordMock;
         $di['request'] = $requestMock;
 

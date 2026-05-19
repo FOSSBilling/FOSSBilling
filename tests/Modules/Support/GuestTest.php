@@ -9,8 +9,8 @@ use PHPUnit\Framework\TestCase;
 
 final class GuestTest extends TestCase
 {
-    private const MIN_TICKET_ID_LENGTH = 30;
-    private const MAX_TICKET_ID_LENGTH = 60;
+    private const int MIN_TICKET_ID_LENGTH = 30;
+    private const int MAX_TICKET_ID_LENGTH = 60;
 
     /**
      * Snapshot of the initial Support extension config captured in setUp().

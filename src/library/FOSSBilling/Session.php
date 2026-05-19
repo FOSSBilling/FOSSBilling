@@ -13,9 +13,9 @@ namespace FOSSBilling;
 
 class Session implements InjectionAwareInterface
 {
-    private const OBSOLETE_FLAG = 'fb_session_obsolete';
-    private const OBSOLETE_EXPIRES_AT = 'fb_session_obsolete_expires_at';
-    private const DEFAULT_REGENERATION_GRACE_PERIOD = 300;
+    private const string OBSOLETE_FLAG = 'fb_session_obsolete';
+    private const string OBSOLETE_EXPIRES_AT = 'fb_session_obsolete_expires_at';
+    private const int DEFAULT_REGENERATION_GRACE_PERIOD = 300;
 
     private ?\Pimple\Container $di = null;
 
@@ -167,23 +167,19 @@ class Session implements InjectionAwareInterface
 
         if ($invalid) {
             $this->di['db']->trash($session);
-            if ($sessionName !== '') {
-                $cookieParams = session_get_cookie_params();
-                $cookieOptions = [
-                    'expires' => time() - 3600,
-                    'path' => $cookieParams['path'] ?? '/',
-                    'domain' => $cookieParams['domain'] ?? '',
-                    'secure' => (bool) ($cookieParams['secure'] ?? false),
-                    'httponly' => (bool) ($cookieParams['httponly'] ?? false),
-                ];
-
-                if (!empty($cookieParams['samesite'])) {
-                    $cookieOptions['samesite'] = $cookieParams['samesite'];
-                }
-
-                setcookie($sessionName, '', $cookieOptions);
-                unset($_COOKIE[$sessionName]);
+            $cookieParams = session_get_cookie_params();
+            $cookieOptions = [
+                'expires' => time() - 3600,
+                'path' => $cookieParams['path'] ?? '/',
+                'domain' => $cookieParams['domain'] ?? '',
+                'secure' => (bool) ($cookieParams['secure'] ?? false),
+                'httponly' => (bool) ($cookieParams['httponly'] ?? false),
+            ];
+            if (!empty($cookieParams['samesite'])) {
+                $cookieOptions['samesite'] = $cookieParams['samesite'];
             }
+            setcookie($sessionName, '', $cookieOptions);
+            unset($_COOKIE[$sessionName]);
         }
     }
 
@@ -239,15 +235,15 @@ class Session implements InjectionAwareInterface
 
         $sessionName = session_name();
         $sessionId = session_id();
-        if ($sessionName !== '' && $sessionId !== '') {
+        if ($sessionId !== '') {
             $params = session_get_cookie_params();
 
             setcookie($sessionName, $sessionId, [
                 'expires' => 0,
                 'path' => $params['path'] ?? '/',
                 'domain' => $params['domain'] ?? '',
-                'secure' => (bool) ($params['secure'] ?? false),
-                'httponly' => (bool) ($params['httponly'] ?? true),
+                'secure' => $params['secure'] ?? false,
+                'httponly' => $params['httponly'] ?? true,
                 'samesite' => $params['samesite'] ?? 'Lax',
             ]);
 
