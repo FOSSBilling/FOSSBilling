@@ -618,7 +618,7 @@ class Admin extends \Api_Abstract
     {
         $status = $data['status'] ?? null;
         $search = $data['search'] ?? null;
-        $cat = $data['cat'] ?? null;
+        $cat = $data['kb_article_category_id'] ?? $data['cat'] ?? null;
 
         $pager = $this->getService()->kbSearchArticles($status, $search, $cat, PaginationOptions::fromArray($data));
 

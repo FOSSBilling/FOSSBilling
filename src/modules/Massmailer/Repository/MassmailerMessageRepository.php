@@ -22,6 +22,12 @@ class MassmailerMessageRepository extends EntityRepository
     {
         $qb = $this->createQueryBuilder('m');
 
+        $id = $data['id'] ?? null;
+        if ($id !== null && $id !== '') {
+            $qb->andWhere('m.id = :id')
+                ->setParameter('id', (int) $id);
+        }
+
         $status = $data['status'] ?? null;
         if ($status !== null && $status !== '') {
             $qb->andWhere('m.status = :status')

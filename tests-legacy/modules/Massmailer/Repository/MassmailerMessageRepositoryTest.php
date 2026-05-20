@@ -10,6 +10,63 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class MassmailerMessageRepositoryTest extends \BBTestCase
 {
+    public function testGetSearchQueryBuilderAddsIdFilterWhenPresent(): void
+    {
+        $whereCalls = [];
+        $parameters = [];
+
+        $queryBuilder = $this->getMockBuilder(QueryBuilder::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['andWhere', 'setParameter', 'orderBy'])
+            ->getMock();
+
+        $queryBuilder->expects($this->exactly(2))
+            ->method('andWhere')
+            ->willReturnCallback(function (string $clause) use (&$whereCalls, $queryBuilder) {
+                $whereCalls[] = $clause;
+
+                return $queryBuilder;
+            });
+
+        $queryBuilder->expects($this->exactly(2))
+            ->method('setParameter')
+            ->willReturnCallback(function (string $name, mixed $value) use (&$parameters, $queryBuilder) {
+                $parameters[$name] = $value;
+
+                return $queryBuilder;
+            });
+
+        $queryBuilder->expects($this->once())
+            ->method('orderBy')
+            ->with('m.createdAt', 'DESC')
+            ->willReturn($queryBuilder);
+
+        $repository = $this->getMockBuilder(MassmailerMessageRepository::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['createQueryBuilder'])
+            ->getMock();
+
+        $repository->expects($this->once())
+            ->method('createQueryBuilder')
+            ->with('m')
+            ->willReturn($queryBuilder);
+
+        $result = $repository->getSearchQueryBuilder([
+            'id' => '42',
+            'status' => 'draft',
+        ]);
+
+        $this->assertSame($queryBuilder, $result);
+        $this->assertSame([
+            'm.id = :id',
+            'm.status = :status',
+        ], $whereCalls);
+        $this->assertSame([
+            'id' => 42,
+            'status' => 'draft',
+        ], $parameters);
+    }
+
     public function testGetSearchQueryBuilderGroupsSearchClauseWhenStatusFilterIsPresent(): void
     {
         $whereCalls = [];

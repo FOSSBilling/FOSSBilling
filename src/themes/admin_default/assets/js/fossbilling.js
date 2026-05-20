@@ -231,21 +231,23 @@ globalThis.FOSSBilling = {
    });
 
    //===== Search filter toggle state =====//
-   const syncSearchFilterToggleState = (toggle) => {
+   const syncSearchFilterToggleState = (toggle, panel) => {
      const targetSelector = toggle.getAttribute('data-bs-target');
      if (!targetSelector || !targetSelector.startsWith('#')) {
        return;
      }
 
-     const panel = document.querySelector(targetSelector);
      const isOpen = panel?.classList.contains('show') || toggle.getAttribute('aria-expanded') === 'true';
      toggle.classList.toggle('text-primary', isOpen);
      toggle.classList.toggle('text-secondary', !isOpen);
+
+     const summary = document.querySelector('.filter-panel-summary');
+     if (summary) {
+       summary.classList.toggle('d-none', isOpen);
+     }
    };
 
    document.querySelectorAll('.search-filter-toggle[data-bs-target]').forEach((toggle) => {
-     syncSearchFilterToggleState(toggle);
-
      const targetSelector = toggle.getAttribute('data-bs-target');
      if (!targetSelector || !targetSelector.startsWith('#')) {
        return;
@@ -256,7 +258,9 @@ globalThis.FOSSBilling = {
        return;
      }
 
-     panel.addEventListener('shown.bs.collapse', () => syncSearchFilterToggleState(toggle));
-     panel.addEventListener('hidden.bs.collapse', () => syncSearchFilterToggleState(toggle));
+     syncSearchFilterToggleState(toggle, panel);
+
+     panel.addEventListener('shown.bs.collapse', () => syncSearchFilterToggleState(toggle, panel));
+     panel.addEventListener('hidden.bs.collapse', () => syncSearchFilterToggleState(toggle, panel));
    });
  });

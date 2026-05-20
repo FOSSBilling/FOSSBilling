@@ -3,6 +3,9 @@
 {% import 'macro_functions.html.twig' as mf %}
 
 {% set active_menu = 'support' %}
+{% set has_filter_panel = true %}
+{% set filter_panel_id = 'page-search-filters' %}
+{% set filter_panel_open = request_has_filters %}
 
 {% block meta_title %}{{ 'News'|trans }}{% endblock %}
 
@@ -33,7 +36,49 @@
                 </div>
                 <div class="tab-content border-top">
                     <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-            {{ include('partial_search.html.twig') }}
+            {{ include('partial_search.html.twig', {
+                search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : ''
+            }) }}
+            <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
+                <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
+                    {% if request.search %}
+                        <input type="hidden" name="search" value="{{ request.search }}">
+                    {% endif %}
+                    <div class="row g-3">
+                        <div class="col-md-6 col-xl-3">
+                            <div>
+                                <label class="form-label text-muted small mb-1" for="news-id">{{ 'ID'|trans }}</label>
+                                <input class="form-control" type="text" id="news-id" name="id" value="{{ request.id }}" placeholder="{{ 'Post ID'|trans }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-xl-3">
+                            <div>
+                                <label class="form-label text-muted small mb-1" for="news-status">{{ 'Status'|trans }}</label>
+                                <select class="form-select" id="news-status" name="status">
+                                    <option value="">{{ 'All Posts'|trans }}</option>
+                                    <option value="draft"{% if request.status == 'draft' %} selected{% endif %}>{{ 'Draft'|trans }}</option>
+                                    <option value="active"{% if request.status == 'active' %} selected{% endif %}>{{ 'Active'|trans }}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-12 col-xl-6">
+                            <div>
+                                <label class="form-label text-muted small mb-1" for="news-section">{{ 'Section'|trans }}</label>
+                                <input class="form-control" type="text" id="news-section" name="section" value="{{ request.section }}" placeholder="{{ 'Section Name'|trans }}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-3">
+                        <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
+                        <button class="btn btn-primary" type="submit">
+                            <svg class="icon">
+                                <use xlink:href="#filter" />
+                            </svg>
+                            {{ 'Apply Filters'|trans }}
+                        </button>
+                    </div>
+                </form>
+            </section>
             <div class="table-responsive">
                 <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                 <thead>
