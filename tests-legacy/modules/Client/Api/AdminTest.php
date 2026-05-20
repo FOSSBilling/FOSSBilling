@@ -333,7 +333,7 @@ final class AdminTest extends \BBTestCase
             'notes' => 'none',
             'country' => 'Moon',
             'postcode' => 'IL-11123',
-            'city' => 'Chicaco',
+            'city' => 'Chicago',
             'state' => 'IL',
             'currency' => 'USD',
             'tax_exempt' => 'N/A',
