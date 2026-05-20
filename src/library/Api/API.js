@@ -312,6 +312,22 @@ const API = {
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    const parseResponseBody = async (response) => {
+      if (response.status === 204) {
+        return null;
+      }
+
+      const text = await response.text();
+      if (!text) {
+        return null;
+      }
+
+      try {
+        return JSON.parse(text);
+      } catch (error) {
+        throw new Error('Invalid or non-JSON response from server');
+      }
+    };
 
     url = new URL(url);
     const isFormData = params instanceof FormData;
@@ -362,7 +378,7 @@ const API = {
       body: body,
       signal: controller.signal
     })
-      .then((response) => {
+      .then(async (response) => {
         clearTimeout(timeoutId);
 
         if (response.redirected) {
@@ -370,26 +386,26 @@ const API = {
           return;
         }
 
+        const payload = await parseResponseBody(response);
+
         if (!response.ok) {
-          throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+          const error = new Error(payload?.error?.message || `HTTP error ${response.status}: ${response.statusText}`);
+          error.code = payload?.error?.code || `http_${response.status}`;
+          error.status = response.status;
+          throw error;
         }
 
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          return response.json().catch(() => {
-            throw new Error('Invalid JSON response from server');
-          });
-        } else {
-          return response.text().then(text => {
-            try {
-              return JSON.parse(text);
-            } catch (e) {
-              throw new Error('Invalid or non-JSON response from server');
-            }
-          });
-        }
+        return payload;
       })
       .then((response) => {
+        if (!response) {
+          if (typeof successHandler === 'function') {
+            successHandler(null);
+          }
+
+          return null;
+        }
+
         if (response.error) {
           const error = new Error(response.error.message || 'Unknown API error');
           error.code = response.error.code;
