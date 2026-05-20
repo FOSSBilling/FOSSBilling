@@ -151,7 +151,17 @@ body {
   }
 
 .search-actions {
+    display: inline-flex;
+    align-items: center;
     gap: 0.5rem;
+}
+
+.search-input-group > .input-group-text {
+    color: var(--tblr-secondary);
+}
+
+.search-input-group > .form-control {
+    min-width: 16rem;
 }
 
 .search-filter-toggle,

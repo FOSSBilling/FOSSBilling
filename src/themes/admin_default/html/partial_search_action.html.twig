@@ -1,8 +1,13 @@
 <form method="get">
-	<div class="input-group input-group-flat">
-		<input class="form-control" type="search" name="search" value="{{ request.search }}" placeholder="{{ 'Enter search text...'|trans }}" aria-label="{{ 'Search'|trans }}">
+	<div class="input-group input-group-flat search-input-group">
+        <span class="input-group-text">
+            <svg class="icon">
+                <use xlink:href="#search"/>
+            </svg>
+        </span>
+	    <input class="form-control" type="search" name="search" value="{{ request.search }}" placeholder="{{ 'Enter search text...'|trans }}" aria-label="{{ 'Search'|trans }}">
+        {% if has_filter_panel|default(false) %}
         <span class="input-group-text search-actions">
-            {% if has_filter_panel|default(false) %}
     		<button class="search-filter-toggle {% if filter_panel_open|default(false) %}text-primary{% else %}text-secondary{% endif %}"
                 type="button"
                 data-bs-toggle="collapse"
@@ -14,14 +19,7 @@
     				<use xlink:href="#settings"/>
     			</svg>
     		</button>
-            {% endif %}
-    		<button class="search-submit-toggle text-secondary"
-    			type="submit"
-    			aria-label="{{ 'Search'|trans }}">
-    			<svg class="icon">
-    				<use xlink:href="#search"/>
-    			</svg>
-    		</button>
         </span>
+        {% endif %}
 	</div>
 </form>
