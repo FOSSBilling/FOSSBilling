@@ -78,11 +78,11 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
 
         $data = ['id' => 1];
-        $result = $admin_Client->get_pairs($data);
+        $result = $adminClient->get_pairs($data);
         $this->assertIsArray($result);
     }
 
@@ -112,11 +112,11 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setService($serviceMock);
-        $admin_Client->setDi($di);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setService($serviceMock);
+        $adminClient->setDi($di);
 
-        $result = $admin_Client->get([]);
+        $result = $adminClient->get([]);
         $this->assertIsArray($result);
     }
 
