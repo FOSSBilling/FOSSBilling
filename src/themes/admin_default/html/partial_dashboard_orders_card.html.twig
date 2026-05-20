@@ -64,23 +64,19 @@
         </div>
         {% if orders.total > 5 %}
             <div class="card-footer d-flex align-items-center">
-                <div class="dropdown">
-                    <a class="btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                        <span class="me-1">{{ ordersPerPage }}</span>
-                        <span>{{ 'records'|trans }}</span>
-                    </a>
-                    <div class="dropdown-menu">
-                        {% for pageSize in ordersPageSizeOptions %}
-                            <a
-                                class="dropdown-item {{ pageSize == ordersPerPage ? 'active' : '' }}"
-                                data-dashboard-section="orders"
-                                href="{{ ''|url(query: ordersDashboardRequest|merge({ 'orders_per_page': pageSize })) }}"
-                            >
-                                {{ pageSize }} {{ 'records'|trans }}
-                            </a>
-                        {% endfor %}
-                    </div>
-                </div>
+                {% set ordersRecordSelectorOptions = [] %}
+                {% for pageSize in ordersPageSizeOptions %}
+                    {% set ordersRecordSelectorOptions = ordersRecordSelectorOptions|merge([{
+                        value: pageSize,
+                        active: pageSize == ordersPerPage,
+                        href: ''|url(query: ordersDashboardRequest|merge({ 'orders_per_page': pageSize })),
+                        attributes: { 'data-dashboard-section': 'orders' }
+                    }]) %}
+                {% endfor %}
+                {{ include('partial_record_selector.html.twig', {
+                    record_selector_current: ordersPerPage,
+                    record_selector_options: ordersRecordSelectorOptions
+                }) }}
             </div>
         {% endif %}
     </div>

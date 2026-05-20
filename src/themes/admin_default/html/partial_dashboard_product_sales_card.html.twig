@@ -50,23 +50,19 @@
         </div>
         {% if productSummary|length > 5 %}
             <div class="card-footer d-flex align-items-center">
-                <div class="dropdown">
-                    <a class="btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                        <span class="me-1">{{ productSalesPerPage }}</span>
-                        <span>{{ 'records'|trans }}</span>
-                    </a>
-                    <div class="dropdown-menu">
-                        {% for pageSize in productSalesPageSizeOptions %}
-                            <a
-                                class="dropdown-item {{ pageSize == productSalesPerPage ? 'active' : '' }}"
-                                data-dashboard-section="product-sales"
-                                href="{{ ''|url(query: productSalesDashboardRequest|merge({ 'product_sales_per_page': pageSize })) }}"
-                            >
-                                {{ pageSize }} {{ 'records'|trans }}
-                            </a>
-                        {% endfor %}
-                    </div>
-                </div>
+                {% set productSalesRecordSelectorOptions = [] %}
+                {% for pageSize in productSalesPageSizeOptions %}
+                    {% set productSalesRecordSelectorOptions = productSalesRecordSelectorOptions|merge([{
+                        value: pageSize,
+                        active: pageSize == productSalesPerPage,
+                        href: ''|url(query: productSalesDashboardRequest|merge({ 'product_sales_per_page': pageSize })),
+                        attributes: { 'data-dashboard-section': 'product-sales' }
+                    }]) %}
+                {% endfor %}
+                {{ include('partial_record_selector.html.twig', {
+                    record_selector_current: productSalesPerPage,
+                    record_selector_options: productSalesRecordSelectorOptions
+                }) }}
             </div>
         {% endif %}
     </div>

@@ -84,23 +84,19 @@
         </div>
         {% if invoicesUnpaid.total > 5 %}
             <div class="card-footer d-flex align-items-center">
-                <div class="dropdown">
-                    <a class="btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                        <span class="me-1">{{ invoicePerPage }}</span>
-                        <span>{{ 'records'|trans }}</span>
-                    </a>
-                    <div class="dropdown-menu">
-                        {% for pageSize in invoicePageSizeOptions %}
-                            <a
-                                class="dropdown-item {{ pageSize == invoicePerPage ? 'active' : '' }}"
-                                data-dashboard-section="invoices"
-                                href="{{ ''|url(query: invoiceDashboardRequest|merge({ 'invoice_per_page': pageSize })) }}"
-                            >
-                                {{ pageSize }} {{ 'records'|trans }}
-                            </a>
-                        {% endfor %}
-                    </div>
-                </div>
+                {% set invoiceRecordSelectorOptions = [] %}
+                {% for pageSize in invoicePageSizeOptions %}
+                    {% set invoiceRecordSelectorOptions = invoiceRecordSelectorOptions|merge([{
+                        value: pageSize,
+                        active: pageSize == invoicePerPage,
+                        href: ''|url(query: invoiceDashboardRequest|merge({ 'invoice_per_page': pageSize })),
+                        attributes: { 'data-dashboard-section': 'invoices' }
+                    }]) %}
+                {% endfor %}
+                {{ include('partial_record_selector.html.twig', {
+                    record_selector_current: invoicePerPage,
+                    record_selector_options: invoiceRecordSelectorOptions
+                }) }}
             </div>
         {% endif %}
     </div>
