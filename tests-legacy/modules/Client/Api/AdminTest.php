@@ -155,11 +155,11 @@ final class AdminTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
         $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
 
         $data = ['id' => 1];
-        $result = $admin_Client->login($data);
+        $result = $adminClient->login($data);
         $this->assertIsArray($result);
     }
 
