@@ -333,7 +333,7 @@ final class AdminTest extends \BBTestCase
             'notes' => 'none',
             'country' => 'Moon',
             'postcode' => 'IL-11123',
-            'city' => 'Chicaco',
+            'city' => 'Chicago',
             'state' => 'IL',
             'currency' => 'USD',
             'tax_exempt' => 'N/A',
@@ -396,7 +396,7 @@ final class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testUpdateEmailALreadyRegistered(): void
+    public function testUpdateEmailAlreadyRegistered(): void
     {
         $data = [
             'id' => 1,
@@ -416,7 +416,7 @@ final class AdminTest extends \BBTestCase
             'notes' => 'none',
             'country' => 'Moon',
             'postcode' => 'IL-11123',
-            'city' => 'Chicaco',
+            'city' => 'Chicago',
             'state' => 'IL',
             'currency' => 'USD',
             'tax_exempt' => 'N/A',
