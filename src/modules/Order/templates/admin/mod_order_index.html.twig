@@ -100,81 +100,93 @@
                 </div>
         <div class="tab-content border-top">
             <div class="tab-pane fade show active" id="tab-index" role="tabpanel" aria-labelledby="index-tab">
-                {{ include('partial_search.html.twig') }}
-                <section id="{{ filter_panel_id }}" class="card-body border-bottom collapse{% if filter_panel_open %} show{% endif %}">
-                    <h5>{{ 'Filter Orders'|trans }}</h5>
-                    <form method="get">
-                        <div class="form-group mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'ID'|trans }}</label>
-                            <div class="col">
-                                <input class="form-control" type="text" name="id" value="{{ request.id }}">
+                {{ include('partial_search.html.twig', {
+                    search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : ''
+                }) }}
+                <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
+                    <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
+                        {% if request.search %}
+                            <input type="hidden" name="search" value="{{ request.search }}">
+                        {% endif %}
+                        <div class="row g-3">
+                            <div class="col-md-6 col-xl-3">
+                                <div>
+                                    <label class="form-label text-muted small mb-1" for="filter-order-id">{{ 'ID'|trans }}</label>
+                                    <input class="form-control" type="text" id="filter-order-id" name="id" value="{{ request.id }}" placeholder="{{ 'Order ID'|trans }}">
+                                </div>
                             </div>
-                        </div>
-                        <div class="form-group mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}</label>
-                            <div class="col">
-                                <input class="form-control" type="text" name="title" value="{{ request.title }}">
+                            <div class="col-md-6 col-xl-3">
+                                <div>
+                                    <label class="form-label text-muted small mb-1" for="filter-order-title">{{ 'Title'|trans }}</label>
+                                    <input class="form-control" type="text" id="filter-order-title" name="title" value="{{ request.title }}" placeholder="{{ 'Order Title'|trans }}">
+                                </div>
                             </div>
-                        </div>
-                        <div class="form-group mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}</label>
-                            <div class="col">
-                                {{ mf.selectbox('status', admin.order_get_status_pairs, request.status, 0, 'All Statuses'|trans) }}
+                            <div class="col-md-6 col-xl-3">
+                                <div>
+                                    <label class="form-label text-muted small mb-1" for="status">{{ 'Status'|trans }}</label>
+                                    {{ mf.selectbox('status', admin.order_get_status_pairs, request.status, 0, 'All Statuses'|trans) }}
+                                </div>
                             </div>
-                        </div>
-                        <div class="form-group mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Type'|trans }}:</label>
-                            <div class="col">
-                                {{ mf.selectbox('type', admin.product_get_types, request.type, 0, 'All Types'|trans) }}
+                            <div class="col-md-6 col-xl-3">
+                                <div>
+                                    <label class="form-label text-muted small mb-1" for="type">{{ 'Type'|trans }}</label>
+                                    {{ mf.selectbox('type', admin.product_get_types, request.type, 0, 'All Types'|trans) }}
+                                </div>
                             </div>
-                        </div>
-                        <div class="form-group mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Product'|trans }}:</label>
-                            <div class="col">
-                                {{ mf.selectbox('product_id', admin.product_get_pairs, request.product_id, 0, 'All Products'|trans) }}
+                            <div class="col-md-6 col-xl-4">
+                                <div>
+                                    <label class="form-label text-muted small mb-1" for="product_id">{{ 'Product'|trans }}</label>
+                                    {{ mf.selectbox('product_id', admin.product_get_pairs, request.product_id, 0, 'All Products'|trans) }}
+                                </div>
                             </div>
-                        </div>
-                        <div class="form-group mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Period'|trans }}</label>
-                            <div class="col">
-                                {{ mf.selectbox('period', guest.system_periods, request.period, 0, 'All Periods'|trans) }}
+                            <div class="col-md-6 col-xl-4">
+                                <div>
+                                    <label class="form-label text-muted small mb-1" for="period">{{ 'Period'|trans }}</label>
+                                    {{ mf.selectbox('period', guest.system_periods, request.period, 0, 'All Periods'|trans) }}
+                                </div>
                             </div>
-                        </div>
-                        <div class="form-group mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Invoice Option'|trans }}</label>
-                            <div class="col">
-                                {{ mf.selectbox('invoice_option', admin.order_get_invoice_options, request.invoice_option, 0, 'All Invoice Options'|trans) }}
+                            <div class="col-md-6 col-xl-4">
+                                <div>
+                                    <label class="form-label text-muted small mb-1" for="invoice_option">{{ 'Invoice Option'|trans }}</label>
+                                    {{ mf.selectbox('invoice_option', admin.order_get_invoice_options, request.invoice_option, 0, 'All Invoice Options'|trans) }}
+                                </div>
                             </div>
-                        </div>
-                        <div class="form-group mb-3 row">
-                            <label class="form-label col-3 col-form-label" for="creation_date">{{ 'Creation Date'|trans }}</label>
-                            <div class="col">
-                                <div class="input-group">
-                                    <div class="input-icon w-100">
-                                        <input class="form-control datepicker"
-                                               id="creation_date"
-                                               value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
-                                               data-name-from="date_from"
-                                               data-name-to="date_to"
-                                        >
-                                        <span class="input-icon-addon">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
-                                                <path d="M16 3l0 4"></path>
-                                                <path d="M8 3l0 4"></path>
-                                                <path d="M4 11l16 0"></path>
-                                                <path d="M11 15l1 0"></path>
-                                                <path d="M12 15l0 3"></path>
-                                            </svg>
-                                        </span>
+                            <div class="col-md-6 col-xl-4">
+                                <div>
+                                    <label class="form-label text-muted small mb-1" for="creation_date">{{ 'Creation Date'|trans }}</label>
+                                    <div class="input-group">
+                                        <div class="input-icon w-100">
+                                            <input class="form-control datepicker"
+                                                   id="creation_date"
+                                                   placeholder="{{ 'Select Date Range'|trans }}"
+                                                   value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
+                                                   data-name-from="date_from"
+                                                   data-name-to="date_to"
+                                            >
+                                            <span class="input-icon-addon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                    <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                                                    <path d="M16 3l0 4"></path>
+                                                    <path d="M8 3l0 4"></path>
+                                                    <path d="M4 11l16 0"></path>
+                                                    <path d="M11 15l1 0"></path>
+                                                    <path d="M12 15l0 3"></path>
+                                                </svg>
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-primary w-75" type="submit">{{ 'Filter'|trans }}</button>
-                            <a class="btn btn-danger w-25" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
+                            <button class="btn btn-primary" type="submit">
+                                <svg class="icon">
+                                    <use xlink:href="#filter" />
+                                </svg>
+                                {{ 'Apply Filters'|trans }}
+                            </button>
                         </div>
                     </form>
                 </section>

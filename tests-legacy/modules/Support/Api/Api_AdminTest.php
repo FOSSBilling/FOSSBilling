@@ -390,7 +390,7 @@ final class Api_AdminTest extends \BBTestCase
     {
         $statuses = [
             \Model_SupportPTicket::OPENED => 'Open',
-            \Model_SupportPTicket::ONHOLD => 'On hold',
+            \Model_SupportPTicket::ONHOLD => 'On Hold',
             \Model_SupportPTicket::CLOSED => 'Closed',
         ];
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
@@ -411,7 +411,7 @@ final class Api_AdminTest extends \BBTestCase
     {
         $statuses = [
             \Model_SupportPTicket::OPENED => 'Open',
-            \Model_SupportPTicket::ONHOLD => 'On hold',
+            \Model_SupportPTicket::ONHOLD => 'On Hold',
             \Model_SupportPTicket::CLOSED => 'Closed',
         ];
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
@@ -640,7 +640,7 @@ final class Api_AdminTest extends \BBTestCase
     {
         $statuses = [
             \Model_SupportPTicket::OPENED => 'Open',
-            \Model_SupportPTicket::ONHOLD => 'On hold',
+            \Model_SupportPTicket::ONHOLD => 'On Hold',
             \Model_SupportPTicket::CLOSED => 'Closed',
         ];
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
@@ -661,7 +661,7 @@ final class Api_AdminTest extends \BBTestCase
     {
         $statuses = [
             \Model_SupportPTicket::OPENED => 'Open',
-            \Model_SupportPTicket::ONHOLD => 'On hold',
+            \Model_SupportPTicket::ONHOLD => 'On Hold',
             \Model_SupportPTicket::CLOSED => 'Closed',
         ];
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)

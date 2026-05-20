@@ -100,94 +100,101 @@
                 </div>
         <div class="tab-content border-top">
             <div class="tab-pane show active" id="tab-index" role="tabpanel">
-                {{ include('partial_search.html.twig') }}
-                <section id="{{ filter_panel_id }}" class="card-body border-bottom collapse{% if filter_panel_open %} show{% endif %}">
-                    <h5>{{ 'Filter Invoices'|trans }}</h5>
-                    <form method="get">
-                        <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Invoice ID'|trans }}</label>
-                            <div class="col">
-                                <input class="form-control" type="text" name="id" value="{{ request.id }}">
-                            </div>
-                        </div>
-                        <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Invoice Number'|trans }}</label>
-                            <div class="col">
-                                <input class="form-control" type="text" name="nr" value="{{ request.nr }}">
-                            </div>
-                        </div>
-                        <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label" for="client_id">{{ 'Client'|trans }}</label>
-                            <div class="col">
-                                <select class="form-control autocomplete-selector"
-                                        placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
-                                        id="client_id"
-                                        name="client_id"
-                                        data-resturl="/api/admin/client/get_pairs">
-                                {% if not request.client_id %}
-                                {% else %}
-                                    {% set client = admin.client_get({ 'id': request.client_id }) %}
-                                    <option value="{{ request.client_id }}" selected>{{ client.first_name }} {{ client.last_name }}</option>
-                                {% endif %}
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Currency'|trans }}</label>
-                            <div class="col">
-                                {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'All Currencies'|trans) }}
-                            </div>
-                        </div>
-                        <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}</label>
-                            <div class="col">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" id="radioStatusAll" type="radio" name="status" value=""{% if not request.status %} checked{% endif %}>
-                                    <label class="form-check-label" for="radioStatusAll">{{ 'All'|trans }}</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" id="radioStatusPaid" type="radio" name="status" value="paid"{% if request.status == 'paid' %} checked{% endif %}>
-                                    <label class="form-check-label" for="radioStatusPaid">{{ 'Paid'|trans }}</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" id="radioStatusUnpaid" type="radio" name="status" value="unpaid"{% if request.status == 'unpaid' %} checked{% endif %}>
-                                    <label class="form-check-label" for="radioStatusUnpaid">{{ 'Unpaid'|trans }}</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" id="radioStatusRefunded" type="radio" name="status" value="refunded"{% if request.status == 'refunded' %} checked{% endif %}>
-                                    <label class="form-check-label" for="radioStatusRefunded">{{ 'Refunded'|trans }}</label>
+                {{ include('partial_search.html.twig', {
+                    search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : ''
+                }) }}
+                <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
+                    <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
+                        {% if request.search %}
+                            <input type="hidden" name="search" value="{{ request.search }}">
+                        {% endif %}
+                        <div class="row g-3">
+                            <div class="col-md-6 col-xl-3">
+                                <div>
+                                    <label class="form-label text-muted small mb-1" for="filter-invoice-id">{{ 'Invoice ID'|trans }}</label>
+                                    <input class="form-control" type="text" id="filter-invoice-id" name="id" value="{{ request.id }}" placeholder="{{ 'Invoice ID'|trans }}">
                                 </div>
                             </div>
-                        </div>
-                        <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label" for="issue_date">{{ 'Date Issued'|trans }}</label>
-                            <div class="col">
-                                <div class="input-group">
-                                    <div class="input-icon w-100">
-                                        <input class="form-control datepicker"
-                                               id="issue_date"
-                                               value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
-                                               data-name-from="date_from"
-                                               data-name-to="date_to"
-                                        >
-                                        <span class="input-icon-addon">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
-                                                <path d="M16 3l0 4"></path>
-                                                <path d="M8 3l0 4"></path>
-                                                <path d="M4 11l16 0"></path>
-                                                <path d="M11 15l1 0"></path>
-                                                <path d="M12 15l0 3"></path>
-                                            </svg>
-                                        </span>
+                            <div class="col-md-6 col-xl-3">
+                                <div>
+                                    <label class="form-label text-muted small mb-1" for="filter-invoice-number">{{ 'Invoice Number'|trans }}</label>
+                                    <input class="form-control" type="text" id="filter-invoice-number" name="nr" value="{{ request.nr }}" placeholder="{{ 'Invoice Number'|trans }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-xl-3">
+                                <div>
+                                    <label class="form-label text-muted small mb-1" for="client_id">{{ 'Client'|trans }}</label>
+                                    <select class="form-control autocomplete-selector"
+                                            placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
+                                            id="client_id"
+                                            name="client_id"
+                                            data-resturl="/api/admin/client/get_pairs">
+                                    {% if not request.client_id %}
+                                    {% else %}
+                                        {% set client = admin.client_get({ 'id': request.client_id }) %}
+                                        <option value="{{ request.client_id }}" selected>{{ client.first_name }} {{ client.last_name }}</option>
+                                    {% endif %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-xl-3">
+                                <div>
+                                    <label class="form-label text-muted small mb-1" for="currency">{{ 'Currency'|trans }}</label>
+                                    {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'All Currencies'|trans) }}
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-xl-4">
+                                <div>
+                                    <label class="form-label text-muted small mb-1" for="issue_date">{{ 'Date Issued'|trans }}</label>
+                                    <div class="input-group">
+                                        <div class="input-icon w-100">
+                                            <input class="form-control datepicker"
+                                                   id="issue_date"
+                                                   placeholder="{{ 'Select Date Range'|trans }}"
+                                                   value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
+                                                   data-name-from="date_from"
+                                                   data-name-to="date_to"
+                                            >
+                                            <span class="input-icon-addon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                    <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                                                    <path d="M16 3l0 4"></path>
+                                                    <path d="M8 3l0 4"></path>
+                                                    <path d="M4 11l16 0"></path>
+                                                    <path d="M11 15l1 0"></path>
+                                                    <path d="M12 15l0 3"></path>
+                                                </svg>
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            <div class="col-xl-8">
+                                <label class="form-label text-muted small mb-1">{{ 'Status'|trans }}</label>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <input class="btn-check" id="invoiceStatusAll" type="radio" name="status" value=""{% if not request.status %} checked{% endif %}>
+                                    <label class="btn btn-outline-primary" for="invoiceStatusAll">{{ 'All'|trans }}</label>
+
+                                    <input class="btn-check" id="invoiceStatusPaid" type="radio" name="status" value="paid"{% if request.status == 'paid' %} checked{% endif %}>
+                                    <label class="btn btn-outline-primary" for="invoiceStatusPaid">{{ 'Paid'|trans }}</label>
+
+                                    <input class="btn-check" id="invoiceStatusUnpaid" type="radio" name="status" value="unpaid"{% if request.status == 'unpaid' %} checked{% endif %}>
+                                    <label class="btn btn-outline-primary" for="invoiceStatusUnpaid">{{ 'Unpaid'|trans }}</label>
+
+                                    <input class="btn-check" id="invoiceStatusRefunded" type="radio" name="status" value="refunded"{% if request.status == 'refunded' %} checked{% endif %}>
+                                    <label class="btn btn-outline-primary" for="invoiceStatusRefunded">{{ 'Refunded'|trans }}</label>
+                                </div>
+                            </div>
                         </div>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-primary w-75" type="submit">{{ 'Filter'|trans }}</button>
-                            <a class="btn btn-danger w-25" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
+                            <button class="btn btn-primary" type="submit">
+                                <svg class="icon">
+                                    <use xlink:href="#filter" />
+                                </svg>
+                                {{ 'Apply Filters'|trans }}
+                            </button>
                         </div>
                     </form>
                 </section>

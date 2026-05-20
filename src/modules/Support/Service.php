@@ -225,7 +225,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         return [
             \Model_SupportTicket::OPENED => 'Open',
-            \Model_SupportTicket::ONHOLD => 'On hold',
+            \Model_SupportTicket::ONHOLD => 'On Hold',
             \Model_SupportTicket::CLOSED => 'Closed',
         ];
     }
@@ -1225,7 +1225,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         return [
             \Model_SupportPTicket::OPENED => 'Open',
-            \Model_SupportPTicket::ONHOLD => 'On hold',
+            \Model_SupportPTicket::ONHOLD => 'On Hold',
             \Model_SupportPTicket::CLOSED => 'Closed',
         ];
     }
