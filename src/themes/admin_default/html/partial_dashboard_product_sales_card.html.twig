@@ -1,0 +1,73 @@
+{% set productSalesPerPageRaw = request.product_sales_per_page|default('5') %}
+{% if productSalesPerPageRaw in dashboardPageSizes %}
+    {% set productSalesPerPage = productSalesPerPageRaw %}
+{% else %}
+    {% set productSalesPerPage = '5' %}
+{% endif %}
+{% set productSalesDashboardRequest = request|merge({ 'product_sales_per_page': null, 'dashboard_section': null })|filter(v => v is not null) %}
+{% set productSummary = admin.stats_get_product_summary %}
+{% set productSalesPageSizeOptions = ['5'] %}
+{% if productSummary|length > 5 %}
+    {% set productSalesPageSizeOptions = productSalesPageSizeOptions|merge(['10']) %}
+{% endif %}
+{% if productSummary|length > 10 %}
+    {% set productSalesPageSizeOptions = productSalesPageSizeOptions|merge(['20']) %}
+{% endif %}
+{% if productSalesPerPage not in productSalesPageSizeOptions %}
+    {% set productSalesPerPage = productSalesPageSizeOptions|last %}
+{% endif %}
+
+<div class="col-lg-6" data-dashboard-card="product-sales">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">{{ 'Product Sales'|trans }}</h3>
+        </div>
+        <div class="table-responsive">
+            <table class="table card-table table-vcenter text-nowrap">
+                <thead>
+                    <tr>
+                        <th>{{ 'Product/Service'|trans }}</th>
+                        <th class="text-center">{{ 'Orders'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for p in productSummary|slice(0, productSalesPerPage) %}
+                    <tr>
+                        <td>
+                            <a href='{{ "product/manage/#{p.id}"|url }}' title="{{ p.title }}">{{ p.title|truncate(35) }}</a>
+                        </td>
+                        <td align="center">
+                            <a href='{{ 'order'|url(query: { 'product_id': p.id }) }}'>{{ p.orders }}</a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td class="text-muted text-center" colspan="2">{{ 'The list is empty'|trans }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if productSummary|length > 5 %}
+            <div class="card-footer d-flex align-items-center">
+                <div class="dropdown">
+                    <a class="btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="me-1">{{ productSalesPerPage }}</span>
+                        <span>{{ 'records'|trans }}</span>
+                    </a>
+                    <div class="dropdown-menu">
+                        {% for pageSize in productSalesPageSizeOptions %}
+                            <a
+                                class="dropdown-item {{ pageSize == productSalesPerPage ? 'active' : '' }}"
+                                data-dashboard-section="product-sales"
+                                href="{{ ''|url(query: productSalesDashboardRequest|merge({ 'product_sales_per_page': pageSize })) }}"
+                            >
+                                {{ pageSize }} {{ 'records'|trans }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>

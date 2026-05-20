@@ -1,0 +1,108 @@
+{% import 'macro_functions.html.twig' as mf %}
+
+{% set invoicePerPageRaw = request.invoice_per_page|default('5') %}
+{% if invoicePerPageRaw in dashboardPageSizes %}
+    {% set invoicePerPage = invoicePerPageRaw %}
+{% else %}
+    {% set invoicePerPage = '5' %}
+{% endif %}
+{% set invoiceDashboardRequest = request|merge({ 'invoice_per_page': null, 'dashboard_section': null })|filter(v => v is not null) %}
+{% set invoicesUnpaid = admin.invoice_get_list({ 'status': 'unpaid', 'page': 1, 'per_page': invoicePerPage }) %}
+{% set invoicePageSizeOptions = ['5'] %}
+{% if invoicesUnpaid.total > 5 %}
+    {% set invoicePageSizeOptions = invoicePageSizeOptions|merge(['10']) %}
+{% endif %}
+{% if invoicesUnpaid.total > 10 %}
+    {% set invoicePageSizeOptions = invoicePageSizeOptions|merge(['20']) %}
+{% endif %}
+{% if invoicePerPage not in invoicePageSizeOptions %}
+    {% set invoicePerPage = invoicePageSizeOptions|last %}
+{% endif %}
+
+{% if invoicesUnpaid.total > 0 %}
+<div class="col-12" data-dashboard-card="invoices">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">{{ 'Invoices'|trans }}</h3>
+            <div class="card-actions">
+                <a href="{{ 'invoice'|url }}" class="btn-action">
+                    <svg class="icon">
+                        <use xlink:href="#dots-vertical" />
+                    </svg>
+                </a>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table card-table table-vcenter text-nowrap">
+                <thead>
+                    <tr>
+                        <th>{{ 'Invoice #'|trans }}</th>
+                        <th>{{ 'Client'|trans }}</th>
+                        <th class="text-center">{{ 'Amount'|trans }}</th>
+                        <th class="text-center">{{ 'Created At'|trans }}</th>
+                        <th>{{ 'Status'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for invoice in invoicesUnpaid.list %}
+                    <tr>
+                        <td class="w-1">
+                            <a href='{{ "invoice/manage/#{invoice.id}"|url }}'>{{ invoice.serie_nr }}</a>
+                        </td>
+                        <td>
+                            <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>
+                                {{ mf.avatar(invoice.buyer.email, 24, 'db-avatar avatar avatar-xs') }}
+                            </a>&nbsp;
+                            <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>{{ invoice.buyer.first_name }} {{ invoice.buyer.last_name }}</a>
+                        </td>
+                        <td class="text-center">{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
+                        <td class="text-center">{{ invoice.created_at|format_date }}</td>
+                        <td>
+                            {% if invoice.status == 'paid' %}
+                                <span class="badge bg-success me-1"></span>
+                            {% endif %}
+                            {% if invoice.status == 'unpaid' %}
+                                <span class="badge bg-danger me-1"></span>
+                            {% endif %}
+                            {% if invoice.status == 'refunded' %}
+                                <span class="badge bg-warning me-1"></span>
+                            {% endif %}
+                            {% if invoice.status == 'canceled' %}
+                                <span class="badge bg-secondary me-1"></span>
+                            {% endif %}
+                            {{ mf.status_name(invoice.status) }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td class="text-muted text-center" colspan="5">{{ 'The list is empty'|trans }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if invoicesUnpaid.total > 5 %}
+            <div class="card-footer d-flex align-items-center">
+                <div class="dropdown">
+                    <a class="btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="me-1">{{ invoicePerPage }}</span>
+                        <span>{{ 'records'|trans }}</span>
+                    </a>
+                    <div class="dropdown-menu">
+                        {% for pageSize in invoicePageSizeOptions %}
+                            <a
+                                class="dropdown-item {{ pageSize == invoicePerPage ? 'active' : '' }}"
+                                data-dashboard-section="invoices"
+                                href="{{ ''|url(query: invoiceDashboardRequest|merge({ 'invoice_per_page': pageSize })) }}"
+                            >
+                                {{ pageSize }} {{ 'records'|trans }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
