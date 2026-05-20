@@ -236,7 +236,8 @@ class Service implements InjectionAwareInterface
             $honeypotField = $config['honeypot_field'] ?? 'bio';
 
             if (!empty($params[$honeypotField])) {
-                $this->di['logger']->info("Potential spam registration blocked. Reason: honeypot field was not empty.");
+                $this->di['logger']->info('Potential spam registration blocked. Reason: honeypot field was not empty.');
+
                 throw new \FOSSBilling\InformationException('Registration failed.');
             }
         }

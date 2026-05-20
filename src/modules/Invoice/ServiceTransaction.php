@@ -21,6 +21,7 @@ class ServiceTransaction implements InjectionAwareInterface
     private const int PROCESSING_RECOVERY_TIMEOUT = 300;
 
     protected ?\Pimple\Container $di = null;
+    private ?bool $transactionIpnHashColumnExists = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -139,7 +140,8 @@ class ServiceTransaction implements InjectionAwareInterface
         // Fallback dedupe: compute a canonical hash of the IPN payload and
         // look up an existing transaction by (gateway_id, ipn_hash).
         $ipn_hash = $this->ipnHash($ipn);
-        if (!empty($data['gateway_id']) && !empty($ipn_hash)) {
+        $supportsIpnHash = $this->supportsTransactionIpnHash();
+        if ($supportsIpnHash && !empty($data['gateway_id']) && !empty($ipn_hash)) {
             $existingByHash = $this->di['db']->findOne('Transaction', 'gateway_id = ? AND ipn_hash = ?', [$data['gateway_id'], $ipn_hash]);
             if ($existingByHash instanceof \Model_Transaction) {
                 $this->di['logger']->info('Duplicate transaction detected by IPN hash, returning existing transaction #%s', $existingByHash->id);
@@ -152,7 +154,9 @@ class ServiceTransaction implements InjectionAwareInterface
         $transaction->gateway_id = $data['gateway_id'] ?? null;
         $transaction->invoice_id = $data['invoice_id'] ?? null;
         $transaction->txn_id = $data['txn_id'] ?? null;
-        $transaction->ipn_hash = $ipn_hash ?? null;
+        if ($supportsIpnHash) {
+            $transaction->ipn_hash = $ipn_hash ?? null;
+        }
         $transaction->status = 'received';
         $transaction->ip = $this->di['request']->getClientIp();
         $transaction->ipn = json_encode($ipn);
@@ -166,6 +170,31 @@ class ServiceTransaction implements InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionCreate', 'params' => ['id' => $newId]]);
 
         return $newId;
+    }
+
+    private function supportsTransactionIpnHash(): bool
+    {
+        if ($this->transactionIpnHashColumnExists !== null) {
+            return $this->transactionIpnHashColumnExists;
+        }
+
+        try {
+            $schemaManager = $this->di['dbal']->createSchemaManager();
+            $columns = array_map(static fn ($column) => $column->getName(), $schemaManager->listTableColumns('transaction'));
+            $indexes = array_map(static fn ($index) => $index->getName(), $schemaManager->listTableIndexes('transaction'));
+
+            $supported = in_array('ipn_hash', $columns, true) && in_array('transaction_ipn_hash_idx', $indexes, true);
+        } catch (\Throwable $e) {
+            if (isset($this->di['logger'])) {
+                $this->di['logger']->warn('Could not determine whether transaction.ipn_hash exists; disabling IPN hash dedupe: %s', $e->getMessage());
+            }
+
+            return false;
+        }
+
+        $this->transactionIpnHashColumnExists = $supported;
+
+        return $this->transactionIpnHashColumnExists;
     }
 
     public function delete(\Model_Transaction $model): bool

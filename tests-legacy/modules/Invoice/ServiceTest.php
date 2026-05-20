@@ -712,6 +712,56 @@ final class ServiceTest extends \BBTestCase
         $this->assertSame(5, $invoiceModel->gateway_id);
     }
 
+    public function testMarkAsPaidByAdminReturnsBoolWhenCustomGatewayProcessingReturnsNonBool(): void
+    {
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        $invoiceModel->id = 42;
+        $invoiceModel->gateway_id = 5;
+        $invoiceModel->currency = 'USD';
+
+        $gatewayModel = new \Model_PayGateway();
+        $gatewayModel->loadBean(new \DummyBean());
+        $gatewayModel->id = 5;
+        $gatewayModel->gateway = 'Custom';
+        $gatewayModel->enabled = 1;
+
+        $transactionServiceMock = $this->createMock(ServiceTransaction::class);
+        $transactionServiceMock->expects($this->once())
+            ->method('create')
+            ->willReturn(99);
+        $transactionServiceMock->expects($this->once())
+            ->method('processTransaction')
+            ->with(99)
+            ->willReturn(99);
+
+        $serviceMock = $this->getMockBuilder(Service::class)
+            ->onlyMethods(['markAsPaid'])
+            ->getMock();
+        $serviceMock->expects($this->never())
+            ->method('markAsPaid');
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('getExistingModelById')
+            ->with('PayGateway', 5, 'Payment gateway not found')
+            ->willReturn($gatewayModel);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['logger'] = new \Box_Log();
+        $di['mod_service'] = $di->protect(fn (string $serviceName, string $sub = ''): \PHPUnit\Framework\MockObject\MockObject => match ([$serviceName, $sub]) {
+            ['Invoice', 'Transaction'] => $transactionServiceMock,
+            default => throw new \RuntimeException('Unexpected service request'),
+        });
+
+        $serviceMock->setDi($di);
+
+        $this->assertTrue($serviceMock->markAsPaidByAdmin($invoiceModel, [
+            'transactionId' => 'manual-txn-2',
+        ]));
+    }
+
     public function testMarkAsPaidByAdminRequiresTransactionIdForCustomGateway(): void
     {
         $invoiceModel = new \Model_Invoice();

@@ -621,10 +621,54 @@ final class ServiceTransactionTest extends \BBTestCase
         $existing->id = 123;
         $existing->status = \Model_Transaction::STATUS_PROCESSED;
 
+        $schemaManager = new class {
+            public function listTableColumns(string $table): array
+            {
+                return [
+                    new class {
+                        public function getName(): string
+                        {
+                            return 'ipn_hash';
+                        }
+                    },
+                ];
+            }
+
+            public function listTableIndexes(string $table): array
+            {
+                return [
+                    new class {
+                        public function getName(): string
+                        {
+                            return 'transaction_ipn_hash_idx';
+                        }
+                    },
+                ];
+            }
+        };
+
+        $dbal = new readonly class($schemaManager) {
+            public function __construct(private object $schemaManager)
+            {
+            }
+
+            public function createSchemaManager(): object
+            {
+                return $this->schemaManager;
+            }
+
+            public function executeStatement(string $sql): never
+            {
+                throw new \RuntimeException('Unexpected schema repair query: ' . $sql);
+            }
+        };
+
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('findOne')
             ->willReturn($existing);
+        $dbMock->expects($this->never())
+            ->method('dispense');
 
         $eventsMock = $this->createMock('\Box_EventManager');
         $eventsMock->expects($this->atLeastOnce())
@@ -632,6 +676,7 @@ final class ServiceTransactionTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
+        $di['dbal'] = $dbal;
         $di['events_manager'] = $eventsMock;
         $di['logger'] = new \Box_Log();
 
@@ -648,5 +693,219 @@ final class ServiceTransactionTest extends \BBTestCase
 
         $resultId = $this->service->create($data);
         $this->assertEquals(123, $resultId);
+    }
+
+    public function testCreateSkipsIpnHashLookupWhenSchemaDoesNotHaveColumn(): void
+    {
+        $transactionModel = new \Model_Transaction();
+        $transactionModel->loadBean(new \DummyBean());
+        $payGatewayModel = new \Model_PayGateway();
+        $payGatewayModel->loadBean(new \DummyBean());
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+
+        $schemaManager = new class {
+            public function listTableColumns(string $table): array
+            {
+                return [];
+            }
+
+            public function listTableIndexes(string $table): array
+            {
+                return [];
+            }
+        };
+
+        $dbal = new readonly class($schemaManager) {
+            public function __construct(private object $schemaManager)
+            {
+            }
+
+            public function createSchemaManager(): object
+            {
+                return $this->schemaManager;
+            }
+
+            public function executeStatement(string $sql): never
+            {
+                throw new \RuntimeException('No SQL statements should be executed during transaction creation: ' . $sql);
+            }
+        };
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('findOne')
+            ->willReturnCallback(function (string $model, string $sql, array $bindings) {
+                $this->assertSame('Transaction', $model);
+                $this->assertSame('txn_id = ? AND gateway_id = ?', $sql);
+                $this->assertSame(['manual-txn-1', 5], $bindings);
+
+                return null;
+            });
+        $dbMock->expects($this->once())
+            ->method('dispense')
+            ->with('Transaction')
+            ->willReturn($transactionModel);
+        $dbMock->expects($this->once())
+            ->method('store')
+            ->with($this->callback(function (\Model_Transaction $transaction): bool {
+                $this->assertSame(5, $transaction->gateway_id);
+                $this->assertSame(42, $transaction->invoice_id);
+                $this->assertSame('manual-txn-1', $transaction->txn_id);
+                $this->assertNull($transaction->ipn_hash);
+
+                return true;
+            }))
+            ->willReturn(99);
+        $dbMock->expects($this->exactly(3))
+            ->method('getExistingModelById')
+            ->willReturnCallback(function (string $modelName, int $id, string $message) use ($payGatewayModel, $invoiceModel) {
+                static $calls = 0;
+                ++$calls;
+
+                if ($calls === 1) {
+                    $this->assertSame('PayGateway', $modelName);
+                    $this->assertSame(5, $id);
+                    $this->assertSame('Gateway was not found', $message);
+
+                    return $payGatewayModel;
+                }
+
+                if ($calls === 2) {
+                    $this->assertSame('Invoice', $modelName);
+                    $this->assertSame(42, $id);
+                    $this->assertSame('Invoice was not found', $message);
+
+                    return $invoiceModel;
+                }
+
+                if ($calls === 3) {
+                    $this->assertSame('PayGateway', $modelName);
+                    $this->assertSame(5, $id);
+                    $this->assertSame('Gateway was not found', $message);
+
+                    return $payGatewayModel;
+                }
+
+                $this->fail('Unexpected getExistingModelById call');
+            });
+
+        $requestMock = new class {
+            public function getClientIp(): string
+            {
+                return '127.0.0.1';
+            }
+        };
+
+        $eventsMock = $this->createMock('\Box_EventManager');
+        $eventsMock->expects($this->exactly(2))
+            ->method('fire');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['dbal'] = $dbal;
+        $di['request'] = $requestMock;
+        $di['events_manager'] = $eventsMock;
+        $di['logger'] = new \Box_Log();
+
+        $this->service->setDi($di);
+
+        $resultId = $this->service->create([
+            'invoice_id' => 42,
+            'gateway_id' => 5,
+            'txn_id' => 'manual-txn-1',
+            'source' => 'admin',
+        ]);
+
+        $this->assertSame(99, $resultId);
+    }
+
+    public function testCreateUsesIpnHashLookupWhenSchemaSupportsColumn(): void
+    {
+        $existing = new \Model_Transaction();
+        $existing->loadBean(new \DummyBean());
+        $existing->id = 321;
+
+        $schemaManager = new class {
+            public function listTableColumns(string $table): array
+            {
+                return [
+                    new class {
+                        public function getName(): string
+                        {
+                            return 'ipn_hash';
+                        }
+                    },
+                ];
+            }
+
+            public function listTableIndexes(string $table): array
+            {
+                return [
+                    new class {
+                        public function getName(): string
+                        {
+                            return 'transaction_ipn_hash_idx';
+                        }
+                    },
+                ];
+            }
+        };
+
+        $dbal = new readonly class($schemaManager) {
+            public function __construct(private object $schemaManager)
+            {
+            }
+
+            public function createSchemaManager(): object
+            {
+                return $this->schemaManager;
+            }
+
+            public function executeStatement(string $sql): never
+            {
+                throw new \RuntimeException('Unexpected schema repair query: ' . $sql);
+            }
+        };
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->exactly(2))
+            ->method('findOne')
+            ->willReturnCallback(function (string $model, string $sql, array $bindings) use ($existing) {
+                if ($sql === 'txn_id = ? AND gateway_id = ?') {
+                    return null;
+                }
+
+                if ($sql === 'gateway_id = ? AND ipn_hash = ?') {
+                    $this->assertSame('Transaction', $model);
+                    $this->assertSame(5, $bindings[0]);
+                    $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $bindings[1]);
+
+                    return $existing;
+                }
+
+                $this->fail('Unexpected findOne lookup: ' . $sql);
+            });
+
+        $eventsMock = $this->createMock('\Box_EventManager');
+        $eventsMock->expects($this->once())
+            ->method('fire');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['dbal'] = $dbal;
+        $di['events_manager'] = $eventsMock;
+        $di['logger'] = new \Box_Log();
+
+        $this->service->setDi($di);
+
+        $resultId = $this->service->create([
+            'skip_validation' => true,
+            'gateway_id' => 5,
+            'txn_id' => 'manual-txn-2',
+            'source' => 'admin',
+        ]);
+
+        $this->assertSame(321, $resultId);
     }
 }

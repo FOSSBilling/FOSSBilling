@@ -53,12 +53,12 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setService($serviceMock);
-        $admin_Client->setDi($di);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setService($serviceMock);
+        $adminClient->setDi($di);
         $data = [];
 
-        $result = $admin_Client->get_list($data);
+        $result = $adminClient->get_list($data);
         $this->assertIsArray($result);
     }
 
@@ -78,11 +78,11 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
 
         $data = ['id' => 1];
-        $result = $admin_Client->get_pairs($data);
+        $result = $adminClient->get_pairs($data);
         $this->assertIsArray($result);
     }
 
@@ -112,11 +112,11 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setService($serviceMock);
-        $admin_Client->setDi($di);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setService($serviceMock);
+        $adminClient->setDi($di);
 
-        $result = $admin_Client->get([]);
+        $result = $adminClient->get([]);
         $this->assertIsArray($result);
     }
 
@@ -155,11 +155,11 @@ final class AdminTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
         $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
 
         $data = ['id' => 1];
-        $result = $admin_Client->login($data);
+        $result = $adminClient->login($data);
         $this->assertIsArray($result);
     }
 
@@ -195,11 +195,11 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
-        $admin_Client->setService($serviceMock);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
+        $adminClient->setService($serviceMock);
 
-        $result = $admin_Client->create($data);
+        $result = $adminClient->create($data);
 
         $this->assertIsInt($result, 'create() returned: ' . $result);
     }
@@ -333,7 +333,7 @@ final class AdminTest extends \BBTestCase
             'notes' => 'none',
             'country' => 'Moon',
             'postcode' => 'IL-11123',
-            'city' => 'Chicaco',
+            'city' => 'Chicago',
             'state' => 'IL',
             'currency' => 'USD',
             'tax_exempt' => 'N/A',
@@ -396,7 +396,7 @@ final class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testUpdateEmailALreadyRegistered(): void
+    public function testUpdateEmailAlreadyRegistered(): void
     {
         $data = [
             'id' => 1,
@@ -416,7 +416,7 @@ final class AdminTest extends \BBTestCase
             'notes' => 'none',
             'country' => 'Moon',
             'postcode' => 'IL-11123',
-            'city' => 'Chicaco',
+            'city' => 'Chicago',
             'state' => 'IL',
             'currency' => 'USD',
             'tax_exempt' => 'N/A',
@@ -537,7 +537,7 @@ final class AdminTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
         $di['password'] = $passwordMock;
         $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
-        $di['mod_service'] = $di->protect(fn ($name) => match (strtolower((string) $name)) {
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
             'profile' => $profileService,
             'staff' => $staffServiceMock,
         });
@@ -773,9 +773,17 @@ final class AdminTest extends \BBTestCase
         $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('getExpiredPasswordReminders')->willReturn($expiredArr);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'delete');
+
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+            'client' => $serviceMock,
+            'staff' => $staffServiceMock,
+        });
         $di['logger'] = new \Box_Log();
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();

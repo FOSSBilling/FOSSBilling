@@ -279,8 +279,6 @@ class Service implements InjectionAwareInterface
     public function getAdminNavigation($admin, $url = null)
     {
         $staff_service = $this->di['mod_service']('staff');
-        $current_mod = null;
-        $current_url = null;
         $nav = [];
         $subpages = [];
 
@@ -301,6 +299,7 @@ class Service implements InjectionAwareInterface
                     $l = $n['group']['location'];
                     unset($n['group']['location']);
                     $n['group']['active'] = false;
+                    $n['group']['uri'] = $this->normalizeNavigationUri($n['group']['uri'] ?? null);
                     $nav[$l] = $n['group'];
                 }
 
@@ -331,15 +330,52 @@ class Service implements InjectionAwareInterface
 
             $l = $page['location'];
             unset($page['location']);
+            $page['uri'] = $this->normalizeNavigationUri($page['uri'] ?? null);
             $nav[$l]['subpages'][] = $page;
         }
 
         // submenu sorting
         foreach ($nav as &$group) {
             $group['subpages'] = $this->di['tools']->sortByOneKey($group['subpages'], 'index');
+            $group['uri'] = $this->resolveNavigationGroupUri($group);
         }
 
         return $nav;
+    }
+
+    private function resolveNavigationGroupUri(array $group): ?string
+    {
+        $groupUri = $this->normalizeNavigationUri($group['uri'] ?? null);
+        if (!empty($groupUri)) {
+            return $groupUri;
+        }
+
+        foreach ($group['subpages'] ?? [] as $subpage) {
+            $subpageUri = $this->normalizeNavigationUri($subpage['uri'] ?? null);
+            if (!empty($subpageUri)) {
+                return $subpageUri;
+            }
+        }
+
+        return null;
+    }
+
+    private function normalizeNavigationUri(?string $uri): ?string
+    {
+        if (is_null($uri)) {
+            return null;
+        }
+
+        $uri = trim($uri);
+        if ($uri === '') {
+            return null;
+        }
+
+        if (preg_match('/^(?:[a-z][a-z0-9+.-]*:|\/|#|\?)/i', $uri) === 1) {
+            return $uri;
+        }
+
+        return $this->di['url']->adminLink(ltrim($uri, '/'));
     }
 
     /**
@@ -793,15 +829,16 @@ class Service implements InjectionAwareInterface
     public function hasManagePermission(string $module, ?\Box_App $app = null): void
     {
         $staff_service = $this->di['mod_service']('Staff');
+        $permission_module = str_starts_with($module, 'mod_') ? substr($module, 4) : $module;
 
         // The module isn't active or has no permissions if this is the case, so continue as normal
-        if (!$this->isExtensionActive('mod', $module)) {
+        if (!$this->isExtensionActive('mod', $permission_module)) {
             return;
         }
 
         // First check if any access is allowed to the module for this person
-        if (!$staff_service->hasPermission(null, $module)) {
-            $e = new \FOSSBilling\InformationException('You do not have permission to access the :mod: module', [':mod:' => $module], 403);
+        if (!$staff_service->hasPermission(null, $permission_module)) {
+            $e = new \FOSSBilling\InformationException('You do not have permission to access the :mod: module', [':mod:' => $permission_module], 403);
             if (!is_null($app)) {
                 $app->abortWithResponse(new \Symfony\Component\HttpFoundation\Response(
                     $app->render('error', ['exception' => $e]),
@@ -812,10 +849,10 @@ class Service implements InjectionAwareInterface
             throw $e;
         }
 
-        $module_permissions = $this->getSpecificModulePermissions($module);
+        $module_permissions = $this->getSpecificModulePermissions($permission_module);
 
         // If they have access, let's see if that module has a permission specifically for managing settings and check if they have that permission.
-        if (array_key_exists('manage_settings', $module_permissions) && !$staff_service->hasPermission(null, $module, 'manage_settings')) {
+        if (array_key_exists('manage_settings', $module_permissions) && !$staff_service->hasPermission(null, $permission_module, 'manage_settings')) {
             $e = new \FOSSBilling\InformationException('You do not have permission to perform this action', [], 403);
             if (!is_null($app)) {
                 $app->abortWithResponse(new \Symfony\Component\HttpFoundation\Response(

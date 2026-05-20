@@ -135,6 +135,11 @@ body {
     position: relative;
   }
 
+.search-filter-toggle {
+    min-width: 0;
+    min-height: 0;
+}
+
 .activity-log-filters .form-label {
     margin-bottom: 0.5rem;
 }

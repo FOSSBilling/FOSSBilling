@@ -239,7 +239,7 @@ class Service implements InjectionAwareInterface
 
         $results = $result->fetchAllKeyValue();
 
-        return $this->_genFlotArray($results, $time_from, $time_to);
+        return $this->_genFlotArrayFloat($results, $time_from, $time_to);
     }
 
     public function getIncome($data)
@@ -272,7 +272,7 @@ class Service implements InjectionAwareInterface
 
         $results = $result->fetchAllKeyValue();
 
-        return $this->_genFlotArray($results, $time_from, $time_to);
+        return $this->_genFlotArrayFloat($results, $time_from, $time_to);
     }
 
     public function getClientCountries($data)
@@ -355,24 +355,35 @@ class Service implements InjectionAwareInterface
 
         $results = $result->fetchAllKeyValue();
 
-        return $this->_genFlotArray($results, $time_from, $time_to);
+        return $this->_genFlotArrayInt($results, $time_from, $time_to);
     }
 
     /**
-     * @param int $time_from
-     * @param int $time_to
-     *
-     * @return int[][]
+     * @return array<int, array{0:int, 1:int}>
      */
-    private function _genFlotArray($results, $time_from, $time_to): array
+    private function _genFlotArrayInt(array $results, int $time_from, int $time_to): array
     {
         $data = [];
-        // Loop between timestamps, 1 day at a time
         do {
             $time_from = strtotime('+1 day', $time_from);
             $dom = date('Y-m-d', $time_from);
-            $c = $results[$dom] ?? 0;
-            $data[] = [$time_from * 1000, (int) $c];
+            $data[] = [$time_from * 1000, (int) ($results[$dom] ?? 0)];
+        } while ($time_to > $time_from);
+        array_pop($data);
+
+        return $data;
+    }
+
+    /**
+     * @return array<int, array{0:int, 1:float}>
+     */
+    private function _genFlotArrayFloat(array $results, int $time_from, int $time_to): array
+    {
+        $data = [];
+        do {
+            $time_from = strtotime('+1 day', $time_from);
+            $dom = date('Y-m-d', $time_from);
+            $data[] = [$time_from * 1000, round((float) ($results[$dom] ?? 0), 2)];
         } while ($time_to > $time_from);
         array_pop($data);
 

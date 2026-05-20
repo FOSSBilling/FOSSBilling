@@ -14,7 +14,7 @@ class PdoMock extends \PDO
     {
     }
 }
-class PdoStatmentsMock extends \PDOStatement
+class PdoStatementsMock extends \PDOStatement
 {
     public function __construct()
     {
@@ -106,7 +106,7 @@ final class ServiceTest extends \BBTestCase
         return [
             [[], 'SELECT * FROM extension', []],
             [['type' => 'mod'], 'AND type = :type', [':type' => 'mod']],
-            [['search' => 'FindUp'], 'AND name LIKE :search', [':search' => 'FindUp']],
+            [['search' => 'FindUp'], 'AND name LIKE :search', [':search' => '%FindUp%']],
         ];
     }
 
@@ -171,6 +171,14 @@ final class ServiceTest extends \BBTestCase
 
         $result = $this->service->getExtensionsList($data);
         $this->assertIsArray($result);
+        $this->assertNotEmpty($result);
+
+        foreach ($result as $extension) {
+            $this->assertArrayHasKey('has_settings', $extension);
+            $this->assertTrue((bool) $extension['has_settings']);
+            $this->assertArrayHasKey('status', $extension);
+            $this->assertContains($extension['status'], ['core', 'installed']);
+        }
     }
 
     public function testGetExtensionsListOnlyInstalled(): void
@@ -218,10 +226,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetAdminNavigation(): void
     {
-        $extensionServiceMock = $this->getMockBuilder(Service::class)->onlyMethods(['getConfig'])->getMock();
-        $extensionServiceMock->expects($this->atLeastOnce())
-            ->method('getConfig')
-            ->willReturn([]);
+        $extensionServiceMock = new Service($this->filesystemMock);
 
         $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffServiceMock->expects($this->atLeastOnce())
@@ -269,13 +274,25 @@ final class ServiceTest extends \BBTestCase
                 };
             }
         };
+        $cacheMock = new class {
+            public function get(string $key, callable $callback): array
+            {
+                return [];
+            }
+        };
 
         $link = 'extension';
-
         $urlMock = $this->createMock('Box_Url');
         $urlMock->expects($this->atLeastOnce())
             ->method('adminLink')
-            ->willReturn('http://fossbilling.org/index.php?_url=/' . $link);
+            ->willReturnCallback(static function (string $path, array $query = []): string {
+                $url = 'http://fossbilling.org/index.php?_url=/' . ltrim($path, '/');
+                if (!empty($query)) {
+                    $url .= '&' . http_build_query($query);
+                }
+
+                return $url;
+            });
 
         $di = $this->getDi();
         $di['mod'] = $di->protect(function ($name) use ($di) {
@@ -294,10 +311,15 @@ final class ServiceTest extends \BBTestCase
         });
         $di['url'] = $urlMock;
         $di['dbal'] = $dbalMock;
+        $di['cache'] = $cacheMock;
 
+        $extensionServiceMock->setDi($di);
         $this->service->setDi($di);
         $result = $this->service->getAdminNavigation(new \Model_Admin());
         $this->assertIsArray($result);
+        $this->assertSame('http://fossbilling.org/index.php?_url=/' . $link, $result['extensions']['uri']);
+        $this->assertSame('http://fossbilling.org/index.php?_url=/system', $result['system']['uri']);
+        $this->assertSame('http://fossbilling.org/index.php?_url=/invoice', $result['invoice']['uri']);
     }
 
     public function testFindExtension(): void
@@ -313,6 +335,44 @@ final class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
         $result = $this->service->findExtension('mod', 'id');
         $this->assertInstanceOf('\Model_Extension', $result);
+    }
+
+    public function testHasManagePermissionNormalizesPrefixedModuleNames(): void
+    {
+        $staffService = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffService->expects($this->exactly(2))
+            ->method('hasPermission')
+            ->willReturnMap([
+                [null, 'client', null, null, true],
+                [null, 'client', 'manage_settings', null, true],
+            ]);
+
+        $service = $this->getMockBuilder(Service::class)
+            ->setConstructorArgs([$this->filesystemMock])
+            ->onlyMethods(['isExtensionActive', 'getSpecificModulePermissions'])
+            ->getMock();
+
+        $service->expects($this->once())
+            ->method('isExtensionActive')
+            ->with('mod', 'client')
+            ->willReturn(true);
+
+        $service->expects($this->once())
+            ->method('getSpecificModulePermissions')
+            ->with('client')
+            ->willReturn([
+                'manage_settings' => [
+                    'type' => 'bool',
+                ],
+            ]);
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn (string $module, ...$args): \PHPUnit\Framework\MockObject\MockObject => $staffService);
+
+        $service->setDi($di);
+        $service->hasManagePermission('mod_client');
+
+        $this->addToAssertionCount(1);
     }
 
     public function testUpdate(): void
@@ -528,40 +588,41 @@ final class ServiceTest extends \BBTestCase
         $tmpDir = sys_get_temp_dir() . '/fb_test_ext_' . uniqid();
         mkdir($tmpDir, 0o755, true);
 
-        // Configure getExtensionPath to return the temp directory
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getExtensionPath')
-            ->willReturn($tmpDir);
+        try {
+            // Configure getExtensionPath to return the temp directory
+            $serviceMock->expects($this->atLeastOnce())
+                ->method('getExtensionPath')
+                ->willReturn($tmpDir);
 
-        $di['db'] = $dbMock;
-        $di['logger'] = new \Box_Log();
-        $di['mod'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $modMock);
+            $di['db'] = $dbMock;
+            $di['logger'] = new \Box_Log();
+            $di['mod'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $modMock);
 
-        $di['mod_service'] = $di->protect(function ($name) use ($staffService) {
-            if ($name === 'Staff') {
-                return $staffService;
+            $di['mod_service'] = $di->protect(function ($name) use ($staffService) {
+                if ($name === 'Staff') {
+                    return $staffService;
+                }
+
+                return null;
+            });
+
+            $serviceMock->setDi($di);
+
+            // Set up filesystem mock to return true for exists() before calling uninstall
+            $this->filesystemMock->expects($this->atLeastOnce())
+                ->method('exists')
+                ->willReturn(true);
+
+            $result = $serviceMock->uninstall('mod', 'TestExtension');
+            $this->assertTrue($result);
+
+            $result = $serviceMock->uninstall('mod', 'Branding');
+            $this->assertTrue($result);
+        } finally {
+            if (is_dir($tmpDir)) {
+                rmdir($tmpDir);
             }
-
-            return null;
-        });
-
-        $serviceMock->setDi($di);
-
-        // Set up filesystem mock to return true for exists() before calling uninstall
-        $this->filesystemMock->expects($this->atLeastOnce())
-            ->method('exists')
-            ->willReturn(true);
-
-        $result = $serviceMock->uninstall('mod', 'TestExtension');
-        $this->assertTrue($result);
-
-        // Clean up temp directory
-        if (is_dir($tmpDir)) {
-            rmdir($tmpDir);
         }
-
-        $result = $serviceMock->uninstall('mod', 'Branding');
-        $this->assertTrue($result);
     }
 
     public function testDownloadAndExtractDownloadUrlMissing(): void

@@ -283,16 +283,17 @@ final class AdminTest extends \BBTestCase
     {
         $data = [
             'id' => '1',
-            'permissions' => 'default',
+            'permissions' => ['client' => ['access' => 1]],
         ];
+
+        $staffModel = new \Model_Admin();
+        $staffModel->loadBean(new \DummyBean());
 
         $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $serviceMock->expects($this->atLeastOnce())
             ->method('setPermissions')
+            ->with($staffModel, $data['permissions'])
             ->willReturn(true);
-
-        $staffModel = new \Model_Admin();
-        $staffModel->loadBean(new \DummyBean());
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
@@ -476,7 +477,7 @@ final class AdminTest extends \BBTestCase
 
         $model = new \Model_ActivityAdminHistory();
         $model->loadBean(new \DummyBean());
-        $dbMock = $this->createMock('\Box_Database');
+        $dbMock = $this->createStub('\Box_Database');
         $dbMock->method('getExistingModelById')
             ->willReturn($model);
 
@@ -524,7 +525,7 @@ final class AdminTest extends \BBTestCase
     {
         $data['id'] = '1';
 
-        $serviceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $serviceMock = $this->createStub(\Box\Mod\Staff\Service::class);
         $serviceMock->method('toActivityAdminHistoryApiArray')
             ->willReturn([]);
 

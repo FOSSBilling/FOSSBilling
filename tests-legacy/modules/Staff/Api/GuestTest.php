@@ -58,9 +58,7 @@ final class GuestTest extends \BBTestCase
             ->method('login')
             ->willReturn([]);
 
-        $sessionMock = $this->getMockBuilder(\FOSSBilling\Session::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $sessionMock = $this->createStub(\FOSSBilling\Session::class);
 
         $di = $this->getDi();
 
@@ -132,7 +130,7 @@ final class GuestTest extends \BBTestCase
         $dbMock->expects($this->never())
             ->method('findOne');
 
-        $rateLimiterMock = $this->createMock(\FOSSBilling\Security\RateLimiter::class);
+        $rateLimiterMock = $this->createStub(\FOSSBilling\Security\RateLimiter::class);
         $rateLimiterMock->method('consumeOrThrow')->willReturn(new RateLimitResult('test', false, 10, 9));
 
         $di = $this->getDi();
@@ -199,10 +197,10 @@ final class GuestTest extends \BBTestCase
             ->with('staff@example.com')
             ->willReturn('staff@example.com');
 
-        $rateLimiterMock = $this->createMock(\FOSSBilling\Security\RateLimiter::class);
+        $rateLimiterMock = $this->createStub(\FOSSBilling\Security\RateLimiter::class);
         $rateLimiterMock->method('consume')->willReturn(new RateLimitResult('test', false, 10, 9));
 
-        $extensionServiceMock = $this->createMock(\Box\Mod\Extension\Service::class);
+        $extensionServiceMock = $this->createStub(\Box\Mod\Extension\Service::class);
         $extensionServiceMock->method('isExtensionActive')->willReturn(false);
 
         $di = $this->getDi();
@@ -210,12 +208,12 @@ final class GuestTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
         $di['validator'] = new \FOSSBilling\Validate();
         $di['tools'] = $toolsMock;
-        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\MockObject => match ($name) {
+        $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
             'email' => $emailServiceMock,
             'extension' => $extensionServiceMock,
             default => $this->createMock(\Box\Mod\Extension\Service::class),
         });
-        $di['logger'] = $this->createMock('\Box_Log');
+        $di['logger'] = $this->createStub('\Box_Log');
         $di['rate_limiter'] = $rateLimiterMock;
 
         $guestApi = new \Box\Mod\Staff\Api\Guest();
@@ -263,7 +261,7 @@ final class GuestTest extends \BBTestCase
         $passwordMock->expects($this->never())
             ->method('hashIt');
 
-        $rateLimiterMock = $this->createMock(\FOSSBilling\Security\RateLimiter::class);
+        $rateLimiterMock = $this->createStub(\FOSSBilling\Security\RateLimiter::class);
         $rateLimiterMock->method('consumeOrThrow')->willReturn(new RateLimitResult('test', false, 10, 9));
 
         $di = $this->getDi();
@@ -272,7 +270,7 @@ final class GuestTest extends \BBTestCase
         $di['validator'] = new \FOSSBilling\Validate();
         $di['password'] = $passwordMock;
         $di['rate_limiter'] = $rateLimiterMock;
-        $di['logger'] = $this->createMock('\Box_Log');
+        $di['logger'] = $this->createStub('\Box_Log');
 
         $guestApi = new \Box\Mod\Staff\Api\Guest();
         $guestApi->setDi($di);

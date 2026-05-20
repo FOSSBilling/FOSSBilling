@@ -163,6 +163,10 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('API key does not exist');
         }
 
+        if (!$this->isActive($model)) {
+            throw new \FOSSBilling\InformationException('Order is not active');
+        }
+
         $config = json_decode($model->config ?? '', true);
 
         $model->api_key = $this->generateKey($config);
