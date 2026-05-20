@@ -95,7 +95,7 @@
             <a href="{{ 'invoice'|url }}" class="card card-sm h-100">
                 <div class="card-body d-flex align-items-center h-100">
                     {% if invoice_statuses.unpaid > 0 %}
-                    <span class="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger text-light">{{ invoice_statuses.unpaid }}</span>
+                        <div class="ribbon ribbon-top bg-red">{{ invoice_statuses.unpaid }}</div>
                     {% endif %}
                     <div class="row align-items-center w-100">
                         <div class="col-auto">
@@ -117,7 +117,7 @@
             <a href="{{ 'support'|url }}" class="card card-sm h-100">
                 <div class="card-body d-flex align-items-center h-100">
                     {% if support_statuses.open > 0 %}
-                    <span class="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger text-light">{{ support_statuses.open }}</span>
+                        <div class="ribbon ribbon-top bg-red">{{ support_statuses.open }}</div>
                     {% endif %}
                     <div class="row align-items-center w-100">
                         <div class="col-auto">
