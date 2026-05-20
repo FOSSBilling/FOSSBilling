@@ -50,7 +50,7 @@
             </tr>
         </thead>
         <tbody>
-        {% set emails = admin.email_email_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+        {% set emails = admin.email_email_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
         {% for i, email in emails.list %}
         <tr>
             {% if can_delete_email_history %}

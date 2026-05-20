@@ -199,7 +199,7 @@
                 </tr>
             </thead>
             <tbody>
-            {% set events = admin.activity_log_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+            {% set events = admin.activity_log_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
             {% for i, event in events.list %}
             <tr>
                 <td class="text-nowrap">{{ event.id }}</td>
@@ -287,8 +287,8 @@
         </table>
     </div>
 
-    <div class="card-footer d-flex align-items-center justify-content-end">
-        {{ include('partial_pagination.html.twig', { 'list': events, 'url': 'activity' }) }}
+    <div class="card-footer d-flex align-items-center">
+        {{ include('partial_pagination.html.twig', { 'list': events, 'url': 'activity', 'split_footer_controls': true }) }}
     </div>
 </div>
 {% endblock %}

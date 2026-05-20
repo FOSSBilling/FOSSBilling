@@ -173,7 +173,7 @@
         </thead>
 
         <tbody>
-            {% set transactions = admin.invoice_transaction_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+            {% set transactions = admin.invoice_transaction_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
             {% for i, tx in transactions.list %}
             <tr>
                 <td>

@@ -62,7 +62,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% set products = admin.product_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+                            {% set products = admin.product_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
                             {% for product in products.list %}
                             <tr>
                                 <td>{{ product.id }}</td>
@@ -104,8 +104,8 @@
                         </tbody>
                     </table>
 
-                    <div class="card-footer d-flex align-items-center justify-content-end">
-                        {{ include('partial_pagination.html.twig', { 'list': products, 'url': 'product' }) }}
+                    <div class="card-footer d-flex align-items-center">
+                        {{ include('partial_pagination.html.twig', { 'list': products, 'url': 'product', 'split_footer_controls': true }) }}
                     </div>
 
                     <div class="card-footer text-end">

@@ -71,7 +71,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                {% set responses = admin.support_canned_get_list({ 'per_page': 90, 'page': request.page }|merge(request)) %}
+                {% set responses = admin.support_canned_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
                 {% for i, response in responses.list %}
                 <tr>
                     <td>
@@ -102,8 +102,8 @@
                 </tbody>
                 </table>
             </div>
-            <div class="card-footer d-flex align-items-center justify-content-end">
-                {{ include('partial_pagination.html.twig', { 'list': responses, 'url': 'support/canned-responses' }) }}
+            <div class="card-footer d-flex align-items-center">
+                {{ include('partial_pagination.html.twig', { 'list': responses, 'url': 'support/canned-responses', 'split_footer_controls': true }) }}
             </div>
         </div>
 

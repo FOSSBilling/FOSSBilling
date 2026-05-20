@@ -68,7 +68,7 @@
                     </thead>
                     <tbody>
                     {% set currency = guest.currency_get %}
-                    {% set promos = admin.product_promo_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+                    {% set promos = admin.product_promo_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
                     {% for promo in promos.list %}
                     <tr>
                         <td>
@@ -125,8 +125,8 @@
                 </table>
                 </div>
 
-                <div class="card-footer d-flex align-items-center justify-content-end">
-                    {{ include('partial_pagination.html.twig', { 'list': promos, 'url': 'product/promos' }) }}
+                <div class="card-footer d-flex align-items-center">
+                    {{ include('partial_pagination.html.twig', { 'list': promos, 'url': 'product/promos', 'split_footer_controls': true }) }}
                 </div>
             </div>
 

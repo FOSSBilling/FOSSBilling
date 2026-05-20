@@ -44,7 +44,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                    {% set events = admin.notification_get_list({ "per_page": 10, "page": request.page }|merge(request)) %}
+                    {% set events = admin.notification_get_list({ "per_page": 25, "page": request.page }|merge(request)) %}
                     {% for i, event in events.list %}
                         <tr>
                             <td>{{ event.meta_value|raw }}</td>

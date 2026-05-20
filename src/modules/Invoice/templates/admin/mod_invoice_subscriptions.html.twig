@@ -51,7 +51,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% set subscriptions = admin.invoice_subscription_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+                    {% set subscriptions = admin.invoice_subscription_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
                     {% for i, subscription in subscriptions.list %}
                     <tr>
                         <td>

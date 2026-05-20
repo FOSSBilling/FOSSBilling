@@ -55,7 +55,7 @@
                             </tr>
                             </thead>
                             <tbody>
-                            {% set msgs = admin.massmailer_get_list({ "per_page": 30, "page": request.page }|merge(request)) %}
+                            {% set msgs = admin.massmailer_get_list({ "per_page": 25, "page": request.page }|merge(request)) %}
                             {% for i, msg in msgs.list %}
                                 <tr>
                                     <td>{{ msg.subject }}</td>
@@ -90,8 +90,8 @@
                             {% endfor %}
                             </tbody>
                         </table>
-                        <div class="card-footer d-flex align-items-center justify-content-end">
-                            {{ include('partial_pagination.html.twig', { 'list': msgs, 'url': 'massmailer' }) }}
+                        <div class="card-footer d-flex align-items-center">
+                            {{ include('partial_pagination.html.twig', { 'list': msgs, 'url': 'massmailer', 'split_footer_controls': true }) }}
                         </div>
                     </div>
                 </div>

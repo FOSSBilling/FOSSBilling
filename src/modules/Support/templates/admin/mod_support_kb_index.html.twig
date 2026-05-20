@@ -73,7 +73,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% set posts = admin.support_kb_article_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+                    {% set posts = admin.support_kb_article_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
                     {% for i, post in posts.list %}
                     <tr>
                         <td>
@@ -114,8 +114,8 @@
                 </table>
             </div>
 
-            <div class="card-footer d-flex align-items-center justify-content-end">
-                {{ include('partial_pagination.html.twig', { 'list': posts, 'url': 'support/kb' }) }}
+            <div class="card-footer d-flex align-items-center">
+                {{ include('partial_pagination.html.twig', { 'list': posts, 'url': 'support/kb', 'split_footer_controls': true }) }}
             </div>
         </div>
 

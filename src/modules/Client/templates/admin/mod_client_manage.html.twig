@@ -618,7 +618,7 @@
                         <svg class="icon">
                             <use xlink:href="#plus" />
                         </svg>
-                        {{ 'New invoice'|trans }}
+                        {{ 'New Invoice'|trans }}
                     </a>
                 </div>
             </div>
@@ -816,7 +816,9 @@
                     </thead>
 
                     <tbody>
-                        {% set emails = admin.email_email_get_list({ 'per_page': 20, 'client_id': client.id }) %}
+                        {% set emailsPerPage = request.per_page matches '/^\\d+$/' ? request.per_page : 25 %}
+                        {% set emailsPage = request.page matches '/^\\d+$/' ? request.page : 1 %}
+                        {% set emails = admin.email_email_get_list({ 'per_page': emailsPerPage, 'page': emailsPage, 'client_id': client.id }) %}
                         {% for i, email in emails.list %}
                         <tr>
                             <td>{{ email.subject }}</td>
@@ -846,8 +848,8 @@
                     </tbody>
                 </table>
             </div>
-            <div class="card-footer d-flex align-items-center justify-content-end">
-                {{ include('partial_pagination.html.twig', { 'list': emails }) }}
+            <div class="card-footer d-flex align-items-center">
+                {{ include('partial_pagination.html.twig', { 'list': emails, 'split_footer_controls': true }) }}
             </div>
         </div>
         {% endif %}

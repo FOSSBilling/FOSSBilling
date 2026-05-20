@@ -107,7 +107,7 @@
                 </tr>
             </thead>
             <tbody>
-            {% set tickets = admin.support_public_ticket_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+            {% set tickets = admin.support_public_ticket_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
             {% for i, ticket in tickets.list %}
             <tr>
                 <td>
