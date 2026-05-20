@@ -53,12 +53,12 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setService($serviceMock);
-        $admin_Client->setDi($di);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setService($serviceMock);
+        $adminClient->setDi($di);
         $data = [];
 
-        $result = $admin_Client->get_list($data);
+        $result = $adminClient->get_list($data);
         $this->assertIsArray($result);
     }
 
@@ -78,11 +78,11 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
 
         $data = ['id' => 1];
-        $result = $admin_Client->get_pairs($data);
+        $result = $adminClient->get_pairs($data);
         $this->assertIsArray($result);
     }
 
@@ -112,11 +112,11 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setService($serviceMock);
-        $admin_Client->setDi($di);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setService($serviceMock);
+        $adminClient->setDi($di);
 
-        $result = $admin_Client->get([]);
+        $result = $adminClient->get([]);
         $this->assertIsArray($result);
     }
 
@@ -155,11 +155,11 @@ final class AdminTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
         $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
 
         $data = ['id' => 1];
-        $result = $admin_Client->login($data);
+        $result = $adminClient->login($data);
         $this->assertIsArray($result);
     }
 
@@ -195,11 +195,11 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
-        $admin_Client->setService($serviceMock);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
+        $adminClient->setService($serviceMock);
 
-        $result = $admin_Client->create($data);
+        $result = $adminClient->create($data);
 
         $this->assertIsInt($result, 'create() returned: ' . $result);
     }
