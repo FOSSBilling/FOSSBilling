@@ -8,7 +8,7 @@
         </div>
         <div class="form-check form-check-inline">
             <input class="form-check-input" type="radio" name="pricing[type]" value="once"{% if product.pricing.type == 'once' %} checked{% endif %} id="pricing-once">
-            <label class="form-check-label" for="pricing-once">{{ 'One time'|trans }}</label>
+            <label class="form-check-label" for="pricing-once">{{ 'One Time'|trans }}</label>
         </div>
         <div class="form-check form-check-inline">
             <input class="form-check-input" type="radio" name="pricing[type]" value="recurrent"{% if product.pricing.type == 'recurrent' %} checked{% endif %} id="pricing-recurrent">
@@ -28,7 +28,7 @@
         </tr>
         <tr>
             <td>
-                <label for="">{{ 'One time'|trans }}</label>
+                <label for="">{{ 'One Time'|trans }}</label>
             </td>
             <td>
                 <input type="text" class="form-control price setup_price" name="pricing[once][setup]" value="{{ product.pricing.once.setup }}">

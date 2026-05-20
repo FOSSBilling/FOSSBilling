@@ -135,9 +135,32 @@ body {
     position: relative;
   }
 
-.search-filter-toggle {
+.search-actions {
+    gap: 0.5rem;
+}
+
+.search-filter-toggle,
+.search-submit-toggle {
+    appearance: none;
+    -webkit-appearance: none;
     min-width: 0;
     min-height: 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    color: inherit;
+
+    &:focus,
+    &:focus-visible,
+    &:active {
+        box-shadow: none;
+        outline: 0;
+    }
 }
 
 .activity-log-filters .form-label {
