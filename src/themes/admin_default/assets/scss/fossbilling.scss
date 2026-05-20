@@ -47,6 +47,21 @@ body {
     }
 }
 
+.ts-wrapper.form-control.autocomplete-selector-wrapper {
+    min-height: 40px !important;
+    height: 40px;
+    align-items: stretch;
+
+    .ts-control,
+    &.single.input-active .ts-control {
+        min-height: 38px !important;
+        line-height: 20px;
+        align-items: center;
+        padding-top: 8px !important;
+        padding-bottom: 8px !important;
+    }
+}
+
 .canned_ticket_response {
     width: 18rem;
 }
