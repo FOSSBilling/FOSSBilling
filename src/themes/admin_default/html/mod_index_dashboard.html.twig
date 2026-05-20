@@ -36,12 +36,12 @@
         {% set currency = guest.currency_get %}
 
         <div class="col-sm-6 col-lg-3">
-            <a href="{{ 'client'|url }}" class="card card-sm">
-                <div class="card-body">
+            <a href="{{ 'client'|url }}" class="card card-sm h-100">
+                <div class="card-body d-flex align-items-center h-100">
                     {% if client_statuses.suspended > 0 %}
-                    <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger text-light">{{ client_statuses.suspended }}</span>
+                    <span class="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger text-light">{{ client_statuses.suspended }}</span>
                     {% endif %}
-                    <div class="row align-items-center">
+                    <div class="row align-items-center w-100">
                         <div class="col-auto">
                             <span class="bg-blue text-white avatar">
                                 <svg class="icon">
@@ -58,12 +58,12 @@
             </a>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <a href="{{ 'order'|url }}" class="card card-sm">
-                <div class="card-body">
+            <a href="{{ 'order'|url }}" class="card card-sm h-100">
+                <div class="card-body d-flex align-items-center h-100">
                     {% if order_statuses.suspended > 0 %}
-                    <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger text-light">{{ order_statuses.suspended }}</span>
+                    <span class="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger text-light">{{ order_statuses.suspended }}</span>
                     {% endif %}
-                    <div class="row align-items-center">
+                    <div class="row align-items-center w-100">
                         <div class="col-auto">
                         <span class="bg-green text-white avatar">
                             <svg class="icon">
@@ -80,12 +80,12 @@
             </a>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <a href="{{ 'invoice'|url }}" class="card card-sm">
-                <div class="card-body">
+            <a href="{{ 'invoice'|url }}" class="card card-sm h-100">
+                <div class="card-body d-flex align-items-center h-100">
                     {% if invoice_statuses.unpaid > 0 %}
-                    <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger text-light">{{ invoice_statuses.unpaid }}</span>
+                    <span class="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger text-light">{{ invoice_statuses.unpaid }}</span>
                     {% endif %}
-                    <div class="row align-items-center">
+                    <div class="row align-items-center w-100">
                         <div class="col-auto">
                             <span class="bg-danger text-white avatar">
                                 <svg class="icon">
@@ -102,12 +102,12 @@
             </a>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <a href="{{ 'support'|url }}" class="card card-sm">
-                <div class="card-body">
+            <a href="{{ 'support'|url }}" class="card card-sm h-100">
+                <div class="card-body d-flex align-items-center h-100">
                     {% if support_statuses.open > 0 %}
-                    <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger text-light">{{ support_statuses.open }}</span>
+                    <span class="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger text-light">{{ support_statuses.open }}</span>
                     {% endif %}
-                    <div class="row align-items-center">
+                    <div class="row align-items-center w-100">
                         <div class="col-auto">
                         <span class="bg-warning text-white avatar">
                             <svg class="icon">
