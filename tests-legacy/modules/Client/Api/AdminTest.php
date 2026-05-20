@@ -230,13 +230,13 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
-        $admin_Client->setService($serviceMock);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
+        $adminClient->setService($serviceMock);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('A password is required when the welcome email is disabled.');
-        $admin_Client->create($data);
+        $adminClient->create($data);
     }
 
     public function testCreateEmailRegisteredException(): void
@@ -263,13 +263,13 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
-        $admin_Client->setService($serviceMock);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
+        $adminClient->setService($serviceMock);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('This email address is already registered.');
-        $admin_Client->create($data);
+        $adminClient->create($data);
     }
 
     public function testDelete(): void
@@ -306,10 +306,10 @@ final class AdminTest extends \BBTestCase
         });
         $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
-        $admin_Client->setService($serviceMock);
-        $result = $admin_Client->delete($data);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
+        $adminClient->setService($serviceMock);
+        $result = $adminClient->delete($data);
         $this->assertTrue($result);
     }
 
@@ -390,9 +390,9 @@ final class AdminTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
         $di['tools'] = $toolsMock;
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
-        $result = $admin_Client->update($data);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
+        $result = $adminClient->update($data);
         $this->assertTrue($result);
     }
 
@@ -472,28 +472,28 @@ final class AdminTest extends \BBTestCase
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('This email address is already registered.');
-        $admin_Client->update($data);
+        $adminClient->update($data);
     }
 
     public function testUpdateIdException(): void
     {
         $data = [];
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
+        $adminClient = new \Box\Mod\Client\Api\Admin();
 
         $di = $this->getDi();
 
         $di['validator'] = new \FOSSBilling\Validate();
-        $admin_Client->setDi($di);
+        $adminClient->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Client ID was not passed');
-        $this->validateRequiredParams($admin_Client, 'update', $data);
-        $admin_Client->update($data);
+        $this->validateRequiredParams($adminClient, 'update', $data);
+        $adminClient->update($data);
     }
 
     public function testChangePassword(): void
