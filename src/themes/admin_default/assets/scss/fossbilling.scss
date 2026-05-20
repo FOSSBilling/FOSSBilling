@@ -152,8 +152,18 @@ body {
 #back-to-top {
     left: auto;
     right: 1.5rem;
-    bottom: 5rem;
+    bottom: 2rem;
     z-index: 1030;
+}
+
+.back-to-top-hidden {
+    display: none !important;
+}
+
+.back-to-top-visible {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
 }
 
 .dashboard-stat-link {
