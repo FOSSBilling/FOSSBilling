@@ -68,8 +68,8 @@
                         <div class="col">
                             {% set tpl = 'mod_service' ~ product.type ~ '_order_form.html.twig' %}
                             {% if guest.system_template_exists({ 'file': tpl }) %}
-                            <div class="nNote nInformation">
-                                <p>Please edit <strong>{{ tpl }}</strong> file in order to change order form for <strong>{{ product.type }}</strong> category products.</p>
+                            <div class="form-control-plaintext text-secondary py-2">
+                                {{ 'Edit'|trans }} <code>{{ tpl }}</code> {{ 'to change the order form for'|trans }} <strong>{{ product.type }}</strong> {{ 'category products.'|trans }}
                             </div>
                             {% else %}
                                 <div class="input-group">
