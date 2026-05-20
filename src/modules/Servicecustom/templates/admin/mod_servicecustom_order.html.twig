@@ -1,9 +1,8 @@
 {% if product.stock_control %}
-<div class="rowElem">
-    <label>{{ 'Quantity'|trans }}:</label>
-    <div class="formRight">
-        <input type="text" name="quantity" value="1"/>
+<div class="mb-3 row">
+    <label class="form-label col-3 col-form-label">{{ 'Quantity'|trans }}</label>
+    <div class="col">
+        <input class="form-control" type="text" name="quantity" value="1">
     </div>
-    <div class="fix"></div>
 </div>
 {% endif %}

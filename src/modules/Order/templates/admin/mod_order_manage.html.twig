@@ -188,31 +188,12 @@
                         <span>{{ 'Suspend'|trans }}</span>
                     </a>
                     {% else %}
-                    <div id="suspend_popup" style="position: fixed; z-index: 99999; padding: 5px; margin: 0px; min-width: 310px; max-width: 310px; top: 30%; left: 45%; display: none;">
-                        <h5 id="suspend_popup_title">{{ 'Suspension Reason'|trans }}</h5>
-                        <div id="suspend_popup_content" class="confirm">
-                            <div id="suspend_popup_message">
-                                <div>{{ 'Reason for Suspension'|trans }}
-                                    {% for reason in params.suspend_reason_list|trim|split("\r\n") %}
-                                    <div class="item">
-                                        <input type="radio" value="{{ reason }}" name="reason">
-                                        <label>{{ reason }}</label>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            <div id="suspend_popup_panel">
-                                <input type="button" class="btn btn-primary w-100" value="&nbsp;{{ 'Suspend'|trans }}&nbsp;" id="popup_ok" onclick="return susp.suspendOrder('{{ 'order/suspend'|api_url(query: { 'id': order.id }) }}', 'reason');">
-                                <input type="button" class="btn btn-primary" value="&nbsp;Cancel&nbsp;" id="popup_cancel" onclick="return susp.suspenderHide();">
-                            </div>
-                        </div>
-                    </div>
-                    <a class="btn btn-primary" id="suspend_button" href="#" onclick="return susp.showSuspendPopup()" {{ fb_api_link({ reload: true}) }}>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#suspendModal">
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#close" />
                         </svg>
                         <span>{{ 'Suspend'|trans }}</span>
-                    </a>
+                    </button>
                     {% endif %}
                     <a class="btn btn-primary"
                         {{ fb_api_link({href: 'order/cancel'|api_url(query: {'id': order.id}), modal: {type: 'prompt', title: 'Cancellation Reason'|trans, label: 'Reason for Cancellation'|trans, key: 'reason'}, reload: true}) }}>
@@ -261,7 +242,9 @@
                     {% endif %}
                 {% endset %}
 
-                {{ order_actions }}
+                <div class="btn-list justify-content-center">
+                    {{ order_actions }}
+                </div>
             </div>
         </div>
 
@@ -288,6 +271,36 @@
                 </div>
             </div>
         </div>
+        {% if order.status == 'active' or order.status == 'failed_renew' %}
+            {% set params = admin.extension_config_get({ 'ext': 'mod_order' }) %}
+            {% if params.suspend_reason_list|trim is not empty %}
+                <div class="modal modal-blur fade" id="suspendModal" tabindex="-1" aria-labelledby="suspendModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-sm">
+                        <div class="modal-content">
+                            <form method="post" action="{{ 'order/suspend'|api_url }}" {{ fb_api_form({ reload: true }) }}>
+                                <div class="modal-status bg-warning"></div>
+                                <div class="modal-body">
+                                    <div class="modal-title" id="suspendModalLabel">{{ 'Suspension Reason'|trans }}</div>
+                                    <input type="hidden" name="id" value="{{ order.id }}">
+                                    <div class="mt-3 d-flex flex-column gap-2">
+                                        {% for reason in params.suspend_reason_list|trim|split("\r\n") %}
+                                            <label class="form-check">
+                                                <input class="form-check-input" type="radio" name="reason" value="{{ reason }}"{% if loop.first %} checked{% endif %}>
+                                                <span class="form-check-label">{{ reason }}</span>
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                                    <button type="submit" class="btn btn-primary">{{ 'Suspend'|trans }}</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        {% endif %}
 
         <div class="tab-pane fade" id="tab-manage" role="tabpanel">
             <div class="card-body">
@@ -365,45 +378,6 @@
                     <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
                 </form>
             </div>
-
-            {# <form method="post" action="{{ 'order/update'|api_url }}">
-                <fieldset>
-                    <legend>Order promotion code</legend>
-
-                    <div class="mb-3 row noborder">
-                        <label>{{ 'Promo code'|trans }}</label>
-                        <div class="formRight">
-                            <input type="text" name="promo_id" value="{{ order.promo_id }}" required>
-                        </div>
-                        <div class="fix"></div>
-                    </div>
-
-                    <input type="submit" value="{{ 'Update promo'|trans }}" class="btn btn-primary w-100">
-                </fieldset>
-                <input type="hidden" name="id" value="{{ order.id }}">
-            </form> #}
-            {# order_actions #}
-
-            {# if order.status == 'pending_setup' or order.status == 'failed_setup' %}
-            <div class="help">
-                <h2>{{ 'Order Parameters'|trans }}</h2>
-            </div>
-
-            <form method="post" action="{{ 'order/update_config'|api_url }}" {{ fb_api_form({ message: 'Order Config Updated'|trans}) }}>
-                {% for name, value in order.config %}
-                <div class="mb-3 row">
-                    <label class="topLabel">{{ name }}</label>
-                        <div class="formBottom">
-                            <textarea rows="2" name="config[{{ name }}]">{{ value }}</textarea>
-                        </div>
-                    <div class="fix"></div>
-                </div>
-                {% endfor %}
-
-                <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary submitForm" />
-                <input type="hidden" name="id" value="{{ order.id }}"/>
-            </form>
-            {% endif #}
         </div>
 
         <div class="tab-pane fade" id="tab-config" role="tabpanel">
@@ -615,39 +589,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block js %}
-<script>
-    var susp = {
-        showSuspendPopup: () => {
-            document.getElementById('suspend_popup').style.display = 'block';
-        },
-        suspendOrder: (url, name) => {
-            var p = {};
-            var inps = document.getElementsByName(name);
-            var value = '';
-
-            for (var i = 0; i < inps.length; i++) {
-            if (inps[i].checked) {
-                value = inps[i].value;
-                break;
-            }
-            }
-
-            p[name] = value;
-            API.makeRequest('GET', Tools.getBaseURL(url), p,
-                (result) => {
-                    return API._afterComplete(document.getElementById('suspend_button'), result);
-                });
-
-            document.getElementById('suspend_popup').style.display = 'none';
-
-            return false;
-        },
-        suspenderHide: () => {
-            document.getElementById('suspend_popup').style.display = 'none';
-        }
-    };
-</script>
 {% endblock %}
