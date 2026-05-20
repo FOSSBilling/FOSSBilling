@@ -1477,7 +1477,7 @@ final class ServiceTest extends \BBTestCase
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->exactly(2))
             ->method('getExistingModelById')
-            ->willReturnOnConsecutiveCalls($clientModel, $productModel);
+            ->willReturnOnConsecutiveCalls($productModel, $clientModel);
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($invoiceModel);
@@ -1512,6 +1512,112 @@ final class ServiceTest extends \BBTestCase
                 [
                     'price' => 20.0,
                     'quantity' => 2,
+                ]
+            );
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function (string $service, ?string $sub = null) use ($currencyService, $invoiceItemServiceMock) {
+            if ($service === 'Currency') {
+                return $currencyService;
+            }
+
+            if ($service === 'Invoice' && $sub === 'InvoiceItem') {
+                return $invoiceItemServiceMock;
+            }
+
+            throw new \RuntimeException('Unexpected service request');
+        });
+
+        $serviceMock->setDi($di);
+        $result = $serviceMock->generateForOrder($orderModel);
+        $this->assertInstanceOf('\Model_Invoice', $result);
+    }
+
+    public function testGenerateForOrderUsesRenewalPricingWhenStoredDomainOrderPriceIsZero(): void
+    {
+        $serviceMock = $this->getMockBuilder(Service::class)
+            ->onlyMethods(['setInvoiceDefaults'])
+            ->getMock();
+        $serviceMock->expects($this->once())
+            ->method('setInvoiceDefaults');
+
+        $orderModel = new \Model_ClientOrder();
+        $orderModel->loadBean(new \DummyBean());
+        $orderModel->client_id = 1;
+        $orderModel->product_id = 2;
+        $orderModel->currency = 'EUR';
+        $orderModel->price = 0;
+        $orderModel->quantity = 1;
+        $orderModel->status = \Model_ClientOrder::STATUS_ACTIVE;
+        $orderModel->config = json_encode([
+            'action' => 'register',
+            'register_tld' => '.com',
+            'register_years' => 1,
+            'period' => '1Y',
+        ]);
+
+        $clientModel = new \Model_Client();
+        $clientModel->loadBean(new \DummyBean());
+
+        $productTable = $this->getMockBuilder(\Model_ProductDomainTable::class)
+            ->onlyMethods(['getRenewalLineConfig'])
+            ->getMock();
+        $productTable->expects($this->once())
+            ->method('getRenewalLineConfig')
+            ->willReturn([
+                'price' => 10.0,
+                'quantity' => 1,
+            ]);
+
+        $productModel = $this->getMockBuilder(\Model_Product::class)
+            ->onlyMethods(['getTable'])
+            ->getMock();
+        $productModel->expects($this->once())
+            ->method('getTable')
+            ->willReturn($productTable);
+
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->exactly(2))
+            ->method('getExistingModelById')
+            ->willReturnOnConsecutiveCalls($productModel, $clientModel);
+        $dbMock->expects($this->atLeastOnce())
+            ->method('dispense')
+            ->willReturn($invoiceModel);
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store');
+
+        $currencyRepository = $this->getMockBuilder(\Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $currencyRepository->expects($this->once())
+            ->method('getRateByCode')
+            ->with('EUR')
+            ->willReturn(1.0);
+
+        $currencyService = $this->getMockBuilder(\Box\Mod\Currency\Service::class)
+            ->onlyMethods(['getCurrencyRepository'])
+            ->getMock();
+        $currencyService->expects($this->once())
+            ->method('getCurrencyRepository')
+            ->willReturn($currencyRepository);
+
+        $invoiceItemServiceMock = $this->getMockBuilder(ServiceInvoiceItem::class)
+            ->onlyMethods(['generateFromOrder'])
+            ->getMock();
+        $invoiceItemServiceMock->expects($this->once())
+            ->method('generateFromOrder')
+            ->with(
+                $this->identicalTo($invoiceModel),
+                $this->identicalTo($orderModel),
+                \Model_InvoiceItem::TASK_RENEW,
+                10.0,
+                [
+                    'price' => 10.0,
+                    'quantity' => 1,
                 ]
             );
 
