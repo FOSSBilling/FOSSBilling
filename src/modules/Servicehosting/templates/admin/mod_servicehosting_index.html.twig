@@ -66,7 +66,7 @@
                                         </td>
                                         <td>{{ server.ip }}</td>
                                         <td>{{ mf.status_name(server.manager) }}</td>
-                                        <td>{{ mf.q(server.active) }}</td>
+                                        <td>{{ mf.boolean_badge(server.active, 'Yes'|trans, 'No'|trans, 'text-bg-success', 'text-bg-secondary') }}</td>
                                         <td>
                                             <a class="btn btn-icon" href="{{ server.cpanel_url }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Log Into the Control Panel'|trans }}" target="_blank">
                                                 <svg class="icon">

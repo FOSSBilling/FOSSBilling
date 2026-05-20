@@ -76,12 +76,44 @@
         {{ 'Suspended'|trans }}
     {% elseif status == 'Canceled' %}
         {{ 'Canceled'|trans }}
+    {% elseif status == 'Inactive' %}
+        {{ 'Inactive'|trans }}
+    {% elseif status == 'Enabled' %}
+        {{ 'Enabled'|trans }}
+    {% elseif status == 'Disabled' %}
+        {{ 'Disabled'|trans }}
+    {% elseif status == 'Draft' %}
+        {{ 'Draft'|trans }}
+    {% elseif status == 'Sent' %}
+        {{ 'Sent'|trans }}
+    {% elseif status == 'Sending' %}
+        {{ 'Sending'|trans }}
+    {% elseif status == 'Unsent' %}
+        {{ 'Unsent'|trans }}
     {% elseif status == 'Paid' %}
         {{ 'Paid'|trans }}
     {% elseif status == 'Unpaid' %}
         {{ 'Unpaid'|trans }}
     {% elseif status == 'Refunded' %}
         {{ 'Refunded'|trans }}
+    {% elseif status == 'Approved' %}
+        {{ 'Approved'|trans }}
+    {% elseif status == 'Processed' %}
+        {{ 'Processed'|trans }}
+    {% elseif status == 'Received' %}
+        {{ 'Received'|trans }}
+    {% elseif status == 'Error' %}
+        {{ 'Error'|trans }}
+    {% elseif status == 'Unknown' %}
+        {{ 'Unknown'|trans }}
+    {% elseif status == 'Complete' %}
+        {{ 'Complete'|trans }}
+    {% elseif status == 'Completed' %}
+        {{ 'Completed'|trans }}
+    {% elseif status == 'Success' %}
+        {{ 'Success'|trans }}
+    {% elseif status == 'Failed' %}
+        {{ 'Failed'|trans }}
     {% else %}
         {{ status|trans }}
     {% endif %}
@@ -236,6 +268,11 @@
     {% elseif type == 'product' %}
         {% if status_key == 'enabled' %}{% set badge_class = 'text-bg-success' %}
         {% elseif status_key == 'disabled' %}{% set badge_class = 'text-bg-secondary' %}
+        {% else %}{% set badge_class = 'text-bg-primary' %}
+        {% endif %}
+    {% elseif type == 'massmailer' %}
+        {% if status_key == 'sent' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status_key == 'draft' %}{% set badge_class = 'text-bg-secondary' %}
         {% else %}{% set badge_class = 'text-bg-primary' %}
         {% endif %}
     {% elseif type == 'transaction' %}

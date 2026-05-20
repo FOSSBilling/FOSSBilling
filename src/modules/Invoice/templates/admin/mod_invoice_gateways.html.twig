@@ -124,9 +124,9 @@
                                         <a href='{{ "invoice/gateway/#{gateway.id}"|url }}'>{{ gateway.title }}</a>
                                     </td>
                                     <td>{{ gateway.code }}</td>
-                                    <td>{{ mf.q(gateway.enabled) }}</td>
-                                    <td>{{ mf.q(gateway.allow_single) }}</td>
-                                    <td>{{ mf.q(gateway.allow_recurrent) }}</td>
+                                    <td>{{ mf.boolean_badge(gateway.enabled, 'Yes'|trans, 'No'|trans, 'text-bg-success', 'text-bg-secondary') }}</td>
+                                    <td>{{ mf.boolean_badge(gateway.allow_single, 'Yes'|trans, 'No'|trans, 'text-bg-success', 'text-bg-secondary') }}</td>
+                                    <td>{{ mf.boolean_badge(gateway.allow_recurrent, 'Yes'|trans, 'No'|trans, 'text-bg-success', 'text-bg-secondary') }}</td>
                                     <td>
                                         <a class="btn btn-icon" href="{{ 'invoice/gateway_copy'|api_url(query: { 'id': gateway.id }) }}" title="{{ 'Copy'|trans }}"
                                             {{ fb_api_link({redirect: 'invoice/gateways'|url}) }}>
