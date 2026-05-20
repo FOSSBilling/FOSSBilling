@@ -29,27 +29,36 @@
 {% endblock %}
 
 {% block content %}
-    <div class="card-tabs">
-        <ul class="nav nav-tabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <a class="nav-link active" href="#tab-template" data-bs-toggle="tab">{{ 'Template'|trans }}</a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#tab-vars" data-bs-toggle="tab">{{ 'Variables'|trans }}</a>
-            </li>
-            {% if can_manage_templates %}
-                <li class="nav-item" role="presentation">
-                    <a class="nav-link" href="#tab-manage" data-bs-toggle="tab">{{ 'Template Settings'|trans }}</a>
-                </li>
-            {% endif %}
-            {% if can_manage_templates %}
-                <li class="nav-item" role="presentation">
-                    <a class="nav-link" href="#tab-examples" data-bs-toggle="tab">{{ 'Examples'|trans }}</a>
-                </li>
-            {% endif %}
-        </ul>
-        <div class="card">
-            <div class="tab-content">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ template.action_code }}</h3>
+                <p class="card-subtitle">{{ 'Manage the email template content, inspect available variables, and preview how the rendered message will look.'|trans }}</p>
+            </div>
+        </div>
+        <div class="card-body pt-3 pb-0 px-0">
+            <div class="card border-0 shadow-none rounded-0">
+                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
+                    <ul class="nav nav-pills card-header-pills" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" href="#tab-template" data-bs-toggle="tab" role="tab">{{ 'Template'|trans }}</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" href="#tab-vars" data-bs-toggle="tab" role="tab">{{ 'Variables'|trans }}</a>
+                        </li>
+                        {% if can_manage_templates %}
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" href="#tab-manage" data-bs-toggle="tab" role="tab">{{ 'Template Settings'|trans }}</a>
+                            </li>
+                        {% endif %}
+                        {% if can_manage_templates %}
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" href="#tab-examples" data-bs-toggle="tab" role="tab">{{ 'Examples'|trans }}</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            <div class="tab-content border-top">
                 <div class="tab-pane fade show active" id="tab-template" role="tabpanel">
                     <form method="post" action="admin/email/template_update" {{ fb_api_form({message: 'Template Updated'|trans}) }}>
                         <input type="hidden" name="id" value="{{ template.id }}">
@@ -250,6 +259,8 @@ You can event use IF statements in email templates: {% if 1 == 2 %}This will nev
                     </div>
                 </div>
                 {% endif %}
+            </div>
+        </div>
             </div>
         </div>
     </div>

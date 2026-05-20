@@ -8,15 +8,18 @@
     {% set update_info = admin.system_update_info %}
     <div class="card">
         <div class="card-header">
-            <h1 class="card-title">{{ 'Update FOSSBilling'|trans }}</h1>
+            <div>
+                <h3 class="card-title">{{ 'Update FOSSBilling'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Review release notes, check for updates, and apply available platform updates.'|trans }}</p>
+            </div>
         </div>
         <div class="card-body">
             {% if admin.system_update_available or update_info['branch'] == 'preview' %}
                 {% if update_info['branch'] == 'preview' %}
-                    <h2 class="card-title">{{ 'Update Release Notes'|trans }}</h2>
+                    <h4 class="mb-2">{{ 'Update Release Notes'|trans }}</h4>
                 {% else %}
-                    <h2 class="card-title mb-0">{{ 'Update Release Notes'|trans }} ({{ FOSSBillingVersion }} => {{ update_info['version'] }})</h2>
-                    <span>{{ 'Required PHP version:'|trans }} {{ update_info['minimum_php_version'] }}</span>
+                    <h4 class="mb-0">{{ 'Update Release Notes'|trans }} ({{ FOSSBillingVersion }} => {{ update_info['version'] }})</h4>
+                    <p class="text-secondary mb-3">{{ 'Required PHP version:'|trans }} {{ update_info['minimum_php_version'] }}</p>
                 {% endif %}
                 {% if update_info['update_type'] == 2 %}
                     <div class="alert alert-danger" role="alert">
@@ -66,10 +69,11 @@
                 </svg>
                 {{ 'Apply Patches & Update Configuration'|trans }}
             </a>
-            <br />
-            <span class="text-muted">{{ "Applying patches and updating the configuration should be performed automatically, you don't need to use that button unless you are experiencing issues."|trans }}<br />
-            <span class="text-muted">{{ 'Last update check:'|trans }} {{ update_info['last_check']|format_datetime() }}.</span><br />
-            <span class="text-muted"> {{ 'Next update check:'|trans }} {{ update_info['next_check']|format_datetime() }}.</span>
+            <div class="mt-3 text-secondary">
+                <div>{{ "Applying patches and updating the configuration should be performed automatically, you don't need to use that button unless you are experiencing issues."|trans }}</div>
+                <div>{{ 'Last update check:'|trans }} {{ update_info['last_check']|format_datetime() }}.</div>
+                <div>{{ 'Next update check:'|trans }} {{ update_info['next_check']|format_datetime() }}.</div>
+            </div>
         </div>
     </div>
 {% endblock %}

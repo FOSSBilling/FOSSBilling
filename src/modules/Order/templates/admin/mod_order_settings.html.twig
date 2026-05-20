@@ -24,9 +24,13 @@
 
 {% block content %}
 <div class="card">
+    <div class="card-header">
+        <div>
+            <h3 class="card-title">{{ 'Orders Settings'|trans }}</h3>
+            <p class="card-subtitle">{{ 'Control renewal-date logic, addon visibility, suspension reasons, and automated cancellation behavior.'|trans }}</p>
+        </div>
+    </div>
     <div class="card-body">
-        <h3>{{ 'Orders Settings'|trans }}</h3>
-
         {% set params = admin.extension_config_get({ 'ext': 'mod_order' }) %}
         <form method="post" action="{{ 'extension/config_save'|api_url }}" {{ fb_api_form({message: 'Settings Updated'|trans}) }}>
             <div class="form-group mb-3 row">

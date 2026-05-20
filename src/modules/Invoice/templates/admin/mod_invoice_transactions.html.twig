@@ -77,7 +77,10 @@
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <h5 class="mb-0">{{ 'Transactions'|trans }}</h5>
+        <div>
+            <h3 class="card-title">{{ 'Transactions'|trans }}</h3>
+            <p class="card-subtitle">{{ 'Review invoice transactions, filter payment activity, and retry or remove transaction records.'|trans }}</p>
+        </div>
     </div>
 
     {{ include('partial_search.html.twig') }}
@@ -152,6 +155,7 @@
             </div>
         </form>
     </section>
+    <div class="table-responsive">
     <table class="table card-table table-vcenter table-striped text-nowrap">
         <thead>
             <tr>
@@ -219,6 +223,7 @@
             {% endfor %}
         </tbody>
     </table>
+    </div>
 
     <div class="card-footer d-flex align-items-center justify-content-between">
         {% include 'partial_batch_delete.html.twig' with { 'action': 'invoice/batch_delete_transaction' } %}

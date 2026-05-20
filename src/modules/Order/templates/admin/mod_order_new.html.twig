@@ -82,7 +82,7 @@
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label" for="gateway_id">{{ 'Payment Gateway'|trans }}</label>
                         <div class="col">
-                            {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, request.gateway_id, 0, 'Select payment gateway'|trans) }}
+                            {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, request.gateway_id, 0, 'Select Payment Gateway'|trans) }}
                             <small class="form-hint">{{ 'Required when marking the invoice as paid during order creation.'|trans }}</small>
                         </div>
                     </div>

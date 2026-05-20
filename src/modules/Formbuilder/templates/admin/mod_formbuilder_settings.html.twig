@@ -44,7 +44,10 @@
 
     <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
                 <div class="card-header">
-                    <h3 class="card-title">{{ 'Custom Forms'|trans }}</h3>
+                    <div>
+                        <h3 class="card-title">{{ 'Custom Forms'|trans }}</h3>
+                        <p class="card-subtitle">{{ 'Create and manage reusable custom forms that can be attached to products and order flows.'|trans }}</p>
+                    </div>
                     <div class="card-actions">
                         <a href="#" id="new-form" class="btn btn-primary">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 5l0 14"></path><path d="M5 12l14 0"></path></svg>
@@ -111,7 +114,10 @@
 {% set form = admin.formbuilder_get_form({ "id": request.id }) %}
     <div class="tab-pane fade show active" id="form-options-{{ form.id }}" role="tabpanel">
         <div class="card-header">
-            <h3 class="card-title">{{ 'Form Options'|trans }}</h3>
+            <div>
+                <h3 class="card-title">{{ form.name }}</h3>
+                <p class="card-subtitle">{{ 'Adjust form-level display options and then manage the individual fields below.'|trans }}</p>
+            </div>
         </div>
         <form method="post" action="{{ 'formbuilder/update_form_settings'|api_url }}" {{ fb_api_form({message: 'Form Options Updated'|trans}) }}>
             <div class="row row-cards">
@@ -154,7 +160,7 @@
 
     <div class="mt-3 card widget" id="form-{{ form.id }}">
         <div class="card-header">
-            <h3 class="card-title">{{ form.name }}</h3>
+            <h5 class="card-title mb-0">{{ 'Form Fields'|trans }}</h5>
         </div>
         <div class="row row-cards">
             <div class="card-body col-12">

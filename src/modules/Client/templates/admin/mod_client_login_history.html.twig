@@ -9,8 +9,11 @@
 
 {% block content %}
 <div class="card">
-    <div class="card-body">
-        <h5>{{ 'Client Login History'|trans }}</h5>
+    <div class="card-header">
+        <div>
+            <h3 class="card-title">{{ 'Client Login History'|trans }}</h3>
+            <p class="card-subtitle">{{ 'Review successful client logins, related IP addresses, and origin countries.'|trans }}</p>
+        </div>
     </div>
 
     {% if can_view_client_login_history %}

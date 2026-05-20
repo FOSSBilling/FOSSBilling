@@ -24,9 +24,13 @@
 
 {% block content %}
 <div class="card">
+    <div class="card-header">
+        <div>
+            <h3 class="card-title">{{ tld.tld }}</h3>
+            <p class="card-subtitle">{{ 'Manage pricing, registrar assignment, and registration availability for this top-level domain.'|trans }}</p>
+        </div>
+    </div>
     <div class="card-body">
-        <h3>{{ tld.tld }} {{ 'Top Level Domain Management'|trans }}</h3>
-
         <form method="post" action="{{ 'servicedomain/tld_update'|api_url }}" {{ fb_api_form({message: 'Top Level Domain Settings Updated'|trans}) }}>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Registrar'|trans }}:</label>

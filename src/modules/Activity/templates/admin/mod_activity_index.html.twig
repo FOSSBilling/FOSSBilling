@@ -38,7 +38,10 @@
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title">{{ 'System Activity'|trans }}</h3>
+        <div>
+            <h3 class="card-title">{{ 'System Activity'|trans }}</h3>
+            <p class="card-subtitle">{{ 'Review staff, client, and guest activity across the platform with detailed filtering.'|trans }}</p>
+        </div>
     </div>
     {{ include('partial_search.html.twig') }}
     <section id="{{ filter_panel_id }}" class="card-body border-bottom activity-log-filters collapse{% if filter_panel_open %} show{% endif %}">

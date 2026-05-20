@@ -22,134 +22,144 @@
 
 {% block content %}
     <div class="card">
-        <div class="card-body">
-            <h3 class="card-title">{{ 'Client Area Themes'|trans }}</h3>
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'Themes'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Choose the active client and admin themes, and open theme-specific settings where available.'|trans }}</p>
+            </div>
         </div>
-        <table class="table card-table table-vcenter table-striped text-nowrap table-hover">
-            <thead>
-            <tr>
-                <th>{{ 'Name'|trans }}</th>
-                <th class="w-1">{{ 'Settings'|trans }}</th>
-                <th class="w-1">{{ 'Default'|trans }}</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% set themes = admin.theme_get_list({ "per_page": 100 }) %}
-            {% for i, theme in themes.list %}
-            <tr>
-                <td>
-                    {{ theme.code|capitalize }}
-                </td>
-                <td>
-                    {% if theme.hasSettings %}
-                        <a class="btn btn-outline-primary" href='{{ "theme/#{theme.code}"|url }}'>
-                            <svg class="icon">
-                                <use xlink:href="#cog"/>
-                            </svg>
-                            {{ 'Settings'|trans }}
-                        </a>
-                    {% else %}
-                        <a class="btn btn-outline-primary disabled" href="#" aria-disabled="true">
-                            <svg class="icon">
-                                <use xlink:href="#cog"/>
-                            </svg>
-                            {{ 'Settings'|trans }}
-                        </a>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if admin.theme_get_current({ 'client': true }).code != theme.code %}
-                        <a class="btn btn-primary" href="{{ 'theme/select'|api_url(query: { 'code': theme.code }) }}" {{ fb_api_link({ redirect: 'extension/settings/theme'|url }) }}>
-                            <svg class="icon">
+        <div class="card-body border-bottom">
+            <h5 class="mb-0">{{ 'Client Area Themes'|trans }}</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table card-table table-vcenter table-striped text-nowrap table-hover">
+                <thead>
+                <tr>
+                    <th>{{ 'Name'|trans }}</th>
+                    <th class="w-1">{{ 'Settings'|trans }}</th>
+                    <th class="w-1">{{ 'Default'|trans }}</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% set themes = admin.theme_get_list({ "per_page": 100 }) %}
+                {% for i, theme in themes.list %}
+                <tr>
+                    <td>
+                        {{ theme.code|capitalize }}
+                    </td>
+                    <td>
+                        {% if theme.hasSettings %}
+                            <a class="btn btn-outline-primary" href='{{ "theme/#{theme.code}"|url }}'>
+                                <svg class="icon">
+                                    <use xlink:href="#cog"/>
+                                </svg>
+                                {{ 'Settings'|trans }}
+                            </a>
+                        {% else %}
+                            <a class="btn btn-outline-primary disabled" href="#" aria-disabled="true">
+                                <svg class="icon">
+                                    <use xlink:href="#cog"/>
+                                </svg>
+                                {{ 'Settings'|trans }}
+                            </a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if admin.theme_get_current({ 'client': true }).code != theme.code %}
+                            <a class="btn btn-primary" href="{{ 'theme/select'|api_url(query: { 'code': theme.code }) }}" {{ fb_api_link({ redirect: 'extension/settings/theme'|url }) }}>
+                                <svg class="icon">
+                                    <use xlink:href="#check"/>
+                                </svg>
+                                {{ 'Set as default'|trans }}
+                            </a>
+                        {% else %}
+                            <a class="btn btn-primary disabled" href="{{ 'theme/select'|api_url(query: { 'code': theme.code }) }}" aria-disabled="true"
+                                {{ fb_api_link({ redirect: 'extension/settings/theme'|url }) }}>
+                                <svg class="icon">
                                 <use xlink:href="#check"/>
                             </svg>
                             {{ 'Set as default'|trans }}
-                        </a>
-                    {% else %}
-                        <a class="btn btn-primary disabled" href="{{ 'theme/select'|api_url(query: { 'code': theme.code }) }}" aria-disabled="true"
-                            {{ fb_api_link({ redirect: 'extension/settings/theme'|url }) }}>
-                            <svg class="icon">
-                            <use xlink:href="#check"/>
-                        </svg>
-                        {{ 'Set as default'|trans }}
-                        </a>
-                    {% endif %}
-                </td>
-            </tr>
-            </tbody>
-            {% else %}
+                            </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                </tbody>
+                {% else %}
+                    <tbody>
+                    <tr>
+                        <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
+                    </tr>
+                    </tbody>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-body border-bottom">
+            <h5 class="mb-0">{{ 'Admin Area Themes'|trans }}</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table card-table table-vcenter table-striped text-nowrap table-hover">
+                <thead>
+                <tr>
+                    <th>{{ 'Name'|trans }}</th>
+                    <th class="w-1">{{ 'Settings'|trans }}</th>
+                    <th class="w-1">{{ 'Default'|trans }}</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% set themes = admin.theme_get_admin_list({ 'per_page': 100 }) %}
+                {% for i, theme in themes.list %}
+                <tr>
+                    <td>
+                        {{ theme.code|replace({ 'admin_': '' })|capitalize }}
+                    </td>
+                    <td>
+                        {% if theme.hasSettings %}
+                            <a class="btn btn-outline-primary" href='{{ "theme/#{theme.code}"|url }}'>
+                                <svg class="icon">
+                                    <use xlink:href="#cog"/>
+                                </svg>
+                                {{ 'Settings'|trans }}
+                            </a>
+                        {% else %}
+                            <a class="btn btn-outline-primary disabled" href="#" aria-disabled="true">
+                                <svg class="icon">
+                                    <use xlink:href="#cog"/>
+                                </svg>
+                                {{ 'Settings'|trans }}
+                            </a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if admin.theme_get_current({ 'client': false }).code != theme.code %}
+                            <a class="btn btn-primary" href="{{ 'theme/select'|api_url(query: {'code' : theme.code }) }}" {{ fb_api_link({ redirect: 'extension/settings/theme'|url }) }}>
+                                <svg class="icon">
+                                    <use xlink:href="#check"/>
+                                </svg>
+                                {{ 'Set as default'|trans }}
+                            </a>
+                        {% else %}
+                            <a class="btn btn-primary disabled" href="{{ 'theme/select'|api_url(query: {'code' : theme.code }) }}" aria-disabled="true"
+                                {{ fb_api_link({ redirect: 'extension/settings/theme'|url }) }}>
+                                <svg class="icon">
+                                    <use xlink:href="#check"/>
+                                </svg>
+                                {{ 'Set as default'|trans }}
+                            </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                </tbody>
+                {% else %}
                 <tbody>
                 <tr>
                     <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
                 </tr>
                 </tbody>
-            {% endfor %}
-        </table>
-    </div>
-
-    <div class="card mt-3">
-        <div class="card-body">
-            <h3 class="card-title">{{ 'Admin Area Themes'|trans }}</h3>
+                {% endfor %}
+            </table>
         </div>
-        <table class="table card-table table-vcenter table-striped text-nowrap table-hover">
-            <thead>
-            <tr>
-                <th>{{ 'Name'|trans }}</th>
-                <th class="w-1">{{ 'Settings'|trans }}</th>
-                <th class="w-1">{{ 'Default'|trans }}</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% set themes = admin.theme_get_admin_list({ 'per_page': 100 }) %}
-            {% for i, theme in themes.list %}
-            <tr>
-                <td>
-                    {{ theme.code|replace({ 'admin_': '' })|capitalize }}
-                </td>
-                <td>
-                    {% if theme.hasSettings %}
-                        <a class="btn btn-outline-primary" href='{{ "theme/#{theme.code}"|url }}'>
-                            <svg class="icon">
-                                <use xlink:href="#cog"/>
-                            </svg>
-                            {{ 'Settings'|trans }}
-                        </a>
-                    {% else %}
-                        <a class="btn btn-outline-primary disabled" href="#" aria-disabled="true">
-                            <svg class="icon">
-                                <use xlink:href="#cog"/>
-                            </svg>
-                            {{ 'Settings'|trans }}
-                        </a>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if admin.theme_get_current({ 'client': false }).code != theme.code %}
-                        <a class="btn btn-primary" href="{{ 'theme/select'|api_url(query: {'code' : theme.code }) }}" {{ fb_api_link({ redirect: 'extension/settings/theme'|url }) }}>
-                            <svg class="icon">
-                                <use xlink:href="#check"/>
-                            </svg>
-                            {{ 'Set as default'|trans }}
-                        </a>
-                    {% else %}
-                        <a class="btn btn-primary disabled" href="{{ 'theme/select'|api_url(query: {'code' : theme.code }) }}" aria-disabled="true"
-                            {{ fb_api_link({ redirect: 'extension/settings/theme'|url }) }}>
-                            <svg class="icon">
-                                <use xlink:href="#check"/>
-                            </svg>
-                            {{ 'Set as default'|trans }}
-                        </a>
-                    {% endif %}
-                </td>
-            </tr>
-            </tbody>
-            {% else %}
-            <tbody>
-            <tr>
-                <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
-            </tr>
-            </tbody>
-            {% endfor %}
-        </table>
     </div>
 {% endblock %}

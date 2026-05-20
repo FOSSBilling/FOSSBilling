@@ -8,8 +8,11 @@
 
 {% block content %}
 <div class="card">
-    <div class="card-body">
-        <h5>{{ 'Staff Members Login History'|trans }}</h5>
+    <div class="card-header">
+        <div>
+            <h3 class="card-title">{{ 'Staff Members Login History'|trans }}</h3>
+            <p class="card-subtitle">{{ 'Review staff login events, related IP addresses, and origin countries.'|trans }}</p>
+        </div>
     </div>
 
     {{ include('partial_search.html.twig') }}

@@ -32,21 +32,30 @@
 		</div>
 	{% endif %}
 
-	<div class="card-tabs">
-		<ul class="nav nav-tabs" role="tablist">
-			<li class="nav-item" role="presentation">
-				<a class="nav-link active" href="#tab-profile" data-bs-toggle="tab">{{ 'Profile'|trans }}</a>
-			</li>
-			<li class="nav-item" role="presentation" data-bs-toggle="tab">
-				<a class="nav-link" href="#tab-permissions" data-bs-toggle="tab">{{ 'Permissions'|trans }}</a>
-			</li>
-			<li class="nav-item" role="presentation">
-				<a class="nav-link" href="#tab-password" data-bs-toggle="tab">{{ 'Password'|trans }}</a>
-			</li>
-		</ul>
+	<div class="card">
+		<div class="card-header">
+			<div>
+				<h3 class="card-title">{{ staff.name }}</h3>
+				<p class="card-subtitle">{{ 'Manage the staff profile, permissions, and password for this administrator account.'|trans }}</p>
+			</div>
+		</div>
+		<div class="card-body pt-3 pb-0 px-0">
+			<div class="card border-0 shadow-none rounded-0">
+				<div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
+					<ul class="nav nav-pills card-header-pills" role="tablist">
+						<li class="nav-item" role="presentation">
+							<a class="nav-link active" href="#tab-profile" data-bs-toggle="tab" role="tab">{{ 'Profile'|trans }}</a>
+						</li>
+						<li class="nav-item" role="presentation">
+							<a class="nav-link" href="#tab-permissions" data-bs-toggle="tab" role="tab">{{ 'Permissions'|trans }}</a>
+						</li>
+						<li class="nav-item" role="presentation">
+							<a class="nav-link" href="#tab-password" data-bs-toggle="tab" role="tab">{{ 'Password'|trans }}</a>
+						</li>
+					</ul>
+				</div>
 
-		<div class="card">
-			<div class="tab-content">
+			<div class="tab-content border-top">
 				<div class="tab-pane fade show active" id="tab-profile" role="tabpanel">
 					<div class="card-header">
 						<h3 class="card-title">{{ 'Manage Staff Member Details'|trans }}</h3>
@@ -232,6 +241,9 @@
 					<input type="submit" value="{{ 'Submit'|trans }}" class="btn btn-primary">
 				</div>
 			</form>
+		</div>
+	</div>
+			</div>
 		</div>
 	</div>
 </div>

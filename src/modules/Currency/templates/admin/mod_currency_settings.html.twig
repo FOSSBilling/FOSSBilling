@@ -29,30 +29,39 @@
 {% endblock %}
 
 {% block content %}
-    <div class="card-tabs">
-        <ul class="nav nav-tabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <a class="nav-link active" href="#tab-currencies" data-bs-toggle="tab" role="tab">{{ 'Currencies'|trans }}</a>
-            </li>
-            {% if can_create_currency %}
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#tab-new-currency" data-bs-toggle="tab" role="tab">
-                    <svg class="icon me-2">
-                        <use xlink:href="#plus" />
-                    </svg>
-                    {{ 'Add New Currency'|trans }}
-                </a>
-            </li>
-            {% endif %}
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#tab-api-settings" data-bs-toggle="tab" role="tab">{{ 'Integrations / Automation'|trans }}</a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#tab-converter" data-bs-toggle="tab" role="tab">{{ 'Converter'|trans }}</a>
-            </li>
-        </ul>
-        <div class="card">
-            <div class="tab-content">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'Currency Settings'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Manage currencies, configure exchange-rate automation, and test conversions from the default currency.'|trans }}</p>
+            </div>
+        </div>
+        <div class="card-body pt-3 pb-0 px-0">
+            <div class="card border-0 shadow-none rounded-0">
+                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
+                    <ul class="nav nav-pills card-header-pills" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" href="#tab-currencies" data-bs-toggle="tab" role="tab">{{ 'Currencies'|trans }}</a>
+                        </li>
+                        {% if can_create_currency %}
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" href="#tab-new-currency" data-bs-toggle="tab" role="tab">
+                                <svg class="icon me-2">
+                                    <use xlink:href="#plus" />
+                                </svg>
+                                {{ 'Add New Currency'|trans }}
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" href="#tab-api-settings" data-bs-toggle="tab" role="tab">{{ 'Integrations / Automation'|trans }}</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" href="#tab-converter" data-bs-toggle="tab" role="tab">{{ 'Converter'|trans }}</a>
+                        </li>
+                    </ul>
+                </div>
+            <div class="tab-content border-top">
                 <div class="tab-pane fade show active" id="tab-currencies" role="tabpanel">
                     <div class="card-body border-bottom">
                         <h3 class="card-title">{{ 'Manage Currencies'|trans }}</h3>
@@ -264,6 +273,7 @@
                         </div>
                     </form>
                 </div>
+            </div>
             </div>
         </div>
     </div>

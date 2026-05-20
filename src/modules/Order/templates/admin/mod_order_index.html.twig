@@ -74,22 +74,31 @@
 {% endblock %}
 
 {% block content %}
-    <ul class="nav nav-tabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="index-tab" data-bs-toggle="tab" data-bs-target="#tab-index" type="button" role="tab" aria-controls="index" aria-selected="true">{{ 'Orders'|trans }}</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="new-tab" data-bs-toggle="tab" data-bs-target="#tab-new" type="button" role="tab" aria-controls="index" aria-selected="true">
-                <svg class="icon me-2">
-                    <use xlink:href="#plus" />
-                </svg>
-                {{ 'New Order'|trans }}
-            </button>
-        </li>
-    </ul>
-
     <div class="card">
-        <div class="tab-content">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'Orders'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Manage orders, filter order records, and create new orders for clients.'|trans }}</p>
+            </div>
+        </div>
+        <div class="card-body pt-3 pb-0 px-0">
+            <div class="card border-0 shadow-none rounded-0">
+                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
+                    <ul class="nav nav-pills card-header-pills">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="index-tab" data-bs-toggle="tab" data-bs-target="#tab-index" type="button" role="tab" aria-controls="index" aria-selected="true">{{ 'Orders'|trans }}</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="new-tab" data-bs-toggle="tab" data-bs-target="#tab-new" type="button" role="tab" aria-controls="index" aria-selected="true">
+                                <svg class="icon me-2">
+                                    <use xlink:href="#plus" />
+                                </svg>
+                                {{ 'New Order'|trans }}
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+        <div class="tab-content border-top">
             <div class="tab-pane fade show active" id="tab-index" role="tabpanel" aria-labelledby="index-tab">
                 {{ include('partial_search.html.twig') }}
                 <section id="{{ filter_panel_id }}" class="card-body border-bottom collapse{% if filter_panel_open %} show{% endif %}">
@@ -268,7 +277,7 @@
             </div>
 
             <div class="tab-pane fade" id="tab-new" role="tabpanel" aria-labelledby="new-tab">
-                <div class="card-body">
+                <div class="p-3">
                     <form method="post" action="{{ 'order/new'|url }}">
                         <div class="form-group mb-3 row">
                             <label class="form-label col-3 col-form-label" for="client_id">{{ 'Client'|trans }}</label>
@@ -300,6 +309,8 @@
                         {% endif %}
                     </form>
                 </div>
+            </div>
+        </div>
             </div>
         </div>
     </div>

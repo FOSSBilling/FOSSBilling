@@ -25,7 +25,10 @@
 {% block content %}
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">{{ 'Invoice Settings'|trans }}</h3>
+            <div>
+                <h3 class="card-title">{{ 'Invoice Settings'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Configure invoice timing, numbering, document behavior, refunds, and add-funds limits.'|trans }}</p>
+            </div>
         </div>
         <form method="post" action="{{ 'system/update_params'|api_url }}" {{ fb_api_form({message: 'Settings Updated'|trans}) }}>
             <div class="card-body">
@@ -63,8 +66,8 @@
                     </div>
                 </div>
             </div>
-            <div class="card-body">
-                <h3 class="card-title">{{ 'Invoicing / Sequential Invoice Numbering'|trans }}</h3>
+            <div class="card-body border-top">
+                <h5 class="mb-3">{{ 'Invoicing / Sequential Invoice Numbering'|trans }}</h5>
                 <div class="mb-3 row">
                     <label class="col-md-3 col-form-label">{{ 'Remove Unpaid Invoices After Days'|trans }}</label>
                     <div class="col-md-6">
@@ -97,8 +100,8 @@
                     </div>
                 </div>
             </div>
-            <div class="card-body">
-                <h3 class="card-title">{{ 'Document Settings'|trans }}</h3>
+            <div class="card-body border-top">
+                <h5 class="mb-3">{{ 'Document Settings'|trans }}</h5>
                 <div class="mb-3 row">
                     <label class="col-md-3 col-form-label">{{ 'Document Format'|trans }}</label>
                     <div class="col-md-6">
@@ -127,8 +130,8 @@
                     <p>{{ "If enabled, invoices can be accessed by anyone who knows the invoice hash, although it's quite a long hash and would not be brute-forceable."|trans }}</p>
                 </div>
             </div>
-            <div class="card-body">
-                <h3 class="card-title">{{ 'Refunds Settings'|trans }}</h3>
+            <div class="card-body border-top">
+                <h5 class="mb-3">{{ 'Refunds Settings'|trans }}</h5>
                 <div class="mb-3 row">
                     <label class="col-md-3 col-form-label">{{ 'Refunds Logic'|trans }}</label>
                     <div class="col-md-6">
@@ -147,8 +150,8 @@
                     </div>
                 </div>
             </div>
-            <div class="card-body">
-                <h3 class="card-title">{{ 'Add Funds Settings'|trans }}</h3>
+            <div class="card-body border-top">
+                <h5 class="mb-3">{{ 'Add Funds Settings'|trans }}</h5>
                 <div class="mb-3 row">
                     <label class="col-md-3 col-form-label">{{ 'Minimum Amount for Add Funds Invoice'|trans }}</label>
                     <div class="col-md-6">

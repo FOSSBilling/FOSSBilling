@@ -23,23 +23,32 @@
 {% endblock %}
 
 {% block content %}
-    <div class="card-tabs">
-        <ul class="nav nav-tabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'General'|trans }}</a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#tab-helpdesks" data-bs-toggle="tab" role="tab">{{ 'Helpdesks'|trans }}</a>
-            </li>
-        </ul>
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'Support Settings'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Manage support automation, knowledge base availability, public tickets, and helpdesk configuration.'|trans }}</p>
+            </div>
+        </div>
+        <div class="card-body pt-3 pb-0 px-0">
+            <div class="card border-0 shadow-none rounded-0">
+                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
+                    <ul class="nav nav-pills card-header-pills" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'General'|trans }}</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" href="#tab-helpdesks" data-bs-toggle="tab" role="tab">{{ 'Helpdesks'|trans }}</a>
+                        </li>
+                    </ul>
+                </div>
 
-        <div class="card">
-            <div class="tab-content">
+            <div class="tab-content border-top">
                 <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
                     <form method="post" action="{{ 'extension/config_save'|api_url }}" {{ fb_api_form({ message: 'Configuration Updated'|trans }) }}>
                         {% set params = admin.extension_config_get({ 'ext': 'mod_support' }) %}
                         <div class="card-body">
-                            <h3 class="card-title">{{ 'Auto Responder'|trans }}</h3>
+                            <h5 class="mb-3">{{ 'Auto Responder'|trans }}</h5>
                             <div class="mb-3 row">
                                 <label class="col-md-3 form-label">{{ 'Enable Auto Responder'|trans }}</label>
                                 <div class="col-md-6">
@@ -61,8 +70,8 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="card-body">
-                            <h3 class="card-title">{{ 'Ticket Delay'|trans }}</h3>
+                        <div class="card-body border-top">
+                            <h5 class="mb-3">{{ 'Ticket Delay'|trans }}</h5>
                             <div class="mb-3 row">
                                 <label class="col-md-3 form-label">{{ 'Enable Delay Message'|trans }}</label>
                                 <div class="col-md-6">
@@ -99,8 +108,8 @@
                             </div>
                             <input type="hidden" name="ext" value="mod_support">
                         </div>
-                        <div class="card-body">
-                            <h3 class="card-title">{{ 'Knowledge Base'|trans }}</h3>
+                        <div class="card-body border-top">
+                            <h5 class="mb-3">{{ 'Knowledge Base'|trans }}</h5>
                             <div class="mb-3 row">
                                 <label class="col-md-3 form-label">{{ 'Enable Knowledge Base'|trans }}</label>
                                 <div class="col-md-6">
@@ -110,8 +119,8 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="card-body">
-                            <h3 class="card-title">{{ 'Public Tickets'|trans }}</h3>
+                        <div class="card-body border-top">
+                            <h5 class="mb-3">{{ 'Public Tickets'|trans }}</h5>
                             <div class="mb-3 row">
                                 <label class="col-md-3 form-label">{{ 'Disable Public Tickets'|trans }}</label>
                                 <div class="col-md-6">
@@ -139,48 +148,52 @@
                             </div>
                             {{ include('partial_search.html.twig') }}
                         </div>
-                    <table class="table card-table table-vcenter table-striped text-nowrap">
-                        <thead>
-                        <tr>
-                            <th class="w-1">#</th>
-                            <th>{{ 'Title'|trans }}</th>
-                            <th>{{ 'Email'|trans }}</th>
-                            <th>{{ 'Close Tickets After'|trans }}</th>
-                            <th class="w-1"></th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for helpdesk in admin.support_helpdesk_get_list({ 'per_page': 50, 'page': request.page }|merge(request)).list %}
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
                             <tr>
-                                <td>{{ loop.index }}</td>
-                                <td>
-                                    <a href='{{ "support/helpdesk/#{helpdesk.id}"|url }}'>{{ helpdesk.name }}</a>
-                                </td>
-                                <td>{{ helpdesk.email }}</td>
-                                <td>{{ helpdesk.close_after }} {{ 'hour(s)'|trans }}</td>
-                                <td>
-                                    <a class="btn btn-icon" href='{{ "support/helpdesk/#{helpdesk.id}"|url }}' data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
-                                        <svg class="icon">
-                                            <use xlink:href="#edit" />
-                                        </svg>
-                                    </a>
-                                    <a class="btn btn-icon" href="{{ 'support/helpdesk_delete'|api_url(query: { 'id': helpdesk.id }) }}"
-                                        data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
-                                        {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'extension/settings/support'|url }) }}>
-                                        <svg class="icon">
-                                            <use xlink:href="#delete" />
-                                        </svg>
-                                    </a>
-                                </td>
+                                <th class="w-1">#</th>
+                                <th>{{ 'Title'|trans }}</th>
+                                <th>{{ 'Email'|trans }}</th>
+                                <th>{{ 'Close Tickets After'|trans }}</th>
+                                <th class="w-1"></th>
                             </tr>
-                        {% else %}
-                            <tr>
-                                <td colspan="4" class="text-muted">{{ 'The list is empty'|trans }}</td>
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                            {% for helpdesk in admin.support_helpdesk_get_list({ 'per_page': 50, 'page': request.page }|merge(request)).list %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td>
+                                        <a href='{{ "support/helpdesk/#{helpdesk.id}"|url }}'>{{ helpdesk.name }}</a>
+                                    </td>
+                                    <td>{{ helpdesk.email }}</td>
+                                    <td>{{ helpdesk.close_after }} {{ 'hour(s)'|trans }}</td>
+                                    <td>
+                                        <a class="btn btn-icon" href='{{ "support/helpdesk/#{helpdesk.id}"|url }}' data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
+                                            <svg class="icon">
+                                                <use xlink:href="#edit" />
+                                            </svg>
+                                        </a>
+                                        <a class="btn btn-icon" href="{{ 'support/helpdesk_delete'|api_url(query: { 'id': helpdesk.id }) }}"
+                                            data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
+                                            {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'extension/settings/support'|url }) }}>
+                                            <svg class="icon">
+                                                <use xlink:href="#delete" />
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-muted">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+            </div>
+        </div>
             </div>
         </div>
     </div>

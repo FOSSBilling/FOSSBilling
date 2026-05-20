@@ -84,11 +84,15 @@
     </section>
 
     <div class="card">
-        <div class="card-body">
-            <h3>{{ 'Public Tickets'|trans }}</h3>
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'Public Tickets'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Review support tickets submitted without a client account and manage public conversations.'|trans }}</p>
+            </div>
         </div>
 
         {{ include('partial_search.html.twig') }}
+        <div class="table-responsive">
         <table class="table card-table table-vcenter table-striped text-nowrap sortable">
             <thead>
                 <tr>
@@ -141,10 +145,11 @@
             {% endfor %}
             </tbody>
         </table>
-    </div>
+        </div>
 
-    <div class="card-footer d-flex align-items-center justify-content-between">
-        {% include 'partial_batch_delete.html.twig' with { 'action': 'support/batch_delete_public' } %}
-        {% include 'partial_pagination.html.twig' with { 'list': tickets, 'url': 'support/public-tickets' } %}
+        <div class="card-footer d-flex align-items-center justify-content-between">
+            {% include 'partial_batch_delete.html.twig' with { 'action': 'support/batch_delete_public' } %}
+            {% include 'partial_pagination.html.twig' with { 'list': tickets, 'url': 'support/public-tickets' } %}
+        </div>
     </div>
 {% endblock %}

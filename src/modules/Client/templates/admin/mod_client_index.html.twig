@@ -79,37 +79,46 @@
 {% endblock %}
 
 {% block content %}
-    <ul class="nav nav-tabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Clients'|trans }}</a>
-        </li>
-        {% if can_create_client %}
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" href="#tab-new" data-bs-toggle="tab" role="tab">
-                <svg class="icon me-2">
-                    <use xlink:href="#plus" />
-                </svg>
-                {{ 'New Client'|trans }}
-            </button>
-        </li>
-        {% endif %}
-        {% if can_manage_groups %}
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" href="#tab-groups" data-bs-toggle="tab" role="tab">{{ 'Groups'|trans }}</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" href="#tab-new-group" data-bs-toggle="tab" role="tab">
-                <svg class="icon me-2">
-                    <use xlink:href="#plus" />
-                </svg>
-                {{ 'New Group'|trans }}
-            </button>
-        </li>
-        {% endif %}
-    </ul>
-
     <div class="card">
-        <div class="tab-content">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'Clients'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Manage client accounts, review registrations, and organize clients into groups.'|trans }}</p>
+            </div>
+        </div>
+        <div class="card-body pt-3 pb-0 px-0">
+            <div class="card border-0 shadow-none rounded-0">
+                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
+                    <ul class="nav nav-pills card-header-pills">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Clients'|trans }}</a>
+                        </li>
+                        {% if can_create_client %}
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" href="#tab-new" data-bs-toggle="tab" role="tab">
+                                <svg class="icon me-2">
+                                    <use xlink:href="#plus" />
+                                </svg>
+                                {{ 'New Client'|trans }}
+                            </button>
+                        </li>
+                        {% endif %}
+                        {% if can_manage_groups %}
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" href="#tab-groups" data-bs-toggle="tab" role="tab">{{ 'Groups'|trans }}</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" href="#tab-new-group" data-bs-toggle="tab" role="tab">
+                                <svg class="icon me-2">
+                                    <use xlink:href="#plus" />
+                                </svg>
+                                {{ 'New Group'|trans }}
+                            </button>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+        <div class="tab-content border-top">
             <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
                 {{ include('partial_search.html.twig') }}
                 <section id="{{ filter_panel_id }}" class="card-body border-bottom collapse{% if filter_panel_open %} show{% endif %}">
@@ -309,6 +318,7 @@
 
             {% if can_manage_groups %}
             <div class="tab-pane fade" id="tab-groups" role="tabpanel">
+                <div class="table-responsive">
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <thead>
                         <tr>
@@ -343,10 +353,11 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                </div>
             </div>
 
             <div class="tab-pane fade" id="tab-new-group" role="tabpanel">
-                <div class="card-body">
+                <div class="p-3">
                     <form method="post" action="{{ 'client/group_create'|api_url }}" {{ fb_api_form({ redirect: 'client'|url}) }}>
                         <div class="form-group mb-3 row">
                             <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
@@ -359,6 +370,8 @@
                 </div>
             </div>
             {% endif %}
+        </div>
+            </div>
         </div>
     </div>
 {% endblock %}
