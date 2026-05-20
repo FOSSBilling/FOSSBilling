@@ -216,11 +216,43 @@ globalThis.FOSSBilling = {
    const hashTabId = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
    showTabById(hashTabId);
 
+   const syncTabHeaderActions = (actionContainer, targetId) => {
+     if (!actionContainer || !targetId) {
+       return;
+     }
+
+     actionContainer.querySelectorAll('[data-tab-action]').forEach((action) => {
+       const targetIds = (action.getAttribute('data-tab-action') || '')
+         .split(/\s+/)
+         .filter(Boolean);
+
+       action.classList.toggle('d-none', !targetIds.includes(targetId));
+     });
+   };
+
+   const initTabHeaderActions = () => {
+     const actionContainers = document.querySelectorAll('[data-tab-action-container]');
+
+     actionContainers.forEach((actionContainer) => {
+       const scopedCard = actionContainer.closest('.card');
+       const activePane = scopedCard?.querySelector('.tab-content .tab-pane.active.show, .tab-content .tab-pane.active');
+
+       if (activePane?.id) {
+         syncTabHeaderActions(actionContainer, activePane.id);
+       }
+     });
+   };
+
    tabTriggers.forEach((tabTrigger) => {
      tabTrigger.addEventListener('shown.bs.tab', function() {
        const targetSelector = getTabTargetSelector(this);
        if (targetSelector) {
          syncTabUrl(targetSelector.slice(1));
+
+         const actionContainer = this.closest('.card-header')?.querySelector('[data-tab-action-container]');
+         if (actionContainer) {
+           syncTabHeaderActions(actionContainer, targetSelector.slice(1));
+         }
        }
      });
    });
@@ -229,6 +261,8 @@ globalThis.FOSSBilling = {
      const nextTabId = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
      showTabById(nextTabId);
    });
+
+   initTabHeaderActions();
 
    //===== Search filter toggle state =====//
    const syncSearchFilterToggleState = (toggle, panel) => {

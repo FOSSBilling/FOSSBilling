@@ -6,6 +6,22 @@
 {% set has_filter_panel = true %}
 {% set filter_panel_id = 'page-search-filters' %}
 {% set filter_panel_open = request_has_filters %}
+{% set new_canned_response_action %}
+    <a class="btn btn-primary" href="#tab-new" data-bs-toggle="tab" role="button">
+        <svg class="icon">
+            <use xlink:href="#plus" />
+        </svg>
+        {{ 'New Response'|trans }}
+    </a>
+{% endset %}
+{% set new_canned_category_action %}
+    <a class="btn btn-primary" href="#tab-new-category" data-bs-toggle="tab" role="button">
+        <svg class="icon">
+            <use xlink:href="#plus" />
+        </svg>
+        {{ 'New Category'|trans }}
+    </a>
+{% endset %}
 
 {% block breadcrumbs %}
     <ol class="breadcrumb">
@@ -35,31 +51,23 @@
         </div>
         <div class="card-body pt-3 pb-0 px-0">
             <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
+                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0 d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center justify-content-between gap-3">
                     <ul class="nav nav-pills card-header-pills">
                         <li class="nav-item">
                             <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Canned Responses'|trans }}</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
-                                <svg class="icon me-2">
-                                    <use xlink:href="#plus" />
-                                </svg>
-                                {{ 'New Response'|trans }}
-                            </a>
-                        </li>
-                        <li class="nav-item">
                             <a class="nav-link" href="#tab-categories" data-bs-toggle="tab">{{ 'Manage Categories'|trans }}</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#tab-new-category" data-bs-toggle="tab">
-                                <svg class="icon me-2">
-                                    <use xlink:href="#plus" />
-                                </svg>
-                                {{ 'New Category'|trans }}
-                            </a>
-                        </li>
                     </ul>
+                    <div class="d-flex justify-content-end flex-wrap gap-2" data-tab-action-container>
+                        <div data-tab-action="tab-index tab-new">
+                            {{ new_canned_response_action|raw }}
+                        </div>
+                        <div class="d-none" data-tab-action="tab-categories tab-new-category">
+                            {{ new_canned_category_action|raw }}
+                        </div>
+                    </div>
                 </div>
                 <div class="tab-content border-top">
                     <div class="tab-pane fade show active" id="tab-index" role="tabpanel">

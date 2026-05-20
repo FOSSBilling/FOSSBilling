@@ -120,7 +120,7 @@
                         {% endif %}
                     </ul>
                     {% if can_create_client or can_manage_groups %}
-                    <div id="client-header-actions" class="d-flex justify-content-end flex-wrap gap-2">
+                    <div id="client-header-actions" class="d-flex justify-content-end flex-wrap gap-2" data-tab-action-container>
                         {% if can_create_client %}
                             <div data-tab-action="tab-index">
                                 {{ new_client_action|raw }}
@@ -395,36 +395,4 @@
             </div>
         </div>
     </div>
-{% endblock %}
-
-{% block js %}
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const actionContainer = document.getElementById('client-header-actions');
-    if (!actionContainer) {
-        return;
-    }
-
-    const syncClientHeaderActions = (tabId) => {
-        actionContainer.querySelectorAll('[data-tab-action]').forEach((action) => {
-            action.classList.toggle('d-none', action.dataset.tabAction !== tabId);
-        });
-    };
-
-    const activeTab = document.querySelector('.card-header [data-bs-toggle="tab"].active');
-    const activeTarget = activeTab?.getAttribute('href')?.replace('#', '') || activeTab?.getAttribute('data-bs-target')?.replace('#', '') || 'tab-index';
-    syncClientHeaderActions(activeTarget);
-
-    document.querySelectorAll('.card-header [data-bs-toggle="tab"]').forEach((tabTrigger) => {
-        tabTrigger.addEventListener('shown.bs.tab', function () {
-            const target = this.getAttribute('href') || this.getAttribute('data-bs-target');
-            if (!target || !target.startsWith('#')) {
-                return;
-            }
-
-            syncClientHeaderActions(target.slice(1));
-        });
-    });
-});
-</script>
 {% endblock %}
