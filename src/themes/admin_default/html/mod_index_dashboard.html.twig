@@ -7,20 +7,20 @@
 {% block content %}
     {% set alerts = admin.system_cas_messages()|merge(admin.system_messages()) %}
     {% for alert in alerts %}
-    <div class="alert alert-{{ alert.type }} {{ alert.dismissible ? "alert-dismissible" : "" }}" role="alert">
+    <div class="alert alert-{{ alert.type }} {{ alert.dismissible ? "alert-dismissible" : "" }} fade show mb-3" role="alert">
         {% if alert.title %}
-        <h3 class="mb-1">{{ alert.title }}</h3>
+            <strong>{{ alert.title }}</strong>{% if alert.message %} {% endif %}
         {% endif %}
-        <p>{{ alert.message }}</p>
+        {{ alert.message }}
         {% if alert.buttons|length > 0 %}
-            <div class="btn-list">
+            <div class="btn-list mt-2">
             {% for button in alert.buttons %}
                 <a href="{{ button.link }}" class="btn {{ button.type ? "btn-" ~ button.type : "" }}">{{ button.text }}</a>
             {% endfor %}
             </div>
         {% endif %}
         {% if alert.dismissible %}
-            <a class="btn-close" data-bs-dismiss="alert" aria-label="{{ 'Close'|trans }}"></a>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ 'Close'|trans }}"></button>
         {% endif %}
     </div>
     {% endfor %}
@@ -364,7 +364,7 @@
                         <thead>
                             <tr>
                                 <th>{{ 'Product/Service'|trans }}</th>
-                                <th>{{ 'Orders'|trans }}</th>
+                                <th class="text-center">{{ 'Orders'|trans }}</th>
                             </tr>
                         </thead>
                         <tbody>
