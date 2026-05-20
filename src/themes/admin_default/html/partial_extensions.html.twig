@@ -20,10 +20,10 @@
             </div>
         </div>
     </div>
-    <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+    <table class="table card-table table-vcenter table-striped sortable">
         <thead>
         <tr>
-            <th class="no-sort"></th>
+            <th class="w-1 no-sort"></th>
             <th>{{ 'Extension'|trans }}</th>
             <th>{{ 'Description'|trans }}</th>
             <th class="w-1 no-sort"></th>
@@ -35,25 +35,25 @@
         {% for extension in extensions %}
         {% set latest = extension.releases|first %}
             <tr>
-                <td>
+                <td class="text-nowrap">
                     <img src="{{ extension.icon_url|default('assets/icons/cog.svg') }}" alt="{{ extension.name }}" style="width: 32px; height: 32px;">
                 </td>
-                <td>
+                <td class="text-wrap">
                     <strong>{{ extension.name }}</strong> {{ latest.tag }}<br>
                     <span>by <a href="{{ extension.author.URL }}" target="_blank">{{ extension.author.id }}</a></span>
                 </td>
-                <td>
+                <td class="text-wrap">
                     {{ extension.description|truncate(150) }}<br>
                     <a href="https://extensions.fossbilling.org/extension/{{ extension.id }}" target="_blank">{{ 'View on the extension directory'|trans }}</a>
                 </td>
-                <td  data-bs-toggle="tooltip" data-bs-title="{{ 'View extension README'|trans }}">
+                <td class="text-nowrap" data-bs-toggle="tooltip" data-bs-title="{{ 'View extension README'|trans }}">
                     <a class="btn btn-icon" data-bs-toggle="modal" data-bs-target="#extensionReadMe" onclick="getExtensionReadme('{{ extension.id }}', '{{ extension.name }}');">
                      <svg class="icon">
                          <use xlink:href="#eye" />
                      </svg>
                     </a>
                 </td>
-                <td>
+                <td class="text-nowrap">
                     <a class="btn btn-icon" href="{{ 'extension/install'|api_url(query: { 'type': extension.type, 'id': extension.id }) }}"
                         data-bs-toggle="tooltip" data-bs-title="{{ 'Install extension'|trans }}"
                         {{ fb_api_link({ message: 'By installing "' ~ extension.name ~ '", you agree with terms and conditions. Only install extensions you trust. You also might want to have a full backup ready in case something goes wrong.'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true }) }}>
