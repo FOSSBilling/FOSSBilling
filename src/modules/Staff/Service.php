@@ -196,6 +196,7 @@ class Service implements InjectionAwareInterface
             foreach ($modulePerms as $value) {
                 if (!empty($value)) {
                     $hasGrantedPermissions = true;
+
                     break;
                 }
             }
