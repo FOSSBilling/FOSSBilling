@@ -157,91 +157,91 @@
                         <tr>
                             <td>{{ 'Income'|trans }}</td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|url(query: { 'paid_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ income.today|format_currency(currency.code) }}</a>
+                                <a href="{{ 'invoice'|url(query: { 'paid_at': 'now'|date('Y-m-d')}) }}" class="dashboard-stat-link">{{ income.today|format_currency(currency.code) }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|url(query: { 'paid_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ income.yesterday|format_currency(currency.code) }}</a>
+                                <a href="{{ 'invoice'|url(query: { 'paid_at': 'yesterday'|date('Y-m-d')}) }}" class="dashboard-stat-link">{{ income.yesterday|format_currency(currency.code) }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|url }}" class="text-danger">{{ income.this_month|format_currency(currency.code) }}</a>
+                                <a href="{{ 'invoice'|url }}" class="dashboard-stat-link">{{ income.this_month|format_currency(currency.code) }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|url }}" class="text-danger">{{ income.last_month|format_currency(currency.code) }}</a>
+                                <a href="{{ 'invoice'|url }}" class="dashboard-stat-link">{{ income.last_month|format_currency(currency.code) }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|url }}" class="text-danger">{{ income.total|format_currency(currency.code) }}</a>
+                                <a href="{{ 'invoice'|url }}" class="dashboard-stat-link">{{ income.total|format_currency(currency.code) }}</a>
                             </td>
                         </tr>
                         <tr>
                             <td>{{ 'Clients'|trans }}</td>
                             <td class="text-center">
-                                <a href="{{ 'client'|url(query: { 'created_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ stats.clients_today }}</a>
+                                <a href="{{ 'client'|url(query: { 'created_at': 'now'|date('Y-m-d')}) }}" class="dashboard-stat-link">{{ stats.clients_today }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'client'|url(query: { 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ stats.clients_yesterday }}</a>
+                                <a href="{{ 'client'|url(query: { 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="dashboard-stat-link">{{ stats.clients_yesterday }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'client'|url }}" class="text-danger">{{ stats.clients_this_month }}</a>
+                                <a href="{{ 'client'|url }}" class="dashboard-stat-link">{{ stats.clients_this_month }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'client'|url }}" class="text-danger">{{ stats.clients_last_month }}</a>
+                                <a href="{{ 'client'|url }}" class="dashboard-stat-link">{{ stats.clients_last_month }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'client'|url }}" class="text-danger">{{ stats.clients_total }}</a>
+                                <a href="{{ 'client'|url }}" class="dashboard-stat-link">{{ stats.clients_total }}</a>
                             </td>
                         </tr>
                         <tr>
                             <td>{{ 'Orders'|trans }}</td>
                             <td class="text-center">
-                                <a href="{{ 'order'|url(query: { 'created_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ stats.orders_today }}</a>
+                                <a href="{{ 'order'|url(query: { 'created_at': 'now'|date('Y-m-d')}) }}" class="dashboard-stat-link">{{ stats.orders_today }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'order'|url(query: { 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ stats.orders_yesterday }}</a>
+                                <a href="{{ 'order'|url(query: { 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="dashboard-stat-link">{{ stats.orders_yesterday }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'order'|url }}" class="text-danger">{{ stats.orders_this_month }}</a>
+                                <a href="{{ 'order'|url }}" class="dashboard-stat-link">{{ stats.orders_this_month }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'order'|url }}" class="text-danger">{{ stats.orders_last_month }}</a>
+                                <a href="{{ 'order'|url }}" class="dashboard-stat-link">{{ stats.orders_last_month }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'order'|url }}" class="text-danger">{{ stats.orders_total }}</a>
+                                <a href="{{ 'order'|url }}" class="dashboard-stat-link">{{ stats.orders_total }}</a>
                             </td>
                         </tr>
                         <tr>
                             <td>{{ 'Invoices'|trans }}</td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|url(query: { 'created_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ stats.invoices_today }}</a>
+                                <a href="{{ 'invoice'|url(query: { 'created_at': 'now'|date('Y-m-d')}) }}" class="dashboard-stat-link">{{ stats.invoices_today }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|url(query: { 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ stats.invoices_yesterday }}</a>
+                                <a href="{{ 'invoice'|url(query: { 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="dashboard-stat-link">{{ stats.invoices_yesterday }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|url }}" class="text-danger">{{ stats.invoices_this_month }}</a>
+                                <a href="{{ 'invoice'|url }}" class="dashboard-stat-link">{{ stats.invoices_this_month }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|url }}" class="text-danger">{{ stats.invoices_last_month }}</a>
+                                <a href="{{ 'invoice'|url }}" class="dashboard-stat-link">{{ stats.invoices_last_month }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|url }}" class="text-danger">{{ stats.invoices_total }}</a>
+                                <a href="{{ 'invoice'|url }}" class="dashboard-stat-link">{{ stats.invoices_total }}</a>
                             </td>
                         </tr>
                         <tr>
                             <td>{{ 'Tickets'|trans }}</td>
                             <td class="text-center">
-                                <a href="{{ 'support'|url(query: { 'created_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ stats.tickets_today }}</a>
+                                <a href="{{ 'support'|url(query: { 'created_at': 'now'|date('Y-m-d')}) }}" class="dashboard-stat-link">{{ stats.tickets_today }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'support'|url(query: { 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ stats.tickets_yesterday }}</a>
+                                <a href="{{ 'support'|url(query: { 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="dashboard-stat-link">{{ stats.tickets_yesterday }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'support'|url }}" class="text-danger">{{ stats.tickets_this_month }}</a>
+                                <a href="{{ 'support'|url }}" class="dashboard-stat-link">{{ stats.tickets_this_month }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'support'|url }}" class="text-danger">{{ stats.tickets_last_month }}</a>
+                                <a href="{{ 'support'|url }}" class="dashboard-stat-link">{{ stats.tickets_last_month }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'support'|url }}" class="text-danger">{{ stats.tickets_total }}</a>
+                                <a href="{{ 'support'|url }}" class="dashboard-stat-link">{{ stats.tickets_total }}</a>
                             </td>
                         </tr>
                     </tbody>
@@ -483,20 +483,25 @@
                 const charts = [
                     ['chart-income', {{ admin.stats_get_income({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, {
                         label: "{{ 'Income'|trans }}",
+                        height: 112,
                         valueFormat: 'currency',
                         currency: "{{ currency.code ?: default_currency }}",
                     }],
                     ['chart-orders', {{ admin.stats_get_orders({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, {
                         label: "{{ 'Orders'|trans }}",
+                        height: 88,
                     }],
                     ['chart-invoices', {{ admin.stats_get_invoices({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, {
                         label: "{{ 'Invoices'|trans }}",
+                        height: 88,
                     }],
                     ['chart-clients', {{ admin.stats_get_clients({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, {
                         label: "{{ 'Clients'|trans }}",
+                        height: 88,
                     }],
                     ['chart-tickets', {{ admin.stats_get_tickets({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, {
                         label: "{{ 'Tickets'|trans }}",
+                        height: 88,
                     }],
                 ];
 

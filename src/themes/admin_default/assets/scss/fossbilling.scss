@@ -149,6 +149,25 @@ body {
     overflow-wrap: anywhere;
 }
 
+#back-to-top {
+    left: auto;
+    right: 1.5rem;
+    bottom: 5rem;
+    z-index: 1030;
+}
+
+.dashboard-stat-link {
+    color: var(--tblr-body-color);
+    font-weight: 500;
+    text-decoration: none;
+
+    &:hover,
+    &:focus {
+        color: var(--tblr-primary);
+        text-decoration: none;
+    }
+}
+
 @media (min-width: 992px) {
     .activity-log-filters .form-label {
         margin-bottom: 0;
