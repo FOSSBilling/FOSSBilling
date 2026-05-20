@@ -846,7 +846,9 @@
                     </tbody>
                 </table>
             </div>
-            {{ include('partial_pagination.html.twig', { 'list': emails }) }}
+            <div class="card-footer d-flex align-items-center justify-content-end">
+                {{ include('partial_pagination.html.twig', { 'list': emails }) }}
+            </div>
         </div>
         {% endif %}
 

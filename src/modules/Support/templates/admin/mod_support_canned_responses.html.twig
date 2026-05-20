@@ -102,7 +102,9 @@
                 </tbody>
                 </table>
             </div>
-            {{ include('partial_pagination.html.twig', { 'list': responses, 'url': 'support/canned-responses' }) }}
+            <div class="card-footer d-flex align-items-center justify-content-end">
+                {{ include('partial_pagination.html.twig', { 'list': responses, 'url': 'support/canned-responses' }) }}
+            </div>
         </div>
 
         <div class="tab-pane fade" id="tab-new" role="tabpanel">

@@ -90,7 +90,9 @@
                             {% endfor %}
                             </tbody>
                         </table>
-                        {{ include('partial_pagination.html.twig', { 'list': msgs, 'url': 'massmailer' }) }}
+                        <div class="card-footer d-flex align-items-center justify-content-end">
+                            {{ include('partial_pagination.html.twig', { 'list': msgs, 'url': 'massmailer' }) }}
+                        </div>
                     </div>
                 </div>
 

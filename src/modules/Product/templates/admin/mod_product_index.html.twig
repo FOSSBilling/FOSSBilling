@@ -104,7 +104,9 @@
                         </tbody>
                     </table>
 
-                    {{ include('partial_pagination.html.twig', { 'list': products, 'url': 'product' }) }}
+                    <div class="card-footer d-flex align-items-center justify-content-end">
+                        {{ include('partial_pagination.html.twig', { 'list': products, 'url': 'product' }) }}
+                    </div>
 
                     <div class="card-footer text-end">
                         <button type="submit" class="btn btn-primary">

@@ -66,8 +66,6 @@
                     </tbody>
                 </table>
             </div>
-            {{ include('partial_pagination.html.twig', { 'list': events, 'url':'notification' }) }}
-
             <div class="card-footer d-flex align-items-center justify-content-between">
                 <a class="btn btn-danger" href="{{ 'notification/delete_all'|api_url }}"
                     {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
@@ -76,6 +74,7 @@
                     </svg>
                     {{ 'Delete all'|trans }}
                 </a>
+                {{ include('partial_pagination.html.twig', { 'list': events, 'url':'notification' }) }}
             </div>
         </div>
 

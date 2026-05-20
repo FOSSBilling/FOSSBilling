@@ -114,7 +114,9 @@
                 </table>
             </div>
 
-            {{ include('partial_pagination.html.twig', { 'list': posts, 'url': 'support/kb' }) }}
+            <div class="card-footer d-flex align-items-center justify-content-end">
+                {{ include('partial_pagination.html.twig', { 'list': posts, 'url': 'support/kb' }) }}
+            </div>
         </div>
 
         <div class="tab-pane fade" id="tab-new-article" role="tabpanel">
