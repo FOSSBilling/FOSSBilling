@@ -21,8 +21,12 @@
 {% endblock %}
 
 {% set active_menu = 'support' %}
+{% set has_filter_panel = true %}
+{% set filter_panel_id = 'page-search-filters' %}
+{% set filter_panel_open = request_has_filters %}
 
 {% block content %}
+    {% if not filter_panel_open %}
     {% set statuses = admin.support_public_ticket_get_statuses %}
     <section class="row row-cards mb-3">
         <div class="col-sm-6 col-lg-3">
@@ -82,6 +86,7 @@
             </a>
         </div>
     </section>
+    {% endif %}
 
     <div class="card">
         <div class="card-header">
@@ -91,7 +96,73 @@
             </div>
         </div>
 
-        {{ include('partial_search.html.twig') }}
+        {{ include('partial_search.html.twig', {
+            search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : ''
+        }) }}
+        <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
+            <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
+                {% if request.search %}
+                    <input type="hidden" name="search" value="{{ request.search }}">
+                {% endif %}
+                <div class="row g-3">
+                    <div class="col-md-6 col-xl-3">
+                        <div>
+                            <label class="form-label text-muted small mb-1" for="filter-public-ticket-id">{{ 'Ticket ID'|trans }}</label>
+                            <input class="form-control" type="text" id="filter-public-ticket-id" name="id" value="{{ request.id }}" placeholder="{{ 'Ticket ID'|trans }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xl-3">
+                        <div>
+                            <label class="form-label text-muted small mb-1" for="filter-public-ticket-name">{{ 'Name'|trans }}</label>
+                            <input class="form-control" type="text" id="filter-public-ticket-name" name="name" value="{{ request.name }}" placeholder="{{ 'Author Name'|trans }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xl-3">
+                        <div>
+                            <label class="form-label text-muted small mb-1" for="filter-public-ticket-email">{{ 'Email'|trans }}</label>
+                            <input class="form-control" type="text" id="filter-public-ticket-email" name="email" value="{{ request.email }}" placeholder="{{ 'Author Email'|trans }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xl-3">
+                        <label class="form-label text-muted small mb-1">{{ 'Status'|trans }}</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <input class="btn-check" id="publicTicketStatusAll" type="radio" name="status" value=""{% if not request.status %} checked{% endif %}>
+                            <label class="btn btn-outline-primary" for="publicTicketStatusAll">{{ 'All'|trans }}</label>
+
+                            <input class="btn-check" id="publicTicketStatusOpen" type="radio" name="status" value="open"{% if request.status == 'open' %} checked{% endif %}>
+                            <label class="btn btn-outline-primary" for="publicTicketStatusOpen">{{ 'Open'|trans }}</label>
+
+                            <input class="btn-check" id="publicTicketStatusHold" type="radio" name="status" value="on_hold"{% if request.status == 'on_hold' %} checked{% endif %}>
+                            <label class="btn btn-outline-primary" for="publicTicketStatusHold">{{ 'On Hold'|trans }}</label>
+
+                            <input class="btn-check" id="publicTicketStatusClosed" type="radio" name="status" value="closed"{% if request.status == 'closed' %} checked{% endif %}>
+                            <label class="btn btn-outline-primary" for="publicTicketStatusClosed">{{ 'Closed'|trans }}</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xl-6">
+                        <div>
+                            <label class="form-label text-muted small mb-1" for="filter-public-ticket-subject">{{ 'Subject'|trans }}</label>
+                            <input class="form-control" type="text" id="filter-public-ticket-subject" name="subject" value="{{ request.subject }}" placeholder="{{ 'Ticket Subject'|trans }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xl-6">
+                        <div>
+                            <label class="form-label text-muted small mb-1" for="filter-public-ticket-content">{{ 'Message Content'|trans }}</label>
+                            <input class="form-control" type="text" id="filter-public-ticket-content" name="content" value="{{ request.content }}" placeholder="{{ 'Search Ticket Messages'|trans }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end gap-2 mt-3">
+                    <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
+                    <button class="btn btn-primary" type="submit">
+                        <svg class="icon">
+                            <use xlink:href="#filter" />
+                        </svg>
+                        {{ 'Apply Filters'|trans }}
+                    </button>
+                </div>
+            </form>
+        </section>
         <div class="table-responsive">
         <table class="table card-table table-vcenter table-striped text-nowrap sortable">
             <thead>
