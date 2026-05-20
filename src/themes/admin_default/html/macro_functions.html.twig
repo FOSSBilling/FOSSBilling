@@ -60,6 +60,9 @@
 {% endmacro build_form %}
 
 {% macro status_name(status) %}
+    {% if status is same as(null) or (status is empty and status != '0') %}
+        -
+    {% else %}
     {% set status = status|replace({'_': " "})|title|trim %}
     {% if status == 'Active' %}
         {{ 'Active'|trans }}
@@ -81,6 +84,7 @@
         {{ 'Refunded'|trans }}
     {% else %}
         {{ status|trans }}
+    {% endif %}
     {% endif %}
 {% endmacro status_name %}
 
