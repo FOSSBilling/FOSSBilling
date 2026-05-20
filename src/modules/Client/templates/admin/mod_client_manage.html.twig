@@ -151,8 +151,12 @@
                         <tr>
                             <td class="text-end">{{ 'Address'|trans }}:</td>
                             <td>
-                                <span class="flag flag-country-{{ client.country|lower }}" title="{{ guest.system_countries[client.country] }}"></span>
-                                {{ guest.system_countries[client.country] }} {{ client.state }} {{ client.address_1 }} {{ client.address_2 }} {{ client.city }} {{ client.postcode }}
+                                {% if client.country is not empty %}
+                                    <span class="flag flag-country-{{ client.country|lower }}" title="{{ guest.system_countries[client.country] }}"></span>
+                                    {{ guest.system_countries[client.country] }} {{ client.state }} {{ client.address_1 }} {{ client.address_2 }} {{ client.city }} {{ client.postcode }}
+                                {% else %}
+                                    -
+                                {% endif %}
                             </td>
                         </tr>
                         <tr>
@@ -223,7 +227,7 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Mail approved'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Email Address Approved'|trans }}:</label>
                         <div class="col">
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" id="radioEmailApprovedYes" type="radio" name="email_approved" value="1"{% if client.email_approved == 1 %} checked{% endif %}>
@@ -261,7 +265,7 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label" for="birthday">{{ 'Date of birth'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label" for="birthday">{{ 'Date of Birth'|trans }}:</label>
                         <div class="col">
                             <div class="input-group">
                                 <div class="input-icon w-100">
@@ -287,11 +291,11 @@
                         </div>
                     </div>
                     <div class="mb-3 row" id="company-details">
-                        <label class="form-label col-3 col-form-label">{{ 'Company details'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Company Details'|trans }}:</label>
                         <div class="col">
                             <div class="row">
                                 <div class="col">
-                                    <input class="form-control" type="text" name="company" value="{{ client.company }}" placeholder="{{ 'Company name'|trans }}">
+                                    <input class="form-control" type="text" name="company" value="{{ client.company }}" placeholder="{{ 'Company Name'|trans }}">
                                 </div>
                                 <div class="col">
                                     <input class="form-control" type="text" name="company_number" value="{{ client.company_number }}" placeholder="{{ 'Company Number'|trans }}">
@@ -355,7 +359,7 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Passport number'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Passport Number'|trans }}:</label>
                         <div class="col">
                             <input class="form-control" type="text" name="document_nr" value="{{ client.document_nr }}">
                         </div>
@@ -377,7 +381,7 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Exempt from tax'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Exempt from Tax'|trans }}:</label>
                         <div class="col">
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" id="radioTaxExemptYes" type="radio" name="tax_exempt" value="1"{% if client.tax_exempt %} checked{% endif %}>
@@ -390,7 +394,7 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label" for="created_at">{{ 'Signed up time'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label" for="created_at">{{ 'Account Created At'|trans }}:</label>
                         <div class="col">
                             <div class="input-group">
                                 <div class="input-icon w-100">
@@ -422,7 +426,7 @@
                     </div>
 
                     <input type="hidden" name="id" value="{{ client.id }}">
-                    <button class="btn btn-primary w-100" type="submit">{{ 'Update profile'|trans }}</button>
+                    <button class="btn btn-primary w-100" type="submit">{{ 'Update Profile'|trans }}</button>
                 </form>
                 <hr>
                 {% endif %}
@@ -438,14 +442,14 @@
                     </div>
 
                     <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Password confirm'|trans }}</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Confirm Password'|trans }}</label>
                         <div class="col">
                             <input class="form-control" type="password" name="password_confirm" value="" required>
                         </div>
                     </div>
 
                     <input type="hidden" name="id" value="{{ client.id }}">
-                    <button class="btn btn-primary w-100" type="submit">{{ 'Change password'|trans }}</button>
+                    <button class="btn btn-primary w-100" type="submit">{{ 'Change Password'|trans }}</button>
                 </form>
                 {% endif %}
                 {% if can_edit_profile %}

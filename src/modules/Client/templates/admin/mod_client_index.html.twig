@@ -211,7 +211,7 @@
                                 <th>{{ 'Company'|trans }}</th>
                                 <th>{{ 'Status'|trans }}</th>
                                 <th>{{ 'Date'|trans }}</th>
-                                <th class="w-1"></th>
+                                <th class="w-1 no-sort"></th>
                             </tr>
                         </thead>
 
@@ -232,7 +232,9 @@
                                         <div class="flex-fill">
                                             <div class="font-weight-medium">
                                                 <a href='{{ "client/manage/#{client.id }"|url }}'>{{ client.first_name }} {{ client.last_name }}</a>
-                                                <span class="flag flag-country-{{ client.country|lower }}" title="{{ guest.system_countries[client.country] }}"></span>
+                                                {% if client.country is not empty %}
+                                                    <span class="flag flag-country-{{ client.country|lower }}" title="{{ guest.system_countries[client.country] }}"></span>
+                                                {% endif %}
                                             </div>
                                             <div class="text-muted">
                                                 <a href="#" class="text-reset">{{ client.email }}</a>
