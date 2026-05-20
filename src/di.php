@@ -436,8 +436,10 @@ $di['api'] = $di->protect(function ($role) use ($di) {
         $isApiRequest = str_starts_with($routePath, '/api/');
         $isAllowedClientApi = str_starts_with($routePath, '/api/client/client/')
             || str_starts_with($routePath, '/api/client/profile/');
+        $isAllowedClientPage = str_starts_with($routePath, '/client/profile')
+            || str_starts_with($routePath, '/client/logout');
 
-        if (($isApiRequest && !$isAllowedClientApi) || (!$isApiRequest && !str_starts_with($routePath, '/client'))) {
+        if (($isApiRequest && !$isAllowedClientApi) || (!$isApiRequest && !$isAllowedClientPage)) {
             throw new EmailValidationRequiredException();
         }
     }

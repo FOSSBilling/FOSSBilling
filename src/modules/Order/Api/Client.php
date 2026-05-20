@@ -82,7 +82,11 @@ class Client extends \Api_Abstract
     {
         $order = $this->_getOrder($data);
 
-        return $this->getService()->getOrderServiceData($order, $data['id'], $this->getIdentity());
+        if ($order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+            throw new \FOSSBilling\InformationException('Order is not active');
+        }
+
+        return $this->getService()->getOrderServiceData($order, $this->getIdentity());
     }
 
     /**

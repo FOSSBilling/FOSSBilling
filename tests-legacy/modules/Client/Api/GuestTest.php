@@ -625,7 +625,7 @@ final class GuestTest extends \BBTestCase
     private function registerPasswordResetModService(\Pimple\Container $di, ?object $emailService = null): void
     {
         $clientService = new class($di, $emailService) {
-            public function __construct(private \Pimple\Container $di, private ?object $emailService)
+            public function __construct(private \Pimple\Container $di, private readonly ?object $emailService)
             {
             }
 

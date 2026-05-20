@@ -61,7 +61,7 @@ final class FOSSBilling_i18nTest extends BBTestCase
             }
         }
 
-        @unlink(\Symfony\Component\Filesystem\Path::changeExtension(PATH_CONFIG, 'old.php'));
+        @unlink(Symfony\Component\Filesystem\Path::changeExtension(PATH_CONFIG, 'old.php'));
 
         if ($this->originalCookie !== null) {
             $_COOKIE = $this->originalCookie;

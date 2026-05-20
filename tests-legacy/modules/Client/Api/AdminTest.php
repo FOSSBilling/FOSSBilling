@@ -333,7 +333,7 @@ final class AdminTest extends \BBTestCase
             'notes' => 'none',
             'country' => 'Moon',
             'postcode' => 'IL-11123',
-            'city' => 'Chicaco',
+            'city' => 'Chicago',
             'state' => 'IL',
             'currency' => 'USD',
             'tax_exempt' => 'N/A',
@@ -396,7 +396,7 @@ final class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testUpdateEmailALreadyRegistered(): void
+    public function testUpdateEmailAlreadyRegistered(): void
     {
         $data = [
             'id' => 1,
@@ -416,7 +416,7 @@ final class AdminTest extends \BBTestCase
             'notes' => 'none',
             'country' => 'Moon',
             'postcode' => 'IL-11123',
-            'city' => 'Chicaco',
+            'city' => 'Chicago',
             'state' => 'IL',
             'currency' => 'USD',
             'tax_exempt' => 'N/A',
@@ -537,7 +537,7 @@ final class AdminTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
         $di['password'] = $passwordMock;
         $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
-        $di['mod_service'] = $di->protect(fn ($name) => match (strtolower((string) $name)) {
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
             'profile' => $profileService,
             'staff' => $staffServiceMock,
         });
@@ -773,9 +773,17 @@ final class AdminTest extends \BBTestCase
         $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('getExpiredPasswordReminders')->willReturn($expiredArr);
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('client', 'delete');
+
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
+        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
+            'client' => $serviceMock,
+            'staff' => $staffServiceMock,
+        });
         $di['logger'] = new \Box_Log();
 
         $admin_Client = new \Box\Mod\Client\Api\Admin();

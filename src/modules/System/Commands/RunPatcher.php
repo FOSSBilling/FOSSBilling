@@ -27,8 +27,8 @@ use Symfony\Component\Filesystem\Exception\IOException;
 )]
 class RunPatcher extends Command implements \FOSSBilling\InjectionAwareInterface
 {
-    private const CACHE_VERSION_KEY = 'version';
-    private const CACHE_LATEST_PATCH_LEVEL_KEY = 'latest_patch_level';
+    private const string CACHE_VERSION_KEY = 'version';
+    private const string CACHE_LATEST_PATCH_LEVEL_KEY = 'latest_patch_level';
 
     protected $di;
 

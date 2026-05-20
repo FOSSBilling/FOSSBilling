@@ -138,9 +138,28 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->getAssoc($sql, $params);
     }
 
-    public function setPermissions($member_id, $array): bool
+    public function setPermissions(\Model_Admin $model, array $array): bool
     {
-        $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
+        $caller = $this->di['loggedin_admin'];
+
+        if ($caller->id == $model->id) {
+            throw new \FOSSBilling\InformationException('You cannot modify your own permissions');
+        }
+
+        if ($model->role === \Model_Admin::ROLE_ADMIN) {
+            $this->checkPermissionsAndThrowException('staff', 'create_and_edit_admin');
+        } else {
+            $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
+        }
+
+        if ($caller->role !== \Model_Admin::ROLE_ADMIN) {
+            $callerPerms = $this->getPermissions($caller->id);
+            $callerHasWildcard = !empty($callerPerms['default']['all']);
+
+            if (!$callerHasWildcard) {
+                $this->enforcePermissionCeiling($array, $callerPerms);
+            }
+        }
 
         $array = array_filter($array);
 
@@ -150,12 +169,56 @@ class Service implements InjectionAwareInterface
             ->set('permissions', ':p')
             ->where('id = :id')
             ->setParameter('p', json_encode($array))
-            ->setParameter('id', $member_id)
+            ->setParameter('id', $model->id)
             ->executeStatement();
 
-        $this->permissionCache[(string) $member_id] = $array;
+        $this->permissionCache[(string) $model->id] = $array;
 
         return true;
+    }
+
+    private function enforcePermissionCeiling(array $submitted, array $callerPerms): void
+    {
+        foreach ($submitted as $module => $modulePerms) {
+            if ($module === 'default') {
+                if (!empty($submitted['default']['all']) && empty($callerPerms['default']['all'])) {
+                    throw new \FOSSBilling\InformationException('You cannot grant wildcard access that you do not have');
+                }
+
+                continue;
+            }
+
+            if (!is_array($modulePerms)) {
+                continue;
+            }
+
+            $hasGrantedPermissions = false;
+            foreach ($modulePerms as $value) {
+                if (!empty($value)) {
+                    $hasGrantedPermissions = true;
+
+                    break;
+                }
+            }
+
+            if (!$hasGrantedPermissions) {
+                continue;
+            }
+
+            if (!isset($callerPerms[$module])) {
+                throw new \FOSSBilling\InformationException('You cannot grant permissions for a module you do not have access to');
+            }
+
+            foreach ($modulePerms as $key => $value) {
+                if (empty($value)) {
+                    continue;
+                }
+
+                if (!isset($callerPerms[$module][$key]) || !$callerPerms[$module][$key]) {
+                    throw new \FOSSBilling\InformationException('You cannot grant a permission that you do not have');
+                }
+            }
+        }
     }
 
     public function getPermissions($member_id)

@@ -9,8 +9,8 @@ use PHPUnit\Framework\TestCase;
 
 final class GuestTest extends TestCase
 {
-    private const MIN_TICKET_ID_LENGTH = 30;
-    private const MAX_TICKET_ID_LENGTH = 60;
+    private const int MIN_TICKET_ID_LENGTH = 30;
+    private const int MAX_TICKET_ID_LENGTH = 60;
 
     /**
      * Snapshot of the initial Support extension config captured in setUp().
@@ -150,7 +150,7 @@ final class GuestTest extends TestCase
         ]);
 
         $this->assertFalse($result->wasSuccessful());
-        $this->assertEquals('Please enter your name', $result->getErrorMessage());
+        $this->assertSame('Please enter your name', $result->getErrorMessage());
     }
 
     public function testTicketCreateForGuestMissingEmail(): void
@@ -163,7 +163,7 @@ final class GuestTest extends TestCase
         ]);
 
         $this->assertFalse($result->wasSuccessful());
-        $this->assertEquals('Please enter your email address', $result->getErrorMessage());
+        $this->assertSame('Please enter your email address', $result->getErrorMessage());
     }
 
     public function testTicketCreateForGuestInvalidEmail(): void
@@ -176,7 +176,7 @@ final class GuestTest extends TestCase
         ]);
 
         $this->assertFalse($result->wasSuccessful());
-        $this->assertEquals('Email address is invalid', $result->getErrorMessage());
+        $this->assertSame('Email address is invalid', $result->getErrorMessage());
     }
 
     public function testTicketCreateForGuestEmptySubject(): void
@@ -189,7 +189,7 @@ final class GuestTest extends TestCase
         ]);
 
         $this->assertFalse($result->wasSuccessful());
-        $this->assertEquals('Please enter the subject', $result->getErrorMessage());
+        $this->assertSame('Please enter the subject', $result->getErrorMessage());
     }
 
     public function testTicketCreateForGuestEmptyMessage(): void
@@ -202,6 +202,6 @@ final class GuestTest extends TestCase
         ]);
 
         $this->assertFalse($result->wasSuccessful());
-        $this->assertEquals('Please enter your message', $result->getErrorMessage());
+        $this->assertSame('Please enter your message', $result->getErrorMessage());
     }
 }
