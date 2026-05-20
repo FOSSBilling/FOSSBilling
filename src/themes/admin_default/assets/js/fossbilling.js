@@ -160,14 +160,73 @@ globalThis.FOSSBilling = {
      });
    });
 
-   //===== Tab parameter support =====//
-   const urlParams = new URLSearchParams(window.location.search);
-   const tabParam = urlParams.get('tab');
-   if (tabParam) {
-     const tabTrigger = document.querySelector(`button[data-bs-target="#${tabParam}"], a[data-bs-target="#${tabParam}"]`);
-     if (tabTrigger) {
-       const tab = new bootstrap.Tab(tabTrigger);
-       tab.show();
+   //===== Tab deep-linking and persistence =====//
+   const tabTriggers = document.querySelectorAll('[data-bs-toggle="tab"], [data-bs-toggle="pill"]');
+
+   const getTabTargetSelector = (tabTrigger) => {
+     const dataTarget = tabTrigger.getAttribute('data-bs-target');
+     if (dataTarget && dataTarget.startsWith('#')) {
+       return dataTarget;
      }
-   }
+
+     const hrefTarget = tabTrigger.getAttribute('href');
+     if (hrefTarget && hrefTarget.startsWith('#')) {
+       return hrefTarget;
+     }
+
+     return null;
+   };
+
+   const findTabTrigger = (tabId) => {
+     if (!tabId) {
+       return null;
+     }
+
+     return document.querySelector(
+       `[data-bs-toggle="tab"][data-bs-target="#${tabId}"], ` +
+       `[data-bs-toggle="pill"][data-bs-target="#${tabId}"], ` +
+       `[data-bs-toggle="tab"][href="#${tabId}"], ` +
+       `[data-bs-toggle="pill"][href="#${tabId}"]`
+     );
+   };
+
+   const showTabById = (tabId) => {
+     const tabTrigger = findTabTrigger(tabId);
+     if (!tabTrigger) {
+       return false;
+     }
+
+     const tab = bootstrap.Tab.getOrCreateInstance(tabTrigger);
+     tab.show();
+
+     return true;
+   };
+
+   const syncTabUrl = (tabId) => {
+     if (!tabId) {
+       return;
+     }
+
+     const url = new URL(window.location.href);
+     url.hash = tabId;
+     url.searchParams.delete('tab');
+     window.history.replaceState({}, '', url);
+   };
+
+   const hashTabId = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
+   showTabById(hashTabId);
+
+   tabTriggers.forEach((tabTrigger) => {
+     tabTrigger.addEventListener('shown.bs.tab', function() {
+       const targetSelector = getTabTargetSelector(this);
+       if (targetSelector) {
+         syncTabUrl(targetSelector.slice(1));
+       }
+     });
+   });
+
+   window.addEventListener('hashchange', () => {
+     const nextTabId = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
+     showTabById(nextTabId);
+   });
  });
