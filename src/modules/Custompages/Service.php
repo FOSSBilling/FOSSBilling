@@ -45,10 +45,22 @@ class Service
     {
         $filter = [];
         $search = $data['search'] ?? null;
+        $id = $data['id'] ?? null;
+        $slug = $data['slug'] ?? null;
 
         $sql = 'SELECT * FROM custom_pages WHERE 1';
+        if ($id !== null && $id !== '') {
+            $sql .= ' AND id = :id';
+            $filter[':id'] = (int) $id;
+        }
+
+        if ($slug !== null && $slug !== '') {
+            $sql .= ' AND slug LIKE :slug';
+            $filter[':slug'] = '%' . $slug . '%';
+        }
+
         if ($search) {
-            $sql .= ' AND (title LIKE :q OR content LIKE :q)';
+            $sql .= ' AND (title LIKE :q OR slug LIKE :q OR description LIKE :q OR keywords LIKE :q OR content LIKE :q)';
             $filter[':q'] = "%$search%";
         }
         $sql .= ' ORDER BY id DESC';

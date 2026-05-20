@@ -1,6 +1,9 @@
 {% import "macro_functions.html.twig" as mf %}
 {% extends "layout_default.html.twig" %}
 {% set active_menu = 'extensions' %}
+{% set has_filter_panel = true %}
+{% set filter_panel_id = 'page-search-filters' %}
+{% set filter_panel_open = request_has_filters %}
 {% block meta_title %}{{ 'Custom Pages'|trans }}{% endblock %}
 
 {% block content %}
@@ -30,23 +33,42 @@
                 </div>
                 <div class="tab-content border-top">
                     <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-                        <div class="p-3 border-bottom">
-                            <div class="d-flex">
-                                {% include "partial_batch_delete.html.twig" with {'action' : 'custompages/batch_delete'} %}
-                                <div class="ms-auto text-muted">
-                                    <form method="get">
-                                        <div class="input-group">
-                                            <input type="text" class="form-control" placeholder="Search…" name="search">
-                                            <button class="btn btn-icon">
-                                                <svg class="icon">
-                                                    <use xlink:href="#search"></use>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
+                        <div class="px-3 pt-3">
+                            {% include "partial_batch_delete.html.twig" with {'action' : 'custompages/batch_delete'} %}
                         </div>
+                        {{ include('partial_search.html.twig', {
+                            search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : ''
+                        }) }}
+                        <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
+                            <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
+                                {% if request.search %}
+                                    <input type="hidden" name="search" value="{{ request.search }}">
+                                {% endif %}
+                                <div class="row g-3">
+                                    <div class="col-md-6 col-xl-4">
+                                        <div>
+                                            <label class="form-label text-muted small mb-1" for="filter-page-id">{{ 'ID'|trans }}</label>
+                                            <input class="form-control" type="text" id="filter-page-id" name="id" value="{{ request.id }}" placeholder="{{ 'Page ID'|trans }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 col-xl-8">
+                                        <div>
+                                            <label class="form-label text-muted small mb-1" for="filter-page-slug">{{ 'Slug'|trans }}</label>
+                                            <input class="form-control" type="text" id="filter-page-slug" name="slug" value="{{ request.slug }}" placeholder="{{ 'Page Slug'|trans }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-end gap-2 mt-3">
+                                    <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
+                                    <button class="btn btn-primary" type="submit">
+                                        <svg class="icon">
+                                            <use xlink:href="#filter" />
+                                        </svg>
+                                        {{ 'Apply Filters'|trans }}
+                                    </button>
+                                </div>
+                            </form>
+                        </section>
                         <div class="table-responsive">
                             <table class="table card-table table-vcenter text-nowrap datatable">
                                 <thead>

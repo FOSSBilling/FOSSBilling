@@ -3,6 +3,9 @@
 {% import 'macro_functions.html.twig' as mf %}
 
 {% set active_menu = 'system' %}
+{% set has_filter_panel = true %}
+{% set filter_panel_id = 'page-search-filters' %}
+{% set filter_panel_open = request_has_filters %}
 
 {% block meta_title %}{{ 'Payment Gateways'|trans }}{% endblock %}
 
@@ -41,7 +44,67 @@
                 </div>
                 <div class="tab-content border-top">
                     <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-                        {{ include('partial_search.html.twig') }}
+                        {{ include('partial_search.html.twig', {
+                            search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : ''
+                        }) }}
+                        <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
+                            <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
+                                {% if request.search %}
+                                    <input type="hidden" name="search" value="{{ request.search }}">
+                                {% endif %}
+                                <div class="row g-3">
+                                    <div class="col-md-6 col-xl-3">
+                                        <div>
+                                            <label class="form-label text-muted small mb-1" for="gateway-enabled">{{ 'Enabled'|trans }}</label>
+                                            <select class="form-select" id="gateway-enabled" name="enabled">
+                                                <option value="">{{ 'All Gateways'|trans }}</option>
+                                                <option value="1"{% if request.enabled == '1' %} selected{% endif %}>{{ 'Enabled'|trans }}</option>
+                                                <option value="0"{% if request.enabled == '0' %} selected{% endif %}>{{ 'Disabled'|trans }}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 col-xl-3">
+                                        <div>
+                                            <label class="form-label text-muted small mb-1" for="gateway-allow-single">{{ 'Allow One-Time Payments'|trans }}</label>
+                                            <select class="form-select" id="gateway-allow-single" name="allow_single">
+                                                <option value="">{{ 'All Gateways'|trans }}</option>
+                                                <option value="1"{% if request.allow_single == '1' %} selected{% endif %}>{{ 'Yes'|trans }}</option>
+                                                <option value="0"{% if request.allow_single == '0' %} selected{% endif %}>{{ 'No'|trans }}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 col-xl-3">
+                                        <div>
+                                            <label class="form-label text-muted small mb-1" for="gateway-allow-recurrent">{{ 'Allow Subscriptions'|trans }}</label>
+                                            <select class="form-select" id="gateway-allow-recurrent" name="allow_recurrent">
+                                                <option value="">{{ 'All Gateways'|trans }}</option>
+                                                <option value="1"{% if request.allow_recurrent == '1' %} selected{% endif %}>{{ 'Yes'|trans }}</option>
+                                                <option value="0"{% if request.allow_recurrent == '0' %} selected{% endif %}>{{ 'No'|trans }}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 col-xl-3">
+                                        <div>
+                                            <label class="form-label text-muted small mb-1" for="gateway-test-mode">{{ 'Test Mode'|trans }}</label>
+                                            <select class="form-select" id="gateway-test-mode" name="test_mode">
+                                                <option value="">{{ 'All Gateways'|trans }}</option>
+                                                <option value="1"{% if request.test_mode == '1' %} selected{% endif %}>{{ 'Yes'|trans }}</option>
+                                                <option value="0"{% if request.test_mode == '0' %} selected{% endif %}>{{ 'No'|trans }}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-end gap-2 mt-3">
+                                    <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
+                                    <button class="btn btn-primary" type="submit">
+                                        <svg class="icon">
+                                            <use xlink:href="#filter" />
+                                        </svg>
+                                        {{ 'Apply Filters'|trans }}
+                                    </button>
+                                </div>
+                            </form>
+                        </section>
                         <div class="table-responsive">
                             <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                                 <thead>
