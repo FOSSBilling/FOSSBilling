@@ -3,7 +3,7 @@
 		<input class="form-control" type="search" name="search" value="{{ request.search }}" placeholder="{{ 'Enter search text...'|trans }}" aria-label="{{ 'Search'|trans }}">
         <span class="input-group-text search-actions">
             {% if has_filter_panel|default(false) %}
-    		<button class="search-filter-toggle text-secondary"
+    		<button class="search-filter-toggle {% if filter_panel_open|default(false) %}text-primary{% else %}text-secondary{% endif %}"
                 type="button"
                 data-bs-toggle="collapse"
                 data-bs-target="#{{ filter_panel_id|default('page-search-filters') }}"
