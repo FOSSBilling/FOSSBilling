@@ -417,6 +417,8 @@ class Admin extends \Api_Abstract
      */
     public function batch_expire_password_reminders(): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'delete');
+
         $service = $this->di['mod_service']('client');
         $expired = $service->getExpiredPasswordReminders();
         foreach ($expired as $model) {
