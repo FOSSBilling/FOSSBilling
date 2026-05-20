@@ -336,78 +336,90 @@
     {% endif %}
 
     {% if admin.system_is_allowed({ 'mod': 'activity' }) %}
-    <div class="col-12 d-block">
-        <ul class="nav nav-tabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <a class="nav-link active" href="#tab-index" role="tab" data-bs-toggle="tab">{{ 'Recent Client Activity'|trans }}</a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#tab-staff" role="tab" data-bs-toggle="tab">{{ 'Recent Staff Activity'|trans }}</a>
-            </li>
-        </ul>
-
+    <div class="col-12">
         <div class="card">
-            <div class="tab-content" id="tabs">
-                <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-                    <table class="table table-vcenter card-table table-striped">
-                        <thead>
-                            <tr>
-                                <th>{{ 'Client'|trans }}</th>
-                                <th>{{ 'Message'|trans }}</th>
-                                <th class="text-center">{{ 'Date/Time'|trans }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% set events = admin.activity_log_get_list({ 'per_page': 10, 'user_filter': 'only_clients' }) %}
-                            {% for i, event in events.list %}
-                            <tr>
-                                <td>
-                                    <a href='{{ "client/manage/#{event.client.id}"|url }}'>
-                                        {{ mf.avatar(event.client.email, 24, 'db-avatar avatar avatar-xs') }}
-                                    </a>&nbsp;
-                                    <a href='{{ "client/manage/#{event.client.id}"|url }}'>{{ event.client.name|truncate(40) }}</a>
-                                </td>
-                                <td>{{ event.message|truncate(50) }}</td>
-                                <td class="text-center">{{ event.created_at|format_datetime }} ({{ event.created_at|timeago }} {{ 'ago'|trans }})</td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+            <div class="card-header">
+                <h3 class="card-title mb-0">{{ 'Activity Overview'|trans }}</h3>
+            </div>
+            <div class="card-body">
+                <div class="card">
+                    <div class="card-header">
+                        <ul class="nav nav-pills card-header-pills">
+                            <li class="nav-item">
+                                <a class="nav-link active" href="#tab-index" role="tab" data-bs-toggle="tab">{{ 'Recent Client Activity'|trans }}</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#tab-staff" role="tab" data-bs-toggle="tab">{{ 'Recent Staff Activity'|trans }}</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="tab-content" id="tabs">
+                        <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-vcenter card-table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>{{ 'Client'|trans }}</th>
+                                            <th>{{ 'Message'|trans }}</th>
+                                            <th class="text-center">{{ 'Date/Time'|trans }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% set events = admin.activity_log_get_list({ 'per_page': 10, 'user_filter': 'only_clients' }) %}
+                                        {% for i, event in events.list %}
+                                        <tr>
+                                            <td>
+                                                <a href='{{ "client/manage/#{event.client.id}"|url }}'>
+                                                    {{ mf.avatar(event.client.email, 24, 'db-avatar avatar avatar-xs') }}
+                                                </a>&nbsp;
+                                                <a href='{{ "client/manage/#{event.client.id}"|url }}'>{{ event.client.name|truncate(40) }}</a>
+                                            </td>
+                                            <td>{{ event.message|truncate(50) }}</td>
+                                            <td class="text-center">{{ event.created_at|format_datetime }} ({{ event.created_at|timeago }} {{ 'ago'|trans }})</td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
 
-                <div class="tab-pane fade" id="tab-staff" role="tabpanel">
-                    <table class="table table-vcenter card-table table-striped">
-                        <thead>
-                            <tr>
-                                <th>{{ 'Staff Member'|trans }}</th>
-                                <th>{{ 'Message'|trans }}</th>
-                                <th class="text-center">{{ 'Date/Time'|trans }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% set events = admin.activity_log_get_list({ 'per_page': 10, 'user_filter': 'only_staff' }) %}
-                            {% for i, event in events.list %}
-                            <tr>
-                                <td>
-                                    <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>
-                                        {{ mf.avatar(event.staff.email, 24, 'db-avatar avatar avatar-xs') }}
-                                    </a>&nbsp;
-                                    <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>{{ event.staff.name }}</a>
-                                </td>
-                                <td>{{ event.message|truncate(50) }}</td>
-                                <td class="text-center">{{ event.created_at|format_datetime }} ({{ event.created_at|timeago }} {{ 'ago'|trans }})</td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                        <div class="tab-pane fade" id="tab-staff" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-vcenter card-table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>{{ 'Staff Member'|trans }}</th>
+                                            <th>{{ 'Message'|trans }}</th>
+                                            <th class="text-center">{{ 'Date/Time'|trans }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% set events = admin.activity_log_get_list({ 'per_page': 10, 'user_filter': 'only_staff' }) %}
+                                        {% for i, event in events.list %}
+                                        <tr>
+                                            <td>
+                                                <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>
+                                                    {{ mf.avatar(event.staff.email, 24, 'db-avatar avatar avatar-xs') }}
+                                                </a>&nbsp;
+                                                <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>{{ event.staff.name }}</a>
+                                            </td>
+                                            <td>{{ event.message|truncate(50) }}</td>
+                                            <td class="text-center">{{ event.created_at|format_datetime }} ({{ event.created_at|timeago }} {{ 'ago'|trans }})</td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
