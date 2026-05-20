@@ -66,16 +66,26 @@
                             <h3 class="card-title">{{ 'Manage Email Template'|trans }}</h3>
                             <p class="card-subtitle">{{ 'Email templates can receive variables from FOSSBilling. Available variables are listed under the "Variables" tab. Copy a variable name to your email template and hit preview to see parsed content. Please note that values will be different when an actual email is sent.'|trans }}</p>
                             {% if not can_manage_templates %}
-                                <div class="alert alert-warning">{{ 'You can view this email template, but you do not have permission to edit or preview it.'|trans }}</div>
+                                <div class="alert alert-warning" role="alert">
+                                    <strong class="me-1">{{ 'Warning:'|trans }}</strong>{{ 'You can view this email template, but you do not have permission to edit or preview it.'|trans }}
+                                </div>
                             {% endif %}
                             {% if template.is_custom %}
-                                <div class="alert alert-info">{{ 'This is a custom template stored in the database.'|trans }}</div>
+                                <div class="alert alert-info" role="alert">
+                                    <strong class="me-1">{{ 'Information:'|trans }}</strong>{{ 'This is a custom template stored in the database.'|trans }}
+                                </div>
                             {% elseif not template.has_default %}
-                                <div class="alert alert-warning">{{ 'This template no longer has a file-backed default.'|trans }}</div>
+                                <div class="alert alert-warning" role="alert">
+                                    <strong class="me-1">{{ 'Warning:'|trans }}</strong>{{ 'This template no longer has a file-backed default.'|trans }}
+                                </div>
                             {% elseif template.is_overridden %}
-                                <div class="alert alert-info">{{ 'This built-in template is customized. Reset it to use the file-backed default.'|trans }}</div>
+                                <div class="alert alert-info" role="alert">
+                                    <strong class="me-1">{{ 'Information:'|trans }}</strong>{{ 'This built-in template is customized. Reset it to use the file-backed default.'|trans }}
+                                </div>
                             {% else %}
-                                <div class="alert alert-info">{{ 'This built-in template is using the file-backed default.'|trans }}</div>
+                                <div class="alert alert-info" role="alert">
+                                    <strong class="me-1">{{ 'Information:'|trans }}</strong>{{ 'This built-in template is using the file-backed default.'|trans }}
+                                </div>
                             {% endif %}
                             <div class="mb-3 row">
                                 <label class="col-md-3 col-form-label">{{ 'Email Subject'|trans }}</label>

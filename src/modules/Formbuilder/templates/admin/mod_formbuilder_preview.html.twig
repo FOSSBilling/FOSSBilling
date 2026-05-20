@@ -21,10 +21,10 @@
                            value="{{ field.default_value }}" id="{{ field.name }}"
                            placeholder="https://example.com"
                         {{ (field.readonly==1)? 'readonly="readonly"' : '' }} />
-                {% elseif field.type == "select" %}
-                    {% if field.options is empty %}
+                    {% elseif field.type == "select" %}
+                        {% if field.options is empty %}
                         <div class="alert alert-danger" role="alert">
-                            {{ 'Please click on "Edit" in order to add options'|trans }}
+                            <strong class="me-1">{{ 'Important:'|trans }}</strong>{{ 'Please click on "Edit" in order to add options'|trans }}
                         </div>
                     {% else %}
                         <select class="form-select" name="{{ field.name }}" required="required" id="{{ field.name }}"
@@ -39,7 +39,7 @@
 
                     {% if field.options is empty %}
                         <div class="alert alert-danger" role="alert">
-                            {{ 'Please click on "Edit" in order to add options'|trans }}
+                            <strong class="me-1">{{ 'Important:'|trans }}</strong>{{ 'Please click on "Edit" in order to add options'|trans }}
                         </div>
                     {% else %}
                         <div>
@@ -54,10 +54,10 @@
                         </div>
                     {% endif %}
 
-                {% elseif field.type == "radio" %}
+                    {% elseif field.type == "radio" %}
                     {% if field.options is empty %}
                         <div class="alert alert-danger" role="alert">
-                            {{ 'Please click on "Edit" in order to add options'|trans }}
+                            <strong class="me-1">{{ 'Important:'|trans }}</strong>{{ 'Please click on "Edit" in order to add options'|trans }}
                         </div>
                     {% else %}
                         <div>

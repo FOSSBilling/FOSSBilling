@@ -69,11 +69,11 @@
                     </div>
                     {% if params.sync_rate != 'never' %}
                         <div class="alert alert-success" role="alert">
-                            {{ 'FOSSBilling is configured to automatically sync currency exchange rates.'|trans }}
+                            <strong class="me-1">{{ 'Success:'|trans }}</strong>{{ 'FOSSBilling is configured to automatically sync currency exchange rates.'|trans }}
                         </div>
                     {% else %}
                         <div class="alert alert-warning" role="alert">
-                            {{ 'FOSSBilling is not configured to automatically sync currency exchange rates.'|trans }}
+                            <strong class="me-1">{{ 'Warning:'|trans }}</strong>{{ 'FOSSBilling is not configured to automatically sync currency exchange rates.'|trans }}
                         </div>
                     {% endif %}
                     <div class="table-responsive">

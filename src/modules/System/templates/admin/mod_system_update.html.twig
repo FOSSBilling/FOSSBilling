@@ -23,12 +23,12 @@
                 {% endif %}
                 {% if update_info['update_type'] == 2 %}
                     <div class="alert alert-danger" role="alert">
-                        <span>{{ 'This update is considered to be a major update, you should check the release notes for any breaking changes.'|trans }}</span>
+                        <strong class="me-1">{{ 'Important:'|trans }}</strong>{{ 'This update is considered to be a major update, you should check the release notes for any breaking changes.'|trans }}
                     </div>
                 {% endif %}
                 {% if update_info['update_type'] == 1 %}
                     <div class="alert alert-warning" role="alert">
-                        <span>{{ 'This update is considered to be a minor update, there are low chances of incompatibilities.'|trans }}</span>
+                        <strong class="me-1">{{ 'Warning:'|trans }}</strong>{{ 'This update is considered to be a minor update, there are low chances of incompatibilities.'|trans }}
                     </div>
                 {% endif %}
                 {{ (update_info['release_notes'] ?? '')|markdown_to_html }}
