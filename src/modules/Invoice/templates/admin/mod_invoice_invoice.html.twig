@@ -72,21 +72,7 @@
                     </tr>
                     <tr>
                         <td class="text-end">{{ 'Status'|trans }}:</td>
-                        <td>
-                            {% if invoice.status == 'paid' %}
-                                <span class="badge bg-success me-1"></span>
-                            {% endif %}
-                            {% if invoice.status == 'unpaid' %}
-                                <span class="badge bg-danger me-1"></span>
-                            {% endif %}
-                            {% if invoice.status == 'refunded' %}
-                                <span class="badge bg-warning me-1"></span>
-                            {% endif %}
-                            {% if invoice.status == 'canceled' %}
-                                <span class="badge bg-secondary me-1"></span>
-                            {% endif %}
-                            {{ mf.status_name(invoice.status) }}
-                        </td>
+                        <td>{{ mf.status_badge(invoice.status, 'invoice') }}</td>
                     </tr>
                     {% if invoice.tax %}
                     <tr>
@@ -683,7 +669,7 @@
                     <td>{{ tx.type }}</td>
                     <td>{{ tx.gateway }}</td>
                     <td>{{ tx.amount|format_currency(tx.currency ?? default_currency) }}</td>
-                    <td>{{ mf.status_name(tx.status) }}</td>
+                    <td>{{ mf.status_badge(tx.status, 'transaction') }}</td>
                     <td>{{ tx.created_at|format_datetime }}</td>
                     <td>
                         <a class="btn btn-icon" href='{{ "invoice/transaction/#{tx.id}"|url }}'>

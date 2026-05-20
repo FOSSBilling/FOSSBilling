@@ -105,21 +105,7 @@
                         {% endif %}
                         <tr>
                             <td class="text-end">{{ 'Order Status'|trans }}</td>
-                            <td>
-                            {% if order.status == 'pending_setup' or order.status == 'failed_setup' or order.status == 'failed_renew' %}
-                                <span class="badge bg-warning me-1"></span>
-                            {% endif %}
-                            {% if order.status == 'active' %}
-                                <span class="badge bg-success me-1"></span>
-                            {% endif %}
-                            {% if order.status == 'suspended' %}
-                                <span class="badge bg-danger me-1"></span>
-                            {% endif %}
-                            {% if order.status == 'canceled' %}
-                                <span class="badge bg-secondary me-1"></span>
-                            {% endif %}
-                            {{ mf.status_name(order.status) }}
-                            </td>
+                            <td>{{ mf.status_badge(order.status, 'order') }}</td>
                         </tr>
                         {% if order.notes %}
                         <tr>
@@ -469,21 +455,7 @@
                             <td>{{ addon.period|period_title }}</td>
                             <td>{{ addon.total|format_currency(addon.currency ?? default_currency) }}</td>
                             <td>{% if addon.expires_at %}{{ addon.expires_at|format_date }}{% else %}-{% endif %}</td>
-                            <td>
-                                {% if addon.status == 'pending_setup' or addon.status == 'failed_setup' or addon.status == 'failed_renew' %}
-                                    <span class="badge bg-warning me-1"></span>
-                                {% endif %}
-                                {% if addon.status == 'active' %}
-                                    <span class="badge bg-success me-1"></span>
-                                {% endif %}
-                                {% if addon.status == 'suspended' %}
-                                    <span class="badge bg-danger me-1"></span>
-                                {% endif %}
-                                {% if addon.status == 'canceled' %}
-                                    <span class="badge bg-secondary me-1"></span>
-                                {% endif %}
-                                {{ mf.status_name(addon.status) }}
-                            </td>
+                            <td>{{ mf.status_badge(addon.status, 'order') }}</td>
                             <td>
                                 <a class="btn btn-icon" href='{{ "order/manage/#{addon.id}"|url }}'>
                                     <svg class="icon">
@@ -533,21 +505,7 @@
                             <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
                             <td>{{ invoice.created_at|format_date }}</td>
                             <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
-                            <td>
-                                {% if invoice.status == 'paid' %}
-                                    <span class="badge bg-success me-1"></span>
-                                {% endif %}
-                                {% if invoice.status == 'unpaid' %}
-                                    <span class="badge bg-danger me-1"></span>
-                                {% endif %}
-                                {% if invoice.status == 'refunded' %}
-                                    <span class="badge bg-warning me-1"></span>
-                                {% endif %}
-                                {% if invoice.status == 'canceled' %}
-                                    <span class="badge bg-secondary me-1"></span>
-                                {% endif %}
-                                {{ mf.status_name(invoice.status) }}
-                            </td>
+                            <td>{{ mf.status_badge(invoice.status, 'invoice') }}</td>
                             <td>
                                 <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
                                     <svg class="icon">
@@ -589,21 +547,7 @@
                             <td>
                                 {% set class = 'bg-secondary' %}
 
-                                {% if sh.status == 'active' %}
-                                    {% set class = 'bg-success' %}
-                                {% endif %}
-
-                                {% if sh.status == 'pending_setup' or sh.status == 'failed_renew'%}
-                                    {% set class = 'bg-warning' %}
-                                {% endif %}
-
-                                {% if sh.status == 'failed_setup' or sh.status == 'suspended' or sh.status == 'canceled'%}
-                                    {% set class = 'bg-danger' %}
-                                {% endif %}
-
-                                <span class="badge {{ class }} me-1 d-none d-lg-inline-block"></span>
-                                <span class="badge {{ class }} ms-2 d-lg-none"></span>
-                                <span class="d-none d-lg-inline-block">{{ mf.status_name(sh.status) }}</span>
+                                {{ mf.status_badge(sh.status, 'order') }}
                             </td>
                             <td class="text-wrap">{{ sh.notes }}</td>
                             <td>
@@ -649,21 +593,7 @@
                             <td>
                                 <a href='{{ "support/ticket/#{ticket.id}"|url }}'>{{ ticket.subject|truncate(30) }}</a>
                             </td>
-                            <td>
-                                {% if order.status == 'pending_setup' %}
-                                    <span class="badge bg-warning me-1"></span>
-                                {% endif %}
-                                {% if order.status == 'active' %}
-                                    <span class="badge bg-success me-1"></span>
-                                {% endif %}
-                                {% if order.status == 'suspended' %}
-                                    <span class="badge bg-danger me-1"></span>
-                                {% endif %}
-                                {% if order.status == 'canceled' %}
-                                    <span class="badge bg-secondary me-1"></span>
-                                {% endif %}
-                                {{ mf.status_name(ticket.status) }}
-                            </td>
+                            <td>{{ mf.status_badge(ticket.status, 'ticket') }}</td>
                             <td>
                                 <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}'>
                                     <svg class="icon">

@@ -70,15 +70,7 @@
                             </tr>
                             <tr>
                                 <td class="text-end">{{ 'Status'|trans }}:</td>
-                                <td>
-                                    {% if subscription.status == 'active' %}
-                                        <span class="badge bg-success me-1"></span>
-                                    {% endif %}
-                                    {% if subscription.status == 'canceled' %}
-                                        <span class="badge bg-secondary me-1"></span>
-                                    {% endif %}
-                                    {{ mf.status_name(subscription.status) }}
-                                </td>
+                                <td>{{ mf.status_badge(subscription.status, 'subscription') }}</td>
                             </tr>
                             <tr>
                                 <td class="text-end">{{ 'Created At'|trans }}:</td>

@@ -36,23 +36,11 @@
         </tr>
         <tr>
             <td class="text-end">{{ 'Locked'|trans }}:</td>
-            <td id="locked-value">
-                {% if service.locked == 1 %}
-                    <span class="badge bg-danger me-1"></span> {{ 'Yes'|trans }}
-                {% else %}
-                    <span class="badge bg-success me-1"></span> {{ 'No'|trans }}
-                {% endif %}
-            </td>
+            <td id="locked-value">{{ mf.boolean_badge(service.locked, 'Yes'|trans, 'No'|trans, 'text-bg-danger', 'text-bg-success') }}</td>
         </tr>
         <tr>
             <td class="text-end">{{ 'Privacy Protection'|trans }}:</td>
-            <td id="privacy-value">
-                {% if service.privacy == 1 %}
-                    <span class="badge bg-danger me-1"></span> {{ 'Enabled'|trans }}
-                {% else %}
-                    <span class="badge bg-success me-1"></span> {{ 'Disabled'|trans }}
-                {% endif %}
-            </td>
+            <td id="privacy-value">{{ mf.boolean_badge(service.privacy, 'Enabled'|trans, 'Disabled'|trans, 'text-bg-danger', 'text-bg-success') }}</td>
         </tr>
         <tr>
             <td class="text-end">{{ 'Registration/Renewal Years'|trans }}:</td>
@@ -275,7 +263,7 @@
                     document.getElementById('domain-unlock').classList.remove('d-inline-block');
                     document.getElementById('domain-unlock').style.display = 'none';
 
-                    document.getElementById('locked-value').innerHTML = '<span class="badge bg-success me-1"></span> {{ "No"|trans }}';
+                    document.getElementById('locked-value').innerHTML = '<span class="badge text-bg-success">{{ "No"|trans }}</span>';
                 });
         });
 
@@ -298,7 +286,7 @@
                     document.getElementById('domain-enable-pp').style.display = 'none';
                     document.getElementById('domain-disable-pp').classList.add('d-inline-block');
 
-                    document.getElementById('privacy-value').innerHTML = '<span class="badge bg-danger me-1"></span> {{ "Enabled"|trans }}';
+                    document.getElementById('privacy-value').innerHTML = '<span class="badge text-bg-danger">{{ "Enabled"|trans }}</span>';
                 });
         });
 
@@ -311,7 +299,7 @@
                     document.getElementById('domain-disable-pp').style.display = 'none';
                     document.getElementById('domain-enable-pp').classList.add('d-inline-block');
 
-                    document.getElementById('privacy-value').innerHTML = '<span class="badge bg-success me-1"></span> {{ "Disabled"|trans }}';
+                    document.getElementById('privacy-value').innerHTML = '<span class="badge text-bg-success">{{ "Disabled"|trans }}</span>';
                 });
         });
 

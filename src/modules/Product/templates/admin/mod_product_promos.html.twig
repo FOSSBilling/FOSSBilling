@@ -92,15 +92,7 @@
                             From {% if promo.start_at %}{{ promo.start_at|format_date }}{% else %}now{% endif %}
                             until {% if promo.end_at %}{{ promo.end_at|format_date }}{% else %}disabled{% endif %}
                         </td>
-                        <td>
-                            {% if promo.active == true %}
-                                <span class="badge bg-success me-1"></span>
-                            {% endif %}
-                            {% if promo.active == false %}
-                                <span class="badge bg-secondary me-1"></span>
-                            {% endif %}
-                            {{ mf.q(promo.active) }}
-                        </td>
+                        <td>{{ mf.boolean_badge(promo.active, 'Yes'|trans, 'No'|trans, 'text-bg-success', 'text-bg-secondary') }}</td>
                         <td>{{ promo.used }} / {% if promo.maxuses %}{{ promo.maxuses }}{% else %}&#8734;{% endif %}</td>
                         <td>
                             <a class="btn btn-icon" href='{{ "product/promo/#{promo.id}"|url }}'>

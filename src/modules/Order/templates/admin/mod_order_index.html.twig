@@ -228,27 +228,7 @@
                                 </td>
                                 <td class="text-center">{{ order.period|period_title }}</td>
                                 <td class="text-center">{{ order.total|format_currency(order.currency ?? default_currency) }}</td>
-                                <td>
-                                    {% if order.status == 'pending_setup' %}
-                                        <span class="badge bg-warning me-1"></span>
-                                    {% endif %}
-                                    {% if order.status == 'failed_setup' %}
-                                    <span class="badge bg-warning me-1"></span>
-                                    {% endif %}
-                                    {% if order.status == 'failed_renew' %}
-                                    <span class="badge bg-warning me-1"></span>
-                                    {% endif %}
-                                    {% if order.status == 'active' %}
-                                        <span class="badge bg-success me-1"></span>
-                                    {% endif %}
-                                    {% if order.status == 'suspended' %}
-                                        <span class="badge bg-danger me-1"></span>
-                                    {% endif %}
-                                    {% if order.status == 'canceled' %}
-                                        <span class="badge bg-secondary me-1"></span>
-                                    {% endif %}
-                                    {{ mf.status_name(order.status) }}
-                                </td>
+                                <td>{{ mf.status_badge(order.status, 'order') }}</td>
                                 <td>
                                     <a class="btn btn-icon" href='{{ "order/manage/#{order.id}"|url }}'>
                                         <svg class="icon">

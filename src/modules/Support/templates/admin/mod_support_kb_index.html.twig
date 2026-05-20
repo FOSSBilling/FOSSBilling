@@ -121,14 +121,7 @@
                         <td>
                             <a href='{{ "support/kb/category/#{post.category.id}"|url }}'>{{ post.category.title }}</a>
                         </td>
-                        <td>
-                            {% if post.status == 'active' %}
-                                <span class="badge bg-success me-1"></span>
-                            {% endif %}
-                            {% if post.status == 'draft' %}
-                                <span class="badge bg-secondary me-1"></span>
-                            {% endif %}
-                            {{ mf.status_name(post.status) }}</td>
+                        <td>{{ mf.status_badge(post.status, 'post') }}</td>
                         <td class="text-center">{{ post.views }}</td>
                         <td>
                             <a class="btn btn-icon" href='{{ "support/kb/article/#{post.id}"|url }}'>

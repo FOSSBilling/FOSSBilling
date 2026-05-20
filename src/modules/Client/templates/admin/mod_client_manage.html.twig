@@ -103,18 +103,7 @@
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Status'|trans }}:</td>
-                            <td>
-                                {% if client.status == 'active' %}
-                                    <span class="badge bg-success me-1"></span>
-                                {% endif %}
-                                {% if client.status == 'suspended' %}
-                                    <span class="badge bg-danger me-1"></span>
-                                {% endif %}
-                                {% if client.status == 'canceled' %}
-                                    <span class="badge bg-secondary me-1"></span>
-                                {% endif %}
-                                {{ mf.status_name(client.status) }}
-                            </td>
+                            <td>{{ mf.status_badge(client.status, 'client') }}</td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Group'|trans }}:</td>
@@ -513,21 +502,7 @@
                             </td>
                             <td>{{ order.total|format_currency(order.currency ?? default_currency) }}</td>
                             <td>{{ order.period|period_title }}</td>
-                            <td>
-                                {% if order.status == 'pending_setup' %}
-                                    <span class="badge bg-warning me-1"></span>
-                                {% endif %}
-                                {% if order.status == 'active' %}
-                                    <span class="badge bg-success me-1"></span>
-                                {% endif %}
-                                {% if order.status == 'suspended' %}
-                                    <span class="badge bg-danger me-1"></span>
-                                {% endif %}
-                                {% if order.status == 'canceled' %}
-                                    <span class="badge bg-secondary me-1"></span>
-                                {% endif %}
-                                {{ mf.status_name(order.status) }}
-                            </td>
+                            <td>{{ mf.status_badge(order.status, 'order') }}</td>
                             <td>
                                 <a class="btn btn-icon" href='{{ "order/manage/#{order.id}"|url }}'>
                                     <svg class="icon">
@@ -582,21 +557,7 @@
                             <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
                             <td>{{ invoice.created_at|format_date }}</td>
                             <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
-                            <td>
-                                {% if invoice.status == 'paid' %}
-                                    <span class="badge bg-success me-1"></span>
-                                {% endif %}
-                                {% if invoice.status == 'unpaid' %}
-                                    <span class="badge bg-danger me-1"></span>
-                                {% endif %}
-                                {% if invoice.status == 'refunded' %}
-                                    <span class="badge bg-warning me-1"></span>
-                                {% endif %}
-                                {% if invoice.status == 'canceled' %}
-                                    <span class="badge bg-secondary me-1"></span>
-                                {% endif %}
-                                {{ mf.status_name(invoice.status) }}
-                            </td>
+                            <td>{{ mf.status_badge(invoice.status, 'invoice') }}</td>
                             <td>
                                 <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
                                     <svg class="icon">
@@ -649,18 +610,7 @@
                             <td>
                                 <a href='{{ "support/ticket/#{ticket.id}"|url }}'>{{ ticket.subject|truncate(30) }}</a>
                             </td>
-                            <td>
-                                {% if ticket.status == 'open' %}
-                                    <span class="badge bg-success me-1"></span>
-                                {% endif %}
-                                {% if ticket.status == 'on_hold' %}
-                                    <span class="badge bg-warning me-1"></span>
-                                {% endif %}
-                                {% if ticket.status == 'closed' %}
-                                    <span class="badge bg-secondary me-1"></span>
-                                {% endif %}
-                                {{ mf.status_name(ticket.status) }}
-                            </td>
+                            <td>{{ mf.status_badge(ticket.status, 'ticket') }}</td>
                             <td>
                                 <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}'>
                                     <svg class="icon">
@@ -884,7 +834,7 @@
                                 {% else %}
                                     -
                                 {% endif %}</td>
-                            <td>{{ mf.status_name(tx.status) }}</td>
+                            <td>{{ mf.status_badge(tx.status, 'transaction') }}</td>
                             <td>{{ tx.created_at|format_datetime }}</td>
                             <td>
                                 <a class="btn btn-icon" href='{{ "invoice/transaction/#{tx.id}"|url }}'>

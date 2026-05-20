@@ -238,21 +238,7 @@
                             <td class="text-center">{{ invoice.created_at|date('Y-m-d') }}</td>
                             <td class="text-center">{% if invoice.due_at %}{{ invoice.due_at|date('Y-m-d') }}{% else %}-{% endif %}</td>
                             <td class="text-center">{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% else %}-{% endif %}</td>
-                            <td>
-                                {% if invoice.status == 'paid' %}
-                                    <span class="badge bg-success me-1"></span>
-                                {% endif %}
-                                {% if invoice.status == 'unpaid' %}
-                                    <span class="badge bg-danger me-1"></span>
-                                {% endif %}
-                                {% if invoice.status == 'refunded' %}
-                                    <span class="badge bg-warning me-1"></span>
-                                {% endif %}
-                                {% if invoice.status == 'canceled' %}
-                                    <span class="badge bg-secondary me-1"></span>
-                                {% endif %}
-                                {{ mf.status_name(invoice.status) }}
-                            </td>
+                            <td>{{ mf.status_badge(invoice.status, 'invoice') }}</td>
                             <td>
                                 <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
                                     <svg class="icon">

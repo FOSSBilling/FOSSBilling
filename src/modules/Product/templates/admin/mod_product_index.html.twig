@@ -71,14 +71,7 @@
                                     <a href='{{ "product/category/#{product.category.id}"|url }}'>{{ product.category.title }}</a>
                                 </td>
                                 <td><a href='{{ "product/manage/#{product.id}"|url }}'>{{ product.title }}</a></td>
-                                <td>
-                                    {% if product.status == 'enabled' %}
-                                        <span class="badge bg-success me-1"></span>
-                                    {% endif %}
-                                    {% if product.status == 'disabled' %}
-                                        <span class="badge bg-secondary me-1"></span>
-                                    {% endif %}
-                                    {{ mf.status_name(product.status) }}</td>
+                                <td>{{ mf.status_badge(product.status, 'product') }}</td>
                                 <td class="text-center">
                                     <input type="text" class="form-control form-control-sm" name="priority[{{ product.id }}]" value="{{ product.priority }}" size="2">
                                 </td>

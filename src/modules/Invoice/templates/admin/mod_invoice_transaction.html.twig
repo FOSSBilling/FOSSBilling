@@ -84,11 +84,11 @@
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Transaction Status on Payment Gateway'|trans }}</td>
-                            <td>{{ mf.status_name(transaction.txn_status) }}</td>
+                            <td>{{ mf.status_badge(transaction.txn_status, 'gateway_tx') }}</td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Status'|trans }}</td>
-                            <td>{{ mf.status_name(transaction.status) }}</td>
+                            <td>{{ mf.status_badge(transaction.status, 'transaction') }}</td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'IP'|trans }}</td>

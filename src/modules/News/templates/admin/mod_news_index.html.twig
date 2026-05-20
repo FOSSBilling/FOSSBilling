@@ -104,15 +104,7 @@
                         <td>
                             <a href='{{ "news/post/#{post.id}"|url }}'>{{ post.title }}</a>
                         </td>
-                        <td>
-                            {% if post.status == 'active' %}
-                                <span class="badge bg-success me-1"></span>
-                            {% endif %}
-                            {% if post.status == 'draft' %}
-                                <span class="badge bg-secondary me-1"></span>
-                            {% endif %}
-                            {{ mf.status_name(post.status) }}
-                        </td>
+                        <td>{{ mf.status_badge(post.status, 'post') }}</td>
                         <td>{{ post.created_at|format_datetime }}</td>
                         <td>
                             <a class="btn btn-icon" href='{{ "news/post/#{post.id}"|url }}'>

@@ -201,15 +201,7 @@
                                     <td class="text-break">{{ template.action_code }}</td>
                                     <td><span class="badge {{ type_class }}">{{ type_label }}</span></td>
                                     <td><span class="badge {{ status_class }}">{{ status_label }}</span></td>
-                                    <td>
-                                        {% if template.enabled == 1 %}
-                                            <span class="badge bg-success me-1"></span>
-                                        {% endif %}
-                                        {% if template.enabled == 0 %}
-                                            <span class="badge bg-danger me-1"></span>
-                                        {% endif %}
-                                        {{ mf.q(template.enabled) }}
-                                    </td>
+                                    <td>{{ mf.boolean_badge(template.enabled, 'Yes'|trans, 'No'|trans, 'text-bg-success', 'text-bg-danger') }}</td>
                                     <td>
                                         <a class="btn btn-icon" href='{{ "email/template/#{template.id}"|url }}'
                                            data-bs-toggle="tooltip" data-bs-title="{{ (can_manage_templates ? 'Edit' : 'View')|trans }}">
@@ -414,14 +406,7 @@
                                     <td>
                                         <a href="mailto:{{ queuedEmail.recipient }}"> {{ queuedEmail.recipient }}</a>
                                     </td>
-                                    <td>
-                                        {% if queuedEmail.status == 'unsent' %}
-                                            <span class="badge bg-danger me-1"></span>
-                                        {% else %}
-                                            <span class="badge bg-success me-1"></span>
-                                        {% endif %}
-                                        <span class="text-capitalize">{{ queuedEmail.status }}</span>
-                                    </td>
+                                    <td>{{ mf.status_badge(queuedEmail.status, 'mail_queue') }}</td>
                                     <td>
                                         {{ queuedEmail.tries }} / {{ params.cancel_after|default(5) }}
                                     </td>

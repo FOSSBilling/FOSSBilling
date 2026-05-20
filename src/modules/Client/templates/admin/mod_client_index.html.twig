@@ -262,16 +262,7 @@
                                     <a href='{{ "client/manage/#{client.id}"|url }}' title="{{ client.company }}">{{ client.company|default('-')|truncate(30) }}</a>
                                 </td>
                                 <td>
-                                    {% if client.status == 'active' %}
-                                        <span class="badge bg-success me-1"></span>
-                                    {% endif %}
-                                    {% if client.status == 'suspended' %}
-                                        <span class="badge bg-danger me-1"></span>
-                                    {% endif %}
-                                    {% if client.status == 'canceled' %}
-                                        <span class="badge bg-secondary me-1"></span>
-                                    {% endif %}
-                                    {{ mf.status_name(client.status) }}
+                                    {{ mf.status_badge(client.status, 'client') }}
                                 </td>
                                 <td>{{ client.created_at|format_date }}</td>
                                 <td>

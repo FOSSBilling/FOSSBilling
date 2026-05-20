@@ -172,15 +172,7 @@
                         <td>{{ subscription.sid }}</td>
                         <td>{{ subscription.amount|format_currency(subscription.currency ?? default_currency) }} {{ subscription.period|period_title }}</td>
                         <td>{{ subscription.gateway.title }}</td>
-                        <td>
-                            {% if subscription.status == 'active' %}
-                                <span class="badge bg-success me-1"></span>
-                            {% endif %}
-                            {% if subscription.status == 'canceled' %}
-                                <span class="badge bg-secondary me-1"></span>
-                            {% endif %}
-                            {{ mf.status_name(subscription.status) }}
-                        </td>
+                        <td>{{ mf.status_badge(subscription.status, 'subscription') }}</td>
                         <td>
                             <a class="btn btn-icon" href='{{ "invoice/subscription/#{subscription.id}"|url }}'>
                                 <svg class="icon">

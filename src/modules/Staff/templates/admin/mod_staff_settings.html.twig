@@ -142,15 +142,7 @@
                                     <td>
                                         <a href='{{ "staff/group/#{member.group.id}"|url }}'>{{ member.group.name }}</a>
                                     </td>
-                                    <td>
-                                        {% if member.status == 'active' %}
-                                            <span class="badge bg-success me-1"></span>
-                                        {% endif %}
-                                        {% if member.status == 'inactive' %}
-                                            <span class="badge bg-secondary me-1"></span>
-                                        {% endif %}
-                                        {{ mf.status_name(member.status) }}
-                                    </td>
+                                    <td>{{ mf.status_badge(member.status, 'admin') }}</td>
                                     <td>
                                         <a class="btn btn-icon" href='{{ "staff/manage/#{member.id}"|url }}'
                                            data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">

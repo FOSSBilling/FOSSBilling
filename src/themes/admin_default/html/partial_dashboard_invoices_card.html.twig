@@ -58,21 +58,7 @@
                         </td>
                         <td class="text-center">{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
                         <td class="text-center">{{ invoice.created_at|format_date }}</td>
-                        <td>
-                            {% if invoice.status == 'paid' %}
-                                <span class="badge bg-success me-1"></span>
-                            {% endif %}
-                            {% if invoice.status == 'unpaid' %}
-                                <span class="badge bg-danger me-1"></span>
-                            {% endif %}
-                            {% if invoice.status == 'refunded' %}
-                                <span class="badge bg-warning me-1"></span>
-                            {% endif %}
-                            {% if invoice.status == 'canceled' %}
-                                <span class="badge bg-secondary me-1"></span>
-                            {% endif %}
-                            {{ mf.status_name(invoice.status) }}
-                        </td>
+                        <td>{{ mf.status_badge(invoice.status, 'invoice') }}</td>
                     </tr>
                     {% else %}
                     <tr>

@@ -235,18 +235,7 @@
                             <td>
                                 <a href='{{ "support/ticket/#{ticket.id}"|url }}'>{{ ticket.subject|truncate(30) }}</a>
                             </td>
-                            <td>
-                                {% if ticket.status == 'open' %}
-                                    <span class="badge bg-success me-1"></span>
-                                {% endif %}
-                                {% if ticket.status == 'on_hold' %}
-                                    <span class="badge bg-warning me-1"></span>
-                                {% endif %}
-                                {% if ticket.status == 'closed' %}
-                                    <span class="badge bg-secondary me-1"></span>
-                                {% endif %}
-                                {{ mf.status_name(ticket.status) }}
-                            </td>
+                            <td>{{ mf.status_badge(ticket.status, 'ticket') }}</td>
                             <td>
                                 <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}'>
                                     <svg class="icon">
