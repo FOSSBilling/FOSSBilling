@@ -351,47 +351,21 @@ class Service implements InjectionAwareInterface
               FROM activity_client_history as ach
                 LEFT JOIN client as c on ach.client_id = c.id ';
 
-        $id = $data['id'] ?? null;
         $search = $data['search'] ?? null;
         $client_id = $data['client_id'] ?? null;
-        $ip = $data['ip'] ?? null;
-        $date_from = $data['date_from'] ?? null;
-        $date_to = $data['date_to'] ?? null;
 
         $where = [];
         $params = [];
-
-        if ($id !== null && $id !== '') {
-            $where[] = 'ach.id = :event_id';
-            $params[':event_id'] = (int) $id;
-        }
-
         if ($search) {
-            $where[] = '(c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR c.email LIKE :email OR c.id LIKE :id)';
+            $where[] = '(c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR c.id LIKE :id)';
             $params[':first_name'] = '%' . $search . '%';
             $params[':last_name'] = '%' . $search . '%';
-            $params[':email'] = '%' . $search . '%';
             $params[':id'] = $search;
         }
 
         if ($client_id) {
             $where[] = 'ach.client_id = :client_id';
             $params[':client_id'] = $client_id;
-        }
-
-        if ($ip !== null && $ip !== '') {
-            $where[] = 'ach.ip LIKE :ip';
-            $params[':ip'] = '%' . $ip . '%';
-        }
-
-        if ($date_from !== null && $date_from !== '') {
-            $where[] = 'ach.created_at >= :date_from';
-            $params[':date_from'] = date('Y-m-d 00:00:00', strtotime((string) $date_from));
-        }
-
-        if ($date_to !== null && $date_to !== '') {
-            $where[] = 'ach.created_at <= :date_to';
-            $params[':date_to'] = date('Y-m-d 23:59:59', strtotime((string) $date_to));
         }
 
         if (!empty($where)) {

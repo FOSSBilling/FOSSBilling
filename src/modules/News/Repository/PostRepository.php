@@ -27,11 +27,6 @@ class PostRepository extends EntityRepository
     {
         $qb = $this->createQueryBuilder('p');
 
-        if (!empty($data['id'])) {
-            $qb->andWhere('p.id = :id')
-                ->setParameter('id', (int) $data['id']);
-        }
-
         // Apply status filter
         if (!empty($data['status'])) {
             $qb->andWhere('p.status = :status')
@@ -40,14 +35,14 @@ class PostRepository extends EntityRepository
 
         // Apply search filter (title OR content)
         if (!empty($data['search'])) {
-            $qb->andWhere('(p.title LIKE :search OR p.slug LIKE :search OR COALESCE(p.description, \'\') LIKE :search OR COALESCE(p.section, \'\') LIKE :search OR COALESCE(p.content, \'\') LIKE :search)')
+            $qb->andWhere('(p.title LIKE :search OR p.content LIKE :search)')
                ->setParameter('search', '%' . $data['search'] . '%');
         }
 
         // Apply section filter
         if (!empty($data['section'])) {
-            $qb->andWhere('p.section LIKE :section')
-               ->setParameter('section', '%' . $data['section'] . '%');
+            $qb->andWhere('p.section = :section')
+               ->setParameter('section', $data['section']);
         }
 
         $qb->orderBy('p.createdAt', 'DESC');

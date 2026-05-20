@@ -27,85 +27,77 @@
 
 {% block content %}
 <div class="card mb-3">
-    <div class="card-header">
-        <div>
-            <h3 class="card-title">{{ ticket.subject }}</h3>
-            <p class="card-subtitle">{{ 'Review the ticket, manage its status, track internal notes, and inspect related client conversations.'|trans }}</p>
-        </div>
+    <div class="card-body">
+        <h3>{{ ticket.subject }}</h3>
     </div>
-    <div class="card-body pt-3 pb-0 px-0">
-        <div class="card border-0 shadow-none rounded-0">
-            <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                <ul class="nav nav-pills card-header-pills" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Ticket'|trans }}</a>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-manage" data-bs-toggle="tab" role="tab">{{ 'Manage'|trans }}</a>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-notes" data-bs-toggle="tab" role="tab">{{ 'Notes'|trans }} {% if ticket.notes|length > 0 %}({{ ticket.notes|length }}){% endif %}</a>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-support" data-bs-toggle="tab" role="tab">{{ 'Client Tickets'|trans }}</a>
-                    </li>
-                </ul>
-            </div>
 
-    <div class="tab-content border-top">
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Ticket'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-manage" data-bs-toggle="tab">{{ 'Manage'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-notes" data-bs-toggle="tab">{{ 'Notes'|trans }} {% if ticket.notes|length > 0 %}({{ ticket.notes|length }}){% endif %}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-support" data-bs-toggle="tab">{{ 'Client Tickets'|trans }}</a>
+        </li>
+    </ul>
+
+    <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-            <div class="table-responsive">
-                <table class="table card-table table-vcenter table-striped text-nowrap">
-                    <tbody>
-                        <tr>
-                            <td class="w-25">{{ 'Ticket ID'|trans }}</td>
-                            <td>#{{ ticket.id }}</td>
-                        </tr>
-                        <tr>
-                            <td>{{ 'Client'|trans }}</td>
-                            <td><a href='{{ "client/manage/#{ticket.client.id }"|url }}'>{{ ticket.client.first_name }} {{ ticket.client.last_name }}</a> (#{{ ticket.client.id }})</td>
-                        </tr>
-                        <tr>
-                            <td>{{ 'Helpdesk'|trans }}</td>
-                            <td>{{ admin.support_helpdesk_get_pairs[ticket.support_helpdesk_id]|trans }}</td>
-                        </tr>
-                        <tr>
-                            <td>{{ 'Status'|trans }}</td>
-                                {% for tcode, tstatus in admin.support_ticket_get_statuses({ 'titles': true }) %}
-                                    {% if ticket.status == tcode %}
-                                    <td>{{ tstatus|trans }}</td>
-                                    {% endif %}
-                                {% endfor %}
-                        </tr>
-                        <tr>
-                            <td>{{ 'Time Opened'|trans }}</td>
-                            <td>{{ ticket.created_at|format_date }}</td>
-                        </tr>
+            <table class="table card-table table-vcenter table-striped text-nowrap">
+                <tbody>
+                    <tr>
+                        <td class="w-25">{{ 'Ticket ID'|trans }}</td>
+                        <td>#{{ ticket.id }}</td>
+                    </tr>
+                    <tr>
+                        <td>{{ 'Client'|trans }}</td>
+                        <td><a href='{{ "client/manage/#{ticket.client.id }"|url }}'>{{ ticket.client.first_name }} {{ ticket.client.last_name }}</a> (#{{ ticket.client.id }})</td>
+                    </tr>
+                    <tr>
+                        <td>{{ 'Helpdesk'|trans }}</td>
+                        <td>{{ admin.support_helpdesk_get_pairs[ticket.support_helpdesk_id]|trans }}</td>
+                    </tr>
+                    <tr>
+                        <td>{{ 'Status'|trans }}</td>
+                            {% for tcode, tstatus in admin.support_ticket_get_statuses({ 'titles': true }) %}
+                                {% if ticket.status == tcode %}
+                                <td>{{ tstatus|trans }}</td>
+                                {% endif %}
+                            {% endfor %}
+                    </tr>
+                    <tr>
+                        <td>{{ 'Time Opened'|trans }}</td>
+                        <td>{{ ticket.created_at|format_date }}</td>
+                    </tr>
 
-                    {% set task = ticket.rel %}
-                        {% if task.task %}
-                        <tr>
-                            <td><label>{{ 'Task'|trans }}</label></td>
-                            <td>{{ mf.status_name(task.task) }}</td>
-                        </tr>
-                        {% endif %}
+                {% set task = ticket.rel %}
+                    {% if task.task %}
+                    <tr>
+                        <td><label>{{ 'Task'|trans }}</label></td>
+                        <td>{{ mf.status_name(task.task) }}</td>
+                    </tr>
+                    {% endif %}
 
-                        {% if task.type == 'order' %}
-                        <tr>
-                            <td><label>{{ 'Related To'|trans }}</label></td>
-                            <td><a href='{{ "order/manage/#{task.id}"|url }}'>Order #{{ task.id }}</a></td>
-                        </tr>
-                        {% endif %}
+                    {% if task.type == 'order' %}
+                    <tr>
+                        <td><label>{{ 'Related To'|trans }}</label></td>
+                        <td><a href='{{ "order/manage/#{task.id}"|url }}'>Order #{{ task.id }}</a></td>
+                    </tr>
+                    {% endif %}
 
-                        {% if task.task == 'upgrade' %}
-                        <tr>
-                            <td><label>{{ 'Upgrade To'|trans }}</label></td>
-                            <td><a href='{{ "product/manage/#{task.new_value}"|url }}'>{{ admin.product_get_pairs[task.new_value] }}</a></td>
-                        </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
+                    {% if task.task == 'upgrade' %}
+                    <tr>
+                        <td><label>{{ 'Upgrade To'|trans }}</label></td>
+                        <td><a href='{{ "product/manage/#{task.new_value}"|url }}'>{{ admin.product_get_pairs[task.new_value] }}</a></td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
 
             <div class="card-footer text-center">
                 {% if ticket.status != 'closed' %}
@@ -169,30 +161,25 @@
         </div>
 
         <div class="tab-pane fade" id="tab-notes" role="tabpanel">
-            <div class="table-responsive">
-                <table class="table card-table table-vcenter table-striped text-nowrap">
-                {% for note in ticket.notes %}
-                    <tr>
-                        <td class="w-1">
-                            <a href='{{ "staff/manage/#{note.admin_id}"|url }}'>{{ note.author.name }}</a>
-                        </td>
-                        <td>{{ note.note }}</td>
-                        <td class="w-1">
-                            <a class="btn btn-icon" href="{{ 'support/note_delete'|api_url(query: { 'id': note.id }) }}"
-                                {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true }) }}>
-                                <svg class="icon">
-                                    <use xlink:href="#delete" />
-                                </svg>
-                            </a>
-                        </td>
-                    </tr>
-                {% else %}
-                    <tr>
-                        <td class="text-muted" colspan="3">{{ 'The list is empty'|trans }}</td>
-                    </tr>
-                {% endfor %}
-                </table>
-            </div>
+            <table class="table card-table table-vcenter table-striped text-nowrap">
+            {% for note in ticket.notes %}
+                <tr>
+                    <td class="w-1">
+                        <a href='{{ "staff/manage/#{note.admin_id}"|url }}'>{{ note.author.name }}</a>
+                    </td>
+                    <td>{{ note.note }}</td>
+                    <td class="w-1">
+                        <a class="btn btn-icon" href="{{ 'support/note_delete'|api_url(query: { 'id': note.id }) }}"
+                            {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true }) }}>
+                            <svg class="icon">
+                                <use xlink:href="#delete" />
+                            </svg>
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </table>
+            <hr>
 
             <div class="card-body">
                 <form method="post" action="{{ 'support/note_create'|api_url }}" {{ fb_api_form({ reload: true}) }}>
@@ -215,54 +202,61 @@
         </div>
 
         <div class="tab-pane fade" id="tab-support" role="tabpanel">
-            <div class="table-responsive">
-                <table class="table card-table table-vcenter table-striped text-nowrap">
-                    <thead>
-                        <tr>
-                            <th>{{ 'ID'|trans }}</th>
-                            <th>{{ 'Helpdesk'|trans }}</th>
-                            <th>{{ 'Subject'|trans }}</th>
-                            <th>{{ 'Status'|trans }}</th>
-                            <th class="w-1"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% set tickets = admin.support_ticket_get_list({ 'per_page': 20, 'client_id': ticket.client.id, 'deep': 0, 'include_first': 0 }) %}
-                        {% for ticket in tickets.list %}
-                        <tr>
-                            <td>{{ ticket.id }}</td>
-                            <td>{{ ticket.helpdesk.name }}</td>
-                            <td>
-                                <a href='{{ "support/ticket/#{ticket.id}"|url }}'>{{ ticket.subject|truncate(30) }}</a>
-                            </td>
-                            <td>{{ mf.status_badge(ticket.status, 'ticket') }}</td>
-                            <td>
-                                <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}'>
-                                    <svg class="icon">
-                                        <use xlink:href="#edit" />
-                                    </svg>
-                                </a>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+            <table class="table card-table table-vcenter table-striped text-nowrap">
+                <thead>
+                    <tr>
+                        <th>{{ 'ID'|trans }}</th>
+                        <th>{{ 'Helpdesk'|trans }}</th>
+                        <th>{{ 'Subject'|trans }}</th>
+                        <th>{{ 'Status'|trans }}</th>
+                        <th class="w-1"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set tickets = admin.support_ticket_get_list({ 'per_page': 20, 'client_id': ticket.client.id, 'deep': 0, 'include_first': 0 }) %}
+                    {% for ticket in tickets.list %}
+                    <tr>
+                        <td>{{ ticket.id }}</td>
+                        <td>{{ ticket.helpdesk.name }}</td>
+                        <td>
+                            <a href='{{ "support/ticket/#{ticket.id}"|url }}'>{{ ticket.subject|truncate(30) }}</a>
+                        </td>
+                        <td>
+                            {% if ticket.status == 'open' %}
+                                <span class="badge bg-success me-1"></span>
+                            {% endif %}
+                            {% if ticket.status == 'on_hold' %}
+                                <span class="badge bg-warning me-1"></span>
+                            {% endif %}
+                            {% if ticket.status == 'closed' %}
+                                <span class="badge bg-secondary me-1"></span>
+                            {% endif %}
+                            {{ mf.status_name(ticket.status) }}
+                        </td>
+                        <td>
+                            <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}'>
+                                <svg class="icon">
+                                    <use xlink:href="#edit" />
+                                </svg>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
 
             <div class="card-footer">
-                <a href="{{ 'support'|url(query: { 'client_id': ticket.client.id}) }}#tab-new" class="btn btn-primary">
+                <a href="{{ 'support'|url(query: { 'client_id': client.id}) }}#tab-new" class="btn btn-primary">
                     <svg class="icon">
                         <use xlink:href="#plus" />
                     </svg>
                     {{ 'New Support Ticket'|trans }}
                 </a>
             </div>
-        </div>
-    </div>
         </div>
     </div>
 </div>

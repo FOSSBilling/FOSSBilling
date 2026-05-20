@@ -46,34 +46,10 @@ class ServicePayGateway implements InjectionAwareInterface
             WHERE 1 ';
 
         $search = $data['search'] ?? null;
-        $enabled = $data['enabled'] ?? null;
-        $allowSingle = $data['allow_single'] ?? null;
-        $allowRecurrent = $data['allow_recurrent'] ?? null;
-        $testMode = $data['test_mode'] ?? null;
         $params = [];
         if ($search) {
-            $sql .= 'AND (name LIKE :search OR gateway LIKE :search) ';
+            $sql .= 'AND name LIKE :search';
             $params[':search'] = "%$search%";
-        }
-
-        if ($enabled !== null && $enabled !== '') {
-            $sql .= 'AND enabled = :enabled ';
-            $params[':enabled'] = (int) $enabled;
-        }
-
-        if ($allowSingle !== null && $allowSingle !== '') {
-            $sql .= 'AND allow_single = :allow_single ';
-            $params[':allow_single'] = (int) $allowSingle;
-        }
-
-        if ($allowRecurrent !== null && $allowRecurrent !== '') {
-            $sql .= 'AND allow_recurrent = :allow_recurrent ';
-            $params[':allow_recurrent'] = (int) $allowRecurrent;
-        }
-
-        if ($testMode !== null && $testMode !== '') {
-            $sql .= 'AND test_mode = :test_mode ';
-            $params[':test_mode'] = (int) $testMode;
         }
 
         $sql .= ' ORDER by gateway ASC';

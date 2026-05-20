@@ -160,107 +160,14 @@ globalThis.FOSSBilling = {
      });
    });
 
-   //===== Tab deep-linking and persistence =====//
-   const tabTriggers = document.querySelectorAll('[data-bs-toggle="tab"], [data-bs-toggle="pill"]');
-
-   const getTabTargetSelector = (tabTrigger) => {
-     const dataTarget = tabTrigger.getAttribute('data-bs-target');
-     if (dataTarget && dataTarget.startsWith('#')) {
-       return dataTarget;
+   //===== Tab parameter support =====//
+   const urlParams = new URLSearchParams(window.location.search);
+   const tabParam = urlParams.get('tab');
+   if (tabParam) {
+     const tabTrigger = document.querySelector(`button[data-bs-target="#${tabParam}"], a[data-bs-target="#${tabParam}"]`);
+     if (tabTrigger) {
+       const tab = new bootstrap.Tab(tabTrigger);
+       tab.show();
      }
-
-     const hrefTarget = tabTrigger.getAttribute('href');
-     if (hrefTarget && hrefTarget.startsWith('#')) {
-       return hrefTarget;
-     }
-
-     return null;
-   };
-
-   const findTabTrigger = (tabId) => {
-     if (!tabId) {
-       return null;
-     }
-
-     return document.querySelector(
-       `[data-bs-toggle="tab"][data-bs-target="#${tabId}"], ` +
-       `[data-bs-toggle="pill"][data-bs-target="#${tabId}"], ` +
-       `[data-bs-toggle="tab"][href="#${tabId}"], ` +
-       `[data-bs-toggle="pill"][href="#${tabId}"]`
-     );
-   };
-
-   const showTabById = (tabId) => {
-     const tabTrigger = findTabTrigger(tabId);
-     if (!tabTrigger) {
-       return false;
-     }
-
-     const tab = bootstrap.Tab.getOrCreateInstance(tabTrigger);
-     tab.show();
-
-     return true;
-   };
-
-   const syncTabUrl = (tabId) => {
-     if (!tabId) {
-       return;
-     }
-
-     const url = new URL(window.location.href);
-     url.hash = tabId;
-     url.searchParams.delete('tab');
-     window.history.replaceState({}, '', url);
-   };
-
-   const hashTabId = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
-   showTabById(hashTabId);
-
-   tabTriggers.forEach((tabTrigger) => {
-     tabTrigger.addEventListener('shown.bs.tab', function() {
-       const targetSelector = getTabTargetSelector(this);
-       if (targetSelector) {
-         syncTabUrl(targetSelector.slice(1));
-       }
-     });
-   });
-
-   window.addEventListener('hashchange', () => {
-     const nextTabId = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
-     showTabById(nextTabId);
-   });
-
-   //===== Search filter toggle state =====//
-   const syncSearchFilterToggleState = (toggle, panel) => {
-     const targetSelector = toggle.getAttribute('data-bs-target');
-     if (!targetSelector || !targetSelector.startsWith('#')) {
-       return;
-     }
-
-     const isOpen = panel?.classList.contains('show') || toggle.getAttribute('aria-expanded') === 'true';
-     toggle.classList.toggle('text-primary', isOpen);
-     toggle.classList.toggle('text-secondary', !isOpen);
-
-     const summary = document.querySelector('.filter-panel-summary');
-     if (summary) {
-       summary.classList.toggle('d-none', isOpen);
-     }
-   };
-
-   document.querySelectorAll('.search-filter-toggle[data-bs-target]').forEach((toggle) => {
-     const targetSelector = toggle.getAttribute('data-bs-target');
-     if (!targetSelector || !targetSelector.startsWith('#')) {
-       return;
-     }
-
-     const panel = document.querySelector(targetSelector);
-     if (!panel) {
-       return;
-     }
-
-     syncSearchFilterToggleState(toggle, panel);
-
-     panel.addEventListener('shown.bs.collapse', () => syncSearchFilterToggleState(toggle, panel));
-     panel.addEventListener('hidden.bs.collapse', () => syncSearchFilterToggleState(toggle, panel));
-   });
+   }
  });

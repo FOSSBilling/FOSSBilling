@@ -225,7 +225,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         return [
             \Model_SupportTicket::OPENED => 'Open',
-            \Model_SupportTicket::ONHOLD => 'On Hold',
+            \Model_SupportTicket::ONHOLD => 'On hold',
             \Model_SupportTicket::CLOSED => 'Closed',
         ];
     }
@@ -1225,7 +1225,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         return [
             \Model_SupportPTicket::OPENED => 'Open',
-            \Model_SupportPTicket::ONHOLD => 'On Hold',
+            \Model_SupportPTicket::ONHOLD => 'On hold',
             \Model_SupportPTicket::CLOSED => 'Closed',
         ];
     }
@@ -1603,28 +1603,15 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 ON spc.id = sp.support_pr_category_id';
 
         $search = $data['search'] ?? null;
-        $id = $data['id'] ?? null;
-        $categoryId = $data['category_id'] ?? null;
 
         $where = [];
         $bindings = [];
 
-        if ($id !== null && $id !== '') {
-            $where[] = 'sp.id = :id';
-            $bindings[':id'] = (int) $id;
-        }
-
         if ($search) {
             $search = '%' . $search . '%';
-            $where[] = '(sp.title LIKE :title OR sp.content LIKE :content OR spc.title LIKE :category_title)';
+            $where[] = '(title LIKE :title OR content LIKE :content)';
             $bindings[':title'] = $search;
             $bindings[':content'] = $search;
-            $bindings[':category_title'] = $search;
-        }
-
-        if ($categoryId !== null && $categoryId !== '') {
-            $where[] = 'sp.support_pr_category_id = :category_id';
-            $bindings[':category_id'] = (int) $categoryId;
         }
 
         if (!empty($where)) {

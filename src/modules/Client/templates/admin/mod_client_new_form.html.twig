@@ -1,168 +1,167 @@
 {% import 'macro_functions.html.twig' as mf %}
-<div class="modal modal-blur fade" id="newClientModal" tabindex="-1" aria-labelledby="newClientModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl">
-        <div class="modal-content">
-            <form method="post" action="{{ 'client/create'|api_url }}" {{ fb_api_form({ redirect: 'client'|url}) }}>
-                <div class="modal-header">
-                    <h3 class="modal-title" id="newClientModalLabel">{{ 'Create a New Client'|trans }}</h3>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row g-4">
-                        <div class="col-md-6">
-                            <div class="mb-3 row">
-                                <label class="col-3 col-form-label required">{{ 'Name'|trans }}</label>
-                                <div class="col">
-                                    <div class="row">
-                                        <div class="col">
-                                            <input type="text" name="first_name" class="form-control" placeholder="{{ 'First name'|trans }}" required>
-                                        </div>
-                                        <div class="col">
-                                            <input type="text" name="last_name" class="form-control" placeholder="{{ 'Last name'|trans }}">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-3 col-form-label required">{{ 'Email Address'|trans }}</label>
-                                <div class="col">
-                                    <input type="email" name="email" class="form-control" placeholder="client@fossbilling.org" required>
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-3 col-form-label">{{ 'Password'|trans }}</label>
-                                <div class="col">
-                                    <input type="password" name="password" class="form-control" placeholder="{{ 'Optional initial password'|trans }}">
-                                    <div class="form-text">{{ 'Leave blank to let the client set a password from the welcome email.'|trans }}</div>
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-3 col-form-label">{{ 'Welcome Email'|trans }}</label>
-                                <div class="col">
-                                    <input type="hidden" name="send_welcome_email" value="0">
-                                    <label class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="send_welcome_email" value="1" checked>
-                                        <span class="form-check-label">{{ 'Send client welcome email'|trans }}</span>
-                                    </label>
-                                    <div class="form-text">{{ 'Includes a secure password reset link instead of sending account credentials.'|trans }}</div>
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-3 col-form-label">{{ 'Status'|trans }}</label>
-                                <div class="col">
-                                    <select name="status" class="form-select">
-                                        <option value="active">{{ 'Active'|trans }}</option>
-                                        <option value="suspended">{{ 'Suspended'|trans }}</option>
-                                        <option value="canceled">{{ 'Canceled'|trans }}</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-3 col-form-label">{{ 'Group'|trans }}</label>
-                                <div class="col">
-                                    {{ mf.selectbox('group_id', admin.client_group_get_pairs, request.group_id, 0, 'Select Group'|trans) }}
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-3 col-form-label">{{ 'Currency'|trans }}</label>
-                                <div class="col">
-                                    {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'Select Currency'|trans) }}
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-3 col-form-label">{{ 'Language'|trans }}</label>
-                                <div class="col">
-                                    {% set languages = guest.extension_languages(true) %}
-                                    <select name="lang" class="form-select js-language-selector">
-                                        <option value="">{{ 'System default'|trans }}</option>
-                                        {% for lang in languages %}
-                                            <option value="{{ lang.locale }}">{{ lang.title }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-3 col-form-label">{{ 'Phone Number'|trans }}</label>
-                                <div class="col">
-                                    <div class="input-group">
-                                        <span class="input-group-text">+</span>
-                                        <input class="form-control" type="text" name="phone_cc">
-                                        <input class="form-control w-50" type="text" name="phone">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+<form method="post" action="{{ 'client/create'|api_url }}" {{ fb_api_form({ redirect: 'client'|url}) }}>
+	<div class="card">
+		<div class="card-header">
+			<h3 class="card-title">{{ 'Create a New Client'|trans }}</h3>
+		</div>
+		<div class="card-body">
+			<div class="row">
+				<!-- Left column -->
+				<div class="col-md-6">
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label required">{{ 'Name'|trans }}</label>
+						<div class="col">
+							<div class="row">
+								<div class="col">
+									<input type="text" name="first_name" class="form-control" placeholder="{{ 'First name'|trans }}" required>
+								</div>
+								<div class="col">
+									<input type="text" name="last_name" class="form-control" placeholder="{{ 'Last name'|trans }}">
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label required">{{ 'Email Address'|trans }}</label>
+						<div class="col">
+							<input type="email" name="email" class="form-control" placeholder="client@fossbilling.org" required>
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'Password'|trans }}</label>
+						<div class="col">
+							<input type="password" name="password" class="form-control" placeholder="{{ 'Optional initial password'|trans }}">
+							<div class="form-text">{{ 'Leave blank to let the client set a password from the welcome email.'|trans }}</div>
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'Welcome Email'|trans }}</label>
+						<div class="col">
+							<input type="hidden" name="send_welcome_email" value="0">
+							<label class="form-check">
+								<input class="form-check-input" type="checkbox" name="send_welcome_email" value="1" checked>
+								<span class="form-check-label">{{ 'Send client welcome email'|trans }}</span>
+							</label>
+							<div class="form-text">{{ 'Includes a secure password reset link instead of sending account credentials.'|trans }}</div>
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'Status'|trans }}</label>
+						<div class="col">
+							<select name="status" class="form-select">
+								<option value="active">{{ 'Active'|trans }}</option>
+								<option value="suspended">{{ 'Suspended'|trans }}</option>
+								<option value="canceled">{{ 'Canceled'|trans }}</option>
+							</select>
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'Group'|trans }}</label>
+						<div class="col">
+							{{ mf.selectbox('group_id', admin.client_group_get_pairs, request.group_id, 0, 'Select Group'|trans) }}
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'Currency'|trans }}</label>
+						<div class="col">
+							{{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'Select Currency'|trans) }}
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'Language'|trans }}</label>
+						<div class="col">
+							{% set languages = guest.extension_languages(true) %}
+							<select name="lang" class="form-select js-language-selector">
+								<option value="">{{ 'System default'|trans }}</option>
+								{% for lang in languages %}
+									<option value="{{ lang.locale }}">{{ lang.title }}</option>
+								{% endfor %}
+							</select>
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'Phone Number'|trans }}</label>
+						<div class="col">
+							<div class="input-group">
+								<span class="input-group-text">+</span>
+								<input class="form-control" type="text" name="phone_cc">
+								<input class="form-control w-50" type="text" name="phone">
+							</div>
+						</div>
+					</div>
+				</div>
 
-                        <div class="col-md-6">
-                            <div class="mb-3 row">
-                                <label class="col-3 col-form-label">{{ 'Company'|trans }}</label>
-                                <div class="col">
-                                    <div class="row">
-                                        <div class="col">
-                                            <input type="text" name="company" class="form-control" placeholder="{{ 'Name'|trans }}">
-                                        </div>
-                                        <div class="col">
-                                            <input type="text" name="company_number" class="form-control" placeholder="{{ 'Number'|trans }}">
-                                        </div>
-                                        <div class="col">
-                                            <input type="text" name="company_vat" class="form-control" placeholder="{{ 'VAT number'|trans }}">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-3 col-form-label">{{ 'Address 1'|trans }}</label>
-                                <div class="col">
-                                    <input type="text" name="address_1" class="form-control">
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-3 col-form-label">{{ 'Address 2'|trans }}</label>
-                                <div class="col">
-                                    <input type="text" name="address_2" class="form-control">
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-3 col-form-label">{{ 'City'|trans }}</label>
-                                <div class="col">
-                                    <input type="text" name="city" class="form-control">
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-3 col-form-label">{{ 'State/Region'|trans }}</label>
-                                <div class="col">
-                                    <input type="text" name="state" class="form-control">
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-3 col-form-label">{{ 'Postcode'|trans }}</label>
-                                <div class="col">
-                                    <input type="text" name="postcode" class="form-control">
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-3 col-form-label">{{ 'Country'|trans }}</label>
-                                <div class="col">
-                                    {{ mf.selectbox('country', guest.system_countries, guest.system_default_country, 0, 'Select Country'|trans) }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+				<!-- Right column -->
+				<div class="col-md-6">
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'Company'|trans }}</label>
+						<div class="col">
+							<div class="row">
+								<div class="col">
+									<input type="text" name="company" class="form-control" placeholder="{{ 'Name'|trans }}">
+								</div>
+								<div class="col">
+									<input type="text" name="company_number" class="form-control" placeholder="{{ 'Number'|trans }}">
+								</div>
+								<div class="col">
+									<input type="text" name="company_vat" class="form-control" placeholder="{{ 'VAT number'|trans }}">
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'Address 1'|trans }}</label>
+						<div class="col">
+							<input type="text" name="address_1" class="form-control">
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'Address 2'|trans }}</label>
+						<div class="col">
+							<input type="text" name="address_2" class="form-control">
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'City'|trans }}</label>
+						<div class="col">
+							<input type="text" name="city" class="form-control">
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'State/Region'|trans }}</label>
+						<div class="col">
+							<input type="text" name="state" class="form-control">
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'Postcode'|trans }}</label>
+						<div class="col">
+							<input type="text" name="postcode" class="form-control">
+						</div>
+					</div>
+					<div class="mb-3 row">
+						<label class="col-3 col-form-label">{{ 'Country'|trans }}</label>
+						<div class="col">
+							{{ mf.selectbox('country', guest.system_countries, guest.system_default_country, 0, 'Select Country'|trans) }}
+						</div>
+					</div>
+				</div>
+			</div>
 
-                    <hr>
+			<hr/>
 
-                    <div class="row">
-                        <label class="col-md-2 col-form-label">{{ 'Admin Notes'|trans }}</label>
-                        <div class="col-md-10">
-                            <textarea name="notes" class="form-control" rows="3"></textarea>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
-                    <button type="submit" class="btn btn-primary">{{ 'Create client'|trans }}</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+			<!-- Notes -->
+			<div class="mb-4 row">
+				<label class="col-3 col-form-label">{{ 'Admin Notes'|trans }}</label>
+				<div class="col">
+					<textarea name="notes" class="form-control" rows="3"></textarea>
+				</div>
+			</div>
+		</div>
+
+		<!-- Footer -->
+		<div class="card-footer text-end">
+			<button type="submit" class="btn btn-primary ms-2">{{ 'Create client'|trans }}</button>
+		</div>
+	</div>
+</form>

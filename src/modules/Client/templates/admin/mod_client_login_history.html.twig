@@ -6,94 +6,15 @@
 {% block meta_title %}{{ 'Clients Login History'|trans }}{% endblock %}
 
 {% set active_menu = 'activity' %}
-{% set has_filter_panel = true %}
-{% set filter_panel_id = 'page-search-filters' %}
-{% set filter_panel_open = request_has_filters %}
 
 {% block content %}
 <div class="card">
-    <div class="card-header">
-        <div>
-            <h3 class="card-title">{{ 'Client Login History'|trans }}</h3>
-            <p class="card-subtitle">{{ 'Review successful client logins, related IP addresses, and origin countries.'|trans }}</p>
-        </div>
+    <div class="card-body">
+        <h5>{{ 'Client Login History'|trans }}</h5>
     </div>
 
     {% if can_view_client_login_history %}
-    {{ include('partial_search.html.twig', {
-        search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : ''
-    }) }}
-    <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
-        <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
-            {% if request.search %}
-                <input type="hidden" name="search" value="{{ request.search }}">
-            {% endif %}
-            <div class="row g-3">
-                <div class="col-md-6 col-xl-3">
-                    <div>
-                        <label class="form-label text-muted small mb-1" for="client-login-history-id">{{ 'Event ID'|trans }}</label>
-                        <input class="form-control" type="text" id="client-login-history-id" name="id" value="{{ request.id }}" placeholder="{{ 'Login Event ID'|trans }}">
-                    </div>
-                </div>
-                <div class="col-md-6 col-xl-5">
-                    <div>
-                        <label class="form-label text-muted small mb-1" for="client-login-history-client">{{ 'Client'|trans }}</label>
-                        <select class="form-control autocomplete-selector"
-                                placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
-                                id="client-login-history-client"
-                                name="client_id"
-                                data-resturl="/api/admin/client/get_pairs">
-                        {% if request.client_id %}
-                            {% set client = admin.client_get({ 'id': request.client_id }) %}
-                            <option value="{{ request.client_id }}" selected>{{ client.first_name }} {{ client.last_name }} ({{ client.email }})</option>
-                        {% endif %}
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-6 col-xl-4">
-                    <div>
-                        <label class="form-label text-muted small mb-1" for="client-login-history-ip">{{ 'IP Address'|trans }}</label>
-                        <input class="form-control" type="text" id="client-login-history-ip" name="ip" value="{{ request.ip }}" placeholder="{{ 'Filter by IP Address'|trans }}">
-                    </div>
-                </div>
-                <div class="col-md-6 col-xl-4">
-                    <div>
-                        <label class="form-label text-muted small mb-1" for="client-login-history-date-range">{{ 'Date Range'|trans }}</label>
-                        <div class="input-group">
-                            <div class="input-icon w-100">
-                                <input class="form-control datepicker"
-                                       id="client-login-history-date-range"
-                                       placeholder="{{ 'Select Date Range'|trans }}"
-                                       value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
-                                       data-name-from="date_from"
-                                       data-name-to="date_to">
-                                <span class="input-icon-addon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                        <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
-                                        <path d="M16 3l0 4"></path>
-                                        <path d="M8 3l0 4"></path>
-                                        <path d="M4 11l16 0"></path>
-                                        <path d="M11 15l1 0"></path>
-                                        <path d="M12 15l0 3"></path>
-                                    </svg>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="d-flex justify-content-end gap-2 mt-3">
-                <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
-                <button class="btn btn-primary" type="submit">
-                    <svg class="icon">
-                        <use xlink:href="#filter" />
-                    </svg>
-                    {{ 'Apply Filters'|trans }}
-                </button>
-            </div>
-        </form>
-    </section>
+    {{ include('partial_search.html.twig') }}
     <div class="table-responsive">
         <table class="table card-table table-vcenter table-striped text-nowrap">
             <thead>
@@ -108,7 +29,7 @@
             </thead>
 
             <tbody>
-            {% set history = admin.client_login_history_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
+            {% set history = admin.client_login_history_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
             {% for i, event in history.list %}
             <tr>
                 <td>{{ event.id }}</td>
@@ -143,8 +64,8 @@
         </table>
     </div>
 
-    <div class="card-footer d-flex align-items-center">
-        {{ include('partial_pagination.html.twig', { 'list': history, 'url': 'client/logins', 'split_footer_controls': true }) }}
+    <div class="card-footer d-flex align-items-center justify-content-between">
+        {{ include('partial_pagination.html.twig', { 'list': history, 'url': 'client/logins' }) }}
     </div>
     {% else %}
     <div class="card-body">

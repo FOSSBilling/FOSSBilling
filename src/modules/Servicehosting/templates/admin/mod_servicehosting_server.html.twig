@@ -23,13 +23,9 @@
 {% block content %}
 {% set tlsVerify = server.config.tls_verify is defined ? server.config.tls_verify : true %}
 <div class="card">
-    <div class="card-header">
-        <div>
-            <h3 class="card-title">{{ server.name }}</h3>
-            <p class="card-subtitle">{{ 'Manage connection details, provisioning settings, and nameserver defaults for this hosting server.'|trans }}</p>
-        </div>
-    </div>
     <div class="card-body">
+        <h3>{{ 'Server Management'|trans }}</h3>
+
         <form method="post" action="{{ 'servicehosting/server_update'|api_url }}" id="server-update" {{ fb_api_form({message: 'Server Updated'|trans}) }}>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}:</label>
@@ -70,7 +66,7 @@
             </div>
             <hr>
 
-            <h5 class="mb-3 mt-4">{{ 'Server Manager'|trans }}</h5>
+            <h5>{{ 'Server Manager'|trans }}</h5>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Server Manager'|trans }}:</label>
                 <div class="col">
@@ -127,7 +123,7 @@
 
             <input class="btn btn-primary w-100" id="test-connection" type="button" value="{{ 'Update and Test Connection'|trans }}">
 
-            <h5 class="mb-3 mt-4">{{ 'Optional Configuration'|trans }}</h5>
+            <h5>{{ 'Optional Configuration'|trans }}</h5>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Users Prefix'|trans }}:</label>
                 <div class="col">
@@ -138,7 +134,7 @@
 
             <hr>
 
-            <h5 class="mb-3 mt-4">{{ 'Nameservers'|trans }}</h5>
+            <h5>{{ 'Nameservers'|trans }}</h5>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label">{{ 'Nameserver 1'|trans }}:</label>
                 <div class="col">

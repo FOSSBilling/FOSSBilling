@@ -25,53 +25,42 @@
 {% set can_view_email_history = has_permission('email', 'view_email_history') %}
 {% set can_send_emails = has_permission('email', 'send_emails') %}
 {% set can_manage_settings = has_permission('email', 'manage_settings') %}
-{% set requested_tab = request.tab in ['templates', 'new', 'queue', 'email'] ? request.tab : null %}
-{% set active_tab = requested_tab ?? (can_view_templates ? 'templates' : (can_manage_templates ? 'new' : (can_view_email_history ? 'queue' : 'email'))) %}
-{% if can_manage_templates %}
-    {% set new_template_action %}
-        <a class="btn btn-primary" href="#tab-new" data-bs-toggle="tab" role="button">
-            <svg class="icon">
-                <use xlink:href="#plus" />
-            </svg>
-            {{ 'New Template'|trans }}
-        </a>
-    {% endset %}
-{% endif %}
+{% set active_tab = can_view_templates ? 'templates' : (can_manage_templates ? 'new' : (can_view_email_history ? 'queue' : 'email')) %}
 {% block content %}
     {% set params = admin.extension_config_get({ 'ext': 'mod_email' }) %}
-    <div class="card">
-        <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'Email'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Manage email templates, queued messages, and delivery settings for outgoing mail.'|trans }}</p>
-            </div>
-        </div>
-        <div class="card-body pt-3 pb-0 px-0">
-            <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                    <ul class="nav nav-pills card-header-pills" role="tablist">
-                        {% if can_view_templates %}
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link{% if active_tab == 'templates' %} active{% endif %}" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Email Templates'|trans }}</a>
-                        </li>
-                        {% endif %}
-                        {% if can_view_email_history %}
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link{% if active_tab == 'queue' %} active{% endif %}" href="#tab-queue" data-bs-toggle="tab" role="tab">{{ 'Email Queue'|trans }}</a>
-                        </li>
-                        {% endif %}
-                        {% if can_manage_settings %}
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link{% if active_tab == 'email' %} active{% endif %}" href="#tab-email" data-bs-toggle="tab" role="tab">{{ 'Email Settings'|trans }}</a>
-                        </li>
-                        {% endif %}
-                    </ul>
-                </div>
-            <div class="tab-content border-top">
+    <div class="card-tabs">
+
+        <ul class="nav nav-tabs" role="tablist">
+            {% if can_view_templates %}
+            <li class="nav-item" role="presentation">
+                <a class="nav-link{% if active_tab == 'templates' %} active{% endif %}" href="#tab-index" data-bs-toggle="tab">{{ 'Email Templates'|trans }}</a>
+            </li>
+            {% endif %}
+            {% if can_manage_templates %}
+            <li class="nav-item" role="presentation">
+                <a class="nav-link{% if active_tab == 'new' %} active{% endif %}" href="#tab-new" data-bs-toggle="tab">
+                    <svg class="icon me-2">
+                        <use xlink:href="#plus" />
+                    </svg>
+                    {{ 'New Template'|trans }}
+                </a>
+            </li>
+            {% endif %}
+            {% if can_view_email_history %}
+            <li class="nav-item" role="presentation">
+                <a class="nav-link{% if active_tab == 'queue' %} active{% endif %}" href="#tab-queue" data-bs-toggle="tab">{{ 'Email Queue'|trans }}</a>
+            </li>
+            {% endif %}
+            {% if can_manage_settings %}
+            <li class="nav-item" role="presentation">
+                <a class="nav-link{% if active_tab == 'email' %} active{% endif %}" href="#tab-email" data-bs-toggle="tab">{{ 'Email Settings'|trans }}</a>
+            </li>
+            {% endif %}
+        </ul>
+        <div class="card">
+            <div class="tab-content">
                 {% if can_view_templates %}
                 <div class="tab-pane fade{% if active_tab == 'templates' %} show active{% endif %}" id="tab-index" role="tabpanel">
-                    {% set template_filter_panel_id = 'email-template-search-filters' %}
-                    {% set template_filter_panel_open = request_has_filters %}
 
                     {% if can_manage_templates %}
                     <div class="card-footer text-center">
@@ -95,75 +84,9 @@
                         </a>
                     </div>
                     {% endif %}
-                    {{ include('partial_search.html.twig', {
-                        has_filter_panel: true,
-                        filter_panel_id: template_filter_panel_id,
-                        filter_panel_open: template_filter_panel_open,
-                        search_body_class: template_filter_panel_open ? 'pb-2 border-bottom-0' : '',
-                        search_toolbar_actions: new_template_action|default(''),
-                        search_hidden_fields: {
-                            tab: 'templates'
-                        }
-                    }) }}
-                    <section id="{{ template_filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if template_filter_panel_open %} show{% endif %}">
-                        <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
-                            <input type="hidden" name="tab" value="templates">
-                            {% if request.search %}
-                                <input type="hidden" name="search" value="{{ request.search }}">
-                            {% endif %}
-                            <div class="row g-3">
-                                <div class="col-md-6 col-xl-3">
-                                    <div>
-                                        <label class="form-label text-muted small mb-1" for="template-id">{{ 'Template ID'|trans }}</label>
-                                        <input class="form-control" type="text" id="template-id" name="id" value="{{ request.id }}" placeholder="{{ 'Template ID'|trans }}">
-                                    </div>
-                                </div>
-                                <div class="col-md-6 col-xl-3">
-                                    <div>
-                                        <label class="form-label text-muted small mb-1" for="template-code">{{ 'Action Code'|trans }}</label>
-                                        <input class="form-control" type="text" id="template-code" name="code" value="{{ request.code }}" placeholder="{{ 'Action Code'|trans }}">
-                                    </div>
-                                </div>
-                                <div class="col-md-6 col-xl-3">
-                                    <div>
-                                        <label class="form-label text-muted small mb-1" for="template-category">{{ 'Category'|trans }}</label>
-                                        <input class="form-control" type="text" id="template-category" name="category" value="{{ request.category }}" placeholder="{{ 'Category'|trans }}">
-                                    </div>
-                                </div>
-                                <div class="col-md-6 col-xl-3">
-                                    <div>
-                                        <label class="form-label text-muted small mb-1" for="template-enabled">{{ 'Enabled'|trans }}</label>
-                                        <select class="form-select" id="template-enabled" name="enabled">
-                                            <option value="">{{ 'All Templates'|trans }}</option>
-                                            <option value="1"{% if request.enabled is same as('1') or request.enabled is same as(1) %} selected{% endif %}>{{ 'Enabled'|trans }}</option>
-                                            <option value="0"{% if request.enabled is same as('0') or request.enabled is same as(0) %} selected{% endif %}>{{ 'Disabled'|trans }}</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-6 col-xl-3">
-                                    <div>
-                                        <label class="form-label text-muted small mb-1" for="template-type">{{ 'Type'|trans }}</label>
-                                        <select class="form-select" id="template-type" name="type">
-                                            <option value="">{{ 'All Types'|trans }}</option>
-                                            <option value="builtin"{% if request.type == 'builtin' %} selected{% endif %}>{{ 'Built-in'|trans }}</option>
-                                            <option value="custom"{% if request.type == 'custom' %} selected{% endif %}>{{ 'Custom'|trans }}</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-end gap-2 mt-3">
-                                <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
-                                <button class="btn btn-primary" type="submit">
-                                    <svg class="icon">
-                                        <use xlink:href="#filter" />
-                                    </svg>
-                                    {{ 'Apply Filters'|trans }}
-                                </button>
-                            </div>
-                        </form>
-                    </section>
+                    {{ include('partial_search.html.twig') }}
                     <div class="table-responsive">
-                        <table class="table card-table table-vcenter table-striped sortable">
+                        <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                             <thead>
                             <tr>
                                 <th class="w-1">{{ 'Subject'|trans }}</th>
@@ -172,7 +95,7 @@
                                 <th>{{ 'Type'|trans }}</th>
                                 <th>{{ 'Status'|trans }}</th>
                                 <th>{{ 'Enabled'|trans }}</th>
-                                <th class="w-1 no-sort"></th>
+                                <th class="w-1"></th>
                             </tr>
                             </thead>
 
@@ -195,14 +118,22 @@
                                     {% set status_class = 'bg-secondary-lt' %}
                                 {% endif %}
                                 <tr>
-                                    <td class="text-wrap">
+                                    <td>
                                         <a href='{{ "email/template/#{template.id}"|url }}'>{{ template.subject }}</a>
                                     </td>
-                                    <td class="text-wrap">{{ template.category }}</td>
-                                    <td class="text-break">{{ template.action_code }}</td>
+                                    <td>{{ template.category }}</td>
+                                    <td>{{ template.action_code }}</td>
                                     <td><span class="badge {{ type_class }}">{{ type_label }}</span></td>
                                     <td><span class="badge {{ status_class }}">{{ status_label }}</span></td>
-                                    <td>{{ mf.boolean_badge(template.enabled, 'Yes'|trans, 'No'|trans, 'text-bg-success', 'text-bg-danger') }}</td>
+                                    <td>
+                                        {% if template.enabled == 1 %}
+                                            <span class="badge bg-success me-1"></span>
+                                        {% endif %}
+                                        {% if template.enabled == 0 %}
+                                            <span class="badge bg-danger me-1"></span>
+                                        {% endif %}
+                                        {{ mf.q(template.enabled) }}
+                                    </td>
                                     <td>
                                         <a class="btn btn-icon" href='{{ "email/template/#{template.id}"|url }}'
                                            data-bs-toggle="tooltip" data-bs-title="{{ (can_manage_templates ? 'Edit' : 'View')|trans }}">
@@ -286,96 +217,7 @@
 
                 {% if can_view_email_history %}
                 <div class="tab-pane fade{% if active_tab == 'queue' %} show active{% endif %}" id="tab-queue" role="tabpanel">
-                    {% set queue_filter_panel_id = 'email-queue-search-filters' %}
-                    {% set queue_filter_panel_open = active_tab == 'queue' and request_has_filters %}
-                    {{ include('partial_search.html.twig', {
-                        has_filter_panel: true,
-                        filter_panel_id: queue_filter_panel_id,
-                        filter_panel_open: queue_filter_panel_open,
-                        search_body_class: queue_filter_panel_open ? 'pb-2 border-bottom-0' : '',
-                        search_hidden_fields: {
-                            tab: 'queue'
-                        }
-                    }) }}
-                    <section id="{{ queue_filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if queue_filter_panel_open %} show{% endif %}">
-                        <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
-                            <input type="hidden" name="tab" value="queue">
-                            {% if request.search %}
-                                <input type="hidden" name="search" value="{{ request.search }}">
-                            {% endif %}
-                            <div class="row g-3">
-                                <div class="col-md-6 col-xl-3">
-                                    <div>
-                                        <label class="form-label text-muted small mb-1" for="queue-id">{{ 'Queue ID'|trans }}</label>
-                                        <input class="form-control" type="text" id="queue-id" name="id" value="{{ request.id }}" placeholder="{{ 'Queue ID'|trans }}">
-                                    </div>
-                                </div>
-                                <div class="col-md-6 col-xl-3">
-                                    <div>
-                                        <label class="form-label text-muted small mb-1" for="queue-recipient">{{ 'Recipient Email'|trans }}</label>
-                                        <input class="form-control" type="text" id="queue-recipient" name="recipient" value="{{ request.recipient }}" placeholder="{{ 'Recipient Email'|trans }}">
-                                    </div>
-                                </div>
-                                <div class="col-md-6 col-xl-3">
-                                    <div>
-                                        <label class="form-label text-muted small mb-1" for="queue-subject">{{ 'Subject'|trans }}</label>
-                                        <input class="form-control" type="text" id="queue-subject" name="subject" value="{{ request.subject }}" placeholder="{{ 'Email Subject'|trans }}">
-                                    </div>
-                                </div>
-                                <div class="col-md-6 col-xl-3">
-                                    <div>
-                                        <label class="form-label text-muted small mb-1" for="queue-tries">{{ 'Tries'|trans }}</label>
-                                        <input class="form-control" type="text" id="queue-tries" name="tries" value="{{ request.tries }}" placeholder="{{ 'Attempt Count'|trans }}">
-                                    </div>
-                                </div>
-                                <div class="col-md-6 col-xl-4">
-                                    <div>
-                                        <label class="form-label text-muted small mb-1" for="queue-status">{{ 'Status'|trans }}</label>
-                                        <select class="form-select" id="queue-status" name="status">
-                                            <option value="">{{ 'All Statuses'|trans }}</option>
-                                            <option value="unsent"{% if request.status == 'unsent' %} selected{% endif %}>{{ 'Unsent'|trans }}</option>
-                                            <option value="sending"{% if request.status == 'sending' %} selected{% endif %}>{{ 'Sending'|trans }}</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-6 col-xl-4">
-                                    <div>
-                                        <label class="form-label text-muted small mb-1" for="queue-date-range">{{ 'Created At'|trans }}</label>
-                                        <div class="input-group">
-                                            <div class="input-icon w-100">
-                                                <input class="form-control datepicker"
-                                                       id="queue-date-range"
-                                                       placeholder="{{ 'Select Date Range'|trans }}"
-                                                       value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
-                                                       data-name-from="date_from"
-                                                       data-name-to="date_to">
-                                                <span class="input-icon-addon">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                        <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
-                                                        <path d="M16 3l0 4"></path>
-                                                        <path d="M8 3l0 4"></path>
-                                                        <path d="M4 11l16 0"></path>
-                                                        <path d="M11 15l1 0"></path>
-                                                        <path d="M12 15l0 3"></path>
-                                                    </svg>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-end gap-2 mt-3">
-                                <a class="btn btn-outline-secondary" href="{{ request_path|url({ tab: 'queue' }) }}">{{ 'Reset'|trans }}</a>
-                                <button class="btn btn-primary" type="submit">
-                                    <svg class="icon">
-                                        <use xlink:href="#filter" />
-                                    </svg>
-                                    {{ 'Apply Filters'|trans }}
-                                </button>
-                            </div>
-                        </form>
-                    </section>
+                    {{ include('partial_search.html.twig') }}
                     <div class="ms-1 mt-1 mb-1">
                         <p>{{ 'FOSSBilling queues emails to have them be sent via cron in the background. Here you may find the list of queued emails and how many times the system has tried to send them.'|trans }}</p>
                         <p>{{ 'Emails that have been sent or that failed to be sent will not be listed here.'|trans }}</p>
@@ -391,7 +233,7 @@
                                 <th>{{ 'Tries'|trans }}</th>
                                 <th>{{ 'Created At'|trans }}</th>
                                 <th>{{ 'Updated At'|trans }}</th>
-                                <th class="w-1 no-sort"></th>
+                                <th class="w-1"></th>
                             </tr>
                             </thead>
                             <tbody>
@@ -407,7 +249,14 @@
                                     <td>
                                         <a href="mailto:{{ queuedEmail.recipient }}"> {{ queuedEmail.recipient }}</a>
                                     </td>
-                                    <td>{{ mf.status_badge(queuedEmail.status, 'mail_queue') }}</td>
+                                    <td>
+                                        {% if queuedEmail.status == 'unsent' %}
+                                            <span class="badge bg-danger me-1"></span>
+                                        {% else %}
+                                            <span class="badge bg-success me-1"></span>
+                                        {% endif %}
+                                        <span class="text-capitalize">{{ queuedEmail.status }}</span>
+                                    </td>
                                     <td>
                                         {{ queuedEmail.tries }} / {{ params.cancel_after|default(5) }}
                                     </td>
@@ -591,7 +440,6 @@
                         </div>
                     </div>
                 {% endif %}
-            </div>
             </div>
         </div>
     </div>

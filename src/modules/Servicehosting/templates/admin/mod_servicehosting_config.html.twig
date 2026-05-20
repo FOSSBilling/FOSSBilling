@@ -74,13 +74,11 @@
             </div>
         </div>
 
-        <div class="alert alert-danger d-none d-flex align-items-center" id="domain-options-warning" role="alert">
+        <div class="alert alert-danger d-none" id="domain-options-warning">
             <svg class="icon me-2">
                 <use xlink:href="#alert-triangle" />
             </svg>
-            <div>
-                <strong class="me-1">{{ 'Warning:'|trans }}</strong>{{ 'At least one domain option must be enabled. Customers will not be able to order this product if all domain options are disabled.'|trans }}
-            </div>
+            {{ 'At least one domain option must be enabled. Customers will not be able to order this product if all domain options are disabled.'|trans }}
         </div>
 
         <hr />

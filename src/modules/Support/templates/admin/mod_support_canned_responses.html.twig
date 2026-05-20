@@ -3,25 +3,6 @@
 {% import 'macro_functions.html.twig' as mf %}
 
 {% set active_menu = 'support' %}
-{% set has_filter_panel = true %}
-{% set filter_panel_id = 'page-search-filters' %}
-{% set filter_panel_open = request_has_filters %}
-{% set new_canned_response_action %}
-    <a class="btn btn-primary" href="#tab-new" data-bs-toggle="tab" role="button">
-        <svg class="icon">
-            <use xlink:href="#plus" />
-        </svg>
-        {{ 'New Response'|trans }}
-    </a>
-{% endset %}
-{% set new_canned_category_action %}
-    <a class="btn btn-primary" href="#tab-new-category" data-bs-toggle="tab" role="button">
-        <svg class="icon">
-            <use xlink:href="#plus" />
-        </svg>
-        {{ 'New Category'|trans }}
-    </a>
-{% endset %}
 
 {% block breadcrumbs %}
     <ol class="breadcrumb">
@@ -42,63 +23,36 @@
 {% block meta_title %}{{ 'Canned Responses'|trans }}{% endblock %}
 
 {% block content %}
-    <div class="card">
-        <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'Canned Responses'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Manage reusable support responses and organize them into categories.'|trans }}</p>
-            </div>
-        </div>
-        <div class="card-body pt-3 pb-0 px-0">
-            <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                    <ul class="nav nav-pills card-header-pills">
-                        <li class="nav-item">
-                            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Canned Responses'|trans }}</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#tab-categories" data-bs-toggle="tab">{{ 'Manage Categories'|trans }}</a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="tab-content border-top">
-                    <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-            {{ include('partial_search.html.twig', {
-                search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
-                search_toolbar_actions: new_canned_response_action
-            }) }}
-            <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
-                <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
-                    {% if request.search %}
-                        <input type="hidden" name="search" value="{{ request.search }}">
-                    {% endif %}
-                    <div class="row g-3">
-                        <div class="col-md-6 col-xl-4">
-                            <div>
-                                <label class="form-label text-muted small mb-1" for="canned-response-id">{{ 'ID'|trans }}</label>
-                                <input class="form-control" type="text" id="canned-response-id" name="id" value="{{ request.id }}" placeholder="{{ 'Response ID'|trans }}">
-                            </div>
-                        </div>
-                        <div class="col-md-6 col-xl-8">
-                            <div>
-                                <label class="form-label text-muted small mb-1" for="canned-response-category">{{ 'Category'|trans }}</label>
-                                {{ mf.selectbox('category_id', admin.support_canned_category_pairs, request.category_id, 0, 'All Categories'|trans) }}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-end gap-2 mt-3">
-                        <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
-                        <button class="btn btn-primary" type="submit">
-                            <svg class="icon">
-                                <use xlink:href="#filter" />
-                            </svg>
-                            {{ 'Apply Filters'|trans }}
-                        </button>
-                    </div>
-                </form>
-            </section>
-            <div class="table-responsive">
-                <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Canned Responses'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New Response'|trans }}
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-categories" data-bs-toggle="tab">{{ 'Manage Categories'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-new-category" data-bs-toggle="tab">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New Category'|trans }}
+            </a>
+        </li>
+    </ul>
+
+<div class="card">
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+            {{ include('partial_search.html.twig') }}
+            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                 <thead>
                     <tr>
                         <th>{{ 'Title'|trans }}</th>
@@ -107,7 +61,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                {% set responses = admin.support_canned_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
+                {% set responses = admin.support_canned_get_list({ 'per_page': 90, 'page': request.page }|merge(request)) %}
                 {% for i, response in responses.list %}
                 <tr>
                     <td>
@@ -136,15 +90,12 @@
                 </tr>
                 {% endfor %}
                 </tbody>
-                </table>
-            </div>
-            <div class="card-footer d-flex align-items-center">
-                {{ include('partial_pagination.html.twig', { 'list': responses, 'url': 'support/canned-responses', 'split_footer_controls': true }) }}
-            </div>
+            </table>
+            {{ include('partial_pagination.html.twig', { 'list': responses, 'url': 'support/canned-responses' }) }}
         </div>
 
         <div class="tab-pane fade" id="tab-new" role="tabpanel">
-            <div class="p-3">
+            <div class="card-body">
                 <form method="post" action="{{ 'support/canned_create'|api_url }}" {{ fb_api_form({redirect: 'support/canned-responses'|url}) }}>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}:</label>
@@ -172,12 +123,6 @@
         </div>
 
         <div class="tab-pane fade" id="tab-categories" role="tabpanel">
-            <div class="card-body border-bottom py-3">
-                <div class="d-flex justify-content-end">
-                    {{ new_canned_category_action|raw }}
-                </div>
-            </div>
-            <div class="table-responsive">
             <table class="table card-table table-vcenter table-striped text-nowrap">
                 <thead>
                     <tr>
@@ -212,11 +157,10 @@
                     {% endfor %}
                 </tbody>
             </table>
-            </div>
         </div>
 
         <div class="tab-pane fade" id="tab-new-category" role="tabpanel">
-            <div class="p-3">
+            <div class="card-body">
                 <form method="post" action="{{ 'support/canned_category_create'|api_url }}" {{ fb_api_form({redirect: 'support/canned-responses'|url}) }}>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
@@ -229,8 +173,6 @@
                 </form>
             </div>
         </div>
-                </div>
-            </div>
-        </div>
     </div>
+</div>
 {% endblock %}

@@ -5,25 +5,6 @@
 {% block meta_title %}{{ 'Staff'|trans }}{% endblock %}
 
 {% set active_menu = 'system' %}
-{% set has_filter_panel = true %}
-{% set filter_panel_id = 'page-search-filters' %}
-{% set filter_panel_open = request_has_filters %}
-{% set new_staff_action %}
-    <a class="btn btn-primary" href="#tab-new" data-bs-toggle="tab" role="button">
-        <svg class="icon">
-            <use xlink:href="#plus"/>
-        </svg>
-        {{ 'New Staff Member'|trans }}
-    </a>
-{% endset %}
-{% set new_staff_group_action %}
-    <a class="btn btn-primary" href="#tab-new-group" data-bs-toggle="tab" role="button">
-        <svg class="icon">
-            <use xlink:href="#plus"/>
-        </svg>
-        {{ 'New Group'|trans }}
-    </a>
-{% endset %}
 
 {% block breadcrumbs %}
     <ol class="breadcrumb">
@@ -42,80 +23,39 @@
 {% endblock %}
 
 {% block content %}
-    <div class="card">
-        <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'Staff'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Manage staff accounts, configure staff login rules, and maintain permission groups.'|trans }}</p>
-            </div>
-        </div>
-        <div class="card-body pt-3 pb-0 px-0">
-            <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                    <ul class="nav nav-pills card-header-pills" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link active" href="#tab-staff" data-bs-toggle="tab" role="tab">{{ 'Staff'|trans }}</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" href="#tab-settings" data-bs-toggle="tab" role="tab">{{ 'Settings'|trans }}</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" href="#tab-groups" data-bs-toggle="tab" role="tab">{{ 'Manage Groups'|trans }}</a>
-                        </li>
-                    </ul>
-                </div>
+    <div class="card-tabs">
+        <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a class="nav-link active" href="#tab-staff" data-bs-toggle="tab">{{ 'Staff'|trans }}</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#tab-settings" data-bs-toggle="tab">{{ 'Settings'|trans }}</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
+                    <svg class="icon me-2">
+                        <use xlink:href="#plus"/>
+                    </svg>
+                    {{ 'New staff member'|trans }}
+                </a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#tab-groups" data-bs-toggle="tab">{{ 'Manage Groups'|trans }}</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#tab-new-group" data-bs-toggle="tab">
+                    <svg class="icon me-2">
+                        <use xlink:href="#plus"/>
+                    </svg>
+                    {{ 'New group'|trans }}
+                </a>
+            </li>
+        </ul>
 
-                <div class="tab-content border-top">
+        <div class="card">
+            <div class="tab-content">
                 <div class="tab-pane fade show active" id="tab-staff" role="tabpanel">
-                    {{ include('partial_search.html.twig', {
-                        search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
-                        search_toolbar_actions: new_staff_action
-                    }) }}
-                    <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
-                        <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
-                            {% if request.search %}
-                                <input type="hidden" name="search" value="{{ request.search }}">
-                            {% endif %}
-                            <div class="row g-3">
-                                <div class="col-md-6 col-xl-3">
-                                    <label class="form-label text-muted small mb-1" for="staff-id">{{ 'Staff ID'|trans }}</label>
-                                    <input class="form-control" type="text" id="staff-id" name="id" value="{{ request.id }}" placeholder="{{ 'Staff ID'|trans }}">
-                                </div>
-                                <div class="col-md-6 col-xl-3">
-                                    <label class="form-label text-muted small mb-1">{{ 'Group'|trans }}</label>
-                                    {{ mf.selectbox('admin_group_id', admin.staff_group_get_pairs, request.admin_group_id, 0, 'All Groups'|trans) }}
-                                </div>
-                                <div class="col-md-6 col-xl-3">
-                                    <label class="form-label text-muted small mb-1" for="staff-status">{{ 'Status'|trans }}</label>
-                                    <select class="form-select" id="staff-status" name="status">
-                                        <option value="">{{ 'All Statuses'|trans }}</option>
-                                        <option value="active"{% if request.status == 'active' %} selected{% endif %}>{{ 'Active'|trans }}</option>
-                                        <option value="inactive"{% if request.status == 'inactive' %} selected{% endif %}>{{ 'Inactive'|trans }}</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6 col-xl-3">
-                                    <div>
-                                        <label class="form-label text-muted small mb-1 d-block invisible" aria-hidden="true">{{ 'Status'|trans }}</label>
-                                        <div class="d-flex align-items-center" style="min-height: 40px;">
-                                            <label class="form-check form-switch m-0">
-                                                <input class="form-check-input" type="checkbox" name="no_cron" value="1"{% if request.no_cron %} checked{% endif %}>
-                                                <span class="form-check-label">{{ 'Exclude Cron User'|trans }}</span>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-end gap-2 mt-3">
-                                <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
-                                <button class="btn btn-primary" type="submit">
-                                    <svg class="icon">
-                                        <use xlink:href="#filter"/>
-                                    </svg>
-                                    {{ 'Apply Filters'|trans }}
-                                </button>
-                            </div>
-                        </form>
-                    </section>
+                    {{ include('partial_search.html.twig') }}
                     <div class="table-responsive">
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
@@ -143,7 +83,15 @@
                                     <td>
                                         <a href='{{ "staff/group/#{member.group.id}"|url }}'>{{ member.group.name }}</a>
                                     </td>
-                                    <td>{{ mf.status_badge(member.status, 'admin') }}</td>
+                                    <td>
+                                        {% if member.status == 'active' %}
+                                            <span class="badge bg-success me-1"></span>
+                                        {% endif %}
+                                        {% if member.status == 'inactive' %}
+                                            <span class="badge bg-secondary me-1"></span>
+                                        {% endif %}
+                                        {{ mf.status_name(member.status) }}
+                                    </td>
                                     <td>
                                         <a class="btn btn-icon" href='{{ "staff/manage/#{member.id}"|url }}'
                                            data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
@@ -189,11 +137,11 @@
                                 </div>
                             </div>
                             <div class="mb-3 row" id="check_ip"{% if not params.check_ip %} style="display:none;"{% endif %}>
+                                <div class="alert alert-danger" role="alert">
+                                    {{ 'WARNING! Incorrect configuration of allowed IPs can lead to a complete lockout of the administrator panel. Only use when you have static addresses.'|trans }}
+                                </div>
                                 <label class="col-md-3 col-form-label">{{ 'Allowed IPs. One per line'|trans }}</label>
                                 <div class="col-md-6">
-                                    <div class="alert alert-warning mb-3" role="alert">
-                                        <strong class="me-1">{{ 'Warning:'|trans }}</strong>{{ 'Incorrect configuration of allowed IPs can lead to a complete lockout of the administrator panel. Only use when you have static addresses.'|trans }}
-                                    </div>
                                     <textarea class="form-control" name="allowed_ips" rows="2" placeholder="{{ admin.system_env({ 'ip': 1 }) }}">{{ params.allowed_ips }}</textarea>
                                 </div>
                             </div>
@@ -277,11 +225,6 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-groups" role="tabpanel">
-                    <div class="card-body border-bottom py-3">
-                        <div class="d-flex justify-content-end">
-                            {{ new_staff_group_action|raw }}
-                        </div>
-                    </div>
                     <table class="table card-table table-vcenter table-striped text-nowrap">
                         <thead>
                         <tr>
@@ -336,8 +279,6 @@
                         </div>
                     </form>
                 </div>
-            </div>
-        </div>
             </div>
         </div>
     </div>

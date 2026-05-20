@@ -3,85 +3,29 @@
 {% import 'macro_functions.html.twig' as mf %}
 
 {% set active_menu = 'support' %}
-{% set has_filter_panel = true %}
-{% set filter_panel_id = 'page-search-filters' %}
-{% set filter_panel_open = request_has_filters %}
-{% set new_post_action %}
-    <a class="btn btn-primary" href="#tab-new" data-bs-toggle="tab" role="button">
-        <svg class="icon">
-            <use xlink:href="#plus" />
-        </svg>
-        {{ 'New Announcement'|trans }}
-    </a>
-{% endset %}
 
 {% block meta_title %}{{ 'News'|trans }}{% endblock %}
 
 {% block content %}
-    <div class="card">
-        <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'News & Announcements'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Manage published announcements and draft new updates for the client area.'|trans }}</p>
-            </div>
-        </div>
-        <div class="card-body pt-3 pb-0 px-0">
-            <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                    <ul class="nav nav-pills card-header-pills">
-                        <li class="nav-item">
-                            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'News & Announcements'|trans }}</a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="tab-content border-top">
-                    <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-            {{ include('partial_search.html.twig', {
-                search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
-                search_toolbar_actions: new_post_action
-            }) }}
-            <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
-                <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
-                    {% if request.search %}
-                        <input type="hidden" name="search" value="{{ request.search }}">
-                    {% endif %}
-                    <div class="row g-3">
-                        <div class="col-md-6 col-xl-3">
-                            <div>
-                                <label class="form-label text-muted small mb-1" for="news-id">{{ 'ID'|trans }}</label>
-                                <input class="form-control" type="text" id="news-id" name="id" value="{{ request.id }}" placeholder="{{ 'Post ID'|trans }}">
-                            </div>
-                        </div>
-                        <div class="col-md-6 col-xl-3">
-                            <div>
-                                <label class="form-label text-muted small mb-1" for="news-status">{{ 'Status'|trans }}</label>
-                                <select class="form-select" id="news-status" name="status">
-                                    <option value="">{{ 'All Posts'|trans }}</option>
-                                    <option value="draft"{% if request.status == 'draft' %} selected{% endif %}>{{ 'Draft'|trans }}</option>
-                                    <option value="active"{% if request.status == 'active' %} selected{% endif %}>{{ 'Active'|trans }}</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-12 col-xl-6">
-                            <div>
-                                <label class="form-label text-muted small mb-1" for="news-section">{{ 'Section'|trans }}</label>
-                                <input class="form-control" type="text" id="news-section" name="section" value="{{ request.section }}" placeholder="{{ 'Section Name'|trans }}">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-end gap-2 mt-3">
-                        <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
-                        <button class="btn btn-primary" type="submit">
-                            <svg class="icon">
-                                <use xlink:href="#filter" />
-                            </svg>
-                            {{ 'Apply Filters'|trans }}
-                        </button>
-                    </div>
-                </form>
-            </section>
-            <div class="table-responsive">
-                <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'News & Announcements'|trans }}</a>
+        </li>
+        <li>
+            <a class="nav-link" href="#tab-new" data-bs-toggle="tab" role="tab">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New Announcement'|trans }}
+            </a>
+        </li>
+    </ul>
+
+<div class="card">
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+            {{ include('partial_search.html.twig') }}
+            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                 <thead>
                     <tr>
                         <th class="w-1 no-sort">
@@ -91,11 +35,11 @@
                         <th>{{ 'Title'|trans }}</th>
                         <th>{{ 'Active'|trans }}</th>
                         <th>{{ 'Date'|trans }}</th>
-                        <th class="w-1 no-sort"></th>
+                        <th class="w-1"></th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% set posts = admin.news_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
+                    {% set posts = admin.news_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
                     {% for i, post in posts.list %}
                     <tr>
                         <td>
@@ -105,7 +49,15 @@
                         <td>
                             <a href='{{ "news/post/#{post.id}"|url }}'>{{ post.title }}</a>
                         </td>
-                        <td>{{ mf.status_badge(post.status, 'post') }}</td>
+                        <td>
+                            {% if post.status == 'active' %}
+                                <span class="badge bg-success me-1"></span>
+                            {% endif %}
+                            {% if post.status == 'draft' %}
+                                <span class="badge bg-secondary me-1"></span>
+                            {% endif %}
+                            {{ mf.status_name(post.status) }}
+                        </td>
                         <td>{{ post.created_at|format_datetime }}</td>
                         <td>
                             <a class="btn btn-icon" href='{{ "news/post/#{post.id}"|url }}'>
@@ -127,8 +79,7 @@
                     </tr>
                     {% endfor %}
                 </tbody>
-                </table>
-            </div>
+            </table>
 
             <div class="card-footer d-flex align-items-center justify-content-between">
                 {% include 'partial_batch_delete.html.twig' with { 'action': 'news/batch_delete' } %}
@@ -137,7 +88,7 @@
         </div>
 
         <div class="tab-pane fade" id="tab-new" role="tabpanel">
-            <div class="p-3">
+            <div class="card-body">
                 <form method="post" action="{{ 'news/create'|api_url }}" {{ fb_api_form({redirect: 'news'|url}) }}>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
@@ -170,10 +121,8 @@
                 </form>
             </div>
         </div>
-                </div>
-            </div>
-        </div>
     </div>
+</div>
 {% endblock %}
 
 {% block head %}{{ mf.wysiwyg('.editor-textarea') }}{% endblock %}

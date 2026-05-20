@@ -10,8 +10,8 @@
 
 export default function (options) {
   const defaults = {
-    hiddenClass: 'back-to-top-hidden',
-    visibleClass: 'back-to-top-visible',
+    hiddenClass: 'hidden',
+    visibleClass: 'visible',
     buttonID: 'back-to-top',
     minimum: 200,
   };

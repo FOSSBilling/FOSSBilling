@@ -9,37 +9,27 @@
 {% set active_menu = 'system' %}
 
 {% block content %}
-    <div class="card">
-        <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'Tax'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Manage tax rules and configure how taxes are applied across the billing system.'|trans }}</p>
-            </div>
-        </div>
-        <div class="card-body pt-3 pb-0 px-0">
-            <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                    <ul class="nav nav-pills card-header-pills">
-                        <li class="nav-item">
-                            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Tax Rules'|trans }}</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
-                                <svg class="icon me-2">
-                                    <use xlink:href="#plus" />
-                                </svg>
-                                {{ 'New Tax Rule'|trans }}
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#tab-settings" data-bs-toggle="tab">{{ 'Tax Settings'|trans }}</a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="tab-content border-top">
-                    <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-            <div class="table-responsive">
-                <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Tax Rules'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New tax rule'|trans }}
+            </a>
+        </li>
+        <li>
+            <a class="nav-link" href="#tab-settings" data-bs-toggle="tab">{{ 'Tax Settings'|trans }}</a>
+        </li>
+    </ul>
+
+<div class="card">
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                 <thead>
                     <tr>
                         <th class="w-1">
@@ -49,7 +39,7 @@
                         <th>{{ 'Country'|trans }}</th>
                         <th>{{ 'State/Region'|trans }}</th>
                         <th>{{ 'Tax Rate'|trans }}</th>
-                        <th class="w-1 no-sort"></th>
+                        <th class="w-1"></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -98,8 +88,7 @@
                     </tr>
                 </tbody>
                 {% endfor %}
-                </table>
-            </div>
+            </table>
 
             <div class="card-footer d-flex align-items-center">
                 {% include "partial_batch_delete.html.twig" with { 'action': 'invoice/batch_delete_tax' } %}
@@ -107,7 +96,7 @@
         </div>
 
         <div class="tab-pane fade" id="tab-new" role="tabpanel">
-            <div class="p-3">
+            <div class="card-body">
                 <form method="post" action="{{ 'invoice/tax_create'|api_url }}" {{ fb_api_form({reload: true}) }}>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Tax Title'|trans }}:</label>
@@ -144,7 +133,7 @@
         </div>
 
         <div class="tab-pane fade" id="tab-settings" role="tabpanel">
-            <div class="p-3">
+            <div class="card-body">
                 <form method="post" action="{{ 'system/update_params'|api_url }}" {{ fb_api_form({message: 'Tax Settings Updated'|trans}) }}>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Enable Tax Support'|trans }}:</label>
@@ -164,8 +153,6 @@
                 </form>
             </div>
         </div>
-                </div>
-            </div>
-        </div>
     </div>
+</div>
 {% endblock %}

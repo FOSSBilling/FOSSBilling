@@ -47,21 +47,6 @@ body {
     }
 }
 
-.ts-wrapper.form-control.autocomplete-selector-wrapper {
-    min-height: 40px !important;
-    height: 40px;
-    align-items: stretch;
-
-    .ts-control,
-    &.single.input-active .ts-control {
-        min-height: 38px !important;
-        line-height: 20px;
-        align-items: center;
-        padding-top: 8px !important;
-        padding-bottom: 8px !important;
-    }
-}
-
 .canned_ticket_response {
     width: 18rem;
 }
@@ -150,42 +135,9 @@ body {
     position: relative;
   }
 
-.search-actions {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.search-input-group > .input-group-text {
-    color: var(--tblr-secondary);
-}
-
-.search-input-group > .form-control {
-    min-width: 16rem;
-}
-
-.search-filter-toggle,
-.search-submit-toggle {
-    appearance: none;
-    -webkit-appearance: none;
+.search-filter-toggle {
     min-width: 0;
     min-height: 0;
-    padding: 0;
-    background: transparent;
-    border: 0;
-    box-shadow: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0;
-    color: inherit;
-
-    &:focus,
-    &:focus-visible,
-    &:active {
-        box-shadow: none;
-        outline: 0;
-    }
 }
 
 .activity-log-filters .form-label {
@@ -195,35 +147,6 @@ body {
 .activity-log-table .activity-message-cell {
     white-space: normal;
     overflow-wrap: anywhere;
-}
-
-#back-to-top {
-    left: auto;
-    right: 1.5rem;
-    bottom: 2rem;
-    z-index: 1030;
-}
-
-.back-to-top-hidden {
-    display: none !important;
-}
-
-.back-to-top-visible {
-    display: inline-flex !important;
-    align-items: center;
-    justify-content: center;
-}
-
-.dashboard-stat-link {
-    color: var(--tblr-body-color);
-    font-weight: 500;
-    text-decoration: none;
-
-    &:hover,
-    &:focus {
-        color: var(--tblr-primary);
-        text-decoration: none;
-    }
 }
 
 @media (min-width: 992px) {

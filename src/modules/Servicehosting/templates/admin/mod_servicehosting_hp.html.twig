@@ -23,10 +23,7 @@
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <div>
-            <h3 class="card-title">{{ hp.name }}</h3>
-            <p class="card-subtitle">{{ 'Configure resource limits, manager-specific parameters, and extra provisioning fields for this hosting plan.'|trans }}</p>
-        </div>
+        <h3>{{ 'Manage Hosting Plan'|trans }}</h3>
     </div>
     <div class="card-body">
         <form method="post" action="{{ 'servicehosting/hp_update'|api_url }}" {{ fb_api_form({message: 'Hosting Plan Updated'|trans}) }}>
@@ -73,7 +70,7 @@
                 <input class="form-control" id="plan-parked" type="text" name="max_park" value="{{ hp.max_park }}">
             </div>
             {% if hp.config|length > 0 %}
-                <h5 class="mb-3 mt-4">{{ 'Server Manager Specific Parameters'|trans }}</h5>
+                <h3>{{ 'Server Manager Specific Parameters'|trans }}</h3>
                 {% for name, value in hp.config %}
                 <div class="mb-3">
                     <label class="form-label" for="plan-special-{{ name }}">{{ name }}:</label>
@@ -87,7 +84,7 @@
         </form>
         <hr>
 
-        <h5>{{ 'Hosting Plan Additional Parameters'|trans }}</h5>
+        <h3>{{ 'Hosting Plan Additional Parameters'|trans }}</h3>
         <p class="text-muted">{{ 'Depending on server manager used to setup hosting account you may require provide additional parameters. List of parameters server managers requires you can find on extensions page.'|trans }}</p>
 
         <form method="post" action="{{ 'servicehosting/hp_update'|api_url }}" {{ fb_api_form({reload: true}) }}>

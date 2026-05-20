@@ -7,9 +7,8 @@
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <div>
-            <h3 class="card-title">{{ msg.subject }}</h3>
-            <p class="card-subtitle">{{ 'Configure message metadata, define recipient filters, and preview the final mass-mail content before sending.'|trans }}</p>
+        <div class="card-title">
+            <h3 class="mb-0">{{ 'Send Email Message'|trans }} - {{ msg.subject }}</h3>
         </div>
         <div class="card-actions">
             <a href="{{ 'massmailer'|url }}" class="btn">
@@ -61,7 +60,7 @@
             </div>
 
             <div class="row mb-3">
-                <label class="col-md-3 col-form-label">{{ 'Client Status and Group'|trans }}</label>
+                <label class="col-md-3 col-form-label">{{ 'Client status and group'|trans }}</label>
                 <div class="col-md-8">
                     <div class="row">
                         <div class="col-md-6">
@@ -83,7 +82,7 @@
             </div>
 
             <div class="row mb-3">
-                <label class="col-md-3 col-form-label">{{ 'Has Order'|trans }}</label>
+                <label class="col-md-3 col-form-label">{{ 'Has order'|trans }}</label>
                 <div class="col-md-8">
                     <div class="row">
                         <div class="col-md-6">
@@ -105,10 +104,9 @@
             </div>
         </div>
         <div class="card-body">
-            <h5 class="card-title mb-3">{{ 'Email Content'|trans }}</h5>
-            <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-0 pt-0 pb-3 border-0">
-                <ul class="nav nav-pills card-header-pills" id="content-tabs" role="tablist">
+            <h3 class="card-title">{{ 'Email Content'|trans }}</h3>
+            <div class="card-tabs">
+                <ul class="nav nav-tabs" id="content-tabs" role="tablist">
                     <li class="nav-item" role="presentation">
                         <a href="#tab-message" class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-message" aria-selected="true"
                            role="tab">{{ 'Message'|trans }}</a></li>
@@ -126,14 +124,18 @@
                         </a>
                     </li>
                 </ul>
-                </div>
-                <div class="tab-content border-top">
+
+                <div class="card">
+                    <div class="tab-content">
                         <div class="tab-pane fade show active" id="tab-message" role="tabpanel">
                             <div class="card-body">
                                 <textarea class="form-control" name="content" cols="5" rows="20"
                                           placeholder="Email content">{{ msg.content }}</textarea>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="tab-content">
                         <div class="tab-pane fade" id="tab-preview" role="tabpanel">
                             <div class="p-4" id="preview-banner">
                                 <h3>{{ 'Click on the update and preview button'|trans }}</h3>
@@ -145,6 +147,9 @@
                                 <div class="card-body" id="preview-content"></div>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="tab-content">
                         <div class="tab-pane fade" id="tab-recipients" role="tabpanel">
                             <div class="p-4" id="recipients-banner">
                                 <h3>{{ 'Click on the update and preview button'|trans }}</h3>
@@ -159,6 +164,7 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
                 </div>
             </div>
         </div>

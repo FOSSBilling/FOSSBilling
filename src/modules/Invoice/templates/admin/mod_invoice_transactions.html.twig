@@ -13,7 +13,7 @@
 {% if not filter_panel_open %}
 
 {% set statuses = admin.invoice_transaction_get_statuses %}
-    <section class="row row-cards mb-3 filter-panel-summary">
+    <section class="row row-cards mb-3">
         <div class="col-sm-6 col-lg-3">
             <a class="card card-sm card-link" href="{{ 'invoice/transactions'|url(query: { 'status': 'processed' }) }}">
                 <div class="card-body">
@@ -77,97 +77,81 @@
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <div>
-            <h3 class="card-title">{{ 'Transactions'|trans }}</h3>
-            <p class="card-subtitle">{{ 'Review invoice transactions, filter payment activity, and retry or remove transaction records.'|trans }}</p>
-        </div>
+        <h5 class="mb-0">{{ 'Transactions'|trans }}</h5>
     </div>
 
-    {{ include('partial_search.html.twig', {
-        search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : ''
-    }) }}
-    <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
-        <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
-            {% if request.search %}
-                <input type="hidden" name="search" value="{{ request.search }}">
-            {% endif %}
-            <div class="row g-3">
-                <div class="col-md-6 col-xl-3">
-                    <div>
-                        <label class="form-label text-muted small mb-1" for="filter-transaction-id">{{ 'ID'|trans }}</label>
-                        <input class="form-control" type="text" id="filter-transaction-id" name="id" value="{{ request.id }}" placeholder="{{ 'Transaction ID'|trans }}">
-                    </div>
+    {{ include('partial_search.html.twig') }}
+    <section id="{{ filter_panel_id }}" class="card-body border-bottom collapse{% if filter_panel_open %} show{% endif %}">
+        <h5>{{ 'Filter Transactions'|trans }}</h5>
+        <form method="get">
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'ID'|trans }}</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="id" value="{{ request.id }}">
                 </div>
-                <div class="col-md-6 col-xl-3">
-                    <div>
-                        <label class="form-label text-muted small mb-1" for="filter-transaction-gateway-id">{{ 'ID on Payment Gateway'|trans }}</label>
-                        <input class="form-control" type="text" id="filter-transaction-gateway-id" name="txn_id" value="{{ request.txn_id }}" placeholder="{{ 'Gateway Transaction ID'|trans }}">
-                    </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'ID on Payment Gateway'|trans }}</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="txn_id" value="{{ request.txn_id }}">
                 </div>
-                <div class="col-md-6 col-xl-3">
-                    <div>
-                        <label class="form-label text-muted small mb-1" for="filter-transaction-invoice-id">{{ 'Invoice ID'|trans }}</label>
-                        <input class="form-control" type="text" id="filter-transaction-invoice-id" name="invoice_id" value="{{ request.invoice_id }}" placeholder="{{ 'Invoice ID'|trans }}">
-                    </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Invoice ID'|trans }}</label>
+                <div class="col">
+                    <input class="form-control" type="text" name="invoice_id" value="{{ request.invoice_id }}">
                 </div>
-                <div class="col-md-6 col-xl-3">
-                    <div>
-                        <label class="form-label text-muted small mb-1" for="currency">{{ 'Currency'|trans }}</label>
-                        {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'All Currencies'|trans) }}
-                    </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Currency'|trans }}</label>
+                <div class="col">
+                    {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'All Currencies'|trans) }}
                 </div>
-                <div class="col-md-6 col-xl-4">
-                    <div>
-                        <label class="form-label text-muted small mb-1" for="status">{{ 'Status'|trans }}</label>
-                        {{ mf.selectbox('status', admin.invoice_transaction_get_statuses_pairs, request.status, 0, 'All Statuses'|trans) }}
-                    </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}</label>
+                <div class="col">
+                    {{ mf.selectbox('status', admin.invoice_transaction_get_statuses_pairs, request.status, 0, 'All Statuses'|trans) }}
                 </div>
-                <div class="col-md-6 col-xl-4">
-                    <div>
-                        <label class="form-label text-muted small mb-1" for="gateway_id">{{ 'Payment Gateway'|trans }}</label>
-                        {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, request.gateway_id, 0, 'All Payment Gateways'|trans) }}
-                    </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label">{{ 'Payment Gateway'|trans }}:</label>
+                <div class="col">
+                    {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, request.gateway_id, 0, 'All Payment Gateways'|trans) }}
                 </div>
-                <div class="col-md-6 col-xl-4">
-                    <div>
-                        <label class="form-label text-muted small mb-1" for="received_at">{{ 'Received At'|trans }}</label>
-                        <div class="input-group">
-                            <div class="input-icon w-100">
-                                <input class="form-control datepicker"
-                                       id="received_at"
-                                       placeholder="{{ 'Select Date Range'|trans }}"
-                                       value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
-                                       data-name-from="date_from"
-                                       data-name-to="date_to"
-                                >
-                                <span class="input-icon-addon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                        <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
-                                        <path d="M16 3l0 4"></path>
-                                        <path d="M8 3l0 4"></path>
-                                        <path d="M4 11l16 0"></path>
-                                        <path d="M11 15l1 0"></path>
-                                        <path d="M12 15l0 3"></path>
-                                    </svg>
-                                </span>
-                            </div>
+            </div>
+            <div class="mb-3 row">
+                <label class="form-label col-3 col-form-label" for="received_at">{{ 'Received At'|trans }}</label>
+                <div class="col">
+                    <div class="input-group">
+                        <div class="input-icon w-100">
+                            <input class="form-control datepicker"
+                                   id="received_at"
+                                   value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
+                                   data-name-from="date_from"
+                                   data-name-to="date_to"
+                            >
+                            <span class="input-icon-addon">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                                    <path d="M16 3l0 4"></path>
+                                    <path d="M8 3l0 4"></path>
+                                    <path d="M4 11l16 0"></path>
+                                    <path d="M11 15l1 0"></path>
+                                    <path d="M12 15l0 3"></path>
+                                </svg>
+                            </span>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="d-flex justify-content-end gap-2 mt-3">
-                <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
-                <button class="btn btn-primary" type="submit">
-                    <svg class="icon">
-                        <use xlink:href="#filter" />
-                    </svg>
-                    {{ 'Apply Filters'|trans }}
-                </button>
+            <div class="d-flex gap-2">
+                <input type="submit" value="{{ 'Filter'|trans }}" class="btn btn-primary w-75">
+                <a class="btn btn-danger w-25" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
             </div>
         </form>
     </section>
-    <div class="table-responsive">
     <table class="table card-table table-vcenter table-striped text-nowrap">
         <thead>
             <tr>
@@ -185,7 +169,7 @@
         </thead>
 
         <tbody>
-            {% set transactions = admin.invoice_transaction_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
+            {% set transactions = admin.invoice_transaction_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
             {% for i, tx in transactions.list %}
             <tr>
                 <td>
@@ -203,7 +187,7 @@
                     {% if tx.error %}
                         <a href="#" onclick="FOSSBilling.message('{{ tx.error }}', '{{ tx.error_code }}'); return false;">{{ tx.error_code }}</a>
                     {% else %}
-                        {{ mf.status_badge(tx.status, 'transaction') }}
+                        {{ mf.status_name(tx.status) }}
                     {% endif %}
                 </td>
                 <td>{{ tx.gateway }}</td>
@@ -235,7 +219,6 @@
             {% endfor %}
         </tbody>
     </table>
-    </div>
 
     <div class="card-footer d-flex align-items-center justify-content-between">
         {% include 'partial_batch_delete.html.twig' with { 'action': 'invoice/batch_delete_transaction' } %}

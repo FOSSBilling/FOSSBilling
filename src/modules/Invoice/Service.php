@@ -1115,6 +1115,24 @@ class Service implements InjectionAwareInterface
             }
         }
 
+        if ($order->price <= 0) {
+            throw new InformationException('Invoices are not generated for 0 amount orders.');
+        }
+
+        $client = $this->di['db']->getExistingModelById('Client', $order->client_id, 'Client not found');
+
+        // generate proforma
+        $proforma = $this->di['db']->dispense('Invoice');
+        $proforma->client_id = $client->id;
+        $proforma->status = \Model_Invoice::STATUS_UNPAID;
+        $proforma->currency = $order->currency;
+        $proforma->approved = false;
+        $proforma->created_at = date('Y-m-d H:i:s');
+        $proforma->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($proforma);
+
+        $this->setInvoiceDefaults($proforma);
+
         $price = $order->price;
         $line = [
             'price' => $order->price,
@@ -1147,24 +1165,6 @@ class Service implements InjectionAwareInterface
                 ];
             }
         }
-
-        if (($price * ($line['quantity'] ?? 1)) <= 0) {
-            throw new InformationException('Invoices are not generated for 0 amount orders.');
-        }
-
-        $client = $this->di['db']->getExistingModelById('Client', $order->client_id, 'Client not found');
-
-        // generate proforma after validating the resolved renewal amount
-        $proforma = $this->di['db']->dispense('Invoice');
-        $proforma->client_id = $client->id;
-        $proforma->status = \Model_Invoice::STATUS_UNPAID;
-        $proforma->currency = $order->currency;
-        $proforma->approved = false;
-        $proforma->created_at = date('Y-m-d H:i:s');
-        $proforma->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($proforma);
-
-        $this->setInvoiceDefaults($proforma);
 
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
         $invoiceItemService->generateFromOrder($proforma, $order, \Model_InvoiceItem::TASK_RENEW, $price, $line);

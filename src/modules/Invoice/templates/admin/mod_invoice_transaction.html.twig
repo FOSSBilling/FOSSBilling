@@ -23,35 +23,26 @@
 {% endblock %}
 
 {% block content %}
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Transaction'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-manage" data-bs-toggle="tab" role="tab">{{ 'Manage'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-note" data-bs-toggle="tab" role="tab">{{ 'Notes'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-ipn" data-bs-toggle="tab" role="tab">{{ 'IPN'|trans }}</a>
+        </li>
+    </ul>
+
 <div class="card">
-    <div class="card-header">
-        <div>
-            <h3 class="card-title">{{ transaction.txn_id|default('#' ~ transaction.id) }}</h3>
-            <p class="card-subtitle">{{ 'Review transaction details, correct payment metadata, and inspect the raw callback payload.'|trans }}</p>
-        </div>
-    </div>
-    <div class="card-body pt-3 pb-0 px-0">
-        <div class="card border-0 shadow-none rounded-0">
-            <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                <ul class="nav nav-pills card-header-pills" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Transaction'|trans }}</a>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-manage" data-bs-toggle="tab" role="tab">{{ 'Manage'|trans }}</a>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-note" data-bs-toggle="tab" role="tab">{{ 'Notes'|trans }}</a>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-ipn" data-bs-toggle="tab" role="tab">{{ 'IPN'|trans }}</a>
-                    </li>
-                </ul>
-            </div>
-    <div class="tab-content border-top">
+    <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
             <div class="card-body">
-                <h5>{{ 'Transaction Details'|trans }} #{{transaction.id}}</h5>
+                <h3>{{ 'Transaction Details'|trans }} #{{transaction.id}}</h3>
 
                 {% if transaction.error %}
                     <strong class="red">{{ transaction.error_code }} - {{ transaction.error }}</strong>
@@ -84,11 +75,11 @@
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Transaction Status on Payment Gateway'|trans }}</td>
-                            <td>{{ mf.status_badge(transaction.txn_status, 'gateway_tx') }}</td>
+                            <td>{{ mf.status_name(transaction.txn_status) }}</td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Status'|trans }}</td>
-                            <td>{{ mf.status_badge(transaction.status, 'transaction') }}</td>
+                            <td>{{ mf.status_name(transaction.status) }}</td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'IP'|trans }}</td>
@@ -208,7 +199,7 @@
 
         <div class="tab-pane fade" id="tab-note" role="tabpanel">
             <div class="card-body">
-                <h5>{{ 'Note About This Transaction'|trans }}</h5>
+                <h3>{{ 'Note About This Transaction'|trans }}</h3>
 
                 <form method="post" action="{{ 'invoice/transaction_update'|api_url }}" {{ fb_api_form({message: 'Transaction Note Updated'|trans}) }}>
                     <div class="mb-3 row">
@@ -226,7 +217,7 @@
 
         <div class="tab-pane fade" id="tab-ipn" role="tabpanel">
             <div class="card-body">
-                <h5>{{ 'GET'|trans }}</h5>
+                <h3>{{ 'GET'|trans }}</h3>
             </div>
             {% if transaction.ipn.get %}
             <table class="table card-table table-vcenter table-striped text-nowrap">
@@ -246,7 +237,7 @@
             {% endif %}
 
             <div class="card-body">
-                <h5>{{ 'POST'|trans }}</h5>
+                <h3>{{ 'POST'|trans }}</h3>
             </div>
             {% if transaction.ipn.post %}
             <table class="table card-table table-vcenter table-striped text-nowrap">
@@ -266,7 +257,7 @@
             {% endif %}
 
             <div class="card-body">
-                <h5>{{ 'SERVER'|trans }}</h5>
+                <h3>{{ 'SERVER'|trans }}</h3>
             </div>
             {% if transaction.ipn.server %}
             <table class="table card-table table-vcenter table-striped text-nowrap">
@@ -286,7 +277,7 @@
             {% endif %}
 
             <div class="card-body">
-                <h5>{{ 'http_raw_post_data'|upper}}</h5>
+                <h3>{{ 'http_raw_post_data'|upper}}</h3>
             </div>
             {% if transaction.ipn.http_raw_post_data %}
             <div class="card-body">
@@ -297,8 +288,6 @@
                 <p>{{ 'No'|trans }} {{ 'http_raw_post_data'|upper }} {{ 'parameters received'|trans }}</p>
             </div>
             {% endif %}
-        </div>
-    </div>
         </div>
     </div>
 </div>

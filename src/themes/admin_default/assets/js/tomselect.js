@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      const autocompleteSelector = new TomSelect(autocompleteSelectorEl, {
+      new TomSelect(autocompleteSelectorEl, {
         copyClassesToDropdown: false,
         dropdownClass: "dropdown-menu ts-dropdown",
         optionClass: "dropdown-item",
@@ -104,8 +104,6 @@ document.addEventListener('DOMContentLoaded', () => {
           item: (item, escape) => `<span>${escape(item.label)}</span>`,
         },
       });
-
-      autocompleteSelector.wrapper.classList.add('autocomplete-selector-wrapper');
     });
   }
 

@@ -25,30 +25,21 @@
 
 {% block content %}
     {% set params = admin.extension_config_get({"ext":"mod_orderbutton"}) %}
-    <div class="card">
-        <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'Order Button Settings'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Configure the popup order window and generate embeddable button code for external pages.'|trans }}</p>
-            </div>
-        </div>
-        <div class="card-body pt-3 pb-0 px-0">
-            <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                    <ul class="nav nav-pills card-header-pills" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link active" href="#tab-index"
-                               data-bs-toggle="tab" role="tab">{{ 'Order Window Settings'|trans }}</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" href="#tab-popup" data-bs-toggle="tab" role="tab">{{ 'Advanced Settings'|trans }}</a>
-                        </li>
-                    </ul>
-                </div>
+    <div class="card-tabs">
+        <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a class="nav-link active" href="#tab-index"
+                   data-bs-toggle="tab">{{ 'Order Window Settings'|trans }}</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#tab-popup" data-bs-toggle="tab">{{ 'Advanced Settings'|trans }}</a>
+            </li>
+        </ul>
 
         <form method="post" action="{{ 'extension/config_save'|api_url }}" {{ fb_api_form({reload: true}) }}>
             <input type="hidden" name="ext" value="mod_orderbutton">
-                <div class="tab-content border-top">
+            <div class="card">
+                <div class="tab-content">
                     <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
                         <div class="card-header border-0">
                             <div>
@@ -74,6 +65,9 @@
                                    onclick="window.onbeforeunload = null;">
                         </div>
                     </div>
+                </div>
+
+                <div class="tab-content">
                     <div class="tab-pane fade" id="tab-popup" role="tabpanel">
                         <div class="card-header border-0">
                             <div>
@@ -178,9 +172,8 @@
                         </div>
                     </div>
                 </div>
-        </form>
             </div>
-        </div>
+        </form>
     </div>
 
     <div class="card mt-3">
@@ -213,7 +206,7 @@
                 <div class="row mb-3">
                     <div class="col">
                         <div class="alert alert-info" role="alert">
-                            <strong class="d-block mb-2">{{ 'Important:'|trans }}</strong>
+                            <h4 class="alert-title">{{ 'IMPORTANT'|trans }}</h4>
                             <div class="text-muted" id="button-info">
                                 <span class="d-block mb-2">{{ 'You need to add ID (if you want to use it for one html element) or class (if you want to use it for multiple elements) in order for it to work'|trans }}</span>
                                 <div id="button-code-info">

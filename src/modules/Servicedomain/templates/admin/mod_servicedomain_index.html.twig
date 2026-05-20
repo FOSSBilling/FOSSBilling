@@ -7,33 +7,50 @@
 {% set active_menu = 'system' %}
 
 {% block content %}
-    <div class="card">
-        <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'Domain Management'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Manage TLD pricing, registrars, extension installs, and default nameserver settings.'|trans }}</p>
-            </div>
-        </div>
-        <div class="card-body pt-3 pb-0 px-0">
-            <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                    <ul class="nav nav-pills card-header-pills">
-                        <li class="nav-item"><a class="nav-link active" href="#tab-tlds" data-bs-toggle="tab">{{ 'Top Level Domains'|trans }}</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#tab-new-tld" data-bs-toggle="tab"><svg class="icon me-2"><use xlink:href="#plus" /></svg>{{ 'New Top Level Domain'|trans }}</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#tab-registrars" data-bs-toggle="tab">{{ 'Registrars'|trans }}</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#tab-new-registrar" data-bs-toggle="tab"><svg class="icon me-2"><use xlink:href="#plus" /></svg>{{ 'New Domain Registrar'|trans }}</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#tab-extension-directory" data-bs-toggle="tab"><svg class="icon me-2"><use xlink:href="#plus" /></svg>{{ 'Install from the Extension Directory'|trans }}</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#tab-nameservers" data-bs-toggle="tab">{{ 'Nameservers'|trans }}</a></li>
-                    </ul>
-                </div>
-                <div class="tab-content border-top">
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-tlds" data-bs-toggle="tab">{{ 'Top Level Domains'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-new-tld" data-bs-toggle="tab">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New Top Level Domain'|trans }}
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-registrars" data-bs-toggle="tab">{{ 'Registrars'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-new-registrar" data-bs-toggle="tab">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New Domain Registrar'|trans }}
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-extension-directory" data-bs-toggle="tab">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'Install from the Extension Directory'|trans }}
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-nameservers" data-bs-toggle="tab">{{ 'Nameservers'|trans }}</a>
+        </li>
+    </ul>
+
+<div class="card">
+    <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-tlds" role="tabpanel">
-            <div class="p-3">
+            <div class="card-body">
                 <h5>{{ 'Manage TLDs'|trans }}</h5>
                 <p class="text-muted">{{ 'Setup domain pricing and allowed operations. Assign specific domain registrars for each Top Level Domain (TLD)'|trans }}</p>
             </div>
 
-            <div class="table-responsive">
             <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                 <thead>
                     <tr>
@@ -43,7 +60,7 @@
                         <th>{{ 'Transfer'|trans }} </th>
                         <th>{{ 'Operations'|trans }}</th>
                         <th>{{ 'Registrar'|trans }}</th>
-                        <th class="w-1 no-sort"></th>
+                        <th class="w-1"></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -81,11 +98,10 @@
                     {% endfor %}
                 </tbody>
             </table>
-            </div>
         </div>
 
         <div class="tab-pane fade" id="tab-new-tld" role="tabpanel">
-            <div class="p-3">
+            <div class="card-body">
                 <h5>{{ 'Add New Top Level Domain'|trans }}</h5>
                 <p class="text-muted">{{ 'Setup new TLD prices and properties'|trans }}</p>
 
@@ -176,12 +192,11 @@
         </div>
 
         <div class="tab-pane fade" id="tab-registrars" role="tabpanel">
-            <div class="p-3">
+            <div class="card-body">
                 <h5>{{ 'Domain Registrars'|trans }}</h5>
                 <p class="text-muted">{{ 'Manage Domain Registrars'|trans }}</p>
             </div>
 
-            <div class="table-responsive">
             <table class="table card-table table-vcenter table-striped text-nowrap">
                 <thead>
                     <tr>
@@ -217,11 +232,10 @@
                     {% endfor %}
                 </tbody>
             </table>
-            </div>
         </div>
 
         <div class="tab-pane fade" id="tab-new-registrar" role="tabpanel">
-            <div class="p-3">
+            <div class="card-body">
                 <h1>{{ 'Adding New Domain Registrar'|trans }}</h1>
                 <p>{{ 'Follow instructions below to install new domain registrar.'|trans }}</p>
 
@@ -237,7 +251,6 @@
             </div>
 
             {% if admin.servicedomain_registrar_get_available|length > 0 %}
-            <div class="table-responsive">
             <table class="table card-table table-vcenter table-striped text-nowrap">
                 <thead>
                     <tr>
@@ -261,21 +274,20 @@
                 {% else %}
                 <tbody>
                     <tr>
-                        <td class="text-muted" colspan="5">{{ 'All Domain Registrars Installed'|trans }}</td>
+                        <td class="text-muted" colspan="5">{{ 'All payment gateways installed'|trans }}</td>
                     </tr>
                 </tbody>
                 {% endfor %}
             </table>
-            </div>
             {% endif %}
         </div>
 
         <div class="tab-pane fade" id="tab-extension-directory" role="tabpanel">
-            {{ include('partial_extensions.html.twig', { 'type': 'domain-registrar' }, with_context = false) }}
+            {{ include('partial_extensions.html.twig', { 'type': 'domain-registrar', 'header': 'List of domain registrars on the Extension Directory'|trans }, with_context = false) }}
         </div>
 
         <div class="tab-pane fade" id="tab-nameservers" role="tabpanel">
-            <div class="p-3">
+            <div class="card-body">
                 <h5>{{ 'Nameservers'|trans }}</h5>
                 <p class="text-muted">{{ 'Set default nameservers that will be used for new domain registrations if a client has not provided their own nameservers while ordering a domain'|trans }}</p>
 
@@ -310,8 +322,6 @@
                 </form>
             </div>
         </div>
-                </div>
-            </div>
-        </div>
     </div>
+</div>
 {% endblock %}

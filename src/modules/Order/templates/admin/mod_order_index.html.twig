@@ -6,21 +6,13 @@
 {% set has_filter_panel = true %}
 {% set filter_panel_id = 'page-search-filters' %}
 {% set filter_panel_open = request_has_filters %}
-{% set new_order_action %}
-    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newOrderModal">
-        <svg class="icon">
-            <use xlink:href="#plus" />
-        </svg>
-        {{ 'New Order'|trans }}
-    </button>
-{% endset %}
 
 {% block meta_title %}{{ 'Orders'|trans }}{% endblock %}
 
 {% block top_content %}
 {% if not filter_panel_open %}
     {% set count_orders = admin.order_get_statuses %}
-    <div class="row row-cards mb-3 filter-panel-summary">
+    <div class="row row-cards mb-3">
         <div class="col-sm-6 col-lg-3">
             <a class="card card-sm card-link" href="{{ 'order'|url(query: { 'status': 'pending_setup' }) }}">
                 <div class="card-body">
@@ -82,103 +74,98 @@
 {% endblock %}
 
 {% block content %}
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="index-tab" data-bs-toggle="tab" data-bs-target="#tab-index" type="button" role="tab" aria-controls="index" aria-selected="true">{{ 'Orders'|trans }}</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="new-tab" data-bs-toggle="tab" data-bs-target="#tab-new" type="button" role="tab" aria-controls="index" aria-selected="true">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New Order'|trans }}
+            </button>
+        </li>
+    </ul>
+
     <div class="card">
-        <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'Orders'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Manage orders, filter order records, and create new orders for clients.'|trans }}</p>
-            </div>
-        </div>
-        <div class="card-body pt-0 pb-0 px-0">
-            <div class="card border-0 shadow-none rounded-0">
-                {{ include('partial_search.html.twig', {
-                    search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
-                    search_toolbar_actions: new_order_action
-                }) }}
-                <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
-                    <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
-                        {% if request.search %}
-                            <input type="hidden" name="search" value="{{ request.search }}">
-                        {% endif %}
-                        <div class="row g-3">
-                            <div class="col-md-6 col-xl-3">
-                                <div>
-                                    <label class="form-label text-muted small mb-1" for="filter-order-id">{{ 'ID'|trans }}</label>
-                                    <input class="form-control" type="text" id="filter-order-id" name="id" value="{{ request.id }}" placeholder="{{ 'Order ID'|trans }}">
-                                </div>
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="tab-index" role="tabpanel" aria-labelledby="index-tab">
+                {{ include('partial_search.html.twig') }}
+                <section id="{{ filter_panel_id }}" class="card-body border-bottom collapse{% if filter_panel_open %} show{% endif %}">
+                    <h5>{{ 'Filter Orders'|trans }}</h5>
+                    <form method="get">
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'ID'|trans }}</label>
+                            <div class="col">
+                                <input class="form-control" type="text" name="id" value="{{ request.id }}">
                             </div>
-                            <div class="col-md-6 col-xl-3">
-                                <div>
-                                    <label class="form-label text-muted small mb-1" for="filter-order-title">{{ 'Title'|trans }}</label>
-                                    <input class="form-control" type="text" id="filter-order-title" name="title" value="{{ request.title }}" placeholder="{{ 'Order Title'|trans }}">
-                                </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}</label>
+                            <div class="col">
+                                <input class="form-control" type="text" name="title" value="{{ request.title }}">
                             </div>
-                            <div class="col-md-6 col-xl-3">
-                                <div>
-                                    <label class="form-label text-muted small mb-1" for="status">{{ 'Status'|trans }}</label>
-                                    {{ mf.selectbox('status', admin.order_get_status_pairs, request.status, 0, 'All Statuses'|trans) }}
-                                </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}</label>
+                            <div class="col">
+                                {{ mf.selectbox('status', admin.order_get_status_pairs, request.status, 0, 'All Statuses'|trans) }}
                             </div>
-                            <div class="col-md-6 col-xl-3">
-                                <div>
-                                    <label class="form-label text-muted small mb-1" for="type">{{ 'Type'|trans }}</label>
-                                    {{ mf.selectbox('type', admin.product_get_types, request.type, 0, 'All Types'|trans) }}
-                                </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Type'|trans }}:</label>
+                            <div class="col">
+                                {{ mf.selectbox('type', admin.product_get_types, request.type, 0, 'All Types'|trans) }}
                             </div>
-                            <div class="col-md-6 col-xl-4">
-                                <div>
-                                    <label class="form-label text-muted small mb-1" for="product_id">{{ 'Product'|trans }}</label>
-                                    {{ mf.selectbox('product_id', admin.product_get_pairs, request.product_id, 0, 'All Products'|trans) }}
-                                </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Product'|trans }}:</label>
+                            <div class="col">
+                                {{ mf.selectbox('product_id', admin.product_get_pairs, request.product_id, 0, 'All Products'|trans) }}
                             </div>
-                            <div class="col-md-6 col-xl-4">
-                                <div>
-                                    <label class="form-label text-muted small mb-1" for="period">{{ 'Period'|trans }}</label>
-                                    {{ mf.selectbox('period', guest.system_periods, request.period, 0, 'All Periods'|trans) }}
-                                </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Period'|trans }}</label>
+                            <div class="col">
+                                {{ mf.selectbox('period', guest.system_periods, request.period, 0, 'All Periods'|trans) }}
                             </div>
-                            <div class="col-md-6 col-xl-4">
-                                <div>
-                                    <label class="form-label text-muted small mb-1" for="invoice_option">{{ 'Invoice Option'|trans }}</label>
-                                    {{ mf.selectbox('invoice_option', admin.order_get_invoice_options, request.invoice_option, 0, 'All Invoice Options'|trans) }}
-                                </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Invoice Option'|trans }}</label>
+                            <div class="col">
+                                {{ mf.selectbox('invoice_option', admin.order_get_invoice_options, request.invoice_option, 0, 'All Invoice Options'|trans) }}
                             </div>
-                            <div class="col-md-6 col-xl-4">
-                                <div>
-                                    <label class="form-label text-muted small mb-1" for="creation_date">{{ 'Creation Date'|trans }}</label>
-                                    <div class="input-group">
-                                        <div class="input-icon w-100">
-                                            <input class="form-control datepicker"
-                                                   id="creation_date"
-                                                   placeholder="{{ 'Select Date Range'|trans }}"
-                                                   value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
-                                                   data-name-from="date_from"
-                                                   data-name-to="date_to"
-                                            >
-                                            <span class="input-icon-addon">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                    <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
-                                                    <path d="M16 3l0 4"></path>
-                                                    <path d="M8 3l0 4"></path>
-                                                    <path d="M4 11l16 0"></path>
-                                                    <path d="M11 15l1 0"></path>
-                                                    <path d="M12 15l0 3"></path>
-                                                </svg>
-                                            </span>
-                                        </div>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label" for="creation_date">{{ 'Creation Date'|trans }}</label>
+                            <div class="col">
+                                <div class="input-group">
+                                    <div class="input-icon w-100">
+                                        <input class="form-control datepicker"
+                                               id="creation_date"
+                                               value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
+                                               data-name-from="date_from"
+                                               data-name-to="date_to"
+                                        >
+                                        <span class="input-icon-addon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                                                <path d="M16 3l0 4"></path>
+                                                <path d="M8 3l0 4"></path>
+                                                <path d="M4 11l16 0"></path>
+                                                <path d="M11 15l1 0"></path>
+                                                <path d="M12 15l0 3"></path>
+                                            </svg>
+                                        </span>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="d-flex justify-content-end gap-2 mt-3">
-                            <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
-                            <button class="btn btn-primary" type="submit">
-                                <svg class="icon">
-                                    <use xlink:href="#filter" />
-                                </svg>
-                                {{ 'Apply Filters'|trans }}
-                            </button>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-primary w-75" type="submit">{{ 'Filter'|trans }}</button>
+                            <a class="btn btn-danger w-25" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
                         </div>
                     </form>
                 </section>
@@ -196,11 +183,11 @@
                                 <th class="text-center">{{ 'Period'|trans }}</th>
                                 <th class="text-center">{{ 'Amount'|trans }}</th>
                                 <th>{{ 'Status'|trans }}</th>
-                                <th class="w-1 no-sort"></th>
+                                <th class="w-1"></th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% set orders = admin.order_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
+                            {% set orders = admin.order_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
                             {% for i, order in orders.list %}
                             <tr>
                                 <td>
@@ -220,7 +207,27 @@
                                 </td>
                                 <td class="text-center">{{ order.period|period_title }}</td>
                                 <td class="text-center">{{ order.total|format_currency(order.currency ?? default_currency) }}</td>
-                                <td>{{ mf.status_badge(order.status, 'order') }}</td>
+                                <td>
+                                    {% if order.status == 'pending_setup' %}
+                                        <span class="badge bg-warning me-1"></span>
+                                    {% endif %}
+                                    {% if order.status == 'failed_setup' %}
+                                    <span class="badge bg-warning me-1"></span>
+                                    {% endif %}
+                                    {% if order.status == 'failed_renew' %}
+                                    <span class="badge bg-warning me-1"></span>
+                                    {% endif %}
+                                    {% if order.status == 'active' %}
+                                        <span class="badge bg-success me-1"></span>
+                                    {% endif %}
+                                    {% if order.status == 'suspended' %}
+                                        <span class="badge bg-danger me-1"></span>
+                                    {% endif %}
+                                    {% if order.status == 'canceled' %}
+                                        <span class="badge bg-secondary me-1"></span>
+                                    {% endif %}
+                                    {{ mf.status_name(order.status) }}
+                                </td>
                                 <td>
                                     <a class="btn btn-icon" href='{{ "order/manage/#{order.id}"|url }}'>
                                         <svg class="icon">
@@ -247,9 +254,9 @@
                 <div class="card-footer d-flex align-items-center justify-content-between">
                     <div>
                         {% include 'partial_batch_delete.html.twig' with { 'action': 'order/batch_delete' } %}
-                    </div>
-                    <div class="d-flex align-items-center gap-2 ms-auto">
                         {% include 'partial_pagination.html.twig' with { 'list': orders, 'url': 'order' } %}
+                    </div>
+                    <div>
                         <a class="btn btn-secondary" href="{{ 'order/export_csv'|api_url(query: { CSRFToken: CSRFToken }) }}" title="{{ 'Export Orders'|trans }}">
                             <svg class="icon">
                                 <use xlink:href="#download" />
@@ -258,80 +265,42 @@
                         </a>
                     </div>
                 </div>
+            </div>
 
-            <div class="modal modal-blur fade" id="newOrderModal" tabindex="-1" aria-labelledby="newOrderModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                        <form method="post" action="{{ 'order/new'|url }}">
-                            <div class="modal-header">
-                                <h3 class="modal-title" id="newOrderModalLabel">{{ 'Create New Order'|trans }}</h3>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="mb-3 row">
-                                    <label class="form-label col-3 col-form-label" for="client_id">{{ 'Client'|trans }}</label>
-                                    <div class="col">
-                                        {% if not request.client_id %}
-                                            <select class="form-control autocomplete-selector"
-                                                    placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
-                                                    id="client_id"
-                                                    name="client_id"
-                                                    data-resturl="/api/admin/client/get_pairs"
-                                                    required aria-required="true">
-                                            </select>
-                                        {% else %}
-                                            {% set client = admin.client_get({ 'id': request.client_id }) %}
-                                            <input type="text" id="client_id" class="form-control" disabled value="{{ client.first_name }} {{ client.last_name }}" />
-                                            <input type="hidden" name="client_id" value="{{ request.client_id }}" />
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="mb-0 row">
-                                    <label class="form-label col-3 col-form-label" for="product_id">{{ 'Product'|trans }}</label>
-                                    <div class="col">
-                                        {{ mf.selectbox('product_id', admin.product_get_pairs, request.product_id, 1) }}
-                                    </div>
-                                </div>
-                                {% if request.client_id %}
-                                    <input type="hidden" name="client_id" value="{{ request.client_id}}">
+            <div class="tab-pane fade" id="tab-new" role="tabpanel" aria-labelledby="new-tab">
+                <div class="card-body">
+                    <form method="post" action="{{ 'order/new'|url }}">
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label" for="client_id">{{ 'Client'|trans }}</label>
+                            <div class="col">
+                                {% if not request.client_id %}
+                                    <select class="form-control autocomplete-selector"
+                                            placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
+                                            id="client_id"
+                                            name="client_id"
+                                            data-resturl="/api/admin/client/get_pairs"
+                                            required aria-required="true">
+                                    </select>
+                                {% else %}
+                                    {% set client = admin.client_get({ 'id': request.client_id }) %}
+                                    <input type="text" id="client_id" class="form-control" disabled value="{{ client.first_name }} {{ client.last_name }}" />
+                                    <input type="hidden" name="client_id" value="{{ request.client_id }}" />
                                 {% endif %}
                             </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
-                                <button type="submit" class="btn btn-primary">{{ 'Continue'|trans }}</button>
+                        </div>
+                        <div class="form-group mb-3 row">
+                            <label class="form-label col-3 col-form-label">{{ 'Product'|trans }}:</label>
+                            <div class="col">
+                                {{ mf.selectbox('product_id', admin.product_get_pairs, request.product_id, 1) }}
                             </div>
-                        </form>
-                    </div>
+                        </div>
+                        <input type="submit" value="{{ 'Continue'|trans }}" class="btn btn-primary">
+                        {% if request.client_id %}
+                            <input type="hidden" name="client_id" value="{{ request.client_id}}">
+                        {% endif %}
+                    </form>
                 </div>
             </div>
         </div>
-        </div>
     </div>
-{% endblock %}
-
-{% block js %}
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const modalElement = document.getElementById('newOrderModal');
-    if (!modalElement) {
-        return;
-    }
-
-    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
-
-    if (window.location.hash === '#tab-new') {
-        modal.show();
-    }
-
-    modalElement.addEventListener('hidden.bs.modal', function () {
-        if (window.location.hash !== '#tab-new') {
-            return;
-        }
-
-        const url = new URL(window.location.href);
-        url.hash = '';
-        window.history.replaceState({}, '', url);
-    });
-});
-</script>
 {% endblock %}

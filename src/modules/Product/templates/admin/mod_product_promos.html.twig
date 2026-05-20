@@ -23,36 +23,29 @@
 {% endblock %}
 
 {% block content %}
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-promos" data-bs-toggle="tab">{{ 'Promotions'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New Promotion'|trans }}
+            </a>
+        </li>
+    </ul>
+
     <div class="card">
-        <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'Product Promotions'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Manage promotional discounts and create new offers for products and client groups.'|trans }}</p>
-            </div>
-        </div>
-        <div class="card-body pt-3 pb-0 px-0">
-            <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                    <ul class="nav nav-pills card-header-pills">
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link active" href="#tab-promos" data-bs-toggle="tab">{{ 'Promotions'|trans }}</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
-                                <svg class="icon me-2">
-                                    <use xlink:href="#plus" />
-                                </svg>
-                                {{ 'New Promotion'|trans }}
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="tab-content border-top">
+        <div class="tab-content">
             <div class="tab-pane fade show active" id="tab-promos" role="tabpanel">
-                <div class="p-3 border-bottom d-flex justify-content-end">
-                    {{ include('partial_search_action.html.twig') }}
+                <div class="card-header">
+                    <h3 class="card-title">{{ 'Promo Codes'|trans }}</h3>
+                    <div class="card-actions">
+                        {{ include('partial_search_action.html.twig') }}
+                    </div>
                 </div>
-                <div class="table-responsive">
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <thead>
                         <tr>
@@ -68,7 +61,7 @@
                     </thead>
                     <tbody>
                     {% set currency = guest.currency_get %}
-                    {% set promos = admin.product_promo_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
+                    {% set promos = admin.product_promo_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
                     {% for promo in promos.list %}
                     <tr>
                         <td>
@@ -92,7 +85,15 @@
                             From {% if promo.start_at %}{{ promo.start_at|format_date }}{% else %}now{% endif %}
                             until {% if promo.end_at %}{{ promo.end_at|format_date }}{% else %}disabled{% endif %}
                         </td>
-                        <td>{{ mf.boolean_badge(promo.active, 'Yes'|trans, 'No'|trans, 'text-bg-success', 'text-bg-secondary') }}</td>
+                        <td>
+                            {% if promo.active == true %}
+                                <span class="badge bg-success me-1"></span>
+                            {% endif %}
+                            {% if promo.active == false %}
+                                <span class="badge bg-secondary me-1"></span>
+                            {% endif %}
+                            {{ mf.q(promo.active) }}
+                        </td>
                         <td>{{ promo.used }} / {% if promo.maxuses %}{{ promo.maxuses }}{% else %}&#8734;{% endif %}</td>
                         <td>
                             <a class="btn btn-icon" href='{{ "product/promo/#{promo.id}"|url }}'>
@@ -115,15 +116,12 @@
                     {% endfor %}
                     </tbody>
                 </table>
-                </div>
 
-                <div class="card-footer d-flex align-items-center">
-                    {{ include('partial_pagination.html.twig', { 'list': promos, 'url': 'product/promos', 'split_footer_controls': true }) }}
-                </div>
+                {{ include('partial_pagination.html.twig', { 'list': promos, 'url': 'product/promos' }) }}
             </div>
 
             <div class="tab-pane fade" id="tab-new" role="tabpanel">
-                <div class="p-3">
+                <div class="card-body">
                     <h3>{{ 'Create New Promotional Code'|trans }}</h3>
                     <p class="text-muted">{{ 'Create special offers for your clients by creating promo codes.'|trans }}</p>
                     <form method="post" action="{{ 'product/promo_create'|api_url }}" {{ fb_api_form({redirect: 'product/promos'|url}) }}>
@@ -274,8 +272,6 @@
                         <input type="submit" value="{{ 'Create'|trans }}" class="btn btn-primary w-100">
                     </form>
                 </div>
-            </div>
-        </div>
             </div>
         </div>
     </div>

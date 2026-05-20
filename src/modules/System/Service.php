@@ -448,7 +448,7 @@ class Service
         if ($this->filesystem->exists($install)) {
             $messages[] = $this->createAdminAlert(
                 'danger',
-                __trans('Installer (":path") still exists. Please remove it for security reasons.', [':path' => $install])
+                __trans('Install module ":path" still exists. Please remove it for security reasons.', [':path' => $install])
             );
         }
 

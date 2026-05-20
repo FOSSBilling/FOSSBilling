@@ -27,8 +27,10 @@
         <div class="card-header">
             <div>
                 <h3 class="card-title">{{ 'Cron Settings'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Review cron status, confirm your schedule, and control whether the guest cron endpoint is available.'|trans }}</p>
             </div>
+        </div>
+        <div class="card-body border-bottom">
+            <span class="card-subtitle">{{ 'Scheduled tasks must be enabled immediately after installation. Cron is responsible for sending your clients reminder about payments, domain renewal notices and many more.'|trans }}</span>
         </div>
         {% set cron = admin.cron_info %}
         <div class="table-responsive">
@@ -60,23 +62,22 @@
                 </tbody>
             </table>
         </div>
-        <div class="card-body border-top">
+        <div class="card-body container">
             {% set params = admin.extension_config_get({ 'ext': 'mod_cron' }) %}
             <form method="post" action="{{ 'extension/config_save'|api_url }}" {{ fb_api_form({message: 'Configuration Updated'|trans}) }}>
                 <input type="hidden" name="ext" value="mod_cron">
-                <div class="row align-items-start">
-                    <div class="col-md-3">
-                        <label class="form-label">{{ 'Enable the Cron API Endpoint for Guests'|trans }}</label>
+                <div class="row">
+                    <div class="col-3">
+                        <label>{{ 'Enable the Cron API Endpoint for Guests'|trans }}</label>
                     </div>
-                    <div class="col-md-1">
+                    <div class="col-1">
                         <label class="form-check form-switch">
                             <input class="form-check-input" name="guest_cron" type="checkbox" {% if params.guest_cron %} checked="checked"{% endif %}>
                         </label>
                     </div>
-                    <div class="col-md-8">
-                        <p class="text-muted mb-3">{{ 'If enabled, this URL can be used to execute the cronjob:'|trans }} {{ 'cron/run'|api_url(role: 'guest') }}</p>
-                        <input class="btn btn-primary" type="submit" value="{{ 'Update'|trans }}">
-                    </div>
+
+                    <p class="text-muted">{{ 'If enabled, this URL can be used to execute the cronjob:'|trans }} {{ 'cron/run'|api_url(role: 'guest') }}</p>
+                    <input class="btn btn-primary w-25" type="submit" value="{{ 'Update'|trans }}">
                 </div>
             </form>
         </div>

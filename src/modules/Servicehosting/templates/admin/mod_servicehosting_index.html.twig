@@ -7,154 +7,148 @@
 {% set active_menu = 'system' %}
 
 {% block content %}
-    <div class="card">
-        <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'Hosting Plans and Servers'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Manage hosting servers, hosting plans, and the provisioning details used by your products.'|trans }}</p>
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-servers" data-bs-toggle="tab">{{ 'Hosting Servers'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-plans" data-bs-toggle="tab">{{ 'Hosting Plans'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-new-server" data-bs-toggle="tab">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New Server'|trans }}
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-new-plan" data-bs-toggle="tab">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New Plan'|trans }}
+            </a>
+        </li>
+    </ul>
+
+<div class="card">
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-servers" role="tabpanel">
+            <div class="card-header">
+                <h3 class="card-title">{{ 'Hosting Servers'|trans }}</h3>
             </div>
+            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                <thead>
+                    <tr>
+                        <th>{{  '#'|trans }}</th>
+                        <th>{{ 'Title'|trans }}</th>
+                        <th>{{ 'IP'|trans }}</th>
+                        <th>{{ 'Server Manager'|trans }}</th>
+                        <th>{{ 'Active'|trans }}</th>
+                        <th class="w-1 no-sort"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set servers = admin.servicehosting_server_get_list({ 'per_page': 100 }) %}
+                    {% for server in servers.list %}
+                    <tr>
+                        <td>{{ server.id }}</td>
+                        <td>
+                            <a href='{{ "servicehosting/server/#{server.id }"|url }}'>{{ server.name }}</a>
+                        </td>
+                        <td>{{ server.ip }}</td>
+                        <td>{{ mf.status_name(server.manager) }}</td>
+                        <td>{{ mf.q(server.active) }}</td>
+                        <td>
+                            <a class="btn btn-icon" href="{{ server.cpanel_url }}"  data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Log Into the Control Panel'|trans }}" target="_blank">
+                                <svg class="icon">
+                                    <use xlink:href="#settings" />
+                                </svg>
+                            </a>
+                            <a class="btn btn-icon" href="{{ 'servicehosting/server_test_connection'|api_url(query: { 'id': server.id }) }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Test Connection'|trans }}" {{ fb_api_link({message: 'Server Connected'|trans}) }}>
+                                <svg class="icon">
+                                    <use xlink:href="#wifi" />
+                                </svg>
+                            </a>
+                            <a class="btn btn-icon" href='{{ "servicehosting/server/#{server.id}"|url }}' data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Edit Server Details'|trans }}">
+                                <svg class="icon">
+                                    <use xlink:href="#edit" />
+                                </svg>
+                            </a>
+                            <a class="btn btn-icon" href="{{ 'servicehosting/server_delete'|api_url(query: { 'id': server.id }) }}"
+                                data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Delete the Server'|trans }}"
+                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'servicehosting'|url}) }}>
+                                <svg class="icon">
+                                    <use xlink:href="#delete" />
+                                </svg>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-        <div class="card-body pt-3 pb-0 px-0">
-            <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                    <ul class="nav nav-pills card-header-pills">
-                        <li class="nav-item">
-                            <a class="nav-link active" href="#tab-servers" data-bs-toggle="tab">{{ 'Hosting Servers'|trans }}</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#tab-plans" data-bs-toggle="tab">{{ 'Hosting Plans'|trans }}</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#tab-new-server" data-bs-toggle="tab">
-                                <svg class="icon me-2">
-                                    <use xlink:href="#plus" />
+
+        <div class="tab-pane fade show" id="tab-plans" role="tabpanel">
+            <div class="card-header">
+                <h3 class="card-title">{{ 'Hosting Plans'|trans }}</h3>
+            </div>
+
+            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                <thead>
+                    <tr>
+                        <th>{{  '#'|trans }}</th>
+                        <th>{{ 'Title'|trans }}</th>
+                        <th>{{ 'Addon Domains'|trans }}</th>
+                        <th>{{ 'Disk Quota'|trans }}</th>
+                        <th>{{ 'Bandwidth'|trans }}</th>
+                        <th class="w-1 no-sort"></th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% set hps = admin.servicehosting_hp_get_list({ 'per_page': 100 }) %}
+                    {% for hp in hps.list %}
+                    <tr>
+                        <td>{{ hp.id }}</td>
+                        <td>
+                            <a href='{{ "servicehosting/plan/#{hp.id}"|url }}'>{{ hp.name }}</a>
+                        </td>
+                        <td>{{ hp.max_addon }}</td>
+                        <td>{{ hp.quota }} <span class="text-body-secondary">MB</span></td>
+                        <td>{{ hp.bandwidth }} <span class="text-body-secondary">MB</span></td>
+                        <td>
+                            <a class="btn btn-icon" href='{{ "servicehosting/plan/#{hp.id}"|url }}' data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Edit Plan Details'|trans }}">
+                                <svg class="icon">
+                                    <use xlink:href="#edit" />
                                 </svg>
-                                {{ 'New Server'|trans }}
                             </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#tab-new-plan" data-bs-toggle="tab">
-                                <svg class="icon me-2">
-                                    <use xlink:href="#plus" />
+                            <a class="btn btn-icon" href="{{ 'servicehosting/hp_delete'|api_url(query: { 'id': hp.id }) }}"
+                                data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Delete the Plan'|trans }}"
+                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'servicehosting'|url}) }}>
+                                <svg class="icon">
+                                    <use xlink:href="#delete" />
                                 </svg>
-                                {{ 'New Plan'|trans }}
                             </a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="tab-content border-top">
-                    <div class="tab-pane fade show active" id="tab-servers" role="tabpanel">
-                        <div class="table-responsive">
-                            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
-                                <thead>
-                                    <tr>
-                                        <th>{{ '#'|trans }}</th>
-                                        <th>{{ 'Title'|trans }}</th>
-                                        <th>{{ 'IP'|trans }}</th>
-                                        <th>{{ 'Server Manager'|trans }}</th>
-                                        <th>{{ 'Active'|trans }}</th>
-                                        <th class="w-1 no-sort"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% set servers = admin.servicehosting_server_get_list({ 'per_page': 100 }) %}
-                                    {% for server in servers.list %}
-                                    <tr>
-                                        <td>{{ server.id }}</td>
-                                        <td>
-                                            <a href='{{ "servicehosting/server/#{server.id }"|url }}'>{{ server.name }}</a>
-                                        </td>
-                                        <td>{{ server.ip }}</td>
-                                        <td>{{ mf.status_name(server.manager) }}</td>
-                                        <td>{{ mf.boolean_badge(server.active, 'Yes'|trans, 'No'|trans, 'text-bg-success', 'text-bg-secondary') }}</td>
-                                        <td>
-                                            <a class="btn btn-icon" href="{{ server.cpanel_url }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Log Into the Control Panel'|trans }}" target="_blank">
-                                                <svg class="icon">
-                                                    <use xlink:href="#settings" />
-                                                </svg>
-                                            </a>
-                                            <a class="btn btn-icon" href="{{ 'servicehosting/server_test_connection'|api_url(query: { 'id': server.id }) }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Test Connection'|trans }}" {{ fb_api_link({message: 'Server Connected'|trans}) }}>
-                                                <svg class="icon">
-                                                    <use xlink:href="#wifi" />
-                                                </svg>
-                                            </a>
-                                            <a class="btn btn-icon" href='{{ "servicehosting/server/#{server.id}"|url }}' data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Edit Server Details'|trans }}">
-                                                <svg class="icon">
-                                                    <use xlink:href="#edit" />
-                                                </svg>
-                                            </a>
-                                            <a class="btn btn-icon" href="{{ 'servicehosting/server_delete'|api_url(query: { 'id': server.id }) }}"
-                                                data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Delete the Server'|trans }}"
-                                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'servicehosting'|url}) }}>
-                                                <svg class="icon">
-                                                    <use xlink:href="#delete" />
-                                                </svg>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    {% else %}
-                                    <tr>
-                                        <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-                    <div class="tab-pane fade" id="tab-plans" role="tabpanel">
-                        <div class="table-responsive">
-                            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
-                                <thead>
-                                    <tr>
-                                        <th>{{ '#'|trans }}</th>
-                                        <th>{{ 'Title'|trans }}</th>
-                                        <th>{{ 'Addon Domains'|trans }}</th>
-                                        <th>{{ 'Disk Quota'|trans }}</th>
-                                        <th>{{ 'Bandwidth'|trans }}</th>
-                                        <th class="w-1 no-sort"></th>
-                                    </tr>
-                                </thead>
-
-                                <tbody>
-                                    {% set hps = admin.servicehosting_hp_get_list({ 'per_page': 100 }) %}
-                                    {% for hp in hps.list %}
-                                    <tr>
-                                        <td>{{ hp.id }}</td>
-                                        <td>
-                                            <a href='{{ "servicehosting/plan/#{hp.id}"|url }}'>{{ hp.name }}</a>
-                                        </td>
-                                        <td>{{ hp.max_addon }}</td>
-                                        <td>{{ hp.quota }} <span class="text-body-secondary">MB</span></td>
-                                        <td>{{ hp.bandwidth }} <span class="text-body-secondary">MB</span></td>
-                                        <td>
-                                            <a class="btn btn-icon" href='{{ "servicehosting/plan/#{hp.id}"|url }}' data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Edit Plan Details'|trans }}">
-                                                <svg class="icon">
-                                                    <use xlink:href="#edit" />
-                                                </svg>
-                                            </a>
-                                            <a class="btn btn-icon" href="{{ 'servicehosting/hp_delete'|api_url(query: { 'id': hp.id }) }}"
-                                                data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Delete the Plan'|trans }}"
-                                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'servicehosting'|url}) }}>
-                                                <svg class="icon">
-                                                    <use xlink:href="#delete" />
-                                                </svg>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    {% else %}
-                                    <tr>
-                                        <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="tab-pane fade" id="tab-new-server" role="tabpanel">
-                        <div class="p-3">
-                            <form method="post" action="{{ 'servicehosting/server_create'|api_url }}" {{ fb_api_form({redirect: 'servicehosting'|url}) }}>
+        <div class="tab-pane fade" id="tab-new-server" role="tabpanel">
+            <div class="card-body">
+                <form method="post" action="{{ 'servicehosting/server_create'|api_url }}" {{ fb_api_form({redirect: 'servicehosting'|url}) }}>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}:</label>
                         <div class="col">
@@ -272,41 +266,41 @@
                         </div>
                     </div>
                     <input type="submit" value="{{ 'Add Server'|trans }}" class="btn btn-primary">
-                            </form>
-                        </div>
-                    </div>
+                </form>
+            </div>
+        </div>
 
-                    <div class="tab-pane fade" id="tab-new-plan" role="tabpanel">
-                        <div class="p-3">
-                            <h3 class="card-title">{{ 'Add New Hosting Plan'|trans }}</h3>
-                            <p class="text-body-secondary">{{ 'Depending on the server manager used to setup hosting accounts, you may need to provide additional parameters in the next step. Start with the basic hosting plan information here.'|trans }}</p>
-                            <form method="post" action="{{ 'servicehosting/hp_create'|api_url }}" {{ fb_api_form({callback: 'onAfterHostingPlanCreate'}) }}>
-                                <div class="mb-3">
-                                    <label class="form-label" for="new-plan-name">{{ 'Name'|trans }}:</label>
-                                    <input class="form-control" id="new-plan-name" type="text" name="name" value="" required placeholder="{{ 'Unique name to identify this hosting plan'|trans }}">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label" for="new-plan-quota">{{ 'Disk Quota'|trans }}:</label>
-                                    <div class="input-group">
-                                        <input class="form-control" type="text" name="quota" value="1024" aria-describedby="new-plan-quota">
-                                        <span class="input-group-text" id="new-plan-quota">MB</span>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label" for="new-plan-bandwidth">{{ 'Bandwidth'|trans }}:</label>
-                                    <div class="input-group">
-                                        <input class="form-control" type="text" name="bandwidth" value="1024" aria-describedby="new-plan-bandwidth">
-                                        <span class="input-group-text" id="new-plan-bandwidth">MB</span>
-                                    </div>
-                                </div>
-                                <button class="btn btn-primary w-100" type="submit">{{ 'Create Hosting Plan'|trans }}</button>
-                            </form>
+        <div class="tab-pane fade" id="tab-new-plan" role="tabpanel">
+            <div class="card-header">
+                <h3 class="card-title">{{ 'Add New Hosting Plan'|trans }}</h3>
+            </div>
+            <div class="card-body">
+                <p class="text-body-secondary">{{ 'Depending on server manager used to setup hosting account you may require provide additional parameters in next step. In this step provide basic hosting plan information.'|trans }}</p>
+                <form method="post" action="{{ 'servicehosting/hp_create'|api_url }}" {{ fb_api_form({callback: 'onAfterHostingPlanCreate'}) }}>
+                    <div class="mb-3">
+                        <label class="form-label" for="new-plan-name">{{ 'Name'|trans }}:</label>
+                        <input class="form-control" id="new-plan-name" type="text" name="name" value="" required placeholder="{{ 'Unique name to identify this hosting plan'|trans }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="new-plan-quota">{{ 'Disk Quota'|trans }}:</label>
+                        <div class="input-group">
+                            <input class="form-control" type="text" name="quota" value="1024" aria-describedby="new-plan-quota">
+                            <span class="input-group-text" id="new-plan-quota">MB</span>
                         </div>
                     </div>
-                </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="new-plan-bandwidth">{{ 'Bandwidth'|trans }}:</label>
+                        <div class="input-group">
+                            <input class="form-control" type="text" name="bandwidth" value="1024" aria-describedby="new-plan-bandwidth">
+                            <span class="input-group-text" id="new-plan-bandwidth">MB</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary w-100" type="submit">{{ 'Create Hosting Plan'|trans }}</button>
+                </form>
             </div>
         </div>
     </div>
+</div>
 {% endblock %}
 
 {% block js %}
@@ -315,7 +309,7 @@
         window.location = "{{ 'servicehosting/plan'|url }}/" + id;
     }
 
-    function handleManagerChange(select) {
+    function handleManagerChange (select) {
         var pairs = {{ admin.servicehosting_manager_get_pairs|json_encode|raw }} // PHP array returned by the server manager converted to a JavaScript object
         var defaults = {
             form: {

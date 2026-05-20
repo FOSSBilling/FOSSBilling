@@ -25,34 +25,28 @@
 {% block content %}
 <div class="card mb-3">
     <div class="card-header">
-        <div>
-            <h3 class="card-title">{{ 'Invoice'|trans }} {{ invoice.serie }}{{ "%05s"|format(invoice.nr) }}</h3>
-            <p class="card-subtitle">{{ 'Review billing details, update invoice content, and adjust stored purchase records.'|trans }}</p>
-        </div>
+        <h5 class="mb-0">{{ 'Invoice'|trans }} #{{ invoice.id }}</h5>
     </div>
-    <div class="card-body pt-3 pb-0 px-0">
-        <div class="card border-0 shadow-none rounded-0">
-            <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                <ul class="nav nav-pills card-header-pills" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <a class="nav-link active" href="#tab-info" data-bs-toggle="tab" role="tab">{{ 'Details'|trans }}</a>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-manage" data-bs-toggle="tab" role="tab">{{ 'Manage'|trans }}</a>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-texts" data-bs-toggle="tab" role="tab">{{ 'Texts'|trans }}</a>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-buyer-credentials" data-bs-toggle="tab" role="tab">{{ 'Client Credentials'|trans }}</a>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-seller-credentials" data-bs-toggle="tab" role="tab">{{ 'Company Credentials'|trans }}</a>
-                    </li>
-                </ul>
-            </div>
 
-    <div class="tab-content border-top">
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-info" data-bs-toggle="tab">{{ 'Details'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-manage" data-bs-toggle="tab">{{ 'Manage'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-texts" data-bs-toggle="tab">{{ 'Texts'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-buyer-credentials" data-bs-toggle="tab">{{ 'Client Credentials'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-seller-credentials" data-bs-toggle="tab">{{ 'Company Credentials'|trans }}</a>
+        </li>
+    </ul>
+
+    <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-info" role="tabpanel">
             <table class="table card-table table-vcenter table-striped text-nowrap">
                 <tbody>
@@ -72,7 +66,21 @@
                     </tr>
                     <tr>
                         <td class="text-end">{{ 'Status'|trans }}:</td>
-                        <td>{{ mf.status_badge(invoice.status, 'invoice') }}</td>
+                        <td>
+                            {% if invoice.status == 'paid' %}
+                                <span class="badge bg-success me-1"></span>
+                            {% endif %}
+                            {% if invoice.status == 'unpaid' %}
+                                <span class="badge bg-danger me-1"></span>
+                            {% endif %}
+                            {% if invoice.status == 'refunded' %}
+                                <span class="badge bg-warning me-1"></span>
+                            {% endif %}
+                            {% if invoice.status == 'canceled' %}
+                                <span class="badge bg-secondary me-1"></span>
+                            {% endif %}
+                            {{ mf.status_name(invoice.status) }}
+                        </td>
                     </tr>
                     {% if invoice.tax %}
                     <tr>
@@ -365,7 +373,7 @@
 
         <div class="tab-pane fade" id="tab-seller-credentials" role="tabpanel">
             <div class="card-body">
-                <h5>{{ 'Company Details at Time of Purchase'|trans }}</h5>
+                <h3>{{ 'Company Details at Time of Purchase'|trans }}</h3>
 
                 {% set seller = invoice.seller %}
                 <form method="post" action="{{ 'invoice/update'|api_url }}" {{ fb_api_form({message: 'Invoice Updated'|trans}) }}>
@@ -414,7 +422,7 @@
 
         <div class="tab-pane fade" id="tab-buyer-credentials" role="tabpanel">
             <div class="card-body">
-                <h5>{{ 'Client Details at Time of Purchase'|trans }}</h5>
+                <h3>{{ 'Client Details at Time of Purchase'|trans }}</h3>
 
                 {% set buyer = invoice.buyer %}
                 <form method="post" action="{{ 'invoice/update'|api_url }}" {{ fb_api_form({message: 'Invoice Updated'|trans}) }}>
@@ -496,8 +504,6 @@
                     <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
                 </form>
             </div>
-        </div>
-    </div>
         </div>
     </div>
 </div>
@@ -669,7 +675,7 @@
                     <td>{{ tx.type }}</td>
                     <td>{{ tx.gateway }}</td>
                     <td>{{ tx.amount|format_currency(tx.currency ?? default_currency) }}</td>
-                    <td>{{ mf.status_badge(tx.status, 'transaction') }}</td>
+                    <td>{{ mf.status_name(tx.status) }}</td>
                     <td>{{ tx.created_at|format_datetime }}</td>
                     <td>
                         <a class="btn btn-icon" href='{{ "invoice/transaction/#{tx.id}"|url }}'>

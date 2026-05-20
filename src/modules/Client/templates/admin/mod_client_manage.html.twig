@@ -30,55 +30,46 @@
 {% endblock %}
 
 {% block content %}
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-info" data-bs-toggle="tab" role="tab">{{ 'Profile'|trans }}</a>
+        </li>
+        {% if has_profile_edit_actions %}
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-profile" data-bs-toggle="tab" role="tab">{{ 'Edit'|trans }}</a>
+        </li>
+        {% endif %}
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-orders" data-bs-toggle="tab" role="tab">{{ 'Orders'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-invoice" data-bs-toggle="tab" role="tab">{{ 'Invoices'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-support" data-bs-toggle="tab" role="tab">{{ 'Tickets'|trans }}</a>
+        </li>
+        {% if can_manage_balance %}
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-balance" data-bs-toggle="tab" role="tab">{{ 'Payments'|trans }}</a>
+        </li>
+        {% endif %}
+        {% if can_view_client_login_history %}
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-history" data-bs-toggle="tab" role="tab">{{ 'Logins'|trans }}</a>
+        </li>
+        {% endif %}
+        {% if can_view_email_history %}
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#tab-emails" data-bs-toggle="tab" role="tab">{{ 'Emails'|trans }}</a>
+            </li>
+        {% endif %}
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-transactions" data-bs-toggle="tab" role="tab">{{ 'Transactions'|trans }}</a>
+        </li>
+    </ul>
+
 <div class="card">
-    <div class="card-header">
-        <div>
-            <h3 class="card-title">{{ client.first_name }} {{ client.last_name }}</h3>
-            <p class="card-subtitle">{{ 'Manage the client profile, billing records, support history, and account activity.'|trans }}</p>
-        </div>
-    </div>
-    <div class="card-body pt-3 pb-0 px-0">
-        <div class="card border-0 shadow-none rounded-0">
-            <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                <ul class="nav nav-pills card-header-pills" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <a class="nav-link active" href="#tab-info" data-bs-toggle="tab" role="tab">{{ 'Profile'|trans }}</a>
-                    </li>
-                    {% if has_profile_edit_actions %}
-                    <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-profile" data-bs-toggle="tab" role="tab">{{ 'Edit'|trans }}</a>
-                    </li>
-                    {% endif %}
-                    <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-orders" data-bs-toggle="tab" role="tab">{{ 'Orders'|trans }}</a>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-invoice" data-bs-toggle="tab" role="tab">{{ 'Invoices'|trans }}</a>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-support" data-bs-toggle="tab" role="tab">{{ 'Tickets'|trans }}</a>
-                    </li>
-                    {% if can_manage_balance %}
-                    <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-balance" data-bs-toggle="tab" role="tab">{{ 'Payments'|trans }}</a>
-                    </li>
-                    {% endif %}
-                    {% if can_view_client_login_history %}
-                    <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-history" data-bs-toggle="tab" role="tab">{{ 'Logins'|trans }}</a>
-                    </li>
-                    {% endif %}
-                    {% if can_view_email_history %}
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" href="#tab-emails" data-bs-toggle="tab" role="tab">{{ 'Emails'|trans }}</a>
-                        </li>
-                    {% endif %}
-                    <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-transactions" data-bs-toggle="tab" role="tab">{{ 'Transactions'|trans }}</a>
-                    </li>
-                </ul>
-            </div>
-    <div class="tab-content border-top">
+    <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-info" role="tabpanel" aria-labelledby="index-tab">
             <div class="card-body position-relative">
                 {{ mf.avatar(client.email, 112, 'db-avatar avatar avatar-xl mb-3 avatar-rounded shadow position-absolute top-0 end-0 m-3') }}
@@ -103,7 +94,18 @@
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Status'|trans }}:</td>
-                            <td>{{ mf.status_badge(client.status, 'client') }}</td>
+                            <td>
+                                {% if client.status == 'active' %}
+                                    <span class="badge bg-success me-1"></span>
+                                {% endif %}
+                                {% if client.status == 'suspended' %}
+                                    <span class="badge bg-danger me-1"></span>
+                                {% endif %}
+                                {% if client.status == 'canceled' %}
+                                    <span class="badge bg-secondary me-1"></span>
+                                {% endif %}
+                                {{ mf.status_name(client.status) }}
+                            </td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Group'|trans }}:</td>
@@ -149,12 +151,8 @@
                         <tr>
                             <td class="text-end">{{ 'Address'|trans }}:</td>
                             <td>
-                                {% if client.country is not empty %}
-                                    <span class="flag flag-country-{{ client.country|lower }}" title="{{ guest.system_countries[client.country] }}"></span>
-                                    {{ guest.system_countries[client.country] }} {{ client.state }} {{ client.address_1 }} {{ client.address_2 }} {{ client.city }} {{ client.postcode }}
-                                {% else %}
-                                    -
-                                {% endif %}
+                                <span class="flag flag-country-{{ client.country|lower }}" title="{{ guest.system_countries[client.country] }}"></span>
+                                {{ guest.system_countries[client.country] }} {{ client.state }} {{ client.address_1 }} {{ client.address_2 }} {{ client.city }} {{ client.postcode }}
                             </td>
                         </tr>
                         <tr>
@@ -225,7 +223,7 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Email Address Approved'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Mail approved'|trans }}:</label>
                         <div class="col">
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" id="radioEmailApprovedYes" type="radio" name="email_approved" value="1"{% if client.email_approved == 1 %} checked{% endif %}>
@@ -263,7 +261,7 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label" for="birthday">{{ 'Date of Birth'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label" for="birthday">{{ 'Date of birth'|trans }}:</label>
                         <div class="col">
                             <div class="input-group">
                                 <div class="input-icon w-100">
@@ -289,11 +287,11 @@
                         </div>
                     </div>
                     <div class="mb-3 row" id="company-details">
-                        <label class="form-label col-3 col-form-label">{{ 'Company Details'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Company details'|trans }}:</label>
                         <div class="col">
                             <div class="row">
                                 <div class="col">
-                                    <input class="form-control" type="text" name="company" value="{{ client.company }}" placeholder="{{ 'Company Name'|trans }}">
+                                    <input class="form-control" type="text" name="company" value="{{ client.company }}" placeholder="{{ 'Company name'|trans }}">
                                 </div>
                                 <div class="col">
                                     <input class="form-control" type="text" name="company_number" value="{{ client.company_number }}" placeholder="{{ 'Company Number'|trans }}">
@@ -357,7 +355,7 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Passport Number'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Passport number'|trans }}:</label>
                         <div class="col">
                             <input class="form-control" type="text" name="document_nr" value="{{ client.document_nr }}">
                         </div>
@@ -379,7 +377,7 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Exempt from Tax'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Exempt from tax'|trans }}:</label>
                         <div class="col">
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" id="radioTaxExemptYes" type="radio" name="tax_exempt" value="1"{% if client.tax_exempt %} checked{% endif %}>
@@ -392,7 +390,7 @@
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label" for="created_at">{{ 'Account Created At'|trans }}:</label>
+                        <label class="form-label col-3 col-form-label" for="created_at">{{ 'Signed up time'|trans }}:</label>
                         <div class="col">
                             <div class="input-group">
                                 <div class="input-icon w-100">
@@ -424,7 +422,7 @@
                     </div>
 
                     <input type="hidden" name="id" value="{{ client.id }}">
-                    <button class="btn btn-primary w-100" type="submit">{{ 'Update Profile'|trans }}</button>
+                    <button class="btn btn-primary w-100" type="submit">{{ 'Update profile'|trans }}</button>
                 </form>
                 <hr>
                 {% endif %}
@@ -440,14 +438,14 @@
                     </div>
 
                     <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Confirm Password'|trans }}</label>
+                        <label class="form-label col-3 col-form-label">{{ 'Password confirm'|trans }}</label>
                         <div class="col">
                             <input class="form-control" type="password" name="password_confirm" value="" required>
                         </div>
                     </div>
 
                     <input type="hidden" name="id" value="{{ client.id }}">
-                    <button class="btn btn-primary w-100" type="submit">{{ 'Change Password'|trans }}</button>
+                    <button class="btn btn-primary w-100" type="submit">{{ 'Change password'|trans }}</button>
                 </form>
                 {% endif %}
                 {% if can_edit_profile %}
@@ -502,7 +500,21 @@
                             </td>
                             <td>{{ order.total|format_currency(order.currency ?? default_currency) }}</td>
                             <td>{{ order.period|period_title }}</td>
-                            <td>{{ mf.status_badge(order.status, 'order') }}</td>
+                            <td>
+                                {% if order.status == 'pending_setup' %}
+                                    <span class="badge bg-warning me-1"></span>
+                                {% endif %}
+                                {% if order.status == 'active' %}
+                                    <span class="badge bg-success me-1"></span>
+                                {% endif %}
+                                {% if order.status == 'suspended' %}
+                                    <span class="badge bg-danger me-1"></span>
+                                {% endif %}
+                                {% if order.status == 'canceled' %}
+                                    <span class="badge bg-secondary me-1"></span>
+                                {% endif %}
+                                {{ mf.status_name(order.status) }}
+                            </td>
                             <td>
                                 <a class="btn btn-icon" href='{{ "order/manage/#{order.id}"|url }}'>
                                     <svg class="icon">
@@ -557,7 +569,21 @@
                             <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
                             <td>{{ invoice.created_at|format_date }}</td>
                             <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
-                            <td>{{ mf.status_badge(invoice.status, 'invoice') }}</td>
+                            <td>
+                                {% if invoice.status == 'paid' %}
+                                    <span class="badge bg-success me-1"></span>
+                                {% endif %}
+                                {% if invoice.status == 'unpaid' %}
+                                    <span class="badge bg-danger me-1"></span>
+                                {% endif %}
+                                {% if invoice.status == 'refunded' %}
+                                    <span class="badge bg-warning me-1"></span>
+                                {% endif %}
+                                {% if invoice.status == 'canceled' %}
+                                    <span class="badge bg-secondary me-1"></span>
+                                {% endif %}
+                                {{ mf.status_name(invoice.status) }}
+                            </td>
                             <td>
                                 <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
                                     <svg class="icon">
@@ -579,7 +605,7 @@
                         <svg class="icon">
                             <use xlink:href="#plus" />
                         </svg>
-                        {{ 'New Invoice'|trans }}
+                        {{ 'New invoice'|trans }}
                     </a>
                 </div>
             </div>
@@ -610,7 +636,18 @@
                             <td>
                                 <a href='{{ "support/ticket/#{ticket.id}"|url }}'>{{ ticket.subject|truncate(30) }}</a>
                             </td>
-                            <td>{{ mf.status_badge(ticket.status, 'ticket') }}</td>
+                            <td>
+                                {% if ticket.status == 'open' %}
+                                    <span class="badge bg-success me-1"></span>
+                                {% endif %}
+                                {% if ticket.status == 'on_hold' %}
+                                    <span class="badge bg-warning me-1"></span>
+                                {% endif %}
+                                {% if ticket.status == 'closed' %}
+                                    <span class="badge bg-secondary me-1"></span>
+                                {% endif %}
+                                {{ mf.status_name(ticket.status) }}
+                            </td>
                             <td>
                                 <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}'>
                                     <svg class="icon">
@@ -766,9 +803,7 @@
                     </thead>
 
                     <tbody>
-                        {% set emailsPerPage = request.per_page matches '/^\\d+$/' ? request.per_page : 25 %}
-                        {% set emailsPage = request.page matches '/^\\d+$/' ? request.page : 1 %}
-                        {% set emails = admin.email_email_get_list({ 'per_page': emailsPerPage, 'page': emailsPage, 'client_id': client.id }) %}
+                        {% set emails = admin.email_email_get_list({ 'per_page': 20, 'client_id': client.id }) %}
                         {% for i, email in emails.list %}
                         <tr>
                             <td>{{ email.subject }}</td>
@@ -798,9 +833,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="card-footer d-flex align-items-center">
-                {{ include('partial_pagination.html.twig', { 'list': emails, 'split_footer_controls': true }) }}
-            </div>
+            {{ include('partial_pagination.html.twig', { 'list': emails }) }}
         </div>
         {% endif %}
 
@@ -834,7 +867,7 @@
                                 {% else %}
                                     -
                                 {% endif %}</td>
-                            <td>{{ mf.status_badge(tx.status, 'transaction') }}</td>
+                            <td>{{ mf.status_name(tx.status) }}</td>
                             <td>{{ tx.created_at|format_datetime }}</td>
                             <td>
                                 <a class="btn btn-icon" href='{{ "invoice/transaction/#{tx.id}"|url }}'>
@@ -852,8 +885,6 @@
                     </tbody>
                 </table>
             </div>
-        </div>
-    </div>
         </div>
     </div>
 </div>

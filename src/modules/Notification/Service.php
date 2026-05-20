@@ -49,33 +49,11 @@ class Service implements InjectionAwareInterface
 
     public function getSearchQueryBuilder(array $filter = []): \Doctrine\ORM\QueryBuilder
     {
-        $qb = $this->getExtensionMetaRepository()
+        return $this->getExtensionMetaRepository()
             ->createQueryBuilderForExtension('mod_notification', 'n')
             ->andWhere('n.metaKey = :metaKey')
             ->setParameter('metaKey', 'message')
             ->orderBy('n.id', 'DESC');
-
-        if (!empty($filter['id'])) {
-            $qb->andWhere('n.id = :id')
-                ->setParameter('id', (int) $filter['id']);
-        }
-
-        if (!empty($filter['search'])) {
-            $qb->andWhere('n.metaValue LIKE :search')
-                ->setParameter('search', '%' . $filter['search'] . '%');
-        }
-
-        if (!empty($filter['date_from'])) {
-            $qb->andWhere('n.createdAt >= :date_from')
-                ->setParameter('date_from', new \DateTime(date('Y-m-d 00:00:00', strtotime((string) $filter['date_from']))));
-        }
-
-        if (!empty($filter['date_to'])) {
-            $qb->andWhere('n.createdAt <= :date_to')
-                ->setParameter('date_to', new \DateTime(date('Y-m-d 23:59:59', strtotime((string) $filter['date_to']))));
-        }
-
-        return $qb;
     }
 
     public function toApiArray(ExtensionMeta $row): array

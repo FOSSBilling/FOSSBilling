@@ -11,10 +11,12 @@
     <div class="card-header">
         <div>
             <h3 class="card-title">{{ 'IP Lookup'|trans }}</h3>
-            <p class="card-subtitle">{{ 'Lookup IP addresses and review country and ASN ownership details.'|trans }}</p>
         </div>
     </div>
-    <div class="card-body">
+    <div class="card-body border-bottom">
+        <span class="card-subtitle">{{ 'Lookup & discover info about IP addresses.'|trans }}</span>
+    </div>
+    <div class="card-body container">
         <form method="post" action="{{'security/ip_lookup'|api_url }}" {{ fb_api_form({callback: 'appendResult'}) }}>
             <div class="d-flex">
                 <input type="text" name="ip" class="form-control me-2" placeholder="{{ 'IP address to lookup'|trans }}" {% if request.ip %}value="{{ request.ip }}"{% endif %}>
@@ -46,7 +48,7 @@
         </div>
     </div>
     <div class="card-footer text-center">
-        <p class="mb-0 text-secondary">{{ 'ASN stands for autonomous system number. IP address information may not always be accurate.'|trans }}</p>
+        <p>{{ 'ASN stands for autonomous system number. IP address info may not always be accurate.'|trans }}</p>
     </div>
 </div>
 {% endblock %}

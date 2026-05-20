@@ -5,85 +5,36 @@
 {% block meta_title %}{{ 'Mass Mailer'|trans }}{% endblock %}
 
 {% set active_menu = 'system' %}
-{% set has_filter_panel = true %}
-{% set filter_panel_id = 'page-search-filters' %}
-{% set filter_panel_open = request_has_filters %}
-{% set new_message_action %}
-    <a class="btn btn-primary" href="#tab-new" data-bs-toggle="tab" role="button">
-        <svg class="icon">
-            <use xlink:href="#plus"/>
-        </svg>
-        {{ 'New Message'|trans }}
-    </a>
-{% endset %}
 
 {% block content %}
-    <div class="card">
-        <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'Mass Mailer'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Create broadcast messages, manage queued campaigns, and configure testing defaults for mass mail sends.'|trans }}</p>
-            </div>
-        </div>
-        <div class="card-body pt-3 pb-0 px-0">
-            <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                    <ul class="nav nav-pills card-header-pills" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <a href="#tab-index" class="nav-link active" data-bs-toggle="tab" aria-selected="true"
-                               role="tab">{{ 'Messages'|trans }}</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a href="#tab-settings" class="nav-link" data-bs-toggle="tab" aria-selected="true" role="tab">
-                                <svg class="icon me-2">
-                                    <use xlink:href="#cog"/>
-                                </svg>
-                                {{ 'Settings'|trans }}
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+    <div class="card-tabs">
+        <ul class="nav nav-tabs" data-bs-toggle="tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a href="#index" class="nav-link active" data-bs-toggle="tab" aria-selected="true"
+                   role="tab">{{ 'Messages'|trans }}</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a href="#new" class="nav-link" data-bs-toggle="tab" aria-selected="true" role="tab">
+                    <svg class="icon me-2">
+                        <use xlink:href="#plus"/>
+                    </svg>
+                    {{ 'New message'|trans }}
+                </a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a href="#settings" class="nav-link" data-bs-toggle="tab" aria-selected="true" role="tab">
+                    <svg class="icon me-2">
+                        <use xlink:href="#cog"/>
+                    </svg>
+                    {{ 'Settings'|trans }}
+                </a>
+            </li>
+        </ul>
 
-                <div class="tab-content border-top">
-                <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-                    {{ include('partial_search.html.twig', {
-                        search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
-                        search_toolbar_actions: new_message_action
-                    }) }}
-                    <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
-                        <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
-                            {% if request.search %}
-                                <input type="hidden" name="search" value="{{ request.search }}">
-                            {% endif %}
-                            <div class="row g-3">
-                                <div class="col-md-6 col-xl-4">
-                                    <div>
-                                        <label class="form-label text-muted small mb-1" for="massmailer-id">{{ 'ID'|trans }}</label>
-                                        <input class="form-control" type="text" id="massmailer-id" name="id" value="{{ request.id }}" placeholder="{{ 'Message ID'|trans }}">
-                                    </div>
-                                </div>
-                                <div class="col-md-6 col-xl-4">
-                                    <div>
-                                        <label class="form-label text-muted small mb-1" for="massmailer-status">{{ 'Status'|trans }}</label>
-                                        <select class="form-select" id="massmailer-status" name="status">
-                                            <option value="">{{ 'All Messages'|trans }}</option>
-                                            <option value="draft"{% if request.status == 'draft' %} selected{% endif %}>{{ 'Draft'|trans }}</option>
-                                            <option value="sent"{% if request.status == 'sent' %} selected{% endif %}>{{ 'Sent'|trans }}</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-end gap-2 mt-3">
-                                <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
-                                <button class="btn btn-primary" type="submit">
-                                    <svg class="icon">
-                                        <use xlink:href="#filter" />
-                                    </svg>
-                                    {{ 'Apply Filters'|trans }}
-                                </button>
-                            </div>
-                        </form>
-                    </section>
+        <div class="card">
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="index" role="tabpanel">
+                    {{ include('partial_search.html.twig') }}
                     <div class="table-responsive">
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
@@ -95,12 +46,12 @@
                             </tr>
                             </thead>
                             <tbody>
-                            {% set msgs = admin.massmailer_get_list({ "per_page": 25, "page": request.page }|merge(request)) %}
+                            {% set msgs = admin.massmailer_get_list({ "per_page": 30, "page": request.page }|merge(request)) %}
                             {% for i, msg in msgs.list %}
                                 <tr>
                                     <td>{{ msg.subject }}</td>
                                     <td>{{ msg.from_name }} <br/>{{ msg.from_email }}</td>
-                                    <td>{{ mf.status_badge(msg.status, 'massmailer') }}</td>
+                                    <td>{{ mf.status_badge(msg.status, 'generic') }}</td>
                                     <td class="text-end">
                                         <a class="btn btn-icon" href="{{ 'massmailer/copy'|api_url(query: {'id' : msg.id }) }}"
                                            {{ fb_api_link({redirect: 'massmailer'|url}) }}>
@@ -130,20 +81,18 @@
                             {% endfor %}
                             </tbody>
                         </table>
-                        <div class="card-footer d-flex align-items-center">
-                            {{ include('partial_pagination.html.twig', { 'list': msgs, 'url': 'massmailer', 'split_footer_controls': true }) }}
-                        </div>
+                        {{ include('partial_pagination.html.twig', { 'list': msgs, 'url': 'massmailer' }) }}
                     </div>
                 </div>
 
-                <div class="tab-pane fade" id="tab-new" role="tabpanel">
+                <div class="tab-pane fade" id="new" role="tabpanel">
                     <form method="post" action="admin/massmailer/create" {{ fb_api_form({callback: 'onAfterCreateMM'}) }}>
                         <div class="card-body mt-2">
                             <div class="mb-3 row">
                                 <label class="col-md-2 col-form-label">{{ 'Subject'|trans }}</label>
                                 <div class="col-md-7">
                                     <input class="form-control" type="text" name="subject" value="{{ request.subject }}" required="required"
-                                           placeholder="{{ 'Message Subject'|trans }}">
+                                           placeholder="{{ 'Message subject'|trans }}">
                                 </div>
                             </div>
                         </div>
@@ -153,10 +102,10 @@
                     </form>
                 </div>
 
-                <div class="tab-pane fade" id="tab-settings" role="tabpanel">
+                <div class="tab-pane fade" id="settings" role="tabpanel">
                     <div class="card-header">
                         <div class="card-title">
-                            <h3 class="mb-0">{{ 'Mass Mailer Settings'|trans }}</h3>
+                            <h3 class="mb-0">{{ 'Mass Mail Settings'|trans }}</h3>
                         </div>
                     </div>
                     {% set params = admin.extension_config_get({"ext":"mod_massmailer"}) %}
@@ -164,7 +113,7 @@
                         <input type="hidden" name="ext" value="mod_massmailer">
                         <div class="card-body">
                             <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label" for="test_client_id">{{ 'Client to Send Test Email'|trans }}</label>
+                                <label class="col-md-3 col-form-label" for="test_client_id">{{ 'Client to send test email'|trans }}</label>
                                 <div class="col-md-6">
                                     {% if not request.test_client_id %}
                                         <select class="form-control autocomplete-selector"
@@ -187,8 +136,6 @@
                         </div>
                     </form>
                 </div>
-            </div>
-        </div>
             </div>
         </div>
     </div>

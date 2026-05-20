@@ -24,12 +24,8 @@
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <div>
-            <h3 class="card-title">{{ 'Edit Client Group'|trans }}</h3>
-            <p class="card-subtitle">{{ group.title }}</p>
-        </div>
+        <h4>{{ 'Edit Client Group'|trans }} - {{ group.title }}</h4>
     </div>
-    {% if can_manage_groups %}
     <form method="post" action="{{ 'client/group_update'|api_url }}" {{ fb_api_form({redirect: 'client'|url}) }}>
         <div class="card-body">
             <div class="mb-3 row">

@@ -3,25 +3,6 @@
 {% import 'macro_functions.html.twig' as mf %}
 
 {% set active_menu = 'support' %}
-{% set has_filter_panel = true %}
-{% set filter_panel_id = 'page-search-filters' %}
-{% set filter_panel_open = request_has_filters %}
-{% set new_article_action %}
-    <a class="btn btn-primary" href="#tab-new-article" data-bs-toggle="tab" role="button">
-        <svg class="icon">
-            <use xlink:href="#plus" />
-        </svg>
-        {{ 'New Article'|trans }}
-    </a>
-{% endset %}
-{% set new_kb_category_action %}
-    <a class="btn btn-primary" href="#tab-new-category" data-bs-toggle="tab" role="button">
-        <svg class="icon">
-            <use xlink:href="#plus" />
-        </svg>
-        {{ 'New Category'|trans }}
-    </a>
-{% endset %}
 
 {% block breadcrumbs %}
     <ol class="breadcrumb">
@@ -42,78 +23,47 @@
 {% block meta_title %}{{ 'Knowledge Base'|trans }}{% endblock %}
 
 {% block content %}
-    <div class="card">
-        <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'Knowledge Base'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Manage knowledge base articles and organize content into categories.'|trans }}</p>
-            </div>
-        </div>
-        <div class="card-body pt-3 pb-0 px-0">
-            <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                    <ul class="nav nav-pills card-header-pills">
-                        <li class="nav-item">
-                            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Articles'|trans }}</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#tab-categories" data-bs-toggle="tab">{{ 'Manage Categories'|trans }}</a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="tab-content border-top">
-                    <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-            {{ include('partial_search.html.twig', {
-                search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
-                search_toolbar_actions: new_article_action
-            }) }}
-            <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
-                <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
-                    {% if request.search %}
-                        <input type="hidden" name="search" value="{{ request.search }}">
-                    {% endif %}
-                    <div class="row g-3">
-                        <div class="col-md-6 col-xl-4">
-                            <div>
-                                <label class="form-label text-muted small mb-1" for="kb-status">{{ 'Status'|trans }}</label>
-                                <select class="form-select" id="kb-status" name="status">
-                                    <option value="">{{ 'All Articles'|trans }}</option>
-                                    <option value="draft"{% if request.status == 'draft' %} selected{% endif %}>{{ 'Draft'|trans }}</option>
-                                    <option value="active"{% if request.status == 'active' %} selected{% endif %}>{{ 'Active'|trans }}</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6 col-xl-8">
-                            <div>
-                                <label class="form-label text-muted small mb-1" for="kb-category">{{ 'Category'|trans }}</label>
-                                {{ mf.selectbox('kb_article_category_id', admin.support_kb_category_get_pairs, request.kb_article_category_id, 0, 'All Categories'|trans) }}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-end gap-2 mt-3">
-                        <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
-                        <button class="btn btn-primary" type="submit">
-                            <svg class="icon">
-                                <use xlink:href="#filter" />
-                            </svg>
-                            {{ 'Apply Filters'|trans }}
-                        </button>
-                    </div>
-                </form>
-            </section>
-            <div class="table-responsive">
-                <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Articles'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-new-article" data-bs-toggle="tab">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New Article'|trans }}
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-categories" data-bs-toggle="tab">{{ 'Manage Categories'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-new-category" data-bs-toggle="tab">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New Category'|trans }}
+            </a>
+        </li>
+    </ul>
+
+<div class="card">
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+            {{ include('partial_search.html.twig') }}
+            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                 <thead>
                     <tr>
                         <th>{{ 'Title'|trans }}</th>
                         <th>{{ 'Category'|trans }}</th>
                         <th>{{ 'Status'|trans }}</th>
                         <th class="text-center">{{ 'Views'|trans }}</th>
-                        <th class="w-1 no-sort"></th>
+                        <th class="w-1"></th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% set posts = admin.support_kb_article_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
+                    {% set posts = admin.support_kb_article_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
                     {% for i, post in posts.list %}
                     <tr>
                         <td>
@@ -122,7 +72,14 @@
                         <td>
                             <a href='{{ "support/kb/category/#{post.category.id}"|url }}'>{{ post.category.title }}</a>
                         </td>
-                        <td>{{ mf.status_badge(post.status, 'post') }}</td>
+                        <td>
+                            {% if post.status == 'active' %}
+                                <span class="badge bg-success me-1"></span>
+                            {% endif %}
+                            {% if post.status == 'draft' %}
+                                <span class="badge bg-secondary me-1"></span>
+                            {% endif %}
+                            {{ mf.status_name(post.status) }}</td>
                         <td class="text-center">{{ post.views }}</td>
                         <td>
                             <a class="btn btn-icon" href='{{ "support/kb/article/#{post.id}"|url }}'>
@@ -144,16 +101,13 @@
                     </tr>
                 {% endfor %}
                 </tbody>
-                </table>
-            </div>
+            </table>
 
-            <div class="card-footer d-flex align-items-center">
-                {{ include('partial_pagination.html.twig', { 'list': posts, 'url': 'support/kb', 'split_footer_controls': true }) }}
-            </div>
+            {{ include('partial_pagination.html.twig', { 'list': posts, 'url': 'support/kb' }) }}
         </div>
 
         <div class="tab-pane fade" id="tab-new-article" role="tabpanel">
-            <div class="p-3">
+            <div class="card-body">
                 <form method="post" action="{{ 'support/kb_article_create'|api_url }}" {{ fb_api_form({ reload: true }) }}>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}:</label>
@@ -193,12 +147,6 @@
         </div>
 
         <div class="tab-pane fade" id="tab-categories" role="tabpanel">
-            <div class="card-body border-bottom py-3">
-                <div class="d-flex justify-content-end">
-                    {{ new_kb_category_action|raw }}
-                </div>
-            </div>
-            <div class="table-responsive">
             <table class="table card-table table-vcenter table-striped text-nowrap">
                 <tbody>
                     {% for cat_id, cat_title in admin.support_kb_category_get_pairs %}
@@ -227,11 +175,10 @@
                     {% endfor %}
                 </tbody>
             </table>
-            </div>
         </div>
 
         <div class="tab-pane fade" id="tab-new-category" role="tabpanel">
-            <div class="p-3">
+            <div class="card-body">
                 <form method="post" action="{{ 'support/kb_category_create'|api_url }}" {{ fb_api_form({ reload: true }) }}>
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
@@ -250,9 +197,7 @@
                 </form>
             </div>
         </div>
-                </div>
-            </div>
-        </div>
     </div>
+</div>
 {{ mf.wysiwyg('editor-textarea') }}
 {% endblock %}

@@ -28,13 +28,9 @@
 
 {% block content %}
 <div class="card">
-    <div class="card-header">
-        <div>
-            <h3 class="card-title">{{ group.name }}</h3>
-            <p class="card-subtitle">{{ 'Update the group name used when organizing staff members and assigning permissions.'|trans }}</p>
-        </div>
-    </div>
     <div class="card-body">
+        <h5>{{ 'Manage Staff Member Details'|trans }}</h5>
+
         <form method="post" action="{{ 'staff/group_update'|api_url }}" {{ fb_api_form({message: 'Staff Group Updated'|trans}) }}>
             <div class="mb-3 row">
                 <label class="form-label col-3 col-form-label" for="inputName">{{ 'Name'|trans }}</label>

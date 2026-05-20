@@ -26,14 +26,8 @@
     {% if page.id > 0 %}
 
 <div class="card">
-    <div class="card-header">
-        <div>
-            <h3 class="card-title">{{ page.title }}</h3>
-            <p class="card-subtitle">{{ 'Update custom page content, metadata, and the client-facing URL for this page.'|trans }}</p>
-        </div>
-    </div>
     <form method="post" action="{{ 'custompages/update'|api_url }}" {{ fb_api_form({message: 'Custom Page Updated'|trans}) }}>
-        <div class="card-body">
+        <div class="card-body mt-2">
             <input type="hidden" name="id" value="{{ page.id }}">
             <div class="mb-3 row">
                 <label class="col-md-3 col-form-label">{{ 'Title'|trans }}</label>

@@ -10,16 +10,13 @@
 {% block content %}
     <div class="card">
         <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'Security Dashboard'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Run built-in security checks and review the current status of key platform safeguards.'|trans }}</p>
-            </div>
+            <h3 class="card-title">{{ 'Security Dashboard'|trans }}</h3>
             <div class="card-actions">
                 <a class="btn btn-primary btn-3" href="{{ 'security/run_checks'|api_url }}" {{ fb_api_link({callback: 'setResults'}) }}>{{ "Run All Checks"|trans }}</a>
             </div>
         </div>
         <div class="table-responsive">
-            <table class="table card-table table-vcenter sortable">
+            <table class="table sortable">
                 <thead>
                     <tr>
                         <th scope="col" class="no-sort"></th>
@@ -36,7 +33,7 @@
                         </td>
                         <td scope="row">{{ check.name }}</td>
                         <td scope="row">{{ check.description }}</td>
-                        <td id="{{ check.id }}" scope="row"><div class="alert d-flex justify-content-center align-items-center mb-0"><span>?</span></div></td>
+                        <td id="{{ check.id }}" scope="row"><div class="alert d-flex justify-content-center align-items-center"><span>?</span></div></td>
                     </tr>
                     {% endfor %}
                 </tbody>

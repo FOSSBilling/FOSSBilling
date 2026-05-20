@@ -26,10 +26,7 @@
 	{% set params = admin.extension_config_get({ 'ext': 'mod_activity' }) %}
 	<div class="card">
 		<div class="card-header">
-			<div>
-				<h3 class="card-title">{{ 'Activity Settings'|trans }}</h3>
-				<p class="card-subtitle">{{ 'Control how long system activity and sent email logs are retained before automatic cleanup.'|trans }}</p>
-			</div>
+			<h3 class="card-title">{{ 'Activity Settings'|trans }}</h3>
 		</div>
 
 		<form method="post" action="{{ 'extension/config_save'|api_url }}" {{ fb_api_form({message: 'Configuration Updated'|trans}) }}>

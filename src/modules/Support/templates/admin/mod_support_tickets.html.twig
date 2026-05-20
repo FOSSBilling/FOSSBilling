@@ -28,7 +28,7 @@
 {% block top_content %}
 {% if not filter_panel_open %}
     {% set statuses = admin.support_ticket_get_statuses %}
-    <section class="row row-cards mb-3 filter-panel-summary">
+    <section class="row row-cards mb-3">
         <div class="col-sm-6 col-lg-3">
             <a class="card card-sm card-link" href="{{ 'support'|url(query: { 'status': 'open' }) }}">
                 <div class="card-body">
@@ -90,131 +90,109 @@
 {% endblock %}
 
 {% block content %}
-    <div class="card">
-        <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'Support Tickets'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Manage client and public tickets, filter conversations, and open new support requests.'|trans }}</p>
-            </div>
-        </div>
-        <div class="card-body pt-3 pb-0 px-0">
-            <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                    <ul class="nav nav-pills card-header-pills">
-                        <li class="nav-item">
-                            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Tickets'|trans }}</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
-                                <svg class="icon me-2">
-                                    <use xlink:href="#plus" />
-                                </svg>
-                                {{ 'New Client Ticket'|trans }}
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#tab-email" data-bs-toggle="tab">
-                                <svg class="icon me-2">
-                                    <use xlink:href="#plus" />
-                                </svg>
-                                {{ 'New Public Ticket'|trans }}
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="tab-content border-top">
-                    <div class="tab-pane fade show active" id="tab-index" role="tabpanel" aria-labelledby="index-tab">
-            {{ include('partial_search.html.twig', {
-                search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : ''
-            }) }}
-            <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
-                <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
-                    {% if request.search %}
-                        <input type="hidden" name="search" value="{{ request.search }}">
-                    {% endif %}
-                    <div class="row g-3">
-                        <div class="col-md-6 col-xl-3">
-                            <div>
-                                <label class="form-label text-muted small mb-1" for="filter-ticket-client-id">{{ 'Client ID'|trans }}</label>
-                                <input class="form-control" type="text" id="filter-ticket-client-id" name="client_id" value="{{ request.client_id }}" placeholder="{{ 'Client ID'|trans }}">
-                            </div>
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Tickets'|trans }}</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New Client Ticket'|trans }}
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="#tab-email" data-bs-toggle="tab">
+                <svg class="icon me-2">
+                    <use xlink:href="#plus" />
+                </svg>
+                {{ 'New Public Ticket'|trans }}
+            </a>
+        </li>
+    </ul>
+
+<div class="card">
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-index" role="tabpanel" aria-labelledby="index-tab">
+            {{ include('partial_search.html.twig') }}
+            <section id="{{ filter_panel_id }}" class="card-body border-bottom collapse{% if filter_panel_open %} show{% endif %}">
+                <h5>{{ 'Filter Support Tickets'|trans }}</h5>
+                <form method="get">
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Client ID'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="client_id" value="{{ request.client_id }}">
                         </div>
-                        <div class="col-md-6 col-xl-3">
-                            <div>
-                                <label class="form-label text-muted small mb-1" for="filter-ticket-order-id">{{ 'Order ID'|trans }}</label>
-                                <input class="form-control" type="text" id="filter-ticket-order-id" name="order_id" value="{{ request.order_id }}" placeholder="{{ 'Order ID'|trans }}">
-                            </div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Order ID'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="order_id" value="{{ request.order_id }}">
                         </div>
-                        <div class="col-md-6 col-xl-3">
-                            <div>
-                                <label class="form-label text-muted small mb-1" for="filter-ticket-subject">{{ 'Ticket Subject'|trans }}</label>
-                                <input class="form-control" type="text" id="filter-ticket-subject" name="subject" value="{{ request.subject }}" placeholder="{{ 'Ticket Subject'|trans }}">
-                            </div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Ticket Subject'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="subject" value="{{ request.subject }}">
                         </div>
-                        <div class="col-md-6 col-xl-3">
-                            <div>
-                                <label class="form-label text-muted small mb-1" for="filter-ticket-message">{{ 'Ticket Messages'|trans }}</label>
-                                <input class="form-control" type="text" id="filter-ticket-message" name="content" value="{{ request.content }}" placeholder="{{ 'Search Ticket Messages'|trans }}">
-                            </div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Ticket Messages'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="content" value="{{ request.content }}">
                         </div>
-                        <div class="col-md-6 col-xl-3">
-                            <div>
-                                <label class="form-label text-muted small mb-1" for="filter-ticket-priority">{{ 'Priority'|trans }}</label>
-                                <input class="form-control" type="text" id="filter-ticket-priority" name="priority" value="{{ request.priority }}" placeholder="{{ 'Priority'|trans }}">
-                            </div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Priority'|trans }}</label>
+                        <div class="col">
+                            <input class="form-control" type="text" name="priority" value="{{ request.priority }}">
                         </div>
-                        <div class="col-md-6 col-xl-3">
-                            <div>
-                                <label class="form-label text-muted small mb-1" for="status">{{ 'Status'|trans }}</label>
-                                {{ mf.selectbox('status', admin.support_ticket_get_statuses({ 'titles': true }), request.status, 0, 'All Statuses'|trans) }}
-                            </div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}</label>
+                        <div class="col">
+                            {{ mf.selectbox('status', admin.support_ticket_get_statuses({ 'titles': true }), request.status, 0, 'All Statuses'|trans) }}
                         </div>
-                        <div class="col-md-6 col-xl-3">
-                            <div>
-                                <label class="form-label text-muted small mb-1" for="support_helpdesk_id">{{ 'Helpdesk'|trans }}</label>
-                                {{ mf.selectbox('support_helpdesk_id', admin.support_helpdesk_get_pairs, request.support_helpdesk_id, 0, 'All Helpdesks'|trans) }}
-                            </div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label">{{ 'Helpdesk'|trans }}:</label>
+                        <div class="col">
+                            {{ mf.selectbox('support_helpdesk_id', admin.support_helpdesk_get_pairs, request.support_helpdesk_id, 0, 'All Helpdesks'|trans) }}
                         </div>
-                        <div class="col-md-6 col-xl-3">
-                            <div>
-                                <label class="form-label text-muted small mb-1" for="created_at">{{ 'Created At'|trans }}</label>
-                                <div class="input-group">
-                                    <div class="input-icon w-100">
-                                        <input class="form-control datepicker"
-                                               id="created_at"
-                                               placeholder="{{ 'Select Date Range'|trans }}"
-                                               value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
-                                               data-name-from="date_from"
-                                               data-name-to="date_to"
-                                        >
-                                        <span class="input-icon-addon">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
-                                                <path d="M16 3l0 4"></path>
-                                                <path d="M8 3l0 4"></path>
-                                                <path d="M4 11l16 0"></path>
-                                                <path d="M11 15l1 0"></path>
-                                                <path d="M12 15l0 3"></path>
-                                            </svg>
-                                        </span>
-                                    </div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-3 col-form-label" for="created_at">{{ 'Created At'|trans }}</label>
+                        <div class="col">
+                            <div class="input-group">
+                                <div class="input-icon w-100">
+                                    <input class="form-control datepicker"
+                                           id="created_at"
+                                           value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
+                                           data-name-from="date_from"
+                                           data-name-to="date_to"
+                                    >
+                                    <span class="input-icon-addon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                            <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                                            <path d="M16 3l0 4"></path>
+                                            <path d="M8 3l0 4"></path>
+                                            <path d="M4 11l16 0"></path>
+                                            <path d="M11 15l1 0"></path>
+                                            <path d="M12 15l0 3"></path>
+                                        </svg>
+                                    </span>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="d-flex justify-content-end gap-2 mt-3">
-                        <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
-                        <button class="btn btn-primary" type="submit">
-                            <svg class="icon">
-                                <use xlink:href="#filter" />
-                            </svg>
-                            {{ 'Apply Filters'|trans }}
-                        </button>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary w-75" type="submit">{{ 'Filter'|trans }}</button>
+                        <a class="btn btn-danger w-25" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
                     </div>
                 </form>
             </section>
-            <div class="table-responsive">
             <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                 <thead>
                     <tr>
@@ -225,11 +203,11 @@
                         <th>{{ 'Subject'|trans }}</th>
                         <th>{{ 'Status'|trans }}</th>
                         <th>{{ 'Helpdesk'|trans }}</th>
-                        <th class="w-1 no-sort"></th>
+                        <th class="w-1"></th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% set tickets = admin.support_ticket_get_list({ 'per_page': 25, 'page': request.page, 'deep': 0, 'include_first': 0 }|merge(request)) %}
+                    {% set tickets = admin.support_ticket_get_list({ 'per_page': 30, 'page': request.page, 'deep': 0, 'include_first': 0 }|merge(request)) %}
                     {% for i, ticket in tickets.list %}
                     <tr class="priority_{{ ticket.priority }}">
                         <td>
@@ -261,7 +239,17 @@
                             {% endif %}
                             <span class="text-muted">{{ ticket.updated_at|timeago }} {{ 'ago'|trans }}</span>
                         </td>
-                        <td>{{ mf.status_badge(ticket.status, 'ticket') }}</td>
+                        <td>
+                            {% if ticket.status == 'open' %}
+                                <span class="badge bg-success me-1"></span>
+                            {% endif %}
+                            {% if ticket.status == 'on_hold' %}
+                                <span class="badge bg-warning me-1"></span>
+                            {% endif %}
+                            {% if ticket.status == 'closed' %}
+                                <span class="badge bg-secondary me-1"></span>
+                            {% endif %}
+                            {{ mf.status_name(ticket.status) }}</td>
                         <td>{{ ticket.helpdesk.name }}</td>
                         <td>
                             <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}#reply-box'>
@@ -284,7 +272,6 @@
                     {% endfor %}
                 </tbody>
             </table>
-            </div>
 
             <div class="card-footer d-flex align-items-center justify-content-between">
                 {% include 'partial_batch_delete.html.twig' with { 'action': 'support/batch_delete' } %}
@@ -293,7 +280,7 @@
         </div>
 
         <div class="tab-pane fade" id="tab-new" role="tabpanel" aria-labelledby="new-tab">
-            <div class="p-3">
+            <div class="card-body">
                 <h5>{{ 'Open Ticket for Existing Client'|trans }}</h5>
                 <form method="post" action="{{ 'support/ticket_create'|api_url }}" {{ fb_api_form({ redirect: 'support'|url }) }}>
                     <div class="form-group mb-3 row">
@@ -337,7 +324,7 @@
         </div>
 
         <div class="tab-pane fade" id="tab-email" role="tabpanel" aria-labelledby="email-tab">
-            <div class="p-3">
+            <div class="card-body">
                 <h5>{{ 'Open Public Ticket for Non-client'|trans }}</h5>
                 <form method="post" action="{{ 'support/public_ticket_create'|api_url }}" {{ fb_api_form({ callback: 'onAfterPublicTicketCreate' }) }}>
                     <div class="form-group mb-3 row">
@@ -368,10 +355,8 @@
                 </form>
             </div>
         </div>
-                </div>
-            </div>
-        </div>
     </div>
+</div>
 {% endblock %}
 
 {% block js %}

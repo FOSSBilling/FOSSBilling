@@ -30,45 +30,36 @@
     {% set can_invalidate_cache = has_permission('system', 'invalidate_cache') %}
     {% set can_toggle_error_reporting = has_permission('system', 'toggle_error_reporting') %}
     {% set can_manage_network_interface = has_permission('system', 'manage_network_interface') %}
-    <div class="card">
-        <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'System Settings'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Manage company information, localization, system maintenance, and environment-level controls.'|trans }}</p>
-            </div>
-        </div>
-        <div class="card-body pt-3 pb-0 px-0">
-            <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                    <ul class="nav nav-pills card-header-pills" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Company Details'|trans }}</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" href="#company-legal" data-bs-toggle="tab" role="tab">{{ 'Company Legal'|trans }}</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" href="#tab-localization" data-bs-toggle="tab" role="tab">{{ 'Localization'|trans }}</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" href="#tab-countries" data-bs-toggle="tab" role="tab">{{ 'Countries'|trans }}</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" href="#tab-cache" data-bs-toggle="tab" role="tab">{{ 'Cache'|trans }}</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" href="#tab-about" data-bs-toggle="tab" role="tab">{{ 'About'|trans }}</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" href="#tab-reporting" data-bs-toggle="tab" role="tab">{{ 'Error Reporting'|trans }}</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" href="#network-interface" data-bs-toggle="tab" role="tab">{{ 'Network Interface'|trans }}</a>
-                        </li>
-                    </ul>
-                </div>
+    <div class="card-tabs">
+        <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Company Details'|trans }}</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#company-legal" data-bs-toggle="tab" role="tab">{{ 'Company Legal'|trans }}</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#tab-localization" data-bs-toggle="tab" role="tab">{{ 'Localization'|trans }}</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#tab-countries" data-bs-toggle="tab" role="tab">{{ 'Countries'|trans }}</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#tab-cache" data-bs-toggle="tab" role="tab">{{ 'Cache'|trans }}</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#tab-about" data-bs-toggle="tab" role="tab">{{ 'About'|trans }}</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#tab-reporting" data-bs-toggle="tab" role="tab">{{ 'Error Reporting'|trans }}</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="#network-interface" data-bs-toggle="tab" role="tab">{{ 'Network Interface'|trans }}</a>
+            </li>
+        </ul>
 
-            <div class="tab-content border-top">
+        <div class="card">
+            <div class="tab-content">
                 <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
                     <form method="post" action="{{ 'system/update_params'|api_url }}" {{ fb_api_form({ message: 'Company Updated'|trans}) }}>
                         <div class="card-body">
@@ -685,7 +676,7 @@ ZW=Zimbabwe
                     </div>
                     <div class="card-body">
                         <div class="alert alert-info" role="alert" id="external-ip">
-                            <strong class="me-1">{{ 'Information:'|trans }}</strong>{{ "Checking external IP..."|trans }}
+                            {{ "Checking external IP..."|trans }}
                         </div>
                         {% if can_manage_network_interface %}
                             <form method="post" action="{{ 'system/set_interface_ip'|api_url }}" {{ fb_api_form({ callback: 'onAfterInterfaceSet'}) }}>
@@ -713,13 +704,11 @@ ZW=Zimbabwe
                             </form>
                         {% else %}
                             <div class="alert alert-warning" role="alert">
-                                <strong class="me-1">{{ 'Warning:'|trans }}</strong>{{ 'You do not have permission to manage the network interface.'|trans }}
+                                {{ 'You do not have permission to manage the network interface.'|trans }}
                             </div>
                         {% endif %}
                     </div>
                 </div>
-            </div>
-        </div>
             </div>
         </div>
     </div>
@@ -733,15 +722,15 @@ ZW=Zimbabwe
     function updateExternalIP() {
         const el = document.getElementById('external-ip');
         // Always show a loading state first
-        el.innerHTML = `<strong class="me-1">{{ 'Information:'|trans }}</strong>{{ "Checking external IP..."|trans }}`;
+        el.innerText = `{{ "Checking external IP..."|trans }}`;
         el.className = 'alert alert-info';
 
         API.admin.get('system/env', { ip: true }, function (ip) {
             if (ip) {
-                el.innerHTML = `<strong class="me-1">{{ 'Success:'|trans }}</strong>{{ 'With the current settings, your FOSSBilling instance will have an external IP address of: '|trans }}` + ip;
+                el.innerText = `{{ 'With the current settings, your FOSSBilling instance will have an external IP address of: '|trans }}` + ip;
                 el.className = 'alert alert-success';
             } else {
-                el.innerHTML = `<strong class="me-1">{{ 'Warning:'|trans }}</strong>{{ 'The currently selected network interface does not appear to be able to reach the internet!'|trans }}`;
+                el.innerText = `{{ 'The currently selected network interface does not appear to be able to reach the internet!'|trans }}`;
                 el.className = 'alert alert-danger';
             }
         });
