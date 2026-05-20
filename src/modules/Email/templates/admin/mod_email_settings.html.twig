@@ -69,6 +69,8 @@
             <div class="tab-content border-top">
                 {% if can_view_templates %}
                 <div class="tab-pane fade{% if active_tab == 'templates' %} show active{% endif %}" id="tab-index" role="tabpanel">
+                    {% set template_filter_panel_id = 'email-template-search-filters' %}
+                    {% set template_filter_panel_open = request_has_filters %}
 
                     {% if can_manage_templates %}
                     <div class="card-footer text-center">
@@ -92,9 +94,70 @@
                         </a>
                     </div>
                     {% endif %}
-                    {{ include('partial_search.html.twig') }}
+                    {{ include('partial_search.html.twig', {
+                        has_filter_panel: true,
+                        filter_panel_id: template_filter_panel_id,
+                        filter_panel_open: template_filter_panel_open,
+                        search_body_class: template_filter_panel_open ? 'pb-2 border-bottom-0' : ''
+                    }) }}
+                    <section id="{{ template_filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if template_filter_panel_open %} show{% endif %}">
+                        <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
+                            {% if request.search %}
+                                <input type="hidden" name="search" value="{{ request.search }}">
+                            {% endif %}
+                            <div class="row g-3">
+                                <div class="col-md-6 col-xl-3">
+                                    <div>
+                                        <label class="form-label text-muted small mb-1" for="template-id">{{ 'Template ID'|trans }}</label>
+                                        <input class="form-control" type="text" id="template-id" name="id" value="{{ request.id }}" placeholder="{{ 'Template ID'|trans }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6 col-xl-3">
+                                    <div>
+                                        <label class="form-label text-muted small mb-1" for="template-code">{{ 'Action Code'|trans }}</label>
+                                        <input class="form-control" type="text" id="template-code" name="code" value="{{ request.code }}" placeholder="{{ 'Action Code'|trans }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6 col-xl-3">
+                                    <div>
+                                        <label class="form-label text-muted small mb-1" for="template-category">{{ 'Category'|trans }}</label>
+                                        <input class="form-control" type="text" id="template-category" name="category" value="{{ request.category }}" placeholder="{{ 'Category'|trans }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6 col-xl-3">
+                                    <div>
+                                        <label class="form-label text-muted small mb-1" for="template-enabled">{{ 'Enabled'|trans }}</label>
+                                        <select class="form-select" id="template-enabled" name="enabled">
+                                            <option value="">{{ 'All Templates'|trans }}</option>
+                                            <option value="1"{% if request.enabled is same as('1') or request.enabled is same as(1) %} selected{% endif %}>{{ 'Enabled'|trans }}</option>
+                                            <option value="0"{% if request.enabled is same as('0') or request.enabled is same as(0) %} selected{% endif %}>{{ 'Disabled'|trans }}</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 col-xl-3">
+                                    <div>
+                                        <label class="form-label text-muted small mb-1" for="template-type">{{ 'Type'|trans }}</label>
+                                        <select class="form-select" id="template-type" name="type">
+                                            <option value="">{{ 'All Types'|trans }}</option>
+                                            <option value="builtin"{% if request.type == 'builtin' %} selected{% endif %}>{{ 'Built-in'|trans }}</option>
+                                            <option value="custom"{% if request.type == 'custom' %} selected{% endif %}>{{ 'Custom'|trans }}</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end gap-2 mt-3">
+                                <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
+                                <button class="btn btn-primary" type="submit">
+                                    <svg class="icon">
+                                        <use xlink:href="#filter" />
+                                    </svg>
+                                    {{ 'Apply Filters'|trans }}
+                                </button>
+                            </div>
+                        </form>
+                    </section>
                     <div class="table-responsive">
-                        <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                        <table class="table card-table table-vcenter table-striped sortable">
                             <thead>
                             <tr>
                                 <th class="w-1">{{ 'Subject'|trans }}</th>
@@ -126,11 +189,11 @@
                                     {% set status_class = 'bg-secondary-lt' %}
                                 {% endif %}
                                 <tr>
-                                    <td>
+                                    <td class="text-wrap">
                                         <a href='{{ "email/template/#{template.id}"|url }}'>{{ template.subject }}</a>
                                     </td>
-                                    <td>{{ template.category }}</td>
-                                    <td>{{ template.action_code }}</td>
+                                    <td class="text-wrap">{{ template.category }}</td>
+                                    <td class="text-break">{{ template.action_code }}</td>
                                     <td><span class="badge {{ type_class }}">{{ type_label }}</span></td>
                                     <td><span class="badge {{ status_class }}">{{ status_label }}</span></td>
                                     <td>
