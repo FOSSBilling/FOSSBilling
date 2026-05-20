@@ -1603,15 +1603,28 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 ON spc.id = sp.support_pr_category_id';
 
         $search = $data['search'] ?? null;
+        $id = $data['id'] ?? null;
+        $categoryId = $data['category_id'] ?? null;
 
         $where = [];
         $bindings = [];
 
+        if ($id !== null && $id !== '') {
+            $where[] = 'sp.id = :id';
+            $bindings[':id'] = (int) $id;
+        }
+
         if ($search) {
             $search = '%' . $search . '%';
-            $where[] = '(title LIKE :title OR content LIKE :content)';
+            $where[] = '(sp.title LIKE :title OR sp.content LIKE :content OR spc.title LIKE :category_title)';
             $bindings[':title'] = $search;
             $bindings[':content'] = $search;
+            $bindings[':category_title'] = $search;
+        }
+
+        if ($categoryId !== null && $categoryId !== '') {
+            $where[] = 'sp.support_pr_category_id = :category_id';
+            $bindings[':category_id'] = (int) $categoryId;
         }
 
         if (!empty($where)) {

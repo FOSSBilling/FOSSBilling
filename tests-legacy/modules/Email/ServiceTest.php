@@ -120,6 +120,25 @@ final class ServiceTest extends \BBTestCase
                     ':client_id' => 5,
                 ],
             ],
+            [
+                [
+                    'id' => '15',
+                    'sender' => 'staff@example.com',
+                    'recipient' => 'client@example.com',
+                    'subject' => 'Invoice',
+                    'date_from' => '2026-01-10',
+                    'date_to' => '2026-01-12',
+                ],
+                'SELECT * FROM activity_client_email WHERE id = :id AND sender LIKE :filter_sender AND recipients LIKE :filter_recipient AND subject LIKE :filter_subject AND created_at >= :date_from AND created_at <= :date_to ORDER BY id DESC',
+                [
+                    ':id' => 15,
+                    ':filter_sender' => '%staff@example.com%',
+                    ':filter_recipient' => '%client@example.com%',
+                    ':filter_subject' => '%Invoice%',
+                    ':date_from' => '2026-01-10 00:00:00',
+                    ':date_to' => '2026-01-12 23:59:59',
+                ],
+            ],
         ];
     }
 

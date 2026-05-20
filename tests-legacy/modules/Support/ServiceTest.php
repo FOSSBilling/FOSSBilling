@@ -2341,6 +2341,27 @@ final class ServiceTest extends \BBTestCase
         $this->assertIsArray($bindings);
     }
 
+    public function testCannedGetSearchQueryWithCategoryAndIdFilters(): void
+    {
+        $di = $this->getDi();
+
+        $this->service->setDi($di);
+
+        $data = [
+            'id' => '3',
+            'category_id' => '7',
+        ];
+
+        [$query, $bindings] = $this->service->cannedGetSearchQuery($data);
+
+        $this->assertStringContainsString('sp.id = :id', $query);
+        $this->assertStringContainsString('sp.support_pr_category_id = :category_id', $query);
+        $this->assertSame([
+            ':id' => 3,
+            ':category_id' => 7,
+        ], $bindings);
+    }
+
     public function testCannedGetGroupedPairs(): void
     {
         $pairs = [

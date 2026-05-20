@@ -92,10 +92,21 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $query = 'SELECT * FROM activity_client_email';
 
         $search = $data['search'] ?? null;
+        $id = $data['id'] ?? null;
         $client_id = $data['client_id'] ?? null;
+        $sender = $data['sender'] ?? null;
+        $recipient = $data['recipient'] ?? null;
+        $subject = $data['subject'] ?? null;
+        $date_from = $data['date_from'] ?? null;
+        $date_to = $data['date_to'] ?? null;
 
         $where = [];
         $bindings = [];
+
+        if ($id !== null && $id !== '') {
+            $where[] = 'id = :id';
+            $bindings[':id'] = (int) $id;
+        }
 
         if ($search) {
             $search = "%$search%";
@@ -107,9 +118,34 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $bindings[':content_html'] = $search;
         }
 
+        if ($sender !== null && $sender !== '') {
+            $where[] = 'sender LIKE :filter_sender';
+            $bindings[':filter_sender'] = '%' . $sender . '%';
+        }
+
+        if ($recipient !== null && $recipient !== '') {
+            $where[] = 'recipients LIKE :filter_recipient';
+            $bindings[':filter_recipient'] = '%' . $recipient . '%';
+        }
+
+        if ($subject !== null && $subject !== '') {
+            $where[] = 'subject LIKE :filter_subject';
+            $bindings[':filter_subject'] = '%' . $subject . '%';
+        }
+
         if ($client_id !== null) {
             $where[] = 'client_id = :client_id';
             $bindings[':client_id'] = $client_id;
+        }
+
+        if ($date_from !== null && $date_from !== '') {
+            $where[] = 'created_at >= :date_from';
+            $bindings[':date_from'] = date('Y-m-d 00:00:00', strtotime((string) $date_from));
+        }
+
+        if ($date_to !== null && $date_to !== '') {
+            $where[] = 'created_at <= :date_to';
+            $bindings[':date_to'] = date('Y-m-d 23:59:59', strtotime((string) $date_to));
         }
 
         if (!empty($where)) {
