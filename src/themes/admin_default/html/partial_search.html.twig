@@ -4,6 +4,9 @@
             <div class="ms-2 d-inline-block">
                 <div class="d-flex">
                     <form method="get">
+                        {% for field_name, field_value in search_hidden_fields|default({}) %}
+                            <input type="hidden" name="{{ field_name }}" value="{{ field_value }}">
+                        {% endfor %}
                         <div class="input-group input-group-flat">
                             <input class="form-control"
                                 type="search"
