@@ -396,7 +396,7 @@ final class AdminTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testUpdateEmailALreadyRegistered(): void
+    public function testUpdateEmailAlreadyRegistered(): void
     {
         $data = [
             'id' => 1,
