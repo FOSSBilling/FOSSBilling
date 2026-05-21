@@ -1101,7 +1101,7 @@ final class ServiceTest extends \BBTestCase
         $di['logger'] = $logMock;
         $di['db'] = $dbMock;
         $di['password'] = $passwordMock;
-        $di['mod_service'] = $di->protect(fn () => $profileService);
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\Stub => $profileService);
 
         $serviceMock->setDi($di);
 
