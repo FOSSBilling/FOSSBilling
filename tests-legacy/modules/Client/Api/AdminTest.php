@@ -651,11 +651,11 @@ final class AdminTest extends \BBTestCase
             return false;
         });
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
 
         $this->expectException(\FOSSBilling\InformationException::class);
-        $admin_Client->balance_get_list($data);
+        $adminClient->balance_get_list($data);
     }
 
     public function testBalanceDelete(): void
