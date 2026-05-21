@@ -172,8 +172,8 @@ class Session implements InjectionAwareInterface
                 'expires' => time() - 3600,
                 'path' => $cookieParams['path'] ?? '/',
                 'domain' => $cookieParams['domain'] ?? '',
-                'secure' => (bool) ($cookieParams['secure'] ?? false),
-                'httponly' => (bool) ($cookieParams['httponly'] ?? false),
+                'secure' => $cookieParams['secure'] ?? false,
+                'httponly' => $cookieParams['httponly'] ?? false,
             ];
             if (!empty($cookieParams['samesite'])) {
                 $cookieOptions['samesite'] = $cookieParams['samesite'];

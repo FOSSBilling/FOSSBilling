@@ -189,7 +189,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['logger'] = $logMock;
-        $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\Stub => match ($name) {
             'Staff' => $staffServiceMock,
             default => throw new \RuntimeException("Unexpected mod_service request: $name"),
         });
@@ -1181,7 +1181,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\Stub => match ($name) {
             'Staff' => $staffServiceMock,
             default => throw new \RuntimeException("Unexpected mod_service request: $name"),
         });
@@ -1208,7 +1208,7 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
-        $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\Stub => match ($name) {
             'Staff' => $staffServiceMock,
             default => throw new \RuntimeException("Unexpected mod_service request: $name"),
         });
@@ -1244,7 +1244,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['events_manager'] = $eventMock;
         $di['logger'] = $logMock;
-        $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\Stub => match ($name) {
             'Staff' => $staffServiceMock,
             default => throw new \RuntimeException("Unexpected mod_service request: $name"),
         });
