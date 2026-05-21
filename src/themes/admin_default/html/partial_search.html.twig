@@ -8,11 +8,13 @@
                         <input type="hidden" name="{{ field_name }}" value="{{ field_value }}">
                     {% endfor %}
                     <div class="input-group input-group-flat search-input-group">
-                        <button class="input-group-text search-submit-toggle" type="submit" aria-label="{{ 'Search'|trans }}" title="{{ 'Search'|trans }}">
-                            <svg class="icon">
-                                <use xlink:href="#search" />
-                            </svg>
-                        </button>
+                        <span class="input-group-text">
+                            <button class="search-submit-toggle" type="submit" aria-label="{{ 'Search'|trans }}" title="{{ 'Search'|trans }}">
+                                <svg class="icon">
+                                    <use xlink:href="#search" />
+                                </svg>
+                            </button>
+                        </span>
                         <input class="form-control"
                             type="search"
                             name="search"
@@ -27,7 +29,7 @@
                                 data-bs-target="#{{ filter_panel_id|default('page-search-filters') }}"
                                 aria-expanded="{% if filter_panel_open|default(false) %}true{% else %}false{% endif %}"
                                 aria-controls="{{ filter_panel_id|default('page-search-filters') }}"
-                                title="{{ 'Search settings'|trans }}">
+                                title="{{ 'Search Settings'|trans }}">
                                 <svg class="icon">
                                     <use xlink:href="#settings" />
                                 </svg>
@@ -51,11 +53,13 @@
                                 <input type="hidden" name="{{ field_name }}" value="{{ field_value }}">
                             {% endfor %}
                             <div class="input-group input-group-flat search-input-group">
-                                <button class="input-group-text search-submit-toggle" type="submit" aria-label="{{ 'Search'|trans }}" title="{{ 'Search'|trans }}">
-                                    <svg class="icon">
-                                        <use xlink:href="#search" />
-                                    </svg>
-                                </button>
+                                <span class="input-group-text">
+                                    <button class="search-submit-toggle" type="submit" aria-label="{{ 'Search'|trans }}" title="{{ 'Search'|trans }}">
+                                        <svg class="icon">
+                                            <use xlink:href="#search" />
+                                        </svg>
+                                    </button>
+                                </span>
                                 <input class="form-control"
                                     type="search"
                                     name="search"
@@ -70,7 +74,7 @@
                                         data-bs-target="#{{ filter_panel_id|default('page-search-filters') }}"
                                         aria-expanded="{% if filter_panel_open|default(false) %}true{% else %}false{% endif %}"
                                         aria-controls="{{ filter_panel_id|default('page-search-filters') }}"
-                                        title="{{ 'Search settings'|trans }}">
+                                        title="{{ 'Search Settings'|trans }}">
                                         <svg class="icon">
                                             <use xlink:href="#settings" />
                                         </svg>
