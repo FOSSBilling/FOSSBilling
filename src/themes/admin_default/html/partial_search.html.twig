@@ -1,8 +1,9 @@
 <div class="card-body border-bottom py-3 {{ search_body_class|default('') }}">
     {% set has_search_toolbar_actions = search_toolbar_actions is defined and search_toolbar_actions is not empty %}
+    {% set search_max_width = search_max_width|default('22rem') %}
     {% if has_search_toolbar_actions %}
         <div class="d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center justify-content-lg-end gap-3">
-            <div class="text-muted w-100 w-lg-auto" style="max-width: 28rem;">
+            <div class="text-muted w-100 w-lg-auto" style="max-width: {{ search_max_width }};">
                 <form method="get">
                     {% for field_name, field_value in search_hidden_fields|default({}) %}
                         <input type="hidden" name="{{ field_name }}" value="{{ field_value }}">
