@@ -687,10 +687,10 @@ final class AdminTest extends \BBTestCase
         });
         $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
 
-        $result = $admin_Client->balance_delete($data);
+        $result = $adminClient->balance_delete($data);
         $this->assertTrue($result);
     }
 
@@ -726,10 +726,10 @@ final class AdminTest extends \BBTestCase
 
         $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
 
-        $result = $admin_Client->balance_add_funds($data);
+        $result = $adminClient->balance_add_funds($data);
         $this->assertTrue($result);
     }
 
