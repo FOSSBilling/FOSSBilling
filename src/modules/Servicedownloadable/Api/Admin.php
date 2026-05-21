@@ -29,7 +29,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function upload($data)
     {
-        $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
+        $model = $this->di['mod_service']('product')->findProductById((int) $data['id']);
 
         $request = $this->di['request'];
         if (!$request->files->has('file_data')) {
@@ -73,7 +73,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function config_save($data)
     {
-        $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
+        $model = $this->di['mod_service']('product')->findProductById((int) $data['id']);
 
         $service = $this->getService();
 
@@ -92,7 +92,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function send_file($data): Response
     {
-        $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
+        $model = $this->di['mod_service']('product')->findProductById((int) $data['id']);
 
         $service = $this->getService();
 

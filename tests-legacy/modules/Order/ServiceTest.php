@@ -31,6 +31,21 @@ final class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
+    private function createProductEntity(?int $id = null, ?string $type = null): \Box\Mod\Product\Entity\Product
+    {
+        $product = new \Box\Mod\Product\Entity\Product();
+        if ($id !== null) {
+            $reflection = new \ReflectionProperty($product, 'id');
+            $reflection->setAccessible(true);
+            $reflection->setValue($product, $id);
+        }
+        if ($type !== null) {
+            $product->setType($type);
+        }
+
+        return $product;
+    }
+
     public function testCounter(): void
     {
         $counter = [
@@ -801,7 +816,7 @@ final class ServiceTest extends \BBTestCase
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
         $order->service_id = 1;
-        $order->service_type = \Model_ProductTable::CUSTOM;
+        $order->service_type = \Box\Mod\Product\Service::CUSTOM;
 
         $result = $this->service->getOrderService($order);
         $this->assertInstanceOf('Model_ServiceCustom', $result);
@@ -920,9 +935,7 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
         $this->service->setDi($di);
 
-        $product = new \Model_Product();
-        $product->loadBean(new \DummyBean());
-        $product->id = 1;
+        $product = $this->createProductEntity(1);
 
         $result = $this->service->productHasOrders($product);
 
@@ -1123,15 +1136,8 @@ final class ServiceTest extends \BBTestCase
             ->method('getAssoc')
             ->willReturn([]);
 
-        $modelProduct = new \Model_Product();
-        $modelProduct->loadBean(new \DummyBean());
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
-        $dbMock->expects($this->atLeastOnce())
-            ->method('load')
-            ->willReturnCallback(fn (...$args): \Model_Product => match ($args[0]) {
-                'Product' => $modelProduct,
-            });
 
         $exceptionError = 'Client not found';
         $dbMock->expects($this->atLeastOnce())
@@ -1139,13 +1145,22 @@ final class ServiceTest extends \BBTestCase
             ->with('Client', $model->client_id, $exceptionError)
             ->willReturn($modelClient);
 
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('getProductPluginById')
+            ->with((int) $model->product_id)
+            ->willReturn(null);
+
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(function ($serviceName) use ($clientService, $supportService) {
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($clientService, $supportService, $productService) {
             if ($serviceName == 'client') {
                 return $clientService;
             }
             if ($serviceName == 'support') {
                 return $supportService;
+            }
+            if ($serviceName == 'product') {
+                return $productService;
             }
         });
         $di['db'] = $dbMock;
@@ -1245,6 +1260,11 @@ final class ServiceTest extends \BBTestCase
                 'co.id IN (:ids)',
                 [':ids' => [1, 2, 3]],
             ],
+            [
+                ['promo_id' => 9],
+                'co.promo_id = :promo_id',
+                [':promo_id' => 9],
+            ],
 
             [
                 ['meta' => ['param' => 'value']],
@@ -1296,8 +1316,7 @@ final class ServiceTest extends \BBTestCase
         $modelClient = new \Model_Client();
         $modelClient->loadBean(new \DummyBean());
 
-        $modelProduct = new \Model_Product();
-        $modelProduct->loadBean(new \DummyBean());
+        $modelProduct = $this->createProductEntity();
 
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
@@ -1332,11 +1351,9 @@ final class ServiceTest extends \BBTestCase
         $modelClient->loadBean(new \DummyBean());
         $modelClient->currency = 'USD';
 
-        $modelProduct = new \Model_Product();
-        $modelProduct->loadBean(new \DummyBean());
-        $modelProduct->id = 1;
+        $modelProduct = $this->createProductEntity(1);
 
-        $currencyModel = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)->disableOriginalConstructor()->getMock();
+        $currencyModel = $this->createStub('\\' . \Box\Mod\Currency\Entity\Currency::class);
 
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
@@ -1387,12 +1404,10 @@ final class ServiceTest extends \BBTestCase
         $modelClient->loadBean(new \DummyBean());
         $modelClient->currency = 'USD';
 
-        $modelProduct = new \Model_Product();
-        $modelProduct->loadBean(new \DummyBean());
-        $modelProduct->id = 1;
-        $modelProduct->is_addon = 1;
+        $modelProduct = $this->createProductEntity(1);
+        $modelProduct->setIsAddon(true);
 
-        $currencyModel = $this->getMockBuilder(\Box\Mod\Currency\Entity\Currency::class)->disableOriginalConstructor()->getMock();
+        $currencyModel = $this->createStub(\Box\Mod\Currency\Entity\Currency::class);
 
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
@@ -1443,11 +1458,9 @@ final class ServiceTest extends \BBTestCase
         $modelClient->loadBean(new \DummyBean());
         $modelClient->currency = 'USD';
 
-        $modelProduct = new \Model_Product();
-        $modelProduct->loadBean(new \DummyBean());
-        $modelProduct->id = 1;
+        $modelProduct = $this->createProductEntity(1);
 
-        $currencyModel = $this->getMockBuilder(\Box\Mod\Currency\Entity\Currency::class)->disableOriginalConstructor()->getMock();
+        $currencyModel = $this->createStub(\Box\Mod\Currency\Entity\Currency::class);
 
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
@@ -1504,12 +1517,9 @@ final class ServiceTest extends \BBTestCase
         $modelClient->loadBean(new \DummyBean());
         $modelClient->currency = 'USD';
 
-        $modelProduct = new \Model_Product();
-        $modelProduct->loadBean(new \DummyBean());
-        $modelProduct->id = 1;
-        $modelProduct->type = 'custom';
+        $modelProduct = $this->createProductEntity(1, 'custom');
 
-        $currencyModel = $this->getMockBuilder(\Box\Mod\Currency\Entity\Currency::class)->disableOriginalConstructor()->getMock();
+        $currencyModel = $this->createStub(\Box\Mod\Currency\Entity\Currency::class);
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
@@ -1532,7 +1542,10 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $productServiceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
+        $productServiceMock = $this->createStub(\Box\Mod\Servicecustom\Service::class);
+        $pricingServiceMock = $this->createMock(\Box\Mod\Product\Service::class);
+        $pricingServiceMock->expects($this->never())
+            ->method('getProductOrderLineConfig');
 
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -1561,12 +1574,15 @@ final class ServiceTest extends \BBTestCase
             ->willReturn('1Y');
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(function ($serviceName) use ($currencyServiceMock, $cartServiceMock, $productServiceMock) {
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($currencyServiceMock, $cartServiceMock, $productServiceMock, $pricingServiceMock) {
             if ($serviceName == 'currency') {
                 return $currencyServiceMock;
             }
             if ($serviceName == 'cart') {
                 return $cartServiceMock;
+            }
+            if ($serviceName == 'Product') {
+                return $pricingServiceMock;
             }
             if ($serviceName == 'servicecustom') {
                 return $productServiceMock;
@@ -1588,13 +1604,10 @@ final class ServiceTest extends \BBTestCase
         $modelClient->loadBean(new \DummyBean());
         $modelClient->currency = 'USD';
 
-        $modelProduct = new \Model_Product();
-        $modelProduct->loadBean(new \DummyBean());
-        $modelProduct->id = 1;
-        $modelProduct->type = 'custom';
-        $modelProduct->form_id = 42;
+        $modelProduct = $this->createProductEntity(1, 'custom');
+        $modelProduct->setFormId(42);
 
-        $currencyModel = $this->getMockBuilder(\Box\Mod\Currency\Entity\Currency::class)->disableOriginalConstructor()->getMock();
+        $currencyModel = $this->createStub(\Box\Mod\Currency\Entity\Currency::class);
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
@@ -1617,7 +1630,10 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $productServiceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
+        $productServiceMock = $this->createStub(\Box\Mod\Servicecustom\Service::class);
+        $pricingServiceMock = $this->createMock(\Box\Mod\Product\Service::class);
+        $pricingServiceMock->expects($this->never())
+            ->method('getProductOrderLineConfig');
 
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -1646,12 +1662,15 @@ final class ServiceTest extends \BBTestCase
             ->willReturn('1Y');
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(function ($serviceName) use ($currencyServiceMock, $cartServiceMock, $productServiceMock) {
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($currencyServiceMock, $cartServiceMock, $productServiceMock, $pricingServiceMock) {
             if ($serviceName == 'currency') {
                 return $currencyServiceMock;
             }
             if ($serviceName == 'cart') {
                 return $cartServiceMock;
+            }
+            if ($serviceName == 'Product') {
+                return $pricingServiceMock;
             }
             if ($serviceName == 'servicecustom') {
                 return $productServiceMock;
@@ -1674,12 +1693,9 @@ final class ServiceTest extends \BBTestCase
         $modelClient->loadBean(new \DummyBean());
         $modelClient->currency = 'USD';
 
-        $modelProduct = new \Model_Product();
-        $modelProduct->loadBean(new \DummyBean());
-        $modelProduct->id = 1;
-        $modelProduct->type = 'custom';
+        $modelProduct = $this->createProductEntity(1, 'custom');
 
-        $currencyModel = $this->getMockBuilder(\Box\Mod\Currency\Entity\Currency::class)->disableOriginalConstructor()->getMock();
+        $currencyModel = $this->createStub(\Box\Mod\Currency\Entity\Currency::class);
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
@@ -1704,7 +1720,10 @@ final class ServiceTest extends \BBTestCase
         $eventMock->expects($this->atLeastOnce())
             ->method('fire');
 
-        $productServiceMock = $this->getMockBuilder(\Box\Mod\Servicecustom\Service::class)->getMock();
+        $productServiceMock = $this->createStub(\Box\Mod\Servicecustom\Service::class);
+        $pricingServiceMock = $this->createMock(\Box\Mod\Product\Service::class);
+        $pricingServiceMock->expects($this->never())
+            ->method('getProductOrderLineConfig');
 
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
@@ -1762,12 +1781,15 @@ final class ServiceTest extends \BBTestCase
             ->willReturn('1Y');
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(function ($serviceName) use ($cartServiceMock, $currencyServiceMock, $invoiceServiceMock, $productServiceMock) {
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($cartServiceMock, $currencyServiceMock, $invoiceServiceMock, $productServiceMock, $pricingServiceMock) {
             if ($serviceName == 'currency') {
                 return $currencyServiceMock;
             }
             if ($serviceName == 'cart') {
                 return $cartServiceMock;
+            }
+            if ($serviceName == 'Product') {
+                return $pricingServiceMock;
             }
             if ($serviceName == 'invoice') {
                 return $invoiceServiceMock;
@@ -1792,6 +1814,116 @@ final class ServiceTest extends \BBTestCase
         ]);
 
         $this->assertSame($newId, $result);
+    }
+
+    public function testCreateOrderUsesProductPricingServiceForDomainOrders(): void
+    {
+        $modelClient = new \Model_Client();
+        $modelClient->loadBean(new \DummyBean());
+        $modelClient->currency = 'USD';
+
+        $modelProduct = $this->createProductEntity(10, \Box\Mod\Product\Service::DOMAIN);
+        $modelProduct->setUnit('year');
+
+        $currencyModel = $this->createStub(\Box\Mod\Currency\Entity\Currency::class);
+        $currencyModel->method('getCode')
+            ->willReturn('USD');
+
+        $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $currencyRepositoryMock->expects($this->once())
+            ->method('findOneByCode')
+            ->with('USD')
+            ->willReturn($currencyModel);
+        $currencyRepositoryMock->expects($this->once())
+            ->method('getRateByCode')
+            ->with('USD')
+            ->willReturn(1.0);
+
+        $currencyServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
+            ->onlyMethods(['getCurrencyRepository'])
+            ->getMock();
+        $currencyServiceMock->expects($this->atLeastOnce())
+            ->method('getCurrencyRepository')
+            ->willReturn($currencyRepositoryMock);
+
+        $cartServiceMock = $this->getMockBuilder('\\' . \Box\Mod\Cart\Service::class)->getMock();
+        $cartServiceMock->expects($this->atLeastOnce())
+            ->method('isStockAvailable')
+            ->with($modelProduct)
+            ->willReturn(true);
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->atLeastOnce())
+            ->method('fire');
+
+        $domainServiceMock = $this->createStub(\Box\Mod\Servicedomain\Service::class);
+
+        $pricingServiceMock = $this->createMock(\Box\Mod\Product\Service::class);
+        $pricingServiceMock->expects($this->once())
+            ->method('getProductOrderLineConfig')
+            ->with(
+                $modelProduct,
+                $this->callback(static fn (array $config): bool => ($config['quantity'] ?? null) === 1)
+            )
+            ->willReturn([
+                'price' => 22.0,
+                'quantity' => 2,
+                'setup_price' => 0.0,
+            ]);
+
+        $clientOrderModel = new \Model_ClientOrder();
+        $clientOrderModel->loadBean(new \DummyBean());
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('transaction')
+            ->willReturnCallback(fn (callable $callback) => $callback());
+        $dbMock->expects($this->atLeastOnce())
+            ->method('dispense')
+            ->with('ClientOrder')
+            ->willReturn($clientOrderModel);
+        $newId = 10;
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->with($clientOrderModel)
+            ->willReturn($newId);
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->with('ClientOrder', $newId, 'Order not found')
+            ->willReturn($clientOrderModel);
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($currencyServiceMock, $cartServiceMock, $domainServiceMock, $pricingServiceMock) {
+            if ($serviceName == 'currency') {
+                return $currencyServiceMock;
+            }
+            if ($serviceName == 'cart') {
+                return $cartServiceMock;
+            }
+            if ($serviceName == 'Product') {
+                return $pricingServiceMock;
+            }
+            if ($serviceName == 'servicedomain') {
+                return $domainServiceMock;
+            }
+        });
+        $di['events_manager'] = $eventMock;
+        $di['db'] = $dbMock;
+        $di['logger'] = new \Box_Log();
+
+        $this->service->setDi($di);
+        $result = $this->service->createOrder($modelClient, $modelProduct, [
+            'action' => 'register',
+            'register_tld' => '.com',
+            'register_sld' => 'example',
+            'register_years' => 2,
+        ]);
+
+        $this->assertSame($newId, $result);
+        $this->assertSame(2, $clientOrderModel->quantity);
+        $this->assertSame(22.0, $clientOrderModel->price);
     }
 
     public function testGetMasterOrderForClient(): void
@@ -1909,18 +2041,19 @@ final class ServiceTest extends \BBTestCase
 
     public function testStockSale(): void
     {
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $productModel->stock_control = 1;
-        $productModel->quantity_in_stock = 5;
-
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('store')
-            ->with($productModel);
+        $productModel = $this->createProductEntity();
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('reduceStock')
+            ->with($productModel, 2)
+            ->willReturn(true);
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($productService) {
+            if ($serviceName == 'product') {
+                return $productService;
+            }
+        });
         $this->service->setDi($di);
 
         $result = $this->service->stockSale($productModel, 2);
@@ -1929,18 +2062,19 @@ final class ServiceTest extends \BBTestCase
 
     public function testStockSaleThrowsWhenQuantityWouldGoNegative(): void
     {
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $productModel->id = 1;
-        $productModel->stock_control = 1;
-        $productModel->quantity_in_stock = 1;
-
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->never())
-            ->method('store');
+        $productModel = $this->createProductEntity(1);
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('reduceStock')
+            ->with($productModel, 2)
+            ->willThrowException(new \FOSSBilling\InformationException('Product :id is out of stock.', [':id' => 1], 831));
 
         $di = $this->getDi();
-        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($productService) {
+            if ($serviceName == 'product') {
+                return $productService;
+            }
+        });
         $this->service->setDi($di);
 
         $this->expectException(\FOSSBilling\InformationException::class);
@@ -2164,6 +2298,10 @@ final class ServiceTest extends \BBTestCase
     {
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
+        $clientModel->id = 100;
+
+        $orderModel = new \Model_ClientOrder();
+        $orderModel->loadBean(new \DummyBean());
 
         $queryBuilderMock = new class {
             private bool $deleteCalled = false;
@@ -2244,8 +2382,21 @@ final class ServiceTest extends \BBTestCase
             }
         };
 
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('find')
+            ->with('ClientOrder', 'client_id = ?', [100])
+            ->willReturn([$orderModel]);
+
+        $productServiceMock = $this->createMock(\Box\Mod\Product\Service::class);
+        $productServiceMock->expects($this->once())
+            ->method('releaseReservedPromoRedemptionsForOrder')
+            ->with($orderModel, 'client_deleted');
+
         $di = new \Pimple\Container();
+        $di['db'] = $dbMock;
         $di['dbal'] = $dbalMock;
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productServiceMock);
         $this->service->setDi($di);
         $this->service->rmByClient($clientModel);
 

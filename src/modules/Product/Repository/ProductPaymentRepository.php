@@ -9,6 +9,11 @@ declare(strict_types=1);
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-class Model_ProductLicense extends RedBeanPHP\SimpleModel
+
+namespace Box\Mod\Product\Repository;
+
+use Doctrine\ORM\EntityRepository;
+
+class ProductPaymentRepository extends EntityRepository
 {
 }

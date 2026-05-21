@@ -31,7 +31,7 @@ final class AdminTest extends \BBTestCase
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getOrderService');
 
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->createStub(\FOSSBilling\Validate::class);
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
@@ -82,9 +82,8 @@ final class AdminTest extends \BBTestCase
             'update_orders' => true,
         ];
 
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $productModel->config = '{"filename": "test.txt"}';
+        $productModel = new \Box\Mod\Product\Entity\Product();
+        $productModel->setConfig('{"filename": "test.txt"}');
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Servicedownloadable\Service::class)->getMock();
         $serviceMock->expects($this->atLeastOnce())
@@ -92,14 +91,20 @@ final class AdminTest extends \BBTestCase
             ->with($productModel, $data)
             ->willReturn(true);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->with('Product', $data['id'], 'Product not found')
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('findProductById')
+            ->with($data['id'])
             ->willReturn($productModel);
 
         $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function (string $service) use ($productService) {
+            if ($service === 'product') {
+                return $productService;
+            }
+
+            throw new \RuntimeException('Unexpected service request');
+        });
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -116,14 +121,20 @@ final class AdminTest extends \BBTestCase
             'update_orders' => true,
         ];
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->with('Product', $data['id'], 'Product not found')
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('findProductById')
+            ->with($data['id'])
             ->willThrowException(new \FOSSBilling\Exception('Product not found'));
 
         $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function (string $service) use ($productService) {
+            if ($service === 'product') {
+                return $productService;
+            }
+
+            throw new \RuntimeException('Unexpected service request');
+        });
 
         $this->api->setDi($di);
 
@@ -136,14 +147,20 @@ final class AdminTest extends \BBTestCase
     {
         $data = ['id' => 999];
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->with('Product', $data['id'], 'Product not found')
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('findProductById')
+            ->with($data['id'])
             ->willThrowException(new \FOSSBilling\Exception('Product not found'));
 
         $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function (string $service) use ($productService) {
+            if ($service === 'product') {
+                return $productService;
+            }
+
+            throw new \RuntimeException('Unexpected service request');
+        });
 
         $this->api->setDi($di);
 
@@ -156,9 +173,8 @@ final class AdminTest extends \BBTestCase
     {
         $data = ['id' => 1];
 
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $productModel->config = '{}';
+        $productModel = new \Box\Mod\Product\Entity\Product();
+        $productModel->setConfig('{}');
 
         $serviceMock = $this->createMock(\Box\Mod\Servicedownloadable\Service::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -166,14 +182,20 @@ final class AdminTest extends \BBTestCase
             ->with($productModel)
             ->willThrowException(new \FOSSBilling\Exception('No file associated with this product.', null, 404));
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->with('Product', $data['id'], 'Product not found')
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('findProductById')
+            ->with($data['id'])
             ->willReturn($productModel);
 
         $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function (string $service) use ($productService) {
+            if ($service === 'product') {
+                return $productService;
+            }
+
+            throw new \RuntimeException('Unexpected service request');
+        });
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -187,9 +209,8 @@ final class AdminTest extends \BBTestCase
     {
         $data = ['id' => 1];
 
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $productModel->config = '{"filename": "test.txt"}';
+        $productModel = new \Box\Mod\Product\Entity\Product();
+        $productModel->setConfig('{"filename": "test.txt"}');
 
         $serviceMock = $this->createMock(\Box\Mod\Servicedownloadable\Service::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -197,14 +218,20 @@ final class AdminTest extends \BBTestCase
             ->with($productModel)
             ->willThrowException(new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404));
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->with('Product', $data['id'], 'Product not found')
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('findProductById')
+            ->with($data['id'])
             ->willReturn($productModel);
 
         $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function (string $service) use ($productService) {
+            if ($service === 'product') {
+                return $productService;
+            }
+
+            throw new \RuntimeException('Unexpected service request');
+        });
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -218,9 +245,8 @@ final class AdminTest extends \BBTestCase
     {
         $data = ['id' => 1];
 
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $productModel->config = '{"filename": "test.txt"}';
+        $productModel = new \Box\Mod\Product\Entity\Product();
+        $productModel->setConfig('{"filename": "test.txt"}');
 
         $serviceMock = $this->createMock(\Box\Mod\Servicedownloadable\Service::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -228,14 +254,20 @@ final class AdminTest extends \BBTestCase
             ->with($productModel)
             ->willReturn(new Response('file'));
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->with('Product', $data['id'], 'Product not found')
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('findProductById')
+            ->with($data['id'])
             ->willReturn($productModel);
 
         $di = new \Pimple\Container();
-        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function (string $service) use ($productService) {
+            if ($service === 'product') {
+                return $productService;
+            }
+
+            throw new \RuntimeException('Unexpected service request');
+        });
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);

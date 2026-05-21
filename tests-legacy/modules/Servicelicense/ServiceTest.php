@@ -16,11 +16,17 @@ final class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
+    private function createProductEntity(string $config): \Box\Mod\Product\Entity\Product
+    {
+        $product = new \Box\Mod\Product\Entity\Product();
+        $product->setConfig($config);
+
+        return $product;
+    }
+
     public function testAttachOrderConfigEmptyProductConig(): void
     {
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $productModel->config = '{}';
+        $productModel = $this->createProductEntity('{}');
         $data = [];
 
         $result = $this->service->attachOrderConfig($productModel, $data);
@@ -30,11 +36,9 @@ final class ServiceTest extends \BBTestCase
 
     public function testAttachOrderConfig(): void
     {
-        $productModel = new \Model_Product();
-        $productModel->loadBean(new \DummyBean());
-        $productModel->config = '["hello", "world"]';
+        $productModel = $this->createProductEntity('["hello", "world"]');
         $data = ['testing' => 'phase'];
-        $expected = array_merge(json_decode($productModel->config ?? '', true), $data);
+        $expected = array_merge(json_decode($productModel->getConfig() ?? '', true) ?? [], $data);
 
         $result = $this->service->attachOrderConfig($productModel, $data);
         $this->assertIsArray($result);

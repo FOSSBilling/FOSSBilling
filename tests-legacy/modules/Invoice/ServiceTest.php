@@ -545,6 +545,11 @@ final class ServiceTest extends \BBTestCase
         $currencyServiceMock->expects($this->atLeastOnce())->method('getCurrencyRepository')
             ->willReturn($currencyRepositoryMock);
 
+        $productServiceMock = $this->createMock(\Box\Mod\Product\Service::class);
+        $productServiceMock->expects($this->once())
+            ->method('commitReservedPromoRedemptionsForInvoice')
+            ->with($invoiceModel);
+
         $eventManagerMock = $this->getMockBuilder('\Box_EventManager')->getMock();
         $eventManagerMock->expects($this->atLeastOnce())
             ->method('fire');
@@ -557,7 +562,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store');
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $itemInvoiceServiceMock, $currencyServiceMock) {
+        $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $itemInvoiceServiceMock, $currencyServiceMock, $productServiceMock) {
             if ($serviceName == 'system') {
                 return $systemService;
             }
@@ -566,6 +571,9 @@ final class ServiceTest extends \BBTestCase
             }
             if ($serviceName == 'currency') {
                 return $currencyServiceMock;
+            }
+            if ($serviceName == 'Product') {
+                return $productServiceMock;
             }
         });
         $di['db'] = $dbMock;
@@ -580,9 +588,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testCountIncome(): void
     {
-        $serviceMock = $this->getMockBuilder(Service::class)
-            ->onlyMethods(['getTotal'])
-            ->getMock();
+        $serviceMock = new Service();
 
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
@@ -847,7 +853,7 @@ final class ServiceTest extends \BBTestCase
                     'id' => 1,
                 ],
             ],
-            'approve' => true,
+            'approve' => false,
         ];
 
         $clientModel = new \Model_Client();
@@ -856,12 +862,9 @@ final class ServiceTest extends \BBTestCase
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
 
-        $currencyModel = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $currencyModel = $this->createStub('\\' . \Box\Mod\Currency\Entity\Currency::class);
         $defaultCurrencyCode = 'USD';
-        $currencyModel->expects($this->any())
-            ->method('getCode')
+        $currencyModel->method('getCode')
             ->willReturn($defaultCurrencyCode);
 
         $currencyRepositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
@@ -1230,6 +1233,58 @@ final class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
+    public function testUpdateInvoiceReleasesReservedPromoRedemptionsWhenCanceled(): void
+    {
+        $data = [
+            'status' => \Model_Invoice::STATUS_CANCELED,
+            'items' => [],
+            'new_item' => [],
+        ];
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        $invoiceModel->status = \Model_Invoice::STATUS_UNPAID;
+
+        $eventManagerMock = $this->createMock('\Box_EventManager');
+        $eventManagerMock->expects($this->atLeastOnce())
+            ->method('fire');
+
+        $itemInvoiceServiceMock = $this->createStub(ServiceInvoiceItem::class);
+        $productServiceMock = $this->createMock(\Box\Mod\Product\Service::class);
+        $productServiceMock->expects($this->once())
+            ->method('releaseReservedPromoRedemptionsForInvoice')
+            ->with($invoiceModel, 'invoice_canceled');
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($itemInvoiceServiceMock, $productServiceMock) {
+            if ($sub === 'InvoiceItem') {
+                return $itemInvoiceServiceMock;
+            }
+            if ($serviceName === 'Product') {
+                return $productServiceMock;
+            }
+        });
+        $di['events_manager'] = $eventManagerMock;
+        $di['logger'] = new \Box_Log();
+
+        $serviceMock = $this->getMockBuilder('\\' . Service::class)
+            ->onlyMethods(['toApiArray'])
+            ->getMock();
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('toApiArray')
+            ->willReturn(['id' => 1]);
+
+        $serviceMock->setDi($di);
+
+        $result = $serviceMock->updateInvoice($invoiceModel, $data);
+        $this->assertTrue($result);
+    }
+
     public function testRmInvoice(): void
     {
         $invoiceModel = new \Model_Invoice();
@@ -1247,13 +1302,51 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('trash');
 
+        $productServiceMock = $this->createMock(\Box\Mod\Product\Service::class);
+        $productServiceMock->expects($this->once())
+            ->method('releaseReservedPromoRedemptionsForInvoice')
+            ->with($invoiceModel, 'invoice_deleted');
+
         $di = $this->getDi();
         $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productServiceMock);
 
         $this->service->setDi($di);
 
         $result = $this->service->rmInvoice($invoiceModel);
         $this->assertTrue($result);
+    }
+
+    public function testRmByClientUsesRmInvoiceForEachInvoice(): void
+    {
+        $client = new \Model_Client();
+        $client->loadBean(new \DummyBean());
+        $client->id = 10;
+
+        $invoiceOne = new \Model_Invoice();
+        $invoiceOne->loadBean(new \DummyBean());
+        $invoiceTwo = new \Model_Invoice();
+        $invoiceTwo->loadBean(new \DummyBean());
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('find')
+            ->with('Invoice', 'client_id = ?', [10])
+            ->willReturn([$invoiceOne, $invoiceTwo]);
+
+        $serviceMock = $this->getMockBuilder(Service::class)
+            ->onlyMethods(['rmInvoice'])
+            ->getMock();
+        $serviceMock->expects($this->exactly(2))
+            ->method('rmInvoice')
+            ->with($this->isInstanceOf(\Model_Invoice::class))
+            ->willReturn(true);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $serviceMock->setDi($di);
+
+        $serviceMock->rmByClient($client);
     }
 
     public function testDeleteInvoiceByAdmin(): void
@@ -1454,30 +1547,18 @@ final class ServiceTest extends \BBTestCase
         $clientModel = new \Model_Client();
         $clientModel->loadBean(new \DummyBean());
 
-        $productTable = $this->getMockBuilder(\Model_ProductDomainTable::class)
-            ->onlyMethods(['getRenewalLineConfig'])
-            ->getMock();
-        $productTable->expects($this->once())
-            ->method('getRenewalLineConfig')
-            ->willReturn([
-                'price' => 20.0,
-                'quantity' => 2,
-            ]);
-
-        $productModel = $this->getMockBuilder(\Model_Product::class)
-            ->onlyMethods(['getTable'])
-            ->getMock();
-        $productModel->expects($this->once())
-            ->method('getTable')
-            ->willReturn($productTable);
+        $productModel = new \Box\Mod\Product\Entity\Product();
+        $productIdReflection = new \ReflectionProperty($productModel, 'id');
+        $productIdReflection->setAccessible(true);
+        $productIdReflection->setValue($productModel, 2);
 
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
 
         $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->exactly(2))
+        $dbMock->expects($this->once())
             ->method('getExistingModelById')
-            ->willReturnOnConsecutiveCalls($clientModel, $productModel);
+            ->willReturn($clientModel);
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($invoiceModel);
@@ -1499,6 +1580,24 @@ final class ServiceTest extends \BBTestCase
             ->method('getCurrencyRepository')
             ->willReturn($currencyRepository);
 
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('findProductById')
+            ->with(2)
+            ->willReturn($productModel);
+        $productService->expects($this->once())
+            ->method('getProductRenewalLineConfig')
+            ->with($productModel, [
+                'action' => 'register',
+                'register_tld' => '.com',
+                'register_years' => 2,
+                'period' => '2Y',
+            ])
+            ->willReturn([
+                'price' => 20.0,
+                'quantity' => 2,
+            ]);
+
         $invoiceItemServiceMock = $this->getMockBuilder(ServiceInvoiceItem::class)
             ->onlyMethods(['generateFromOrder'])
             ->getMock();
@@ -1517,9 +1616,13 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(function (string $service, ?string $sub = null) use ($currencyService, $invoiceItemServiceMock) {
+        $di['mod_service'] = $di->protect(function (string $service, ?string $sub = null) use ($currencyService, $invoiceItemServiceMock, $productService) {
             if ($service === 'Currency') {
                 return $currencyService;
+            }
+
+            if ($service === 'Product') {
+                return $productService;
             }
 
             if ($service === 'Invoice' && $sub === 'InvoiceItem') {
@@ -2355,7 +2458,7 @@ final class ServiceTest extends \BBTestCase
         $service->method('getPdfTemplate')
             ->willReturn('default-invoice.twig');
 
-        $twigFactory = $this->createMock(TwigFactory::class);
+        $twigFactory = $this->createStub(TwigFactory::class);
         $twigFactory->method('createBaseEnvironment')->willReturn($twig);
 
         $di = $this->getDi();

@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicehosting;
 
+use Box\Mod\Product\Entity\Product;
 use FOSSBilling\Exception;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
@@ -42,18 +43,25 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function getCartProductTitle($product, array $data)
+    private function logInfo(string $message): void
+    {
+        if ($this->di !== null && isset($this->di['logger'])) {
+            $this->di['logger']->info($message);
+        }
+    }
+
+    public function getCartProductTitle(Product $product, array $data)
     {
         try {
             [$sld, $tld] = $this->_getDomainTuple($data);
 
-            return __trans(':hosting for :domain', [':hosting' => $product->title, ':domain' => $sld . $tld]);
+            return __trans(':hosting for :domain', [':hosting' => $product->getTitle(), ':domain' => $sld . $tld]);
         } catch (\Exception $e) {
             // should never occur, but in case
-            error_log($e->getMessage());
+            $this->logInfo($e->getMessage());
         }
 
-        return $product->title;
+        return $product->getTitle();
     }
 
     public function validateOrderData(array &$data): void
@@ -1028,7 +1036,7 @@ class Service implements InjectionAwareInterface
 
             return [$m->getLoginUrl(null), $m->getResellerLoginUrl(null)];
         } catch (\Exception $e) {
-            error_log("Error while retrieving control panel url: {$e->getMessage()}.");
+            $this->logInfo("Error while retrieving control panel url: {$e->getMessage()}.");
         }
 
         return [false, false];
@@ -1048,9 +1056,9 @@ class Service implements InjectionAwareInterface
         return $adapter->getLoginUrl($account);
     }
 
-    public function prependOrderConfig(\Model_Product $product, array $data): array
+    public function attachOrderConfig(Product $product, array $data): array
     {
-        $c = json_decode($product->config ?? '', true) ?? [];
+        $c = json_decode($product instanceof Product ? $product->getConfig() ?? '' : $product->config ?? '', true) ?? [];
 
         if (isset($data['domain']['action'])) {
             $this->validateDomainAction($data, $c);
@@ -1075,7 +1083,7 @@ class Service implements InjectionAwareInterface
     {
         $action = $data['domain']['action'];
 
-        // Settings default to true for backward compatibility
+        // When unset, hosting products allow all domain actions.
         $allowRegister = $productConfig['allow_domain_register'] ?? true;
         $allowTransfer = $productConfig['allow_domain_transfer'] ?? true;
         $allowOwn = $productConfig['allow_domain_own'] ?? true;
@@ -1088,12 +1096,12 @@ class Service implements InjectionAwareInterface
         };
     }
 
-    public function getDomainProductFromConfig(\Model_Product $product, array &$data): bool|array
+    public function getDomainProductFromConfig(Product $product, array &$data): bool|array
     {
-        $data = $this->prependOrderConfig($product, $data);
-        $product->getService()->validateOrderData($data);
+        $data = $this->attachOrderConfig($product, $data);
+        $this->validateOrderData($data);
 
-        $c = json_decode($product->config ?? '', true) ?? [];
+        $c = json_decode($product->getConfig() ?? '', true) ?? [];
 
         $dc = $data['domain'];
         $action = $dc['action'];
@@ -1122,16 +1130,16 @@ class Service implements InjectionAwareInterface
 
         $table = $this->di['mod_service']('product');
         $d = $table->getMainDomainProduct();
-        if (!$d instanceof \Model_Product) {
+        if (!$d instanceof Product) {
             throw new Exception('Could not find main domain product');
         }
 
         return ['product' => $d, 'config' => $dc];
     }
 
-    public function getFreeTlds(\Model_Product $product, $identity = null): array
+    public function getFreeTlds(Product $product, $identity = null): array
     {
-        $config = json_decode($product->config ?? '', true) ?? [];
+        $config = json_decode($product->getConfig() ?? '', true) ?? [];
         $freeTlds = $config['free_tlds'] ?? [];
         $result = [];
         foreach ($freeTlds as $tld) {

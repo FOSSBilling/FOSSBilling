@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedownloadable;
 
+use Box\Mod\Product\Entity\Product;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
@@ -129,9 +130,9 @@ class Service implements InjectionAwareInterface
         $this->filesystem = new Filesystem();
     }
 
-    public function attachOrderConfig(\Model_Product $product, array &$data): array
+    public function attachOrderConfig(Product $product, array &$data): array
     {
-        $config = json_decode($product->config ?? '', true) ?? [];
+        $config = json_decode($product->getConfig() ?? '', true) ?? [];
         $required = [
             'filename' => 'Product is not configured completely.',
         ];
@@ -243,7 +244,7 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function uploadProductFile(\Model_Product $productModel): bool
+    public function uploadProductFile(Product $productModel): bool
     {
         $productService = $this->di['mod_service']('product');
         $request = $this->di['request'];
@@ -265,7 +266,7 @@ class Service implements InjectionAwareInterface
         $fileSavePath = PATH_UPLOADS;
         $file->move($fileSavePath, $fileNameHash);
 
-        $config = json_decode($productModel->config ?? '', true) ?? [];
+        $config = json_decode($productModel->getConfig() ?? '', true) ?? [];
 
         // Remove old file.
         if (isset($config['filename'])) {
@@ -300,11 +301,12 @@ class Service implements InjectionAwareInterface
         }
 
         $config['filename'] = $fileName;
-        $productModel->config = json_encode($config);
-        $productModel->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($productModel);
+        $updatedAt = new \DateTime();
+        $productModel->setConfig(json_encode($config));
+        $productModel->setUpdatedAt($updatedAt);
+        $this->di['em']->flush();
 
-        $this->di['logger']->info('Uploaded new file for product %s', $productModel->id);
+        $this->di['logger']->info('Uploaded new file for product %s', $productModel->getId());
 
         return true;
     }
@@ -398,13 +400,14 @@ class Service implements InjectionAwareInterface
         return $response;
     }
 
-    public function saveProductConfig(\Model_Product $productModel, $data): bool
+    public function saveProductConfig(Product $productModel, $data): bool
     {
-        $config = json_decode($productModel->config ?? '', true) ?: [];
+        $config = json_decode($productModel->getConfig() ?? '', true) ?: [];
         $config['update_orders'] = Tools::normalizeBoolean($data['update_orders'] ?? false);
-        $productModel->config = json_encode($config);
-        $productModel->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($productModel);
+        $updatedAt = new \DateTime();
+        $productModel->setConfig(json_encode($config));
+        $productModel->setUpdatedAt($updatedAt);
+        $this->di['em']->flush();
 
         return true;
     }
@@ -414,10 +417,9 @@ class Service implements InjectionAwareInterface
      *
      * @throws \FOSSBilling\Exception
      */
-    public function sendProductFile(\Model_Product $product): Response
+    public function sendProductFile(Product $product): Response
     {
-        $config = $product->config;
-        $config = json_decode($config ?? '', true) ?: [];
+        $config = json_decode($product->getConfig() ?? '', true) ?: [];
 
         if (!isset($config['filename'])) {
             throw new \FOSSBilling\Exception('No file associated with this product.', null, 404);
@@ -440,7 +442,7 @@ class Service implements InjectionAwareInterface
         $response->headers->set('Content-Type', 'application/octet-stream');
         $response->headers->set('Content-Disposition', $disposition);
 
-        $this->di['logger']->info('Downloaded product %s file by admin.', $product->id);
+        $this->di['logger']->info('Downloaded product %s file by admin.', $product->getId());
 
         return $response;
     }

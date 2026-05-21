@@ -17,6 +17,16 @@ final class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
+    private function createProductEntity(?string $config = null): \Box\Mod\Product\Entity\Product
+    {
+        $product = new \Box\Mod\Product\Entity\Product();
+        if ($config !== null) {
+            $product->setConfig($config);
+        }
+
+        return $product;
+    }
+
     public static function validateOrdertDataProvider(): array
     {
         return [
@@ -778,12 +788,12 @@ final class ServiceTest extends \BBTestCase
         $orderServiceMock->expects($this->atLeastOnce())
             ->method('getServiceOrder');
 
-        $serverManagerCustomMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
+        $serverManagerCustomMock = $this->createStub('\Server_Manager_Custom');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
-        $di['server_manager'] = $di->protect(fn ($manager, $config): \PHPUnit\Framework\MockObject\MockObject => $serverManagerCustomMock);
+        $di['server_manager'] = $di->protect(fn ($manager, $config) => $serverManagerCustomMock);
 
         $this->service->setDi($di);
 
@@ -962,10 +972,10 @@ final class ServiceTest extends \BBTestCase
         $hostingServerModel->loadBean(new \DummyBean());
         $hostingServerModel->manager = 'Custom';
 
-        $serverManagerCustom = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
+        $serverManagerCustom = $this->createStub('\Server_Manager_Custom');
 
         $di = $this->getDi();
-        $di['server_manager'] = $di->protect(fn ($manager, $config): \PHPUnit\Framework\MockObject\MockObject => $serverManagerCustom);
+        $di['server_manager'] = $di->protect(fn ($manager, $config) => $serverManagerCustom);
         $this->service->setDi($di);
 
         $result = $this->service->getServerManager($hostingServerModel);
@@ -1000,7 +1010,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testTestConnection(): void
     {
-        $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
+        $serverManagerMock = $this->createMock('\Server_Manager_Custom');
         $serverManagerMock->expects($this->atLeastOnce())
             ->method('testConnection')
             ->willReturn(true);
@@ -1161,7 +1171,7 @@ final class ServiceTest extends \BBTestCase
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
 
-        $serverManagerMock = $this->getMockBuilder('\Server_Manager_Custom')->disableOriginalConstructor()->getMock();
+        $serverManagerMock = $this->createStub('\Server_Manager_Custom');
         $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['getServerManager'])
             ->getMock();
@@ -1249,8 +1259,7 @@ final class ServiceTest extends \BBTestCase
         $di['db'] = $dbMock;
 
         $this->service->setDi($di);
-        $model = new \Model_Product();
-        $model->loadBean(new \DummyBean());
+        $model = $this->createProductEntity();
         $result = $this->service->getFreeTlds($model);
         $this->assertIsArray($result);
     }
@@ -1263,9 +1272,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
 
         $this->service->setDi($di);
-        $model = new \Model_Product();
-        $model->loadBean(new \DummyBean());
-        $model->config = json_encode($config);
+        $model = $this->createProductEntity(json_encode($config));
 
         $result = $this->service->getFreeTlds($model);
         $this->assertIsArray($result);

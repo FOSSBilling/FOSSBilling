@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Box\Mod\Cart\Api;
 
 use Box\Mod\Currency\Entity\Currency;
+use Box\Mod\Product\Entity\Promo;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 /**
@@ -98,7 +99,7 @@ class Guest extends \Api_Abstract
         $this->di['rate_limiter']->consumeOrThrow('cart_promo_apply_ip', (string) $this->getIp());
 
         $promo = $this->getService()->findActivePromoByCode($data['promocode']);
-        if (!$promo instanceof \Model_Promo) {
+        if (!$promo instanceof Promo) {
             throw new \FOSSBilling\InformationException('The promo code has expired or does not exist');
         }
 
@@ -151,28 +152,19 @@ class Guest extends \Api_Abstract
     public function add_item($data)
     {
         $cart = $this->getService()->getSessionCart();
+        $productService = $this->di['mod_service']('product');
 
-        $product = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
+        $product = $productService->findOneActiveById((int) $data['id']);
+        if (!$product instanceof \Box\Mod\Product\Entity\Product) {
+            throw new \FOSSBilling\Exception('Product not found');
+        }
 
-        if ($product->is_addon) {
+        if ($product->isAddon()) {
             throw new \FOSSBilling\InformationException('Addon products cannot be added separately.');
         }
 
         if (is_array($data['addons'] ?? '')) {
-            $validAddons = json_decode($product->addons ?? '');
-            if (empty($validAddons)) {
-                $validAddons = [];
-            }
-
-            foreach ($data['addons'] as $addon => $properties) {
-                if ($properties['selected']) {
-                    $addonModel = $this->di['db']->getExistingModelById('Product', $addon, 'Addon not found');
-
-                    if ($addonModel->status !== 'enabled' || !in_array($addon, $validAddons)) {
-                        throw new \FOSSBilling\InformationException('One or more of your selected add-ons are invalid for the associated product.');
-                    }
-                }
-            }
+            $productService->validateSelectedAddonsForProduct($product, $data['addons']);
         }
 
         // reset cart by default

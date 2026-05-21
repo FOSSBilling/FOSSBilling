@@ -100,7 +100,7 @@ class Admin extends \Api_Abstract
         }
 
         $client = $this->di['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
-        $product = $this->di['db']->getExistingModelById('Product', $data['product_id'], 'Product not found');
+        $product = $this->di['mod_service']('product')->findProductById((int) $data['product_id']);
 
         return $this->getService()->createOrder($client, $product, $data);
     }
@@ -276,11 +276,10 @@ class Admin extends \Api_Abstract
     {
         $order = $this->_getOrder($data);
 
-        if (!is_array($data['config'])) {
+        $config = $data['config'] ?? null;
+        if (!is_array($config)) {
             throw new \FOSSBilling\Exception('Order config not passed');
         }
-
-        $config = $data['config'];
 
         return $this->getService()->updateOrderConfig($order, $config);
     }

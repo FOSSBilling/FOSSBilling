@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedomain;
 
+use Box\Mod\Product\Entity\Product;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -36,7 +37,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function getCartProductTitle($product, array $data)
+    public function getCartProductTitle(Product $product, array $data)
     {
         if (
             isset($data['action']) && $data['action'] == 'register'
@@ -52,7 +53,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             return __trans('Domain :domain transfer', [':domain' => $data['transfer_sld'] . $data['transfer_tld']]);
         }
 
-        return $product->title;
+        return $product->getTitle();
     }
 
     public function validateOrderData(&$data): void

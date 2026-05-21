@@ -211,27 +211,20 @@ final class Api_ClientTest extends \BBTestCase
     {
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
+        $order->product_id = 5;
 
         $apiMock = $this->getMockBuilder(\Box\Mod\Order\Api\Client::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
 
-        $productServiceMock = $this->getMockBuilder(\Box\Mod\Product\Service::class)->onlyMethods(['getUpgradablePairs'])->getMock();
+        $productServiceMock = $this->getMockBuilder(\Box\Mod\Product\Service::class)->onlyMethods(['getUpgradablePairsByProductId'])->getMock();
         $productServiceMock->expects($this->atLeastOnce())
-            ->method('getUpgradablePairs')
+            ->method('getUpgradablePairsByProductId')
+            ->with(5)
             ->willReturn([]);
 
-        $product = new \Model_Product();
-        $product->loadBean(new \RedBeanPHP\OODBBean());
-
-        $dbMock = $this->getMockBuilder('\\Box_Database')->disableOriginalConstructor()->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->willReturn($product);
-
         $di = $this->getDi();
-        $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $productServiceMock);
         $apiMock->setDi($di);
         $data = [];
@@ -295,9 +288,7 @@ final class Api_ClientTest extends \BBTestCase
 
     public function testGetOrder(): void
     {
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-        ;
+        $validatorMock = $this->createStub(\FOSSBilling\Validate::class);
 
         $order = new \Model_ClientOrder();
         $order->loadBean(new \DummyBean());
@@ -330,9 +321,7 @@ final class Api_ClientTest extends \BBTestCase
 
     public function testGetOrderNotFoundException(): void
     {
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
-        $validatorMock->expects($this->any())->method('checkRequiredParamsForArray')
-        ;
+        $validatorMock = $this->createStub(\FOSSBilling\Validate::class);
 
         $serviceMock = $this->getMockBuilder(\Box\Mod\Order\Service::class)
             ->onlyMethods(['findForClientById', 'toApiArray'])->getMock();

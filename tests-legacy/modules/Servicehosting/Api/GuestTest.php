@@ -20,15 +20,22 @@ final class GuestTest extends \BBTestCase
     {
         $di = $this->getDi();
 
-        $model = new \Model_Product();
-        $model->loadBean(new \DummyBean());
-        $model->type = \Model_Product::HOSTING;
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
+        $model = new \Box\Mod\Product\Entity\Product();
+        $model->setType(\Box\Mod\Product\Service::HOSTING);
+
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('findProductById')
+            ->with(1)
             ->willReturn($model);
 
-        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function (string $service) use ($productService) {
+            if ($service === 'product') {
+                return $productService;
+            }
+
+            throw new \RuntimeException('Unexpected service request');
+        });
 
         $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->atLeastOnce())
@@ -46,17 +53,24 @@ final class GuestTest extends \BBTestCase
     {
         $di = $this->getDi();
 
-        $model = new \Model_Product();
-        $model->loadBean(new \DummyBean());
-        $dbMock = $this->createMock('\Box_Database');
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
+        $model = new \Box\Mod\Product\Entity\Product();
+
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('findProductById')
+            ->with(1)
             ->willReturn($model);
 
-        $validatorMock = $this->getMockBuilder(\FOSSBilling\Validate::class)->disableOriginalConstructor()->getMock();
+        $validatorMock = $this->createStub(\FOSSBilling\Validate::class);
 
-        $di['db'] = $dbMock;
         $di['validator'] = $validatorMock;
+        $di['mod_service'] = $di->protect(function (string $service) use ($productService) {
+            if ($service === 'product') {
+                return $productService;
+            }
+
+            throw new \RuntimeException('Unexpected service request');
+        });
 
         $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
         $serviceMock->expects($this->never())->method('getFreeTlds');

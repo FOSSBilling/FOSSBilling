@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Box\Mod\Order;
 
 use Box\Mod\Currency\Entity\Currency;
+use Box\Mod\Product\Entity\Product;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\HttpFoundation\Response;
@@ -29,6 +30,18 @@ class Service implements InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    private static function logInfoToContainer(?\Pimple\Container $di, string $message): void
+    {
+        if ($di !== null && isset($di['logger'])) {
+            $di['logger']->info($message);
+        }
+    }
+
+    private function logInfo(string $message): void
+    {
+        self::logInfoToContainer($this->di, $message);
     }
 
     public function counter(): array
@@ -74,7 +87,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            self::logInfoToContainer($di, $exc->getMessage());
         }
     }
 
@@ -100,7 +113,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            self::logInfoToContainer($di, $exc->getMessage());
         }
     }
 
@@ -126,7 +139,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            self::logInfoToContainer($di, $exc->getMessage());
         }
     }
 
@@ -152,7 +165,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            self::logInfoToContainer($di, $exc->getMessage());
         }
     }
 
@@ -176,7 +189,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            self::logInfoToContainer($di, $exc->getMessage());
         }
     }
 
@@ -202,23 +215,21 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            self::logInfoToContainer($di, $exc->getMessage());
         }
     }
 
     public function getOrderService(\Model_ClientOrder $order)
     {
         if ($order->service_id !== null) {
-            // @deprecated
-            // @todo remove this when doctrine is removed
-            $core_services = [
-                \Model_ProductTable::CUSTOM,
-                \Model_ProductTable::LICENSE,
-                \Model_ProductTable::DOWNLOADABLE,
-                \Model_ProductTable::HOSTING,
-                \Model_ProductTable::DOMAIN,
+            $builtInServiceTypes = [
+                \Box\Mod\Product\Service::CUSTOM,
+                \Box\Mod\Product\Service::LICENSE,
+                \Box\Mod\Product\Service::DOWNLOADABLE,
+                \Box\Mod\Product\Service::HOSTING,
+                \Box\Mod\Product\Service::DOMAIN,
             ];
-            if (in_array($order->service_type, $core_services)) {
+            if (in_array($order->service_type, $builtInServiceTypes, true)) {
                 $repo_class = $this->_getServiceClassName($order);
 
                 return $this->di['db']->load($repo_class, $order->service_id);
@@ -258,9 +269,9 @@ class Service implements InjectionAwareInterface
         return json_decode($model->config ?? '', true) ?? [];
     }
 
-    public function productHasOrders(\Model_Product $product): bool
+    public function productHasOrders(Product $product): bool
     {
-        $order = $this->di['db']->findOne('ClientOrder', 'product_id = :product_id', [':product_id' => $product->id]);
+        $order = $this->di['db']->findOne('ClientOrder', 'product_id = :product_id', [':product_id' => $product->getId()]);
 
         return $order instanceof \Model_ClientOrder;
     }
@@ -348,12 +359,8 @@ class Service implements InjectionAwareInterface
 
         if ($identity instanceof \Model_Admin) {
             $data['config'] = $this->getConfig($model);
-            $productModel = $this->di['db']->load('Product', $model->product_id);
-            if ($productModel instanceof \Model_Product) {
-                $data['plugin'] = $productModel->plugin;
-            } else {
-                $data['plugin'] = null;
-            }
+            $productService = $this->di['mod_service']('product');
+            $data['plugin'] = $productService->getProductPluginById((int) $model->product_id);
         }
 
         $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
@@ -428,14 +435,8 @@ class Service implements InjectionAwareInterface
 
         $plugins = [];
         if ($identity instanceof \Model_Admin && !empty($productIds)) {
-            $placeholders = implode(',', array_fill(0, count($productIds), '?'));
-            $productRows = $this->di['db']->getAll(
-                "SELECT id, plugin FROM product WHERE id IN ($placeholders)",
-                $productIds
-            );
-            foreach ($productRows as $row) {
-                $plugins[$row['id']] = $row['plugin'];
-            }
+            $productService = $this->di['mod_service']('product');
+            $plugins = $productService->getProductPluginMap($productIds);
         }
 
         $result = [];
@@ -497,6 +498,7 @@ class Service implements InjectionAwareInterface
         $show_action_required = $data['show_action_required'] ?? null;
         $id = $data['id'] ?? null;
         $product_id = $data['product_id'] ?? null;
+        $promo_id = $data['promo_id'] ?? null;
         $status = $data['status'] ?? null;
         $title = $data['title'] ?? null;
         $period = $data['period'] ?? null;
@@ -540,6 +542,11 @@ class Service implements InjectionAwareInterface
         if ($product_id) {
             $where[] = 'co.product_id = :product_id';
             $bindings[':product_id'] = $product_id;
+        }
+
+        if ($promo_id) {
+            $where[] = 'co.promo_id = :promo_id';
+            $bindings[':promo_id'] = $promo_id;
         }
 
         if ($type) {
@@ -611,7 +618,7 @@ class Service implements InjectionAwareInterface
         return [$query, $bindings];
     }
 
-    public function createOrder(\Model_Client $client, \Model_Product $product, array $data)
+    public function createOrder(\Model_Client $client, Product $product, array $data)
     {
         $currencyService = $this->di['mod_service']('currency');
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
@@ -628,7 +635,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Currency could not be determined for order');
         }
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderCreate', 'params' => $data, 'subject' => $product->type]);
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderCreate', 'params' => $data, 'subject' => $this->getProductType($product)]);
 
         $period = (isset($data['period']) && !empty($data['period'])) ? $data['period'] : null;
         $qty = $data['quantity'] ?? 1;
@@ -641,12 +648,12 @@ class Service implements InjectionAwareInterface
         $cartService = $this->di['mod_service']('cart');
         // check stock
         if (!$cartService->isStockAvailable($product, $qty)) {
-            throw new InformationException('Product :id is out of stock.', [':id' => $product->id], 831);
+            throw new InformationException('Product :id is out of stock.', [':id' => $this->getProductId($product)], 831);
         }
 
         // Addons must have defined master order
         $parent_order = false;
-        if ($product->is_addon && empty($group_id)) {
+        if ($this->isAddonProduct($product) && empty($group_id)) {
             throw new \FOSSBilling\Exception('Group ID parameter is missing for addon product order', null, 832);
         }
 
@@ -661,14 +668,8 @@ class Service implements InjectionAwareInterface
         if ($period) {
             $config['period'] = $period;
         }
-        $se = $this->di['mod_service']('service' . $product->type);
-        // @deprecated logic
-        if (method_exists($se, 'prependOrderConfig')) {
-            $config = $se->prependOrderConfig($product, $config);
-        }
-
-        // @migration script
-        $se = $this->di['mod_service']('service' . $product->type);
+        $se = $this->di['mod_service']('service' . $this->getProductType($product));
+        $se = $this->di['mod_service']('service' . $this->getProductType($product));
         if (method_exists($se, 'attachOrderConfig')) {
             $config = $se->attachOrderConfig($product, $config);
         }
@@ -704,14 +705,14 @@ class Service implements InjectionAwareInterface
         ) {
             $order = $this->di['db']->dispense('ClientOrder');
             $order->client_id = $client->id;
-            $order->product_id = $product->id;
-            $order->form_id = $product->form_id;
+            $order->product_id = $this->getProductId($product);
+            $order->form_id = $this->getProductFormId($product);
             $order->group_id = ($parent_order) ? $parent_order->group_id : uniqid();
             $order->group_master = ($parent_order) ? 0 : 1;
-            $order->title = $generatedOrderTitle ?? $data['title'] ?? $product->title;
+            $order->title = $generatedOrderTitle ?? $data['title'] ?? $this->getProductTitle($product);
             $order->currency = $currency->getCode();
-            $order->service_type = $product->type;
-            $order->unit = $product->unit;
+            $order->service_type = $this->getProductType($product);
+            $order->unit = $this->getProductUnit($product);
             $order->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
             $order->config = json_encode($config);
             $order->invoice_option = $invoiceOption;
@@ -722,10 +723,9 @@ class Service implements InjectionAwareInterface
             }
 
             $line = null;
-            if (!isset($data['price']) || $product->type === \Model_Product::DOMAIN) {
-                $product->setDi($this->di);
-                $repo = $product->getTable();
-                $line = $repo->getOrderLineConfig($product, array_merge($config, ['quantity' => $qty]));
+            if (!isset($data['price']) || $this->getProductType($product) === \Box\Mod\Product\Service::DOMAIN) {
+                $productService = $this->di['mod_service']('Product');
+                $line = $productService->getProductOrderLineConfig($product, array_merge($config, ['quantity' => $qty]));
                 $order->quantity = $line['quantity'];
             } else {
                 $order->quantity = $qty;
@@ -789,19 +789,19 @@ class Service implements InjectionAwareInterface
                     $invoiceService->markAsPaidByAdmin($invoice, $data);
                 }
             } catch (\Exception $e) {
-                error_log($e->getMessage());
+                $this->logInfo($e->getMessage());
 
                 try {
                     $invoiceService->addNote($invoice, 'Order was created, but invoice follow-up failed: ' . $e->getMessage());
                 } catch (\Exception $noteException) {
-                    error_log($noteException->getMessage());
+                    $this->logInfo($noteException->getMessage());
                 }
             }
         }
 
         $order = $this->di['db']->getExistingModelById('ClientOrder', $id, 'Order not found');
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderCreate', 'params' => ['id' => $order->id], 'subject' => $product->type]);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderCreate', 'params' => ['id' => $order->id], 'subject' => $this->getProductType($product)]);
 
         $this->di['logger']->info('Created order #%s', $id);
 
@@ -810,7 +810,7 @@ class Service implements InjectionAwareInterface
             try {
                 $this->activateOrder($order);
             } catch (\Exception $e) {
-                error_log($e->getMessage());
+                $this->logInfo($e->getMessage());
             }
         }
 
@@ -845,7 +845,7 @@ class Service implements InjectionAwareInterface
                 $this->createFromOrder($addon);
                 $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderActivate', 'params' => ['id' => $addon->id]]);
             } catch (\Exception $e) {
-                error_log($e->getMessage());
+                $this->logInfo($e->getMessage());
             }
         }
 
@@ -923,11 +923,11 @@ class Service implements InjectionAwareInterface
         $order->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($order);
 
-        $productModel = $this->di['db']->load('Product', $order->product_id);
-        if ($productModel instanceof \Model_Product) {
-            $this->stockSale($productModel, $order->quantity);
+        if ($order->product_id) {
+            $productService = $this->di['mod_service']('product');
+            $productService->reduceStock((int) $order->product_id, $order->quantity);
         } else {
-            error_log("Order without product ID detected Order #{$order->id}.");
+            $this->logInfo("Order without product ID detected Order #{$order->id}.");
         }
 
         $this->saveStatusChange($order, 'Order activated');
@@ -943,17 +943,15 @@ class Service implements InjectionAwareInterface
     protected function _callOnService(\Model_ClientOrder $order, $action)
     {
         $repo = $this->di['mod_service']('service' . $order->service_type);
-        // @deprecated
-        // @todo remove this when doctrine is removed
-        $core_services = [
-            \Model_ProductTable::CUSTOM,
-            \Model_ProductTable::LICENSE,
-            \Model_ProductTable::DOWNLOADABLE,
-            \Model_ProductTable::HOSTING,
-            \Model_ProductTable::DOMAIN,
+        $builtInServiceTypes = [
+            \Box\Mod\Product\Service::CUSTOM,
+            \Box\Mod\Product\Service::LICENSE,
+            \Box\Mod\Product\Service::DOWNLOADABLE,
+            \Box\Mod\Product\Service::HOSTING,
+            \Box\Mod\Product\Service::DOMAIN,
         ];
 
-        if (in_array($order->service_type, $core_services)) {
+        if (in_array($order->service_type, $builtInServiceTypes, true)) {
             $m = 'action_' . $action;
             if (!method_exists($repo, $m) || !is_callable([$repo, $m])) {
                 throw new \FOSSBilling\Exception('Service ' . $order->service_type . ' do not support ' . $m);
@@ -961,7 +959,7 @@ class Service implements InjectionAwareInterface
 
             return $repo->$m($order);
         }
-        // @new logic for services
+
         $o = $this->di['db']->findOne(
             'client_order',
             'id = :id',
@@ -976,23 +974,16 @@ class Service implements InjectionAwareInterface
             return $repo->$action($o, $service);
         }
 
-        error_log("Service {$order->service_type} does not support action {$action}.");
+        $this->logInfo("Service {$order->service_type} does not support action {$action}.");
 
         return null;
     }
 
-    public function stockSale(\Model_Product $product, $qty): bool
+    public function stockSale(Product|int $product, $qty): bool
     {
-        if ($product->stock_control) {
-            if ($product->quantity_in_stock < $qty) {
-                throw new InformationException('Product :id is out of stock.', [':id' => $product->id], 831);
-            }
-            $product->quantity_in_stock -= $qty;
-            $product->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($product);
-        }
+        $productService = $this->di['mod_service']('product');
 
-        return true;
+        return $productService->reduceStock($product, $qty);
     }
 
     public function updatePeriod(\Model_ClientOrder $order, $period): int
@@ -1096,7 +1087,7 @@ class Service implements InjectionAwareInterface
                 try {
                     $this->renewFromOrder($addon);
                 } catch (\Exception $e) {
-                    error_log($e->getMessage());
+                    $this->logInfo($e->getMessage());
                 }
             }
         }
@@ -1222,6 +1213,8 @@ class Service implements InjectionAwareInterface
         $order->suspended_at = null;
         $order->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($order);
+        $productService = $this->di['mod_service']('Product');
+        $productService->releaseReservedPromoRedemptionsForOrder($order, 'order_canceled');
 
         $note = ($reason === null) ? 'Order canceled' : 'Canceled order for ' . $reason;
         $this->saveStatusChange($order, $note);
@@ -1314,10 +1307,12 @@ class Service implements InjectionAwareInterface
             if (!$forceDelete) {
                 throw $e;
             }
-            error_log("{$e->getMessage()} in {$e->getFile()} : {$e->getFile()}");
+            $this->logInfo("{$e->getMessage()} in {$e->getFile()} : {$e->getFile()}");
         }
 
         $id = $order->id;
+        $productService = $this->di['mod_service']('Product');
+        $productService->releaseReservedPromoRedemptionsForOrder($order, 'order_deleted');
         $this->rmClientOrderStatusByOrder($order);
         $this->rmOrder($order);
 
@@ -1351,7 +1346,7 @@ class Service implements InjectionAwareInterface
             try {
                 $this->suspendFromOrder($order, $reason);
             } catch (\Exception $e) {
-                error_log($e->getMessage());
+                $this->logInfo($e->getMessage());
             }
         }
 
@@ -1394,7 +1389,7 @@ class Service implements InjectionAwareInterface
                 $order = $this->di['db']->getExistingModelById('ClientOrder', $orderArr['id'], 'Order not found');
                 $this->cancelFromOrder($order, $reason);
             } catch (\Exception $e) {
-                error_log($e->getMessage());
+                $this->logInfo($e->getMessage());
             }
         }
 
@@ -1526,13 +1521,13 @@ class Service implements InjectionAwareInterface
         $orderId = $order->id;
         $service = $this->getOrderService($order);
         if (!is_object($service)) {
-            error_log("Order #{$orderId} has no active service.");
+            $this->logInfo("Order #{$orderId} has no active service.");
 
             return null;
         }
         $srepo = $this->di['mod_service']('service' . $order->service_type);
         if (!method_exists($srepo, 'toApiArray')) {
-            error_log("Service #{$order->service_type} method toApiArray is missing.");
+            $this->logInfo("Service #{$order->service_type} method toApiArray is missing.");
 
             return null;
         }
@@ -1582,6 +1577,14 @@ class Service implements InjectionAwareInterface
 
     public function rmByClient(\Model_Client $client): void
     {
+        $productService = $this->di['mod_service']('Product');
+        $orders = $this->di['db']->find('ClientOrder', 'client_id = ?', [$client->id]);
+        foreach ($orders as $order) {
+            if ($order instanceof \Model_ClientOrder) {
+                $productService->releaseReservedPromoRedemptionsForOrder($order, 'client_deleted');
+            }
+        }
+
         $query = $this->di['dbal']->createQueryBuilder();
         $query
             ->delete('client_order')
@@ -1597,5 +1600,35 @@ class Service implements InjectionAwareInterface
         }
 
         return $this->di['csv_response_factory']->create('client_order', 'orders.csv', $headers);
+    }
+
+    private function getProductId(Product $product): int
+    {
+        return (int) $product->getId();
+    }
+
+    private function getProductFormId(Product $product): ?int
+    {
+        return $product->getFormId();
+    }
+
+    private function getProductTitle(Product $product): string
+    {
+        return (string) $product->getTitle();
+    }
+
+    private function getProductType(Product $product): string
+    {
+        return (string) $product->getType();
+    }
+
+    private function getProductUnit(Product $product): string
+    {
+        return (string) $product->getUnit();
+    }
+
+    private function isAddonProduct(Product $product): bool
+    {
+        return $product->isAddon();
     }
 }

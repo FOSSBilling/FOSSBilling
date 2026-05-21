@@ -1,0 +1,264 @@
+<?php
+
+declare(strict_types=1);
+/**
+ * Copyright 2022-2025 FOSSBilling
+ * Copyright 2011-2021 BoxBilling, Inc.
+ * SPDX-License-Identifier: Apache-2.0.
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ */
+
+namespace Box\Mod\Product\Entity;
+
+use Doctrine\ORM\Mapping as ORM;
+use FOSSBilling\Interfaces\ApiArrayInterface;
+use FOSSBilling\Interfaces\TimestampInterface;
+
+#[ORM\Entity(repositoryClass: \Box\Mod\Product\Repository\PromoRedemptionRepository::class)]
+#[ORM\Table(name: 'promo_redemption')]
+#[ORM\HasLifecycleCallbacks]
+class PromoRedemption implements ApiArrayInterface, TimestampInterface
+{
+    final public const string PHASE_CHECKOUT = 'checkout';
+    final public const string PHASE_RENEWAL = 'renewal';
+    final public const string STATUS_RESERVED = 'reserved';
+    final public const string STATUS_COMMITTED = 'committed';
+    final public const string STATUS_RELEASED = 'released';
+
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::INTEGER)]
+    private ?int $id = null;
+
+    #[ORM\Column(name: 'promo_id', type: \Doctrine\DBAL\Types\Types::INTEGER, nullable: true)]
+    private ?int $promoId = null;
+
+    #[ORM\Column(name: 'client_id', type: \Doctrine\DBAL\Types\Types::INTEGER, nullable: true)]
+    private ?int $clientId = null;
+
+    #[ORM\Column(name: 'client_order_id', type: \Doctrine\DBAL\Types\Types::INTEGER, nullable: true)]
+    private ?int $clientOrderId = null;
+
+    #[ORM\Column(name: 'invoice_id', type: \Doctrine\DBAL\Types\Types::INTEGER, nullable: true)]
+    private ?int $invoiceId = null;
+
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 30)]
+    private string $phase = self::PHASE_CHECKOUT;
+
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 30)]
+    private string $status = self::STATUS_RESERVED;
+
+    #[ORM\Column(name: 'discount_amount', type: \Doctrine\DBAL\Types\Types::DECIMAL, precision: 18, scale: 2, nullable: true)]
+    private ?string $discountAmount = null;
+
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 20, nullable: true)]
+    private ?string $currency = null;
+
+    #[ORM\Column(name: 'committed_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTime $committedAt = null;
+
+    #[ORM\Column(name: 'released_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTime $releasedAt = null;
+
+    #[ORM\Column(name: 'release_reason', type: \Doctrine\DBAL\Types\Types::STRING, length: 100, nullable: true)]
+    private ?string $releaseReason = null;
+
+    #[ORM\Column(name: 'created_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTime $createdAt = null;
+
+    #[ORM\Column(name: 'updated_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTime $updatedAt = null;
+
+    public function toApiArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'promo_id' => $this->promoId,
+            'client_id' => $this->clientId,
+            'client_order_id' => $this->clientOrderId,
+            'invoice_id' => $this->invoiceId,
+            'phase' => $this->phase,
+            'status' => $this->status,
+            'discount_amount' => $this->discountAmount !== null ? (float) $this->discountAmount : null,
+            'currency' => $this->currency,
+            'committed_at' => $this->committedAt?->format('Y-m-d H:i:s'),
+            'released_at' => $this->releasedAt?->format('Y-m-d H:i:s'),
+            'release_reason' => $this->releaseReason,
+            'created_at' => $this->createdAt?->format('Y-m-d H:i:s'),
+            'updated_at' => $this->updatedAt?->format('Y-m-d H:i:s'),
+        ];
+    }
+
+    #[ORM\PrePersist]
+    public function onPrePersist(): void
+    {
+        $now = new \DateTime();
+        $this->createdAt ??= $now;
+        $this->updatedAt = $now;
+    }
+
+    #[ORM\PreUpdate]
+    public function updateTimestamp(): void
+    {
+        $this->updatedAt = new \DateTime();
+    }
+
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function getPromoId(): ?int
+    {
+        return $this->promoId;
+    }
+
+    public function setPromoId(?int $promoId): self
+    {
+        $this->promoId = $promoId;
+
+        return $this;
+    }
+
+    public function getClientId(): ?int
+    {
+        return $this->clientId;
+    }
+
+    public function setClientId(?int $clientId): self
+    {
+        $this->clientId = $clientId;
+
+        return $this;
+    }
+
+    public function getClientOrderId(): ?int
+    {
+        return $this->clientOrderId;
+    }
+
+    public function setClientOrderId(?int $clientOrderId): self
+    {
+        $this->clientOrderId = $clientOrderId;
+
+        return $this;
+    }
+
+    public function getInvoiceId(): ?int
+    {
+        return $this->invoiceId;
+    }
+
+    public function setInvoiceId(?int $invoiceId): self
+    {
+        $this->invoiceId = $invoiceId;
+
+        return $this;
+    }
+
+    public function getPhase(): string
+    {
+        return $this->phase;
+    }
+
+    public function setPhase(string $phase): self
+    {
+        $this->phase = $phase;
+
+        return $this;
+    }
+
+    public function getStatus(): string
+    {
+        return $this->status;
+    }
+
+    public function setStatus(string $status): self
+    {
+        $this->status = $status;
+
+        return $this;
+    }
+
+    public function getDiscountAmount(): ?float
+    {
+        return $this->discountAmount !== null ? (float) $this->discountAmount : null;
+    }
+
+    public function setDiscountAmount(?float $discountAmount): self
+    {
+        $this->discountAmount = $discountAmount !== null ? sprintf('%.2f', $discountAmount) : null;
+
+        return $this;
+    }
+
+    public function getCurrency(): ?string
+    {
+        return $this->currency;
+    }
+
+    public function setCurrency(?string $currency): self
+    {
+        $this->currency = $currency;
+
+        return $this;
+    }
+
+    public function getCommittedAt(): ?\DateTime
+    {
+        return $this->committedAt;
+    }
+
+    public function setCommittedAt(?\DateTime $committedAt): self
+    {
+        $this->committedAt = $committedAt;
+
+        return $this;
+    }
+
+    public function getReleasedAt(): ?\DateTime
+    {
+        return $this->releasedAt;
+    }
+
+    public function setReleasedAt(?\DateTime $releasedAt): self
+    {
+        $this->releasedAt = $releasedAt;
+
+        return $this;
+    }
+
+    public function getReleaseReason(): ?string
+    {
+        return $this->releaseReason;
+    }
+
+    public function setReleaseReason(?string $releaseReason): self
+    {
+        $this->releaseReason = $releaseReason;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTime
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(\DateTime $createdAt): void
+    {
+        $this->createdAt = $createdAt;
+    }
+
+    public function getUpdatedAt(): ?\DateTime
+    {
+        return $this->updatedAt;
+    }
+
+    public function setUpdatedAt(\DateTime $updatedAt): void
+    {
+        $this->updatedAt = $updatedAt;
+    }
+}

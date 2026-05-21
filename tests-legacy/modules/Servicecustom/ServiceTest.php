@@ -254,26 +254,35 @@ final class ServiceTest extends \BBTestCase
         $order->client_id = 1;
         $order->config = 'config';
 
-        $product = new \Model_Product();
-        $product->loadBean(new \DummyBean());
-        $product->plugin = 'plugin';
-        $product->plugin_config = 'plugin_config';
+        $product = new \Box\Mod\Product\Entity\Product();
+        $product->setPlugin('plugin');
+        $product->setPluginConfig('plugin_config');
 
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('store')
             ->willReturn(1);
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->willReturn($product);
         $serviceCustomModel = new \Model_ServiceCustom();
         $serviceCustomModel->loadBean(new \DummyBean());
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
             ->willReturn($serviceCustomModel);
 
+        $productService = $this->createMock(\Box\Mod\Product\Service::class);
+        $productService->expects($this->once())
+            ->method('findProductById')
+            ->with(1)
+            ->willReturn($product);
+
         $di = $this->getDi();
         $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function (string $service) use ($productService) {
+            if ($service === 'product') {
+                return $productService;
+            }
+
+            throw new \RuntimeException('Unexpected service request');
+        });
         $this->service->setDi($di);
 
         $result = $this->service->action_create($order);
