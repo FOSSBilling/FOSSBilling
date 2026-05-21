@@ -556,7 +556,7 @@ final class AdminTest extends \BBTestCase
             'password' => 'strongPass',
             'password_confirm' => 'NotIdentical',
         ];
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
+        $adminClient = new \Box\Mod\Client\Api\Admin();
 
         $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffServiceMock->expects($this->once())
@@ -574,11 +574,11 @@ final class AdminTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
             'staff' => $staffServiceMock,
         });
-        $admin_Client->setDi($di);
+        $adminClient->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Passwords do not match');
-        $admin_Client->change_password($data);
+        $adminClient->change_password($data);
     }
 
     public function testBalanceGetList(): void
