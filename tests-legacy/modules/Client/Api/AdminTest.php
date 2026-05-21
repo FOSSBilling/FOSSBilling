@@ -556,7 +556,7 @@ final class AdminTest extends \BBTestCase
             'password' => 'strongPass',
             'password_confirm' => 'NotIdentical',
         ];
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
+        $adminClient = new \Box\Mod\Client\Api\Admin();
 
         $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffServiceMock->expects($this->once())
@@ -574,11 +574,11 @@ final class AdminTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
             'staff' => $staffServiceMock,
         });
-        $admin_Client->setDi($di);
+        $adminClient->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Passwords do not match');
-        $admin_Client->change_password($data);
+        $adminClient->change_password($data);
     }
 
     public function testBalanceGetList(): void
@@ -651,11 +651,11 @@ final class AdminTest extends \BBTestCase
             return false;
         });
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
 
         $this->expectException(\FOSSBilling\InformationException::class);
-        $admin_Client->balance_get_list($data);
+        $adminClient->balance_get_list($data);
     }
 
     public function testBalanceDelete(): void
@@ -687,10 +687,10 @@ final class AdminTest extends \BBTestCase
         });
         $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
 
-        $result = $admin_Client->balance_delete($data);
+        $result = $adminClient->balance_delete($data);
         $this->assertTrue($result);
     }
 
@@ -726,10 +726,10 @@ final class AdminTest extends \BBTestCase
 
         $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
 
-        $result = $admin_Client->balance_add_funds($data);
+        $result = $adminClient->balance_add_funds($data);
         $this->assertTrue($result);
     }
 
