@@ -153,7 +153,7 @@ final class ServiceTest extends \BBTestCase
     {
         $expected = [
             'free' => 'Free',
-            'once' => 'One time',
+            'once' => 'One Time',
             'recurrent' => 'Recurrent',
         ];
 
@@ -213,7 +213,7 @@ final class ServiceTest extends \BBTestCase
 
         $typesArr = [
             'free' => 'Free',
-            'once' => 'One time',
+            'once' => 'One Time',
             'recurrent' => 'Recurrent',
         ];
         $serviceMock->expects($this->atLeastOnce())
@@ -243,7 +243,7 @@ final class ServiceTest extends \BBTestCase
 
         $typesArr = [
             'free' => 'Free',
-            'once' => 'One time',
+            'once' => 'One Time',
             'recurrent' => 'Recurrent',
         ];
         $serviceMock->expects($this->atLeastOnce())

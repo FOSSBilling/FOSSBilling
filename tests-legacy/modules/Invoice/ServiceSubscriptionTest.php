@@ -176,7 +176,7 @@ final class ServiceSubscriptionTest extends \BBTestCase
                 ['status' => 'active'], 'AND status = :status', [':status' => 'active'],
             ],
             [
-                ['invoice_id' => '1'], 'AND invoice_id = :invoice_id', ['invoice_id' => '1'],
+                ['invoice_id' => '1'], 'AND invoice_id = :invoice_id', [':invoice_id' => '1'],
             ],
             [
                 ['gateway_id' => '2'], 'AND gateway_id = :gateway_id', [':gateway_id' => '2'],
@@ -198,6 +198,14 @@ final class ServiceSubscriptionTest extends \BBTestCase
             ],
             [
                 ['sid' => '10'], 'AND sid = :sid', [':sid' => '10'],
+            ],
+            [
+                ['date_from' => '2026-05-01', 'date_to' => '2026-05-03'],
+                'AND UNIX_TIMESTAMP(created_at) >= :date_from AND UNIX_TIMESTAMP(created_at) <= :date_to',
+                [
+                    ':date_from' => strtotime('2026-05-01 00:00:00'),
+                    ':date_to' => strtotime('2026-05-03 23:59:59'),
+                ],
             ],
         ];
     }

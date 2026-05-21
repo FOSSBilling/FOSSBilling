@@ -390,7 +390,7 @@ final class Api_AdminTest extends \BBTestCase
     {
         $statuses = [
             \Model_SupportPTicket::OPENED => 'Open',
-            \Model_SupportPTicket::ONHOLD => 'On hold',
+            \Model_SupportPTicket::ONHOLD => 'On Hold',
             \Model_SupportPTicket::CLOSED => 'Closed',
         ];
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
@@ -411,7 +411,7 @@ final class Api_AdminTest extends \BBTestCase
     {
         $statuses = [
             \Model_SupportPTicket::OPENED => 'Open',
-            \Model_SupportPTicket::ONHOLD => 'On hold',
+            \Model_SupportPTicket::ONHOLD => 'On Hold',
             \Model_SupportPTicket::CLOSED => 'Closed',
         ];
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
@@ -640,7 +640,7 @@ final class Api_AdminTest extends \BBTestCase
     {
         $statuses = [
             \Model_SupportPTicket::OPENED => 'Open',
-            \Model_SupportPTicket::ONHOLD => 'On hold',
+            \Model_SupportPTicket::ONHOLD => 'On Hold',
             \Model_SupportPTicket::CLOSED => 'Closed',
         ];
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
@@ -661,7 +661,7 @@ final class Api_AdminTest extends \BBTestCase
     {
         $statuses = [
             \Model_SupportPTicket::OPENED => 'Open',
-            \Model_SupportPTicket::ONHOLD => 'On hold',
+            \Model_SupportPTicket::ONHOLD => 'On Hold',
             \Model_SupportPTicket::CLOSED => 'Closed',
         ];
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
@@ -1239,12 +1239,18 @@ final class Api_AdminTest extends \BBTestCase
         $data = [
             'status' => 'status',
             'search' => 'search',
-            'cat' => 'category',
+            'kb_article_category_id' => 'category',
         ];
 
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbSearchArticles'])->getMock();
         $kbService->expects($this->atLeastOnce())
             ->method('kbSearchArticles')
+            ->with(
+                'status',
+                'search',
+                'category',
+                $this->isInstanceOf(\FOSSBilling\PaginationOptions::class)
+            )
             ->willReturn(['list' => []]);
 
         $adminApi->setService($kbService);
