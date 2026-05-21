@@ -5,7 +5,7 @@
                 <use xlink:href="#search"/>
             </svg>
         </span>
-	    <input class="form-control" type="search" name="search" value="{{ request.search }}" placeholder="{{ 'Enter search text...'|trans }}" aria-label="{{ 'Search'|trans }}">
+	    <input class="form-control" type="search" name="search" value="{{ request.search|e('html_attr') }}" placeholder="{{ 'Enter search text...'|trans }}" aria-label="{{ 'Search'|trans }}">
         {% if has_filter_panel|default(false) %}
         <span class="input-group-text search-actions">
     		<button class="search-filter-toggle {% if filter_panel_open|default(false) %}text-primary{% else %}text-secondary{% endif %}"
