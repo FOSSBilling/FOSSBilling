@@ -187,7 +187,7 @@ class Service implements InjectionAwareInterface
     {
         return [
             \Model_ProductPayment::FREE => 'Free',
-            \Model_ProductPayment::ONCE => 'One time',
+            \Model_ProductPayment::ONCE => 'One Time',
             \Model_ProductPayment::RECURRENT => 'Recurrent',
         ];
     }
