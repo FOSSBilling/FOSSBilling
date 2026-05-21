@@ -314,18 +314,18 @@ const API = {
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     const parseResponseBody = async (response) => {
       if (response.status === 204) {
-        return null;
+        return { payload: null, rawText: '' };
       }
 
       const text = await response.text();
       if (!text) {
-        return null;
+        return { payload: null, rawText: '' };
       }
 
       try {
-        return JSON.parse(text);
+        return { payload: JSON.parse(text), rawText: text };
       } catch (error) {
-        throw new Error('Invalid or non-JSON response from server');
+        return { payload: null, rawText: text };
       }
     };
 
@@ -386,13 +386,18 @@ const API = {
           return;
         }
 
-        const payload = await parseResponseBody(response);
+        const { payload, rawText } = await parseResponseBody(response);
 
         if (!response.ok) {
           const error = new Error(payload?.error?.message || `HTTP error ${response.status}: ${response.statusText}`);
           error.code = payload?.error?.code || `http_${response.status}`;
           error.status = response.status;
+          error.rawBody = rawText;
           throw error;
+        }
+
+        if (rawText && payload === null) {
+          throw new Error('Invalid or non-JSON response from server');
         }
 
         return payload;
