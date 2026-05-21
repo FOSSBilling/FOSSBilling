@@ -18,6 +18,8 @@ namespace Box\Mod\Client\Api;
 
 use FOSSBilling\Security\RandomizedTimeFloor;
 use FOSSBilling\Validation\Api\RequiredParams;
+use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 
 class Guest extends \Api_Abstract
 {
@@ -269,8 +271,8 @@ class Guest extends \Api_Abstract
     }
 
     /**
-     * Check if given vat number is valid EU country VAT number
-     * This method uses http://isvat.appspot.com/ method to validate VAT.
+     * Check if given vat number is valid EU country VAT number.
+     * Uses the EU VIES REST API to validate VAT numbers.
      *
      * @return bool true if VAT is valid, false if not
      */
@@ -280,9 +282,17 @@ class Guest extends \Api_Abstract
         $cc = $data['country'];
         $vatnum = $data['vat'];
 
-        // @todo add new service provider https://vatlayer.com/ check
-        //         $url    = 'http://isvat.appspot.com/' . rawurlencode($cc) . '/' . rawurlencode($vatnum) . '/';
-        return true;
+        $url = 'https://ec.europa.eu/taxation_customs/vies/rest-api/ms/' . rawurlencode($cc) . '/vat/' . rawurlencode($vatnum);
+
+        try {
+            $client = HttpClient::create(['bindto' => BIND_TO]);
+            $response = $client->request('GET', $url);
+            $content = $response->toArray();
+
+            return (bool) ($content['isValid'] ?? false);
+        } catch (ExceptionInterface $e) {
+            return false;
+        }
     }
 
     /**
