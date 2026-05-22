@@ -176,7 +176,7 @@
                                                 required="required">
                                             <option value="">{{ '-- Select Country --'|trans }}</option>
                                             {% for val,label in country_names() %}
-                                                <option value="{{ val }}" label="{{ label|e }}">{{ label|e }}</option>
+                                                <option value="{{ val }}" label="{{ label|e }}" {% if request.country|default('') == val %}selected{% endif %}>{{ label|e }}</option>
                                             {% endfor %}
                                         </select>
                                         <label for="country" class="ms-2">{{ 'Country'|trans }}</label>
@@ -208,15 +208,15 @@
 
                             {% if 'phone' in r %}
                                 <div class="row">
-                                    <div class="form-floating col-md-7 mb-3">
+                                    <div class="col-md-7 mb-3">
+                                        <label for="phone" class="form-label">{{ 'Phone Number'|trans }}</label>
                                         <div class="input-group">
-                                            <input class="form-control form-control-sm w-25" type="text" name="phone_cc" id="phone_cc"
+                                            <span class="input-group-text">+</span>
+                                            <input class="form-control form-control-sm fb-phone-country-code" type="text" name="phone_cc" id="phone_cc" value="{{ request.phone_cc }}" inputmode="numeric" maxlength="3" pattern="[0-9]{1,3}" autocomplete="tel-country-code"
                                                    placeholder="{{ 'Phone Code'|trans }}">
                                             <input class="form-control form-control-sm w-50" type="text" name="phone" id="phone"
                                                    placeholder="{{ 'Phone Number'|trans }}">
                                         </div>
-                                        <label for="phone" class="ms-2">{{ 'Phone Number'|trans }}</label>
-                                        <label for="phone_cc" class="ms-2">{{ 'Phone Code'|trans }}</label>
                                     </div>
                                 </div>
                             {% endif %}

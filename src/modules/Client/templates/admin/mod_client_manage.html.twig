@@ -351,7 +351,7 @@
                         <div class="col">
                             <div class="input-group">
                                 <span class="input-group-text">+</span>
-                                <input class="form-control fb-phone-country-code" type="text" name="phone_cc" value="{{ client.phone_cc }}" inputmode="numeric" maxlength="3" pattern="[0-9]{1,3}">
+                                <input class="form-control fb-phone-country-code" type="text" name="phone_cc" value="{{ client.phone_cc }}" inputmode="numeric" maxlength="3" pattern="[0-9]{1,3}" autocomplete="tel-country-code">
                                 <input class="form-control w-50" type="phone" name="phone" value="{{ client.phone }}">
                             </div>
                         </div>

@@ -184,7 +184,7 @@
                         <div class="col-md-5">
                             <label for="whois_phone_cc" class="form-label">{{ 'Phone Country Code'|trans }}</label>
                             <input class="form-control" type="text" name="contact[phone_cc]" id="whois_phone_cc"
-                                   value="{{ request.phone_cc|default(service.contact.phone_cc) }}" required>
+                                   value="{{ request.phone_cc|default(service.contact.phone_cc) }}" inputmode="numeric" maxlength="3" pattern="[0-9]{1,3}" autocomplete="tel-country-code" required>
                         </div>
                         <div class="col-md-5">
                             <label for="whois_phone" class="form-label">{{ 'Phone Number'|trans }}</label>

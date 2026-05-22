@@ -108,7 +108,7 @@
                                     <select class="form-select" id="country" name="country" required="required">
                                         <option value="">{{ '-- Select Country --'|trans }}</option>
                                         {% for val,label in country_names() %}
-                                            <option value="{{ val }}" label="{{ label|e }}" {% if guest.system_default_country == val %}selected{% endif %}>{{ label|e }}</option>
+                                            <option value="{{ val }}" label="{{ label|e }}" {% if request.country|default(guest.system_default_country) == val %}selected{% endif %}>{{ label|e }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
@@ -134,10 +134,9 @@
                                 <div class="mb-3">
                                     <label class="form-label" for="phone">{{ 'Phone Number'|trans }}</label>
                                     <div class="input-group">
-                                        <input class="form-control" id="phone" type="text" name="phone_cc" value=""
-                                               style="width: 20%"/>
-                                        <input class="form-control" id="phone" type="text" name="phone"
-                                               value="{{ request.phone }}" style="width: 70%"/>
+                                        <span class="input-group-text">+</span>
+                                        <input class="form-control fb-phone-country-code" id="phone_cc" type="text" name="phone_cc" value="{{ request.phone_cc }}" inputmode="numeric" maxlength="3" pattern="[0-9]{1,3}" autocomplete="tel-country-code"/>
+                                        <input class="form-control" id="phone" type="text" name="phone" value="{{ request.phone }}"/>
                                     </div>
                                 </div>
                             {% endif %}
