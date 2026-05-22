@@ -31,7 +31,7 @@
     {% if can_edit_currency %}
     <form method="post" action="{{ 'currency/update'|api_url }}" {{ fb_api_form({message: 'Currency Updated'|trans}) }}>
         <div class="card-body">
-            <h3 class="card-title">{{ 'Edit Currency Information'|trans }} - {{ currency.code|currency_name }} ({{ currency.code }})</h3>
+            <h3 class="card-title">{{ 'Edit Currency Information'|trans }} - {{ currency.code }} ({{ currency.code|currency_name }})</h3>
             <input type="hidden" name="code" value="{{ currency.code }}">
             <div class="mb-3 row">
                 <label class="col-md-3 col-form-label">{{ 'Conversion Rate'|trans }}</label>

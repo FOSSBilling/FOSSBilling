@@ -15,6 +15,7 @@ namespace Box\Mod\Currency\Api;
 use Box\Mod\Currency\Entity\Currency;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
+use Symfony\Component\Intl\Currencies;
 
 class Admin extends \Api_Abstract
 {
@@ -38,13 +39,21 @@ class Admin extends \Api_Abstract
     /**
      * Get list of available currencies on system as key-value pairs.
      *
-     * @return array<string, string> Array of currency code => formatted currency display name pairs (e.g., 'USD' => 'USD - United States dollar')
+     * @return array<string, string> Array of currency code => formatted currency display name pairs (e.g., 'USD' => 'USD (US Dollar)')
      */
     public function get_pairs(): array
     {
-        $service = $this->getService();
+        $currencies = Currencies::getNames();
+        foreach ($currencies as $currencyCode => $currencyName) {
+            /** @var string $currencyCode */
+            if (!Currencies::isValidInAnyCountry($currencyCode)) {
+                unset($currencies[$currencyCode]);
+            } else {
+                $currencies[$currencyCode] = sprintf('%s (%s)', $currencyCode, $currencyName);
+            }
+        }
 
-        return $service->getAvailableCurrencies();
+        return $currencies;
     }
 
     /**
@@ -107,8 +116,8 @@ class Admin extends \Api_Abstract
             throw new \FOSSBilling\Exception('Currency already registered');
         }
 
-        if (!array_key_exists($data['code'] ?? null, $service->getAvailableCurrencies())) {
-            throw new \FOSSBilling\Exception('Currency code is invalid');
+        if (!Currencies::exists($data['code'] ?? null)) {
+            throw new \FOSSBilling\Exception('Currency code is invalid.');
         }
 
         $title = $data['title'] ?? null;

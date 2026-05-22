@@ -14,6 +14,7 @@ namespace FOSSBilling;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
+use Symfony\Component\Intl\Languages;
 
 class i18n
 {
@@ -131,7 +132,7 @@ class i18n
 
         // Handle when FOSSBilling is running with a dummy locale folder.
         $localePhpPath = Path::join(PATH_LANGS, 'locales.php');
-        $array = ($filesystem->exists($localePhpPath)) ? include $localePhpPath : ['en_US' => 'English'];
+        $array = ($filesystem->exists($localePhpPath)) ? include $localePhpPath : Languages::getNames($locale);
 
         foreach ($locales as $locale) {
             $title = ($array[$locale] ?? $locale) . " ($locale)";

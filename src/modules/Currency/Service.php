@@ -18,6 +18,7 @@ use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use PrinsFrank\Standards\Currency\CurrencyAlpha3;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\Intl\Currencies;
 use Symfony\Contracts\Cache\ItemInterface;
 
 class Service implements InjectionAwareInterface
@@ -213,32 +214,6 @@ class Service implements InjectionAwareInterface
         $this->di['logger']->info('Set currency %s as default', $currency->getCode());
 
         return true;
-    }
-
-    /**
-     * Returns a list of available currencies.
-     *
-     * @return array List of currencies in the "[short code] - [name]" format
-     */
-    public function getAvailableCurrencies(): array
-    {
-        $options = [];
-        foreach (CurrencyAlpha3::cases() as $currency) {
-            $name = $currency->toCurrencyName()->value;
-
-            // Ensure legacy / outdated currencies aren't listed
-            if (str_contains(strtolower($name), '_old')) {
-                continue;
-            }
-
-            $options[$currency->value] = $currency->value . ' - ' . $name;
-        }
-
-        unset($options['XXX'], $options['XTS']);
-
-        ksort($options);
-
-        return $options;
     }
 
     public function getCurrencyDefaults(string $code): array
