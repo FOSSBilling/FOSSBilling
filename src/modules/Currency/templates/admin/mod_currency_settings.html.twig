@@ -264,7 +264,7 @@
                     <form method="post" action="">
                         <div class="card-body">
                             <div class="input-group">
-                                <span class="input-group-text">{{ guest.currency_get.code }}</span>
+                                <span class="input-group-text">{{ guest.currency_get.code|currency_symbol }}</span>
                                 <input class="form-control" type="text" name="amount" value="" required placeholder="{{ 'Amount'|trans }}" onkeyup="doConvert();">
                                 <span class="input-group-text">=</span>
                                 <input class="form-control" type="text" id="converted_result" value="" placeholder="{{ 'Result'|trans }}" readonly>

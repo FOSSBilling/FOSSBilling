@@ -530,7 +530,7 @@
                     <td>
                         <div class="input-group">
                             <input class="form-control" type="text" name="items[{{ item.id }}][price]" value="{{ item.price }}">
-                            <span class="input-group-text">{{ invoice.currency }}</span>
+                            <span class="input-group-text">{{ invoice.currency|currency_symbol }}</span>
                         </td>
                     <td class="text-center">
                         <input class="form-check-input m-0 align-middle" type="checkbox" name="items[{{ item.id }}][taxed]" value="1"{% if item.taxed %} checked{% endif %}>
@@ -555,7 +555,7 @@
                     <td class="text-center">
                         <div class="input-group">
                             <input class="form-control" type="text" name="new_item[price]" oninput="this.form['new_item[quantity]'].required = this.value.trim() !== ''">
-                            <span class="input-group-text">{{ invoice.currency }}</span>
+                            <span class="input-group-text">{{ invoice.currency|currency_symbol }}</span>
                         </div>
                     </td>
                     <td class="text-center">

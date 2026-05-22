@@ -687,7 +687,7 @@
                         <label class="form-label col-3 col-form-label" for="inputAmount">{{ 'Amount'|trans }}:</label>
                         <div class="col input-group">
                             <input class="form-control" type="text" id="inputAmount" name="amount" required>
-                            <span class="input-group-text">{{ client.currency }}</span>
+                            <span class="input-group-text">{{ client.currency|currency_symbol }}</span>
                         </div>
                     </div>
 
