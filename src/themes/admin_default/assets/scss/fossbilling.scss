@@ -9,6 +9,11 @@ body {
     font-family: Verdana, sans-serif;
 }
 
+.modal-dialog {
+    margin-right: auto;
+    margin-left: auto;
+}
+
 .page {
     min-height: calc(100vh - 2px);
 }
