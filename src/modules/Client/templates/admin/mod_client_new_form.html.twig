@@ -69,7 +69,7 @@
                         </div>
                         <div class="col-sm-6">
                             <label class="form-label" for="country">{{ 'Country'|trans }}</label>
-                            {{ mf.selectbox('country', guest.system_countries, guest.system_default_country, 0, 'Select Country'|trans) }}
+                            {{ mf.selectbox('country', country_names(), guest.system_default_country, 0, 'Select Country'|trans) }}
                         </div>
                         <div class="col-12">
                             <label class="form-label" for="new-client-phone">{{ 'Phone Number'|trans }}</label>

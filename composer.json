@@ -71,6 +71,7 @@
         "symfony/html-sanitizer": "^7.4",
         "symfony/http-client": "^7.4.1",
         "symfony/http-foundation": "^7.4.1",
+        "symfony/intl": "^7.4",
         "symfony/mailer": "^7.4",
         "symfony/polyfill-php84": "^1.33",
         "symfony/polyfill-php85": "^1.33",

@@ -63,16 +63,16 @@
                         </td>
                         <td>
                             {% if tax.country %}
-                                {{ guest.system_countries[tax.country] }}
+                                {{ tax.country|country_name }}
                             {% else %}
-                                {{ 'Applies to any country'|trans }}
+                                {{ 'Applies to Any Country'|trans }}
                             {% endif %}
                         </td>
                         <td>
                             {% if tax.state %}
                                 {{ tax.state }}
                             {% else %}
-                                {{ 'Applies to any state'|trans }}
+                                {{ 'Applies to Any State'|trans }}
                             {% endif %}
                         </td>
                         <td>{{ tax.taxrate }}%</td>
@@ -127,7 +127,7 @@
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Country'|trans }}:</label>
                         <div class="col">
-                            {{ mf.selectbox('country', guest.system_countries, request.country, 0, 'Apply to All Countries'|trans) }}
+                            {{ mf.selectbox('country', country_names(), request.country, 0, 'Apply to All Countries'|trans) }}
                         </div>
                     </div>
                     <div class="mb-3 row">

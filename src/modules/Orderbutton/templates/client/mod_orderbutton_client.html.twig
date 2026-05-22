@@ -174,8 +174,8 @@
                                     <div class="form-floating col-md-7 mb-3">
                                         <select class="form-select form-select-sm" name="country" id="country"
                                                 required="required">
-                                            <option value="">{{ '-- Select country --'|trans }}</option>
-                                            {% for val,label in guest.system_countries %}
+                                            <option value="">{{ '-- Select Country --'|trans }}</option>
+                                            {% for val,label in country_names() %}
                                                 <option value="{{ val }}" label="{{ label|e }}">{{ label|e }}</option>
                                             {% endfor %}
                                         </select>

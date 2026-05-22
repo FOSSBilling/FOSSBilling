@@ -150,8 +150,8 @@
                             <td class="text-end">{{ 'Address'|trans }}:</td>
                             <td>
                                 {% if client.country is not empty %}
-                                    <span class="flag flag-country-{{ client.country|lower }}" title="{{ guest.system_countries[client.country] }}"></span>
-                                    {{ guest.system_countries[client.country] }} {{ client.state }} {{ client.address_1 }} {{ client.address_2 }} {{ client.city }} {{ client.postcode }}
+                                    <span class="flag flag-country-{{ client.country|lower }}" title="{{ client.country|country_name }}"></span>
+                                    {{ client.country|country_name }} {{ client.state }} {{ client.address_1 }} {{ client.address_2 }} {{ client.city }} {{ client.postcode }}
                                 {% else %}
                                     -
                                 {% endif %}
@@ -324,7 +324,7 @@
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Country'|trans }}:</label>
                         <div class="col">
-                            {{ mf.selectbox('country', guest.system_countries, client.country, 0, 'Select Country'|trans) }}
+                            {{ mf.selectbox('country', country_names(), client.country, 0, 'Select Country'|trans) }}
                         </div>
                     </div>
                     <div class="mb-3 row">

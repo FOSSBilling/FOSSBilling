@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "815b663b19ecc040d3f2b2a588588cae",
+    "content-hash": "a19f6bd2e72ce107614ef7e982f9ca90",
     "packages": [
         {
             "name": "antcms/antloader",

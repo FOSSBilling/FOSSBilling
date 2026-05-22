@@ -252,7 +252,7 @@
                                             <div class="font-weight-medium">
                                                 <a href='{{ "client/manage/#{client.id }"|url }}'>{{ client.first_name }} {{ client.last_name }}</a>
                                                 {% if client.country is not empty %}
-                                                    <span class="flag flag-country-{{ client.country|lower }}" title="{{ guest.system_countries[client.country] }}"></span>
+                                                    <span class="flag flag-country-{{ client.country|lower }}" title="{{ client.country|country_name }}"></span>
                                                 {% endif %}
                                             </div>
                                             <div class="text-muted">

@@ -82,16 +82,6 @@ class Guest extends \Api_Abstract
     }
 
     /**
-     * Returns list of world countries.
-     *
-     * @return array
-     */
-    public function countries()
-    {
-        return $this->getService()->getCountries();
-    }
-
-    /**
      * Return the code of the default country, if set.
      */
     public function default_country(): ?string

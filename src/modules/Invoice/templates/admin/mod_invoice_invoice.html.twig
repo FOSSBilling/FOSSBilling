@@ -470,7 +470,7 @@
                     <div class="mb-3 row">
                         <label class="form-label col-3 col-form-label">{{ 'Country'|trans }}:</label>
                         <div class="col">
-                            {{ mf.selectbox('buyer_country', guest.system_countries, buyer.country, 0, 'Select country'|trans) }}
+                            {{ mf.selectbox('buyer_country', country_names(), buyer.country, 0, 'Select country'|trans) }}
                         </div>
                     </div>
                     <div class="mb-3 row">
