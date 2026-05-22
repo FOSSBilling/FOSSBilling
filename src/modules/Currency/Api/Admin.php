@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -70,7 +70,7 @@ class Admin extends \Api_Abstract
         $model = $repo->findOneByCode($data['code']);
 
         if (!$model instanceof Currency) {
-            throw new \FOSSBilling\Exception('Currency not found');
+            throw new \FOSSBilling\Exception('Currency not found.');
         }
 
         return $model->toApiArray();
@@ -79,7 +79,7 @@ class Admin extends \Api_Abstract
     /**
      * Return default system currency.
      */
-    public function get_default(array $data): array
+    public function get_default(): array
     {
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
         $repo = $this->getService()->getCurrencyRepository();
@@ -113,17 +113,16 @@ class Admin extends \Api_Abstract
         $repo = $service->getCurrencyRepository();
 
         if ($repo->findOneByCode($data['code'] ?? null)) {
-            throw new \FOSSBilling\Exception('Currency already registered');
+            throw new \FOSSBilling\Exception('Currency already registered.');
         }
 
         if (!Currencies::exists($data['code'] ?? null)) {
             throw new \FOSSBilling\Exception('Currency code is invalid.');
         }
 
-        $title = $data['title'] ?? null;
         $conversionRate = $data['conversion_rate'] ?? null;
 
-        return $service->createCurrency($data['code'] ?? null, $title, $conversionRate);
+        return $service->createCurrency($data['code'] ?? null, $conversionRate);
     }
 
     /**
@@ -148,7 +147,7 @@ class Admin extends \Api_Abstract
     /**
      * See if CRON jobs are enabled for currency rates.
      */
-    public function is_cron_enabled(array $data): bool
+    public function is_cron_enabled(): bool
     {
         return $this->getService()->isCronEnabled();
     }
@@ -156,7 +155,7 @@ class Admin extends \Api_Abstract
     /**
      * Automatically update all currency rates.
      */
-    public function update_rates(array $data): bool
+    public function update_rates(): bool
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'update_rates');
 
@@ -194,7 +193,7 @@ class Admin extends \Api_Abstract
 
         $model = $repo->findOneByCode($data['code']);
         if (!$model instanceof Currency) {
-            throw new \FOSSBilling\Exception('Currency not found');
+            throw new \FOSSBilling\Exception('Currency not found.');
         }
 
         return $service->setAsDefault($model);

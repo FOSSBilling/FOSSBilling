@@ -26,9 +26,6 @@ class Currency implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::INTEGER)]
     private ?int $id = null;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 50, nullable: true)]
-    private ?string $title = null;
-
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::BOOLEAN, options: ['default' => false])]
     private bool $isDefault = false;
 
@@ -53,7 +50,6 @@ class Currency implements ApiArrayInterface, TimestampInterface
     {
         return [
             'code' => $this->getCode(),
-            'title' => $this->getTitle(),
             'conversion_rate' => $this->getConversionRate(),
             'default' => $this->isDefault(),
         ];
@@ -76,11 +72,6 @@ class Currency implements ApiArrayInterface, TimestampInterface
     public function getId(): ?int
     {
         return $this->id;
-    }
-
-    public function getTitle(): ?string
-    {
-        return $this->title;
     }
 
     public function getCode(): string
@@ -118,20 +109,6 @@ class Currency implements ApiArrayInterface, TimestampInterface
     }
 
     // --- Setters ---
-    public function setTitle(?string $title): self
-    {
-        $this->title = $title;
-
-        return $this;
-    }
-
-    public function setCode(string $code): self
-    {
-        $this->code = $code;
-
-        return $this;
-    }
-
     public function setIsDefault(bool $isDefault): self
     {
         $this->isDefault = $isDefault;
