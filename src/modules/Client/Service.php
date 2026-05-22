@@ -559,7 +559,6 @@ class Service implements InjectionAwareInterface
 
     public function createGroup(array $data)
     {
-
         $model = $this->di['db']->dispense('ClientGroup');
 
         $model->title = $data['title'];

@@ -27,9 +27,8 @@ class CurrencyRepository extends EntityRepository
     {
         $qb = $this->createQueryBuilder('c');
 
-        // Apply search filter if provided
         if (!empty($data['search'])) {
-            $qb->andWhere('(c.code LIKE :search OR c.title LIKE :search)')
+            $qb->andWhere('c.code LIKE :search')
                ->setParameter('search', '%' . $data['search'] . '%');
         }
 
@@ -61,20 +60,17 @@ class CurrencyRepository extends EntityRepository
         return $this->findOneBy(['isDefault' => true]);
     }
 
-    /**
-     * Get all currency code/title pairs.
-     */
     public function getPairs(): array
     {
         $qb = $this->createQueryBuilder('c')
-            ->select('c.code', 'c.title')
+            ->select('c.code')
             ->orderBy('c.code', 'ASC');
 
         $results = $qb->getQuery()->getResult();
 
         $pairs = [];
         foreach ($results as $result) {
-            $pairs[$result['code']] = $result['title'];
+            $pairs[$result['code']] = $result['code'];
         }
 
         return $pairs;

@@ -96,8 +96,6 @@ class Admin extends \Api_Abstract
     /**
      * Add new currency to system.
      *
-     * @optional string $title - custom currency title
-     *
      * @return string - currency code
      *
      * @throws \FOSSBilling\Exception
@@ -128,7 +126,6 @@ class Admin extends \Api_Abstract
     /**
      * Updates system currency settings.
      *
-     * @optional string $title - new currency title
      * @optional float $conversion_rate - new currency conversion rate
      *
      * @throws \FOSSBilling\Exception
@@ -138,10 +135,9 @@ class Admin extends \Api_Abstract
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'edit');
 
-        $title = $data['title'] ?? null;
         $conversionRate = $data['conversion_rate'] ?? null;
 
-        return $this->getService()->updateCurrency($data['code'], $title, $conversionRate);
+        return $this->getService()->updateCurrency($data['code'], $conversionRate);
     }
 
     /**

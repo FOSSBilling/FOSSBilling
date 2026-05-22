@@ -90,7 +90,6 @@ class ServiceTax implements InjectionAwareInterface
 
     public function create(array $data)
     {
-
         $model = $this->di['db']->dispense('Tax');
         $model->name = $data['name'];
         $model->country = (!isset($data['country']) || empty($data['country'])) ? null : $data['country'];

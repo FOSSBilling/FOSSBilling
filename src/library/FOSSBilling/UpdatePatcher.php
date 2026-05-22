@@ -328,6 +328,7 @@ class UpdatePatcher implements InjectionAwareInterface
             60 => 'patch60',
             61 => 'patch61',
             62 => 'patch62',
+            63 => 'patch63',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1275,5 +1276,15 @@ class UpdatePatcher implements InjectionAwareInterface
         $this->executeSql("UPDATE client_order SET period = NULL WHERE period IN ('0', '')");
         $this->executeSql("UPDATE subscription SET period = NULL WHERE period IN ('0', '')");
         $this->executeSql("UPDATE transaction SET s_period = NULL WHERE s_period IN ('0', '')");
+    }
+
+    private function patch63(): void
+    {
+        $schemaManager = $this->di['dbal']->createSchemaManager();
+        $table = $schemaManager->introspectTable('currency');
+
+        if ($table->hasColumn('title')) {
+            $this->executeSql('ALTER TABLE currency DROP COLUMN title');
+        }
     }
 }

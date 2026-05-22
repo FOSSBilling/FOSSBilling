@@ -85,8 +85,8 @@ class Service implements InjectionAwareInterface
      * Convert an amount from a foreign currency to the system's default
      * currency using the current conversion rate.
      *
-     * @param string    $fromCurrencyCode   Currency code of the amount to convert (e.g., 'USD')
-     * @param float|int $amount             Amount in the foreign currency
+     * @param string    $fromCurrencyCode Currency code of the amount to convert (e.g., 'USD')
+     * @param float|int $amount           Amount in the foreign currency
      *
      * @return float Amount converted to the default currency
      *
