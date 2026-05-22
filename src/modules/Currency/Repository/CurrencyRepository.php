@@ -15,6 +15,7 @@ namespace Box\Mod\Currency\Repository;
 use Box\Mod\Currency\Entity\Currency;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use Symfony\Component\Intl\Currencies;
 
 class CurrencyRepository extends EntityRepository
 {
@@ -70,7 +71,8 @@ class CurrencyRepository extends EntityRepository
 
         $pairs = [];
         foreach ($results as $result) {
-            $pairs[$result['code']] = $result['code'];
+            $code = $result['code'];
+            $pairs[$code] = Currencies::getName($code);
         }
 
         return $pairs;

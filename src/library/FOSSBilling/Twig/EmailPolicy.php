@@ -33,6 +33,7 @@ final class EmailPolicy
             'default', 'title', 'length', 'date',
             // IntlExtension
             'format_currency', 'format_date', 'format_datetime', 'format_number', 'format_time',
+            'currency_name', 'currency_symbol',
             // FOSSBillingExtension
             'url', 'daysleft', 'trans',
             // LegacyExtension

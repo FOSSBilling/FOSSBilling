@@ -98,8 +98,11 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     public function getAmountInCents(Model_Invoice $invoice)
     {
         $invoiceService = $this->di['mod_service']('Invoice');
+        $amount = $invoiceService->getTotalWithTax($invoice);
+        $fractionDigits = Symfony\Component\Intl\Currencies::getFractionDigits($invoice->currency);
+        $multiplier = 10 ** $fractionDigits;
 
-        return $invoiceService->getTotalWithTax($invoice) * 100;
+        return (int) round($amount * $multiplier);
     }
 
     public function getInvoiceTitle(Model_Invoice $invoice)

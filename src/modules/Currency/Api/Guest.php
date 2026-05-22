@@ -13,6 +13,9 @@ declare(strict_types=1);
 namespace Box\Mod\Currency\Api;
 
 use Box\Mod\Currency\Entity\Currency;
+use FOSSBilling\i18n;
+use FOSSBilling\Tools;
+use Symfony\Component\Intl\Currencies;
 
 class Guest extends \Api_Abstract
 {
@@ -46,5 +49,43 @@ class Guest extends \Api_Abstract
         }
 
         return $model->toApiArray();
+    }
+
+    /**
+     * Format price by currency code.
+     *
+     * @optional bool $convert          - convert to default currency rate. Default - true
+     * @optional bool $without_currency - show only number, no symbols. Default - false
+     * @optional float $price           - price to be formatted. Default 0
+     * @optional string $code           - currency code, e.g. USD. Default - default currency
+     *
+     * @return string - formatted string
+     */
+    public function format(array $data): string
+    {
+        $c = $this->get($data);
+
+        $price = $data['price'] ?? 0;
+        $convert = Tools::normalizeBoolean($data['convert'] ?? true, true);
+        $withoutCurrency = Tools::normalizeBoolean($data['without_currency'] ?? false);
+
+        $p = floatval($price);
+        if ($convert) {
+            $p = $price * $c['conversion_rate'];
+        }
+
+        $locale = i18n::getActiveLocale();
+
+        if ($withoutCurrency) {
+            $fractionDigits = Currencies::getFractionDigits($c['code']);
+            $formatter = new \NumberFormatter($locale, \NumberFormatter::DECIMAL);
+            $formatter->setAttribute(\NumberFormatter::FRACTION_DIGITS, $fractionDigits);
+
+            return $formatter->format($p);
+        }
+
+        $formatter = new \NumberFormatter($locale, \NumberFormatter::CURRENCY);
+
+        return $formatter->formatCurrency($p, $c['code']);
     }
 }

@@ -273,17 +273,6 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         return $ret == 'VERIFIED';
     }
 
-    #[Override]
-    public function moneyFormat($amount, $currency = null): string
-    {
-        // HUF currency do not accept decimal values
-        if ($currency == 'HUF') {
-            return number_format($amount, 0);
-        }
-
-        return number_format($amount, 2, '.', '');
-    }
-
     /**
      * @param string $url
      */
