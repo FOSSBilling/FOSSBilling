@@ -117,11 +117,17 @@ body {
 .ts-wrapper.js-language-selector .ts-control.locale {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
+    white-space: nowrap;
+}
+
+.ts-wrapper.js-language-selector {
+    min-width: 260px;
 }
 
 @media (max-width: 768px) {
     .ts-wrapper.js-language-selector {
-        width: 180px
+        min-width: 200px;
+        width: auto;
     }
 }
 
