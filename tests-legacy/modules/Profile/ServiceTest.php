@@ -188,7 +188,7 @@ final class ServiceTest extends \BBTestCase
             'state' => 'string',
             'document_type' => 'passport',
             'document_nr' => random_int(100000, 900000),
-            'lang' => 'string',
+            'lang' => 'en_US',
             'notes' => 'string',
             'custom_1' => 'string',
             'custom_2' => 'string',

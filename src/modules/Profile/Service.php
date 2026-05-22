@@ -16,6 +16,7 @@ use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
 use Symfony\Component\Intl\Countries;
+use Symfony\Component\Intl\Locales;
 
 class Service implements InjectionAwareInterface
 {
@@ -173,7 +174,11 @@ class Service implements InjectionAwareInterface
                 $data['document_type'] ?? \Model_Client::DOC_PASSPORT,
             );
         }
-        $client->lang = $data['lang'] ?? $client->lang;
+        $lang = $data['lang'] ?? $client->lang;
+        if (!empty($lang) && !Locales::exists($lang)) {
+            throw new InformationException('Invalid locale code: :code', [':code' => $lang]);
+        }
+        $client->lang = $lang;
         $client->notes = $data['notes'] ?? $client->notes;
         $client->custom_1 = $data['custom_1'] ?? $client->custom_1;
         $client->custom_2 = $data['custom_2'] ?? $client->custom_2;

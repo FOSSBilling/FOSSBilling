@@ -17,6 +17,7 @@ use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Intl\Countries;
+use Symfony\Component\Intl\Locales;
 
 class Service implements InjectionAwareInterface
 {
@@ -635,6 +636,9 @@ class Service implements InjectionAwareInterface
         $client->document_nr = $data['document_nr'] ?? null;
         $client->notes = $data['notes'] ?? null;
         $client->lang = $data['lang'] ?? null;
+        if ($client->lang !== null && $client->lang !== '' && !Locales::exists($client->lang)) {
+            throw new InformationException('Invalid locale code: :code', [':code' => $client->lang]);
+        }
         $client->currency = $data['currency'] ?? null;
 
         $client->custom_1 = $data['custom_1'] ?? null;

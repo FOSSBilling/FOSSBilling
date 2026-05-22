@@ -234,7 +234,13 @@
                             <div class="mb-3 row">
                                 <label class="col-md-3 col-form-label">{{ 'Default Locale'|trans }}</label>
                                 <div class="col-md-6">
-                                    <input class="form-control" type="text" value="{{ localization.locale }}" readonly disabled>
+                                    <select class="form-select" name="locale">
+                                        {% set enabled_locales = guest.extension_languages %}
+                                        {% for lang in enabled_locales %}
+                                            <option value="{{ lang.locale }}" {% if localization.locale == lang.locale %}selected{% endif %}>{{ lang.name }} ({{ lang.locale }})</option>
+                                        {% endfor %}
+                                    </select>
+                                    <input type="hidden" name="current_locale" value="{{ localization.locale }}">
                                     <div class="form-hint">{{ 'Used when browser language detection is disabled or no suitable browser language match is found.'|trans }}</div>
                                 </div>
                             </div>

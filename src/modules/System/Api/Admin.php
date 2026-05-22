@@ -70,6 +70,10 @@ class Admin extends \Api_Abstract
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'update_params');
 
+        if (isset($data['locale']) && $data['locale'] !== '') {
+            Config::setProperty('i18n.locale', $data['locale']);
+        }
+
         Config::setProperty('i18n.auto_detect_locale', Tools::normalizeBoolean($data['auto_detect_locale'] ?? true, true));
 
         return true;

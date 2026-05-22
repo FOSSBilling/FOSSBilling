@@ -22,6 +22,7 @@ use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Intl\Countries;
+use Symfony\Component\Intl\Locales;
 
 class Admin extends \Api_Abstract
 {
@@ -285,6 +286,10 @@ class Admin extends \Api_Abstract
 
         if (!empty($data['country']) && !Countries::exists($data['country'])) {
             throw new InformationException('Invalid country code: :code', [':code' => $data['country']]);
+        }
+
+        if (!empty($data['lang']) && !Locales::exists($data['lang'])) {
+            throw new InformationException('Invalid locale code: :code', [':code' => $data['lang']]);
         }
 
         $allowedFields = [

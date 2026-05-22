@@ -99,9 +99,4 @@ class Box_Translate
 
         return $this;
     }
-
-    public function __($msgid, ?array $values = null)
-    {
-        return __trans($msgid, $values);
-    }
 }
