@@ -208,7 +208,7 @@ final class GuestTest extends \BBTestCase
         $di['events_manager'] = $eventMock;
         $di['validator'] = new \FOSSBilling\Validate();
         $di['tools'] = $toolsMock;
-        $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\Stub => match ($name) {
             'email' => $emailServiceMock,
             'extension' => $extensionServiceMock,
             default => $this->createMock(\Box\Mod\Extension\Service::class),
