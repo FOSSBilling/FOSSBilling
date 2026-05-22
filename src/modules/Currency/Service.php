@@ -55,27 +55,27 @@ class Service implements InjectionAwareInterface
             'can_always_access' => true,
             'create' => [
                 'type' => 'bool',
-                'display_name' => __trans('Create currencies'),
+                'display_name' => __trans('Create Currencies'),
                 'description' => __trans('Allows the staff member to add new currencies to the system.'),
             ],
             'edit' => [
                 'type' => 'bool',
-                'display_name' => __trans('Edit currencies'),
+                'display_name' => __trans('Edit Currencies'),
                 'description' => __trans('Allows the staff member to update currency titles and conversion rates.'),
             ],
             'delete' => [
                 'type' => 'bool',
-                'display_name' => __trans('Delete currencies'),
+                'display_name' => __trans('Delete Currencies'),
                 'description' => __trans('Allows the staff member to remove currencies from the system.'),
             ],
             'set_default' => [
                 'type' => 'bool',
-                'display_name' => __trans('Set default currency'),
+                'display_name' => __trans('Set Default Currency'),
                 'description' => __trans('Allows the staff member to change the system default currency.'),
             ],
             'update_rates' => [
                 'type' => 'bool',
-                'display_name' => __trans('Update currency rates'),
+                'display_name' => __trans('Update Currency Rates'),
                 'description' => __trans('Allows the staff member to refresh all currency conversion rates.'),
             ],
             'manage_settings' => [],
