@@ -213,16 +213,14 @@ final class Api_AdminTest extends \BBTestCase
     public function testGetPairs(): void
     {
         $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi->setDi($this->getDi());
 
-        $service = $this->createMock(\Box\Mod\Currency\Service::class);
-        $service->expects($this->atLeastOnce())
-            ->method('getAvailableCurrencies')
-            ->willReturn($this->availableCurrencies);
-
-        $adminApi->setService($service);
         $result = $adminApi->get_pairs();
-        $this->assertEquals($result, $this->availableCurrencies);
         $this->assertIsArray($result);
+        $this->assertArrayHasKey('USD', $result);
+        $this->assertArrayHasKey('EUR', $result);
+        $this->assertStringContainsString('USD', $result['USD']);
+        $this->assertStringContainsString('EUR', $result['EUR']);
     }
 
     public function testGet(): void
@@ -315,22 +313,20 @@ final class Api_AdminTest extends \BBTestCase
                     'code' => 'EUR',
                 ],
                 'atLeastOnce',
-                'currency_exists', // use string flag instead of mock
-                'never',
+                'currency_exists',
             ],
             [
                 [
-                    'code' => 'NON', // Non existing currency
+                    'code' => 'NON',
                 ],
                 'atLeastOnce',
                 null,
-                'atLeastOnce',
             ],
         ];
     }
 
     #[DataProvider('CreateExceptionProvider')]
-    public function testCreateException(array $data, string $findOneByCodeCalled, ?string $findOneByCodeReturn, string $getAvailableCurrenciesCalled): void
+    public function testCreateException(array $data, string $findOneByCodeCalled, ?string $findOneByCodeReturn): void
     {
         $adminApi = new \Box\Mod\Currency\Api\Admin();
 
@@ -338,7 +334,6 @@ final class Api_AdminTest extends \BBTestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        // Create mock if needed
         if ($findOneByCodeReturn === 'currency_exists') {
             $findOneByCodeReturn = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
                 ->disableOriginalConstructor()
@@ -354,10 +349,6 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getCurrencyRepository')
             ->willReturn($repositoryMock);
 
-        $service->expects($this->$getAvailableCurrenciesCalled())
-            ->method('getAvailableCurrencies')
-            ->willReturn($this->availableCurrencies);
-
         $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffServiceMock->expects($this->once())
             ->method('checkPermissionsAndThrowException')
@@ -370,7 +361,7 @@ final class Api_AdminTest extends \BBTestCase
         $adminApi->setService($service);
         $adminApi->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
-        $adminApi->create($data); // Expecting \FOSSBilling\Exception every time
+        $adminApi->create($data);
     }
 
     public function testCreate(): void
@@ -392,9 +383,6 @@ final class Api_AdminTest extends \BBTestCase
         $service->expects($this->atLeastOnce())
             ->method('getCurrencyRepository')
             ->willReturn($repositoryMock);
-        $service->expects($this->atLeastOnce())
-            ->method('getAvailableCurrencies')
-            ->willReturn($this->availableCurrencies);
         $service->expects($this->atLeastOnce())
             ->method('createCurrency')
             ->willReturn($data['code']);
@@ -460,7 +448,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $service = $this->createMock(\Box\Mod\Currency\Service::class);
         $service->expects($this->never())
-            ->method('deleteCurrencyByCode');
+            ->method('removeCurrency');
 
         $apiHandler = new \Api_Handler(new \Model_Admin());
         $reflection = new \ReflectionClass($apiHandler);
@@ -483,9 +471,9 @@ final class Api_AdminTest extends \BBTestCase
             'code' => 'EUR',
         ];
 
-        $service = $this->getMockBuilder(\Box\Mod\Currency\Service::class)->onlyMethods(['deleteCurrencyByCode'])->getMock();
+        $service = $this->getMockBuilder(\Box\Mod\Currency\Service::class)->onlyMethods(['removeCurrency'])->getMock();
         $service->expects($this->atLeastOnce())
-            ->method('deleteCurrencyByCode')
+            ->method('removeCurrency')
             ->willReturn(true);
 
         $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);

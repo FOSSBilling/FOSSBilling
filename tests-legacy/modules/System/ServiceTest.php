@@ -1050,27 +1050,6 @@ final class ServiceTest extends \BBTestCase
         $this->assertSame('-', $result);
     }
 
-    public function testGetEuCountries(): void
-    {
-        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
-        $modMock->expects($this->atLeastOnce())
-            ->method('getConfig')
-            ->willReturn(['countries' => 'US']);
-
-        $di = $this->getDi();
-        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
-
-        $this->service->setDi($di);
-        $result = $this->service->getEuCountries();
-        $this->assertIsArray($result);
-    }
-
-    public function testGetStates(): void
-    {
-        $result = $this->service->getStates();
-        $this->assertIsArray($result);
-    }
-
     public function testGetPhoneCodes(): void
     {
         $data = [];

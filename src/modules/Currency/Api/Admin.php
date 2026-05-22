@@ -168,7 +168,7 @@ class Admin extends \Api_Abstract
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'delete');
 
-        return $this->getService()->deleteCurrencyByCode($data['code']);
+        return $this->getService()->removeCurrency($data['code']);
     }
 
     /**
