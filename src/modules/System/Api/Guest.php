@@ -18,6 +18,7 @@ namespace Box\Mod\System\Api;
 
 use FOSSBilling\i18n;
 use FOSSBilling\Validation\Api\RequiredParams;
+use PrinsFrank\Standards\CountryCallingCode\CountryCallingCode;
 
 class Guest extends \Api_Abstract
 {
@@ -79,6 +80,20 @@ class Guest extends \Api_Abstract
     public function periods()
     {
         return \Box_Period::getPredefined();
+    }
+
+    /**
+     * Return a unique list of available phone country calling codes.
+     *
+     * @return list<int>
+     */
+    public function phone_codes(): array
+    {
+        $codes = array_map(static fn (CountryCallingCode $code): int => $code->value, CountryCallingCode::cases());
+        $codes = array_values(array_unique($codes));
+        sort($codes, SORT_NUMERIC);
+
+        return $codes;
     }
 
     /**
