@@ -390,7 +390,6 @@ CREATE TABLE `client_password_reset` (
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `currency` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `title` varchar(50) DEFAULT NULL,
   `code` varchar(3) DEFAULT NULL,
   `is_default` tinyint(1) DEFAULT '0',
   `conversion_rate` decimal(13,6) DEFAULT '1.000000',

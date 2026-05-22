@@ -60,7 +60,7 @@ class Service implements InjectionAwareInterface
             'edit' => [
                 'type' => 'bool',
                 'display_name' => __trans('Edit Currencies'),
-                'description' => __trans('Allows the staff member to update currency titles and conversion rates.'),
+                'description' => __trans('Allows the staff member to update currency conversion rates.'),
             ],
             'delete' => [
                 'type' => 'bool',

@@ -534,7 +534,7 @@ final class ServiceTest extends \BBTestCase
 
         $expected = [
             'code' => 'EUR',
-            'title' => 'Euro',
+            'name' => 'Euro',
             'conversion_rate' => 3.4528,
             'default' => true,
         ];
@@ -632,13 +632,12 @@ final class ServiceTest extends \BBTestCase
 
         $this->expectException(\FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Currency conversion rate must be a positive number');
-        $service->createCurrency('EUR', 'Euros', '0');
+        $service->createCurrency('EUR', '0');
     }
 
     public function testUpdateCurrency(): void
     {
         $code = 'EUR';
-        $title = 'Euros';
         $conversion_rate = 0.6;
 
         $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
@@ -679,7 +678,6 @@ final class ServiceTest extends \BBTestCase
     public function testUpdateCurrencyNotFoundException(): void
     {
         $code = 'EUR';
-        $title = 'Euros';
         $conversion_rate = 0.6;
 
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
@@ -703,13 +701,12 @@ final class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $service->updateCurrency($code, $title, $conversion_rate); // Expecting \FOSSBilling\Exception every time
+        $service->updateCurrency($code, $conversion_rate);
     }
 
     public function testUpdateConversionRateException(): void
     {
         $code = 'EUR';
-        $title = 'Euros';
         $conversion_rate = 0;
 
         $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
@@ -737,7 +734,7 @@ final class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $service->updateCurrency($code, $title, $conversion_rate); // Expecting \FOSSBilling\Exception every time
+        $service->updateCurrency($code, $conversion_rate);
     }
 
     public function testUpdateCurrencyRates(): void
