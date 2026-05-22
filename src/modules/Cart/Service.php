@@ -360,7 +360,7 @@ class Service implements InjectionAwareInterface
         $cart->currency_id = $currency->getId();
         $this->di['db']->store($cart);
 
-        $this->di['logger']->info('Changed shopping cart #%s currency to %s', $cart->id, $currency->getTitle());
+        $this->di['logger']->info('Changed shopping cart #%s currency to %s', $cart->id, $currency->getCode());
 
         return true;
     }
