@@ -51,3 +51,14 @@ jobs:
           CYPRESS_PROJECT_ID: ${{ inputs.cypress-project-id }}
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
         run: bash ./.github/scripts/run-docker-cypress-tests.sh fossbilling:cypress-test
+
+      - name: 'Upload Cypress Artifacts'
+        if: failure()
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
+        with:
+          name: cypress-artifacts
+          if-no-files-found: ignore
+          path: |
+            tests/e2e/cypress/screenshots
+            tests/e2e/cypress/videos
+            tests/e2e/cypress/downloads
