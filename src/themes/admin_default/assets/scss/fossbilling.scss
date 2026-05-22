@@ -118,6 +118,10 @@ body {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
     white-space: nowrap;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    line-height: 1.5;
+    min-height: auto;
 }
 
 .ts-wrapper.js-language-selector {
