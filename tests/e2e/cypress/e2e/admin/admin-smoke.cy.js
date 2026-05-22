@@ -14,6 +14,7 @@ describe('admin smoke pages', () => {
 
     pages.forEach((path) => {
       cy.visit(path);
+      cy.location('pathname').should('eq', path);
       cy.get('body').should('be.visible');
     });
   });
