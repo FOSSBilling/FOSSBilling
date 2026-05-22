@@ -366,6 +366,8 @@
         "hostings",
         "rulesets",
         "describedby",
+        "inputmode",
+        "maxlength",
         "offcanvas",
         "newtx",
         "pwreset",
