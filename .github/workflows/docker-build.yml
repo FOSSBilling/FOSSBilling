@@ -101,7 +101,7 @@ jobs:
 
       - name: 'Build and Push by Digest'
         id: build
-        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7
         with:
           build-args: ${{ inputs.build-args }}
           cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}:${{ inputs.cache-scope }}
@@ -114,7 +114,7 @@ jobs:
 
       - name: 'Extract Release Tree'
         if: inputs.extract-release-tree && matrix.platform == 'linux/amd64'
-        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7
         with:
           build-args: ${{ inputs.build-args }}
           cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}:${{ inputs.cache-scope }}
