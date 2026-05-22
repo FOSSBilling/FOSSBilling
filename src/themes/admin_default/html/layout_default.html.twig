@@ -2,9 +2,10 @@
 
 {% set profile = admin.profile_get %}
 {% set company = guest.system_company %}
+{% set active_locale = guest.system_locale|default('en')|replace({'_': '-'}) %}
 
 <!DOCTYPE html>
-<html lang="" data-bs-theme="dark">
+<html lang="{{ active_locale }}" data-bs-theme="dark">
 
 <head>
     <title>{% block meta_title %}{% endblock %} - {{ company.name }}</title>

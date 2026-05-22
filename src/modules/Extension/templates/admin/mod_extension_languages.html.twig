@@ -51,7 +51,7 @@
                                     <td class="w-1">
                                         <span class="flag flag-country-{{ lang.locale|split('_')[1]|lower }}"></span>
                                     </td>
-                                    <td>{{ lang.name }}</td>
+                                    <td>{{ lang.locale|locale_name }}</td>
                                     <td>
                                         {% set progress = admin.extension_locale_completion({'locale_id': lang.locale}) %}
                                         {% if progress > 75 %}
@@ -102,7 +102,7 @@
                                     <td class="w-1">
                                         <span class="flag flag-country-{{ lang.locale|split('_')[1]|lower }}"></span>
                                     </td>
-                                    <td>{{ lang.name }}</td>
+                                    <td>{{ lang.locale|locale_name }}</td>
                                     <td>
                                         {% set progress = admin.extension_locale_completion({'locale_id': lang.locale}) %}
                                         {% if progress > 75 %}

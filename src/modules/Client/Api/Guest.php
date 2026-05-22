@@ -136,6 +136,10 @@ class Guest extends \Api_Abstract
             $this->di['logger']->info('Client #%s logged in', $client->id);
             $this->di['session']->delete('redirect_uri');
 
+            if (!headers_sent() && !empty($client->lang)) {
+                setcookie('fb_locale', (string) $client->lang, ['expires' => strtotime('+1 month'), 'path' => '/']);
+            }
+
             $this->di['mod_service']('cart')->transferFromOtherSession($oldSession);
 
             return $result;
