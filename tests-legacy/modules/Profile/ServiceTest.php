@@ -182,7 +182,7 @@ final class ServiceTest extends \BBTestCase
             'address_2' => 'string',
             'phone_cc' => random_int(10, 300),
             'phone' => random_int(10000, 90000),
-            'country' => 'string',
+            'country' => 'US',
             'postcode' => 'string',
             'city' => 'string',
             'state' => 'string',

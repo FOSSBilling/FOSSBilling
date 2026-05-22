@@ -188,7 +188,12 @@
         <div class="mb-3 row">
             <label class="form-label col-3 col-form-label">{{ 'Country'|trans }}: </label>
             <div class="col">
-                <input class="form-control" type="text" name="contact[country]" value="{{ request.country|default(service.contact.country) }}" required>
+                <select class="form-select" name="contact[country]" required>
+                    <option value="">{{ 'Select country'|trans }}</option>
+                    {% for code, name in country_names() %}
+                        <option value="{{ code }}" {% if (request.country|default(service.contact.country)) == code %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
             </div>
         </div>
         <div class="mb-3 row">

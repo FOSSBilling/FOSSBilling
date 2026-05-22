@@ -12,8 +12,10 @@ declare(strict_types=1);
 
 namespace Box\Mod\Profile;
 
+use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
+use Symfony\Component\Intl\Countries;
 
 class Service implements InjectionAwareInterface
 {
@@ -155,7 +157,11 @@ class Service implements InjectionAwareInterface
         $client->type = $data['type'] ?? $client->type;
         $client->address_1 = $data['address_1'] ?? $client->address_1;
         $client->address_2 = $data['address_2'] ?? $client->address_2;
-        $client->country = $data['country'] ?? $client->country;
+        $country = $data['country'] ?? $client->country;
+        if (!empty($country) && !Countries::exists($country)) {
+            throw new InformationException('Invalid country code: :code', [':code' => $country]);
+        }
+        $client->country = $country;
         $client->postcode = $data['postcode'] ?? $client->postcode;
         $client->city = $data['city'] ?? $client->city;
         $client->state = $data['state'] ?? $client->state;
