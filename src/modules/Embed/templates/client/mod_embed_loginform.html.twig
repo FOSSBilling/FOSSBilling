@@ -31,14 +31,14 @@
 <body>
 <form action="" method="post" id="client-login">
     <fieldset>
-        <legend>Login to client area</legend>
+        <legend>{{ 'Login to Client Area'|trans }}</legend>
         <p>
-            <input type="email" name="email" value="" required="required" placeholder="Your email">
+            <input type="email" name="email" value="" required="required" placeholder="{{ 'Your email'|trans }}">
         </p>
         <p>
-            <input type="password" name="password" value="" required="required" placeholder="Your password">
+            <input type="password" name="password" value="" required="required" placeholder="{{ 'Your password'|trans }}">
         </p>
-        <input type="submit" value="Login">
+        <input type="submit" value="{{ 'Login'|trans }}">
     </fieldset>
 </form>
 
