@@ -52,27 +52,27 @@ class Service
             'can_always_access' => true,
             'manage_settings' => [
                 'type' => 'bool',
-                'display_name' => __trans('Manage system settings'),
+                'display_name' => __trans('Manage System Settings'),
                 'description' => __trans('Allows the staff member to view and manage general system settings.'),
             ],
             'manage_company_details' => [
                 'type' => 'bool',
-                'display_name' => __trans('Manage company details'),
+                'display_name' => __trans('Manage Company Details'),
                 'description' => __trans('Allows the staff member to update company details as set under the system module.'),
             ],
             'manage_company_legal' => [
                 'type' => 'bool',
-                'display_name' => __trans('Manage company legal'),
+                'display_name' => __trans('Manage Company Legal'),
                 'description' => __trans('Allows the staff member to update company legal as set under the system module.'),
             ],
             'update_params' => [
                 'type' => 'bool',
-                'display_name' => __trans('Update system parameters'),
+                'display_name' => __trans('Update System Parameters'),
                 'description' => __trans('Allows the staff member to update system parameters through the system API endpoint.'),
             ],
             'invalidate_cache' => [
                 'type' => 'bool',
-                'display_name' => __trans('Invalidate cache'),
+                'display_name' => __trans('Invalidate Cache'),
                 'description' => __trans('Allows the staff member to invalidate the FOSSBilling cache from within the system settings.'),
             ],
             'system_update' => [
@@ -82,17 +82,17 @@ class Service
             ],
             'recheck_update' => [
                 'type' => 'bool',
-                'display_name' => __trans('Recheck for updates'),
+                'display_name' => __trans('Recheck for Updates'),
                 'description' => __trans('Allows the staff member to clear cached update information and fetch the latest update metadata.'),
             ],
             'toggle_error_reporting' => [
                 'type' => 'bool',
-                'display_name' => __trans('Toggle error reporting'),
+                'display_name' => __trans('Toggle Error Reporting'),
                 'description' => __trans('Allows the staff member to enable or disable error reporting for this FOSSBilling instance.'),
             ],
             'manage_network_interface' => [
                 'type' => 'bool',
-                'display_name' => __trans('Manage the network interface'),
+                'display_name' => __trans('Manage the Network Interface'),
                 'description' => __trans('Allows the staff member to fetch a list of all local interface IP addresses and set the default network interface for FOSSBilling to use.'),
             ],
         ];
@@ -101,7 +101,7 @@ class Service
     public function getParamValue(string $param, $default = null)
     {
         if (empty($param)) {
-            throw new \FOSSBilling\Exception('Parameter key is missing');
+            throw new \FOSSBilling\Exception('Parameter key is missing.');
         }
 
         $query = $this->di['dbal']->createQueryBuilder();
@@ -186,7 +186,7 @@ class Service
     {
         foreach ($params as $param) {
             if (!preg_match('/^[a-z0-9_]+$/', (string) $param)) {
-                throw new \FOSSBilling\InformationException('Invalid parameter name, received: param_', ['param_' => $param]);
+                throw new \FOSSBilling\InformationException('Invalid parameter name, received: param_.', ['param_' => $param]);
             }
         }
         $query = $this->di['dbal']->createQueryBuilder();
