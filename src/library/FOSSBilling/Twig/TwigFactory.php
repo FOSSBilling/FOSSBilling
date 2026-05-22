@@ -25,6 +25,7 @@ use FOSSBilling\Twig\Extension\LegacyExtension;
 use FOSSBilling\Twig\Markdown\FOSSBillingMarkdown;
 use FOSSBilling\Version;
 use Symfony\Component\Filesystem\Path;
+use Symfony\Component\Intl\Currencies;
 use Twig\Environment;
 use Twig\Extension\AttributeExtension;
 use Twig\Extension\CoreExtension;
@@ -69,8 +70,9 @@ class TwigFactory
         $loader = new ArrayLoader();
         $twig = new Environment($loader, $this->baseConfig);
 
-        // Configure core and register bundled Twig extensions.
-        $twig->getExtension(CoreExtension::class)->setNumberFormat(2, '.', '');
+        $decimalDigits = $this->getDefaultCurrencyFractionDigits();
+
+        $twig->getExtension(CoreExtension::class)->setNumberFormat($decimalDigits, '.', '');
         $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
         $twig->addExtension(new DebugExtension());
         $twig->addExtension(new MarkdownExtension());
@@ -190,8 +192,9 @@ class TwigFactory
         $loader = new ArrayLoader();
         $twig = new Environment($loader, $this->baseConfig);
 
-        // Configure core settings
-        $twig->getExtension(CoreExtension::class)->setNumberFormat(2, '.', '');
+        $decimalDigits = $this->getDefaultCurrencyFractionDigits();
+
+        $twig->getExtension(CoreExtension::class)->setNumberFormat($decimalDigits, '.', '');
         $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
 
         // Add only essential extensions for email templates
@@ -291,7 +294,9 @@ class TwigFactory
 
         $twig = new Environment(new ArrayLoader(), $this->baseConfig);
 
-        $twig->getExtension(CoreExtension::class)->setNumberFormat(2, '.', '');
+        $decimalDigits = $this->getDefaultCurrencyFractionDigits();
+
+        $twig->getExtension(CoreExtension::class)->setNumberFormat($decimalDigits, '.', '');
         $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
         $twig->addExtension(new StringLoaderExtension());
 
@@ -402,6 +407,17 @@ class TwigFactory
         $currency = $repository->findDefault();
 
         return $currency instanceof Currency ? $currency->getCode() : null;
+    }
+
+    private function getDefaultCurrencyFractionDigits(): int
+    {
+        $code = $this->getDefaultCurrencyCode();
+
+        if ($code !== null && Currencies::exists($code)) {
+            return Currencies::getFractionDigits($code);
+        }
+
+        return 2;
     }
 
     /**

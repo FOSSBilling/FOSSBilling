@@ -155,7 +155,11 @@
             if (typeof multiply !== 'undefined') {
                 total *= multiply;
             }
-            return `${total.toFixed(2)} ${code}`;
+            return new Intl.NumberFormat(undefined, {
+                style: 'currency',
+                currency: code,
+                currencyDisplay: 'narrowSymbol',
+            }).format(total);
         };
 
         const transferCheck = document.getElementById('transfer-check');

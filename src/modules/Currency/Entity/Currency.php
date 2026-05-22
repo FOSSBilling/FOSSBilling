@@ -15,6 +15,7 @@ namespace Box\Mod\Currency\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Interfaces\ApiArrayInterface;
 use FOSSBilling\Interfaces\TimestampInterface;
+use Symfony\Component\Intl\Currencies;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Currency\Repository\CurrencyRepository::class)]
 #[ORM\Table(name: 'currency')]
@@ -50,6 +51,8 @@ class Currency implements ApiArrayInterface, TimestampInterface
     {
         return [
             'code' => $this->getCode(),
+            'name' => Currencies::getName($this->getCode()),
+            'symbol' => Currencies::getSymbol($this->getCode()),
             'conversion_rate' => $this->getConversionRate(),
             'default' => $this->isDefault(),
         ];

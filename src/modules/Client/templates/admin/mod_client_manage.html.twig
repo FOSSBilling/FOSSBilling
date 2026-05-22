@@ -111,7 +111,7 @@
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Currency'|trans }}:</td>
-                            <td>{{ client.currency|default('-') }}</td>
+                            <td>{{ client.currency ? (client.currency|currency_symbol) : '-' }}</td>
                         </tr>
                         <tr>
                             <td class="text-end">{{ 'Balance'|trans }}:</td>
