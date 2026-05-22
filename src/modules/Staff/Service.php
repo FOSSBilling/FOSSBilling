@@ -708,9 +708,6 @@ class Service implements InjectionAwareInterface
         // TODO: When it becomes possible to create other super admins, add a check for that here,
         $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
 
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_Admin', 3);
-
         $signature = $data['signature'] ?? null;
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffCreate', 'params' => $data]);
@@ -768,9 +765,6 @@ class Service implements InjectionAwareInterface
     public function createGroup($name): int
     {
         $this->checkPermissionsAndThrowException('staff', 'manage_groups');
-
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_AdminGroup', 2);
 
         $model = $this->di['db']->dispense('AdminGroup');
         $model->name = $name;

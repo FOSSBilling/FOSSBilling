@@ -1702,8 +1702,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function cannedCreate(string $title, int $categoryId, ?string $content = null): int
     {
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_SupportPr', 5);
 
         $model = $this->di['db']->dispense('SupportPr');
         $model->support_pr_category_id = $categoryId;
@@ -2059,8 +2057,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function kbCreateCategory(string $title, ?string $description = null): int
     {
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_SupportKbArticleCategory', 2);
 
         $model = $this->di['db']->dispense('SupportKbArticleCategory');
         $model->title = $title;

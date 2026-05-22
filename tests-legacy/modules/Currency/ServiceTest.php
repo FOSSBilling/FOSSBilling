@@ -433,6 +433,9 @@ final class ServiceTest extends \BBTestCase
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('findOneByCode')
+            ->willReturn($model);
 
         $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
@@ -447,7 +450,7 @@ final class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Currency\Service();
         $service->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
-        $service->rm($model); // will throw \FOSSBilling\Exception because default currency cannot be removed
+        $service->removeCurrency('EUR');
     }
 
     public function testRm(): void
@@ -465,6 +468,9 @@ final class ServiceTest extends \BBTestCase
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('findOneByCode')
+            ->willReturn($model);
 
         $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
@@ -478,31 +484,31 @@ final class ServiceTest extends \BBTestCase
         $emMock->expects($this->atLeastOnce())
             ->method('flush');
 
+        $manager = $this->createMock('Box_EventManager');
+        $manager->expects($this->atLeastOnce())
+            ->method('fire')
+            ->willReturn(true);
+
         $di = new \Pimple\Container();
+        $di['logger'] = new \Box_Log();
         $di['em'] = $emMock;
+        $di['events_manager'] = $manager;
 
         $service = new \Box\Mod\Currency\Service();
         $service->setDi($di);
-        $result = $service->rm($model);
+        $result = $service->removeCurrency('EUR');
 
-        $this->assertNull($result);
+        $this->assertTrue($result);
     }
 
     public function testRmMissingCodeException(): void
     {
-        $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $model->expects($this->any())
-            ->method('isDefault')
-            ->willReturn(false);
-        $model->expects($this->any())
-            ->method('getCode')
-            ->willReturn('');
-
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
+        $repositoryMock->expects($this->atLeastOnce())
+            ->method('findOneByCode')
+            ->willReturn(null);
 
         $emMock = $this->getMockBuilder(\Doctrine\ORM\EntityManager::class)
             ->disableOriginalConstructor()
@@ -517,7 +523,7 @@ final class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Currency\Service();
         $service->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
-        $service->rm($model); // will throw \FOSSBilling\Exception because currency code is empty
+        $service->removeCurrency('');
     }
 
     public function testToApiArray(): void
@@ -545,11 +551,6 @@ final class ServiceTest extends \BBTestCase
     {
         $code = 'EUR';
 
-        $systemService = $this->getMockBuilder(\Box\Mod\System\Service::class)->onlyMethods(['checkLimits'])->getMock();
-        $systemService->expects($this->atLeastOnce())
-            ->method('checkLimits')
-            ->willReturn(null);
-
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
@@ -568,12 +569,11 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['em'] = $emMock;
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
 
         $service = new \Box\Mod\Currency\Service();
         $service->setDi($di);
 
-        $result = $service->createCurrency($code, 'Euros', 0.6);
+        $result = $service->createCurrency($code, 0.6);
 
         $this->assertIsString($result);
         $this->assertEquals(strlen($result), 3);
@@ -583,17 +583,12 @@ final class ServiceTest extends \BBTestCase
     public function testCreateCurrencyWithBlankConversionRateUsesAutoRate(): void
     {
         $service = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
-            ->onlyMethods(['_getRate'])
+            ->onlyMethods(['getRate'])
             ->getMock();
         $service->expects($this->once())
-            ->method('_getRate')
+            ->method('getRate')
             ->with(null, 'EUR')
             ->willReturn(1.5);
-
-        $systemService = $this->getMockBuilder(\Box\Mod\System\Service::class)->onlyMethods(['checkLimits'])->getMock();
-        $systemService->expects($this->once())
-            ->method('checkLimits')
-            ->willReturn(null);
 
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
@@ -609,22 +604,16 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['em'] = $emMock;
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
 
         $service->setDi($di);
 
-        $result = $service->createCurrency('EUR', 'Euros', '');
+        $result = $service->createCurrency('EUR', '');
 
         $this->assertSame('EUR', $result);
     }
 
     public function testCreateCurrencyWithZeroStringConversionRateThrowsException(): void
     {
-        $systemService = $this->getMockBuilder(\Box\Mod\System\Service::class)->onlyMethods(['checkLimits'])->getMock();
-        $systemService->expects($this->once())
-            ->method('checkLimits')
-            ->willReturn(null);
-
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
@@ -637,7 +626,6 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['logger'] = new \Box_Log();
         $di['em'] = $emMock;
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
 
         $service = new \Box\Mod\Currency\Service();
         $service->setDi($di);
@@ -682,7 +670,7 @@ final class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Currency\Service();
         $service->setDi($di);
 
-        $result = $service->updateCurrency($code, $title, $conversion_rate);
+        $result = $service->updateCurrency($code, $conversion_rate);
 
         $this->assertIsBool($result);
         $this->assertTrue($result);
@@ -794,10 +782,10 @@ final class ServiceTest extends \BBTestCase
             ->method('flush');
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
-            ->onlyMethods(['_getRate'])
+            ->onlyMethods(['getRate'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
-            ->method('_getRate')
+            ->method('getRate')
             ->willReturn(floatval(random_int(1, 50) / 10));
 
         $di = new \Pimple\Container();
@@ -843,10 +831,10 @@ final class ServiceTest extends \BBTestCase
             ->method('flush');
 
         $serviceMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Service::class)
-            ->onlyMethods(['_getRate'])
+            ->onlyMethods(['getRate'])
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
-            ->method('_getRate')
+            ->method('getRate')
             ->willReturn(0.0);
 
         $di = new \Pimple\Container();
@@ -905,7 +893,7 @@ final class ServiceTest extends \BBTestCase
         $service = new \Box\Mod\Currency\Service();
         $service->setDi($di);
 
-        $result = $service->deleteCurrencyByCode($code);
+        $result = $service->removeCurrency($code);
 
         $this->assertIsBool($result);
         $this->assertTrue($result);
@@ -936,9 +924,6 @@ final class ServiceTest extends \BBTestCase
         $service->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $result = $service->deleteCurrencyByCode($code);
-
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
+        $service->removeCurrency($code);
     }
 }

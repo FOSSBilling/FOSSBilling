@@ -194,8 +194,6 @@ class Service implements InjectionAwareInterface
 
     public function createProduct($title, $type, $categoryId = null): int
     {
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_Product', 5);
         $sql = 'SELECT MAX(priority) FROM product LIMIT 1';
         $priority = $this->di['db']->getCell($sql);
 
@@ -492,9 +490,6 @@ class Service implements InjectionAwareInterface
 
     public function createCategory($title, $description = null, $icon_url = null)
     {
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_ProductCategory', 2);
-
         $model = $this->di['db']->dispense('ProductCategory');
         $model->title = $title;
         $model->description = $description;
@@ -905,9 +900,6 @@ class Service implements InjectionAwareInterface
         if ($this->di['db']->findOne('Promo', 'code = :code', [':code' => $code])) {
             throw new \FOSSBilling\InformationException('This promotion code already exists.');
         }
-
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_Promo', 2);
 
         $model = $this->di['db']->dispense('Promo');
         $model->code = $code;

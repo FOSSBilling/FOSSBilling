@@ -649,13 +649,6 @@ class Service
         return $codes;
     }
 
-    /**
-     * Call this method in API to check limits for entries.
-     */
-    public function checkLimits($model, $limit = 2)
-    {
-    }
-
     public function getNameservers()
     {
         $query = "SELECT param, value FROM setting WHERE param IN ('nameserver_1', 'nameserver_2', 'nameserver_3', 'nameserver_4')";

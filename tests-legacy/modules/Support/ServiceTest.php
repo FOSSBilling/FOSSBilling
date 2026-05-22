@@ -2535,13 +2535,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn($randId);
 
-        $systemServiceMock = $this->getMockBuilder(\Box\Mod\System\Service::class)
-            ->onlyMethods(['checkLimits'])->getMock();
-        $systemServiceMock->expects($this->atLeastOnce())->method('checkLimits')
-            ->willReturn(null);
-
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
         $this->service->setDi($di);
@@ -3242,16 +3236,10 @@ final class ServiceTest extends \BBTestCase
             ->method('slug')
             ->willReturn('article-slug');
 
-        $systemService = $this->createMock(\Box\Mod\System\Service::class);
-        $systemService->expects($this->atLeastOnce())
-            ->method('checkLimits')
-            ->willReturn(true);
-
         $di = $this->getDi();
         $di['db'] = $db;
         $di['tools'] = $tools;
         $di['logger'] = $di['logger'] = $this->createMock('Box_Log');
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
         $service->setDi($di);
 
         $result = $service->kbCreateCategory('Title', 'Description');

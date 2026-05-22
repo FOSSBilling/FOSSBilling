@@ -559,8 +559,6 @@ class Service implements InjectionAwareInterface
 
     public function createGroup(array $data)
     {
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_ClientGroup', 2);
 
         $model = $this->di['db']->dispense('ClientGroup');
 

@@ -1134,10 +1134,6 @@ final class ServiceTest extends \BBTestCase
         $adminModel = new \Model_Admin();
         $adminModel->loadBean(new \DummyBean());
 
-        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
-        $systemServiceMock->expects($this->atLeastOnce())
-            ->method('checkLimits');
-
         $eventsMock = $this->createMock('\Box_EventManager');
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
@@ -1167,7 +1163,6 @@ final class ServiceTest extends \BBTestCase
         $di['events_manager'] = $eventsMock;
         $di['logger'] = $logMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
 
         $di['password'] = $passwordMock;
 
@@ -1192,10 +1187,6 @@ final class ServiceTest extends \BBTestCase
 
         $adminModel = new \Model_Admin();
         $adminModel->loadBean(new \DummyBean());
-
-        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
-        $systemServiceMock->expects($this->atLeastOnce())
-            ->method('checkLimits');
 
         $eventsMock = $this->createMock('\Box_EventManager');
         $eventsMock->expects($this->atLeastOnce())
@@ -1226,7 +1217,6 @@ final class ServiceTest extends \BBTestCase
         $di['events_manager'] = $eventsMock;
         $di['logger'] = $logMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
 
         $di['password'] = $passwordMock;
 
@@ -1289,10 +1279,6 @@ final class ServiceTest extends \BBTestCase
         $adminGroupModel->loadBean(new \DummyBean());
         $newGroupId = 1;
 
-        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
-        $systemServiceMock->expects($this->atLeastOnce())
-            ->method('checkLimits');
-
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
@@ -1310,7 +1296,6 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
 
         $serviceMock->setDi($di);
 
