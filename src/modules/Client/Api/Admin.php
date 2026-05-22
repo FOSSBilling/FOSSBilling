@@ -21,6 +21,7 @@ use FOSSBilling\PaginationOptions;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Intl\Countries;
 
 class Admin extends \Api_Abstract
 {
@@ -281,6 +282,10 @@ class Admin extends \Api_Abstract
         }
 
         $previousStatus = $client->status;
+
+        if (!empty($data['country']) && !Countries::exists($data['country'])) {
+            throw new InformationException('Invalid country code: :code', [':code' => $data['country']]);
+        }
 
         $allowedFields = [
             'email', 'first_name', 'last_name', 'aid', 'gender', 'birthday',

@@ -1044,13 +1044,6 @@ final class ServiceTest extends \BBTestCase
         $this->assertSame('-', $result);
     }
 
-    public function testGetPhoneCodes(): void
-    {
-        $data = [];
-        $result = $this->service->getPhoneCodes($data);
-        $this->assertIsArray($result);
-    }
-
     public function testGetPendingMessages(): void
     {
         $di = $this->getDi();

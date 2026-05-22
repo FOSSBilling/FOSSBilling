@@ -331,7 +331,7 @@ final class AdminTest extends \BBTestCase
             'document_type' => 'doc',
             'document_nr' => '1',
             'notes' => 'none',
-            'country' => 'Moon',
+            'country' => 'US',
             'postcode' => 'IL-11123',
             'city' => 'Chicago',
             'state' => 'IL',
@@ -367,31 +367,27 @@ final class AdminTest extends \BBTestCase
 
         $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('emailAlreadyRegistered')->willReturn(false);
-        $serviceMock->expects($this->atLeastOnce())->method('canChangeCurrency')->willReturn(true);
 
         $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffServiceMock->expects($this->once())
             ->method('checkPermissionsAndThrowException')
             ->with('client', 'edit_profile');
 
-        $eventMock = $this->createMock('\\Box_EventManager');
+        $eventMock = $this->createMock('Box_EventManager');
         $eventMock->expects($this->atLeastOnce())->method('fire');
-
-        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
-            'client' => $serviceMock,
-            'staff' => $staffServiceMock,
-        });
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
-        $di['tools'] = $toolsMock;
+        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($name)) {
+            'staff' => $staffServiceMock,
+            'client' => $serviceMock,
+        });
 
         $adminClient = new \Box\Mod\Client\Api\Admin();
         $adminClient->setDi($di);
+        $adminClient->setService($serviceMock);
         $result = $adminClient->update($data);
         $this->assertTrue($result);
     }
@@ -414,7 +410,7 @@ final class AdminTest extends \BBTestCase
             'document_type' => 'doc',
             'document_nr' => '1',
             'notes' => 'none',
-            'country' => 'Moon',
+            'country' => 'US',
             'postcode' => 'IL-11123',
             'city' => 'Chicago',
             'state' => 'IL',

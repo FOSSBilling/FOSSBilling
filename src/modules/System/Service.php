@@ -22,9 +22,7 @@ use FOSSBilling\Tools;
 use FOSSBilling\Twig\SandboxedStringRenderer;
 use FOSSBilling\Version;
 use Pimple\Container;
-use PrinsFrank\Standards\Country\CountryAlpha2;
-use PrinsFrank\Standards\CountryCallingCode\CountryCallingCode;
-use PrinsFrank\Standards\Language\LanguageAlpha2;
+
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -612,31 +610,6 @@ class Service
         }
 
         return $result;
-    }
-
-    public function getPhoneCodes(array $data)
-    {
-        // If we are looking for a specific country phone code, return it if found or else generate an error
-        try {
-            if (isset($data['country'])) {
-                $country = CountryAlpha2::from($data['country']);
-
-                return CountryCallingCode::forCountry($country)[0]->value;
-            }
-        } catch (\ValueError) {
-            throw new \FOSSBilling\InformationException('Country :code phone code is not registered', [':code' => $data['country']]);
-        }
-
-        $codes = [];
-        foreach (CountryCallingCode::cases() as $code) {
-            $country = $code->getCountriesAlpha2()[0] ?? null;
-            if ($country === null) {
-                continue;
-            }
-            $codes[$code->value] = $country->getNameInLanguage(LanguageAlpha2::English);
-        }
-
-        return $codes;
     }
 
     public function getNameservers()

@@ -50,18 +50,6 @@ class Guest extends \Api_Abstract
     }
 
     /**
-     * Returns world wide phone codes.
-     *
-     * @optional $country - if passed country code the result will be phone code only
-     *
-     * @return array
-     */
-    public function phone_codes($data)
-    {
-        return $this->getService()->getPhoneCodes($data);
-    }
-
-    /**
      * Return the code of the default country, if set.
      */
     public function default_country(): ?string
