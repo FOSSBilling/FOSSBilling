@@ -75,7 +75,7 @@
                             <label class="form-label" for="new-client-phone">{{ 'Phone Number'|trans }}</label>
                             <div class="input-group">
                                 <span class="input-group-text">+</span>
-                                <input class="form-control" type="text" name="phone_cc" aria-label="{{ 'Country Code'|trans }}" placeholder="{{ 'Country code'|trans }}">
+                                <input class="form-control fb-phone-country-code" type="text" name="phone_cc" aria-label="{{ 'Country Code'|trans }}" placeholder="{{ 'Code'|trans }}" inputmode="numeric" maxlength="3" pattern="[0-9]{1,3}">
                                 <input id="new-client-phone" class="form-control" type="text" name="phone" aria-label="{{ 'Phone Number'|trans }}" placeholder="{{ 'Phone number'|trans }}">
                             </div>
                         </div>

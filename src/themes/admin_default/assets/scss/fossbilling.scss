@@ -268,6 +268,11 @@ body {
     padding: 0 0 0.85rem;
 }
 
+.fb-phone-country-code {
+    flex: 0 0 5.5rem;
+    max-width: 5.5rem;
+}
+
 @media (min-width: 992px) {
     .new-client-modal-dialog {
         max-width: min(820px, calc(100vw - 2rem));
