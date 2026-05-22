@@ -32,7 +32,7 @@ final class EmailPolicy
             // Twig Core - Utility
             'default', 'title', 'length', 'date',
             // IntlExtension
-            'format_currency', 'format_date',
+            'format_currency', 'format_date', 'format_datetime', 'format_number', 'format_time',
             // FOSSBillingExtension
             'url', 'daysleft', 'trans',
             // LegacyExtension

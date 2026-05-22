@@ -16,7 +16,6 @@ use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Currency\Repository\CurrencyRepository;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
-use PrinsFrank\Standards\Currency\CurrencyAlpha3;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\Intl\Currencies;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -218,17 +217,15 @@ class Service implements InjectionAwareInterface
 
     public function getCurrencyDefaults(string $code): array
     {
-        try {
-            $currency = CurrencyAlpha3::from($code);
-        } catch (\ValueError) {
+        if (!Currencies::exists($code)) {
             throw new InformationException('Currency code is invalid');
         }
 
         return [
-            'code' => $currency->value,
-            'name' => $currency->toCurrencyName()->value,
-            'symbol' => $currency->getSymbol()->value,
-            'minorUnits' => $currency->getMinorUnits(),
+            'code' => $code,
+            'name' => Currencies::getName($code),
+            'symbol' => Currencies::getSymbol($code),
+            'minorUnits' => Currencies::getFractionDigits($code),
         ];
     }
 

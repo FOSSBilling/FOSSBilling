@@ -13,10 +13,10 @@ declare(strict_types=1);
 namespace Box\Mod\Currency\Api;
 
 use Box\Mod\Currency\Entity\Currency;
-use FOSSBilling\Config;
+use FOSSBilling\i18n;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
-use PrinsFrank\Standards\Currency\CurrencyAlpha3;
+use Symfony\Component\Intl\Currencies;
 
 class Guest extends \Api_Abstract
 {
@@ -108,15 +108,11 @@ class Guest extends \Api_Abstract
 
     private function getMinorUnits(string $currencyCode): int
     {
-        try {
-            return CurrencyAlpha3::from($currencyCode)->getMinorUnits() ?? 2;
-        } catch (\ValueError) {
-            return 2;
-        }
+        return Currencies::getFractionDigits($currencyCode);
     }
 
     private function getLocale(): string
     {
-        return Config::getProperty('i18n.locale', 'en_US');
+        return i18n::getActiveLocale();
     }
 }

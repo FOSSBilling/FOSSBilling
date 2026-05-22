@@ -9,13 +9,13 @@ use PHPUnit\Framework\TestCase;
 
 final class AdminTest extends TestCase
 {
-    public function testGetAvailableCurrencies(): void
+    public function testGetPairs(): void
     {
         $result = Request::makeRequest('admin/currency/get_pairs');
         $this->assertTrue($result->wasSuccessful());
 
         $list = $result->getResult();
-        // These for sure should exist
+
         $this->assertArrayHasKey('USD', $list);
         $this->assertArrayHasKey('EUR', $list);
         $this->assertArrayHasKey('GBP', $list);
@@ -27,10 +27,9 @@ final class AdminTest extends TestCase
         $this->assertArrayHasKey('INR', $list);
         $this->assertArrayHasKey('HKD', $list);
 
-        // These should not exist
         $this->assertArrayNotHasKey('XXX', $list);
         $this->assertArrayNotHasKey('XTS', $list);
-        $this->assertArrayNotHasKey('VES', $list);
-        $this->assertArrayNotHasKey('BZR', $list);
+
+        $this->assertMatchesRegularExpression('/^USD \(.*\)$/', $list['USD']);
     }
 }

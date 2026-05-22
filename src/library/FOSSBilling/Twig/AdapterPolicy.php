@@ -22,7 +22,7 @@ final class AdapterPolicy
         $filters = [
             'escape', 'e',
             'default', 'title', 'length', 'date',
-            'format_currency', 'format_date',
+            'format_currency', 'format_date', 'format_datetime', 'format_number', 'format_time',
             'url', 'daysleft', 'trans',
             'period_title',
             'number_format',

@@ -132,7 +132,7 @@ class i18n
 
         // Handle when FOSSBilling is running with a dummy locale folder.
         $localePhpPath = Path::join(PATH_LANGS, 'locales.php');
-        $array = ($filesystem->exists($localePhpPath)) ? include $localePhpPath : Languages::getNames($locale);
+        $array = ($filesystem->exists($localePhpPath)) ? include $localePhpPath : Languages::getNames('en_US');
 
         foreach ($locales as $locale) {
             $title = ($array[$locale] ?? $locale) . " ($locale)";

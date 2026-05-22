@@ -62,26 +62,6 @@ class Guest extends \Api_Abstract
     }
 
     /**
-     * Returns USA states list.
-     *
-     * @return array
-     */
-    public function states()
-    {
-        return $this->getService()->getStates();
-    }
-
-    /**
-     * Returns list of european union countries.
-     *
-     * @return array
-     */
-    public function countries_eunion()
-    {
-        return $this->getService()->getEuCountries();
-    }
-
-    /**
      * Return the code of the default country, if set.
      */
     public function default_country(): ?string
