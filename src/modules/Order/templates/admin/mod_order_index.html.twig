@@ -261,47 +261,41 @@
 
             <div class="modal modal-blur fade" id="newOrderModal" tabindex="-1" aria-labelledby="newOrderModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                        <form method="post" action="{{ 'order/new'|url }}">
-                            <div class="modal-header">
-                                <h3 class="modal-title" id="newOrderModalLabel">{{ 'Create New Order'|trans }}</h3>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="mb-3 row">
-                                    <label class="form-label col-3 col-form-label" for="client_id">{{ 'Client'|trans }}</label>
-                                    <div class="col">
-                                        {% if not request.client_id %}
-                                            <select class="form-control autocomplete-selector"
-                                                    placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
-                                                    id="client_id"
-                                                    name="client_id"
-                                                    data-resturl="/api/admin/client/get_pairs"
-                                                    required aria-required="true">
-                                            </select>
-                                        {% else %}
-                                            {% set client = admin.client_get({ 'id': request.client_id }) %}
-                                            <input type="text" id="client_id" class="form-control" disabled value="{{ client.first_name }} {{ client.last_name }}" />
-                                            <input type="hidden" name="client_id" value="{{ request.client_id }}" />
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="mb-0 row">
-                                    <label class="form-label col-3 col-form-label" for="product_id">{{ 'Product'|trans }}</label>
-                                    <div class="col">
-                                        {{ mf.selectbox('product_id', admin.product_get_pairs, request.product_id, 1) }}
-                                    </div>
-                                </div>
-                                {% if request.client_id %}
-                                    <input type="hidden" name="client_id" value="{{ request.client_id}}">
+                    <form class="modal-content" method="post" action="{{ 'order/new'|url }}">
+                        <div class="modal-header">
+                            <h3 class="modal-title" id="newOrderModalLabel">{{ 'Create New Order'|trans }}</h3>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label" for="client_id">{{ 'Client'|trans }}</label>
+                                {% if not request.client_id %}
+                                    <select class="form-control autocomplete-selector"
+                                            placeholder="{{ 'Start typing the client name or ID'|trans }}"
+                                            id="client_id"
+                                            name="client_id"
+                                            data-resturl="/api/admin/client/get_pairs"
+                                            required aria-required="true">
+                                    </select>
+                                {% else %}
+                                    {% set client = admin.client_get({ 'id': request.client_id }) %}
+                                    <input type="text" id="client_id" class="form-control" disabled value="{{ client.first_name }} {{ client.last_name }}" />
+                                    <input type="hidden" name="client_id" value="{{ request.client_id }}" />
                                 {% endif %}
                             </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
-                                <button type="submit" class="btn btn-primary">{{ 'Continue'|trans }}</button>
+                            <div class="mb-0">
+                                <label class="form-label" for="product_id">{{ 'Product'|trans }}</label>
+                                {{ mf.selectbox('product_id', admin.product_get_pairs, request.product_id, 1) }}
                             </div>
-                        </form>
-                    </div>
+                            {% if request.client_id %}
+                                <input type="hidden" name="client_id" value="{{ request.client_id }}">
+                            {% endif %}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                            <button type="submit" class="btn btn-primary">{{ 'Continue'|trans }}</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
