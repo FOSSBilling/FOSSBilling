@@ -21,7 +21,7 @@
     "esbuild": "0.28.0",
     "postcss": "8.5.15",
     "purgecss": "8.0.0",
-    "sass": "1.99.0",
+    "sass": "1.100.0",
     "svg-sprite": "2.0.4"
   }
 }
