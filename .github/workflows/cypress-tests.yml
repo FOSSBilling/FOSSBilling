@@ -16,6 +16,8 @@ jobs:
     name: 'Cypress Tests'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      CYPRESS_RECORDING_DISABLED: ${{ secrets.CYPRESS_RECORD_KEY == '' }}
     steps:
       - name: 'Checkout Repository'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -53,7 +55,7 @@ jobs:
         run: bash ./.github/scripts/run-docker-cypress-tests.sh fossbilling:cypress-test
 
       - name: 'Upload Cypress Artifacts'
-        if: failure()
+        if: ${{ failure() && env.CYPRESS_RECORDING_DISABLED == 'true' }}
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
         with:
           name: cypress-artifacts
