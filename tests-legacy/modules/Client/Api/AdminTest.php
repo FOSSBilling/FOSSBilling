@@ -824,11 +824,11 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
-        $admin_Client->setService($serviceMock);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
+        $adminClient->setService($serviceMock);
 
-        $result = $admin_Client->login_history_get_list($data);
+        $result = $adminClient->login_history_get_list($data);
         $this->assertIsArray($result);
     }
 
