@@ -45,7 +45,9 @@
         "hostable",
         "cooldown",
         "ONLYDIR",
-        "sandboxed"
+        "sandboxed",
+        "Segoe",
+        "minmax"
     ],
 
     "ignoreWords": [
