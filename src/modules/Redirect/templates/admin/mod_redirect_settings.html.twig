@@ -30,32 +30,29 @@
             </div>
         </div>
         <div class="card-body border-bottom">
-            <h5 class="mb-3">{{ 'Create New Redirect'|trans }}</h5>
+            <h4 class="card-title mb-2">{{ 'Create New Redirect'|trans }}</h4>
+            <p class="text-secondary mb-4">{{ 'Use a relative client-area path as the source, then point it to another client path or a full external URL.'|trans }}</p>
             <form method="post" action="{{ 'redirect/create'|api_url }}" {{ fb_api_form({reload: true}) }}>
-                <div class="row row-cards">
-                    <div class="col-md-5 mb-3">
+                <div class="row g-3 align-items-end">
+                    <div class="col-xl-5">
                         <label class="form-label required" for="path">{{ 'Path'|trans }}</label>
-                        <div class="col-auto">
-                            <div class="input-group input-group-flat">
+                        <div class="input-group input-group-flat">
                             <span class="input-group-text">
                                 {{ ''|url(area: 'client') }}
                             </span>
-                                <input type="text" class="form-control ps-0" name="path" id="path">
-                            </div>
+                            <input type="text" class="form-control ps-0" name="path" id="path" placeholder="old-page">
                         </div>
                     </div>
-                    <div class="col-md-5 mb-3">
+                    <div class="col-xl-5">
                         <label class="form-label required" for="target">{{ 'Target'|trans }}</label>
-                        <div class="col-auto">
-                            <div class="input-group input-group-flat">
+                        <div class="input-group input-group-flat">
                             <span class="input-group-text">
                                 {{ ''|url(area: 'client') }}
                             </span>
-                                <input type="text" class="form-control ps-0" name="target" id="target" placeholder="{{ 'e.g. /new-page or https://example.com'|trans }}">
-                            </div>
+                            <input type="text" class="form-control ps-0" name="target" id="target" placeholder="{{ 'e.g. new-page or https://example.com'|trans }}">
                         </div>
                     </div>
-                    <div class="col-sm-2 col-md-1 mb-3 d-flex align-items-end">
+                    <div class="col-xl-2 d-flex align-items-end">
                         <button type="submit" class="btn btn-primary">
                             <svg class="icon me-2">
                                 <use xlink:href="#plus" />
@@ -68,13 +65,13 @@
         </div>
 
         <div class="table-responsive">
-            <table class="table card-table table-vcenter table-striped text-nowrap">
+            <table class="table card-table table-vcenter table-striped">
                 <thead>
                 <tr>
                     <th>{{ 'Path'|trans }}</th>
-                    <th></th>
-                    <th>{{ 'Target'|trans }}</th>
                     <th class="w-1"></th>
+                    <th>{{ 'Target'|trans }}</th>
+                    <th class="w-1 text-end">{{ 'Actions'|trans }}</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -96,7 +93,7 @@
                                 <a href="{{ r.target|url(area: 'client') }}" target="_blank">{{ r.target|url(area: 'client') }}</a>
                             {% endif %}
                         </td>
-                        <td>
+                        <td class="text-end">
                             <a class="btn btn-icon" href="{{ 'redirect/delete'|api_url(query: { 'id': r.id }) }}"
                                 {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Delete'|trans}, reload: true}) }}>
                                 <svg class="icon">
@@ -107,7 +104,7 @@
                     </tr>
                 {% else %}
                     <tr>
-                        <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
+                        <td class="text-center text-muted py-4" colspan="4">{{ 'No redirects have been created yet.'|trans }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>

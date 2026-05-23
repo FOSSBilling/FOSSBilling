@@ -22,12 +22,12 @@ final class ServiceTest extends \BBTestCase
     public function testGetFormFieldsTypes(): void
     {
         $expected = [
-            'text' => 'Text input',
-            'url' => 'URL input',
+            'text' => 'Text Input',
+            'url' => 'URL Input',
             'select' => 'Dropdown',
-            'radio' => 'Radio select',
+            'radio' => 'Radio Select',
             'checkbox' => 'Checkbox',
-            'textarea' => 'Text area',
+            'textarea' => 'Text Area',
         ];
 
         $this->assertSame($expected, $this->service->getFormFieldsTypes());
