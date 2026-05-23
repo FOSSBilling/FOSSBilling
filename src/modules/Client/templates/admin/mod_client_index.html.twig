@@ -362,24 +362,22 @@
 
             <div class="modal modal-blur fade" id="newGroupModal" tabindex="-1" aria-labelledby="newGroupModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered modal-sm">
-                    <div class="modal-content">
-                        <form method="post" action="{{ 'client/group_create'|api_url }}" {{ fb_api_form({ redirect: 'client'|url}) }}>
-                            <div class="modal-header">
-                                <h3 class="modal-title" id="newGroupModalLabel">{{ 'Create New Group'|trans }}</h3>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                    <form class="modal-content" method="post" action="{{ 'client/group_create'|api_url }}" {{ fb_api_form({ redirect: 'client'|url}) }}>
+                        <div class="modal-header">
+                            <h3 class="modal-title" id="newGroupModalLabel">{{ 'Create New Group'|trans }}</h3>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-0">
+                                <label class="form-label" for="new-group-title">{{ 'Title'|trans }}</label>
+                                <input class="form-control" id="new-group-title" type="text" name="title" value="{{ request.title }}" required>
                             </div>
-                            <div class="modal-body">
-                                <div class="mb-0">
-                                    <label class="form-label" for="new-group-title">{{ 'Title'|trans }}</label>
-                                    <input class="form-control" id="new-group-title" type="text" name="title" value="{{ request.title }}" required>
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
-                                <button class="btn btn-primary" type="submit">{{ 'Create'|trans }}</button>
-                            </div>
-                        </form>
-                    </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                            <button class="btn btn-primary" type="submit">{{ 'Create'|trans }}</button>
+                        </div>
+                    </form>
                 </div>
             </div>
             {% endif %}
