@@ -186,289 +186,274 @@
 
         {% if has_profile_edit_actions %}
         <div class="tab-pane fade" id="tab-profile" role="tabpanel">
-            <div class="card-body">
+            <div class="card-body d-flex flex-column gap-3">
                 {% if can_edit_profile %}
-                <h5>{{ 'Client Profile Details'|trans }}</h5>
-                <form method="post" action="{{ 'client/update'|api_url }}" {{ fb_api_form({ message: 'Client Profile Updated'|trans}) }}>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
-                        <div class="col">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioStatusActive" type="radio" name="status" value="active"{% if client.status == 'active' %} checked{% endif %}>
-                                <label class="form-check-label" for="radioStatusActive">{{ 'Active'|trans }}</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioStatusSuspended" type="radio" name="status" value="suspended"{% if client.status == 'suspended' %} checked{% endif %}>
-                                <label class="form-check-label" for="radioStatusSuspended">{{ 'Suspended'|trans }}</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioStatusCanceled" type="radio" name="status" value="canceled"{% if client.status == 'canceled' %} checked{% endif %}>
-                                <label class="form-check-label" for="radioStatusCanceled">{{ 'Canceled'|trans }}</label>
-                            </div>
+                <form method="post" action="{{ 'client/update'|api_url }}" class="card" {{ fb_api_form({ message: 'Client Profile Updated'|trans}) }}>
+                    <div class="card-header">
+                        <div>
+                            <h5 class="card-title mb-1">{{ 'Client Profile Details'|trans }}</h5>
+                            <p class="card-subtitle">{{ 'Update the client account, contact information, and internal settings.'|trans }}</p>
                         </div>
                     </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Type'|trans }}:</label>
-                        <div class="col">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioTypePersonal" type="radio" name="type" value="individual"{% if client.type == 'individual' %} checked{% endif %}>
-                                <label class="form-check-label" for="radioTypePersonal">{{ 'Individual'|trans }}</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioTypeCompany" type="radio" name="type" value="company"{% if client.type == 'company' %} checked{% endif %}>
-                                <label class="form-check-label" for="radioTypeCompany">{{ 'Company'|trans }}</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" ="radioTypeOther" type="radio" name="type" value=""{% if not client.type %} checked{% endif %}>
-                                <label class="form-check-label" for="radioTypeOther">{{ 'Other/Unknown'|trans }}</label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Email Address Approved'|trans }}:</label>
-                        <div class="col">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioEmailApprovedYes" type="radio" name="email_approved" value="1"{% if client.email_approved == 1 %} checked{% endif %}>
-                                <label class="form-check-label" for="radioEmailApprovedYes">{{ 'Yes'|trans }}</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioEmailApprovedNo" type="radio" name="email_approved" value="0"{% if client.email_approved != 1 %} checked{% endif %}>
-                                <label class="form-check-label" for="radioEmailApprovedNo">{{ 'No'|trans }}</label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Group'|trans }}:</label>
-                        <div class="col">
-                            {{ mf.selectbox('group_id', admin.client_group_get_pairs, client.group_id, 0, 'Select Group'|trans) }}
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Email'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="email" name="email" value="{{ client.email }}" required>
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}:</label>
-                        <div class="col">
-                            <div class="row">
-                                <div class="col">
+                    <div class="card-body">
+                        <section class="mb-4 pb-4 border-bottom">
+                            <h6 class="text-uppercase text-secondary fw-semibold mb-3">{{ 'Account Details'|trans }}</h6>
+                            <div class="row g-3">
+                                <div class="col-xl-6">
+                                    <label class="form-label d-block">{{ 'Status'|trans }}</label>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioStatusActive" type="radio" name="status" value="active"{% if client.status == 'active' %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Active'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioStatusSuspended" type="radio" name="status" value="suspended"{% if client.status == 'suspended' %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Suspended'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioStatusCanceled" type="radio" name="status" value="canceled"{% if client.status == 'canceled' %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Canceled'|trans }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-xl-6">
+                                    <label class="form-label d-block">{{ 'Type'|trans }}</label>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioTypePersonal" type="radio" name="type" value="individual"{% if client.type == 'individual' %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Individual'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioTypeCompany" type="radio" name="type" value="company"{% if client.type == 'company' %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Company'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioTypeOther" type="radio" name="type" value=""{% if not client.type %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Other/Unknown'|trans }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-xl-6">
+                                    <label class="form-label d-block">{{ 'Email Address Approved'|trans }}</label>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioEmailApprovedYes" type="radio" name="email_approved" value="1"{% if client.email_approved == 1 %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioEmailApprovedNo" type="radio" name="email_approved" value="0"{% if client.email_approved != 1 %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-xl-6">
+                                    <label class="form-label">{{ 'Group'|trans }}</label>
+                                    {{ mf.selectbox('group_id', admin.client_group_get_pairs, client.group_id, 0, 'Select Group'|trans) }}
+                                </div>
+                                <div class="col-xl-6">
+                                    <label class="form-label">{{ 'Email'|trans }}</label>
+                                    <input class="form-control" type="email" name="email" value="{{ client.email }}" required>
+                                </div>
+                                <div class="col-xl-3">
+                                    <label class="form-label">{{ 'First Name'|trans }}</label>
                                     <input class="form-control" type="text" name="first_name" value="{{ client.first_name }}" required>
                                 </div>
-                                <div class="col">
+                                <div class="col-xl-3">
+                                    <label class="form-label">{{ 'Last Name'|trans }}</label>
                                     <input class="form-control" type="text" name="last_name" value="{{ client.last_name }}">
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label" for="birthday">{{ 'Date of Birth'|trans }}:</label>
-                        <div class="col">
-                            <div class="input-group">
-                                <div class="input-icon w-100">
-                                    <input class="form-control datepicker"
-                                           id="birthday"
-                                           value="{{ client.birthday }}"
-                                           name="birthday"
-                                           data-pick-year="1"
-                                    >
-                                    <span class="input-icon-addon">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                            <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
-                                            <path d="M16 3l0 4"></path>
-                                            <path d="M8 3l0 4"></path>
-                                            <path d="M4 11l16 0"></path>
-                                            <path d="M11 15l1 0"></path>
-                                            <path d="M12 15l0 3"></path>
-                                        </svg>
-                                    </span>
+                                <div class="col-xl-6">
+                                    <label class="form-label" for="birthday">{{ 'Date of Birth'|trans }}</label>
+                                    <div class="input-group">
+                                        <div class="input-icon w-100">
+                                            <input class="form-control datepicker"
+                                                   id="birthday"
+                                                   value="{{ client.birthday }}"
+                                                   name="birthday"
+                                                   data-pick-year="1"
+                                            >
+                                            <span class="input-icon-addon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                    <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                                                    <path d="M16 3l0 4"></path>
+                                                    <path d="M8 3l0 4"></path>
+                                                    <path d="M4 11l16 0"></path>
+                                                    <path d="M11 15l1 0"></path>
+                                                    <path d="M12 15l0 3"></path>
+                                                </svg>
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    <div class="mb-3 row" id="company-details">
-                        <label class="form-label col-3 col-form-label">{{ 'Company Details'|trans }}:</label>
-                        <div class="col">
-                            <div class="row">
-                                <div class="col">
-                                    <input class="form-control" type="text" name="company" value="{{ client.company }}" placeholder="{{ 'Company Name'|trans }}">
-                                </div>
-                                <div class="col">
-                                    <input class="form-control" type="text" name="company_number" value="{{ client.company_number }}" placeholder="{{ 'Company Number'|trans }}">
-                                </div>
-                                <div class="col">
-                                    <input class="form-control" type="text" name="company_vat" value="{{ client.company_vat }}" placeholder="{{ 'Company VAT Number'|trans }}">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
-                    <hr>
+                        </section>
 
-                    <h5>{{ 'Address and Contact Details'|trans }}</h5>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Address Line 1'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="address_1" value="{{ client.address_1 }}">
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Address Line 2'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="address_2" value="{{ client.address_2 }}">
-                        </div>
-                    </div>
-
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Country'|trans }}:</label>
-                        <div class="col">
-                            {{ mf.selectbox('country', country_names(), client.country, 0, 'Select Country'|trans) }}
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'State'|trans }}:</label>
-                        <div class="col">
-                            {# mf.selectbox('state', guest.system_states, client.state, 0, 'Select state') #}
-                            <input class="form-control" type="text" name="state" value="{{ client.state }}">
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'City'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="city" value="{{ client.city }}">
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Postcode'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="postcode" value="{{ client.postcode }}">
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Phone'|trans }}:</label>
-                        <div class="col">
-                            <div class="input-group">
-                                <span class="input-group-text">+</span>
-                                <input class="form-control fb-phone-country-code" type="text" name="phone_cc" value="{{ client.phone_cc }}" inputmode="numeric" maxlength="3" pattern="[0-9]{1,3}" autocomplete="tel-country-code">
-                                <input class="form-control w-50" type="phone" name="phone" value="{{ client.phone }}">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Passport Number'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="document_nr" value="{{ client.document_nr }}">
-                        </div>
-                    </div>
-                    <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
-                    <hr>
-
-                    <h5>{{ 'Additional Settings'|trans }}</h5>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Alternative ID'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="aid" value="{{ client.aid }}" placeholder="{{ 'Used to identify client on foreign system. Usually used by importers'|trans }}">
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Currency'|trans }}:</label>
-                        <div class="col">
-                            {{ mf.selectbox('currency', guest.currency_get_pairs, client.currency, 0, 'Select Currency'|trans) }}
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Exempt from Tax'|trans }}:</label>
-                        <div class="col">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioTaxExemptYes" type="radio" name="tax_exempt" value="1"{% if client.tax_exempt %} checked{% endif %}>
-                                <label class="form-check-label" for="radioTaxExemptYes">{{ 'Yes'|trans }}</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioTaxExemptNo" type="radio" name="tax_exempt" value="0"{% if not client.tax_exempt %} checked{% endif %}>
-                                <label class="form-check-label" for="radioTaxExemptNo">{{ 'No'|trans }}</label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label" for="created_at">{{ 'Account Created At'|trans }}:</label>
-                        <div class="col">
-                            <div class="input-group">
-                                <div class="input-icon w-100">
-                                    <input class="form-control datepicker"
-                                           id="created_at"
-                                           value="{{ client.created_at|date('Y-m-d') }}"
-                                           name="created_at"
-                                    >
-                                    <span class="input-icon-addon">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                            <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
-                                            <path d="M16 3l0 4"></path>
-                                            <path d="M8 3l0 4"></path>
-                                            <path d="M4 11l16 0"></path>
-                                            <path d="M11 15l1 0"></path>
-                                            <path d="M12 15l0 3"></path>
-                                        </svg>
-                                    </span>
+                        <section class="mb-4 pb-4 border-bottom" id="company-details">
+                            <h6 class="text-uppercase text-secondary fw-semibold mb-3">{{ 'Company and Contact Details'|trans }}</h6>
+                            <div class="row g-3">
+                                <div class="col-xl-4">
+                                    <label class="form-label">{{ 'Company Name'|trans }}</label>
+                                    <input class="form-control" type="text" name="company" value="{{ client.company }}">
+                                </div>
+                                <div class="col-xl-4">
+                                    <label class="form-label">{{ 'Company Number'|trans }}</label>
+                                    <input class="form-control" type="text" name="company_number" value="{{ client.company_number }}">
+                                </div>
+                                <div class="col-xl-4">
+                                    <label class="form-label">{{ 'Company VAT Number'|trans }}</label>
+                                    <input class="form-control" type="text" name="company_vat" value="{{ client.company_vat }}">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">{{ 'Address Line 1'|trans }}</label>
+                                    <input class="form-control" type="text" name="address_1" value="{{ client.address_1 }}">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">{{ 'Address Line 2'|trans }}</label>
+                                    <input class="form-control" type="text" name="address_2" value="{{ client.address_2 }}">
+                                </div>
+                                <div class="col-xl-4">
+                                    <label class="form-label">{{ 'Country'|trans }}</label>
+                                    {{ mf.selectbox('country', country_names(), client.country, 0, 'Select Country'|trans) }}
+                                </div>
+                                <div class="col-xl-4">
+                                    <label class="form-label">{{ 'State'|trans }}</label>
+                                    <input class="form-control" type="text" name="state" value="{{ client.state }}">
+                                </div>
+                                <div class="col-xl-4">
+                                    <label class="form-label">{{ 'City'|trans }}</label>
+                                    <input class="form-control" type="text" name="city" value="{{ client.city }}">
+                                </div>
+                                <div class="col-xl-4">
+                                    <label class="form-label">{{ 'Postcode'|trans }}</label>
+                                    <input class="form-control" type="text" name="postcode" value="{{ client.postcode }}">
+                                </div>
+                                <div class="col-xl-8">
+                                    <label class="form-label">{{ 'Phone'|trans }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">+</span>
+                                        <input class="form-control fb-phone-country-code" type="text" name="phone_cc" value="{{ client.phone_cc }}" inputmode="numeric" maxlength="3" pattern="[0-9]{1,3}" autocomplete="tel-country-code">
+                                        <input class="form-control" type="phone" name="phone" value="{{ client.phone }}">
+                                    </div>
+                                </div>
+                                <div class="col-xl-6">
+                                    <label class="form-label">{{ 'Passport Number'|trans }}</label>
+                                    <input class="form-control" type="text" name="document_nr" value="{{ client.document_nr }}">
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Notes'|trans }}:</label>
-                        <div class="col">
-                            <textarea class="form-control" name="notes" rows="5">{{ client.notes }}</textarea>
-                        </div>
-                    </div>
+                        </section>
 
-                    <input type="hidden" name="id" value="{{ client.id }}">
-                    <button class="btn btn-primary w-100" type="submit">{{ 'Update Profile'|trans }}</button>
+                        <section>
+                            <h6 class="text-uppercase text-secondary fw-semibold mb-3">{{ 'Additional Settings'|trans }}</h6>
+                            <div class="row g-3">
+                                <div class="col-xl-6">
+                                    <label class="form-label">{{ 'Alternative ID'|trans }}</label>
+                                    <input class="form-control" type="text" name="aid" value="{{ client.aid }}" placeholder="{{ 'Used to identify client on foreign system. Usually used by importers'|trans }}">
+                                </div>
+                                <div class="col-xl-3">
+                                    <label class="form-label">{{ 'Currency'|trans }}</label>
+                                    {{ mf.selectbox('currency', guest.currency_get_pairs, client.currency, 0, 'Select Currency'|trans) }}
+                                </div>
+                                <div class="col-xl-3">
+                                    <label class="form-label d-block">{{ 'Exempt from Tax'|trans }}</label>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioTaxExemptYes" type="radio" name="tax_exempt" value="1"{% if client.tax_exempt %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioTaxExemptNo" type="radio" name="tax_exempt" value="0"{% if not client.tax_exempt %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-xl-6">
+                                    <label class="form-label" for="created_at">{{ 'Account Created At'|trans }}</label>
+                                    <div class="input-group">
+                                        <div class="input-icon w-100">
+                                            <input class="form-control datepicker"
+                                                   id="created_at"
+                                                   value="{{ client.created_at|date('Y-m-d') }}"
+                                                   name="created_at"
+                                            >
+                                            <span class="input-icon-addon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                    <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                                                    <path d="M16 3l0 4"></path>
+                                                    <path d="M8 3l0 4"></path>
+                                                    <path d="M4 11l16 0"></path>
+                                                    <path d="M11 15l1 0"></path>
+                                                    <path d="M12 15l0 3"></path>
+                                                </svg>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">{{ 'Notes'|trans }}</label>
+                                    <textarea class="form-control" name="notes" rows="5">{{ client.notes }}</textarea>
+                                </div>
+                            </div>
+                        </section>
+
+                        <input type="hidden" name="id" value="{{ client.id }}">
+                    </div>
+                    <div class="card-footer text-end">
+                        <button class="btn btn-primary" type="submit">{{ 'Update Profile'|trans }}</button>
+                    </div>
                 </form>
-                <hr>
                 {% endif %}
 
                 {% if can_change_password %}
-                <h5>{{ 'Change Password'|trans }}</h5>
-                <form method="post" action="{{ 'client/change_password'|api_url }}" {{ fb_api_form({ message: 'Password Changed'|trans}) }}>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Password'|trans }}</label>
-                        <div class="col">
-                            <input class="form-control" type="password" name="password" value="" required>
+                <form method="post" action="{{ 'client/change_password'|api_url }}" class="card" {{ fb_api_form({ message: 'Password Changed'|trans}) }}>
+                    <div class="card-header">
+                        <div>
+                            <h5 class="card-title mb-1">{{ 'Change Password'|trans }}</h5>
+                            <p class="card-subtitle">{{ 'Set a new client-area password for this account.'|trans }}</p>
                         </div>
                     </div>
-
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Confirm Password'|trans }}</label>
-                        <div class="col">
-                            <input class="form-control" type="password" name="password_confirm" value="" required>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-xl-6">
+                                <label class="form-label">{{ 'Password'|trans }}</label>
+                                <input class="form-control" type="password" name="password" value="" required>
+                            </div>
+                            <div class="col-xl-6">
+                                <label class="form-label">{{ 'Confirm Password'|trans }}</label>
+                                <input class="form-control" type="password" name="password_confirm" value="" required>
+                            </div>
                         </div>
+                        <input type="hidden" name="id" value="{{ client.id }}">
                     </div>
-
-                    <input type="hidden" name="id" value="{{ client.id }}">
-                    <button class="btn btn-primary w-100" type="submit">{{ 'Change Password'|trans }}</button>
+                    <div class="card-footer text-end">
+                        <button class="btn btn-primary" type="submit">{{ 'Change Password'|trans }}</button>
+                    </div>
                 </form>
                 {% endif %}
                 {% if can_edit_profile %}
-                    {% if can_change_password %}
-                        <hr>
-                    {% endif %}
-                    <h5>{{ 'Custom Fields'|trans }}</h5>
-                <p class="text-muted">{{ 'Use these fields to define custom client details'|trans }}</p>
-                <form method="post" action="{{ 'client/update'|api_url }}" {{ fb_api_form({ message: 'Client Profile Custom Fields Updated'|trans}) }}>
-                    {% for i in 1..10 %}
-                    {% set fn = 'custom_' ~ i %}
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Custom field'|trans }} {{ i }}</label>
-                        <div class="col">
-                            <textarea class="form-control" name="custom_{{ i }}" rows="2">{{ client[fn] }}</textarea>
+                <form method="post" action="{{ 'client/update'|api_url }}" class="card" {{ fb_api_form({ message: 'Client Profile Custom Fields Updated'|trans}) }}>
+                    <div class="card-header">
+                        <div>
+                            <h5 class="card-title mb-1">{{ 'Custom Fields'|trans }}</h5>
+                            <p class="card-subtitle">{{ 'Use these fields to store extra client details that do not fit the standard profile.'|trans }}</p>
                         </div>
                     </div>
-                    {% endfor %}
-
-                    <input type="hidden" name="id" value="{{ client.id }}">
-                    <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            {% for i in 1..10 %}
+                            {% set fn = 'custom_' ~ i %}
+                            <div class="col-xl-6">
+                                <label class="form-label">{{ 'Custom field'|trans }} {{ i }}</label>
+                                <textarea class="form-control" name="custom_{{ i }}" rows="3">{{ client[fn] }}</textarea>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" name="id" value="{{ client.id }}">
+                    </div>
+                    <div class="card-footer text-end">
+                        <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
+                    </div>
                 </form>
                 {% endif %}
             </div>
@@ -681,26 +666,30 @@
             <hr>
 
             <div class="card-body">
-                <h5>{{ 'Add Funds for Client'|trans }}</h5>
-                <form method="post" action="{{ 'client/balance_add_funds'|api_url }}" {{ fb_api_form({ message: 'Funds Added'|trans}) }}>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label" for="inputAmount">{{ 'Amount'|trans }}:</label>
-                        <div class="col input-group">
-                            <input class="form-control" type="text" id="inputAmount" name="amount" required>
-                            <span class="input-group-text">{{ client.currency|currency_symbol }}</span>
+                <form method="post" action="{{ 'client/balance_add_funds'|api_url }}" class="card" {{ fb_api_form({ message: 'Funds Added'|trans}) }}>
+                    <div class="card-header">
+                        <div>
+                            <h5 class="card-title mb-1">{{ 'Add Funds for Client'|trans }}</h5>
+                            <p class="card-subtitle">{{ 'Record a manual balance credit on this client account.'|trans }}</p>
                         </div>
                     </div>
-
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label" for="inputDescription">{{ 'Description'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" id="inputDescription" type="text" name="description" required>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-xl-4">
+                                <label class="form-label" for="inputAmount">{{ 'Amount'|trans }}</label>
+                                <div class="input-group">
+                                    <input class="form-control" type="text" id="inputAmount" name="amount" required>
+                                    <span class="input-group-text">{{ client.currency|currency_symbol }}</span>
+                                </div>
+                            </div>
+                            <div class="col-xl-8">
+                                <label class="form-label" for="inputDescription">{{ 'Description'|trans }}</label>
+                                <input class="form-control" id="inputDescription" type="text" name="description" required>
+                            </div>
                         </div>
+                        <input type="hidden" name="id" value="{{ client.id }}">
                     </div>
-
-                    <input type="hidden" name="id" value="{{ client.id }}">
-
-                    <div class="text-end">
+                    <div class="card-footer text-end">
                         <button class="btn btn-primary" type="submit">
                             <svg class="icon">
                                 <use xlink:href="#plus" />

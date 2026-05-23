@@ -139,87 +139,102 @@
         <div class="tab-pane fade" id="tab-manage" role="tabpanel">
             <div class="card-body">
                 <form method="post" action="{{ 'invoice/transaction_update'|api_url }}" {{ fb_api_form({reload: true}) }}>
-                    <h5>{{ 'Transaction Payment Information'|trans }}</h5>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Invoice ID'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="invoice_id" value="{{ transaction.invoice_id }}">
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Amount'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="amount" value="{{ transaction.amount }}">
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Currency'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="currency" value="{{ transaction.currency }}">
-                        </div>
-                    </div>
-
-                    <h5>{{ 'Transaction Processing Information'|trans }}</h5>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Payment Gateway'|trans }}:</label>
-                        <div class="col">
-                            {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, transaction.gateway_id, 0, 'Select Payment Gateway'|trans) }}
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Validate IPN'|trans }}:</label>
-                        <div class="col">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioValidateIpnYes" type="radio" name="validate_ipn" value="1"{% if transaction.validate_ipn  %} checked{% endif %}>
-                                <label class="form-check-label" for="radioValidateIpnYes">{{ 'Yes'|trans }}</label>
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="d-flex flex-column gap-1 mb-4">
+                                <h5 class="card-title mb-0">{{ 'Transaction Payment Information'|trans }}</h5>
+                                <p class="text-secondary mb-0">{{ 'Correct the linked invoice and stored payment amount for this transaction.'|trans }}</p>
                             </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioValidateIpnNo" type="radio" name="validate_ipn" value="0"{% if not transaction.validate_ipn %} checked{% endif %}>
-                                <label class="form-check-label" for="radioValidateIpnNo">{{ 'No'|trans }}</label>
+                            <div class="row g-3">
+                                <div class="col-lg-4">
+                                    <label class="form-label" for="transaction_invoice_id">{{ 'Invoice ID'|trans }}</label>
+                                    <input class="form-control" id="transaction_invoice_id" type="text" name="invoice_id" value="{{ transaction.invoice_id }}">
+                                </div>
+                                <div class="col-lg-4">
+                                    <label class="form-label" for="transaction_amount">{{ 'Amount'|trans }}</label>
+                                    <input class="form-control" id="transaction_amount" type="text" name="amount" value="{{ transaction.amount }}">
+                                </div>
+                                <div class="col-lg-4">
+                                    <label class="form-label" for="transaction_currency">{{ 'Currency'|trans }}</label>
+                                    <input class="form-control" id="transaction_currency" type="text" name="currency" value="{{ transaction.currency }}">
+                                </div>
                             </div>
                         </div>
                     </div>
-
-                    <h5>{{ 'Transaction Information on Payment Gateway'|trans }}</h5>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Transaction Type'|trans }}:</label>
-                        <div class="col">
-                            {{ mf.selectbox('type', admin.invoice_transaction_types, transaction.type, 0, 'Select Transaction Type'|trans) }}
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="d-flex flex-column gap-1 mb-4">
+                                <h5 class="card-title mb-0">{{ 'Transaction Processing Information'|trans }}</h5>
+                                <p class="text-secondary mb-0">{{ 'Define how this transaction should be processed and validated.'|trans }}</p>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-xl-6">
+                                    <label class="form-label">{{ 'Payment Gateway'|trans }}</label>
+                                    {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, transaction.gateway_id, 0, 'Select Payment Gateway'|trans) }}
+                                </div>
+                                <div class="col-xl-6">
+                                    <label class="form-label d-block">{{ 'Validate IPN'|trans }}</label>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioValidateIpnYes" type="radio" name="validate_ipn" value="1"{% if transaction.validate_ipn  %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioValidateIpnNo" type="radio" name="validate_ipn" value="0"{% if not transaction.validate_ipn %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Transaction status on Payment Gateway'|trans }}:</label>
-                        <div class="col">
-                            {{ mf.selectbox('txn_status', admin.invoice_transaction_gateway_statuses, transaction.txn_status, 0, 'Select Status'|trans) }}
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="d-flex flex-column gap-1 mb-4">
+                                <h5 class="card-title mb-0">{{ 'Gateway Transaction Information'|trans }}</h5>
+                                <p class="text-secondary mb-0">{{ 'Keep the stored gateway-side transaction metadata accurate for reconciliation.'|trans }}</p>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-lg-4">
+                                    <label class="form-label">{{ 'Transaction Type'|trans }}</label>
+                                    {{ mf.selectbox('type', admin.invoice_transaction_types, transaction.type, 0, 'Select Transaction Type'|trans) }}
+                                </div>
+                                <div class="col-lg-4">
+                                    <label class="form-label">{{ 'Transaction Status on Payment Gateway'|trans }}</label>
+                                    {{ mf.selectbox('txn_status', admin.invoice_transaction_gateway_statuses, transaction.txn_status, 0, 'Select Status'|trans) }}
+                                </div>
+                                <div class="col-lg-4">
+                                    <label class="form-label" for="transaction_txn_id">{{ 'Transaction ID on Payment Gateway'|trans }}</label>
+                                    <input class="form-control" id="transaction_txn_id" type="text" name="txn_id" value="{{ transaction.txn_id }}">
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Transaction ID on Payment Gateway'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="txn_id" value="{{ transaction.txn_id }}">
-                        </div>
-                    </div>
-
                     <input type="hidden" name="id" value="{{ transaction.id }}">
-                    <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
+                    <div class="d-flex justify-content-end">
+                        <button class="btn btn-primary" type="submit">{{ 'Update Transaction'|trans }}</button>
+                    </div>
                 </form>
             </div>
         </div>
 
         <div class="tab-pane fade" id="tab-note" role="tabpanel">
             <div class="card-body">
-                <h5>{{ 'Note About This Transaction'|trans }}</h5>
-
                 <form method="post" action="{{ 'invoice/transaction_update'|api_url }}" {{ fb_api_form({message: 'Transaction Note Updated'|trans}) }}>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Content'|trans }}:</label>
-                        <div class="col">
-                            <textarea class="form-control" name="note" rows="10">{{ transaction.note }}</textarea>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex flex-column gap-1 mb-4">
+                                <h5 class="card-title mb-0">{{ 'Note About This Transaction'|trans }}</h5>
+                                <p class="text-secondary mb-0">{{ 'Keep internal notes about reconciliation, investigation, or gateway behavior.'|trans }}</p>
+                            </div>
+                            <label class="form-label" for="transaction_note">{{ 'Content'|trans }}</label>
+                            <textarea class="form-control" id="transaction_note" name="note" rows="10">{{ transaction.note }}</textarea>
+                        </div>
+                        <div class="card-footer d-flex justify-content-end">
+                            <button class="btn btn-primary" type="submit">{{ 'Update Note'|trans }}</button>
                         </div>
                     </div>
-
                     <input type="hidden" name="id" value="{{ transaction.id }}">
-                    <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
                 </form>
             </div>
         </div>

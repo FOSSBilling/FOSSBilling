@@ -304,104 +304,125 @@
 
         <div class="tab-pane fade" id="tab-manage" role="tabpanel">
             <div class="card-body">
-                <h5>{{ 'Order Management'|trans }}</h5>
                 <form method="post" action="{{ 'order/update'|api_url }}" {{ fb_api_form({ reload: true}) }}>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="title" value="{{ order.title }}">
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Changes Status Without Performing Action'|trans }}</label>
-                        <div class="col">
-                            {{ mf.selectbox('status', admin.order_get_status_pairs, order.status, 0, 'Select status'|trans) }}
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Invoice Option'|trans }}</label>
-                        <div class="col">
-                            {{ mf.selectbox('invoice_option', admin.order_get_invoice_options, order.invoice_option) }}
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Price'|trans }}</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="price" value="{{ order.price }}" required>
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Reason'|trans }}</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="reason" value="{{ order.reason }}">
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Period'|trans }}</label>
-                        <div class="col">
-                            {{ mf.selectbox('period', guest.system_periods, order.period, 0, 'Not recurrent'|trans) }}
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label" for="expires_at">{{ 'Date Expires'|trans }}</label>
-                        <div class="col">
-                            <div class="input-group">
-                                <div class="input-icon w-100">
-                                    <input class="form-control datepicker"
-                                           id="expires_at"
-                                           value="{% if order.expires_at %}{{ order.expires_at|date('Y-m-d') }}{% endif %}"
-                                           name="expires_at"
-                                    >
-                                    <span class="input-icon-addon">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                            <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
-                                            <path d="M16 3l0 4"></path>
-                                            <path d="M8 3l0 4"></path>
-                                            <path d="M4 11l16 0"></path>
-                                            <path d="M11 15l1 0"></path>
-                                            <path d="M12 15l0 3"></path>
-                                        </svg>
-                                    </span>
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="d-flex flex-column gap-1 mb-4">
+                                <h5 class="card-title mb-0">{{ 'Order Details'|trans }}</h5>
+                                <p class="text-secondary mb-0">{{ 'Update the order title, pricing, and billing cycle configuration.'|trans }}</p>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="order_title">{{ 'Title'|trans }}</label>
+                                    <input class="form-control" id="order_title" type="text" name="title" value="{{ order.title }}">
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="order_price">{{ 'Price'|trans }}</label>
+                                    <input class="form-control" id="order_price" type="text" name="price" value="{{ order.price }}" required>
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label">{{ 'Invoice Option'|trans }}</label>
+                                    {{ mf.selectbox('invoice_option', admin.order_get_invoice_options, order.invoice_option) }}
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label">{{ 'Period'|trans }}</label>
+                                    {{ mf.selectbox('period', guest.system_periods, order.period, 0, 'Not recurrent'|trans) }}
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="expires_at">{{ 'Date Expires'|trans }}</label>
+                                    <div class="input-icon">
+                                        <input class="form-control datepicker"
+                                               id="expires_at"
+                                               value="{% if order.expires_at %}{{ order.expires_at|date('Y-m-d') }}{% endif %}"
+                                               name="expires_at"
+                                        >
+                                        <span class="input-icon-addon">
+                                            <svg class="icon">
+                                                <use xlink:href="#calendar" />
+                                            </svg>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="order_reason">{{ 'Reason'|trans }}</label>
+                                    <input class="form-control" id="order_reason" type="text" name="reason" value="{{ order.reason }}">
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Notes'|trans }}</label>
-                        <div class="col">
-                            <textarea class="form-control" name="notes" rows="2">{{ order.notes }}</textarea>
+
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="d-flex flex-column gap-1 mb-4">
+                                <h5 class="card-title mb-0">{{ 'Status and Notes'|trans }}</h5>
+                                <p class="text-secondary mb-0">{{ 'Change the recorded status directly and keep internal notes for this order.'|trans }}</p>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-xl-6">
+                                    <label class="form-label">{{ 'Changes Status Without Performing Action'|trans }}</label>
+                                    {{ mf.selectbox('status', admin.order_get_status_pairs, order.status, 0, 'Select status'|trans) }}
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="order_notes">{{ 'Notes'|trans }}</label>
+                                    <textarea class="form-control" id="order_notes" name="notes" rows="3">{{ order.notes }}</textarea>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <input type="hidden" name="id" value="{{ order.id }}">
-                    <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary">{{ 'Update Order'|trans }}</button>
+                    </div>
                 </form>
             </div>
         </div>
 
         <div class="tab-pane fade" id="tab-config" role="tabpanel">
             <div class="card-body">
-                <h5>{{ 'Order Config Management'|trans }}</h5>
-                <p class="text-muted">{{ 'Please be cautious and make sure you know what you are doing when editing order config! FOSSBilling relies on these parameters and you might get unexpected results if you change some of them.'|trans }}</p>
-
                 <form method="post" action="{{ 'order/update_config'|api_url }}" {{ fb_api_form({ reload: true}) }}>
-                    <input type="hidden" name="id" value="{{ order.id }}">
-                    {% for key, config in order.config %}
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ key }}</label>
-                        <div class="col">
-                            {% if config is iterable %}
-                                {% for key2, config2 in config %}
-                                    <input class="form-control" type="text" name="config[{{ key }}][{{ key2 }}]" value="{{ config2 }}"{% if config2 is null %} placeholder="null"{% endif %}>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex flex-column gap-1 mb-4">
+                                <h5 class="card-title mb-0">{{ 'Order Configuration'|trans }}</h5>
+                                <p class="text-secondary mb-0">{{ 'Please be cautious when editing raw order configuration values. Incorrect changes can affect service behavior and billing logic.'|trans }}</p>
+                            </div>
+
+                            <input type="hidden" name="id" value="{{ order.id }}">
+                            <div class="row g-3">
+                                {% for key, config in order.config %}
+                                    <div class="col-12">
+                                        <div class="border rounded p-3">
+                                            <label class="form-label fw-semibold d-block mb-3">{{ key }}</label>
+                                            {% if config is iterable %}
+                                                <div class="row g-3">
+                                                    {% for key2, config2 in config %}
+                                                        <div class="col-lg-6">
+                                                            <label class="form-label" for="config_{{ key }}_{{ key2 }}">{{ key2 }}</label>
+                                                            <input class="form-control"
+                                                                   id="config_{{ key }}_{{ key2 }}"
+                                                                   type="text"
+                                                                   name="config[{{ key }}][{{ key2 }}]"
+                                                                   value="{{ config2 }}"{% if config2 is null %} placeholder="null"{% endif %}>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            {% else %}
+                                                <input class="form-control"
+                                                       id="config_{{ key }}"
+                                                       type="text"
+                                                       name="config[{{ key }}]"
+                                                       value="{{ config }}"{% if config is null %} placeholder="null"{% endif %}>
+                                            {% endif %}
+                                        </div>
+                                    </div>
                                 {% endfor %}
-                            {% else %}
-                                <input class="form-control" type="text" name="config[{{ key }}]" value="{{ config }}"{% if config is null %} placeholder="null"{% endif %}>
-                            {% endif %}
+                            </div>
+                        </div>
+                        <div class="card-footer d-flex justify-content-end">
+                            <button class="btn btn-primary" type="submit">{{ 'Update Configuration'|trans }}</button>
                         </div>
                     </div>
-                    {% endfor %}
-                    <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
                 </form>
             </div>
         </div>
