@@ -786,10 +786,10 @@ final class AdminTest extends \BBTestCase
         });
         $di['logger'] = new \Box_Log();
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
 
-        $result = $admin_Client->batch_expire_password_reminders();
+        $result = $adminClient->batch_expire_password_reminders();
         $this->assertTrue($result);
     }
 
