@@ -542,10 +542,10 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
 
-        $result = $admin_Client->change_password($data);
+        $result = $adminClient->change_password($data);
         $this->assertTrue($result);
     }
 
