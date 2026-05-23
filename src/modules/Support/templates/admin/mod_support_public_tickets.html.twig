@@ -24,6 +24,14 @@
 {% set has_filter_panel = true %}
 {% set filter_panel_id = 'page-search-filters' %}
 {% set filter_panel_open = request_has_filters %}
+{% set public_ticket_toolbar_actions %}
+    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newPublicTicketModal">
+        <svg class="icon">
+            <use xlink:href="#plus" />
+        </svg>
+        {{ 'New Public Ticket'|trans }}
+    </button>
+{% endset %}
 
 {% block content %}
     {% if not filter_panel_open %}
@@ -97,7 +105,8 @@
         </div>
 
         {{ include('partial_search.html.twig', {
-            search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : ''
+            search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
+            search_toolbar_actions: public_ticket_toolbar_actions
         }) }}
         <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
             <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
@@ -211,5 +220,80 @@
             {% include 'partial_batch_delete.html.twig' with { 'action': 'support/batch_delete_public' } %}
             {% include 'partial_pagination.html.twig' with { 'list': tickets, 'url': 'support/public-tickets' } %}
         </div>
+
+        <div class="modal modal-blur fade" id="newPublicTicketModal" tabindex="-1" aria-labelledby="newPublicTicketModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-md-down modal-lg">
+                <form class="modal-content fb-modal-form" method="post" action="{{ 'support/public_ticket_create'|api_url }}" {{ fb_api_form({ callback: 'onAfterPublicTicketCreate' }) }}>
+                    <div class="modal-header">
+                        <h3 class="modal-title" id="newPublicTicketModalLabel">{{ 'Open Public Ticket for Non-Client'|trans }}</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <section class="fb-modal-section">
+                            <div class="fb-modal-section-header">
+                                <div class="fb-modal-section-heading-row">
+                                    <h4 class="fb-modal-section-title">{{ 'Ticket Details'|trans }}</h4>
+                                </div>
+                                <p class="fb-modal-section-description">{{ 'Capture the sender details and compose the opening public support message.'|trans }}</p>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="new-public-ticket-name">{{ 'Receiver Name'|trans }}</label>
+                                    <input class="form-control" type="text" id="new-public-ticket-name" name="name" required placeholder="{{ 'John Smith'|trans }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="new-public-ticket-email">{{ 'Email'|trans }}</label>
+                                    <input class="form-control" type="email" id="new-public-ticket-email" name="email" required placeholder="{{ 'user@domain.com'|trans }}">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="new-public-ticket-subject">{{ 'Subject'|trans }}</label>
+                                    <input class="form-control" type="text" id="new-public-ticket-subject" name="subject" value="{{ request.subject|default('') }}" required placeholder="{{ 'Email Subject'|trans }}">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="new-public-ticket-message">{{ 'Message'|trans }}</label>
+                                    <textarea class="form-control editor-textarea" id="new-public-ticket-message" name="message" rows="10" required>{{ profile.signature }}</textarea>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                        <button type="submit" class="btn btn-primary">{{ 'Create'|trans }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 {% endblock %}
+
+{% block js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalElement = document.getElementById('newPublicTicketModal');
+    if (!modalElement) {
+        return;
+    }
+
+    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+    if (window.location.hash === '#tab-new') {
+        modal.show();
+    }
+
+    modalElement.addEventListener('hidden.bs.modal', function () {
+        if (window.location.hash !== '#tab-new') {
+            return;
+        }
+
+        const url = new URL(window.location.href);
+        url.hash = '';
+        window.history.replaceState({}, '', url);
+    });
+});
+
+function onAfterPublicTicketCreate(result) {
+    window.location = "{{ 'support/public-ticket'|url }}/" + result;
+}
+</script>
+{% endblock %}
+
+{% block head %}{{ mf.wysiwyg('.editor-textarea') }}{% endblock %}

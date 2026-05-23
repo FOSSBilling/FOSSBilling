@@ -24,6 +24,14 @@
 {% set has_filter_panel = true %}
 {% set filter_panel_id = 'page-search-filters' %}
 {% set filter_panel_open = request_has_filters %}
+{% set support_toolbar_actions %}
+    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newClientTicketModal">
+        <svg class="icon">
+            <use xlink:href="#plus" />
+        </svg>
+        {{ 'New Client Ticket'|trans }}
+    </button>
+{% endset %}
 
 {% block top_content %}
 {% if not filter_panel_open %}
@@ -97,35 +105,10 @@
                 <p class="card-subtitle">{{ 'Manage client and public tickets, filter conversations, and open new support requests.'|trans }}</p>
             </div>
         </div>
-        <div class="card-body pt-3 pb-0 px-0">
-            <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                    <ul class="nav nav-pills card-header-pills">
-                        <li class="nav-item">
-                            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Tickets'|trans }}</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
-                                <svg class="icon me-2">
-                                    <use xlink:href="#plus" />
-                                </svg>
-                                {{ 'New Client Ticket'|trans }}
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#tab-email" data-bs-toggle="tab">
-                                <svg class="icon me-2">
-                                    <use xlink:href="#plus" />
-                                </svg>
-                                {{ 'New Public Ticket'|trans }}
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="tab-content border-top">
-                    <div class="tab-pane fade show active" id="tab-index" role="tabpanel" aria-labelledby="index-tab">
+        <div class="card-body p-0">
             {{ include('partial_search.html.twig', {
-                search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : ''
+                search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
+                search_toolbar_actions: support_toolbar_actions
             }) }}
             <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
                 <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
@@ -292,90 +275,93 @@
             </div>
         </div>
 
-        <div class="tab-pane fade" id="tab-new" role="tabpanel" aria-labelledby="new-tab">
-            <div class="p-3">
-                <h5>{{ 'Open Ticket for Existing Client'|trans }}</h5>
-                <form method="post" action="{{ 'support/ticket_create'|api_url }}" {{ fb_api_form({ redirect: 'support'|url }) }}>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label" for="client_id">{{ 'Client'|trans }}</label>
-                        <div class="col">
-                            {% if not request.client_id %}
-                                <select class="form-control autocomplete-selector"
-                                        placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
-                                        id="client_id"
-                                        name="client_id"
-                                        data-resturl="/api/admin/client/get_pairs">
-                                </select>
-                            {% else %}
-                                {% set client = admin.client_get({ 'id': request.client_id }) %}
-                                <input type="text" id="client_id" class="form-control" disabled value="{{ client.first_name }} {{ client.last_name }}" />
-                                <input type="hidden" name="client_id" value="{{ request.client_id }}" />
-                            {% endif %}
-                        </div>
+        <div class="modal modal-blur fade" id="newClientTicketModal" tabindex="-1" aria-labelledby="newClientTicketModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-md-down modal-lg">
+                <form class="modal-content fb-modal-form" method="post" action="{{ 'support/ticket_create'|api_url }}" {{ fb_api_form({ redirect: 'support'|url }) }}>
+                    <div class="modal-header">
+                        <h3 class="modal-title" id="newClientTicketModalLabel">{{ 'Open Ticket for Existing Client'|trans }}</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
                     </div>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Helpdesk'|trans }}</label>
-                        <div class="col">
-                            {{ mf.selectbox('support_helpdesk_id', admin.support_helpdesk_get_pairs, '', 1) }}
-                        </div>
+                    <div class="modal-body">
+                        <section class="fb-modal-section">
+                            <div class="fb-modal-section-header">
+                                <div class="fb-modal-section-heading-row">
+                                    <h4 class="fb-modal-section-title">{{ 'Ticket Details'|trans }}</h4>
+                                </div>
+                                <p class="fb-modal-section-description">{{ 'Choose the client and helpdesk, then draft the opening message.'|trans }}</p>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label" for="client_id">{{ 'Client'|trans }}</label>
+                                    {% if not request.client_id %}
+                                        <select class="form-control autocomplete-selector"
+                                                placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
+                                                id="client_id"
+                                                name="client_id"
+                                                data-resturl="/api/admin/client/get_pairs">
+                                        </select>
+                                    {% else %}
+                                        {% set client = admin.client_get({ 'id': request.client_id }) %}
+                                        <input type="text" id="client_id" class="form-control" disabled value="{{ client.first_name }} {{ client.last_name }}" />
+                                        <input type="hidden" name="client_id" value="{{ request.client_id }}" />
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ 'Helpdesk'|trans }}</label>
+                                    {{ mf.selectbox('support_helpdesk_id', admin.support_helpdesk_get_pairs, '', 1) }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="new-client-ticket-subject">{{ 'Subject'|trans }}</label>
+                                    <input class="form-control" type="text" id="new-client-ticket-subject" name="subject" value="{{ request.subject|default('') }}" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="new-client-ticket-message">{{ 'Message'|trans }}</label>
+                                    <textarea class="form-control editor-textarea" name="content" rows="10" required id="new-client-ticket-message">{{ profile.signature }}</textarea>
+                                </div>
+                            </div>
+                        </section>
                     </div>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Subject'|trans }}</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="subject" value="{{ ticket.subject }}" required>
-                        </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                        <button type="submit" class="btn btn-primary">{{ 'Create'|trans }}</button>
                     </div>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Message'|trans }}</label>
-                        <div class="col">
-                            <textarea class="form-control" name="content" rows="10" required id="msg-area-{{ message.id }}">{{ profile.signature }}</textarea>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">{{ 'Create'|trans }}</button>
                 </form>
             </div>
         </div>
 
-        <div class="tab-pane fade" id="tab-email" role="tabpanel" aria-labelledby="email-tab">
-            <div class="p-3">
-                <h5>{{ 'Open Public Ticket for Non-client'|trans }}</h5>
-                <form method="post" action="{{ 'support/public_ticket_create'|api_url }}" {{ fb_api_form({ callback: 'onAfterPublicTicketCreate' }) }}>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Receiver Name'|trans }}</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="name" required placeholder="{{ 'John Smith'|trans }}">
-                        </div>
-                    </div>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Email'|trans }}</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="email" required placeholder="{{ 'user@domail.com'|trans }}">
-                        </div>
-                    </div>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Subject'|trans }}</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="subject" value="{{ ticket.subject }}" required placeholder="{{ 'Email Subject'|trans }}">
-                        </div>
-                    </div>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Message'|trans }}</label>
-                        <div class="col">
-                            <textarea class="form-control" name="message" rows="10" required>{{ profile.signature }}</textarea>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">{{ 'Create'|trans }}</button>
-                </form>
-            </div>
-        </div>
-                </div>
-            </div>
-        </div>
     </div>
 {% endblock %}
 
 {% block js %}
 <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const modalConfigs = [
+            { elementId: 'newClientTicketModal', hash: '#tab-new' }
+        ];
+
+        for (const { elementId, hash } of modalConfigs) {
+            const modalElement = document.getElementById(elementId);
+            if (!modalElement) {
+                continue;
+            }
+
+            const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+            if (window.location.hash === hash) {
+                modal.show();
+            }
+
+            modalElement.addEventListener('hidden.bs.modal', function () {
+                if (window.location.hash !== hash) {
+                    return;
+                }
+
+                const url = new URL(window.location.href);
+                url.hash = '';
+                window.history.replaceState({}, '', url);
+            });
+        }
+    });
+
     document.querySelectorAll('a.show-notes').forEach(notes => {
         notes.addEventListener('click', function(e) {
             e.preventDefault();
@@ -399,8 +385,7 @@
         });
     })
 
-    function onAfterPublicTicketCreate(result) {
-        window.location = "{{ 'support/public-ticket'|url }}/" + result;
-    }
 </script>
 {% endblock %}
+
+{% block head %}{{ mf.wysiwyg('.editor-textarea') }}{% endblock %}

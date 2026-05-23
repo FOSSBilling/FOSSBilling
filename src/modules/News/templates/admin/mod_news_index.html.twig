@@ -7,12 +7,12 @@
 {% set filter_panel_id = 'page-search-filters' %}
 {% set filter_panel_open = request_has_filters %}
 {% set new_post_action %}
-    <a class="btn btn-primary" href="#tab-new" data-bs-toggle="tab" role="button">
+    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newAnnouncementModal">
         <svg class="icon">
             <use xlink:href="#plus" />
         </svg>
         {{ 'New Announcement'|trans }}
-    </a>
+    </button>
 {% endset %}
 
 {% block meta_title %}{{ 'News'|trans }}{% endblock %}
@@ -25,17 +25,7 @@
                 <p class="card-subtitle">{{ 'Manage published announcements and draft new updates for the client area.'|trans }}</p>
             </div>
         </div>
-        <div class="card-body pt-3 pb-0 px-0">
-            <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                    <ul class="nav nav-pills card-header-pills">
-                        <li class="nav-item">
-                            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'News & Announcements'|trans }}</a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="tab-content border-top">
-                    <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+        <div class="card-body p-0">
             {{ include('partial_search.html.twig', {
                 search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
                 search_toolbar_actions: new_post_action
@@ -82,51 +72,51 @@
             </section>
             <div class="table-responsive">
                 <table class="table card-table table-vcenter table-striped text-nowrap sortable">
-                <thead>
-                    <tr>
-                        <th class="w-1 no-sort">
-                            <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-master-checkbox">
-                        </th>
-                        <th class="w-1">#</th>
-                        <th>{{ 'Title'|trans }}</th>
-                        <th>{{ 'Active'|trans }}</th>
-                        <th>{{ 'Date'|trans }}</th>
-                        <th class="w-1 no-sort"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% set posts = admin.news_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
-                    {% for i, post in posts.list %}
-                    <tr>
-                        <td>
-                            <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-checkbox" data-item-id="{{ post.id }}">
-                        </td>
-                        <td>{{ post.id }}</td>
-                        <td>
-                            <a href='{{ "news/post/#{post.id}"|url }}'>{{ post.title }}</a>
-                        </td>
-                        <td>{{ mf.status_badge(post.status, 'post') }}</td>
-                        <td>{{ post.created_at|format_datetime }}</td>
-                        <td>
-                            <a class="btn btn-icon" href='{{ "news/post/#{post.id}"|url }}'>
-                                <svg class="icon">
-                                    <use xlink:href="#edit" />
-                                </svg>
-                            </a>
-                            <a class="btn btn-icon" href="{{ 'news/delete'|api_url(query: { 'id': post.id }) }}"
-                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'news'|url}) }}>
-                                <svg class="icon">
-                                    <use xlink:href="#delete" />
-                                </svg>
-                            </a>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
+                    <thead>
+                        <tr>
+                            <th class="w-1 no-sort">
+                                <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-master-checkbox">
+                            </th>
+                            <th class="w-1">#</th>
+                            <th>{{ 'Title'|trans }}</th>
+                            <th>{{ 'Active'|trans }}</th>
+                            <th>{{ 'Date'|trans }}</th>
+                            <th class="w-1 no-sort"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set posts = admin.news_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
+                        {% for i, post in posts.list %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-checkbox" data-item-id="{{ post.id }}">
+                            </td>
+                            <td>{{ post.id }}</td>
+                            <td>
+                                <a href='{{ "news/post/#{post.id}"|url }}'>{{ post.title }}</a>
+                            </td>
+                            <td>{{ mf.status_badge(post.status, 'post') }}</td>
+                            <td>{{ post.created_at|format_datetime }}</td>
+                            <td>
+                                <a class="btn btn-icon" href='{{ "news/post/#{post.id}"|url }}'>
+                                    <svg class="icon">
+                                        <use xlink:href="#edit" />
+                                    </svg>
+                                </a>
+                                <a class="btn btn-icon" href="{{ 'news/delete'|api_url(query: { 'id': post.id }) }}"
+                                    {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'news'|url}) }}>
+                                    <svg class="icon">
+                                        <use xlink:href="#delete" />
+                                    </svg>
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
                 </table>
             </div>
 
@@ -136,44 +126,81 @@
             </div>
         </div>
 
-        <div class="tab-pane fade" id="tab-new" role="tabpanel">
-            <div class="p-3">
-                <form method="post" action="{{ 'news/create'|api_url }}" {{ fb_api_form({redirect: 'news'|url}) }}>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="title" value="{{ request.title }}" required>
-                        </div>
+        <div class="modal modal-blur fade" id="newAnnouncementModal" tabindex="-1" aria-labelledby="newAnnouncementModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-md-down modal-xl">
+                <form class="modal-content fb-modal-form" method="post" action="{{ 'news/create'|api_url }}" {{ fb_api_form({redirect: 'news'|url}) }}>
+                    <div class="modal-header">
+                        <h3 class="modal-title" id="newAnnouncementModalLabel">{{ 'Create New Announcement'|trans }}</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
                     </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
-                        <div class="col">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioStatusDraft" type="radio" name="status" value="draft"checked>
-                                <label class="form-check-label" for="radioStatusDraft">{{ 'Draft'|trans }}</label>
+                    <div class="modal-body">
+                        <section class="fb-modal-section">
+                            <div class="fb-modal-section-header">
+                                <div class="fb-modal-section-heading-row">
+                                    <h4 class="fb-modal-section-title">{{ 'Post Details'|trans }}</h4>
+                                </div>
+                                <p class="fb-modal-section-description">{{ 'Set the title and status, then draft the announcement content for the client area.'|trans }}</p>
                             </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioStatusActive" type="radio" name="status" value="active">
-                                <label class="form-check-label" for="radioStatusActive">{{ 'Active'|trans }}</label>
+                            <div class="row g-3">
+                                <div class="col-md-8">
+                                    <label class="form-label" for="new-announcement-title">{{ 'Title'|trans }}</label>
+                                    <input class="form-control" type="text" id="new-announcement-title" name="title" value="{{ request.title }}" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">{{ 'Status'|trans }}</label>
+                                    <div class="d-flex flex-wrap gap-3 pt-2">
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioStatusDraft" type="radio" name="status" value="draft" checked>
+                                            <span class="form-check-label">{{ 'Draft'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioStatusActive" type="radio" name="status" value="active">
+                                            <span class="form-check-label">{{ 'Active'|trans }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="new-announcement-content">{{ 'Content'|trans }}</label>
+                                    <textarea class="editor-textarea" id="new-announcement-content" name="content" rows="10">{{ request.content }}</textarea>
+                                    <small class="mt-2 form-hint">{{ 'If the text is very long you can use <strong>&lt;!--more--&gt;</strong> tag. Inserting this tag within the post will create and excerpt of text (before the tag) to be displayed in posts list. Users will be able to see whole content when they click on "Read more" button.'|trans|raw }}</small>
+                                </div>
                             </div>
-                        </div>
+                        </section>
                     </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Content'|trans }}</label>
-                        <div class="col">
-                            <textarea class="editor-textarea" name="content" rows="10">{{ request.content }}</textarea>
-                            <small class="mt-2 form-hint">{{ 'If the text is very long you can use <strong>&lt;!--more--&gt;</strong> tag. Inserting this tag within the post will create and excerpt of text (before the tag) to be displayed in posts list. Users will be able to see whole content when they click on "Read more" button.'|trans|raw }}</small>
-                        </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                        <button class="btn btn-primary" type="submit">{{ 'Create'|trans }}</button>
                     </div>
-
-                    <input type="submit" value="{{ 'Create'|trans }}" class="btn btn-primary w-100">
                 </form>
             </div>
         </div>
-                </div>
-            </div>
-        </div>
     </div>
+{% endblock %}
+
+{% block js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalElement = document.getElementById('newAnnouncementModal');
+    if (!modalElement) {
+        return;
+    }
+
+    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+    if (window.location.hash === '#tab-new') {
+        modal.show();
+    }
+
+    modalElement.addEventListener('hidden.bs.modal', function () {
+        if (window.location.hash !== '#tab-new') {
+            return;
+        }
+
+        const url = new URL(window.location.href);
+        url.hash = '';
+        window.history.replaceState({}, '', url);
+    });
+});
+</script>
 {% endblock %}
 
 {% block head %}{{ mf.wysiwyg('.editor-textarea') }}{% endblock %}

@@ -7,12 +7,12 @@
 {% set filter_panel_id = 'page-search-filters' %}
 {% set filter_panel_open = request_has_filters %}
 {% set new_gateway_action %}
-    <a class="btn btn-primary" href="#tab-new" data-bs-toggle="tab" role="button">
+    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newPaymentGatewayModal">
         <svg class="icon">
             <use xlink:href="#plus" />
         </svg>
         {{ 'New Payment Gateway'|trans }}
-    </a>
+    </button>
 {% endset %}
 
 {% block meta_title %}{{ 'Payment Gateways'|trans }}{% endblock %}
@@ -33,12 +33,7 @@
                             <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Payment Gateways'|trans }}</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#tab-extension-directory" data-bs-toggle="tab">
-                                <svg class="icon me-2">
-                                    <use xlink:href="#plus" />
-                                </svg>
-                                {{ 'Install from the Extension Directory'|trans }}
-                            </a>
+                            <a class="nav-link" href="#tab-extension-directory" data-bs-toggle="tab">{{ 'Install from the Extension Directory'|trans }}</a>
                         </li>
                     </ul>
                 </div>
@@ -158,59 +153,110 @@
                         </div>
                     </div>
 
-                    <div class="tab-pane fade" id="tab-new" role="tabpanel">
-                        <div class="p-3">
-                            <h3 class="card-title">{{ 'Adding New Payment Gateway'|trans }}</h3>
-                            <p class="text-muted">{{ 'FOSSBilling ships with a few popular payment gateways included. You can install other payment gateways to fit your needs.'|trans }}</p>
-                            <p>{{ 'Follow these instructions to install a new payment gateway.'|trans }}</p>
-                            <ul>
-                                <li>{{ 'Check for payment gateway at'|trans }} <a href="http://extensions.fossbilling.org/" target="_blank">{{ 'FOSSBilling extensions site'|trans }}</a> {{ 'for more payment gateways'|trans }}</li>
-                                <li>{{ 'Download payment gateway extension file and place it to'|trans }} <strong>{{ constant('PATH_LIBRARY') }}Payment/Adapter</strong></li>
-                                <li>{{ 'After file is uploaded in place, reload this page.'|trans }}</li>
-                                <li>{{ 'Select uploaded file name and click on install.'|trans }}</li>
-                                <li>{{ 'Payment gateway will be installed in FOSSBilling and can be configured in "Payment gateways" tab.'|trans }}</li>
-                                <li>{{ 'For developers. Read'|trans }} <a href="https://fossbilling.org/docs" target="_blank">{{ 'FOSSBilling documentation'|trans }}</a> {{ 'to learn how to create your own payment gateway and share it with the community'|trans }}</li>
-                            </ul>
-                        </div>
-
-                        {% if admin.invoice_gateway_get_available|length > 0 %}
-                        <div class="table-responsive">
-                            <table class="table card-table table-vcenter table-striped text-nowrap">
-                                <thead>
-                                    <tr>
-                                        <th>{{ 'Code'|trans }}</th>
-                                        <th class="w-1">{{ 'Install'|trans }}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                {% for gtw in admin.invoice_gateway_get_available %}
-                                <tr>
-                                    <td>{{ gtw }}</td>
-                                    <td>
-                                        <a class="btn btn-icon" href="{{ 'invoice/gateway_install'|api_url(query: { 'code': gtw }) }}" title="{{ 'Install'|trans }}"
-                                            {{ fb_api_link({redirect: 'invoice/gateways'|url}) }}>
-                                            <svg class="icon">
-                                                <use xlink:href="#cog" />
-                                            </svg>
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% else %}
-                                    <tr>
-                                        <td class="text-muted" colspan="2">{{ 'All payment gateways installed'|trans }}</td>
-                                    </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        {% endif %}
-                    </div>
-
                     <div class="tab-pane fade" id="tab-extension-directory" role="tabpanel">
                         {{ include('partial_extensions.html.twig', { 'type': 'payment-gateway' }, with_context = false) }}
                     </div>
                 </div>
             </div>
         </div>
+
+        <div class="modal modal-blur fade" id="newPaymentGatewayModal" tabindex="-1" aria-labelledby="newPaymentGatewayModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-md-down modal-lg">
+                <div class="modal-content fb-modal-form">
+                    <div class="modal-header">
+                        <h3 class="modal-title" id="newPaymentGatewayModalLabel">{{ 'Add New Payment Gateway'|trans }}</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <section class="fb-modal-section">
+                            <div class="fb-modal-section-header">
+                                <div class="fb-modal-section-heading-row">
+                                    <h4 class="fb-modal-section-title">{{ 'Install Locally'|trans }}</h4>
+                                </div>
+                                <p class="fb-modal-section-description">{{ 'Upload or place a gateway adapter on the server, then install it here and configure it from the gateway list.'|trans }}</p>
+                            </div>
+                            <ol class="mb-0 ps-3">
+                                <li>{{ 'Check for payment gateway at'|trans }} <a href="http://extensions.fossbilling.org/" target="_blank">{{ 'FOSSBilling extensions site'|trans }}</a> {{ 'for more payment gateways'|trans }}</li>
+                                <li>{{ 'Download payment gateway extension file and place it to'|trans }} <strong>{{ constant('PATH_LIBRARY') }}Payment/Adapter</strong></li>
+                                <li>{{ 'After file is uploaded in place, reload this page.'|trans }}</li>
+                                <li>{{ 'Select uploaded file name and click on install.'|trans }}</li>
+                                <li>{{ 'Payment gateway will be installed in FOSSBilling and can be configured in the payment gateway list.'|trans }}</li>
+                                <li>{{ 'For developers. Read'|trans }} <a href="https://fossbilling.org/docs" target="_blank">{{ 'FOSSBilling documentation'|trans }}</a> {{ 'to learn how to create your own payment gateway and share it with the community'|trans }}</li>
+                            </ol>
+                        </section>
+
+                        <section class="fb-modal-section">
+                            <div class="fb-modal-section-header">
+                                <div class="fb-modal-section-heading-row">
+                                    <h4 class="fb-modal-section-title">{{ 'Available Adapters'|trans }}</h4>
+                                </div>
+                                <p class="fb-modal-section-description">{{ 'Install any gateway adapters already present on the server.'|trans }}</p>
+                            </div>
+                            {% if admin.invoice_gateway_get_available|length > 0 %}
+                                <div class="table-responsive">
+                                    <table class="table card-table table-vcenter table-striped text-nowrap mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>{{ 'Code'|trans }}</th>
+                                                <th class="w-1">{{ 'Install'|trans }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        {% for gtw in admin.invoice_gateway_get_available %}
+                                            <tr>
+                                                <td>{{ gtw }}</td>
+                                                <td>
+                                                    <a class="btn btn-icon" href="{{ 'invoice/gateway_install'|api_url(query: { 'code': gtw }) }}" title="{{ 'Install'|trans }}"
+                                                        {{ fb_api_link({redirect: 'invoice/gateways'|url}) }}>
+                                                        <svg class="icon">
+                                                            <use xlink:href="#cog" />
+                                                        </svg>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <p class="text-body-secondary mb-0">{{ 'All payment gateways installed'|trans }}</p>
+                            {% endif %}
+                        </section>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Close'|trans }}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+{% endblock %}
+
+{% block js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var modalElement = document.getElementById('newPaymentGatewayModal');
+        var modal = modalElement ? bootstrap.Modal.getOrCreateInstance(modalElement) : null;
+
+        if (window.location.hash === '#tab-new' && modal) {
+            modal.show();
+            return;
+        }
+
+        var tabTrigger = document.querySelector('[data-bs-toggle="tab"][href="' + window.location.hash + '"]');
+        if (tabTrigger) {
+            bootstrap.Tab.getOrCreateInstance(tabTrigger).show();
+        }
+
+        modalElement?.addEventListener('hidden.bs.modal', function () {
+            if (window.location.hash !== '#tab-new') {
+                return;
+            }
+
+            var url = new URL(window.location.href);
+            url.hash = '';
+            window.history.replaceState({}, '', url);
+        });
+    });
+</script>
 {% endblock %}

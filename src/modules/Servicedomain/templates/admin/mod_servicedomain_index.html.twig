@@ -2,9 +2,25 @@
 
 {% import 'macro_functions.html.twig' as mf %}
 
-{% block meta_title %}Domain Management{% endblock %}
+{% block meta_title %}{{ 'Domain Management'|trans }}{% endblock %}
 
 {% set active_menu = 'system' %}
+{% set new_tld_action %}
+    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newTldModal">
+        <svg class="icon">
+            <use xlink:href="#plus" />
+        </svg>
+        {{ 'New Top Level Domain'|trans }}
+    </button>
+{% endset %}
+{% set new_registrar_action %}
+    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newRegistrarModal">
+        <svg class="icon">
+            <use xlink:href="#plus" />
+        </svg>
+        {{ 'New Domain Registrar'|trans }}
+    </button>
+{% endset %}
 
 {% block content %}
     <div class="card">
@@ -18,300 +34,394 @@
             <div class="card border-0 shadow-none rounded-0">
                 <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
                     <ul class="nav nav-pills card-header-pills">
-                        <li class="nav-item"><a class="nav-link active" href="#tab-tlds" data-bs-toggle="tab">{{ 'Top Level Domains'|trans }}</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#tab-new-tld" data-bs-toggle="tab"><svg class="icon me-2"><use xlink:href="#plus" /></svg>{{ 'New Top Level Domain'|trans }}</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#tab-registrars" data-bs-toggle="tab">{{ 'Registrars'|trans }}</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#tab-new-registrar" data-bs-toggle="tab"><svg class="icon me-2"><use xlink:href="#plus" /></svg>{{ 'New Domain Registrar'|trans }}</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#tab-extension-directory" data-bs-toggle="tab"><svg class="icon me-2"><use xlink:href="#plus" /></svg>{{ 'Install from the Extension Directory'|trans }}</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#tab-nameservers" data-bs-toggle="tab">{{ 'Nameservers'|trans }}</a></li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#tab-tlds" data-bs-toggle="tab">{{ 'Top Level Domains'|trans }}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#tab-registrars" data-bs-toggle="tab">{{ 'Registrars'|trans }}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#tab-extension-directory" data-bs-toggle="tab">{{ 'Install from the Extension Directory'|trans }}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#tab-nameservers" data-bs-toggle="tab">{{ 'Nameservers'|trans }}</a>
+                        </li>
                     </ul>
                 </div>
                 <div class="tab-content border-top">
-        <div class="tab-pane fade show active" id="tab-tlds" role="tabpanel">
-            <div class="p-3">
-                <h5>{{ 'Manage TLDs'|trans }}</h5>
-                <p class="text-muted">{{ 'Setup domain pricing and allowed operations. Assign specific domain registrars for each Top Level Domain (TLD)'|trans }}</p>
-            </div>
-
-            <div class="table-responsive">
-            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
-                <thead>
-                    <tr>
-                        <th>{{ 'TLD'|trans }}</th>
-                        <th>{{ 'Registration'|trans }}</th>
-                        <th>{{ 'Renew'|trans }}</th>
-                        <th>{{ 'Transfer'|trans }} </th>
-                        <th>{{ 'Operations'|trans }}</th>
-                        <th>{{ 'Registrar'|trans }}</th>
-                        <th class="w-1 no-sort"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% set currency = guest.currency_get %}
-                    {% for tld in admin.servicedomain_tld_get_list({ 'per_page': 99 }).list %}
-                    <tr>
-                        <td>
-                            <a href='{{ "servicedomain/id/#{tld.id}"|url }}'>{{ tld.tld }}</a>
-                        </td>
-                        <td>{{ tld.price_registration|format_currency(currency.code) }}</td>
-                        <td>{{ tld.price_renew|format_currency(currency.code) }}</td>
-                        <td>{{ tld.price_transfer|format_currency(currency.code) }}</td>
-                        <td>
-                        {{ 'Allow register:'|trans }} {% if tld.allow_register %}{{ 'Yes'|trans }}{% else %}{{ 'No'|trans }}{% endif %}<br/>
-                        {{ 'Allow transfer:'|trans }} {% if tld.allow_transfer %}{{ 'Yes'|trans }}{% else %}{{ 'No'|trans }}{% endif %}<br/>
-                        {{ 'Active:'|trans }} {% if tld.active %}{{ 'Yes'|trans }}{% else %}{{ 'No'|trans }}{% endif %}
-                        </td>
-                        <td>
-                            <a href='{{ "servicedomain/registrar/#{tld.registrar.id}"|url }}'>{{ tld.registrar.title }}</a>
-                        </td>
-                        <td>
-                            <a class="btn btn-icon" href='{{ "servicedomain/id/#{tld.id}"|url }}'>
-                                <svg class="icon">
-                                    <use xlink:href="#edit" />
-                                </svg>
-                            </a>
-                            <a class="btn btn-icon" href="{{ 'servicedomain/tld_delete'|api_url(query: { 'tld': tld.tld }) }}"
-                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
-                                <svg class="icon">
-                                    <use xlink:href="#delete" />
-                                </svg>
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            </div>
-        </div>
-
-        <div class="tab-pane fade" id="tab-new-tld" role="tabpanel">
-            <div class="p-3">
-                <h5>{{ 'Add New Top Level Domain'|trans }}</h5>
-                <p class="text-muted">{{ 'Setup new TLD prices and properties'|trans }}</p>
-
-                <form method="post" action="{{ 'servicedomain/tld_create'|api_url }}" {{ fb_api_form({reload: true}) }}>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Tld'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="tld" value="." required title="{{ 'Must start with a dot'|trans }}">
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Registrar'|trans }}:</label>
-                        <div class="col">
-                            <select class="form-select" name="tld_registrar_id" required>
-                                {% for id,title in admin.servicedomain_registrar_get_pairs %}
-                                <option value="{{ id }}">{{ title }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Registration Price'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="price_registration" required>
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Renewal Price'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="price_renew" required>
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Transfer Price'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="price_transfer" required>
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Minimum Years of Registration'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="min_years" value="1" required>
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Allow Registration'|trans }}:</label>
-                        <div class="col">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioAllowRegisterYes" type="radio" name="allow_register" value="1" checked>
-                                <label class="form-check-label" for="radioAllowRegisterYes">{{ 'Yes'|trans }}</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioAllowRegisterNo" type="radio" name="allow_register" value="0">
-                                <label class="form-check-label" for="radioAllowRegisterNo">{{ 'No'|trans }}</label>
+                    <div class="tab-pane fade show active" id="tab-tlds" role="tabpanel">
+                        <div class="card-body border-bottom py-3">
+                            <div class="d-flex justify-content-end">
+                                {{ new_tld_action|raw }}
                             </div>
                         </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Allow Transfer'|trans }}:</label>
-                        <div class="col">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioAllowTransferYes" type="radio" name="allow_transfer" value="1" checked>
-                                <label class="form-check-label" for="radioAllowTransferYes">{{ 'Yes'|trans }}</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioAllowTransferNo" type="radio" name="allow_transfer" value="0">
-                                <label class="form-check-label" for="radioAllowTransferNo">{{ 'No'|trans }}</label>
-                            </div>
+                        <div class="px-3 pt-3">
+                            <h5>{{ 'Manage TLDs'|trans }}</h5>
+                            <p class="text-muted">{{ 'Set domain pricing, control allowed operations, and assign a registrar for each top level domain.'|trans }}</p>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                                <thead>
+                                    <tr>
+                                        <th>{{ 'TLD'|trans }}</th>
+                                        <th>{{ 'Registration'|trans }}</th>
+                                        <th>{{ 'Renew'|trans }}</th>
+                                        <th>{{ 'Transfer'|trans }}</th>
+                                        <th>{{ 'Operations'|trans }}</th>
+                                        <th>{{ 'Registrar'|trans }}</th>
+                                        <th class="w-1 no-sort"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% set currency = guest.currency_get %}
+                                    {% for tld in admin.servicedomain_tld_get_list({ 'per_page': 99 }).list %}
+                                    <tr>
+                                        <td>
+                                            <a href='{{ "servicedomain/id/#{tld.id}"|url }}'>{{ tld.tld }}</a>
+                                        </td>
+                                        <td>{{ tld.price_registration|format_currency(currency.code) }}</td>
+                                        <td>{{ tld.price_renew|format_currency(currency.code) }}</td>
+                                        <td>{{ tld.price_transfer|format_currency(currency.code) }}</td>
+                                        <td>
+                                            {{ 'Allow register:'|trans }} {% if tld.allow_register %}{{ 'Yes'|trans }}{% else %}{{ 'No'|trans }}{% endif %}<br>
+                                            {{ 'Allow transfer:'|trans }} {% if tld.allow_transfer %}{{ 'Yes'|trans }}{% else %}{{ 'No'|trans }}{% endif %}<br>
+                                            {{ 'Active:'|trans }} {% if tld.active %}{{ 'Yes'|trans }}{% else %}{{ 'No'|trans }}{% endif %}
+                                        </td>
+                                        <td>
+                                            <a href='{{ "servicedomain/registrar/#{tld.registrar.id}"|url }}'>{{ tld.registrar.title }}</a>
+                                        </td>
+                                        <td>
+                                            <a class="btn btn-icon" href='{{ "servicedomain/id/#{tld.id}"|url }}'>
+                                                <svg class="icon">
+                                                    <use xlink:href="#edit" />
+                                                </svg>
+                                            </a>
+                                            <a class="btn btn-icon" href="{{ 'servicedomain/tld_delete'|api_url(query: { 'tld': tld.tld }) }}"
+                                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                                                <svg class="icon">
+                                                    <use xlink:href="#delete" />
+                                                </svg>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td class="text-muted" colspan="7">{{ 'The list is empty'|trans }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Active'|trans }}:</label>
-                        <div class="col">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioActiveYes" type="radio" name="active" value="1" checked>
-                                <label class="form-check-label" for="radioActiveYes">{{ 'Yes'|trans }}</label>
+
+                    <div class="tab-pane fade" id="tab-registrars" role="tabpanel">
+                        <div class="card-body border-bottom py-3">
+                            <div class="d-flex justify-content-end">
+                                {{ new_registrar_action|raw }}
                             </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" id="radioActiveNo" type="radio" name="active" value="0">
-                                <label class="form-check-label" for="radioActiveNo">{{ 'No'|trans }}</label>
-                            </div>
+                        </div>
+                        <div class="px-3 pt-3">
+                            <h5>{{ 'Domain Registrars'|trans }}</h5>
+                            <p class="text-muted">{{ 'Manage installed registrars and configure the providers available for domain operations.'|trans }}</p>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table card-table table-vcenter table-striped text-nowrap">
+                                <thead>
+                                    <tr>
+                                        <th>{{ 'Title'|trans }}</th>
+                                        <th class="w-1"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for registrar in admin.servicedomain_registrar_get_list.list %}
+                                    <tr>
+                                        <td>
+                                            <a href='{{ "servicedomain/registrar/#{registrar.id}"|url }}'>{{ registrar.title }}</a>
+                                        </td>
+                                        <td>
+                                            <a class="btn btn-icon" href="{{ 'servicedomain/registrar_copy'|api_url(query: { 'id': registrar.id }) }}" title="{{ 'Copy'|trans }}" {{ fb_api_link({reload: true}) }}>
+                                                <svg class="icon">
+                                                    <use xlink:href="#copy" />
+                                                </svg>
+                                            </a>
+                                            <a class="btn btn-icon" href='{{ "servicedomain/registrar/#{registrar.id}"|url }}'>
+                                                <svg class="icon">
+                                                    <use xlink:href="#edit" />
+                                                </svg>
+                                            </a>
+                                            <a class="btn btn-icon" href="{{ 'servicedomain/registrar_delete'|api_url(query: { 'id': registrar.id }) }}"
+                                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                                                <svg class="icon">
+                                                    <use xlink:href="#delete" />
+                                                </svg>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td class="text-muted" colspan="2">{{ 'The list is empty'|trans }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 
-                    <input type="submit" value="{{ 'Add'|trans }}" class="btn btn-primary w-100">
-                </form>
-            </div>
-        </div>
+                    <div class="tab-pane fade" id="tab-extension-directory" role="tabpanel">
+                        {{ include('partial_extensions.html.twig', { 'type': 'domain-registrar' }, with_context = false) }}
+                    </div>
 
-        <div class="tab-pane fade" id="tab-registrars" role="tabpanel">
-            <div class="p-3">
-                <h5>{{ 'Domain Registrars'|trans }}</h5>
-                <p class="text-muted">{{ 'Manage Domain Registrars'|trans }}</p>
-            </div>
+                    <div class="tab-pane fade" id="tab-nameservers" role="tabpanel">
+                        <div class="p-3">
+                            <h5>{{ 'Nameservers'|trans }}</h5>
+                            <p class="text-muted">{{ 'Set default nameservers that will be used for new domain registrations if a client does not provide their own nameservers during checkout.'|trans }}</p>
 
-            <div class="table-responsive">
-            <table class="table card-table table-vcenter table-striped text-nowrap">
-                <thead>
-                    <tr>
-                        <th>{{ 'Title'|trans }}</th>
-                        <th class="w-1"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for registrar in admin.servicedomain_registrar_get_list.list %}
-                    <tr>
-                        <td>
-                            <a href='{{ "servicedomain/registrar/#{registrar.id}"|url }}'>{{ registrar.title }}</a>
-                        </td>
-                        <td>
-                            <a class="btn btn-icon" href="{{ 'servicedomain/registrar_copy'|api_url(query: { 'id': registrar.id }) }}" title="{{ 'Install'|trans }}" {{ fb_api_link({reload: true}) }}>
-                                <svg class="icon">
-                                    <use xlink:href="#copy" />
-                                </svg>
-                            </a>
-                            <a class="btn btn-icon" href='{{ "servicedomain/registrar/#{registrar.id}"|url }}'>
-                                <svg class="icon">
-                                    <use xlink:href="#edit" />
-                                </svg>
-                            </a>
-                            <a class="btn btn-icon" href="{{ 'servicedomain/registrar_delete'|api_url(query: { 'id': registrar.id }) }}"
-                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
-                                <svg class="icon">
-                                    <use xlink:href="#delete" />
-                                </svg>
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            </div>
-        </div>
+                            <form method="post" action="{{ 'system/update_params'|api_url }}" {{ fb_api_form({message: 'Nameservers Updated'|trans}) }}>
+                                {% set params = admin.system_get_params %}
+                                <div class="mb-3 row">
+                                    <label class="form-label col-3 col-form-label">{{ 'Nameserver 1'|trans }}:</label>
+                                    <div class="col">
+                                        <input class="form-control" type="text" name="nameserver_1" value="{{ params.nameserver_1 }}">
+                                    </div>
+                                </div>
+                                <div class="mb-3 row">
+                                    <label class="form-label col-3 col-form-label">{{ 'Nameserver 2'|trans }}:</label>
+                                    <div class="col">
+                                        <input class="form-control" type="text" name="nameserver_2" value="{{ params.nameserver_2 }}">
+                                    </div>
+                                </div>
+                                <div class="mb-3 row">
+                                    <label class="form-label col-3 col-form-label">{{ 'Nameserver 3'|trans }}:</label>
+                                    <div class="col">
+                                        <input class="form-control" type="text" name="nameserver_3" value="{{ params.nameserver_3 }}">
+                                    </div>
+                                </div>
+                                <div class="mb-3 row">
+                                    <label class="form-label col-3 col-form-label">{{ 'Nameserver 4'|trans }}:</label>
+                                    <div class="col">
+                                        <input class="form-control" type="text" name="nameserver_4" value="{{ params.nameserver_4 }}">
+                                    </div>
+                                </div>
 
-        <div class="tab-pane fade" id="tab-new-registrar" role="tabpanel">
-            <div class="p-3">
-                <h1>{{ 'Adding New Domain Registrar'|trans }}</h1>
-                <p>{{ 'Follow instructions below to install new domain registrar.'|trans }}</p>
-
-                <div class="">
-                    <ul>
-                        <li>{{ 'Check domain registrar you are looking for is available at'|trans }} <a href="http://extensions.fossbilling.org/" target="_blank">{{ 'FOSSBilling extensions site'|trans }}</a></li>
-                        <li>{{ 'Download domain registrar file and place to'|trans }} <strong>{{ constant('PATH_LIBRARY') }}Registrar/Adapter</strong></li>
-                        <li>{{ 'Reload this page to see newly detected domain registrar'|trans }}</li>
-                        <li>{{ 'Click on install button. Now you will be able to create top level domains with new domain registrar'|trans }}</li>
-                        <li>{{ 'For developers. Read'|trans }} <a href="https://fossbilling.org/docs" target="_blank">{{ 'FOSSBilling documentation'|trans }}</a> {{ 'to learn how to create your own domain registrar.'|trans }}</li>
-                    </ul>
+                                <input type="submit" value="{{ 'Update Nameservers'|trans }}" class="btn btn-primary w-100">
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
-
-            {% if admin.servicedomain_registrar_get_available|length > 0 %}
-            <div class="table-responsive">
-            <table class="table card-table table-vcenter table-striped text-nowrap">
-                <thead>
-                    <tr>
-                        <th>{{ 'Code'|trans }}</th>
-                        <th class="w-1">{{ 'Install'|trans }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for code in admin.servicedomain_registrar_get_available %}
-                <tr>
-                    <td>{{ code }}</td>
-                    <td>
-                        <a class="btn btn-icon" href="{{ 'servicedomain/registrar_install'|api_url(query: { 'code': code }) }}" title="{{ 'Install'|trans }}" {{ fb_api_link({message: 'Domain Registrar Installed'|trans}) }}>
-                            <svg  class="icon">
-                                <use xlink:href="#cog" />
-                            </svg>
-                        </a>
-                    </td>
-                </tr>
-                </tbody>
-                {% else %}
-                <tbody>
-                    <tr>
-                        <td class="text-muted" colspan="5">{{ 'All Domain Registrars Installed'|trans }}</td>
-                    </tr>
-                </tbody>
-                {% endfor %}
-            </table>
-            </div>
-            {% endif %}
         </div>
 
-        <div class="tab-pane fade" id="tab-extension-directory" role="tabpanel">
-            {{ include('partial_extensions.html.twig', { 'type': 'domain-registrar' }, with_context = false) }}
-        </div>
+        <div class="modal modal-blur fade" id="newTldModal" tabindex="-1" aria-labelledby="newTldModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-md-down modal-xl">
+                <form class="modal-content fb-modal-form" method="post" action="{{ 'servicedomain/tld_create'|api_url }}" {{ fb_api_form({reload: true}) }}>
+                    <div class="modal-header">
+                        <h3 class="modal-title" id="newTldModalLabel">{{ 'Add New Top Level Domain'|trans }}</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <section class="fb-modal-section">
+                            <div class="fb-modal-section-header">
+                                <div class="fb-modal-section-heading-row">
+                                    <h4 class="fb-modal-section-title">{{ 'TLD Details'|trans }}</h4>
+                                </div>
+                                <p class="fb-modal-section-description">{{ 'Define the TLD, select its registrar, and set the base pricing used for registration, renewal, and transfer.'|trans }}</p>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="new-tld-name">{{ 'TLD'|trans }}</label>
+                                    <input class="form-control" id="new-tld-name" type="text" name="tld" value="." required title="{{ 'Must start with a dot'|trans }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="new-tld-registrar">{{ 'Registrar'|trans }}</label>
+                                    <select class="form-select" id="new-tld-registrar" name="tld_registrar_id" required>
+                                        {% for id, title in admin.servicedomain_registrar_get_pairs %}
+                                        <option value="{{ id }}">{{ title }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label" for="new-tld-registration-price">{{ 'Registration Price'|trans }}</label>
+                                    <input class="form-control" id="new-tld-registration-price" type="text" name="price_registration" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label" for="new-tld-renewal-price">{{ 'Renewal Price'|trans }}</label>
+                                    <input class="form-control" id="new-tld-renewal-price" type="text" name="price_renew" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label" for="new-tld-transfer-price">{{ 'Transfer Price'|trans }}</label>
+                                    <input class="form-control" id="new-tld-transfer-price" type="text" name="price_transfer" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="new-tld-min-years">{{ 'Minimum Years of Registration'|trans }}</label>
+                                    <input class="form-control" id="new-tld-min-years" type="text" name="min_years" value="1" required>
+                                </div>
+                            </div>
+                        </section>
 
-        <div class="tab-pane fade" id="tab-nameservers" role="tabpanel">
-            <div class="p-3">
-                <h5>{{ 'Nameservers'|trans }}</h5>
-                <p class="text-muted">{{ 'Set default nameservers that will be used for new domain registrations if a client has not provided their own nameservers while ordering a domain'|trans }}</p>
-
-                <form method="post" action="{{ 'system/update_params'|api_url }}" {{ fb_api_form({message: 'Nameservers Updated'|trans}) }}>
-                    {% set params = admin.system_get_params %}
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Nameserver 1'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="nameserver_1" value="{{ params.nameserver_1 }}">
-                        </div>
+                        <section class="fb-modal-section">
+                            <div class="fb-modal-section-header">
+                                <div class="fb-modal-section-heading-row">
+                                    <h4 class="fb-modal-section-title">{{ 'Allowed Operations'|trans }}</h4>
+                                </div>
+                                <p class="fb-modal-section-description">{{ 'Control which actions are available to clients for this TLD and whether the TLD is active.'|trans }}</p>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">{{ 'Allow Registration'|trans }}</label>
+                                    <div class="d-flex flex-wrap gap-3 pt-2">
+                                        <label class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="allow_register" value="1" checked>
+                                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                                        </label>
+                                        <label class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="allow_register" value="0">
+                                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">{{ 'Allow Transfer'|trans }}</label>
+                                    <div class="d-flex flex-wrap gap-3 pt-2">
+                                        <label class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="allow_transfer" value="1" checked>
+                                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                                        </label>
+                                        <label class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="allow_transfer" value="0">
+                                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">{{ 'Active'|trans }}</label>
+                                    <div class="d-flex flex-wrap gap-3 pt-2">
+                                        <label class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="active" value="1" checked>
+                                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                                        </label>
+                                        <label class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="active" value="0">
+                                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
                     </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Nameserver 2'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="nameserver_2" value="{{ params.nameserver_2 }}">
-                        </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                        <button class="btn btn-primary" type="submit">{{ 'Add'|trans }}</button>
                     </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Nameserver 3'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="nameserver_3" value="{{ params.nameserver_3 }}">
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Nameserver 4'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="nameserver_4" value="{{ params.nameserver_4 }}">
-                        </div>
-                    </div>
-
-                    <input type="submit" value="{{ 'Update Nameservers'|trans }}" class="btn btn-primary w-100">
                 </form>
             </div>
         </div>
+
+        <div class="modal modal-blur fade" id="newRegistrarModal" tabindex="-1" aria-labelledby="newRegistrarModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-md-down modal-lg">
+                <div class="modal-content fb-modal-form">
+                    <div class="modal-header">
+                        <h3 class="modal-title" id="newRegistrarModalLabel">{{ 'Add New Domain Registrar'|trans }}</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <section class="fb-modal-section">
+                            <div class="fb-modal-section-header">
+                                <div class="fb-modal-section-heading-row">
+                                    <h4 class="fb-modal-section-title">{{ 'Install Locally'|trans }}</h4>
+                                </div>
+                                <p class="fb-modal-section-description">{{ 'Place a registrar adapter on the server, then install it here before using it for TLD configuration.'|trans }}</p>
+                            </div>
+                            <ol class="mb-0 ps-3">
+                                <li>{{ 'Check whether the registrar you want is available at'|trans }} <a href="http://extensions.fossbilling.org/" target="_blank">{{ 'FOSSBilling extensions site'|trans }}</a></li>
+                                <li>{{ 'Download the domain registrar file and place it in'|trans }} <strong>{{ constant('PATH_LIBRARY') }}Registrar/Adapter</strong></li>
+                                <li>{{ 'Reload this page to detect the newly added registrar adapter.'|trans }}</li>
+                                <li>{{ 'Click install to make the registrar available when creating or editing TLDs.'|trans }}</li>
+                                <li>{{ 'For developers. Read'|trans }} <a href="https://fossbilling.org/docs" target="_blank">{{ 'FOSSBilling documentation'|trans }}</a> {{ 'to learn how to create your own domain registrar.'|trans }}</li>
+                            </ol>
+                        </section>
+
+                        <section class="fb-modal-section">
+                            <div class="fb-modal-section-header">
+                                <div class="fb-modal-section-heading-row">
+                                    <h4 class="fb-modal-section-title">{{ 'Available Registrars'|trans }}</h4>
+                                </div>
+                                <p class="fb-modal-section-description">{{ 'Install any registrar adapters already present on the server.'|trans }}</p>
+                            </div>
+                            {% if admin.servicedomain_registrar_get_available|length > 0 %}
+                                <div class="table-responsive">
+                                    <table class="table card-table table-vcenter table-striped text-nowrap mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>{{ 'Code'|trans }}</th>
+                                                <th class="w-1">{{ 'Install'|trans }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for code in admin.servicedomain_registrar_get_available %}
+                                            <tr>
+                                                <td>{{ code }}</td>
+                                                <td>
+                                                    <a class="btn btn-icon" href="{{ 'servicedomain/registrar_install'|api_url(query: { 'code': code }) }}" title="{{ 'Install'|trans }}" {{ fb_api_link({redirect: 'servicedomain#tab-registrars'|url, message: 'Domain Registrar Installed'|trans}) }}>
+                                                        <svg class="icon">
+                                                            <use xlink:href="#cog" />
+                                                        </svg>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <p class="text-body-secondary mb-0">{{ 'All Domain Registrars Installed'|trans }}</p>
+                            {% endif %}
+                        </section>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Close'|trans }}</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var modalMap = {
+            '#tab-new-tld': document.getElementById('newTldModal'),
+            '#tab-new-registrar': document.getElementById('newRegistrarModal')
+        };
+
+        Object.entries(modalMap).forEach(function (entry) {
+            var hash = entry[0];
+            var element = entry[1];
+
+            if (!element) {
+                return;
+            }
+
+            element.addEventListener('hidden.bs.modal', function () {
+                if (window.location.hash !== hash) {
+                    return;
+                }
+
+                var url = new URL(window.location.href);
+                url.hash = '';
+                window.history.replaceState({}, '', url);
+            });
+        });
+
+        if (modalMap[window.location.hash]) {
+            bootstrap.Modal.getOrCreateInstance(modalMap[window.location.hash]).show();
+            return;
+        }
+
+        var tabTrigger = document.querySelector('[data-bs-toggle="tab"][href="' + window.location.hash + '"]');
+        if (tabTrigger) {
+            bootstrap.Tab.getOrCreateInstance(tabTrigger).show();
+        }
+    });
+</script>
 {% endblock %}
