@@ -117,11 +117,35 @@ jobs:
     if: ${{ github.event_name == 'push' }}
     uses: ./.github/workflows/live-tests.yml
 
+  cypress-tests-pr:
+    name: 'Cypress Tests'
+    permissions:
+      contents: read
+    needs: [ php-build-test-pr ]
+    if: ${{ github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id }}
+    uses: ./.github/workflows/cypress-tests.yml
+    with:
+      cypress-project-id: ${{ vars.CYPRESS_PROJECT_ID }}
+    secrets:
+      CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+
+  cypress-tests-push:
+    name: 'Cypress Tests'
+    permissions:
+      contents: read
+    needs: [ php-build-test-push ]
+    if: ${{ github.event_name == 'push' }}
+    uses: ./.github/workflows/cypress-tests.yml
+    with:
+      cypress-project-id: ${{ vars.CYPRESS_PROJECT_ID }}
+    secrets:
+      CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+
   preview-build-pr:
     name: 'Create Preview Build'
     permissions:
       contents: read
-    needs: [ live-tests-pr ]
+    needs: [ live-tests-pr, cypress-tests-pr ]
     if: ${{ github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id }}
     uses: ./.github/workflows/preview-build.yml
     with:
@@ -132,7 +156,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    needs: [ live-tests-push ]
+    needs: [ live-tests-push, cypress-tests-push ]
     if: ${{ github.event_name == 'push' && github.ref != 'refs/heads/main' }}
     uses: ./.github/workflows/preview-build.yml
     with:
@@ -143,7 +167,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    needs: [ live-tests-push ]
+    needs: [ live-tests-push, cypress-tests-push ]
     if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
     uses: ./.github/workflows/docker-build.yml
     secrets:
