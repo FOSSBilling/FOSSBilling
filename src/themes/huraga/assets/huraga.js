@@ -3,6 +3,11 @@ import './js/utils';
 import { initAvatars } from './js/avatar.js';
 
 globalThis.bootstrap = { Tooltip, Toast, Modal, Collapse, Tab };
+globalThis.initAvatars = initAvatars;
+
+if (globalThis.FOSSBilling) {
+  globalThis.FOSSBilling.initAvatars = initAvatars;
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   initAvatars();

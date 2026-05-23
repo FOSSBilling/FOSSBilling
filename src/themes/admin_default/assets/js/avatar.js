@@ -20,8 +20,18 @@ export function generateAvatar(seed, size = 40) {
   return result;
 }
 
-export function initAvatars() {
-  document.querySelectorAll('.db-avatar').forEach(container => {
+export function initAvatars(root = document) {
+  const containers = [];
+
+  if (root instanceof Element && root.matches('.db-avatar')) {
+    containers.push(root);
+  }
+
+  root.querySelectorAll('.db-avatar').forEach(container => {
+    containers.push(container);
+  });
+
+  containers.forEach(container => {
     const seed = container.dataset.avatarSeed;
     const size = parseInt(container.dataset.avatarSize, 10) || 40;
 

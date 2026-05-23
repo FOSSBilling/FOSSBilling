@@ -472,6 +472,12 @@
                 }
 
                 currentCard.replaceWith(replacement);
+
+                if (globalThis.initAvatars) {
+                    globalThis.initAvatars(replacement);
+                } else if (globalThis.FOSSBilling?.initAvatars) {
+                    globalThis.FOSSBilling.initAvatars(replacement);
+                }
             } catch (error) {
                 window.location.href = link.href;
             }

@@ -16,6 +16,12 @@ coloris({
   alpha: false
 });
 
+globalThis.initAvatars = initAvatars;
+
+if (globalThis.FOSSBilling) {
+  globalThis.FOSSBilling.initAvatars = initAvatars;
+}
+
 
 /**
  * Extracts text from the clipboard target element referenced by the button.
