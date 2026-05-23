@@ -68,14 +68,8 @@
                                        data-name-from="date_from"
                                        data-name-to="date_to">
                                 <span class="input-icon-addon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                        <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
-                                        <path d="M16 3l0 4"></path>
-                                        <path d="M8 3l0 4"></path>
-                                        <path d="M4 11l16 0"></path>
-                                        <path d="M11 15l1 0"></path>
-                                        <path d="M12 15l0 3"></path>
+                                    <svg class="icon">
+                                        <use xlink:href="#calendar" />
                                     </svg>
                                 </span>
                             </div>
@@ -119,24 +113,36 @@
                 </td>
                 <td>
                     <a href='{{ "client/manage/#{event.client.id}"|url }}'>{{ event.client.first_name }} {{ event.client.last_name }}</a>
-                </td>
-                <td>
-                    {{ mf.ip_lookup_link(event.ip) }}
-                    {% if event.ip %}
-                    <a href="{{ 'antispam/block_ip'|api_url(query: { 'ip': event.ip }) }}" {{ fb_api_link({ modal: {type: 'confirm', title: 'Block IP'|trans, content: ('Are you sure you want to block IP address %ip%?'|trans({'%ip%': event.ip}))}, reload: true }) }} title="{{ 'Block IP'|trans }}">
-                        <svg class="icon icon-xs text-danger" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                    <a href="{{ request_path|url(request_query|merge({ 'client_id': event.client.id, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all login events for this client'|trans }}">
+                        <svg class="icon icon-sm text-muted">
+                            <use xlink:href="#filter" />
                         </svg>
                     </a>
-                    {% endif %}
+                </td>
+                <td class="text-nowrap">
+                    <div class="d-inline-flex align-items-center gap-1 flex-nowrap">
+                        {{ mf.ip_lookup_link(event.ip) }}
+                        {% if event.ip %}
+                        <a href="{{ request_path|url(request_query|merge({ 'ip': event.ip, 'page': null })) }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all login events from this IP address'|trans }}">
+                            <svg class="icon icon-sm text-muted">
+                                <use xlink:href="#filter" />
+                            </svg>
+                        </a>
+                        <a href="{{ 'antispam/block_ip'|api_url(query: { 'ip': event.ip }) }}" {{ fb_api_link({ modal: {type: 'confirm', title: 'Block IP'|trans, content: ('Are you sure you want to block IP address %ip%?'|trans({'%ip%': event.ip}))}, reload: true }) }} title="{{ 'Block IP'|trans }}">
+                            <svg class="icon icon-sm text-danger" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                            </svg>
+                        </a>
+                        {% endif %}
+                    </div>
                 </td>
                 <td>{{ event.ip|ip_country_name|default('Unknown'|trans) }}</td>
                 <td>{{ event.created_at|format_datetime }}</td>
             </tr>
             {% else %}
             <tr>
-                <td colspan="6">{{ 'The list is empty'|trans }}</td>
+                <td class="text-muted text-center py-3" colspan="6">{{ 'The list is empty'|trans }}</td>
             </tr>
             {% endfor %}
             </tbody>

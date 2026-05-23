@@ -4,7 +4,7 @@
 
 {% block meta_title %}{{ 'IP Lookup'|trans }}{% endblock %}
 
-{% set active_menu = 'system' %}
+{% set active_menu = 'security' %}
 
 {% block content %}
 <div class="card">
@@ -16,14 +16,24 @@
     </div>
     <div class="card-body">
         <form method="post" action="{{'security/ip_lookup'|api_url }}" {{ fb_api_form({callback: 'appendResult'}) }}>
-            <div class="d-flex">
-                <input type="text" name="ip" class="form-control me-2" placeholder="{{ 'IP address to lookup'|trans }}" {% if request.ip %}value="{{ request.ip }}"{% endif %}>
-                <button class="btn btn-primary" type="submit">{{ 'Submit'|trans }}</button>
+            <div class="row g-3 align-items-end">
+                <div class="col-lg">
+                    <label class="form-label" for="security-ip-lookup">{{ 'IP Address'|trans }}</label>
+                    <input type="text" id="security-ip-lookup" name="ip" class="form-control" placeholder="{{ 'Enter an IPv4 or IPv6 address'|trans }}" {% if request.ip %}value="{{ request.ip }}"{% endif %}>
+                </div>
+                <div class="col-lg-auto">
+                    <button class="btn btn-primary w-100" type="submit">
+                        <svg class="icon">
+                            <use xlink:href="#search" />
+                        </svg>
+                        {{ 'Lookup'|trans }}
+                    </button>
+                </div>
             </div>
         </form>
 
         <div class="table-responsive mt-4">
-            <table class="table table-striped" id="results">
+            <table class="table card-table table-vcenter table-striped" id="results">
                 <thead>
                     <tr>
                         <th scope="col">{{ 'IP Address'|trans }}</th>
@@ -40,6 +50,10 @@
                         <td>{{ record.asn.asnNumber }}</td>
                         <td>{{ record.asn.asnOrg }}</td>
                     </tr>
+                    {% else %}
+                    <tr class="ip-lookup-empty-state">
+                        <td class="text-secondary" colspan="4">{{ 'Enter an IP address above to review its country and ASN details.'|trans }}</td>
+                    </tr>
                     {% endif %}
                 </tbody>
             </table>
@@ -55,6 +69,7 @@
 <script>
     function appendResult(result) {
         const tableBody = document.querySelector('#results tbody');
+        const emptyState = tableBody.querySelector('.ip-lookup-empty-state');
         const newRow = document.createElement('tr');
 
         const addressCell = document.createElement('td');
@@ -73,6 +88,10 @@
         newRow.appendChild(countryCell);
         newRow.appendChild(asnNumCell);
         newRow.appendChild(asnOrgCell);
+
+        if (emptyState) {
+            emptyState.remove();
+        }
 
         tableBody.insertBefore(newRow, tableBody.firstChild);
     }

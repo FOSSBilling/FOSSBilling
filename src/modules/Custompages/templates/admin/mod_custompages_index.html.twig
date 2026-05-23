@@ -5,12 +5,12 @@
 {% set filter_panel_id = 'page-search-filters' %}
 {% set filter_panel_open = request_has_filters %}
 {% set new_custom_page_action %}
-    <a class="btn btn-primary" href="#tab-new" data-bs-toggle="tab" role="button">
+    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newCustomPageModal">
         <svg class="icon">
             <use xlink:href="#plus"></use>
         </svg>
         {{ 'New Custom Page'|trans }}
-    </a>
+    </button>
 {% endset %}
 {% block meta_title %}{{ 'Custom Pages'|trans }}{% endblock %}
 
@@ -23,151 +23,181 @@
             </div>
         </div>
         <div class="card-body pt-3 pb-0 px-0">
-            <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                    <ul class="nav nav-pills card-header-pills">
-                        <li class="nav-item">
-                            <a href="#tab-index" class="nav-link active" data-bs-toggle="tab" aria-selected="true" role="tab">{{ 'Custom Pages'|trans }}</a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="tab-content border-top">
-                    <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-                        <div class="px-3 pt-3">
-                            {% include "partial_batch_delete.html.twig" with {'action' : 'custompages/batch_delete'} %}
-                        </div>
-                        {{ include('partial_search.html.twig', {
-                            search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
-                            search_toolbar_actions: new_custom_page_action
-                        }) }}
-                        <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
-                            <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
-                                {% if request.search %}
-                                    <input type="hidden" name="search" value="{{ request.search }}">
-                                {% endif %}
-                                <div class="row g-3">
-                                    <div class="col-md-6 col-xl-4">
-                                        <div>
-                                            <label class="form-label text-muted small mb-1" for="filter-page-id">{{ 'ID'|trans }}</label>
-                                            <input class="form-control" type="text" id="filter-page-id" name="id" value="{{ request.id }}" placeholder="{{ 'Page ID'|trans }}">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6 col-xl-8">
-                                        <div>
-                                            <label class="form-label text-muted small mb-1" for="filter-page-slug">{{ 'Slug'|trans }}</label>
-                                            <input class="form-control" type="text" id="filter-page-slug" name="slug" value="{{ request.slug }}" placeholder="{{ 'Page Slug'|trans }}">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="d-flex justify-content-end gap-2 mt-3">
-                                    <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
-                                    <button class="btn btn-primary" type="submit">
-                                        <svg class="icon">
-                                            <use xlink:href="#filter" />
-                                        </svg>
-                                        {{ 'Apply Filters'|trans }}
-                                    </button>
-                                </div>
-                            </form>
-                        </section>
-                        <div class="table-responsive">
-                            <table class="table card-table table-vcenter text-nowrap datatable">
-                                <thead>
-                                <tr>
-                                    <th class="w-1">
-                                        <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-master-checkbox">
-                                    </th>
-                                    <th class="w-1">{{ 'ID'|trans }}</th>
-                                    <th>{{ 'Title'|trans }}</th>
-                                    <th>{{ 'Slug'|trans }}</th>
-                                    <th></th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {% set pages = admin.custompages_get_list({"per_page":25, "page":request.page}|merge(request)) %}
-                                {% for page in pages.list %}
-                                    <tr>
-                                        <td>
-                                            <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-checkbox" data-item-id="{{ page.id }}">
-                                        </td>
-                                        <td>{{ page.id }}</td>
-                                        <td>{{ page.title }}</td>
-                                        <td>{{ page.slug }}</td>
-                                        <td class="text-end">
-                                            <a class="btn btn-icon" href='{{ "page/#{page.slug}"|url(area: 'client') }}'
-                                               data-bs-toggle="tooltip" data-bs-title="{{ 'View'|trans }}">
-                                                <svg class="icon">
-                                                    <use xlink:href="#eye"/>
-                                                </svg>
-                                            </a>
-                                            <a class="btn btn-icon" href='{{ "custompages/#{page.id}"|url }}'
-                                               data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
-                                                <svg class="icon">
-                                                    <use xlink:href="#edit"/>
-                                                </svg>
-                                            </a>
-                                            <a class="btn btn-icon" href="{{ 'custompages/delete'|api_url(query: { 'id': page.id }) }}" title="{{ 'Delete'|trans }}"
-                                                data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
-                                                {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Delete'|trans}, reload: true}) }}>
-                                                <svg class="icon">
-                                                    <use xlink:href="#delete"/>
-                                                </svg>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                {% else %}
-                                    <tr>
-                                        <td class="text-center py-3" colspan="5">
-                                            <h4>{{ 'The list is empty'|trans }}</h4>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="card-footer d-flex align-items-center">
-                            {{ include('partial_pagination.html.twig', { 'list': pages, 'url': 'custompages', 'split_footer_controls': true }) }}
-                        </div>
-                    </div>
-
-                    <div class="tab-pane fade" id="tab-new" role="tabpanel">
-                        <form method="post" action="{{ 'custompages/create'|api_url }}" {{ fb_api_form({redirect: 'custompages'|url}) }}>
-                            <div class="p-3">
-                                <div class="mb-3 row">
-                                    <label class="col-md-3 col-form-label">{{ 'Title'|trans }}</label>
-                                    <div class="col">
-                                        <input class="form-control" type="text" name="title" value="{{ request.title }}" required="required">
-                                    </div>
-                                </div>
-                                <div class="mb-3 row">
-                                    <label class="col-md-3 col-form-label">{{ 'Meta Description'|trans }}</label>
-                                    <div class="col">
-                                        <input class="form-control" type="text" name="description" value="{{ request.description }}">
-                                    </div>
-                                </div>
-                                <div class="mb-3 row">
-                                    <label class="col-md-3 col-form-label">{{ 'Meta Keywords'|trans }}</label>
-                                    <div class="col">
-                                        <input class="form-control" type="text" name="keywords" value="{{ request.keywords }}">
-                                    </div>
-                                </div>
-                                <div class="mb-3 row">
-                                    <label class="col-md-3 col-form-label">{{ 'Content'|trans }}</label>
-                                    <div class="col">
-                                        <textarea class="editor-textarea" name="content" cols="5" rows="5" required="required" placeholder="{{ 'Add page content'|trans }}"></textarea>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card-footer text-end">
-                                <input type="submit" value="{{ 'Create'|trans }}" class="btn btn-primary"/>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+            <div class="px-3 pt-3">
+                {% include "partial_batch_delete.html.twig" with {'action' : 'custompages/batch_delete'} %}
             </div>
+            {{ include('partial_search.html.twig', {
+                search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
+                search_toolbar_actions: new_custom_page_action
+            }) }}
+            <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
+                <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
+                    {% if request.search %}
+                        <input type="hidden" name="search" value="{{ request.search }}">
+                    {% endif %}
+                    <div class="row g-3">
+                        <div class="col-md-6 col-xl-4">
+                            <div>
+                                <label class="form-label text-muted small mb-1" for="filter-page-id">{{ 'ID'|trans }}</label>
+                                <input class="form-control" type="text" id="filter-page-id" name="id" value="{{ request.id }}" placeholder="{{ 'Page ID'|trans }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-xl-8">
+                            <div>
+                                <label class="form-label text-muted small mb-1" for="filter-page-slug">{{ 'Slug'|trans }}</label>
+                                <input class="form-control" type="text" id="filter-page-slug" name="slug" value="{{ request.slug }}" placeholder="{{ 'Page Slug'|trans }}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-3">
+                        <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
+                        <button class="btn btn-primary" type="submit">
+                            <svg class="icon">
+                                <use xlink:href="#filter" />
+                            </svg>
+                            {{ 'Apply Filters'|trans }}
+                        </button>
+                    </div>
+                </form>
+            </section>
+            <div class="table-responsive">
+                <table class="table card-table table-vcenter text-nowrap datatable">
+                    <thead>
+                    <tr>
+                        <th class="w-1">
+                            <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-master-checkbox">
+                        </th>
+                        <th class="w-1">{{ 'ID'|trans }}</th>
+                        <th>{{ 'Title'|trans }}</th>
+                        <th>{{ 'Slug'|trans }}</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% set pages = admin.custompages_get_list({"per_page":25, "page":request.page}|merge(request)) %}
+                    {% for page in pages.list %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-checkbox" data-item-id="{{ page.id }}">
+                            </td>
+                            <td>{{ page.id }}</td>
+                            <td>{{ page.title }}</td>
+                            <td>{{ page.slug }}</td>
+                            <td class="text-end">
+                                <a class="btn btn-icon" href='{{ "page/#{page.slug}"|url(area: 'client') }}'
+                                   data-bs-toggle="tooltip" data-bs-title="{{ 'View'|trans }}">
+                                    <svg class="icon">
+                                        <use xlink:href="#eye"/>
+                                    </svg>
+                                </a>
+                                <a class="btn btn-icon" href='{{ "custompages/#{page.id}"|url }}'
+                                   data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
+                                    <svg class="icon">
+                                        <use xlink:href="#edit"/>
+                                    </svg>
+                                </a>
+                                <a class="btn btn-icon" href="{{ 'custompages/delete'|api_url(query: { 'id': page.id }) }}" title="{{ 'Delete'|trans }}"
+                                    data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
+                                    {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Delete'|trans}, reload: true}) }}>
+                                    <svg class="icon">
+                                        <use xlink:href="#delete"/>
+                                    </svg>
+                                </a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td class="text-center py-3" colspan="5">
+                                <h4>{{ 'The list is empty'|trans }}</h4>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card-footer d-flex align-items-center">
+                {{ include('partial_pagination.html.twig', { 'list': pages, 'url': 'custompages', 'split_footer_controls': true }) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="modal modal-blur fade" id="newCustomPageModal" tabindex="-1" aria-labelledby="newCustomPageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-md-down modal-xl">
+            <form method="post" action="{{ 'custompages/create'|api_url }}" class="modal-content fb-modal-form" {{ fb_api_form({redirect: 'custompages'|url}) }}>
+                <div class="modal-header">
+                    <h3 class="modal-title" id="newCustomPageModalLabel">{{ 'New Custom Page'|trans }}</h3>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                </div>
+                <div class="modal-body">
+                    <section class="fb-modal-section">
+                        <div class="fb-modal-section-header">
+                            <div class="fb-modal-section-heading-row">
+                                <h4 class="fb-modal-section-title">{{ 'Page Details'|trans }}</h4>
+                            </div>
+                            <p class="fb-modal-section-description">{{ 'Create a new client-area page with a title and page content.'|trans }}</p>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label" for="new-custom-page-title">{{ 'Title'|trans }}</label>
+                                <input class="form-control" id="new-custom-page-title" type="text" name="title" value="{{ request.title }}" required="required">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label" for="new-custom-page-content">{{ 'Content'|trans }}</label>
+                                <textarea class="form-control editor-textarea" id="new-custom-page-content" name="content" cols="5" rows="8" required="required" placeholder="{{ 'Add page content'|trans }}"></textarea>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="fb-modal-section">
+                        <div class="fb-modal-section-header">
+                            <div class="fb-modal-section-heading-row">
+                                <h4 class="fb-modal-section-title">{{ 'SEO Metadata'|trans }}</h4>
+                            </div>
+                            <p class="fb-modal-section-description">{{ 'Optional metadata for search engines and link previews.'|trans }}</p>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label" for="new-custom-page-description">{{ 'Meta Description'|trans }}</label>
+                                <input class="form-control" id="new-custom-page-description" type="text" name="description" value="{{ request.description }}">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label" for="new-custom-page-keywords">{{ 'Meta Keywords'|trans }}</label>
+                                <input class="form-control" id="new-custom-page-keywords" type="text" name="keywords" value="{{ request.keywords }}">
+                            </div>
+                        </div>
+                    </section>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Close'|trans }}</button>
+                    <button type="submit" class="btn btn-primary">{{ 'Create'|trans }}</button>
+                </div>
+            </form>
         </div>
     </div>
 {% endblock %}
 
 {% block head %}{{ mf.wysiwyg('.editor-textarea') }}{% endblock %}
+
+{% block js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var modalElement = document.getElementById('newCustomPageModal');
+        var modal = modalElement ? bootstrap.Modal.getOrCreateInstance(modalElement) : null;
+
+        if (window.location.hash === '#tab-new' && modal) {
+            modal.show();
+        }
+
+        modalElement?.addEventListener('hidden.bs.modal', function () {
+            if (window.location.hash !== '#tab-new') {
+                return;
+            }
+
+            var url = new URL(window.location.href);
+            url.hash = '';
+            window.history.replaceState({}, '', url);
+        });
+    });
+</script>
+{% endblock %}

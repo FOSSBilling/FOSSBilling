@@ -1,6 +1,35 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
 {% block meta_title %}{{ 'Embed Parts of FOSSBilling'|trans }}{% endblock %}
 {% set active_menu = 'system' %}
+{% set snippets = [
+    {
+        id: 'client-login-form',
+        title: 'Client Area Login Form'|trans,
+        description: 'Embed a compact login form for existing clients.'|trans,
+        width: 215,
+        height: 200,
+        preview_url: 'embed/loginform'|url(area: 'client'),
+        code: '<iframe width="215" height="200" src="' ~ ('embed/loginform'|url(area: 'client')) ~ '" frameborder="0"></iframe>'
+    },
+    {
+        id: 'domain-checker-form',
+        title: 'Domain Checker Form'|trans,
+        description: 'Let visitors search for domain availability directly from your site.'|trans,
+        width: 360,
+        height: 75,
+        preview_url: 'embed/domainchecker'|url(area: 'client'),
+        code: '<iframe width="360" height="75" src="' ~ ('embed/domainchecker'|url(area: 'client')) ~ '" frameborder="0"></iframe>'
+    },
+    {
+        id: 'contact-us-form',
+        title: 'Contact Us Form'|trans,
+        description: 'Add a hosted contact form that submits into your FOSSBilling support flow.'|trans,
+        width: 400,
+        height: 450,
+        preview_url: 'embed/contact'|url(area: 'client'),
+        code: '<iframe width="400" height="450" src="' ~ ('embed/contact'|url(area: 'client')) ~ '" frameborder="0"></iframe>'
+    }
+] %}
 
 {% block content %}
 
@@ -12,51 +41,90 @@
             </div>
         </div>
         <div class="card-body">
-            <div class="mb-3">
-                <label for="client-login-form" class="form-label">{{ 'Client Area Login Form'|trans }}</label>
-                <div class="input-group input-group-flat">
-                    <input id="client-login-form" type="text" class="form-control" autocomplete="off" readonly
-                           value='<iframe width="215" height="200" src="{{ 'embed/loginform'|url(area: 'client') }}" frameborder="0"></iframe>'>
-                    <span class="input-group-text">
-                <span class="link-secondary cursor-pointer clipboard-copy" data-clipboard-target="#client-login-form"
-                      data-bs-toggle="tooltip" aria-label="{{ 'Copy'|trans }}" data-bs-original-title="Copy">
-                    <svg class="icon">
-                        <use xlink:href="#copy" />
-                    </svg>
-                </span>
-            </span>
-                </div>
-            </div>
-            <div class="mb-3">
-                <label for="domain-checker-form" class="form-label">{{ 'Domain Checker Form'|trans }}</label>
-                <div class="input-group input-group-flat">
-                    <input id="domain-checker-form" type="text" class="form-control" autocomplete="off" readonly
-                           value='<iframe width="360" height="75" src="{{ 'embed/domainchecker'|url(area: 'client') }}" frameborder="0"></iframe>'>
-                    <span class="input-group-text">
-                <span class="link-secondary cursor-pointer clipboard-copy" data-clipboard-target="#domain-checker-form"
-                      data-bs-toggle="tooltip" aria-label="{{ 'Copy'|trans }}" data-bs-original-title="{{ 'Copy'|trans }}">
-                    <svg class="icon">
-                        <use xlink:href="#copy" />
-                    </svg>
-                </span>
-            </span>
-                </div>
-            </div>
-            <div class="mb-3">
-                <label for="contact-us-form" class="form-label">{{ 'Contact Us Form'|trans }}</label>
-                <div class="input-group input-group-flat">
-                    <input id="contact-us-form" type="text" class="form-control" autocomplete="off" readonly
-                           value='<iframe width="400" height="310" src="{{ 'embed/contact'|url(area: 'client') }}" frameborder="0"></iframe>'>
-                    <span class="input-group-text">
-                <span class="link-secondary cursor-pointer clipboard-copy" data-clipboard-target="#contact-us-form"
-                      data-bs-toggle="tooltip" aria-label="{{ 'Copy'|trans }}" data-bs-original-title="{{ 'Copy'|trans }}">
-                    <svg class="icon">
-                        <use xlink:href="#copy" />
-                    </svg>
-                </span>
-            </span>
-                </div>
+            <div class="d-flex flex-column gap-4">
+                {% for snippet in snippets %}
+                    <section>
+                        <div class="mb-3">
+                            <div>
+                                <h4 class="card-title mb-1">{{ snippet.title }}</h4>
+                                <p class="text-secondary mb-0">{{ snippet.description }}</p>
+                            </div>
+                        </div>
+                        <label for="{{ snippet.id }}" class="form-label">{{ 'Embed Code'|trans }}</label>
+                        <div class="input-group input-group-flat">
+                            <textarea id="{{ snippet.id }}" rows="2" class="form-control font-monospace" autocomplete="off" readonly spellcheck="false">{{ snippet.code }}</textarea>
+                            <span class="input-group-text align-items-start pt-3">
+                                <span class="input-group-link cursor-pointer clipboard-copy" data-clipboard-target="#{{ snippet.id }}"
+                                      data-bs-toggle="tooltip" aria-label="{{ 'Copy'|trans }}" data-bs-original-title="{{ 'Copy'|trans }}">
+                                    <svg class="icon">
+                                        <use xlink:href="#copy" />
+                                    </svg>
+                                </span>
+                            </span>
+                        </div>
+                        <div class="mt-3">
+                            <div class="d-flex align-items-center justify-content-between gap-3 mb-2">
+                                <label class="form-label mb-0">{{ 'Live Preview'|trans }}</label>
+                                <div class="d-flex align-items-center gap-3">
+                                    <span class="text-secondary small">{{ snippet.width }}x{{ snippet.height }}</span>
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-secondary btn-sm embed-preview-toggle"
+                                        data-preview-target="#{{ snippet.id }}-preview"
+                                        aria-expanded="false">
+                                        <svg class="icon">
+                                            <use xlink:href="#eye" />
+                                        </svg>
+                                        <span class="embed-preview-toggle-label">{{ 'Show Preview'|trans }}</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="border rounded bg-body-tertiary p-3 overflow-auto d-none" id="{{ snippet.id }}-preview">
+                                <iframe
+                                    title="{{ snippet.title }}"
+                                    data-preview-src="{{ snippet.preview_url }}"
+                                    width="{{ snippet.width }}"
+                                    height="{{ snippet.height }}"
+                                    frameborder="0"
+                                    loading="lazy"></iframe>
+                            </div>
+                        </div>
+                    </section>
+                {% endfor %}
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.embed-preview-toggle').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var preview = document.querySelector(button.dataset.previewTarget);
+
+                if (!preview) {
+                    return;
+                }
+
+                var isHidden = preview.classList.contains('d-none');
+                preview.classList.toggle('d-none', !isHidden);
+                button.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+                var label = button.querySelector('.embed-preview-toggle-label');
+                if (label) {
+                    label.textContent = isHidden ? '{{ 'Hide Preview'|trans }}' : '{{ 'Show Preview'|trans }}';
+                }
+
+                if (!isHidden) {
+                    return;
+                }
+
+                var iframe = preview.querySelector('iframe[data-preview-src]');
+                if (iframe && !iframe.getAttribute('src')) {
+                    iframe.setAttribute('src', iframe.dataset.previewSrc);
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}

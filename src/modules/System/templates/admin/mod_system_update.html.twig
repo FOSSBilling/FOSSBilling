@@ -17,6 +17,7 @@
             {% if admin.system_update_available or update_info['branch'] == 'preview' %}
                 {% if update_info['branch'] == 'preview' %}
                     <h4 class="mb-2">{{ 'Update Release Notes'|trans }}</h4>
+                    <p class="text-secondary mb-3">{{ 'Preview branch updates track the latest development changes. Review them carefully before updating a production instance.'|trans }}</p>
                 {% else %}
                     <h4 class="mb-0">{{ 'Update Release Notes'|trans }} ({{ FOSSBillingVersion }} => {{ update_info['version'] }})</h4>
                     <p class="text-secondary mb-3">{{ 'Required PHP version:'|trans }} {{ update_info['minimum_php_version'] }}</p>
@@ -38,39 +39,41 @@
             {% endif %}
         </div>
         <div class="card-footer">
-            {% if admin.system_update_available or update_info['branch'] == 'preview' %}
-                <a class="btn btn-primary" href="{{ 'system/update_core'|api_url }}"
-                    {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true }) }}>
+            <div class="d-flex flex-wrap gap-2">
+                {% if admin.system_update_available or update_info['branch'] == 'preview' %}
+                    <a class="btn btn-primary" href="{{ 'system/update_core'|api_url }}"
+                        {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true }) }}>
+                        <svg class="icon">
+                            <use xlink:href="#download" />
+                        </svg>
+                        {{ 'Update FOSSBilling'|trans }}
+                    </a>
+                {% else %}
+                    <a class="btn btn-secondary disabled" aria-disabled="true">
+                        <svg class="icon">
+                            <use xlink:href="#download" />
+                        </svg>
+                        {{ 'Update FOSSBilling'|trans }}
+                    </a>
+                {% endif %}
+                <a class="btn btn-outline-secondary" href="{{ 'system/recheck_update'|api_url }}" {{ fb_api_link({ reload: true }) }}>
                     <svg class="icon">
-                        <use xlink:href="#download" />
+                        <use xlink:href="#refresh" />
                     </svg>
-                    {{ 'Update FOSSBilling'|trans }}
+                    {{ 'Check for Updates'|trans }}
                 </a>
-            {% else %}
-                <a
-                    class="btn btn-primary disabled"
-                    aria-disabled="true">
+                <a class="btn btn-outline-secondary" href="{{ 'system/manual_update'|api_url }}"
+                    {{ fb_api_link({ message: 'Patches Applied and Configuration Updated'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans} }) }}>
                     <svg class="icon">
-                        <use xlink:href="#download" />
+                        <use xlink:href="#cog-play" />
                     </svg>
-                    {{ 'Update FOSSBilling'|trans }}
+                    {{ 'Apply Patches & Update Configuration'|trans }}
                 </a>
-            {% endif %}
-            <a class="btn btn-primary" href="{{ 'system/recheck_update'|api_url }}" {{ fb_api_link({ reload: true }) }}>
-                <svg class="icon">
-                    <use xlink:href="#refresh" />
-                </svg>
-                {{ 'Check for Updates'|trans }}
-            </a>
-            <a class="btn btn-primary" href="{{ 'system/manual_update'|api_url }}"
-                {{ fb_api_link({ message: 'Patches Applied and Configuration Updated'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans} }) }}>
-                <svg class="icon">
-                    <use xlink:href="#cog-play" />
-                </svg>
-                {{ 'Apply Patches & Update Configuration'|trans }}
-            </a>
-            <div class="mt-3 text-secondary">
-                <div>{{ "Applying patches and updating the configuration should be performed automatically, you don't need to use that button unless you are experiencing issues."|trans }}</div>
+            </div>
+            <div class="alert alert-info mt-3 mb-0" role="alert">
+                {{ "Applying patches and updating the configuration should happen automatically. Use the manual action only if you are troubleshooting update issues."|trans }}
+            </div>
+            <div class="d-flex flex-wrap gap-4 mt-3 text-secondary small">
                 <div>{{ 'Last update check:'|trans }} {{ update_info['last_check']|format_datetime() }}.</div>
                 <div>{{ 'Next update check:'|trans }} {{ update_info['next_check']|format_datetime() }}.</div>
             </div>
