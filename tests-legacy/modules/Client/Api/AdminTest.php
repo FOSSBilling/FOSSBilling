@@ -625,10 +625,10 @@ final class AdminTest extends \BBTestCase
         });
         $di['pager'] = $pagerMock;
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
 
-        $result = $admin_Client->balance_get_list($data);
+        $result = $adminClient->balance_get_list($data);
         $this->assertIsArray($result);
     }
 
