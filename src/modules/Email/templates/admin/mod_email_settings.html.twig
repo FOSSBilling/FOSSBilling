@@ -25,16 +25,17 @@
 {% set can_view_email_history = has_permission('email', 'view_email_history') %}
 {% set can_send_emails = has_permission('email', 'send_emails') %}
 {% set can_manage_settings = has_permission('email', 'manage_settings') %}
-{% set requested_tab = request.tab in ['templates', 'new', 'queue', 'email'] ? request.tab : null %}
-{% set active_tab = requested_tab ?? (can_view_templates ? 'templates' : (can_manage_templates ? 'new' : (can_view_email_history ? 'queue' : 'email'))) %}
+{% set can_access_templates = can_view_templates or can_manage_templates %}
+{% set requested_tab = request.tab in ['templates', 'queue', 'email'] ? request.tab : null %}
+{% set active_tab = requested_tab ?? (can_access_templates ? 'templates' : (can_view_email_history ? 'queue' : 'email')) %}
 {% if can_manage_templates %}
     {% set new_template_action %}
-        <a class="btn btn-primary" href="#tab-new" data-bs-toggle="tab" role="button">
+        <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newEmailTemplateModal">
             <svg class="icon">
                 <use xlink:href="#plus" />
             </svg>
             {{ 'New Template'|trans }}
-        </a>
+        </button>
     {% endset %}
 {% endif %}
 {% block content %}
@@ -46,11 +47,9 @@
                 <p class="card-subtitle">{{ 'Manage email templates, queued messages, and delivery settings for outgoing mail.'|trans }}</p>
             </div>
         </div>
-        <div class="card-body pt-3 pb-0 px-0">
-            <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                    <ul class="nav nav-pills card-header-pills" role="tablist">
-                        {% if can_view_templates %}
+        <div class="card-body pt-3 pb-0">
+                    <ul class="nav nav-pills mb-3" role="tablist">
+                        {% if can_access_templates %}
                         <li class="nav-item" role="presentation">
                             <a class="nav-link{% if active_tab == 'templates' %} active{% endif %}" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Email Templates'|trans }}</a>
                         </li>
@@ -66,15 +65,14 @@
                         </li>
                         {% endif %}
                     </ul>
-                </div>
             <div class="tab-content border-top">
-                {% if can_view_templates %}
+                {% if can_access_templates %}
                 <div class="tab-pane fade{% if active_tab == 'templates' %} show active{% endif %}" id="tab-index" role="tabpanel">
                     {% set template_filter_panel_id = 'email-template-search-filters' %}
                     {% set template_filter_panel_open = request_has_filters %}
 
                     {% if can_manage_templates %}
-                    <div class="card-footer text-center">
+                    <div class="card-footer d-flex flex-wrap justify-content-center gap-2">
                         <a class="btn btn-primary" href="{{ 'email/batch_template_generate'|api_url }}" {{ fb_api_link({ reload: true }) }}>
                             <svg class="icon icon-tabler" width="24" height="24">
                                 <use xlink:href="#mail" />
@@ -223,64 +221,12 @@
                                 </tr>
                             {% else %}
                                 <tr>
-                                    <td class="text-muted" colspan="7">{{ 'The list is empty. Built-in templates are discovered from active modules, while custom templates are stored only in the database.'|trans }}</td>
+                                    <td class="text-center text-muted py-3" colspan="7">{{ 'The list is empty. Built-in templates are discovered from active modules, while custom templates are stored only in the database.'|trans }}</td>
                                 </tr>
                             {% endfor %}
                             </tbody>
                         </table>
                     </div>
-                </div>
-                {% endif %}
-
-                {% if can_manage_templates %}
-                <div class="tab-pane fade{% if active_tab == 'new' %} show active{% endif %}" id="tab-new" role="tabpanel">
-                    <form method="post" action="{{ 'email/template_create'|api_url }}" {{ fb_api_form({ reload: true}) }}>
-                        <div class="card-body">
-                            <h3 class="card-title">{{ 'Where Can I Use a New Email Template?'|trans }}</h3>
-                            <p class="card-subtitle">{{ 'Newly created email templates can be used in custom event hooks.'|trans }}</p>
-
-                            <div class="mb-3 row">
-                                <label class="col-md-3 form-label">{{ 'Enabled'|trans }}</label>
-                                <div class="col-md-6">
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" id="radioEnabledYes" type="radio" name="enabled" value="1">
-                                        <label class="form-check-label" for="radioEnabledYes">{{ 'Yes'|trans }}</label>
-                                    </div>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" id="radioEnabledNo" type="radio" name="enabled" value="0" checked>
-                                        <label class="form-check-label" for="radioEnabledNo">{{ 'No'|trans }}</label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Category'|trans }}</label>
-                                <div class="col-md-6">
-                                    <input class="form-control" type="text" name="category" value="{{ requests.category }}" required placeholder="General">
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Action Code'|trans }}</label>
-                                <div class="col-md-6">
-                                    <input class="form-control" type="text" name="action_code" value="{{ requests.action_code }}" required>
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Subject'|trans }}</label>
-                                <div class="col-md-6">
-                                    <input class="form-control" type="text" name="subject" value="{{ requests.subject }}" required>
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Content'|trans }}</label>
-                                <div class="col-md-6">
-                                    <textarea class="form-control" name="content" rows="5">{{ requests.content }}</textarea>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-footer text-end">
-                            <input type="submit" value="{{ 'Create'|trans }}" class="btn btn-primary">
-                        </div>
-                    </form>
                 </div>
                 {% endif %}
 
@@ -350,14 +296,8 @@
                                                        data-name-from="date_from"
                                                        data-name-to="date_to">
                                                 <span class="input-icon-addon">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                        <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
-                                                        <path d="M16 3l0 4"></path>
-                                                        <path d="M8 3l0 4"></path>
-                                                        <path d="M4 11l16 0"></path>
-                                                        <path d="M11 15l1 0"></path>
-                                                        <path d="M12 15l0 3"></path>
+                                                    <svg class="icon">
+                                                        <use xlink:href="#calendar" />
                                                     </svg>
                                                 </span>
                                             </div>
@@ -430,7 +370,7 @@
                                 </tr>
                             {% else %}
                                 <tr>
-                                    <td class="text-muted" colspan="8">{{ 'The list is empty.'|trans }}</td>
+                                    <td class="text-center text-muted py-3" colspan="8">{{ 'The list is empty.'|trans }}</td>
                                 </tr>
                             {% endfor %}
                             </tbody>
@@ -443,127 +383,115 @@
                 <div class="tab-pane fade{% if active_tab == 'email' %} show active{% endif %}" id="tab-email" role="tabpanel">
                     <form method="post" action="{{ 'extension/config_save'|api_url }}" {{ fb_api_form({ message: 'Email Settings Updated'|trans}) }}>
                         <div class="card-body">
-                            <h3 class="card-title">{{ 'Configure Email Options'|trans }}</h3>
-                            <p class="card-subtitle">{{ 'FOSSBilling sends emails using <em>sendmail</em> by default or you can configure your own SMTP server'|trans|raw }}</p>
-
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'From Name'|trans }}</label>
-                                <div class="col-md-6">
-                                    <input class="form-control" type="text" name="from_name" value="{{ params.from_name }}" placeholder="{{ company.name }}">
-                                    <small class="form-hint">{{ 'Leave blank to use company public name'|trans }}</small>
-                                </div>
+                            <div class="alert alert-info" role="alert">
+                                <strong class="me-1">{{ 'Information:'|trans }}</strong>{{ 'FOSSBilling sends email using Sendmail by default, or you can configure SMTP, SendGrid, or a custom Symfony mailer DSN.'|trans }}
                             </div>
 
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'From Email'|trans }}</label>
-                                <div class="col-md-6">
-                                    <input class="form-control" type="email" name="from_email" value="{{ params.from_email }}" placeholder="{{ company.email }}">
+                            <h4 class="card-title mb-2">{{ 'Sender Identity'|trans }}</h4>
+                            <p class="text-secondary mb-3">{{ 'Control the default sender name and sender email used for outgoing messages.'|trans }}</p>
+                            <div class="row g-3">
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="email-from-name">{{ 'From Name'|trans }}</label>
+                                    <input class="form-control" id="email-from-name" type="text" name="from_name" value="{{ params.from_name }}" placeholder="{{ company.name }}">
+                                    <small class="form-hint">{{ 'Leave blank to use company public name'|trans }}</small>
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="email-from-address">{{ 'From Email'|trans }}</label>
+                                    <input class="form-control" id="email-from-address" type="email" name="from_email" value="{{ params.from_email }}" placeholder="{{ company.email }}">
                                     <small class="form-hint">{{ 'Leave blank to use company public email'|trans }}</small>
                                 </div>
                             </div>
+                        </div>
 
-                            <hr />
-
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Queue Options'|trans }}</label>
-                                <div class="col-md-6">
-                                    <div class="mb-2">
-                                        <small class="form-hint">{{ 'Send emails per cron run (0 = unlimited)'|trans }}</small>
-                                        <input class="form-control" type="text" name="queue_once" placeholder="0" value="{{ params.queue_once|default(0) }}">
-                                    </div>
-                                    <div class="mb-2">
-                                        <small class="form-hint">{{ 'Max email sending time in minutes (0 = unlimited, default 5 min.)'|trans }}</small>
-                                        <input class="form-control" type="text" name="time_limit" placeholder="5" value="{{ params.time_limit|default(5) }}">
-                                    </div>
-                                    <div class="mb-2">
-                                        <small class="form-hint">{{ 'Cancel sending email after unsuccessful tries (0 = do not cancel)'|trans }}</small>
-                                        <input class="form-control" type="text" name="cancel_after" placeholder="5" value="{{ params.cancel_after|default(5) }}">
-                                    </div>
+                        <div class="card-body border-top">
+                            <h4 class="card-title mb-2">{{ 'Queue Options'|trans }}</h4>
+                            <p class="text-secondary mb-3">{{ 'Control how many messages are processed per cron run, how long delivery may run, and when failed deliveries should be abandoned.'|trans }}</p>
+                            <div class="row g-3">
+                                <div class="col-lg-4">
+                                    <label class="form-label" for="queue-once">{{ 'Send Emails Per Cron Run'|trans }}</label>
+                                    <input class="form-control" id="queue-once" type="number" min="0" name="queue_once" placeholder="0" value="{{ params.queue_once|default(0) }}">
+                                    <small class="form-hint">{{ 'Use 0 for unlimited.'|trans }}</small>
+                                </div>
+                                <div class="col-lg-4">
+                                    <label class="form-label" for="queue-time-limit">{{ 'Max Sending Time in Minutes'|trans }}</label>
+                                    <input class="form-control" id="queue-time-limit" type="number" min="0" name="time_limit" placeholder="5" value="{{ params.time_limit|default(5) }}">
+                                    <small class="form-hint">{{ 'Use 0 for unlimited. The default is 5 minutes.'|trans }}</small>
+                                </div>
+                                <div class="col-lg-4">
+                                    <label class="form-label" for="queue-cancel-after">{{ 'Cancel After Unsuccessful Tries'|trans }}</label>
+                                    <input class="form-control" id="queue-cancel-after" type="number" min="0" name="cancel_after" placeholder="5" value="{{ params.cancel_after|default(5) }}">
+                                    <small class="form-hint">{{ 'Use 0 to keep retrying indefinitely.'|trans }}</small>
                                 </div>
                             </div>
+                        </div>
 
-                            <hr />
+                        <div class="card-body border-top">
+                            <h4 class="card-title mb-2">{{ 'Transport and Logging'|trans }}</h4>
+                            <p class="text-secondary mb-3">{{ 'Choose how outgoing email is delivered and whether sent emails should be stored in the database.'|trans }}</p>
 
-                            <div class="mb-3 row">
-                                <label class="col-md-3 form-label">{{ 'Log Sent Emails to Database'|trans }}</label>
-                                <div class="col-md-6">
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" id="radioLogEnabledYes" type="radio" name="log_enabled" value="1"{% if params.log_enabled %} checked{% endif %}>
-                                        <label class="form-check-label" for="radioLogEnabledYes">{{ 'Yes'|trans }}</label>
-                                    </div>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" id="radioLogEnabledNo" type="radio" name="log_enabled" value="0"{% if not params.log_enabled %} checked{% endif %}>
-                                        <label class="form-check-label" for="radioLogEnabledNo">{{ 'No'|trans }}</label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 form-label">{{ 'Email Transport'|trans }}</label>
-                                <div class="col-md-6" id="mailer">
-                                    <div class="form-check form-check-inline">
+                            <label class="form-check form-switch form-switch-2 mb-4">
+                                <input class="form-check-input" type="checkbox" name="log_enabled" value="1" {% if params.log_enabled %}checked{% endif %}>
+                                <span class="form-check-label">{{ 'Log Sent Emails to Database'|trans }}</span>
+                            </label>
+
+                            <label class="form-label d-block">{{ 'Email Transport'|trans }}</label>
+                            <div class="d-flex flex-wrap gap-3" id="mailer">
+                                    <div class="form-check">
                                         <input class="form-check-input" id="radioSendMail" type="radio" name="mailer" value="sendmail"{% if params.mailer == 'sendmail' or not params.mailer %} checked{% endif %}>
                                         <label class="form-check-label" for="radioSendMail">{{ 'SendMail'|trans }}</label>
                                     </div>
-                                    <div class="form-check form-check-inline">
+                                    <div class="form-check">
                                         <input class="form-check-input" id="radioSMTP" type="radio" name="mailer" value="smtp"{% if params.mailer == 'smtp' %} checked{% endif %}>
                                         <label class="form-check-label" for="radioSMTP">{{ 'SMTP'|trans }}</label>
                                     </div>
-                                    <div class="form-check form-check-inline">
+                                    <div class="form-check">
                                         <input class="form-check-input" id="radioSendGrid" type="radio" name="mailer" value="sendgrid"{% if params.mailer == 'sendgrid' %} checked{% endif %}>
                                         <label class="form-check-label" for="radioSendGrid">{{ 'SendGrid'|trans }}</label>
                                     </div>
-                                    <div class="form-check form-check-inline">
+                                    <div class="form-check">
                                         <input class="form-check-input" id="radioCustom" type="radio" name="mailer" value="custom"{% if params.mailer == 'custom' %} checked{% endif %}>
                                         <label class="form-check-label" for="radioCustom">{{ 'Custom'|trans }}</label>
                                     </div>
-                                </div>
                             </div>
 
-                            <fieldset class="smtp"{% if params.mailer != 'smtp' %} style="display:none;"{% endif %} >
-                                <div class="mb-3 row">
-                                    <label class="col-md-3 col-form-label">{{ 'SMTP Hostname'|trans }}</label>
-                                    <div class="col-md-6">
-                                        <input class="form-control" type="text" name="smtp_host" value="{{ params.smtp_host }}" placeholder="smtp.gmail.com">
+                            <fieldset class="smtp mt-4"{% if params.mailer != 'smtp' %} style="display:none;"{% endif %}>
+                                <legend class="h5 mb-3">{{ 'SMTP Settings'|trans }}</legend>
+                                <div class="row g-3">
+                                    <div class="col-lg-6">
+                                        <label class="form-label" for="smtp-host">{{ 'SMTP Hostname'|trans }}</label>
+                                        <input class="form-control" id="smtp-host" type="text" name="smtp_host" value="{{ params.smtp_host }}" placeholder="smtp.gmail.com">
                                     </div>
-                                </div>
-                                <div class="mb-3 row">
-                                    <label class="col-md-3 col-form-label">{{ 'SMTP Port'|trans }}</label>
-                                    <div class="col-md-6">
-                                        <input class="form-control" type="text" name="smtp_port" value="{{ params.smtp_port }}" placeholder="587">
+                                    <div class="col-lg-6">
+                                        <label class="form-label" for="smtp-port">{{ 'SMTP Port'|trans }}</label>
+                                        <input class="form-control" id="smtp-port" type="text" name="smtp_port" value="{{ params.smtp_port }}" placeholder="587">
                                     </div>
-                                </div>
-                                <div class="mb-3 row">
-                                    <label class="col-md-3 col-form-label">{{ 'SMTP Username'|trans }}</label>
-                                    <div class="col-md-6">
-                                        <input class="form-control" type="text" name="smtp_username" value="{{ params.smtp_username }}" placeholder="my.email@gmail.com">
+                                    <div class="col-lg-6">
+                                        <label class="form-label" for="smtp-username">{{ 'SMTP Username'|trans }}</label>
+                                        <input class="form-control" id="smtp-username" type="text" name="smtp_username" value="{{ params.smtp_username }}" placeholder="my.email@gmail.com">
                                     </div>
-                                </div>
-                                <div class="mb-3 row">
-                                    <label class="col-md-3 col-form-label">{{ 'SMTP Password'|trans }}</label>
-                                    <div class="col-md-6">
-                                        <input class="form-control" type="password" name="smtp_password" value="{{ params.smtp_password }}">
+                                    <div class="col-lg-6">
+                                        <label class="form-label" for="smtp-password">{{ 'SMTP Password'|trans }}</label>
+                                        <input class="form-control" id="smtp-password" type="password" name="smtp_password" value="{{ params.smtp_password }}">
                                     </div>
                                 </div>
                             </fieldset>
 
-                            <fieldset class="sendgrid"{% if params.mailer != 'sendgrid' %} style="display:none;"{% endif %} >
-                                <div class="mb-3 row">
-                                    <label class="col-md-3 col-form-label">{{ 'SendGrid API Key'|trans }}</label>
-                                    <div class="col-md-6">
-                                        <input class="form-control" type="text" name="sendgrid_key" value="{{ params.sendgrid_key }}">
-                                    </div>
+                            <fieldset class="sendgrid mt-4"{% if params.mailer != 'sendgrid' %} style="display:none;"{% endif %}>
+                                <legend class="h5 mb-3">{{ 'SendGrid Settings'|trans }}</legend>
+                                <div>
+                                    <label class="form-label" for="sendgrid-key">{{ 'SendGrid API Key'|trans }}</label>
+                                    <input class="form-control" id="sendgrid-key" type="text" name="sendgrid_key" value="{{ params.sendgrid_key }}">
                                 </div>
                             </fieldset>
 
-                            <fieldset class="custom"{% if params.mailer != 'custom' %} style="display:none;"{% endif %} >
-                                <div class="mb-3 row">
-                                    <label class="col-md-3 col-form-label" for="custom_dsn">{{ 'Custom DSN'|trans }}</label>
-                                    <div class="col-md-6">
+                            <fieldset class="custom mt-4"{% if params.mailer != 'custom' %} style="display:none;"{% endif %}>
+                                <legend class="h5 mb-3">{{ 'Custom Transport'|trans }}</legend>
+                                <div>
+                                        <label class="form-label" for="custom_dsn">{{ 'Custom DSN'|trans }}</label>
                                         <p>{{"If none of the available options exactly meet your needs, you can define a custom DSN. Please keep in mind that usernames, passwords, and hostnames with special characters need to be URL-encoded."|trans}}</p>
                                         <p>{{"More information"|trans}}: <a href="https://symfony.com/doc/current/mailer.html#using-built-in-transports">{{"Symfony Documentation"}}</a></p>
                                         <p class="fw-light">{{"Example"|trans}}: smtp://user:pass@smtp.example.com?verify_peer=0</p>
                                         <input class="form-control" type="text" name="custom_dsn" value="{{ params.custom_dsn }}">
-                                    </div>
                                 </div>
                             </fieldset>
                         </div>
@@ -592,9 +520,53 @@
                     </div>
                 {% endif %}
             </div>
-            </div>
         </div>
     </div>
+
+    {% if can_manage_templates %}
+        <div class="modal fade" id="newEmailTemplateModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-md-down">
+                <form method="post" action="{{ 'email/template_create'|api_url }}" class="modal-content" {{ fb_api_form({ reload: true}) }}>
+                    <div class="modal-header">
+                        <h5 class="modal-title">{{ 'New Template'|trans }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-info" role="alert">
+                            <strong class="me-1">{{ 'Information:'|trans }}</strong>{{ 'Newly created email templates can be used in custom event hooks.'|trans }}
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-check form-switch form-switch-2">
+                                    <input class="form-check-input" type="checkbox" name="enabled" value="1">
+                                    <span class="form-check-label">{{ 'Enabled'|trans }}</span>
+                                </label>
+                            </div>
+                            <div class="col-lg-6">
+                                <label class="form-label" for="new-template-category">{{ 'Category'|trans }}</label>
+                                <input class="form-control" id="new-template-category" type="text" name="category" value="{{ request.category }}" required placeholder="General">
+                            </div>
+                            <div class="col-lg-6">
+                                <label class="form-label" for="new-template-code">{{ 'Action Code'|trans }}</label>
+                                <input class="form-control" id="new-template-code" type="text" name="action_code" value="{{ request.action_code }}" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label" for="new-template-subject">{{ 'Subject'|trans }}</label>
+                                <input class="form-control" id="new-template-subject" type="text" name="subject" value="{{ request.subject }}" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label" for="new-template-content">{{ 'Content'|trans }}</label>
+                                <textarea class="form-control" id="new-template-content" name="content" rows="6">{{ request.content }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <input type="submit" value="{{ 'Create'|trans }}" class="btn btn-primary">
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% endif %}
 {% endblock %}
 
 {% block js %}
@@ -646,6 +618,28 @@
                 }
             });
         });
+
+        {% if can_manage_templates %}
+        if (window.location.hash === '#tab-new') {
+            const modalElement = document.getElementById('newEmailTemplateModal');
+            if (modalElement) {
+                bootstrap.Modal.getOrCreateInstance(modalElement).show();
+            }
+        }
+
+        const newTemplateModal = document.getElementById('newEmailTemplateModal');
+        if (newTemplateModal) {
+            newTemplateModal.addEventListener('shown.bs.modal', function () {
+                history.replaceState(null, '', window.location.pathname + window.location.search + '#tab-new');
+            });
+
+            newTemplateModal.addEventListener('hidden.bs.modal', function () {
+                if (window.location.hash === '#tab-new') {
+                    history.replaceState(null, '', window.location.pathname + window.location.search + '#tab-index');
+                }
+            });
+        }
+        {% endif %}
     });
 </script>
 {% endblock %}

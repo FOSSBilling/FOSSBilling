@@ -38,167 +38,124 @@
             </div>
         </div>
         <div class="card-body pt-3 pb-0 px-0">
-            <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                    <ul class="nav nav-pills card-header-pills" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Company Details'|trans }}</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" href="#company-legal" data-bs-toggle="tab" role="tab">{{ 'Company Legal'|trans }}</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" href="#tab-localization" data-bs-toggle="tab" role="tab">{{ 'Localization'|trans }}</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" href="#tab-countries" data-bs-toggle="tab" role="tab">{{ 'Countries'|trans }}</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" href="#tab-cache" data-bs-toggle="tab" role="tab">{{ 'Cache'|trans }}</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" href="#tab-about" data-bs-toggle="tab" role="tab">{{ 'About'|trans }}</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" href="#tab-reporting" data-bs-toggle="tab" role="tab">{{ 'Error Reporting'|trans }}</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" href="#network-interface" data-bs-toggle="tab" role="tab">{{ 'Network Interface'|trans }}</a>
-                        </li>
-                    </ul>
-                </div>
+            <ul class="nav nav-pills mb-3 px-3" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Company Details'|trans }}</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" href="#company-legal" data-bs-toggle="tab" role="tab">{{ 'Company Legal'|trans }}</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" href="#tab-localization" data-bs-toggle="tab" role="tab">{{ 'Localization'|trans }}</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" href="#tab-countries" data-bs-toggle="tab" role="tab">{{ 'Countries'|trans }}</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" href="#tab-cache" data-bs-toggle="tab" role="tab">{{ 'Cache'|trans }}</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" href="#tab-about" data-bs-toggle="tab" role="tab">{{ 'About'|trans }}</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" href="#tab-reporting" data-bs-toggle="tab" role="tab">{{ 'Error Reporting'|trans }}</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" href="#network-interface" data-bs-toggle="tab" role="tab">{{ 'Network Interface'|trans }}</a>
+                </li>
+            </ul>
 
             <div class="tab-content border-top">
                 <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
                     <form method="post" action="{{ 'system/update_params'|api_url }}" {{ fb_api_form({ message: 'Company Updated'|trans}) }}>
                         <div class="card-body">
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Name'|trans }}</label>
-                                <div class="col-md-6">
-                                    <input class="form-control" type="text" name="company_name" value="{{ params.company_name }}">
-                                </div>
+                            <div class="alert alert-info" role="alert">
+                                <strong class="me-1">{{ 'Information:'|trans }}</strong>{{ 'These settings define the company details shown throughout invoices, public pages, and client-facing documents.'|trans }}
                             </div>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Email'|trans }}</label>
-                                <div class="col-md-6">
-                                    <input class="form-control" type="text" name="company_email" value="{{ params.company_email }}">
+
+                            <h4 class="card-title mb-2">{{ 'Contact and Branding'|trans }}</h4>
+                            <p class="text-secondary mb-3">{{ 'Set the primary contact details and branding assets used across the system.'|trans }}</p>
+                            <div class="row g-3">
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="company_name">{{ 'Name'|trans }}</label>
+                                    <input class="form-control" id="company_name" type="text" name="company_name" value="{{ params.company_name }}">
                                 </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Phone'|trans }}</label>
-                                <div class="col-md-6">
-                                    <input class="form-control" type="text" name="company_tel" value="{{ params.company_tel }}">
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="company_email">{{ 'Email'|trans }}</label>
+                                    <input class="form-control" id="company_email" type="text" name="company_email" value="{{ params.company_email }}">
                                 </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Address'|trans }}</label>
-                                <div class="col-md-6">
-                                    <input class="form-control mb-2" type="text" name="company_address_1" value="{{ params.company_address_1 }}" placeholder="{{ 'Address line 1'|trans }}">
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="company_tel">{{ 'Phone'|trans }}</label>
+                                    <input class="form-control" id="company_tel" type="text" name="company_tel" value="{{ params.company_tel }}">
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="company_favicon">{{ 'Favicon'|trans }}</label>
+                                    <input class="form-control" id="company_favicon" type="text" name="company_favicon" value="{{ params.company_favicon }}">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="company_address_1">{{ 'Address'|trans }}</label>
+                                    <input class="form-control mb-2" id="company_address_1" type="text" name="company_address_1" value="{{ params.company_address_1 }}" placeholder="{{ 'Address line 1'|trans }}">
                                     <input class="form-control mb-2" type="text" name="company_address_2" value="{{ params.company_address_2 }}" placeholder="{{ 'Address line 2'|trans }}">
-                                    <input class="form-control mb-2" type="text" name="company_address_3" value="{{ params.company_address_3 }}" placeholder="{{ 'Address line 3'|trans }}">
+                                    <input class="form-control" type="text" name="company_address_3" value="{{ params.company_address_3 }}" placeholder="{{ 'Address line 3'|trans }}">
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="company_logo">{{ 'Logo URL'|trans }}</label>
+                                    <input class="form-control" id="company_logo" type="text" name="company_logo" value="{{ params.company_logo }}">
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="company_logo_dark">{{ 'Logo URL (dark mode)'|trans }}</label>
+                                    <input class="form-control" id="company_logo_dark" type="text" name="company_logo_dark" value="{{ params.company_logo_dark }}">
                                 </div>
                             </div>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Logo URL'|trans }}</label>
-                                <div class="col-md-6">
-                                    <input class="form-control" type="text" name="company_logo" value="{{ params.company_logo }}">
+                        </div>
+                        <div class="card-body border-top">
+                            <h4 class="card-title mb-2">{{ 'Registration and Banking'|trans }}</h4>
+                            <p class="text-secondary mb-3">{{ 'Store company identifiers and optional bank details for use on invoices and documents.'|trans }}</p>
+                            <div class="row g-3">
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="company_number">{{ 'Company Number'|trans }}</label>
+                                    <input class="form-control" id="company_number" type="text" name="company_number" value="{{ params.company_number }}">
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="company_vat_number">{{ 'VAT Number'|trans }}</label>
+                                    <input class="form-control" id="company_vat_number" type="text" name="company_vat_number" value="{{ params.company_vat_number }}">
+                                </div>
+                                <div class="col-lg-4">
+                                    <label class="form-label" for="company_bank_name">{{ 'Bank Name'|trans }}</label>
+                                    <input class="form-control" id="company_bank_name" type="text" name="company_bank_name" value="{{ params.company_bank_name }}">
+                                </div>
+                                <div class="col-lg-4">
+                                    <label class="form-label" for="company_bic">{{ 'BIC / SWIFT Code'|trans }}</label>
+                                    <input class="form-control" id="company_bic" type="text" name="company_bic" value="{{ params.company_bic }}">
+                                </div>
+                                <div class="col-lg-4">
+                                    <label class="form-label" for="company_account_number">{{ 'Bank Account Number'|trans }}</label>
+                                    <input class="form-control" id="company_account_number" type="text" name="company_account_number" value="{{ params.company_account_number }}">
                                 </div>
                             </div>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Logo URL (dark mode)'|trans }}</label>
-                                <div class="col-md-6">
-                                    <input class="form-control" type="text" name="company_logo_dark" value="{{ params.company_logo_dark }}">
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Favicon'|trans }}</label>
-                                <div class="col-md-6">
-                                    <input class="form-control" type="text" name="company_favicon" value="{{ params.company_favicon }}">
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Company Number'|trans }}</label>
-                                <div class="col-md-6">
-                                    <input class="form-control" type="text" name="company_number" value="{{ params.company_number }}">
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'VAT Number'|trans }}</label>
-                                <div class="col-md-6">
-                                    <input class="form-control" type="text" name="company_vat_number" value="{{ params.company_vat_number }}">
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Bank Name'|trans }}</label>
-                                <div class="col-md-6">
-                                    <input class="form-control" type="text" name="company_bank_name" value="{{ params.company_bank_name }}">
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'BIC / SWIFT Code'|trans }}</label>
-                                <div class="col-md-6">
-                                    <input class="form-control" type="text" name="company_bic" value="{{ params.company_bic }}">
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Bank Account Number'|trans }}</label>
-                                <div class="col-md-6">
-                                    <input class="form-control" type="text" name="company_account_number" value="{{ params.company_account_number }}">
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Display Bank Account Information on Documents?'|trans }}</label>
-                                <div class="col-md-6">
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="company_display_bank_info" id="display_bank_info_yes" value="1" {% if params.company_display_bank_info == "1" %}checked{% endif %}>
-                                        <label class="form-check-label" for="display_bank_info_yes">{{ 'Yes'|trans }}</label>
-                                    </div>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="company_display_bank_info" id="display_bank_info_no" value="0" {% if params.company_display_bank_info == "0" %}checked{% endif %}>
-                                        <label class="form-check-label" for="display_bank_info_no">{{ 'No'|trans }}</label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Display Bank Account Information on the Bottom of Every Page?'|trans }}</label>
-                                <div class="col-md-6">
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="company_bank_info_pagebottom" id="company_bank_info_pagebottom_yes" value="1" {% if params.company_bank_info_pagebottom == "1" %}checked{% endif %}>
-                                        <label class="form-check-label" for="company_bank_info_pagebottom_yes">{{ 'Yes'|trans }}</label>
-                                    </div>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="company_bank_info_pagebottom" id="company_bank_info_pagebottom_no" value="0" {% if params.company_bank_info_pagebottom == "0" %}checked{% endif %}>
-                                        <label class="form-check-label" for="company_bank_info_pagebottom_no">{{ 'No'|trans }}</label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mb-3 row">
-                                <label class="form-label col-3 col-form-label">
-                                    {{ 'Hide Some Company Information in the Guest API'|trans }}
-                                    <br/>
-                                    <small class="text-muted">{{'Enabling this will hide some information from the "company" guest API endpoint such as the address, phone number, email, VAT number, and more.'|trans }}</small>
+                            <div class="mt-4 d-flex flex-column gap-3">
+                                <label class="form-check form-switch form-switch-2">
+                                    <input type="hidden" name="company_display_bank_info" value="0">
+                                    <input class="form-check-input" type="checkbox" name="company_display_bank_info" value="1" {% if params.company_display_bank_info == '1' %}checked{% endif %}>
+                                    <span class="form-check-label">{{ 'Display Bank Account Information on Documents'|trans }}</span>
                                 </label>
-                                <div class="col">
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" id="radio_showCompanyPublicYes" type="radio" name="hide_company_public" value="1" {% if params.hide_company_public == "1" %}checked{% endif %}>
-                                        <label class="form-check-label" for="radio_showCompanyPublicYes">
-                                            {{ 'Yes'|trans }}
-                                        </label>
-                                    </div>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" id="radio_showCompanyPublicNo" type="radio" name="hide_company_public" value="0" {% if params.hide_company_public == "0" %}checked{% endif %}>
-                                        <label class="form-check-label" for="radio_showCompanyPublicNo">
-                                            {{ 'No'|trans }}
-                                        </label>
-                                    </div>
-                                </div>
+                                <label class="form-check form-switch form-switch-2">
+                                    <input type="hidden" name="company_bank_info_pagebottom" value="0">
+                                    <input class="form-check-input" type="checkbox" name="company_bank_info_pagebottom" value="1" {% if params.company_bank_info_pagebottom == '1' %}checked{% endif %}>
+                                    <span class="form-check-label">{{ 'Display Bank Account Information at the Bottom of Every Page'|trans }}</span>
+                                </label>
+                                <label class="form-check form-switch form-switch-2">
+                                    <input type="hidden" name="hide_company_public" value="0">
+                                    <input class="form-check-input" id="hide_company_public" type="checkbox" name="hide_company_public" value="1" {% if params.hide_company_public == '1' %}checked{% endif %}>
+                                    <span class="form-check-label">{{ 'Hide Some Company Information in the Guest API'|trans }}</span>
+                                </label>
+                                <small class="form-hint">{{ 'Enabling this hides some information from the company guest API endpoint, including address, phone number, email, VAT number, and more.'|trans }}</small>
                             </div>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Signature'|trans }}</label>
-                                <div class="col-md-6">
-                                    <textarea class="form-control" name="company_signature" rows="2">{{ params.company_signature }}</textarea>
-                                </div>
-                            </div>
+                        </div>
+                        <div class="card-body border-top">
+                            <h4 class="card-title mb-2">{{ 'Signature'|trans }}</h4>
+                            <p class="text-secondary mb-3">{{ 'Set a default company signature for use in documents and communications.'|trans }}</p>
+                            <textarea class="form-control" name="company_signature" rows="3">{{ params.company_signature }}</textarea>
                         </div>
                         <div class="card-footer text-end">
                             <button class="btn btn-primary" type="submit"{% if not can_update_params %} disabled aria-disabled="true"{% endif %}>{{ 'Update Settings'|trans }}</button>
@@ -209,16 +166,19 @@
                 <div class="tab-pane fade" id="company-legal" role="tabpanel">
                     <form method="post" action="{{ 'system/update_params'|api_url }}" {{ fb_api_form({ message: 'Company Updated'|trans}) }}>
                         <div class="card-body">
+                            <div class="alert alert-info" role="alert">
+                                <strong class="me-1">{{ 'Information:'|trans }}</strong>{{ 'These text blocks appear on legal and informational pages and may also be referenced from other client-facing areas.'|trans }}
+                            </div>
                             <div class="mb-3">
-                                <h3>{{ 'Company Terms of Service, Legal Regulation'|trans }}</h3>
+                                <h4 class="card-title mb-2">{{ 'Company Terms of Service, Legal Regulation'|trans }}</h4>
                                 <textarea class="form-control editor-textarea" name="company_tos" rows="5">{{ params.company_tos }}</textarea>
                             </div>
                             <div class="mb-3">
-                                <h3>{{ 'Company Privacy Policy'|trans }}</h3>
+                                <h4 class="card-title mb-2">{{ 'Company Privacy Policy'|trans }}</h4>
                                 <textarea class="form-control editor-textarea" name="company_privacy_policy" rows="5">{{ params.company_privacy_policy }}</textarea>
                             </div>
                             <div class="mb-3">
-                                <h3>{{ 'Notes'|trans }}</h3>
+                                <h4 class="card-title mb-2">{{ 'Notes'|trans }}</h4>
                                 <textarea class="form-control editor-textarea" name="company_note" rows="5">{{ params.company_note }}</textarea>
                             </div>
                         </div>
@@ -231,11 +191,14 @@
                 <div class="tab-pane fade" id="tab-localization" role="tabpanel">
                     <form method="post" action="{{ 'system/update_localization_settings'|api_url }}" {{ fb_api_form({ message: 'Localization settings updated'|trans }) }}>
                         <div class="card-body">
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Default Locale'|trans }}</label>
-                                <div class="col-md-6">
-                                    <select class="form-select" name="locale">
-                                        {% set enabled_locales = guest.extension_languages %}
+                            <div class="alert alert-info" role="alert">
+                                <strong class="me-1">{{ 'Information:'|trans }}</strong>{{ 'Localization controls the default language shown to guests and whether browser language detection should override it before a user chooses a preference.'|trans }}
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="default_locale">{{ 'Default Locale'|trans }}</label>
+                                    <select class="form-select" id="default_locale" name="locale">
+                                        {% set enabled_locales = guest.extension_languages(true) %}
                                         {% for lang in enabled_locales %}
                                             <option value="{{ lang.locale }}" {% if localization.locale == lang.locale %}selected{% endif %}>{{ lang.name }} ({{ lang.locale }})</option>
                                         {% endfor %}
@@ -244,19 +207,13 @@
                                     <div class="form-hint">{{ 'Used when browser language detection is disabled or no suitable browser language match is found.'|trans }}</div>
                                 </div>
                             </div>
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Automatic Browser Language Detection'|trans }}</label>
-                                <div class="col-md-6">
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="auto_detect_locale" id="auto_detect_locale_yes" value="1" {% if localization.auto_detect_locale %}checked{% endif %}>
-                                        <label class="form-check-label" for="auto_detect_locale_yes">{{ 'Enabled'|trans }}</label>
-                                    </div>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="auto_detect_locale" id="auto_detect_locale_no" value="0" {% if not localization.auto_detect_locale %}checked{% endif %}>
-                                        <label class="form-check-label" for="auto_detect_locale_no">{{ 'Disabled'|trans }}</label>
-                                    </div>
-                                    <div class="form-hint">{{ 'When enabled, guests without a saved language preference start in the best match from their browser. When disabled, FOSSBilling uses the configured default locale until the user explicitly selects a language.'|trans }}</div>
-                                </div>
+                            <div class="mt-3">
+                                <label class="form-check form-switch form-switch-2">
+                                    <input type="hidden" name="auto_detect_locale" value="0">
+                                    <input class="form-check-input" type="checkbox" name="auto_detect_locale" id="auto_detect_locale_yes" value="1" {% if localization.auto_detect_locale %}checked{% endif %}>
+                                    <span class="form-check-label">{{ 'Automatic Browser Language Detection'|trans }}</span>
+                                </label>
+                                <small class="form-hint">{{ 'When enabled, guests without a saved language preference start in the best match from their browser. When disabled, FOSSBilling uses the configured default locale until the user explicitly selects a language.'|trans }}</small>
                             </div>
                         </div>
                         <div class="card-footer text-end">
@@ -270,13 +227,15 @@
                         <input type="hidden" name="ext" value="mod_system">
                         <div class="card-body">
 {% set default_countries = country_names()|map((name, code) => code ~ '=' ~ name)|join('\n') %}
-
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'Default Country for New Users'|trans }}</label>
-                                <div class="col-md-6">
-                                    <select class="form-select" name="default_country">
+                            <div class="alert alert-info" role="alert">
+                                <strong class="me-1">{{ 'Information:'|trans }}</strong>{{ 'This list controls which countries appear in signup and profile forms, and which one is preselected for new users.'|trans }}
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="default_country">{{ 'Default Country for New Users'|trans }}</label>
+                                <div class="col-12 col-xl-6 ps-0">
+                                    <select class="form-select" id="default_country" name="default_country">
                                         <option value="" {% if new_params.default_country is not defined or new_params.default_country == '' %}selected{% endif %}>
-                                            {{ 'No default country'|trans }}
+                                            {{ 'No Default Country'|trans }}
                                         </option>
                                         {% for line in (new_params.countries|default(default_countries))|split('\n') %}
                                             {% set parts = line|split('=') %}
@@ -290,12 +249,8 @@
                                 </div>
                             </div>
 
-                            <div class="mb-3 row">
-                                <label class="col-md-3 col-form-label">{{ 'List of Countries'|trans }}</label>
-                                <div class="col-md-6">
-                                    <textarea class="form-control" name="countries" rows="25" placeholder="US=United States">{{ new_params.countries|default(default_countries) }}</textarea>
-                                </div>
-                            </div>
+                            <label class="form-label" for="countries">{{ 'List of Countries'|trans }}</label>
+                            <textarea class="form-control col-12 col-xl-8" id="countries" name="countries" rows="25" placeholder="US=United States">{{ new_params.countries|default(default_countries) }}</textarea>
                         </div>
                         <div class="card-footer text-end">
                             <button class="btn btn-primary" type="submit">{{ 'Update Settings'|trans }}</button>
@@ -304,9 +259,12 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-cache" role="tabpanel">
-                    <div class="card-header">
-                        <h3 class="card-title">{{ 'Cache Control'|trans }}</h3>
-                        <div class="card-actions">
+                    <div class="card-body d-flex align-items-center justify-content-between gap-3">
+                        <div>
+                            <h4 class="card-title mb-2">{{ 'Cache Control'|trans }}</h4>
+                            <p class="text-secondary mb-0">{{ 'Clear compiled templates and cached system state when you need configuration or theme changes to take effect immediately.'|trans }}</p>
+                        </div>
+                        <div>
                             <form method="post" action="{{ 'system/clear_cache'|api_url }}" {{ fb_api_form({ message: 'Cache Directory Cleared'|trans}) }}>
                                 <button class="btn btn-danger" type="submit"{% if not can_invalidate_cache %} disabled aria-disabled="true"{% endif %}>{{ 'Invalidate cache'|trans }}</button>
                             </form>
@@ -315,10 +273,8 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-about" role="tabpanel">
-                    <div class="card-header">
-                        <h3 class="card-title">{{ 'About FOSSBilling'|trans }}</h3>
-                    </div>
                     <div class="card-body">
+                        <h4 class="card-title mb-3">{{ 'About FOSSBilling'|trans }}</h4>
                         <div class="datagrid">
                             <div class="datagrid-item">
                                 <div class="datagrid-title">{{ 'FOSSBilling version'|trans }}</div>
@@ -379,10 +335,8 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-reporting" role="tabpanel">
-                    <div class="card-header">
-                        <h3 class="card-title">{{ 'Error Reporting'|trans }}</h3>
-                    </div>
                     <div class="card-body">
+                        <h4 class="card-title mb-3">{{ 'Error Reporting'|trans }}</h4>
                         {% set last_change = admin.system_last_error_reporting_change %}
                         {% if admin.system_error_reporting_enabled %}
                         <div class="alert alert-success d-flex align-items-center justify-content-between" role="alert">
@@ -440,10 +394,8 @@
                 </div>
 
                 <div class="tab-pane fade" id="network-interface" role="tabpanel">
-                    <div class="card-header">
-                        <h3 class="card-title">{{ 'Network Interface'|trans }}</h3>
-                    </div>
                     <div class="card-body">
+                        <h4 class="card-title mb-3">{{ 'Network Interface'|trans }}</h4>
                         <div class="alert alert-info" role="alert" id="external-ip">
                             <strong class="me-1">{{ 'Information:'|trans }}</strong>{{ "Checking external IP..."|trans }}
                         </div>
@@ -478,8 +430,6 @@
                         {% endif %}
                     </div>
                 </div>
-            </div>
-        </div>
             </div>
         </div>
     </div>
