@@ -216,6 +216,9 @@
 
             const toggleLoader = () => {
                 let loader = document.querySelector('.wait');
+                if (!loader) {
+                    return;
+                }
                 if (loader.style.display === 'none') {
                     loader.style.display = 'block';
                 } else {
