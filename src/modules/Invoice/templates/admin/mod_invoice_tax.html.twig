@@ -111,21 +111,23 @@
                     <div class="tab-pane fade" id="tab-settings" role="tabpanel">
                         <div class="p-3">
                             <form method="post" action="{{ 'system/update_params'|api_url }}" {{ fb_api_form({message: 'Tax Settings Updated'|trans}) }}>
-                                <div class="mb-3 row">
-                                    <label class="form-label col-3 col-form-label">{{ 'Enable Tax Support'|trans }}:</label>
-                                    <div class="col">
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" id="radioTaxEnabledYes" type="radio" name="tax_enabled" value="1"{% if params.tax_enabled %} checked{% endif %}>
-                                            <label class="form-check-label" for="radioTaxEnabledYes">{{ 'Yes'|trans }}</label>
-                                        </div>
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" id="radioTaxEnabledNo" type="radio" name="tax_enabled" value="0"{% if not params.tax_enabled %} checked{% endif %}>
-                                            <label class="form-check-label" for="radioTaxEnabledNo">{{ 'No'|trans }}</label>
-                                        </div>
-                                    </div>
-                                </div>
+                                {% embed 'partial_admin_form_card.html.twig' with {
+                                    title: 'Tax Support Settings'|trans,
+                                    subtitle: 'Control whether tax calculation is enabled across the billing system.'|trans
+                                } %}
+                                    {% import 'macro_functions.html.twig' as mf %}
+                                    {% block form_content %}
+                                        <input type="hidden" name="tax_enabled" value="0">
+                                        <label class="form-check form-switch form-switch-2">
+                                            <input class="form-check-input" id="tax_enabled" type="checkbox" name="tax_enabled" value="1"{% if params.tax_enabled %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Enable Tax Support'|trans }}</span>
+                                        </label>
+                                    {% endblock %}
 
-                                <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
+                                    {% block form_actions %}
+                                        <button type="submit" class="btn btn-primary">{{ 'Update Tax Settings'|trans }}</button>
+                                    {% endblock %}
+                                {% endembed %}
                             </form>
                         </div>
                     </div>

@@ -91,7 +91,13 @@
                                 </tr>
                                 <tr>
                                     <td class="text-end">{{ 'Transaction Status on Payment Gateway'|trans }}</td>
-                                    <td>{{ mf.status_badge(transaction.txn_status, 'gateway_tx') }}</td>
+                                    <td>
+                                        {% if transaction.txn_status %}
+                                            {{ mf.status_badge(transaction.txn_status, 'gateway_tx') }}
+                                        {% else %}
+                                            {{ mf.text_badge('-', 'text-bg-secondary') }}
+                                        {% endif %}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td class="text-end">{{ 'Status'|trans }}</td>
@@ -99,7 +105,14 @@
                                 </tr>
                                 <tr>
                                     <td class="text-end">{{ 'IP'|trans }}</td>
-                                    <td>{{ transaction.ip }} {{ transaction.ip|ip_country_name|default('Unknown') }}</td>
+                                    <td>
+                                        {{ transaction.ip }}
+                                        {% set ip_country_code = transaction.ip|ip_country_code %}
+                                        {% set ip_country_name = transaction.ip|ip_country_name %}
+                                        {% if ip_country_code %}
+                                            <span class="flag flag-country-{{ ip_country_code }} ms-1" title="{{ ip_country_name|default('Unknown') }}"></span>
+                                        {% endif %}
+                                    </td>
                                 </tr>
                                 {% if transaction.note %}
                                 <tr>
@@ -255,77 +268,97 @@
 
         <div class="tab-pane fade" id="tab-ipn" role="tabpanel">
             <div class="card-body">
-                <h5>{{ 'GET'|trans }}</h5>
-            </div>
-            {% if transaction.ipn.get %}
-            <table class="table card-table table-vcenter table-striped text-nowrap">
-                <tbody>
-                    {% for key, val in transaction.ipn.get %}
-                    <tr>
-                        <td class="w-25">{{ key }}</td>
-                        <td>{{ val }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <div class="card-body">
-                <p class="text-muted">{{ 'No GET parameters received'|trans }}</p>
-            </div>
-            {% endif %}
+                <div class="d-flex flex-column gap-3">
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'GET Parameters'|trans,
+                        subtitle: 'Review GET values captured with the payment callback request.',
+                        card_class: 'mb-0'
+                    } %}
+                        {% block form_content %}
+                            {% if transaction.ipn.get %}
+                            <div class="table-responsive">
+                                <table class="table card-table table-vcenter table-striped text-nowrap">
+                                    <tbody>
+                                        {% for key, val in transaction.ipn.get %}
+                                        <tr>
+                                            <td class="w-25">{{ key }}</td>
+                                            <td>{{ val }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted mb-0">{{ 'No GET parameters received'|trans }}</p>
+                            {% endif %}
+                        {% endblock %}
+                    {% endembed %}
 
-            <div class="card-body">
-                <h5>{{ 'POST'|trans }}</h5>
-            </div>
-            {% if transaction.ipn.post %}
-            <table class="table card-table table-vcenter table-striped text-nowrap">
-                <tbody>
-                    {% for key, val in transaction.ipn.post %}
-                    <tr>
-                        <td class="w-25">{{ key }}</td>
-                        <td>{{ val }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <div class="card-body">
-                <p class="text-muted">{{ 'No POST parameters received'|trans }}</p>
-            </div>
-            {% endif %}
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'POST Parameters'|trans,
+                        subtitle: 'Review POST values captured with the payment callback request.',
+                        card_class: 'mb-0'
+                    } %}
+                        {% block form_content %}
+                            {% if transaction.ipn.post %}
+                            <div class="table-responsive">
+                                <table class="table card-table table-vcenter table-striped text-nowrap">
+                                    <tbody>
+                                        {% for key, val in transaction.ipn.post %}
+                                        <tr>
+                                            <td class="w-25">{{ key }}</td>
+                                            <td>{{ val }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted mb-0">{{ 'No POST parameters received'|trans }}</p>
+                            {% endif %}
+                        {% endblock %}
+                    {% endembed %}
 
-            <div class="card-body">
-                <h5>{{ 'SERVER'|trans }}</h5>
-            </div>
-            {% if transaction.ipn.server %}
-            <table class="table card-table table-vcenter table-striped text-nowrap">
-                <tbody>
-                    {% for key, val in transaction.ipn.server %}
-                    <tr>
-                        <td class="w-25">{{ key }}</td>
-                        <td>{{ val }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <div class="card-body">
-                <p class="text-muted">{{ 'No SERVER parameters logged'|trans }}</p>
-            </div>
-            {% endif %}
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Server Parameters'|trans,
+                        subtitle: 'Inspect the server variables logged alongside the callback payload.',
+                        card_class: 'mb-0'
+                    } %}
+                        {% block form_content %}
+                            {% if transaction.ipn.server %}
+                            <div class="table-responsive">
+                                <table class="table card-table table-vcenter table-striped text-nowrap">
+                                    <tbody>
+                                        {% for key, val in transaction.ipn.server %}
+                                        <tr>
+                                            <td class="w-25">{{ key }}</td>
+                                            <td>{{ val }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted mb-0">{{ 'No SERVER parameters logged'|trans }}</p>
+                            {% endif %}
+                        {% endblock %}
+                    {% endembed %}
 
-            <div class="card-body">
-                <h5>{{ 'http_raw_post_data'|upper}}</h5>
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Raw POST Payload'|trans,
+                        subtitle: 'Review the raw request body received from the payment gateway.',
+                        card_class: 'mb-0'
+                    } %}
+                        {% block form_content %}
+                            {% if transaction.ipn.http_raw_post_data %}
+                            <pre class="mb-0 text-wrap">{{ transaction.ipn.http_raw_post_data }}</pre>
+                            {% else %}
+                            <p class="text-muted mb-0">{{ 'No raw POST payload received'|trans }}</p>
+                            {% endif %}
+                        {% endblock %}
+                    {% endembed %}
+                </div>
             </div>
-            {% if transaction.ipn.http_raw_post_data %}
-            <div class="card-body">
-                {{ transaction.ipn.http_raw_post_data }}
-            </div>
-            {% else %}
-            <div class="card-body">
-                <p>{{ 'No'|trans }} {{ 'http_raw_post_data'|upper }} {{ 'parameters received'|trans }}</p>
-            </div>
-            {% endif %}
         </div>
     </div>
         </div>
