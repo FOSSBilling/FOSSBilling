@@ -13,7 +13,7 @@ final class AdminTest extends \BBTestCase
 
     public function setUp(): void
     {
-        $this->api = new Admin();
+        $this->api = $this->createAdminApi(Admin::class);
     }
 
     public function testPluginGetPairs(): void
@@ -49,6 +49,7 @@ final class AdminTest extends \BBTestCase
         $apiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
+        $apiMock->setDi($this->getDi());
         $apiMock->expects($this->atLeastOnce())
             ->method('_getService')
             ->willReturn(new \Model_ServiceLicense());
@@ -74,6 +75,7 @@ final class AdminTest extends \BBTestCase
         $apiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
+        $apiMock->setDi($this->getDi());
         $apiMock->expects($this->atLeastOnce())
             ->method('_getService')
             ->willReturn(new \Model_ServiceLicense());

@@ -13,7 +13,7 @@ final class AdminTest extends \BBTestCase
 
     public function setUp(): void
     {
-        $this->api = new Admin();
+        $this->api = $this->createAdminApi(Admin::class);
     }
 
     public function testGetList(): void
@@ -22,7 +22,7 @@ final class AdminTest extends \BBTestCase
         $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffServiceMock->expects($this->once())
             ->method('checkPermissionsAndThrowException')
-            ->with('hook', 'manage_hooks');
+            ->with('hook', 'view');
 
         $serviceMock->expects($this->atLeastOnce())
             ->method('getSearchQuery')

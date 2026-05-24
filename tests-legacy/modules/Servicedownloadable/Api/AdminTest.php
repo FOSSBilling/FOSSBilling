@@ -14,7 +14,7 @@ final class AdminTest extends \BBTestCase
 
     public function setUp(): void
     {
-        $this->api = new Admin();
+        $this->api = $this->createAdminApi(Admin::class);
     }
 
     public function testUpdateOrderNotActivated(): void
@@ -98,7 +98,7 @@ final class AdminTest extends \BBTestCase
             ->with('Product', $data['id'], 'Product not found')
             ->willReturn($productModel);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -122,7 +122,7 @@ final class AdminTest extends \BBTestCase
             ->with('Product', $data['id'], 'Product not found')
             ->willThrowException(new \FOSSBilling\Exception('Product not found'));
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -142,7 +142,7 @@ final class AdminTest extends \BBTestCase
             ->with('Product', $data['id'], 'Product not found')
             ->willThrowException(new \FOSSBilling\Exception('Product not found'));
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -172,7 +172,7 @@ final class AdminTest extends \BBTestCase
             ->with('Product', $data['id'], 'Product not found')
             ->willReturn($productModel);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -203,7 +203,7 @@ final class AdminTest extends \BBTestCase
             ->with('Product', $data['id'], 'Product not found')
             ->willReturn($productModel);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);
@@ -234,7 +234,7 @@ final class AdminTest extends \BBTestCase
             ->with('Product', $data['id'], 'Product not found')
             ->willReturn($productModel);
 
-        $di = new \Pimple\Container();
+        $di = $this->getDi();
         $di['db'] = $dbMock;
 
         $this->api->setDi($di);

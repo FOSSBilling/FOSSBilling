@@ -13,7 +13,7 @@ final class AdminTest extends \BBTestCase
 
     public function setUp(): void
     {
-        $this->api = new Admin();
+        $this->api = $this->createAdminApi(Admin::class);
     }
 
     public function testGetList(): void
@@ -323,6 +323,7 @@ final class AdminTest extends \BBTestCase
         $apiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['update'])
             ->getMock();
+        $apiMock->setDi($this->getDi());
 
         $apiMock->expects($this->atLeastOnce())
             ->method('update')
@@ -352,6 +353,7 @@ final class AdminTest extends \BBTestCase
         $apiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['delete'])
             ->getMock();
+        $apiMock->setDi($this->getDi());
 
         $apiMock->expects($this->atLeastOnce())
             ->method('delete')

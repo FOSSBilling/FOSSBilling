@@ -13,7 +13,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function setUp(): void
     {
-        $this->adminApi = new \Box\Mod\Support\Api\Admin();
+        $this->adminApi = $this->createAdminApi(\Box\Mod\Support\Api\Admin::class);
     }
 
     public function testTicketGetList(): void
@@ -1233,7 +1233,7 @@ final class Api_AdminTest extends \BBTestCase
     {
         $di = $this->getDi();
 
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Support\Api\Admin::class);
         $adminApi->setDi($di);
 
         $data = [
@@ -1261,7 +1261,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testKbArticleGet(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Support\Api\Admin::class);
 
         $data = [
             'id' => 1,
@@ -1295,7 +1295,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testKbArticleGetNotFoundException(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Support\Api\Admin::class);
 
         $data = [
             'id' => 1,
@@ -1316,7 +1316,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testKbArticleCreate(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Support\Api\Admin::class);
 
         $data = [
             'kb_article_category_id' => 1,
@@ -1342,7 +1342,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testKbArticleUpdate(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Support\Api\Admin::class);
 
         $data = [
             'id' => 1,
@@ -1370,7 +1370,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testKbArticleDelete(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Support\Api\Admin::class);
 
         $data = [
             'id' => 1,
@@ -1398,7 +1398,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testKbArticleDeleteNotFoundException(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Support\Api\Admin::class);
 
         $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
@@ -1423,7 +1423,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testKbCategoryGetList(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Support\Api\Admin::class);
 
         $willReturn = [
             'pages' => 5,
@@ -1459,7 +1459,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testKbCategoryGet(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Support\Api\Admin::class);
 
         $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
@@ -1487,7 +1487,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testKbCategoryGetIdNotSetException(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Support\Api\Admin::class);
 
         $db = $this->createMock('Box_Database');
         $db->expects($this->never())
@@ -1514,7 +1514,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testKbCategoryGetNotFoundException(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Support\Api\Admin::class);
 
         $db = $this->createMock('Box_Database');
         $db->expects($this->atLeastOnce())
@@ -1544,7 +1544,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testKbCategoryCreate(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Support\Api\Admin::class);
 
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCreateCategory'])->getMock();
         $kbService->expects($this->atLeastOnce())
@@ -1567,7 +1567,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testKbCategoryUpdate(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Support\Api\Admin::class);
 
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbUpdateCategory'])->getMock();
         $kbService->expects($this->atLeastOnce())
@@ -1599,7 +1599,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testKbCategoryUpdateIdNotSet(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Support\Api\Admin::class);
 
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbUpdateCategory'])->getMock();
         $kbService->expects($this->never())
@@ -1628,7 +1628,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testKbCategoryUpdateNotFound(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Support\Api\Admin::class);
 
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbUpdateCategory'])->getMock();
         $kbService->expects($this->never())
@@ -1661,7 +1661,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testKbCategoryDelete(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Support\Api\Admin::class);
 
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryRm'])->getMock();
         $kbService->expects($this->atLeastOnce())
@@ -1689,7 +1689,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testKbCategoryDeleteIdNotSet(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Support\Api\Admin::class);
 
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryRm'])->getMock();
         $kbService->expects($this->never())
@@ -1717,7 +1717,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testKbCategoryDeleteNotFound(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Support\Api\Admin::class);
 
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryRm'])->getMock();
         $kbService->expects($this->never())
@@ -1747,7 +1747,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testKbCategoryGetPairs(): void
     {
-        $adminApi = new \Box\Mod\Support\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Support\Api\Admin::class);
 
         $kbService = $this->getMockBuilder(\Box\Mod\Support\Service::class)->onlyMethods(['kbCategoryGetPairs'])->getMock();
         $kbService->expects($this->atLeastOnce())

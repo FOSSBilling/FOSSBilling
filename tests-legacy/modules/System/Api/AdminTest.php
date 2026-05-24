@@ -14,7 +14,7 @@ final class AdminTest extends \BBTestCase
 
     public function setUp(): void
     {
-        $this->api = new Admin();
+        $this->api = $this->createAdminApi(Admin::class);
 
         $configContents = file_get_contents(PATH_CONFIG);
         if ($configContents === false) {

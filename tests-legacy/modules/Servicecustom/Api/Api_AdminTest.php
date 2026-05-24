@@ -13,7 +13,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function setUp(): void
     {
-        $this->api = new \Box\Mod\Servicecustom\Api\Admin();
+        $this->api = $this->createAdminApi(\Box\Mod\Servicecustom\Api\Admin::class);
     }
 
     public function testUpdate(): void

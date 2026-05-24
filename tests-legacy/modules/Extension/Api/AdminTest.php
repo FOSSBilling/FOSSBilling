@@ -15,7 +15,7 @@ final class AdminTest extends \BBTestCase
     public function setUp(): void
     {
         $this->service = new \Box\Mod\Extension\Service();
-        $this->api = new Admin();
+        $this->api = $this->createAdminApi(Admin::class);
     }
 
     public function testGetList(): void

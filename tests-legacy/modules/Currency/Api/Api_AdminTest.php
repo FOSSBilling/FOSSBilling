@@ -12,7 +12,7 @@ final class Api_AdminTest extends \BBTestCase
 {
     public function testGetList(): void
     {
-        $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Currency\Api\Admin::class);
 
         $willReturn = [
             'list' => ['id' => 1],
@@ -56,7 +56,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testGetPairs(): void
     {
-        $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Currency\Api\Admin::class);
         $adminApi->setDi($this->getDi());
 
         $result = $adminApi->get_pairs();
@@ -69,7 +69,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testGet(): void
     {
-        $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Currency\Api\Admin::class);
 
         $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
             ->disableOriginalConstructor()
@@ -109,7 +109,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testGetDefault(): void
     {
-        $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Currency\Api\Admin::class);
 
         $returnArr = [
             'code' => 'EUR',
@@ -172,7 +172,7 @@ final class Api_AdminTest extends \BBTestCase
     #[DataProvider('CreateExceptionProvider')]
     public function testCreateException(array $data, string $findOneByCodeCalled, ?string $findOneByCodeReturn): void
     {
-        $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Currency\Api\Admin::class);
 
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
@@ -210,7 +210,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testCreate(): void
     {
-        $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Currency\Api\Admin::class);
 
         $data = [
             'code' => 'EUR',
@@ -252,7 +252,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testUpdate(): void
     {
-        $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Currency\Api\Admin::class);
 
         $data = [
             'code' => 'EUR',
@@ -287,7 +287,7 @@ final class Api_AdminTest extends \BBTestCase
      */
     public function testDeleteException(): void
     {
-        $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Currency\Api\Admin::class);
 
         $service = $this->createMock(\Box\Mod\Currency\Service::class);
         $service->expects($this->never())
@@ -308,7 +308,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testDelete(): void
     {
-        $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Currency\Api\Admin::class);
 
         $data = [
             'code' => 'EUR',
@@ -354,7 +354,7 @@ final class Api_AdminTest extends \BBTestCase
     #[DataProvider('SetDefaultExceptionProvider')]
     public function testSetDefaultException(array $data, string $getByCodeCalled, $getByCodeReturn): void
     {
-        $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Currency\Api\Admin::class);
 
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
@@ -386,7 +386,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testSetDefault(): void
     {
-        $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Currency\Api\Admin::class);
 
         $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
             ->disableOriginalConstructor()
@@ -431,7 +431,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testUpdateRates(): void
     {
-        $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Currency\Api\Admin::class);
 
         $service = $this->createMock(\Box\Mod\Currency\Service::class);
         $service->expects($this->once())

@@ -25,7 +25,7 @@ final class AdminTest extends \BBTestCase
         $model->created_at = '2014-01-01';
         $model->updated_at = '2014-01-01';
 
-        $adminApi = new \Box\Mod\Profile\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Profile\Api\Admin::class);
         $adminApi->setIdentity($model);
         $adminApi->setService($service);
         $result = $adminApi->get();
@@ -54,7 +54,7 @@ final class AdminTest extends \BBTestCase
         $di['session'] = $sessionMock;
         $di['logger'] = new \Box_Log();
 
-        $adminApi = new \Box\Mod\Profile\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Profile\Api\Admin::class);
         $adminApi->setDi($di);
         $result = $adminApi->logout();
         $this->assertTrue($result);
@@ -70,7 +70,7 @@ final class AdminTest extends \BBTestCase
             ->method('updateAdmin')
             ->willReturn(true);
 
-        $adminApi = new \Box\Mod\Profile\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Profile\Api\Admin::class);
         $adminApi->setIdentity($model);
         $adminApi->setService($serviceMock);
         $result = $adminApi->update(['name' => 'Root']);
@@ -87,7 +87,7 @@ final class AdminTest extends \BBTestCase
             ->method('generateNewApiKey')
             ->willReturn(true);
 
-        $adminApi = new \Box\Mod\Profile\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Profile\Api\Admin::class);
         $adminApi->setIdentity($model);
         $adminApi->setService($serviceMock);
         $result = $adminApi->generate_api_key([]);
@@ -99,7 +99,7 @@ final class AdminTest extends \BBTestCase
         $di = $this->getDi();
         $di['validator'] = new \FOSSBilling\Validate();
 
-        $adminApi = new \Box\Mod\Profile\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Profile\Api\Admin::class);
         $adminApi->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -112,7 +112,7 @@ final class AdminTest extends \BBTestCase
         $di = $this->getDi();
         $di['validator'] = new \FOSSBilling\Validate();
 
-        $adminApi = new \Box\Mod\Profile\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Profile\Api\Admin::class);
         $adminApi->setDi($di);
 
         $this->expectException(\Exception::class);
@@ -137,7 +137,7 @@ final class AdminTest extends \BBTestCase
             ->method('changeAdminPassword')
             ->willReturn(true);
 
-        $adminApi = new \Box\Mod\Profile\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Profile\Api\Admin::class);
         $adminApi->setDi($di);
         $adminApi->setIdentity($model);
         $adminApi->setService($serviceMock);
@@ -174,7 +174,7 @@ final class AdminTest extends \BBTestCase
             default => throw new \RuntimeException('Unexpected module service request: ' . $name),
         });
 
-        $adminApi = new \Box\Mod\Profile\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Profile\Api\Admin::class);
         $adminApi->setDi($di);
         $adminApi->setService($profileServiceMock);
 

@@ -13,7 +13,7 @@ final class AdminTest extends \BBTestCase
 
     public function setUp(): void
     {
-        $this->adminApi = new \Box\Mod\Cart\Api\Admin();
+        $this->adminApi = $this->createAdminApi(\Box\Mod\Cart\Api\Admin::class);
     }
 
     public function testGetList(): void

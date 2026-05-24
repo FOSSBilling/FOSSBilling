@@ -46,7 +46,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertArrayHasKey('delete', $permissions);
         $this->assertArrayHasKey('set_default', $permissions);
         $this->assertArrayHasKey('update_rates', $permissions);
-        $this->assertArrayHasKey('manage_settings', $permissions);
+        $this->assertArrayHasKey('view', $permissions);
     }
 
     public function testGetBaseCurrencyRate(): void

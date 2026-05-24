@@ -27,7 +27,7 @@ final class AdminTest extends \BBTestCase
             ->with($redirect)
             ->willReturn(['id' => 3, 'path' => 'old-page', 'target' => 'new-page']);
 
-        $api = new Admin();
+        $api = $this->createAdminApi(Admin::class);
         $api->setService($service);
 
         $result = $api->get(['id' => 3]);
@@ -54,7 +54,7 @@ final class AdminTest extends \BBTestCase
             default => throw new \RuntimeException(sprintf('Unexpected mod service request: %s', $name)),
         });
 
-        $api = new Admin();
+        $api = $this->createAdminApi(Admin::class);
         $api->setDi($di);
         $api->setService($service);
 
@@ -91,7 +91,7 @@ final class AdminTest extends \BBTestCase
             default => throw new \RuntimeException(sprintf('Unexpected mod service request: %s', $name)),
         });
 
-        $api = new Admin();
+        $api = $this->createAdminApi(Admin::class);
         $api->setDi($di);
         $api->setService($service);
 

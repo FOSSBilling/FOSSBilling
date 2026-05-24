@@ -162,6 +162,7 @@ final class ServiceTest extends \BBTestCase
         $di['events_manager'] = $emMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $clientServiceMock);
+        $di['mod_config'] = $di->protect(fn (): array => ['require_email_confirmation' => false]);
         $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
         $di['tools'] = $toolsMock;
 
