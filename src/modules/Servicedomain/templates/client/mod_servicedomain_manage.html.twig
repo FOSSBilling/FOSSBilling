@@ -155,7 +155,7 @@
                         <div class="col-md-5">
                             <label for="whois_country" class="form-label">{{ 'Country'|trans }}</label>
                             <select class="form-select" name="contact[country]" id="whois_country" required>
-                                <option value="">{{ 'Select country'|trans }}</option>
+                                <option value="">{{ 'Select Country'|trans }}</option>
                                 {% for code, name in country_names() %}
                                     <option value="{{ code }}" {% if (request.country|default(service.contact.country)) == code %}selected{% endif %}>{{ name }}</option>
                                 {% endfor %}

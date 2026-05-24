@@ -73,98 +73,99 @@
     <div class="tab-content border-top">
         <div class="tab-pane fade show active" id="tab-info" role="tabpanel">
             <div class="card-body">
-                <div class="card mb-0">
-                    <div class="card-body">
-                        <div class="d-flex flex-column gap-1">
-                            <h5 class="card-title mb-0">{{ 'Order Summary'|trans }}</h5>
-                            <p class="text-secondary mb-0">{{ 'Review core order, billing, and lifecycle details before taking action on this order.'|trans }}</p>
+                {% embed 'partial_admin_summary_card.html.twig' with {
+                    title: 'Order Summary'|trans,
+                    subtitle: 'Review core order, billing, and lifecycle details before taking action on this order.'|trans,
+                    centered_actions: true,
+                    card_class: 'mb-0'
+                } %}
+                    {% import 'macro_functions.html.twig' as mf %}
+                    {% block summary_content %}
+                        <div class="table-responsive">
+                            <table class="table card-table table-vcenter table-striped text-nowrap">
+                                <tbody>
+                                    <tr>
+                                        <td class="w-50 text-end">{{ 'Order'|trans }}</td>
+                                        <td>#{{ order.id }} ({{ order.service_type }})</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Client'|trans }}</td>
+                                        <td><a href='{{ "client/manage/#{order.client.id}"|url }}'>{{ order.client.first_name }} {{ order.client.last_name }}</a></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Title'|trans }}</td>
+                                        <td><a href='{{ "product/manage/#{order.product_id}"|url }}'><strong>{{ order.title }}</strong></a></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Payment Amount'|trans }}</td>
+                                        <td>{{ order.total|format_currency(order.currency ?? default_currency) }} {% if order.period %}{{ order.period|period_title }}{% endif %}{% if order.quantity > 1 %}({{ order.quantity }} x {{ order.price|format_currency(order.currency ?? default_currency) }}){% endif %}</td>
+                                    </tr>
+                                    {% if order.discount and order.discount > 0%}
+                                    <tr>
+                                        <td class="text-end">{{ 'Order Discount'|trans }}</td>
+                                        <td>-{{ order.discount|format_currency(order.currency ?? default_currency) }} </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Payment Amount After Discount'|trans }}</td>
+                                        <td>{{ (order.total - order.discount)|format_currency(order.currency ?? default_currency)}} </td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <td class="text-end">{{ 'Order Status'|trans }}</td>
+                                        <td>{{ mf.status_badge(order.status, 'order') }}</td>
+                                    </tr>
+                                    {% if order.notes %}
+                                    <tr>
+                                        <td class="text-end">{{ 'Order Notes'|trans }}</td>
+                                        <td>
+                                            <svg class="icon">
+                                                <use xlink:href="#support" />
+                                            </svg>
+                                            <a>{{ order.notes }}</a>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <td class="text-end">{{ 'Order Date'|trans }}</td>
+                                        <td>{{ order.created_at|format_date }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Activation Date'|trans }}</td>
+                                        <td>{% if order.activated_at %}{{ order.activated_at|format_date }} ({{ order.activated_at|timeago }} {{ 'ago'|trans }}){% else %}-{% endif %}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Renewal Date'|trans }}</td>
+                                        <td>{% if order.expires_at %}{{ order.expires_at|format_date }} ({{ order.expires_at|daysleft }} {{ 'day(s)'|trans }}){% else %}-{% endif %}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Order Group ID'|trans }}</td>
+                                        <td>{{ order.group_id|default('-') }}</td>
+                                    </tr>
+                                    {% if order.promo_id %}
+                                    <tr>
+                                        <td class="text-end">{{ 'Order Promo Code'|trans }}</td>
+                                        <td>
+                                            {% set promo = admin.product_promo_get({ 'id': order.promo_id }) %}
+                                            {{ promo.code }}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if order.active_tickets > 0 %}
+                                    <tr>
+                                        <td class="text-end">{{ 'Active Support Tickets'|trans }}</td>
+                                        <td>
+                                            <div class="num">
+                                                <a href="{{ 'support'|url(query: { 'status': 'open', 'order_id': order.id }) }}" class="redNum">{{ order.active_tickets }}</a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
                         </div>
-                    </div>
+                    {% endblock %}
 
-                    <div class="table-responsive">
-                        <table class="table card-table table-vcenter table-striped text-nowrap">
-                            <tbody>
-                                <tr>
-                                    <td class="w-50 text-end">{{ 'Order'|trans }}</td>
-                                    <td>#{{ order.id }} ({{ order.service_type }})</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-end">{{ 'Client'|trans }}</td>
-                                    <td><a href='{{ "client/manage/#{order.client.id}"|url }}'>{{ order.client.first_name }} {{ order.client.last_name }}</a></td>
-                                </tr>
-                                <tr>
-                                    <td class="text-end">{{ 'Title'|trans }}</td>
-                                    <td><a href='{{ "product/manage/#{order.product_id}"|url }}'><strong>{{ order.title }}</strong></a></td>
-                                </tr>
-                                <tr>
-                                    <td class="text-end">{{ 'Payment Amount'|trans }}</td>
-                                    <td>{{ order.total|format_currency(order.currency ?? default_currency) }} {% if order.period %}{{ order.period|period_title }}{% endif %}{% if order.quantity > 1 %}({{ order.quantity }} x {{ order.price|format_currency(order.currency ?? default_currency) }}){% endif %}</td>
-                                </tr>
-                                {% if order.discount and order.discount > 0%}
-                                <tr>
-                                    <td class="text-end">{{ 'Order Discount'|trans }}</td>
-                                    <td>-{{ order.discount|format_currency(order.currency ?? default_currency) }} </td>
-                                </tr>
-                                <tr>
-                                    <td class="text-end">{{ 'Payment Amount After Discount'|trans }}</td>
-                                    <td>{{ (order.total - order.discount)|format_currency(order.currency ?? default_currency)}} </td>
-                                </tr>
-                                {% endif %}
-                                <tr>
-                                    <td class="text-end">{{ 'Order Status'|trans }}</td>
-                                    <td>{{ mf.status_badge(order.status, 'order') }}</td>
-                                </tr>
-                                {% if order.notes %}
-                                <tr>
-                                    <td class="text-end">{{ 'Order Notes'|trans }}</td>
-                                    <td>
-                                        <svg class="icon">
-                                            <use xlink:href="#support" />
-                                        </svg>
-                                        <a>{{ order.notes }}</a>
-                                    </td>
-                                </tr>
-                                {% endif %}
-                                <tr>
-                                    <td class="text-end">{{ 'Order Date'|trans }}</td>
-                                    <td>{{ order.created_at|format_date }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-end">{{ 'Activation Date'|trans }}</td>
-                                    <td>{% if order.activated_at %}{{ order.activated_at|format_date }} ({{ order.activated_at|timeago }} {{ 'ago'|trans }}){% else %}-{% endif %}</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-end">{{ 'Renewal Date'|trans }}</td>
-                                    <td>{% if order.expires_at %}{{ order.expires_at|format_date }} ({{ order.expires_at|daysleft }} {{ 'day(s)'|trans }}){% else %}-{% endif %}</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-end">{{ 'Order Group ID'|trans }}</td>
-                                    <td>{{ order.group_id|default('-') }}</td>
-                                </tr>
-                                {% if order.promo_id %}
-                                <tr>
-                                    <td class="text-end">{{ 'Order Promo Code'|trans }}</td>
-                                    <td>
-                                        {% set promo = admin.product_promo_get({ 'id': order.promo_id }) %}
-                                        {{ promo.code }}
-                                    </td>
-                                </tr>
-                                {% endif %}
-                                {% if order.active_tickets > 0 %}
-                                <tr>
-                                    <td class="text-end">{{ 'Active Support Tickets'|trans }}</td>
-                                    <td>
-                                        <div class="num">
-                                            <a href="{{ 'support'|url(query: { 'status': 'open', 'order_id': order.id }) }}" class="redNum">{{ order.active_tickets }}</a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="card-footer text-center">
+                    {% block summary_actions %}
                         {% set order_actions %}
                     {% if order.status == 'pending_setup' or order.status == 'failed_setup' %}
                     <a class="btn btn-primary"
@@ -248,12 +249,9 @@
                     </a>
                     {% endif %}
                 {% endset %}
-
-                        <div class="btn-list justify-content-center">
-                            {{ order_actions }}
-                        </div>
-                    </div>
-                </div>
+                        {{ order_actions }}
+                    {% endblock %}
+                {% endembed %}
             </div>
         </div>
 
@@ -314,12 +312,13 @@
         <div class="tab-pane fade" id="tab-manage" role="tabpanel">
             <div class="card-body">
                 <form method="post" action="{{ 'order/update'|api_url }}" {{ fb_api_form({ reload: true}) }}>
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <div class="d-flex flex-column gap-1 mb-4">
-                                <h5 class="card-title mb-0">{{ 'Order Details'|trans }}</h5>
-                                <p class="text-secondary mb-0">{{ 'Update the order title, pricing, and billing cycle configuration.'|trans }}</p>
-                            </div>
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Order Details'|trans,
+                        subtitle: 'Update the order title, pricing, and billing cycle configuration.'|trans,
+                        card_class: 'mb-4'
+                    } %}
+                        {% import 'macro_functions.html.twig' as mf %}
+                        {% block form_content %}
                             <div class="row g-3">
                                 <div class="col-lg-6">
                                     <label class="form-label" for="order_title">{{ 'Title'|trans }}</label>
@@ -357,15 +356,16 @@
                                     <input class="form-control" id="order_reason" type="text" name="reason" value="{{ order.reason }}">
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                        {% endblock %}
+                    {% endembed %}
 
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <div class="d-flex flex-column gap-1 mb-4">
-                                <h5 class="card-title mb-0">{{ 'Status and Notes'|trans }}</h5>
-                                <p class="text-secondary mb-0">{{ 'Change the recorded status directly and keep internal notes for this order.'|trans }}</p>
-                            </div>
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Status and Notes'|trans,
+                        subtitle: 'Change the recorded status directly and keep internal notes for this order.'|trans,
+                        card_class: 'mb-4'
+                    } %}
+                        {% import 'macro_functions.html.twig' as mf %}
+                        {% block form_content %}
                             <div class="row g-3">
                                 <div class="col-xl-6">
                                     <label class="form-label">{{ 'Changes Status Without Performing Action'|trans }}</label>
@@ -376,13 +376,14 @@
                                     <textarea class="form-control" id="order_notes" name="notes" rows="3">{{ order.notes }}</textarea>
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                        {% endblock %}
+
+                        {% block form_actions %}
+                            <button type="submit" class="btn btn-primary">{{ 'Update Order'|trans }}</button>
+                        {% endblock %}
+                    {% endembed %}
 
                     <input type="hidden" name="id" value="{{ order.id }}">
-                    <div class="d-flex justify-content-end">
-                        <button type="submit" class="btn btn-primary">{{ 'Update Order'|trans }}</button>
-                    </div>
                 </form>
             </div>
         </div>
@@ -390,13 +391,12 @@
         <div class="tab-pane fade" id="tab-config" role="tabpanel">
             <div class="card-body">
                 <form method="post" action="{{ 'order/update_config'|api_url }}" {{ fb_api_form({ reload: true}) }}>
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex flex-column gap-1 mb-4">
-                                <h5 class="card-title mb-0">{{ 'Order Configuration'|trans }}</h5>
-                                <p class="text-secondary mb-0">{{ 'Please be cautious when editing raw order configuration values. Incorrect changes can affect service behavior and billing logic.'|trans }}</p>
-                            </div>
-
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Order Configuration'|trans,
+                        subtitle: 'Please be cautious when editing raw order configuration values. Incorrect changes can affect service behavior and billing logic.'|trans
+                    } %}
+                        {% import 'macro_functions.html.twig' as mf %}
+                        {% block form_content %}
                             <input type="hidden" name="id" value="{{ order.id }}">
                             <div class="d-flex flex-column gap-2">
                                 {% for key, config in order.config %}
@@ -433,11 +433,12 @@
                                     </section>
                                 {% endfor %}
                             </div>
-                        </div>
-                        <div class="card-footer d-flex justify-content-end">
+                        {% endblock %}
+
+                        {% block form_actions %}
                             <button class="btn btn-primary" type="submit">{{ 'Update Configuration'|trans }}</button>
-                        </div>
-                    </div>
+                        {% endblock %}
+                    {% endembed %}
                 </form>
             </div>
         </div>
