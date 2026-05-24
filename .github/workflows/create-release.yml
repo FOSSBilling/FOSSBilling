@@ -75,6 +75,7 @@ jobs:
           context: .
           target: release-artifact
           outputs: type=local,dest=./release-tree
+          provenance: false
 
       - name: 'Create Release Archive'
         id: archive

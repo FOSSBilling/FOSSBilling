@@ -45,6 +45,7 @@ jobs:
           context: .
           target: release-artifact
           outputs: type=local,dest=./release-tree
+          provenance: false
 
       - name: 'Build Release Artifact'
         id: build_write_cache
@@ -60,6 +61,7 @@ jobs:
           context: .
           target: release-artifact
           outputs: type=local,dest=./release-tree
+          provenance: false
 
       - name: 'Create Preview Build Archive'
         id: archive
