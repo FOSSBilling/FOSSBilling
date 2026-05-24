@@ -22,78 +22,63 @@
     </div>
 
     <form method="post" action="admin/massmailer/update" id="msg-form" {{ fb_api_form({callback: 'onAfterMessageUpdate'}) }}>
-        <div class="card-body">
-            <div class="row mb-3">
-                <label class="col-md-3 col-form-label">{{ 'From'|trans }}</label>
-                <div class="col-md-8">
-                    <div class="row">
-                        <div class="col-6">
-                            <label class="col-form-label">{{ 'Name'|trans }}</label>
+        <div class="p-3 pb-0">
+            {% embed 'partial_admin_form_card.html.twig' with {
+                title: 'Message Details'|trans,
+                subtitle: 'Set the sender identity and subject line for this mass-mail message.',
+                card_class: 'mb-3'
+            } %}
+                {% block form_content %}
+                    <div class="row g-3">
+                        <div class="col-lg-4">
+                            <label class="form-label">{{ 'From Name'|trans }}</label>
+                            <input class="form-control" type="text" name="from_name" value="{{ msg.from_name }}" required="required" title="{{ 'From name'|trans }}">
                         </div>
-                        <div class="col-6">
-                            <label class="col-form-label">{{ 'Email'|trans }}</label>
+                        <div class="col-lg-4">
+                            <label class="form-label">{{ 'From Email'|trans }}</label>
+                            <input class="form-control" type="text" name="from_email" value="{{ msg.from_email }}" required="required" title="{{ 'From email'|trans }}">
+                        </div>
+                        <div class="col-lg-4">
+                            <label class="form-label">{{ 'Subject'|trans }}</label>
+                            <input class="form-control" type="text" name="subject" value="{{ msg.subject }}" required="required"/>
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col-6">
-                            <input class="form-control" type="text" name="from_name" value="{{ msg.from_name }}"
-                                   required="required" title="{{ 'From name'|trans }}">
-                        </div>
-                        <div class="col-6">
-                            <input class="form-control" type="text" name="from_email" value="{{ msg.from_email }}"
-                                   required="required" title="{{ 'From email'|trans }}">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row mb-3">
-                <label class="col-md-3 col-form-label">{{ 'Subject'|trans }}</label>
-                <div class="col-md-8">
-                    <input class="form-control" type="text" name="subject" value="{{ msg.subject }}"
-                           required="required"/>
-                </div>
-            </div>
-        </div>
-        <div class="card-body">
-            <div class="pb-2">
-                <h3 class="card-title">{{ 'Recipients Filter'|trans }}</h3>
-                <p class="card-subtitle">Select none to send message to all clients</p>
-            </div>
+                {% endblock %}
+            {% endembed %}
 
-            <div class="row mb-3">
-                <label class="col-md-3 col-form-label">{{ 'Client Status and Group'|trans }}</label>
-                <div class="col-md-8">
-                    <div class="row">
-                        <div class="col-md-6">
+            {% embed 'partial_admin_form_card.html.twig' with {
+                title: 'Recipients Filter'|trans,
+                subtitle: 'Select none to send this message to all clients.',
+                card_class: 'mb-3'
+            } %}
+                {% block form_content %}
+                    <div class="row g-4">
+                        <div class="col-lg-6">
+                            <label class="form-label">{{ 'Client Status'|trans }}</label>
                             <select class="form-select" name="filter[client_status][]" multiple="multiple" size="4">
                                 <option value="active" {% if 'active' in msg.filter.client_status %} selected="selected"{% endif %}>{{ 'Active'|trans }}</option>
                                 <option value="suspended" {% if 'suspended' in msg.filter.client_status %} selected="selected"{% endif %}>{{ 'Suspended'|trans }}</option>
                                 <option value="canceled" {% if 'canceled' in msg.filter.client_status %} selected="selected"{% endif %}>{{ 'Canceled'|trans }}</option>
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-lg-6">
+                            <label class="form-label">{{ 'Client Groups'|trans }}</label>
                             <select class="form-select" name="filter[client_groups][]" multiple="multiple" size="4">
                                 {% for id,label in admin.client_group_get_pairs %}
                                     <option value="{{id}}" {% if id in msg.filter.client_groups %} selected="selected"{% endif %}>{{label}}</option>
                                 {% endfor %}
                             </select>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row mb-3">
-                <label class="col-md-3 col-form-label">{{ 'Has Order'|trans }}</label>
-                <div class="col-md-8">
-                    <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-lg-6">
+                            <label class="form-label">{{ 'Has Order With Status'|trans }}</label>
                             <select class="form-select" name="filter[has_order_with_status][]" multiple="multiple" size="6">
                                 {% for id,label in admin.order_get_status_pairs %}
                                     <option value="{{id}}" {% if id in msg.filter.has_order_with_status %} selected="selected"{% endif %}>{{label}}</option>
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-lg-6">
+                            <label class="form-label">{{ 'Has Order'|trans }}</label>
                             <select class="form-select" name="filter[has_order][]" multiple="multiple" size="6">
                                 {% for id,label in admin.product_get_pairs %}
                                     <option value="{{id}}" {% if id in msg.filter.has_order %} selected="selected"{% endif %}>{{label}}</option>
@@ -101,12 +86,14 @@
                             </select>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-        <div class="card-body">
-            <h5 class="card-title mb-3">{{ 'Email Content'|trans }}</h5>
-            <div class="card border-0 shadow-none rounded-0">
+                {% endblock %}
+            {% endembed %}
+
+            {% embed 'partial_admin_form_card.html.twig' with {
+                title: 'Email Content'|trans
+            } %}
+                {% block form_content %}
+                    <div class="card border-0 shadow-none rounded-0">
                 <div class="card-header bg-transparent px-0 pt-0 pb-3 border-0">
                 <ul class="nav nav-pills card-header-pills" id="content-tabs" role="tablist">
                     <li class="nav-item" role="presentation">
@@ -161,17 +148,20 @@
                         </div>
                 </div>
             </div>
+                {% endblock %}
+
+                {% block form_actions %}
+                    <div class="d-flex justify-content-between align-items-center w-100">
+                        <div class="d-flex gap-2">
+                            <input type="submit" value="{{ 'Update and preview'|trans }}" class="btn btn-secondary">
+                            <input type="button" value="{{ 'Send test message'|trans }}" class="btn btn-success" id="send-test-msg">
+                        </div>
+                        <input type="button" value="{{ 'Send message to clients'|trans }}" class="btn btn-primary" id="send-msg">
+                    </div>
+                {% endblock %}
+            {% endembed %}
         </div>
         <input type="hidden" name="id" value="{{ msg.id }}">
-        <div class="card-footer">
-            <div class="d-flex justify-content-between">
-                <div class="d-flex gap-2">
-                    <input type="submit" value="{{ 'Update and preview'|trans }}" class="btn btn-secondary">
-                    <input type="button" value="{{ 'Send test message'|trans }}" class="btn btn-success" id="send-test-msg">
-                </div>
-                <input type="button" value="{{ 'Send message to clients'|trans }}" class="btn btn-primary" id="send-msg">
-            </div>
-        </div>
     </form>
 </div>
 {% endblock %}
