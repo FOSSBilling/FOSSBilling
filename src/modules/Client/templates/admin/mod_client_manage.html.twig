@@ -77,110 +77,123 @@
                         <a class="nav-link" href="#tab-transactions" data-bs-toggle="tab" role="tab">{{ 'Transactions'|trans }}</a>
                     </li>
                 </ul>
-            </div>
+        </div>
     <div class="tab-content border-top">
         <div class="tab-pane fade show active" id="tab-info" role="tabpanel" aria-labelledby="index-tab">
             <div class="card-body position-relative">
-                {{ mf.avatar(client.email, 112, 'db-avatar avatar avatar-xl mb-3 avatar-rounded shadow position-absolute top-0 end-0 m-3') }}
+                {% embed 'partial_admin_summary_card.html.twig' with {
+                    title: 'Client Summary'|trans,
+                    subtitle: 'Review the account identity, status, billing profile, and core contact details for this client.'|trans,
+                    centered_actions: true,
+                    body_class: 'position-relative'
+                } %}
+                    {% block summary_header_aside %}
+                        {{ mf.avatar(client.email, 112, 'db-avatar avatar avatar-xl avatar-rounded shadow') }}
+                    {% endblock %}
 
-                <table class="table card-table table-vcenter table-striped text-nowrap">
-                    <tbody>
-                        <tr>
-                            <td class="w-50 text-end">{{ 'Client ID'|trans }}:</td>
-                            <td>{{ client.id }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-end">{{ 'Name'|trans }}:</td>
-                            <td>{{ client.first_name }} {{ client.last_name }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-end">{{ 'Company'|trans }}:</td>
-                            <td>{{ client.company|default('-') }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-end">{{ 'Email'|trans }}:</td>
-                            <td>{{ client.email }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-end">{{ 'Status'|trans }}:</td>
-                            <td>{{ mf.status_badge(client.status, 'client') }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-end">{{ 'Group'|trans }}:</td>
-                            <td>{{ client.group|default('-') }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-end">{{ 'Currency'|trans }}:</td>
-                            <td>{{ client.currency ? (client.currency|currency_symbol) : '-' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-end">{{ 'Balance'|trans }}:</td>
-                            {% if client.currency is not null %}
-                                <td>{{ client.balance|format_currency(client.currency ?? default_currency) }}</td>
-                            {% else %}
-                                <td>-</td>
-                            {% endif %}
-                        </tr>
-                        {% if client.notes %}
-                        <tr>
-                            <td class="text-end">{{ 'Notes'|trans }}:</td>
-                            <td>
-                                <svg class="icon">
-                                    <use xlink:href="#support" />
-                                </svg>
-                                {% if has_profile_edit_actions %}
-                                    <a href="#tab-profile" data-bs-toggle="tab" role="button">{{ client.notes }}</a>
-                                {% else %}
-                                    {{ client.notes }}
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endif %}
-                        <tr>
-                            <td class="text-end">IP:</td>
-                            <td>{%if client.ip %}{{ mf.ip_lookup_link(client.ip) }}{% else %}{{ 'Unknown'|trans }}{% endif %}</td>
-                        </tr>
-                        {% if can_manage_api_keys %}
-                        <tr>
-                            <td class="text-end">{{ 'API Key'|trans }}:</td>
-                            <td>{{ client.api_token|default('-') }}</td>
-                        </tr>
-                        {% endif %}
-                        <tr>
-                            <td class="text-end">{{ 'Address'|trans }}:</td>
-                            <td>
-                                {% if client.country is not empty %}
-                                    <span class="flag flag-country-{{ client.country|lower }}" title="{{ client.country|country_name }}"></span>
-                                    {{ client.country|country_name }} {{ client.state }} {{ client.address_1 }} {{ client.address_2 }} {{ client.city }} {{ client.postcode }}
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="text-end">{{ 'Registered on'|trans }}:</td>
-                            <td>{{ client.created_at|format_date }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                    {% block summary_content %}
+                        <div class="table-responsive">
+                            <table class="table card-table table-vcenter table-striped text-nowrap">
+                                <tbody>
+                                    <tr>
+                                        <td class="w-50 text-end">{{ 'Client ID'|trans }}:</td>
+                                        <td>{{ client.id }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Name'|trans }}:</td>
+                                        <td>{{ client.first_name }} {{ client.last_name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Company'|trans }}:</td>
+                                        <td>{{ client.company|default('-') }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Email'|trans }}:</td>
+                                        <td>{{ client.email }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Status'|trans }}:</td>
+                                        <td>{{ mf.status_badge(client.status, 'client') }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Group'|trans }}:</td>
+                                        <td>{{ client.group|default('-') }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Currency'|trans }}:</td>
+                                        <td>{{ client.currency ? (client.currency|currency_symbol) : '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Balance'|trans }}:</td>
+                                        {% if client.currency is not null %}
+                                            <td>{{ client.balance|format_currency(client.currency ?? default_currency) }}</td>
+                                        {% else %}
+                                            <td>-</td>
+                                        {% endif %}
+                                    </tr>
+                                    {% if client.notes %}
+                                    <tr>
+                                        <td class="text-end">{{ 'Notes'|trans }}:</td>
+                                        <td>
+                                            <svg class="icon">
+                                                <use xlink:href="#support" />
+                                            </svg>
+                                            {% if has_profile_edit_actions %}
+                                                <a href="#tab-profile" data-bs-toggle="tab" role="button">{{ client.notes }}</a>
+                                            {% else %}
+                                                {{ client.notes }}
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <td class="text-end">IP:</td>
+                                        <td>{% if client.ip %}{{ mf.ip_lookup_link(client.ip) }}{% else %}{{ 'Unknown'|trans }}{% endif %}</td>
+                                    </tr>
+                                    {% if can_manage_api_keys %}
+                                    <tr>
+                                        <td class="text-end">{{ 'API Key'|trans }}:</td>
+                                        <td>{{ client.api_token|default('-') }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <td class="text-end">{{ 'Address'|trans }}:</td>
+                                        <td>
+                                            {% if client.country is not empty %}
+                                                <span class="flag flag-country-{{ client.country|lower }}" title="{{ client.country|country_name }}"></span>
+                                                {{ client.country|country_name }} {{ client.state }} {{ client.address_1 }} {{ client.address_2 }} {{ client.city }} {{ client.postcode }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Registered on'|trans }}:</td>
+                                        <td>{{ client.created_at|format_date }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endblock %}
 
-            <div class="card-footer text-center">
-                <a href='{{ "client/login/#{client.id}"|url }}' class="btn btn-primary" target="_blank">
-                    <svg class="icon" width="24" height="24">
-                        <use xlink:href="#login" />
-                    </svg>
-                    <span>{{ 'Login to Client Area'|trans }}</span>
-                </a>
-                {% if can_delete_client %}
-                <a class="btn btn-danger"
-                    {{ fb_api_link({href: 'client/delete'|api_url(query: {'id': client.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'client'|url}) }}>
-                    <svg class="icon" width="24" height="24">
-                        <use xlink:href="#delete" />
-                    </svg>
-                    <span>{{ 'Delete'|trans }}</span>
-                </a>
-                {% endif %}
+                    {% block summary_actions %}
+                        <a href='{{ "client/login/#{client.id}"|url }}' class="btn btn-primary" target="_blank">
+                            <svg class="icon" width="24" height="24">
+                                <use xlink:href="#login" />
+                            </svg>
+                            <span>{{ 'Login to Client Area'|trans }}</span>
+                        </a>
+                        {% if can_delete_client %}
+                        <a class="btn btn-danger"
+                            {{ fb_api_link({href: 'client/delete'|api_url(query: {'id': client.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'client'|url}) }}>
+                            <svg class="icon" width="24" height="24">
+                                <use xlink:href="#delete" />
+                            </svg>
+                            <span>{{ 'Delete'|trans }}</span>
+                        </a>
+                        {% endif %}
+                    {% endblock %}
+                {% endembed %}
             </div>
         </div>
 
@@ -188,14 +201,12 @@
         <div class="tab-pane fade" id="tab-profile" role="tabpanel">
             <div class="card-body d-flex flex-column gap-3">
                 {% if can_edit_profile %}
-                <form method="post" action="{{ 'client/update'|api_url }}" class="card" {{ fb_api_form({ message: 'Client Profile Updated'|trans}) }}>
-                    <div class="card-header">
-                        <div>
-                            <h5 class="card-title mb-1">{{ 'Client Profile Details'|trans }}</h5>
-                            <p class="card-subtitle">{{ 'Update the client account, contact information, and internal settings.'|trans }}</p>
-                        </div>
-                    </div>
-                    <div class="card-body">
+                <form method="post" action="{{ 'client/update'|api_url }}" {{ fb_api_form({ message: 'Client Profile Updated'|trans}) }}>
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Client Profile Details'|trans,
+                        subtitle: 'Update the client account, contact information, and internal settings.'|trans
+                    } %}
+                        {% block form_content %}
                         <section class="mb-4 pb-4 border-bottom">
                             <h6 class="text-uppercase text-secondary fw-semibold mb-3">{{ 'Account Details'|trans }}</h6>
                             <div class="row g-3">
@@ -398,22 +409,22 @@
                         </section>
 
                         <input type="hidden" name="id" value="{{ client.id }}">
-                    </div>
-                    <div class="card-footer text-end">
-                        <button class="btn btn-primary" type="submit">{{ 'Update Profile'|trans }}</button>
-                    </div>
+                        {% endblock %}
+
+                        {% block form_actions %}
+                            <button class="btn btn-primary" type="submit">{{ 'Update Profile'|trans }}</button>
+                        {% endblock %}
+                    {% endembed %}
                 </form>
                 {% endif %}
 
                 {% if can_change_password %}
-                <form method="post" action="{{ 'client/change_password'|api_url }}" class="card" {{ fb_api_form({ message: 'Password Changed'|trans}) }}>
-                    <div class="card-header">
-                        <div>
-                            <h5 class="card-title mb-1">{{ 'Change Password'|trans }}</h5>
-                            <p class="card-subtitle">{{ 'Set a new client-area password for this account.'|trans }}</p>
-                        </div>
-                    </div>
-                    <div class="card-body">
+                <form method="post" action="{{ 'client/change_password'|api_url }}" {{ fb_api_form({ message: 'Password Changed'|trans}) }}>
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Change Password'|trans,
+                        subtitle: 'Set a new client-area password for this account.'|trans
+                    } %}
+                        {% block form_content %}
                         <div class="row g-3">
                             <div class="col-xl-6">
                                 <label class="form-label">{{ 'Password'|trans }}</label>
@@ -425,21 +436,21 @@
                             </div>
                         </div>
                         <input type="hidden" name="id" value="{{ client.id }}">
-                    </div>
-                    <div class="card-footer text-end">
-                        <button class="btn btn-primary" type="submit">{{ 'Change Password'|trans }}</button>
-                    </div>
+                        {% endblock %}
+
+                        {% block form_actions %}
+                            <button class="btn btn-primary" type="submit">{{ 'Change Password'|trans }}</button>
+                        {% endblock %}
+                    {% endembed %}
                 </form>
                 {% endif %}
                 {% if can_edit_profile %}
-                <form method="post" action="{{ 'client/update'|api_url }}" class="card" {{ fb_api_form({ message: 'Client Profile Custom Fields Updated'|trans}) }}>
-                    <div class="card-header">
-                        <div>
-                            <h5 class="card-title mb-1">{{ 'Custom Fields'|trans }}</h5>
-                            <p class="card-subtitle">{{ 'Use these fields to store extra client details that do not fit the standard profile.'|trans }}</p>
-                        </div>
-                    </div>
-                    <div class="card-body">
+                <form method="post" action="{{ 'client/update'|api_url }}" {{ fb_api_form({ message: 'Client Profile Custom Fields Updated'|trans}) }}>
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Custom Fields'|trans,
+                        subtitle: 'Use these fields to store extra client details that do not fit the standard profile.'|trans
+                    } %}
+                        {% block form_content %}
                         <div class="row g-3">
                             {% for i in 1..10 %}
                             {% set fn = 'custom_' ~ i %}
@@ -450,10 +461,12 @@
                             {% endfor %}
                         </div>
                         <input type="hidden" name="id" value="{{ client.id }}">
-                    </div>
-                    <div class="card-footer text-end">
-                        <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
-                    </div>
+                        {% endblock %}
+
+                        {% block form_actions %}
+                            <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
+                        {% endblock %}
+                    {% endembed %}
                 </form>
                 {% endif %}
             </div>

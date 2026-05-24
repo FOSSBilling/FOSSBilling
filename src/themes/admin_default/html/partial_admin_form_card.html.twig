@@ -1,0 +1,20 @@
+{% set form_actions = block('form_actions')|trim %}
+
+<div class="card{% if card_class|default('') %} {{ card_class }}{% endif %}">
+    <div class="card-body{% if body_class|default('') %} {{ body_class }}{% endif %}">
+        <div class="d-flex flex-column gap-1 mb-4">
+            <h5 class="card-title mb-0">{{ title }}</h5>
+            {% if subtitle is defined and subtitle %}
+                <p class="text-secondary mb-0">{{ subtitle }}</p>
+            {% endif %}
+        </div>
+
+        {% block form_content %}{% endblock %}
+    </div>
+
+    {% if form_actions %}
+        <div class="card-footer d-flex justify-content-{{ footer_align|default('end') }}">
+            {{ form_actions|raw }}
+        </div>
+    {% endif %}
+</div>
