@@ -30,24 +30,26 @@
 
 {% block content %}
 <div class="card">
-    <div class="card-body">
-        <form method="post" action="{{ 'support/canned_category_update'|api_url }}" {{ fb_api_form({ redirect: 'support/canned-responses'|url }) }}>
-            <div class="mb-3">
-                <h3 class="card-title mb-1">{{ 'Canned Category'|trans }}</h3>
-                <p class="text-secondary mb-0">{{ category.title }}</p>
-            </div>
-            <div class="row g-3">
-                <div class="col-lg-6">
-                    <label class="form-label">{{ 'Title'|trans }}</label>
-                    <input class="form-control" type="text" name="title" value="{{ category.title }}" required>
+    <form method="post" action="{{ 'support/canned_category_update'|api_url }}" {{ fb_api_form({ redirect: 'support/canned-responses'|url }) }}>
+        {% embed 'partial_admin_form_card.html.twig' with {
+            title: 'Canned Category'|trans,
+            subtitle: category.title,
+            body_class: 'pt-4'
+        } %}
+            {% block form_content %}
+                <div class="row g-3">
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Title'|trans }}</label>
+                        <input class="form-control" type="text" name="title" value="{{ category.title }}" required>
+                    </div>
                 </div>
-            </div>
+                <input type="hidden" name="id" value="{{ category.id }}">
+            {% endblock %}
 
-            <input type="hidden" name="id" value="{{ category.id }}">
-            <div class="d-flex justify-content-end mt-4">
+            {% block form_actions %}
                 <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
-            </div>
-        </form>
-    </div>
+            {% endblock %}
+        {% endembed %}
+    </form>
 </div>
 {% endblock %}
