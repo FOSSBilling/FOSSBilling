@@ -448,7 +448,7 @@ final class AdminTest extends \BBTestCase
 
         $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('emailAlreadyRegistered')->willReturn(true);
-        $serviceMock->expects($this->never())->method('canChangeCurrency')->willReturn(true);
+        $serviceMock->expects($this->never())->method('canChangeCurrency');
 
         $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffServiceMock->expects($this->once())
@@ -643,12 +643,9 @@ final class AdminTest extends \BBTestCase
             ->willThrowException(new \FOSSBilling\InformationException('denied'));
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {
-            if ($serviceName == 'Staff') {
-                return $staffServiceMock;
-            }
-
-            return false;
+        $di['mod_service'] = $di->protect(fn ($serviceName) => match (strtolower((string) $serviceName)) {
+            'staff' => $staffServiceMock,
+            default => false,
         });
 
         $adminClient = new \Box\Mod\Client\Api\Admin();
@@ -751,11 +748,11 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
-        $admin_Client->setService($serviceMock);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
+        $adminClient->setService($serviceMock);
 
-        $result = $admin_Client->export_csv([]);
+        $result = $adminClient->export_csv([]);
         $this->assertInstanceOf(Response::class, $result);
         $this->assertSame('csv-data', $result->getContent());
     }
@@ -840,10 +837,10 @@ final class AdminTest extends \BBTestCase
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
-        $admin_Client->setDi($di);
+        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient->setDi($di);
 
-        $result = $admin_Client->get_statuses([]);
+        $result = $adminClient->get_statuses([]);
         $this->assertIsArray($result);
     }
 
@@ -995,8 +992,8 @@ final class AdminTest extends \BBTestCase
 
     public function testBatchDelete(): void
     {
-        $activityMock = $this->getMockBuilder(\Box\Mod\Client\Api\Admin::class)->onlyMethods(['delete'])->getMock();
-        $activityMock->expects($this->atLeastOnce())->method('delete')->willReturn(true);
+        $adminClientMock = $this->getMockBuilder(\Box\Mod\Client\Api\Admin::class)->onlyMethods(['delete'])->getMock();
+        $adminClientMock->expects($this->atLeastOnce())->method('delete')->willReturn(true);
 
         $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffServiceMock->expects($this->once())
@@ -1008,9 +1005,9 @@ final class AdminTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
             'staff' => $staffServiceMock,
         });
-        $activityMock->setDi($di);
+        $adminClientMock->setDi($di);
 
-        $result = $activityMock->batch_delete(['ids' => [1, 2, 3]]);
+        $result = $adminClientMock->batch_delete(['ids' => [1, 2, 3]]);
         $this->assertTrue($result);
     }
 }
