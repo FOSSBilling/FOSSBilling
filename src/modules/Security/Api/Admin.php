@@ -44,11 +44,15 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'You must specify a check ID to run.'])]
     public function run_check(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'run_checks');
+
         return $this->getService()->runCheck($data['id']);
     }
 
     public function run_checks(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'run_checks');
+
         return $this->getService()->runAllChecks();
     }
 }

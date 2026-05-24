@@ -137,7 +137,16 @@ class Service implements InjectionAwareInterface
                 throw new InformationException('This email address is already registered.');
             }
 
-            $client->email = $email;
+            if ($client->email !== $email) {
+                $client->email = $email;
+                $client->email_approved = false;
+
+                $clientConfig = $this->di['mod_config']('client');
+                if (isset($clientConfig['require_email_confirmation']) && $clientConfig['require_email_confirmation']) {
+                    $clientService = $this->di['mod_service']('client');
+                    $clientService->sendEmailConfirmationForClient($client);
+                }
+            }
         }
 
         if (isset($data['phone_cc']) && $data['phone_cc'] !== '') {

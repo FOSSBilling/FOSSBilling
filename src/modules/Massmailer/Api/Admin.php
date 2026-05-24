@@ -298,6 +298,8 @@ Order our services at {{ "order"|url }}
      */
     public function get_test_client(): string
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'view');
+
         try {
             $client = $this->di['mod_service']('client')->get(['id' => $this->_getTestClientId()]);
         } catch (\Exception) {

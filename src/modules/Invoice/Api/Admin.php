@@ -338,6 +338,8 @@ class Admin extends \Api_Abstract
      */
     public function get_statuses($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'view');
+
         return $this->getService()->counter();
     }
 
@@ -974,6 +976,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices');
+
         foreach ($data['ids'] as $id) {
             $this->delete(['id' => $id]);
         }
@@ -987,6 +991,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete_subscription($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_subscriptions');
+
         foreach ($data['ids'] as $id) {
             $this->subscription_delete(['id' => $id]);
         }
@@ -1000,6 +1006,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete_transaction($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_transactions');
+
         foreach ($data['ids'] as $id) {
             $this->transaction_delete(['id' => $id]);
         }
@@ -1013,6 +1021,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete_tax($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_tax');
+
         foreach ($data['ids'] as $id) {
             $this->tax_delete(['id' => $id]);
         }

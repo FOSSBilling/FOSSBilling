@@ -478,6 +478,8 @@ class Admin extends \Api_Abstract
      */
     public function get_statuses($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
+
         $service = $this->di['mod_service']('client');
 
         return $service->counter();
@@ -490,6 +492,8 @@ class Admin extends \Api_Abstract
      */
     public function group_get_pairs($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
+
         $service = $this->di['mod_service']('client');
 
         return $service->getGroupPairs();
@@ -556,6 +560,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Group ID is missing'])]
     public function group_get($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_groups');
+
         $model = $this->di['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
 
         return $this->di['db']->toArray($model);
