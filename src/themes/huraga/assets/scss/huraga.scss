@@ -120,7 +120,7 @@ body {
 }
 
 @media (max-width: 768px) {
-    .ts-wrapper.js-language-selector {
+    .ts-wrapper.js-locale-selector {
         width: 180px
     }
 }
@@ -352,7 +352,7 @@ body {
     display: flex;
     align-items: center;
 
-    .form-select.js-language-selector {
+    .form-select.js-locale-selector {
         color: var(--bs-body-color);
         padding: 0.5rem 2rem 0.5rem 0.75rem;
         font-size: 0.875rem;

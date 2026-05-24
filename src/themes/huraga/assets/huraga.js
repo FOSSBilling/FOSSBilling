@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
    * Lazy load Tom Select only if language selector exists
    * Includes error handling and ensures CSS is loaded before JS initializes
    */
-  const languageSelector = document.querySelector('.js-language-selector');
+  const languageSelector = document.querySelector('.js-locale-selector');
   if (languageSelector) {
     // Dynamically import TomSelect module with error handling
     import('./js/tomselect.js')

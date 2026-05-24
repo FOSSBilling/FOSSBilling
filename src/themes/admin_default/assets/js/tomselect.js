@@ -20,9 +20,9 @@ document.addEventListener('DOMContentLoaded', () => {
   /**
    * Locale Selector
    */
-  const localeSelectorEl = document.querySelector('.js-language-selector');
+  const localeSelectorEl = document.querySelector('.js-locale-selector');
   if (localeSelectorEl !== null) {
-    const localeSelector = new TomSelect(".js-language-selector", {
+    const localeSelector = new TomSelect(".js-locale-selector", {
       copyClassesToDropdown: false,
       controlClass: "ts-control locale",
       dropdownClass: "dropdown-menu ts-dropdown locale-selector-dropdown",
