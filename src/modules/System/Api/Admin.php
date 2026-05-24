@@ -104,7 +104,11 @@ class Admin extends \Api_Abstract
      */
     public function cas_messages()
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_settings');
+        try {
+            $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_settings');
+        } catch (\Throwable) {
+            return [];
+        }
 
         return $this->getService()->getCasMessages();
     }

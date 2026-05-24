@@ -273,8 +273,6 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ext' => 'Parameter "ext" was not passed'])]
     public function config_save($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
-
         return $this->getService()->setConfig($data);
     }
 

@@ -133,7 +133,7 @@
                                     <label class="form-label" for="country">{{ 'Country'|trans }}</label>
                                     <select class="form-select" id="country" name="country" {% if "country" in required %} required {% endif %}>
                                         <option value="">{{ '-- Select Country --'|trans }}</option>
-                                        {% for val,label in country_names() %}
+                                        {% for val,label in guest.system_countries %}
                                             <option value="{{ val }}" label="{{ label|e }}"
                                                     {% if val == profile.country %}selected="selected"{% endif %}>{{ label|e }}</option>
                                         {% endfor %}

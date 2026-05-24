@@ -175,7 +175,7 @@
                                         <select class="form-select form-select-sm" name="country" id="country"
                                                 required="required">
                                             <option value="">{{ '-- Select Country --'|trans }}</option>
-                                            {% for val,label in country_names() %}
+                                            {% for val,label in guest.system_countries %}
                                                 <option value="{{ val }}" label="{{ label|e }}" {% if request.country|default('') == val %}selected{% endif %}>{{ label|e }}</option>
                                             {% endfor %}
                                         </select>

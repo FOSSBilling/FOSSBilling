@@ -169,6 +169,32 @@ final class AdminTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
+    public function testCasMessagesReturnsEmptyListWithoutManageSettingsPermission(): void
+    {
+        $serviceMock = $this->createMock(\Box\Mod\System\Service::class);
+        $serviceMock->expects($this->never())
+            ->method('getCasMessages');
+
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->once())
+            ->method('checkPermissionsAndThrowException')
+            ->with('system', 'manage_settings')
+            ->willThrowException(new \FOSSBilling\InformationException('You do not have permission to perform this action', [], 403));
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {
+            if ($serviceName == 'Staff') {
+                return $staffServiceMock;
+            }
+
+            return false;
+        });
+        $this->api->setDi($di);
+        $this->api->setService($serviceMock);
+
+        $this->assertSame([], $this->api->cas_messages());
+    }
+
     public function testTemplateExists(): void
     {
         $data = [

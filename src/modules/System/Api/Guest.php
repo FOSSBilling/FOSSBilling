@@ -19,6 +19,7 @@ namespace Box\Mod\System\Api;
 use FOSSBilling\i18n;
 use FOSSBilling\Validation\Api\RequiredParams;
 use PrinsFrank\Standards\CountryCallingCode\CountryCallingCode;
+use Symfony\Component\Intl\Countries;
 
 class Guest extends \Api_Abstract
 {
@@ -59,6 +60,40 @@ class Guest extends \Api_Abstract
         $cfg = $mod->getConfig();
 
         return $cfg['default_country'] ?? null;
+    }
+
+    /**
+     * Return countries enabled in System settings.
+     *
+     * @return array<string, string>
+     */
+    public function countries(): array
+    {
+        $mod = $this->di['mod']('system');
+        $cfg = $mod->getConfig();
+        $configuredCountries = trim((string) ($cfg['countries'] ?? ''));
+
+        if ($configuredCountries === '') {
+            return Countries::getNames();
+        }
+
+        $countries = [];
+        foreach (preg_split('/\R/', $configuredCountries) as $line) {
+            $parts = explode('=', trim($line), 2);
+            if (count($parts) !== 2) {
+                continue;
+            }
+
+            $code = strtoupper(trim($parts[0]));
+            $name = trim($parts[1]);
+            if ($code === '' || $name === '' || !Countries::exists($code)) {
+                continue;
+            }
+
+            $countries[$code] = $name;
+        }
+
+        return $countries;
     }
 
     /**
