@@ -16,6 +16,8 @@ class Admin extends \Api_Abstract
 {
     public function get_config($data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('antispam', 'view');
+
         $config = $this->di['mod_config']('Antispam');
 
         return [
@@ -76,6 +78,8 @@ class Admin extends \Api_Abstract
 
     public function block_ip($data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('antispam', 'manage');
+
         $ip = $this->normalizeIp($data['ip'] ?? null);
 
         $config = $this->di['mod_config']('Antispam');
@@ -97,6 +101,8 @@ class Admin extends \Api_Abstract
 
     public function unblock_ip($data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('antispam', 'manage');
+
         $ip = $this->normalizeIp($data['ip'] ?? null);
 
         $config = $this->di['mod_config']('Antispam');
@@ -115,6 +121,8 @@ class Admin extends \Api_Abstract
 
     public function get_blocked_ips($data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('antispam', 'view');
+
         $config = $this->di['mod_config']('Antispam');
         $blocked_ips = $this->getBlockedIpsFromConfig($config);
 

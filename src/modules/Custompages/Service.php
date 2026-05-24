@@ -23,6 +23,22 @@ class Service
         $this->di = $di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View custom pages'),
+                'description' => __trans('Allows the staff member to view custom pages.'),
+            ],
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage custom pages'),
+                'description' => __trans('Allows the staff member to create, update, and delete custom pages.'),
+            ],
+        ];
+    }
+
     public function install(): bool
     {
         $sql = '

@@ -30,6 +30,22 @@ class Service
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View cron information'),
+                'description' => __trans('Allows the staff member to view cron job information.'),
+            ],
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Run cron jobs'),
+                'description' => __trans('Allows the staff member to manually execute cron jobs.'),
+            ],
+        ];
+    }
+
     public function getCronInfo(): array
     {
         $service = $this->di['mod_service']('system');

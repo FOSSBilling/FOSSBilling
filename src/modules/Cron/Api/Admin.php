@@ -26,6 +26,8 @@ class Admin extends \Api_Abstract
      */
     public function info($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('cron', 'view');
+
         return $this->getService()->getCronInfo();
     }
 
@@ -36,6 +38,8 @@ class Admin extends \Api_Abstract
      */
     public function run($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('cron', 'manage');
+
         return $this->getService()->runCrons();
     }
 }

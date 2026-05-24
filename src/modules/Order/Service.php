@@ -31,6 +31,27 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View orders'),
+                'description' => __trans('Allows the staff member to view orders and order details.'),
+            ],
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage orders'),
+                'description' => __trans('Allows the staff member to create, update, delete, and change order statuses.'),
+            ],
+            'export' => [
+                'type' => 'bool',
+                'display_name' => __trans('Export orders'),
+                'description' => __trans('Allows the staff member to export order data as CSV.'),
+            ],
+        ];
+    }
+
     public function counter(): array
     {
         $sql = '

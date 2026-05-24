@@ -43,6 +43,32 @@ class Service implements InjectionAwareInterface
     /**
      * @return mixed[]
      */
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View products'),
+                'description' => __trans('Allows the staff member to view products, categories, and promotions.'),
+            ],
+            'manage_products' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage products'),
+                'description' => __trans('Allows the staff member to create, update, and delete products.'),
+            ],
+            'manage_categories' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage product categories'),
+                'description' => __trans('Allows the staff member to create, update, and delete product categories.'),
+            ],
+            'manage_promos' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage promotions'),
+                'description' => __trans('Allows the staff member to create, update, and delete promotional codes.'),
+            ],
+        ];
+    }
+
     public function getPairs($data): array
     {
         $sql = 'SELECT id, title

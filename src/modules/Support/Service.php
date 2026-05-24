@@ -29,6 +29,37 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View support tickets'),
+                'description' => __trans('Allows the staff member to view tickets, inquiries, helpdesks, canned responses, and knowledge base articles.'),
+            ],
+            'manage_tickets' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage tickets'),
+                'description' => __trans('Allows the staff member to create, update, reply to, close, and delete tickets and inquiries.'),
+            ],
+            'manage_helpdesk' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage helpdesks'),
+                'description' => __trans('Allows the staff member to create, update, and delete helpdesks.'),
+            ],
+            'manage_canned' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage canned responses'),
+                'description' => __trans('Allows the staff member to create, update, and delete canned responses and categories.'),
+            ],
+            'manage_kb' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage knowledge base'),
+                'description' => __trans('Allows the staff member to create, update, and delete knowledge base articles and categories.'),
+            ],
+        ];
+    }
+
     public static function onAfterClientOpenTicket(\Box_Event $event): void
     {
         $di = $event->getDi();

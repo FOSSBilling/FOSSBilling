@@ -53,6 +53,22 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View themes'),
+                'description' => __trans('Allows the staff member to view available themes and their configuration.'),
+            ],
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage themes'),
+                'description' => __trans('Allows the staff member to select themes and manage presets.'),
+            ],
+        ];
+    }
+
     public function __construct()
     {
         $this->filesystem = new Filesystem();

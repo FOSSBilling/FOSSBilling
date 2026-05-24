@@ -29,6 +29,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function upload($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicedownloadable', 'manage');
+
         $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
 
         $request = $this->di['request'];
@@ -53,6 +55,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['order_id' => 'Order ID (order_id) was not passed'])]
     public function update($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicedownloadable', 'manage');
+
         $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
 
         $orderService = $this->di['mod_service']('order');
@@ -73,6 +77,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function config_save($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicedownloadable', 'manage');
+
         $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
 
         $service = $this->getService();
@@ -92,6 +98,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function send_file($data): Response
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicedownloadable', 'manage');
+
         $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
 
         $service = $this->getService();
