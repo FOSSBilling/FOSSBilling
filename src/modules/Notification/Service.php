@@ -34,6 +34,22 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View notifications'),
+                'description' => __trans('Allows the staff member to view notifications.'),
+            ],
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage notifications'),
+                'description' => __trans('Allows the staff member to add and delete notifications.'),
+            ],
+        ];
+    }
+
     public function getExtensionMetaRepository(): ExtensionMetaRepository
     {
         if ($this->extensionMetaRepository === null) {

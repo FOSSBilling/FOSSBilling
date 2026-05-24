@@ -28,6 +28,17 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View statistics'),
+                'description' => __trans('Allows the staff member to view system statistics and charts.'),
+            ],
+        ];
+    }
+
     public function getSummary(): array
     {
         $stats = [];

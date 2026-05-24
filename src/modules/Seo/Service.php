@@ -30,6 +30,22 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View SEO information'),
+                'description' => __trans('Allows the staff member to view SEO status.'),
+            ],
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage SEO'),
+                'description' => __trans('Allows the staff member to ping search engines.'),
+            ],
+        ];
+    }
+
     public function pingSitemap($config, $forced = false): bool
     {
         $systemService = $this->di['mod_service']('system');

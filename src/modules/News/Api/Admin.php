@@ -27,6 +27,8 @@ class Admin extends \Api_Abstract
      */
     public function get_list(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('news', 'view');
+
         /** @var \Box\Mod\News\Repository\PostRepository $repo */
         $repo = $this->getService()->getPostRepository();
 
@@ -45,6 +47,8 @@ class Admin extends \Api_Abstract
      */
     public function get(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('news', 'view');
+
         $id = $data['id'] ?? null;
         $slug = $data['slug'] ?? null;
 
@@ -80,6 +84,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Post ID was not passed'])]
     public function update(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('news', 'manage');
+
         /** @var \Box\Mod\News\Repository\PostRepository $repo */
         $repo = $this->getService()->getPostRepository();
 
@@ -125,6 +131,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['title' => 'Post title was not passed'])]
     public function create(array $data): int
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('news', 'manage');
+
         $post = new Post($data['title'], $this->di['tools']->slug($data['title']));
 
         $post->setAdminId($this->getIdentity()->id)
@@ -146,6 +154,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Post ID was not passed'])]
     public function delete(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('news', 'manage');
+
         /** @var \Box\Mod\News\Repository\PostRepository $repo */
         $repo = $this->getService()->getPostRepository();
 
@@ -169,6 +179,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('news', 'manage');
+
         /** @var \Box\Mod\News\Repository\PostRepository $repo */
         $repo = $this->getService()->getPostRepository();
 
