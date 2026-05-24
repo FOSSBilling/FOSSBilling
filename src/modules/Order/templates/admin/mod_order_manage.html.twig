@@ -28,17 +28,11 @@
 {% endif %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <div>
-            <h3 class="card-title">{{ order.title }}</h3>
-            <p class="card-subtitle">{{ 'Review order details, manage billing configuration, and inspect related service activity.'|trans }}</p>
-        </div>
-    </div>
-    <div class="card-body pt-3 pb-0 px-0">
-        <div class="card border-0 shadow-none rounded-0">
-            <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                <ul class="nav nav-pills card-header-pills" role="tablist">
+{% embed 'partial_admin_detail_tabs.html.twig' with {
+    title: order.title,
+    subtitle: 'Review order details, manage billing configuration, and inspect related service activity.'|trans
+} %}
+    {% block detail_tabs %}
                     <li class="nav-item" role="presentation">
                         <a class="nav-link active" href="#tab-info" data-bs-toggle="tab" role="tab">{{ 'Details'|trans }}</a>
                     </li>
@@ -67,10 +61,10 @@
                     <li class="nav-item" role="presentation">
                         <a class="nav-link" href="#tab-support" data-bs-toggle="tab" role="tab">{{ 'Support'|trans }}</a>
                     </li>
-                </ul>
-            </div>
+    {% endblock %}
 
-    <div class="tab-content border-top">
+    {% block detail_tab_content %}
+        {% import 'macro_functions.html.twig' as mf %}
         <div class="tab-pane fade show active" id="tab-info" role="tabpanel">
             <div class="card-body">
                 {% embed 'partial_admin_summary_card.html.twig' with {
@@ -444,42 +438,46 @@
         </div>
 
         <div class="tab-pane fade" id="tab-addons" role="tabpanel">
-            <div class="card-body pb-3">
-                <h3 class="card-title mb-1">{{ 'Order Addons'|trans }}</h3>
-                <p class="text-secondary mb-0">{{ 'Review additional products and services attached to this order and open them directly when needed.'|trans }}</p>
-            </div>
-            <div class="table-responsive">
-                <table class="table card-table table-vcenter table-striped text-nowrap">
-                    <thead>
-                        <tr>
-                            <th>{{ 'Product/Service'|trans }}</th>
-                            <th>{{ 'Billing Cycle'|trans }}</th>
-                            <th>{{ 'Price'|trans }}</th>
-                            <th>{{ 'Next Due Date'|trans }}</th>
-                            <th>{{ 'Status'|trans }}</th>
-                            <th class="w-1"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for i, addon in addons %}
-                        <tr>
-                            <td>{{ addon.title }}</td>
-                            <td>{{ addon.period|period_title }}</td>
-                            <td>{{ addon.total|format_currency(addon.currency ?? default_currency) }}</td>
-                            <td>{% if addon.expires_at %}{{ addon.expires_at|format_date }}{% else %}-{% endif %}</td>
-                            <td>{{ mf.status_badge(addon.status, 'order') }}</td>
-                            <td>
-                                <a class="btn btn-icon" href='{{ "order/manage/#{addon.id}"|url }}'>
-                                    <svg class="icon">
-                                        <use xlink:href="#edit" />
-                                    </svg>
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Order Addons'|trans,
+                subtitle: 'Review additional products and services attached to this order and open them directly when needed.'|trans,
+                card_class: 'm-3'
+            } %}
+                {% block section_content %}
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th>{{ 'Product/Service'|trans }}</th>
+                                    <th>{{ 'Billing Cycle'|trans }}</th>
+                                    <th>{{ 'Price'|trans }}</th>
+                                    <th>{{ 'Next Due Date'|trans }}</th>
+                                    <th>{{ 'Status'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for i, addon in addons %}
+                                <tr>
+                                    <td>{{ addon.title }}</td>
+                                    <td>{{ addon.period|period_title }}</td>
+                                    <td>{{ addon.total|format_currency(addon.currency ?? default_currency) }}</td>
+                                    <td>{% if addon.expires_at %}{{ addon.expires_at|format_date }}{% else %}-{% endif %}</td>
+                                    <td>{{ mf.status_badge(addon.status, 'order') }}</td>
+                                    <td>
+                                        <a class="btn btn-icon" href='{{ "order/manage/#{addon.id}"|url }}'>
+                                            <svg class="icon">
+                                                <use xlink:href="#edit" />
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endblock %}
+            {% endembed %}
         </div>
 
         <div class="tab-pane fade" id="tab-service" role="tabpanel">
@@ -494,140 +492,146 @@
         </div>
 
         <div class="tab-pane fade" id="tab-invoices" role="tabpanel">
-            <div class="card-body pb-3">
-                <h3 class="card-title mb-1">{{ 'Order Invoices'|trans }}</h3>
-                <p class="text-secondary mb-0">{{ 'Review invoices generated for this order and open any invoice details directly from here.'|trans }}</p>
-            </div>
-            <div class="table-responsive">
-                <table class="table card-table table-vcenter table-striped text-nowrap">
-                    <thead>
-                        <tr>
-                            <th>{{ 'ID'|trans }}</th>
-                            <th>{{ 'Amount'|trans }}</th>
-                            <th>{{ 'Issued At'|trans }}</th>
-                            <th>{{ 'Paid At'|trans }}</th>
-                            <th>{{ 'Status'|trans }}</th>
-                            <th class="w-1"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% set invoices = admin.invoice_get_list({ 'per_page': 50, 'order_id': order.id }) %}
-                        {% for invoice in invoices.list %}
-                        <tr>
-                            <td><a href='{{ "invoice/manage/#{invoice.id}"|url }}'>#{{ invoice.id }}</a></td>
-                            <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
-                            <td>{{ invoice.created_at|format_date }}</td>
-                            <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
-                            <td>{{ mf.status_badge(invoice.status, 'invoice') }}</td>
-                            <td>
-                                <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
-                                    <svg class="icon">
-                                        <use xlink:href="#edit" />
-                                    </svg>
-                                </a>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Order Invoices'|trans,
+                subtitle: 'Review invoices generated for this order and open any invoice details directly from here.'|trans,
+                card_class: 'm-3'
+            } %}
+                {% block section_content %}
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th>{{ 'ID'|trans }}</th>
+                                    <th>{{ 'Amount'|trans }}</th>
+                                    <th>{{ 'Issued At'|trans }}</th>
+                                    <th>{{ 'Paid At'|trans }}</th>
+                                    <th>{{ 'Status'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set invoices = admin.invoice_get_list({ 'per_page': 50, 'order_id': order.id }) %}
+                                {% for invoice in invoices.list %}
+                                <tr>
+                                    <td><a href='{{ "invoice/manage/#{invoice.id}"|url }}'>#{{ invoice.id }}</a></td>
+                                    <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
+                                    <td>{{ invoice.created_at|format_date }}</td>
+                                    <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
+                                    <td>{{ mf.status_badge(invoice.status, 'invoice') }}</td>
+                                    <td>
+                                        <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
+                                            <svg class="icon">
+                                                <use xlink:href="#edit" />
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endblock %}
+            {% endembed %}
         </div>
 
         <div class="tab-pane fade" id="tab-status" role="tabpanel">
-            <div class="card-body pb-3">
-                <h3 class="card-title mb-1">{{ 'Order History'|trans }}</h3>
-                <p class="text-secondary mb-0">{{ 'Track status changes and internal notes recorded against this order over time.'|trans }}</p>
-            </div>
-            <div class="table-responsive">
-                <table class="table card-table table-vcenter table-striped text-nowrap">
-                    <thead>
-                        <tr>
-                            <th class="w-1">{{ 'Date'|trans }}</th>
-                            <th>{{ 'Status'|trans }}</th>
-                            <th>{{ 'Note'|trans }}</th>
-                            <th class="w-1"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% set statuses = admin.order_status_history_get_list({ 'per_page': 50, 'id': order.id }) %}
-                        {% for i, sh in statuses.list %}
-                        <tr>
-                            <td class="d-none d-lg-table-cell">{{ sh.created_at|format_datetime }}</td>
-                            <td class="d-lg-none">{{ sh.created_at|format_datetime(pattern="MM/DD/YY MM:HH") }}</td>
-                            <td>
-                                {% set class = 'bg-secondary' %}
-
-                                {{ mf.status_badge(sh.status, 'order') }}
-                            </td>
-                            <td class="text-wrap">{{ sh.notes }}</td>
-                            <td>
-                                <a class="btn btn-icon"
-                                    {{ fb_api_link({href: 'order/status_history_delete'|api_url(query: {'id': sh.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'order'|url}) }}>
-                                    <svg class="icon">
-                                        <use xlink:href="#delete" />
-                                    </svg>
-                                </a>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Order History'|trans,
+                subtitle: 'Track status changes and internal notes recorded against this order over time.'|trans,
+                card_class: 'm-3'
+            } %}
+                {% block section_content %}
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th class="w-1">{{ 'Date'|trans }}</th>
+                                    <th>{{ 'Status'|trans }}</th>
+                                    <th>{{ 'Note'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set statuses = admin.order_status_history_get_list({ 'per_page': 50, 'id': order.id }) %}
+                                {% for i, sh in statuses.list %}
+                                <tr>
+                                    <td class="d-none d-lg-table-cell">{{ sh.created_at|format_datetime }}</td>
+                                    <td class="d-lg-none">{{ sh.created_at|format_datetime(pattern="MM/DD/YY MM:HH") }}</td>
+                                    <td>{{ mf.status_badge(sh.status, 'order') }}</td>
+                                    <td class="text-wrap">{{ sh.notes }}</td>
+                                    <td>
+                                        <a class="btn btn-icon"
+                                            {{ fb_api_link({href: 'order/status_history_delete'|api_url(query: {'id': sh.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'order'|url}) }}>
+                                            <svg class="icon">
+                                                <use xlink:href="#delete" />
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endblock %}
+            {% endembed %}
         </div>
 
         <div class="tab-pane fade" id="tab-support" role="tabpanel">
-            <div class="card-body pb-3">
-                <h3 class="card-title mb-1">{{ 'Order Support Tickets'|trans }}</h3>
-                <p class="text-secondary mb-0">{{ 'Review support conversations linked to this order and open the relevant ticket details.'|trans }}</p>
-            </div>
-            <div class="table-responsive">
-                <table class="table card-table table-vcenter table-striped text-nowrap">
-                    <thead>
-                        <tr>
-                            <th class="w-1">#</th>
-                            <th>{{ 'Help desk'|trans }}</th>
-                            <th>{{ 'Subject'|trans }}</th>
-                            <th>{{ 'Status'|trans }}</th>
-                            <th class="w-1"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% set tickets = admin.support_ticket_get_list({ 'per_page': 20, 'order_id': order.id, 'deep': 0, 'include_first': 0 }) %}
-                        {% for ticket in tickets.list %}
-                        <tr>
-                            <td>{{ ticket.id }}</td>
-                            <td>{{ ticket.helpdesk.name }}</td>
-                            <td>
-                                <a href='{{ "support/ticket/#{ticket.id}"|url }}'>{{ ticket.subject|truncate(30) }}</a>
-                            </td>
-                            <td>{{ mf.status_badge(ticket.status, 'ticket') }}</td>
-                            <td>
-                                <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}'>
-                                    <svg class="icon">
-                                        <use xlink:href="#edit" />
-                                    </svg>
-                                </a>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Order Support Tickets'|trans,
+                subtitle: 'Review support conversations linked to this order and open the relevant ticket details.'|trans,
+                card_class: 'm-3'
+            } %}
+                {% block section_content %}
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th class="w-1">#</th>
+                                    <th>{{ 'Help desk'|trans }}</th>
+                                    <th>{{ 'Subject'|trans }}</th>
+                                    <th>{{ 'Status'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set tickets = admin.support_ticket_get_list({ 'per_page': 20, 'order_id': order.id, 'deep': 0, 'include_first': 0 }) %}
+                                {% for ticket in tickets.list %}
+                                <tr>
+                                    <td>{{ ticket.id }}</td>
+                                    <td>{{ ticket.helpdesk.name }}</td>
+                                    <td>
+                                        <a href='{{ "support/ticket/#{ticket.id}"|url }}'>{{ ticket.subject|truncate(30) }}</a>
+                                    </td>
+                                    <td>{{ mf.status_badge(ticket.status, 'ticket') }}</td>
+                                    <td>
+                                        <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}'>
+                                            <svg class="icon">
+                                                <use xlink:href="#edit" />
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endblock %}
+            {% endembed %}
         </div>
-    </div>
-        </div>
-    </div>
-</div>
+    {% endblock %}
+{% endembed %}
 {% endblock %}

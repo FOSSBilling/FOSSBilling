@@ -23,17 +23,12 @@
 {% endblock %}
 
 {% block content %}
-<div class="card mb-3">
-    <div class="card-header">
-        <div>
-            <h3 class="card-title">{{ 'Invoice'|trans }} {{ invoice.serie }}{{ "%05s"|format(invoice.nr) }}</h3>
-            <p class="card-subtitle">{{ 'Review billing details, update invoice content, and adjust stored purchase records.'|trans }}</p>
-        </div>
-    </div>
-    <div class="card-body pt-3 pb-0 px-0">
-        <div class="card border-0 shadow-none rounded-0">
-            <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                <ul class="nav nav-pills card-header-pills" role="tablist">
+{% embed 'partial_admin_detail_tabs.html.twig' with {
+    title: 'Invoice'|trans ~ ' ' ~ invoice.serie ~ ("%05s"|format(invoice.nr)),
+    subtitle: 'Review billing details, update invoice content, and adjust stored purchase records.'|trans,
+    outer_card_class: 'mb-3'
+} %}
+    {% block detail_tabs %}
                     <li class="nav-item" role="presentation">
                         <a class="nav-link active" href="#tab-info" data-bs-toggle="tab" role="tab">{{ 'Details'|trans }}</a>
                     </li>
@@ -49,10 +44,10 @@
                     <li class="nav-item" role="presentation">
                         <a class="nav-link" href="#tab-seller-credentials" data-bs-toggle="tab" role="tab">{{ 'Company Credentials'|trans }}</a>
                     </li>
-                </ul>
-            </div>
+    {% endblock %}
 
-        <div class="tab-content border-top">
+    {% block detail_tab_content %}
+        {% import 'macro_functions.html.twig' as mf %}
         <div class="tab-pane fade show active" id="tab-info" role="tabpanel">
             <div class="px-3 py-3 d-flex flex-column gap-3">
                 {% embed 'partial_admin_summary_card.html.twig' with {
@@ -196,11 +191,12 @@
                 {% endblock %}
             {% endembed %}
 
-            <div class="card mb-3">
-                <div class="card-body pb-3">
-                    <h5 class="card-title mb-1">{{ 'Invoice Items'|trans }}</h5>
-                    <p class="text-secondary mb-0">{{ 'Review line items, pricing, taxation, and approval-ready billing content for this invoice.'|trans }}</p>
-                </div>
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Invoice Items'|trans,
+                subtitle: 'Review line items, pricing, taxation, and approval-ready billing content for this invoice.'|trans,
+                card_class: 'mb-3'
+            } %}
+                {% block section_content %}
                 {% if not invoice.approved %}
                 <form method="post" action="{{ 'invoice/update'|api_url }}" {{ fb_api_form({reload: true}) }}>
                     <table class="table card-table table-vcenter table-striped text-nowrap">
@@ -337,16 +333,17 @@
                     </tfoot>
                 </table>
                 {% endif %}
-            </div>
+                {% endblock %}
+            {% endembed %}
 
             {% set transactions = admin.invoice_transaction_get_list({ 'invoice_id': invoice.id, 'per_page': 100 }).list %}
             {% if transactions|length > 0 %}
-            <div class="card overflow-auto">
-                <div class="card-body pb-3">
-                    <h5 class="card-title mb-1">{{ 'Transactions'|trans }}</h5>
-                    <p class="text-secondary mb-0">{{ 'Inspect payment attempts and gateway callbacks linked to this invoice.'|trans }}</p>
-                </div>
-
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Transactions'|trans,
+                subtitle: 'Inspect payment attempts and gateway callbacks linked to this invoice.'|trans,
+                card_class: 'overflow-auto'
+            } %}
+                {% block section_content %}
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <thead>
                         <tr>
@@ -380,7 +377,8 @@
                         {% endfor %}
                     </tbody>
                 </table>
-            </div>
+                {% endblock %}
+            {% endembed %}
             {% endif %}
         </div>
         </div>
@@ -668,8 +666,8 @@
             </div>
         </div>
     </div>
-        </div>
-    </div>
+    {% endblock %}
+{% endembed %}
 {% endblock %}
 
 {% block sidebar2 %}

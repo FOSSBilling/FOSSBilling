@@ -30,17 +30,11 @@
 {% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <div>
-            <h3 class="card-title">{{ client.first_name }} {{ client.last_name }}</h3>
-            <p class="card-subtitle">{{ 'Manage the client profile, billing records, support history, and account activity.'|trans }}</p>
-        </div>
-    </div>
-    <div class="card-body pt-3 pb-0 px-0">
-        <div class="card border-0 shadow-none rounded-0">
-            <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
-                <ul class="nav nav-pills card-header-pills" role="tablist">
+{% embed 'partial_admin_detail_tabs.html.twig' with {
+    title: client.first_name ~ ' ' ~ client.last_name,
+    subtitle: 'Manage the client profile, billing records, support history, and account activity.'|trans
+} %}
+    {% block detail_tabs %}
                     <li class="nav-item" role="presentation">
                         <a class="nav-link active" href="#tab-info" data-bs-toggle="tab" role="tab">{{ 'Profile'|trans }}</a>
                     </li>
@@ -76,9 +70,10 @@
                     <li class="nav-item" role="presentation">
                         <a class="nav-link" href="#tab-transactions" data-bs-toggle="tab" role="tab">{{ 'Transactions'|trans }}</a>
                     </li>
-                </ul>
-        </div>
-    <div class="tab-content border-top">
+    {% endblock %}
+
+    {% block detail_tab_content %}
+        {% import 'macro_functions.html.twig' as mf %}
         <div class="tab-pane fade show active" id="tab-info" role="tabpanel" aria-labelledby="index-tab">
             <div class="card-body position-relative">
                 {% embed 'partial_admin_summary_card.html.twig' with {
@@ -122,7 +117,7 @@
                                     </tr>
                                     <tr>
                                         <td class="text-end">{{ 'Currency'|trans }}:</td>
-                                        <td>{{ client.currency ? (client.currency|currency_symbol) : '-' }}</td>
+                                        <td>{{ client.currency ? (client.currency|currency_name) : '-' }}</td>
                                     </tr>
                                     <tr>
                                         <td class="text-end">{{ 'Balance'|trans }}:</td>
@@ -478,246 +473,257 @@
         {% endif %}
 
         <div class="tab-pane fade" id="tab-orders" role="tabpanel">
-            <div class="card-body d-flex flex-wrap justify-content-between align-items-start gap-3">
-                <div>
-                    <h3 class="card-title mb-1">{{ 'Client Orders'|trans }}</h3>
-                    <p class="text-secondary mb-0">{{ 'Review the client’s active and historical orders, or create a new order directly for this client.'|trans }}</p>
-                </div>
-                <a href="{{ 'order'|url(query: { 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
-                    <svg class="icon">
-                        <use xlink:href="#plus" />
-                    </svg>
-                    {{ 'New Order'|trans }}
-                </a>
-            </div>
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Client Orders'|trans,
+                subtitle: 'Review the client’s active and historical orders, or create a new order directly for this client.'|trans,
+                card_class: 'm-3'
+            } %}
+                {% block section_action %}
+                    <a href="{{ 'order'|url(query: { 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
+                        <svg class="icon">
+                            <use xlink:href="#plus" />
+                        </svg>
+                        {{ 'New Order'|trans }}
+                    </a>
+                {% endblock %}
 
-            <div class="table-responsive">
-                <table class="table card-table table-vcenter table-striped text-nowrap">
-                    <thead>
-                        <tr>
-                            <th class="w-1">#</th>
-                            <th>{{ 'Title'|trans }}</th>
-                            <th>{{ 'Amount'|trans }}</th>
-                            <th>{{ 'Period'|trans }}</th>
-                            <th>{{ 'Status'|trans }}</th>
-                            <th class="w-1"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% set orders = admin.order_get_list({ 'per_page': 20, 'client_id': client.id }) %}
-                        {% for order in orders.list %}
-                        <tr>
-                            <td>{{ order.id }}</td>
-                            <td>
-                                <a href='{{ "order/manage/#{order.id}"|url }}'>{{ order.title }}</a>
-                            </td>
-                            <td>{{ order.total|format_currency(order.currency ?? default_currency) }}</td>
-                            <td>{{ order.period|period_title }}</td>
-                            <td>{{ mf.status_badge(order.status, 'order') }}</td>
-                            <td>
-                                <a class="btn btn-icon" href='{{ "order/manage/#{order.id}"|url }}'>
-                                    <svg class="icon">
-                                        <use xlink:href="#settings" />
-                                    </svg>
-                                </a>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
+                {% block section_content %}
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th class="w-1">#</th>
+                                    <th>{{ 'Title'|trans }}</th>
+                                    <th>{{ 'Amount'|trans }}</th>
+                                    <th>{{ 'Period'|trans }}</th>
+                                    <th>{{ 'Status'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set orders = admin.order_get_list({ 'per_page': 20, 'client_id': client.id }) %}
+                                {% for order in orders.list %}
+                                <tr>
+                                    <td>{{ order.id }}</td>
+                                    <td>
+                                        <a href='{{ "order/manage/#{order.id}"|url }}'>{{ order.title }}</a>
+                                    </td>
+                                    <td>{{ order.total|format_currency(order.currency ?? default_currency) }}</td>
+                                    <td>{{ order.period|period_title }}</td>
+                                    <td>{{ mf.status_badge(order.status, 'order') }}</td>
+                                    <td>
+                                        <a class="btn btn-icon" href='{{ "order/manage/#{order.id}"|url }}'>
+                                            <svg class="icon">
+                                                <use xlink:href="#settings" />
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endblock %}
+            {% endembed %}
         </div>
 
         <div class="tab-pane fade" id="tab-invoice" role="tabpanel">
-            <div class="card-body d-flex flex-wrap justify-content-between align-items-start gap-3">
-                <div>
-                    <h3 class="card-title mb-1">{{ 'Client Invoices'|trans }}</h3>
-                    <p class="text-secondary mb-0">{{ 'Review invoices issued to this client or prepare a new invoice directly from the account view.'|trans }}</p>
-                </div>
-                <a href="{{ 'invoice'|url(query: { 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
-                    <svg class="icon">
-                        <use xlink:href="#plus" />
-                    </svg>
-                    {{ 'New Invoice'|trans }}
-                </a>
-            </div>
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Client Invoices'|trans,
+                subtitle: 'Review invoices issued to this client or prepare a new invoice directly from the account view.'|trans,
+                card_class: 'm-3'
+            } %}
+                {% block section_action %}
+                    <a href="{{ 'invoice'|url(query: { 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
+                        <svg class="icon">
+                            <use xlink:href="#plus" />
+                        </svg>
+                        {{ 'New Invoice'|trans }}
+                    </a>
+                {% endblock %}
 
-            <div class="table-responsive">
-                <table class="table card-table table-vcenter table-striped text-nowrap">
-                    <thead>
-                        <tr>
-                            <th class="w-1">#</th>
-                            <th>{{ 'Amount'|trans }}</th>
-                            <th>{{ 'Issued On'|trans }}</th>
-                            <th>{{ 'Paid On'|trans }}</th>
-                            <th>{{ 'Status'|trans }}</th>
-                            <th class="w-1"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% set invoices = admin.invoice_get_list({ 'per_page': 100, 'client_id': client.id }) %}
-                        {% for invoice in invoices.list %}
-                        <tr>
-                            <td>
-                                <a href='{{ "invoice/manage/#{invoice.id}"|url }}'>{{ invoice.serie_nr }}</a>
-                            </td>
-                            <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
-                            <td>{{ invoice.created_at|format_date }}</td>
-                            <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
-                            <td>{{ mf.status_badge(invoice.status, 'invoice') }}</td>
-                            <td>
-                                <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
-                                    <svg class="icon">
-                                        <use xlink:href="#edit" />
-                                    </svg>
-                                </a>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="6">{{ 'The list is empty'|trans }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-
-            </div>
+                {% block section_content %}
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th class="w-1">#</th>
+                                    <th>{{ 'Amount'|trans }}</th>
+                                    <th>{{ 'Issued On'|trans }}</th>
+                                    <th>{{ 'Paid On'|trans }}</th>
+                                    <th>{{ 'Status'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set invoices = admin.invoice_get_list({ 'per_page': 100, 'client_id': client.id }) %}
+                                {% for invoice in invoices.list %}
+                                <tr>
+                                    <td>
+                                        <a href='{{ "invoice/manage/#{invoice.id}"|url }}'>{{ invoice.serie_nr }}</a>
+                                    </td>
+                                    <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
+                                    <td>{{ invoice.created_at|format_date }}</td>
+                                    <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
+                                    <td>{{ mf.status_badge(invoice.status, 'invoice') }}</td>
+                                    <td>
+                                        <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
+                                            <svg class="icon">
+                                                <use xlink:href="#edit" />
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endblock %}
+            {% endembed %}
         </div>
 
         <div class="tab-pane fade" id="tab-support" role="tabpanel" aria-labelledby="support-tab">
-            <div class="card-body d-flex flex-wrap justify-content-between align-items-start gap-3">
-                <div>
-                    <h3 class="card-title mb-1">{{ 'Help Desk'|trans }}</h3>
-                    <p class="text-secondary mb-0">{{ 'Track the client’s support tickets and open a new ticket without leaving the client profile.'|trans }}</p>
-                </div>
-                <a href="{{ 'support'|url(query: { 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
-                    <svg class="icon">
-                        <use xlink:href="#plus" />
-                    </svg>
-                    {{ 'New Support Ticket'|trans }}
-                </a>
-            </div>
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Help Desk'|trans,
+                subtitle: 'Track the client’s support tickets and open a new ticket without leaving the client profile.'|trans,
+                card_class: 'm-3'
+            } %}
+                {% block section_action %}
+                    <a href="{{ 'support'|url(query: { 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
+                        <svg class="icon">
+                            <use xlink:href="#plus" />
+                        </svg>
+                        {{ 'New Support Ticket'|trans }}
+                    </a>
+                {% endblock %}
 
-            <div class="table-responsive">
-                <table class="table card-table table-vcenter table-striped text-nowrap">
-                    <thead>
-                        <tr>
-                            <th class="w-1">#</th>
-                            <th>{{ 'Help desk'|trans }}</th>
-                            <th>{{ 'Subject'|trans }}</th>
-                            <th>{{ 'Status'|trans }}</th>
-                            <th class="w-1"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% set tickets = admin.support_ticket_get_list({ 'per_page': 20, 'client_id': client.id, 'deep': 0, 'include_first': 0 }) %}
-                        {% for ticket in tickets.list %}
-                        <tr>
-                            <td>{{ ticket.id }}</td>
-                            <td>{{ ticket.helpdesk.name }}</td>
-                            <td>
-                                <a href='{{ "support/ticket/#{ticket.id}"|url }}'>{{ ticket.subject|truncate(30) }}</a>
-                            </td>
-                            <td>{{ mf.status_badge(ticket.status, 'ticket') }}</td>
-                            <td>
-                                <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}'>
-                                    <svg class="icon">
-                                        <use xlink:href="#edit" />
-                                    </svg>
-                                </a>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
+                {% block section_content %}
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th class="w-1">#</th>
+                                    <th>{{ 'Help desk'|trans }}</th>
+                                    <th>{{ 'Subject'|trans }}</th>
+                                    <th>{{ 'Status'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set tickets = admin.support_ticket_get_list({ 'per_page': 20, 'client_id': client.id, 'deep': 0, 'include_first': 0 }) %}
+                                {% for ticket in tickets.list %}
+                                <tr>
+                                    <td>{{ ticket.id }}</td>
+                                    <td>{{ ticket.helpdesk.name }}</td>
+                                    <td>
+                                        <a href='{{ "support/ticket/#{ticket.id}"|url }}'>{{ ticket.subject|truncate(30) }}</a>
+                                    </td>
+                                    <td>{{ mf.status_badge(ticket.status, 'ticket') }}</td>
+                                    <td>
+                                        <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}'>
+                                            <svg class="icon">
+                                                <use xlink:href="#edit" />
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endblock %}
+            {% endembed %}
         </div>
 
         {% if can_manage_balance %}
         <div class="tab-pane fade" id="tab-balance" role="tabpanel" aria-labelledby="balance-tab">
-            <div class="card-body">
-                <h3 class="card-title mb-1">{{ 'Client Payments History'|trans }}</h3>
-                <p class="text-secondary mb-0">{{ 'Review balance adjustments and record a manual credit for this client when needed.'|trans }}</p>
-            </div>
-
-            <div class="table-responsive">
-                <table class="table card-table table-vcenter table-striped text-nowrap">
-                    <thead>
-                        <tr>
-                            <th>{{ 'Amount'|trans }}</th>
-                            <th>{{ 'Description'|trans }}</th>
-                            <th>{{ 'Date'|trans }}</th>
-                            <th class="w-1"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% set payments = admin.client_balance_get_list({ 'per_page': 20, 'client_id': client.id }) %}
-                        {% for i, tx in payments.list %}
-                        <tr>
-                            <td>{{ tx.amount|format_currency(tx.currency ?? default_currency) }}</td>
-                            <td>{{ tx.description }}</td>
-                            <td>{{ tx.created_at|format_datetime }}</td>
-                            <td>
-                                <a class="btn btn-icon"
-                                    {{ fb_api_link({ href: 'client/balance_delete'|api_url(query: {id: tx.id }), modal: {type: 'confirm', title: 'Are you sure?'|trans} }) }}>
-                                    <svg class="icon">
-                                        <use xlink:href="#delete" />
-                                    </svg>
-                                </a>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <hr>
-
-            <div class="card-body">
-                <form method="post" action="{{ 'client/balance_add_funds'|api_url }}" class="card" {{ fb_api_form({ message: 'Funds Added'|trans}) }}>
-                    <div class="card-header">
-                        <div>
-                            <h5 class="card-title mb-1">{{ 'Add Funds for Client'|trans }}</h5>
-                            <p class="card-subtitle">{{ 'Record a manual balance credit on this client account.'|trans }}</p>
-                        </div>
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Client Payments History'|trans,
+                subtitle: 'Review balance adjustments and record a manual credit for this client when needed.'|trans,
+                card_class: 'm-3 mb-0'
+            } %}
+                {% block section_content %}
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th>{{ 'Amount'|trans }}</th>
+                                    <th>{{ 'Description'|trans }}</th>
+                                    <th>{{ 'Date'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set payments = admin.client_balance_get_list({ 'per_page': 20, 'client_id': client.id }) %}
+                                {% for i, tx in payments.list %}
+                                <tr>
+                                    <td>{{ tx.amount|format_currency(tx.currency ?? default_currency) }}</td>
+                                    <td>{{ tx.description }}</td>
+                                    <td>{{ tx.created_at|format_datetime }}</td>
+                                    <td>
+                                        <a class="btn btn-icon"
+                                            {{ fb_api_link({ href: 'client/balance_delete'|api_url(query: {id: tx.id }), modal: {type: 'confirm', title: 'Are you sure?'|trans} }) }}>
+                                            <svg class="icon">
+                                                <use xlink:href="#delete" />
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-xl-4">
-                                <label class="form-label" for="inputAmount">{{ 'Amount'|trans }}</label>
-                                <div class="input-group">
-                                    <input class="form-control" type="text" id="inputAmount" name="amount" required>
-                                    <span class="input-group-text">{{ client.currency|currency_symbol }}</span>
+                {% endblock %}
+            {% endembed %}
+
+            <div class="p-3 pt-0">
+                <form method="post" action="{{ 'client/balance_add_funds'|api_url }}" {{ fb_api_form({ message: 'Funds Added'|trans}) }}>
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Add Funds for Client'|trans,
+                        subtitle: 'Record a manual balance credit on this client account.'|trans
+                    } %}
+                        {% block form_content %}
+                            <div class="row g-3">
+                                <div class="col-xl-4">
+                                    <label class="form-label" for="inputAmount">{{ 'Amount'|trans }}</label>
+                                    <div class="input-group">
+                                        <input class="form-control" type="text" id="inputAmount" name="amount" required>
+                                        <span class="input-group-text">{{ client.currency|currency_symbol }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-xl-8">
+                                    <label class="form-label" for="inputDescription">{{ 'Description'|trans }}</label>
+                                    <input class="form-control" id="inputDescription" type="text" name="description" required>
                                 </div>
                             </div>
-                            <div class="col-xl-8">
-                                <label class="form-label" for="inputDescription">{{ 'Description'|trans }}</label>
-                                <input class="form-control" id="inputDescription" type="text" name="description" required>
-                            </div>
-                        </div>
-                        <input type="hidden" name="id" value="{{ client.id }}">
-                    </div>
-                    <div class="card-footer text-end">
-                        <button class="btn btn-primary" type="submit">
-                            <svg class="icon">
-                                <use xlink:href="#plus" />
-                            </svg>
-                            {{ 'Add Funds'|trans }}
-                        </button>
-                    </div>
+                            <input type="hidden" name="id" value="{{ client.id }}">
+                        {% endblock %}
+
+                        {% block form_actions %}
+                            <button class="btn btn-primary" type="submit">
+                                <svg class="icon">
+                                    <use xlink:href="#plus" />
+                                </svg>
+                                {{ 'Add Funds'|trans }}
+                            </button>
+                        {% endblock %}
+                    {% endembed %}
                 </form>
             </div>
         </div>
@@ -725,151 +731,161 @@
 
         {% if can_view_client_login_history %}
         <div class="tab-pane fade" id="tab-history" role="tabpanel" aria-labelledby="history-tab">
-            <div class="card-body">
-                <h3 class="card-title mb-1">{{ 'Login History'|trans }}</h3>
-                <p class="text-secondary mb-0">{{ 'See recent client login activity, including originating IP address and detected country.'|trans }}</p>
-            </div>
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Login History'|trans,
+                subtitle: 'See recent client login activity, including originating IP address and detected country.'|trans,
+                card_class: 'm-3'
+            } %}
+                {% block section_content %}
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th>{{ 'IP'|trans }}</th>
+                                    <th>{{ 'Country'|trans }}</th>
+                                    <th>{{ 'Date'|trans }}</th>
+                                </tr>
+                            </thead>
 
-            <div class="table-responsive">
-                <table class="table card-table table-vcenter table-striped text-nowrap">
-                    <thead>
-                        <tr>
-                            <th>{{ 'IP'|trans }}</th>
-                            <th>{{ 'Country'|trans }}</th>
-                            <th>{{ 'Date'|trans }}</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        {% set logins = admin.client_login_history_get_list({ 'per_page': 10, 'page': request.page, 'client_id': client.id }) %}
-                        {% for i, login in logins.list %}
-                        <tr>
-                            <td>{{ mf.ip_lookup_link(login.ip) }}</td>
-                            <td>{{ login.ip|ip_country_name|default('Unknown'|trans) }}</td>
-                            <td>{{ login.created_at|format_datetime }}</td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td class="text-muted" colspan="3">{{ 'The list is empty'|trans }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                            <tbody>
+                                {% set logins = admin.client_login_history_get_list({ 'per_page': 10, 'page': request.page, 'client_id': client.id }) %}
+                                {% for i, login in logins.list %}
+                                <tr>
+                                    <td>{{ mf.ip_lookup_link(login.ip) }}</td>
+                                    <td>{{ login.ip|ip_country_name|default('Unknown'|trans) }}</td>
+                                    <td>{{ login.created_at|format_datetime }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td class="text-muted" colspan="3">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endblock %}
+            {% endembed %}
         </div>
         {% endif %}
 
         {% if can_view_email_history %}
         <div class="tab-pane fade" id="tab-emails" role="tabpanel" aria-labelledby="emails-tab">
-            <div class="card-body">
-                <h3 class="card-title mb-1">{{ 'Emails Sent to Client'|trans }}</h3>
-                <p class="text-secondary mb-0">{{ 'Review outbound email history for this client and preview the rendered message content.'|trans }}</p>
-            </div>
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Emails Sent to Client'|trans,
+                subtitle: 'Review outbound email history for this client and preview the rendered message content.'|trans,
+                card_class: 'm-3'
+            } %}
+                {% block section_content %}
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th>{{ 'Email Subject'|trans }}</th>
+                                    <th>{{ 'To'|trans }}</th>
+                                    <th>{{ 'Date'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
 
-            <div class="table-responsive">
-                <table class="table card-table table-vcenter table-striped text-nowrap">
-                    <thead>
-                        <tr>
-                            <th>{{ 'Email Subject'|trans }}</th>
-                            <th>{{ 'To'|trans }}</th>
-                            <th>{{ 'Date'|trans }}</th>
-                            <th class="w-1"></th>
-                        </tr>
-                    </thead>
+                            <tbody>
+                                {% set emailsPerPage = request.per_page matches '/^\\d+$/' ? request.per_page : 25 %}
+                                {% set emailsPage = request.page matches '/^\\d+$/' ? request.page : 1 %}
+                                {% set emails = admin.email_email_get_list({ 'per_page': emailsPerPage, 'page': emailsPage, 'client_id': client.id }) %}
+                                {% for i, email in emails.list %}
+                                <tr>
+                                    <td>{{ email.subject }}</td>
+                                    <td>{{ email.recipients }}</td>
+                                    <td>{{ email.created_at|format_datetime }}</td>
+                                    <td>
+                                        <button class="btn btn-icon email-preview-btn"
+                                            data-email-subject="{{ email.subject }}"
+                                            data-email-content="{{ email.content_html|e('html_attr') }}"
+                                            title="{{ 'Preview'|trans }}">
+                                            <svg class="icon">
+                                                <use xlink:href="#eye" />
+                                            </svg>
+                                        </button>
+                                        <a class="btn btn-icon" href='{{ "email/#{email.id}"|url }}'>
+                                            <svg class="icon">
+                                                <use xlink:href="#edit"></use>
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endblock %}
 
-                    <tbody>
-                        {% set emailsPerPage = request.per_page matches '/^\\d+$/' ? request.per_page : 25 %}
-                        {% set emailsPage = request.page matches '/^\\d+$/' ? request.page : 1 %}
-                        {% set emails = admin.email_email_get_list({ 'per_page': emailsPerPage, 'page': emailsPage, 'client_id': client.id }) %}
-                        {% for i, email in emails.list %}
-                        <tr>
-                            <td>{{ email.subject }}</td>
-                            <td>{{ email.recipients }}</td>
-                            <td>{{ email.created_at|format_datetime }}</td>
-                            <td>
-                                <button class="btn btn-icon email-preview-btn"
-                                    data-email-subject="{{ email.subject }}"
-                                    data-email-content="{{ email.content_html|e('html_attr') }}"
-                                    title="{{ 'Preview'|trans }}">
-                                    <svg class="icon">
-                                        <use xlink:href="#eye" />
-                                    </svg>
-                                </button>
-                                <a class="btn btn-icon" href='{{ "email/#{email.id}"|url }}'>
-                                    <svg class="icon">
-                                        <use xlink:href="#edit"></use>
-                                    </svg>
-                                </a>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <div class="card-footer d-flex align-items-center">
-                {{ include('partial_pagination.html.twig', { 'list': emails, 'split_footer_controls': true }) }}
-            </div>
+                {% block section_footer %}
+                    <div class="d-flex align-items-center">
+                        {{ include('partial_pagination.html.twig', { 'list': emails, 'split_footer_controls': true }) }}
+                    </div>
+                {% endblock %}
+            {% endembed %}
         </div>
         {% endif %}
 
         <div class="tab-pane fade" id="tab-transactions" role="tabpanel" aria-labelledby="transactions-tab">
-            <div class="card-body">
-                <h3 class="card-title mb-1">{{ 'Transactions Received'|trans }}</h3>
-                <p class="text-secondary mb-0">{{ 'Review payment transactions recorded against this client across all gateways.'|trans }}</p>
-            </div>
-
-            {% set transactions = admin.invoice_transaction_get_list({ 'client_id': client.id, 'per_page': 100 }).list %}
-            <div class="table-responsive">
-                <table class="table card-table table-vcenter table-striped text-nowrap">
-                    <thead>
-                        <tr>
-                            <th>{{ 'ID'|trans }}</th>
-                            <th>{{ 'Type'|trans }}</th>
-                            <th>{{ 'Gateway'|trans }}</th>
-                            <th>{{ 'Amount'|trans }}</th>
-                            <th>{{ 'Status'|trans }}</th>
-                            <th>{{ 'Date'|trans }}</th>
-                            <th class="w-1"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {% for i, tx in transactions %}
-                        <tr>
-                            <td>{{ tx.txn_id }}</td>
-                            <td>{{ tx.type }}</td>
-                            <td>{{ tx.gateway }}</td>
-                            <td>{% if tx.amount %}
-                                    {{ tx.amount|format_currency(tx.currency ?? default_currency) }}
-                                {% else %}
-                                    -
-                                {% endif %}</td>
-                            <td>{{ mf.status_badge(tx.status, 'transaction') }}</td>
-                            <td>{{ tx.created_at|format_datetime }}</td>
-                            <td>
-                                <a class="btn btn-icon" href='{{ "invoice/transaction/#{tx.id}"|url }}'>
-                                    <svg class="icon">
-                                        <use xlink:href="#edit" />
-                                    </svg>
-                                </a>
-                            </td>
-                        </tr>
-                    {% else %}
-                        <tr>
-                            <td class="text-muted" colspan="7">{{ 'The list is empty'|trans }}</td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Transactions Received'|trans,
+                subtitle: 'Review payment transactions recorded against this client across all gateways.'|trans,
+                card_class: 'm-3'
+            } %}
+                {% block section_content %}
+                    {% set transactions = admin.invoice_transaction_get_list({ 'client_id': client.id, 'per_page': 100 }).list %}
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th>{{ 'ID'|trans }}</th>
+                                    <th>{{ 'Type'|trans }}</th>
+                                    <th>{{ 'Gateway'|trans }}</th>
+                                    <th>{{ 'Amount'|trans }}</th>
+                                    <th>{{ 'Status'|trans }}</th>
+                                    <th>{{ 'Date'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {% for i, tx in transactions %}
+                                <tr>
+                                    <td>{{ tx.txn_id }}</td>
+                                    <td>{{ tx.type }}</td>
+                                    <td>{{ tx.gateway }}</td>
+                                    <td>{% if tx.amount %}
+                                            {{ tx.amount|format_currency(tx.currency ?? default_currency) }}
+                                        {% else %}
+                                            -
+                                        {% endif %}</td>
+                                    <td>{{ mf.status_badge(tx.status, 'transaction') }}</td>
+                                    <td>{{ tx.created_at|format_datetime }}</td>
+                                    <td>
+                                        <a class="btn btn-icon" href='{{ "invoice/transaction/#{tx.id}"|url }}'>
+                                            <svg class="icon">
+                                                <use xlink:href="#edit" />
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td class="text-muted" colspan="7">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endblock %}
+            {% endembed %}
         </div>
-    </div>
-        </div>
-    </div>
-</div>
+    {% endblock %}
+{% endembed %}
 {% endblock %}
 
 {% block js%}
