@@ -51,100 +51,110 @@
     <div class="tab-content border-top">
         <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
             <div class="card-body">
-                <h5>{{ 'Transaction Details'|trans }} #{{transaction.id}}</h5>
-
-                {% if transaction.error %}
-                    <strong class="red">{{ transaction.error_code }} - {{ transaction.error }}</strong>
-                    <p>{{ 'If you are sure that this transaction is valid you can update transaction details in &quot;Manage&quot; tab and try processing transaction again'|trans }}</p>
-                {% endif%}
-
-                <table class="table card-table table-vcenter table-striped text-nowrap">
-                    <tbody>
-                        <tr>
-                            <td class="w-50 text-end">{{ 'ID'|trans }}</td>
-                            <td>{{ transaction.id }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-end">{{ 'Invoice ID'|trans }}</td>
-                            <td>
-                                <a href='{{ "invoice/manage/#{transaction.invoice_id}"|url }}'>{{ transaction.invoice_id|default('-') }}</a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="text-end">{{ 'Amount'|trans }}</td>
-                            <td>{{ transaction.amount|format_currency(transaction.currency ?? default_currency) }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-end">{{ 'Payment Gateway'|trans }}</td>
-                            <td>{{ transaction.gateway|default('-') }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-end">{{ 'Transaction ID on Payment Gateway'|trans }}</td>
-                            <td>{{ transaction.txn_id|default('-') }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-end">{{ 'Transaction Status on Payment Gateway'|trans }}</td>
-                            <td>{{ mf.status_badge(transaction.txn_status, 'gateway_tx') }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-end">{{ 'Status'|trans }}</td>
-                            <td>{{ mf.status_badge(transaction.status, 'transaction') }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-end">{{ 'IP'|trans }}</td>
-                            <td>{{ transaction.ip }} {{ transaction.ip|ip_country_name|default('Unknown') }}</td>
-                        </tr>
-                        {% if transaction.note %}
-                        <tr>
-                            <td class="text-end">{{ 'Note'|trans }}</td>
-                            <td>
-                                <svg class="icon">
-                                    <use xlink:href="#support" />
-                                </svg>
-                                <a href="#tab-note" data-bs-toggle="tab" role="button">{{ transaction.note }}</a>
-                            </td>
-                        </tr>
+                {% embed 'partial_admin_summary_card.html.twig' with {
+                    title: 'Transaction Details'|trans ~ ' #' ~ transaction.id,
+                    subtitle: 'Review the stored payment record, gateway response details, and current processing status.'|trans,
+                    centered_actions: true
+                } %}
+                    {% import 'macro_functions.html.twig' as mf %}
+                    {% block summary_content %}
+                        {% if transaction.error %}
+                            <div class="px-3 pt-3">
+                                <strong class="text-danger">{{ transaction.error_code }} - {{ transaction.error }}</strong>
+                                <p class="mb-0">{{ 'If you are sure that this transaction is valid you can update transaction details in &quot;Manage&quot; tab and try processing transaction again'|trans }}</p>
+                            </div>
                         {% endif %}
-                        <tr>
-                            <td class="text-end">{{ 'Received At'|trans }}</td>
-                            <td>{{ transaction.created_at|format_date }}</td>
-                        </tr>
-                        {% if transaction.created_at != transaction.updated_at %}
-                        <tr>
-                            <td class="text-end">{{ 'Updated At'|trans }}</td>
-                            <td>{{ transaction.updated_at|format_date }}</td>
-                        </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
+
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <tbody>
+                                <tr>
+                                    <td class="w-50 text-end">{{ 'ID'|trans }}</td>
+                                    <td>{{ transaction.id }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end">{{ 'Invoice ID'|trans }}</td>
+                                    <td>
+                                        <a href='{{ "invoice/manage/#{transaction.invoice_id}"|url }}'>{{ transaction.invoice_id|default('-') }}</a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end">{{ 'Amount'|trans }}</td>
+                                    <td>{{ transaction.amount|format_currency(transaction.currency ?? default_currency) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end">{{ 'Payment Gateway'|trans }}</td>
+                                    <td>{{ transaction.gateway|default('-') }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end">{{ 'Transaction ID on Payment Gateway'|trans }}</td>
+                                    <td>{{ transaction.txn_id|default('-') }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end">{{ 'Transaction Status on Payment Gateway'|trans }}</td>
+                                    <td>{{ mf.status_badge(transaction.txn_status, 'gateway_tx') }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end">{{ 'Status'|trans }}</td>
+                                    <td>{{ mf.status_badge(transaction.status, 'transaction') }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end">{{ 'IP'|trans }}</td>
+                                    <td>{{ transaction.ip }} {{ transaction.ip|ip_country_name|default('Unknown') }}</td>
+                                </tr>
+                                {% if transaction.note %}
+                                <tr>
+                                    <td class="text-end">{{ 'Note'|trans }}</td>
+                                    <td>
+                                        <svg class="icon">
+                                            <use xlink:href="#support" />
+                                        </svg>
+                                        <a href="#tab-note" data-bs-toggle="tab" role="button">{{ transaction.note }}</a>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <td class="text-end">{{ 'Received At'|trans }}</td>
+                                    <td>{{ transaction.created_at|format_date }}</td>
+                                </tr>
+                                {% if transaction.created_at != transaction.updated_at %}
+                                <tr>
+                                    <td class="text-end">{{ 'Updated At'|trans }}</td>
+                                    <td>{{ transaction.updated_at|format_date }}</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    {% endblock %}
+
+                    {% block summary_actions %}
+                        <a class="btn btn-primary" href="{{ 'invoice/transaction_process'|api_url(query: { 'id': transaction.id }) }}" {{ fb_api_link({reload: true}) }}>
+                            <svg class="icon" width="24" height="24">
+                                <use xlink:href="#refresh" />
+                            </svg>
+                            <span>{{ 'Process'|trans }}</span>
+                        </a>
+                        <a class="btn btn-danger" href="{{ 'invoice/transaction_delete'|api_url(query: { 'id': transaction.id }) }}"
+                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice/transactions'|url}) }}>
+                            <svg class="icon" width="24" height="24">
+                                <use xlink:href="#delete" />
+                            </svg>
+                            <span>{{ 'Delete'|trans }}</span>
+                        </a>
+                    {% endblock %}
+                {% endembed %}
             </div>
-
-            <div class="card-footer text-center">
-                <a class="btn btn-primary" href="{{ 'invoice/transaction_process'|api_url(query: { 'id': transaction.id }) }}" {{ fb_api_link({reload: true}) }}>
-                    <svg class="icon" width="24" height="24">
-                        <use xlink:href="#refresh" />
-                    </svg>
-                    <span>{{ 'Process'|trans }}</span>
-                </a>
-                <a class="btn btn-primary" href="{{ 'invoice/transaction_delete'|api_url(query: { 'id': transaction.id }) }}"
-                    {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice/transactions'|url}) }}>
-                    <svg class="icon" width="24" height="24">
-                        <use xlink:href="#delete" />
-                    </svg>
-                    <span>{{ 'Delete'|trans }}</span>
-                </a>
-                </div>
         </div>
 
         <div class="tab-pane fade" id="tab-manage" role="tabpanel">
             <div class="card-body">
                 <form method="post" action="{{ 'invoice/transaction_update'|api_url }}" {{ fb_api_form({reload: true}) }}>
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <div class="d-flex flex-column gap-1 mb-4">
-                                <h5 class="card-title mb-0">{{ 'Transaction Payment Information'|trans }}</h5>
-                                <p class="text-secondary mb-0">{{ 'Correct the linked invoice and stored payment amount for this transaction.'|trans }}</p>
-                            </div>
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Transaction Payment Information'|trans,
+                        subtitle: 'Correct the linked invoice and stored payment amount for this transaction.'|trans,
+                        card_class: 'mb-4'
+                    } %}
+                        {% import 'macro_functions.html.twig' as mf %}
+                        {% block form_content %}
                             <div class="row g-3">
                                 <div class="col-lg-4">
                                     <label class="form-label" for="transaction_invoice_id">{{ 'Invoice ID'|trans }}</label>
@@ -159,14 +169,15 @@
                                     <input class="form-control" id="transaction_currency" type="text" name="currency" value="{{ transaction.currency }}">
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <div class="d-flex flex-column gap-1 mb-4">
-                                <h5 class="card-title mb-0">{{ 'Transaction Processing Information'|trans }}</h5>
-                                <p class="text-secondary mb-0">{{ 'Define how this transaction should be processed and validated.'|trans }}</p>
-                            </div>
+                        {% endblock %}
+                    {% endembed %}
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Transaction Processing Information'|trans,
+                        subtitle: 'Define how this transaction should be processed and validated.'|trans,
+                        card_class: 'mb-4'
+                    } %}
+                        {% import 'macro_functions.html.twig' as mf %}
+                        {% block form_content %}
                             <div class="row g-3">
                                 <div class="col-xl-6">
                                     <label class="form-label">{{ 'Payment Gateway'|trans }}</label>
@@ -186,14 +197,15 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <div class="d-flex flex-column gap-1 mb-4">
-                                <h5 class="card-title mb-0">{{ 'Gateway Transaction Information'|trans }}</h5>
-                                <p class="text-secondary mb-0">{{ 'Keep the stored gateway-side transaction metadata accurate for reconciliation.'|trans }}</p>
-                            </div>
+                        {% endblock %}
+                    {% endembed %}
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Gateway Transaction Information'|trans,
+                        subtitle: 'Keep the stored gateway-side transaction metadata accurate for reconciliation.'|trans,
+                        card_class: 'mb-4'
+                    } %}
+                        {% import 'macro_functions.html.twig' as mf %}
+                        {% block form_content %}
                             <div class="row g-3">
                                 <div class="col-lg-4">
                                     <label class="form-label">{{ 'Transaction Type'|trans }}</label>
@@ -208,12 +220,13 @@
                                     <input class="form-control" id="transaction_txn_id" type="text" name="txn_id" value="{{ transaction.txn_id }}">
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                        {% endblock %}
+
+                        {% block form_actions %}
+                            <button class="btn btn-primary" type="submit">{{ 'Update Transaction'|trans }}</button>
+                        {% endblock %}
+                    {% endembed %}
                     <input type="hidden" name="id" value="{{ transaction.id }}">
-                    <div class="d-flex justify-content-end">
-                        <button class="btn btn-primary" type="submit">{{ 'Update Transaction'|trans }}</button>
-                    </div>
                 </form>
             </div>
         </div>
@@ -221,19 +234,20 @@
         <div class="tab-pane fade" id="tab-note" role="tabpanel">
             <div class="card-body">
                 <form method="post" action="{{ 'invoice/transaction_update'|api_url }}" {{ fb_api_form({message: 'Transaction Note Updated'|trans}) }}>
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex flex-column gap-1 mb-4">
-                                <h5 class="card-title mb-0">{{ 'Note About This Transaction'|trans }}</h5>
-                                <p class="text-secondary mb-0">{{ 'Keep internal notes about reconciliation, investigation, or gateway behavior.'|trans }}</p>
-                            </div>
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Note About This Transaction'|trans,
+                        subtitle: 'Keep internal notes about reconciliation, investigation, or gateway behavior.'|trans
+                    } %}
+                        {% import 'macro_functions.html.twig' as mf %}
+                        {% block form_content %}
                             <label class="form-label" for="transaction_note">{{ 'Content'|trans }}</label>
                             <textarea class="form-control" id="transaction_note" name="note" rows="10">{{ transaction.note }}</textarea>
-                        </div>
-                        <div class="card-footer d-flex justify-content-end">
+                        {% endblock %}
+
+                        {% block form_actions %}
                             <button class="btn btn-primary" type="submit">{{ 'Update Note'|trans }}</button>
-                        </div>
-                    </div>
+                        {% endblock %}
+                    {% endembed %}
                     <input type="hidden" name="id" value="{{ transaction.id }}">
                 </form>
             </div>

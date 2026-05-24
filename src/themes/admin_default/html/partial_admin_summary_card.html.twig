@@ -1,3 +1,4 @@
+{% set _summary_actions_fallback %}{% block summary_actions %}{% endblock %}{% endset %}
 {% set summary_actions = block('summary_actions')|trim %}
 
 <div class="card{% if card_class|default('') %} {{ card_class }}{% endif %}">

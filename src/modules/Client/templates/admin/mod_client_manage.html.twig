@@ -87,6 +87,7 @@
                     centered_actions: true,
                     body_class: 'position-relative'
                 } %}
+                    {% import 'macro_functions.html.twig' as mf %}
                     {% block summary_header_aside %}
                         {{ mf.avatar(client.email, 112, 'db-avatar avatar avatar-xl avatar-rounded shadow') }}
                     {% endblock %}
@@ -206,6 +207,7 @@
                         title: 'Client Profile Details'|trans,
                         subtitle: 'Update the client account, contact information, and internal settings.'|trans
                     } %}
+                        {% import 'macro_functions.html.twig' as mf %}
                         {% block form_content %}
                         <section class="mb-4 pb-4 border-bottom">
                             <h6 class="text-uppercase text-secondary fw-semibold mb-3">{{ 'Account Details'|trans }}</h6>
@@ -424,6 +426,7 @@
                         title: 'Change Password'|trans,
                         subtitle: 'Set a new client-area password for this account.'|trans
                     } %}
+                        {% import 'macro_functions.html.twig' as mf %}
                         {% block form_content %}
                         <div class="row g-3">
                             <div class="col-xl-6">
@@ -450,6 +453,7 @@
                         title: 'Custom Fields'|trans,
                         subtitle: 'Use these fields to store extra client details that do not fit the standard profile.'|trans
                     } %}
+                        {% import 'macro_functions.html.twig' as mf %}
                         {% block form_content %}
                         <div class="row g-3">
                             {% for i in 1..10 %}

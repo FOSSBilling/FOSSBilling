@@ -52,152 +52,349 @@
                 </ul>
             </div>
 
-    <div class="tab-content border-top">
+        <div class="tab-content border-top">
         <div class="tab-pane fade show active" id="tab-info" role="tabpanel">
-            <table class="table card-table table-vcenter table-striped text-nowrap">
-                <tbody>
-                    <tr>
-                        <td class="w-50 text-end">{{ 'ID'|trans }}:</td>
-                        <td>#{{ invoice.id }}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-end">{{ 'Number'|trans }}:</td>
-                        <td>{{ invoice.serie }}{{ "%05s"|format(invoice.nr) }}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-end">{{ 'Client'|trans }}:</td>
-                        <td>
-                            <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>{{ invoice.client.first_name }} {{ invoice.client.last_name }}</a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="text-end">{{ 'Status'|trans }}:</td>
-                        <td>{{ mf.status_badge(invoice.status, 'invoice') }}</td>
-                    </tr>
-                    {% if invoice.tax %}
-                    <tr>
-                        <td class="text-end">{{ invoice.taxname }} {{ invoice.taxrate }}%</td>
-                        <td>{{ invoice.tax|format_currency(invoice.currency ?? default_currency) }}</td>
-                    </tr>
-                    {% endif %}
-                    <tr>
-                        <td class="text-end">{{ 'Total'|trans }}:</td>
-                        <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-end">{{ 'Currency'|trans }}:</td>
-                        <td>{{ invoice.currency|currency_symbol }}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-end">{{ 'Date Created'|trans }}:</td>
-                        <td>{{ invoice.created_at|format_datetime }}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-end">{{ 'Date Due'|trans }}:</td>
-                        <td>{{ invoice.due_at|format_datetime }}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-end">{{ 'Date Paid'|trans }}:</td>
-                        <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_datetime }}{% else %}-{% endif %}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-end">{{ 'Last Reminded'|trans }}:</td>
-                        {% if invoice.reminded_at %}<td title={{ invoice.reminded_at|format_datetime }}>{{ invoice.reminded_at|timeago }} {{ 'ago'|trans }}</td>{% else %}<td>-</td>{% endif %}
-                    </tr>
-                    {% if invoice.notes %}
-                    <tr>
-                        <td class="text-end">{{ 'Notes'|trans }}:</td>
-                        <td>{{ (invoice.notes ?? '')|markdown_to_html }}</td>
-                    </tr>
-                    {% endif %}
-                </tbody>
-            </table>
+            <div class="px-3 py-3 d-flex flex-column gap-3">
+                {% embed 'partial_admin_summary_card.html.twig' with {
+                    title: 'Invoice Summary'|trans,
+                    subtitle: 'Review billing totals, client attribution, due dates, and the current invoice state.'|trans,
+                    centered_actions: true
+                } %}
+                    {% import 'macro_functions.html.twig' as mf %}
+                    {% block summary_content %}
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <tbody>
+                                <tr>
+                                    <td class="w-50 text-end">{{ 'ID'|trans }}:</td>
+                                    <td>#{{ invoice.id }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end">{{ 'Number'|trans }}:</td>
+                                    <td>{{ invoice.serie }}{{ "%05s"|format(invoice.nr) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end">{{ 'Client'|trans }}:</td>
+                                    <td>
+                                        <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>{{ invoice.client.first_name }} {{ invoice.client.last_name }}</a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end">{{ 'Status'|trans }}:</td>
+                                    <td>{{ mf.status_badge(invoice.status, 'invoice') }}</td>
+                                </tr>
+                                {% if invoice.tax %}
+                                <tr>
+                                    <td class="text-end">{{ invoice.taxname }} {{ invoice.taxrate }}%</td>
+                                    <td>{{ invoice.tax|format_currency(invoice.currency ?? default_currency) }}</td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <td class="text-end">{{ 'Total'|trans }}:</td>
+                                    <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end">{{ 'Currency'|trans }}:</td>
+                                    <td>{{ invoice.currency|currency_name }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end">{{ 'Date Created'|trans }}:</td>
+                                    <td>{{ invoice.created_at|format_datetime }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end">{{ 'Date Due'|trans }}:</td>
+                                    <td>{{ invoice.due_at|format_datetime }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end">{{ 'Date Paid'|trans }}:</td>
+                                    <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_datetime }}{% else %}-{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end">{{ 'Last Reminded'|trans }}:</td>
+                                    {% if invoice.reminded_at %}<td title={{ invoice.reminded_at|format_datetime }}>{{ invoice.reminded_at|timeago }} {{ 'ago'|trans }}</td>{% else %}<td>-</td>{% endif %}
+                                </tr>
+                                {% if invoice.notes %}
+                                <tr>
+                                    <td class="text-end">{{ 'Notes'|trans }}:</td>
+                                    <td>{{ (invoice.notes ?? '')|markdown_to_html }}</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    {% endblock %}
 
-            <div class="card-footer text-center">
-                <a href='{{ "invoice/#{invoice.hash}"|url(area: 'client') }}' class="btn btn-primary" target="_blank">
-                    <svg class="icon" width="24" height="24">
-                        <use xlink:href="#eye" />
-                    </svg>
-                    <span>{{ 'View as Client'|trans }}</span>
-                </a>
-                <a class="btn btn-primary"
-                    {{ fb_api_link({href: 'invoice/delete'|api_url(query: {id: invoice.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice'|url}) }}>
-                    <svg class="icon" width="24" height="24">
-                        <use xlink:href="#delete" />
-                    </svg>
-                    <span>{{ 'Delete'|trans }}</span>
-                </a>
-                {% if invoice.status == 'unpaid' %}
-                <a class="btn btn-primary" {{ fb_api_link({href: 'invoice/send_reminder'|api_url(query: {id: invoice.id}), message: 'Payment Reminder Sent'|trans}) }}>
-                    <svg class="icon" width="24" height="24">
-                        <use xlink:href="#mail" />
-                    </svg>
-                    <span>{{ 'Send Reminder'|trans }}</span>
-                </a>
-                <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#transactionModal">
-                    <svg class="icon" width="24" height="24">
-                        <use xlink:href="#check" />
-                    </svg>
-                    <span>{{ 'Mark as Paid'|trans }}</span>
-                </a>
-                <div class="modal fade" id="transactionModal" tabindex="-1" aria-labelledby="transactionModalLabel" aria-hidden="true">
-                <div class="modal-dialog">
-                    <form class="modal-content" method="post" action="{{ 'invoice/mark_as_paid'|api_url(query: { 'id': invoice.id, 'execute': 1 }) }}" name="transactionForm" {{ fb_api_form({action: 'invoice/mark_as_paid'|api_url(query: {id: invoice.id, execute: 1}), reload: true}) }}>
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="transactionModalLabel">{{ 'Enter Custom Transaction ID'|trans }}:</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
-                    </div>
-                    <div class="modal-body">
-                        <input type="hidden" name="id" value="{{ invoice.id }}">
-                        <div class="d-flex flex-column gap-3">
-                            <div>
-                                <label class="form-label" for="transaction-id">{{ 'Transaction ID'|trans }}</label>
-                                <input class="form-control" type="text" name="transactionId" id="transaction-id">
+                    {% block summary_actions %}
+                        <a href='{{ "invoice/#{invoice.hash}"|url(area: 'client') }}' class="btn btn-primary" target="_blank">
+                            <svg class="icon" width="24" height="24">
+                                <use xlink:href="#eye" />
+                            </svg>
+                            <span>{{ 'View as Client'|trans }}</span>
+                        </a>
+                        <a class="btn btn-danger"
+                            {{ fb_api_link({href: 'invoice/delete'|api_url(query: {id: invoice.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice'|url}) }}>
+                            <svg class="icon" width="24" height="24">
+                                <use xlink:href="#delete" />
+                            </svg>
+                            <span>{{ 'Delete'|trans }}</span>
+                        </a>
+                        {% if invoice.status == 'unpaid' %}
+                        <a class="btn btn-primary" {{ fb_api_link({href: 'invoice/send_reminder'|api_url(query: {id: invoice.id}), message: 'Payment Reminder Sent'|trans}) }}>
+                            <svg class="icon" width="24" height="24">
+                                <use xlink:href="#mail" />
+                            </svg>
+                            <span>{{ 'Send Reminder'|trans }}</span>
+                        </a>
+                        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#transactionModal">
+                            <svg class="icon" width="24" height="24">
+                                <use xlink:href="#check" />
+                            </svg>
+                            <span>{{ 'Mark as Paid'|trans }}</span>
+                        </a>
+                        <div class="modal fade" id="transactionModal" tabindex="-1" aria-labelledby="transactionModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <form class="modal-content" method="post" action="{{ 'invoice/mark_as_paid'|api_url(query: { 'id': invoice.id, 'execute': 1 }) }}" name="transactionForm" {{ fb_api_form({action: 'invoice/mark_as_paid'|api_url(query: {id: invoice.id, execute: 1}), reload: true}) }}>
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="transactionModalLabel">{{ 'Enter Custom Transaction ID'|trans }}:</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
                             </div>
-                            <p class="text-secondary mb-0">
-                                {{ 'Add the transaction ID of the payment to mark the invoice as paid.'|trans }}<br />
-                                {{ 'This should be the transaction ID you use to reconcile your bank statement.'|trans }}
-                            </p>
+                            <div class="modal-body">
+                                <input type="hidden" name="id" value="{{ invoice.id }}">
+                                <div class="d-flex flex-column gap-3">
+                                    <div>
+                                        <label class="form-label" for="transaction-id">{{ 'Transaction ID'|trans }}</label>
+                                        <input class="form-control" type="text" name="transactionId" id="transaction-id">
+                                    </div>
+                                    <p class="text-secondary mb-0">
+                                        {{ 'Add the transaction ID of the payment to mark the invoice as paid.'|trans }}<br />
+                                        {{ 'This should be the transaction ID you use to reconcile your bank statement.'|trans }}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <a href="#" class="btn btn-link link-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</a>
+                                <input type="submit" class="btn btn-primary" value="{{ 'Submit'|trans }}">
+                            </div>
+                            </form>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <a href="#" class="btn btn-link link-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</a>
-                        <input type="submit" class="btn btn-primary" value="{{ 'Submit'|trans }}">
-                    </div>
-                    </form>
+                        </div>
+                        {% endif %}
+
+                        {% if invoice.status == 'paid' %}
+                        <a class="btn btn-primary"
+                            {{ fb_api_link({href: 'invoice/refund'|api_url(query: {'id': invoice.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice'|url}) }}>
+                            <svg class="icon" width="24" height="24">
+                                <use xlink:href="#receipt-refund" />
+                            </svg>
+                            <span>{{ 'Refund'|trans }}</span>
+                        </a>
+                        {% endif %}
+                        <a href='{{ "invoice/pdf/#{invoice.hash}"|url(area: 'client') }}' class="btn btn-primary" target="_blank">
+                            <svg class="icon" width="24" height="24">
+                                <use xlink:href="#download" />
+                            </svg>
+                            <span>{{ 'PDF'|trans }}</span>
+                        </a>
+                {% endblock %}
+            {% endembed %}
+
+            <div class="card mb-3">
+                <div class="card-body pb-3">
+                    <h5 class="card-title mb-1">{{ 'Invoice Items'|trans }}</h5>
+                    <p class="text-secondary mb-0">{{ 'Review line items, pricing, taxation, and approval-ready billing content for this invoice.'|trans }}</p>
                 </div>
-                </div>
-
-
+                {% if not invoice.approved %}
+                <form method="post" action="{{ 'invoice/update'|api_url }}" {{ fb_api_form({reload: true}) }}>
+                    <table class="table card-table table-vcenter table-striped text-nowrap">
+                        <thead>
+                            <tr>
+                                <th>{{ 'Title'|trans }}</th>
+                                <th class="text-center w-10">{{ 'Quantity'|trans }}</th>
+                                <th class="text-center w-25">{{ 'Price'|trans }}</th>
+                                <th class="w-1">{{ 'Tax'|trans }}</th>
+                                <th class="w-1"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for i, item in invoice.lines %}
+                            <tr>
+                                <td>
+                                    <input class="form-control" type="text" name="items[{{ item.id }}][title]" value="{{ item.title }}">
+                                </td>
+                                <td>
+                                    <input class="form-control text-center" type="number" name="items[{{ item.id }}][quantity]" value="{{ item.quantity }}" min="1" max="1000" required>
+                                </td>
+                                <td>
+                                    <div class="input-group">
+                                        <input class="form-control" type="text" name="items[{{ item.id }}][price]" value="{{ item.price }}">
+                                        <span class="input-group-text">{{ invoice.currency|currency_symbol }}</span>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <input class="form-check-input m-0 align-middle" type="checkbox" name="items[{{ item.id }}][taxed]" value="1"{% if item.taxed %} checked{% endif %}>
+                                </td>
+                                <td>
+                                    <a class="btn btn-icon" href="{{ 'invoice/item_delete'|api_url(query: { 'id': item.id }) }}"
+                                        {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                                        <svg class="icon">
+                                            <use xlink:href="#delete" />
+                                        </svg>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            <tr>
+                                <td>
+                                    <input class="form-control" type="text" name="new_item[title]" oninput="this.form['new_item[quantity]'].required = this.value.trim() !== ''">
+                                </td>
+                                <td>
+                                    <input class="form-control text-center" type="number" name="new_item[quantity]" min="1" max="1000">
+                                </td>
+                                <td class="text-center">
+                                    <div class="input-group">
+                                        <input class="form-control" type="text" name="new_item[price]" oninput="this.form['new_item[quantity]'].required = this.value.trim() !== ''">
+                                        <span class="input-group-text">{{ invoice.currency|currency_symbol }}</span>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <input class="form-check-input m-0 align-middle" type="checkbox" name="new_item[taxed]" value="1">
+                                </td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="5" class="currency">
+                                    {{ 'Subtotal'|trans }}: {{ invoice.subtotal|format_currency(invoice.currency ?? default_currency) }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="5" class="currency">
+                                    {{ invoice.taxname }} {{ invoice.taxrate }}%: {{ invoice.tax|format_currency(invoice.currency ?? default_currency) }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="5" class="currency">
+                                    {{ 'Total'|trans }}: {{ invoice.total|format_currency(invoice.currency ?? default_currency) }}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    <div class="card-footer d-flex justify-content-end gap-2">
+                        {% if not invoice.approved %}
+                        <a class="btn btn-success" href="{{ 'invoice/approve'|api_url(query: { 'id': invoice.id }) }}"
+                            {{ fb_api_link({redirect: 'invoice'|url}) }}>
+                            <svg class="icon">
+                                <use xlink:href="#check" />
+                            </svg>
+                            {{ 'Approve'|trans }}
+                        </a>
+                        {% endif %}
+                        <input type="hidden" name="id" value="{{ invoice.id }}">
+                        <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary">
+                    </div>
+                </form>
+                {% else %}
+                <table class="table card-table table-vcenter table-striped text-nowrap">
+                    <thead>
+                        <tr>
+                            <th class="w-1"></th>
+                            <th>{{ 'Title'|trans }}</th>
+                            <th class="text-center">{{ 'Tax'|trans }}</th>
+                            <th class="text-end w-1">{{ 'Total'|trans }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for i, item in invoice.lines %}
+                        <tr>
+                            <td>{{ i + 1 }}</td>
+                            <td>
+                            {% if item.order_id %}
+                            <a href='{{ "order/manage/#{item.order_id}"|url }}'>{{ item.title }} {% if item.quantity > 1 %} x {{ item.quantity }} {# item.unit #}{% endif %}</a>
+                            {% else %}
+                            {{ item.title }} {% if item.quantity > 1 %} x {{ item.quantity }} {# item.unit #}{% endif %}
+                            {% endif %}
+                            </td>
+                            <td class="text-center">{{ item.tax|format_currency(invoice.currency ?? default_currency) }}</td>
+                            <td class="fw-bold">{{  item.total|format_currency(invoice.currency ?? default_currency) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="5" class="text-end fw-bold">
+                                Subtotal: {{ invoice.subtotal|format_currency(invoice.currency ?? default_currency) }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="5" class="text-end fw-bold">
+                                {{ invoice.taxname }} {{ invoice.taxrate }}%: {{ invoice.tax|format_currency(invoice.currency ?? default_currency) }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="5" class="text-end fw-bold">
+                                Total: {{ invoice.total|format_currency(invoice.currency ?? default_currency) }}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
                 {% endif %}
-
-                {% if invoice.status == 'paid' %}
-                <a class="btn btn-primary"
-                    {{ fb_api_link({href: 'invoice/refund'|api_url(query: {'id': invoice.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice'|url}) }}>
-                    <svg class="icon" width="24" height="24">
-                        <use xlink:href="#receipt-refund" />
-                    </svg>
-                    <span>{{ 'Refund'|trans }}</span>
-                </a>
-                {% endif %}
-                <a href='{{ "invoice/pdf/#{invoice.hash}"|url(area: 'client') }}' class="btn btn-primary" target="_blank">
-                    <svg class="icon" width="24" height="24">
-                        <use xlink:href="#download" />
-                    </svg>
-                    <span>{{ 'PDF'|trans }}</span>
-                </a>
             </div>
+
+            {% set transactions = admin.invoice_transaction_get_list({ 'invoice_id': invoice.id, 'per_page': 100 }).list %}
+            {% if transactions|length > 0 %}
+            <div class="card overflow-auto">
+                <div class="card-body pb-3">
+                    <h5 class="card-title mb-1">{{ 'Transactions'|trans }}</h5>
+                    <p class="text-secondary mb-0">{{ 'Inspect payment attempts and gateway callbacks linked to this invoice.'|trans }}</p>
+                </div>
+
+                <table class="table card-table table-vcenter table-striped text-nowrap">
+                    <thead>
+                        <tr>
+                            <th>{{ 'ID'|trans }}</th>
+                            <th>{{ 'Type'|trans }}</th>
+                            <th>{{ 'Gateway'|trans }}</th>
+                            <th>{{ 'Amount'|trans }}</th>
+                            <th>{{ 'Status'|trans }}</th>
+                            <th>{{ 'Date'|trans }}</th>
+                            <th class="w-1"></th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for i, tx in transactions %}
+                        <tr>
+                            <td>{{ tx.txn_id }}</td>
+                            <td>{{ tx.type }}</td>
+                            <td>{{ tx.gateway }}</td>
+                            <td>{{ tx.amount|format_currency(tx.currency ?? default_currency) }}</td>
+                            <td>{{ mf.status_badge(tx.status, 'transaction') }}</td>
+                            <td>{{ tx.created_at|format_datetime }}</td>
+                            <td>
+                                <a class="btn btn-icon" href='{{ "invoice/transaction/#{tx.id}"|url }}'>
+                                    <svg class="icon">
+                                        <use xlink:href="#edit" />
+                                    </svg>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
         </div>
 
         <div class="tab-pane fade" id="tab-manage" role="tabpanel">
             <div class="card-body">
                 <form method="post" action="{{ 'invoice/update'|api_url }}" {{ fb_api_form({ reload: true}) }}>
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <div class="d-flex flex-column gap-1 mb-4">
-                                <h5 class="card-title mb-0">{{ 'Invoice Status and Numbering'|trans }}</h5>
-                                <p class="text-secondary mb-0">{{ 'Control the invoice lifecycle, approval state, and displayed numbering.'|trans }}</p>
-                            </div>
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Invoice Status and Numbering'|trans,
+                        subtitle: 'Control the invoice lifecycle, approval state, and displayed numbering.'|trans,
+                        card_class: 'mb-4'
+                    } %}
+                        {% import 'macro_functions.html.twig' as mf %}
+                        {% block form_content %}
                             <div class="row g-3">
                                 <div class="col-12">
                                     <label class="form-label d-block">{{ 'Status'|trans }}</label>
@@ -242,14 +439,15 @@
                                     <input class="form-control" id="invoice_number" type="text" name="nr" value="{{ invoice.nr }}">
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <div class="d-flex flex-column gap-1 mb-4">
-                                <h5 class="card-title mb-0">{{ 'Billing Settings'|trans }}</h5>
-                                <p class="text-secondary mb-0">{{ 'Adjust taxation, payment method, and key invoice dates.'|trans }}</p>
-                            </div>
+                        {% endblock %}
+                    {% endembed %}
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Billing Settings'|trans,
+                        subtitle: 'Adjust taxation, payment method, and key invoice dates.'|trans,
+                        card_class: 'mb-4'
+                    } %}
+                        {% import 'macro_functions.html.twig' as mf %}
+                        {% block form_content %}
                             <div class="row g-3">
                                 <div class="col-lg-6">
                                     <label class="form-label" for="invoice_tax_name">{{ 'Tax Name'|trans }}</label>
@@ -264,7 +462,7 @@
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label">{{ 'Payment Method'|trans }}</label>
-                                    {{ mf.selectbox('gateway_id', guest.invoice_gateways({ "format": "pairs" }), invoice.gateway_id, 0, 'Select payment method'|trans) }}
+                                    {{ mf.selectbox('gateway_id', guest.invoice_gateways({ "format": "pairs" }), invoice.gateway_id, 0, 'Select Payment Method'|trans) }}
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="created_at">{{ 'Date Created'|trans }}</label>
@@ -300,22 +498,24 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <div class="d-flex flex-column gap-1 mb-4">
-                                <h5 class="card-title mb-0">{{ 'Internal Notes'|trans }}</h5>
-                                <p class="text-secondary mb-0">{{ 'Keep internal notes associated with this invoice record.'|trans }}</p>
-                            </div>
+                        {% endblock %}
+                    {% endembed %}
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Internal Notes'|trans,
+                        subtitle: 'Keep internal notes associated with this invoice record.'|trans,
+                        card_class: 'mb-4'
+                    } %}
+                        {% import 'macro_functions.html.twig' as mf %}
+                        {% block form_content %}
                             <label class="form-label" for="invoice_notes">{{ 'Notes'|trans }}</label>
                             <textarea class="form-control" id="invoice_notes" name="notes" rows="6">{{ invoice.notes }}</textarea>
-                        </div>
-                    </div>
+                        {% endblock %}
+
+                        {% block form_actions %}
+                            <button type="submit" class="btn btn-primary">{{ 'Update Invoice'|trans }}</button>
+                        {% endblock %}
+                    {% endembed %}
                     <input type="hidden" name="id" value="{{ invoice.id }}">
-                    <div class="d-flex justify-content-end">
-                        <button type="submit" class="btn btn-primary">{{ 'Update Invoice'|trans }}</button>
-                    </div>
                 </form>
             </div>
         </div>
@@ -323,12 +523,12 @@
         <div class="tab-pane fade" id="tab-texts" role="tabpanel">
             <div class="card-body">
                 <form method="post" action="{{ 'invoice/update'|api_url }}" {{ fb_api_form({message: 'Invoice Updated'|trans}) }}>
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex flex-column gap-1 mb-4">
-                                <h5 class="card-title mb-0">{{ 'Invoice Text Content'|trans }}</h5>
-                                <p class="text-secondary mb-0">{{ 'Edit the rich text shown above and below the invoice item table.'|trans }}</p>
-                            </div>
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Invoice Text Content'|trans,
+                        subtitle: 'Edit the rich text shown above and below the invoice item table.'|trans
+                    } %}
+                        {% import 'macro_functions.html.twig' as mf %}
+                        {% block form_content %}
                             <div class="row g-4">
                                 <div class="col-12">
                                     <label class="form-label" for="invoice_text_before">{{ 'Text Before Invoice Item Table'|trans }}</label>
@@ -339,11 +539,12 @@
                                     <textarea class="form-control editor-textarea" id="invoice_text_after" name="text_2" rows="6">{{ invoice.text_2 }}</textarea>
                                 </div>
                             </div>
-                        </div>
-                        <div class="card-footer d-flex justify-content-end">
+                        {% endblock %}
+
+                        {% block form_actions %}
                             <button class="btn btn-primary" type="submit">{{ 'Update Invoice Text'|trans }}</button>
-                        </div>
-                    </div>
+                        {% endblock %}
+                    {% endembed %}
                     <input type="hidden" name="id" value="{{ invoice.id }}">
                 </form>
             </div>
@@ -353,12 +554,12 @@
             <div class="card-body">
                 {% set seller = invoice.seller %}
                 <form method="post" action="{{ 'invoice/update'|api_url }}" {{ fb_api_form({message: 'Invoice Updated'|trans}) }}>
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex flex-column gap-1 mb-4">
-                                <h5 class="card-title mb-0">{{ 'Company Details at Time of Purchase'|trans }}</h5>
-                                <p class="text-secondary mb-0">{{ 'Review and correct the seller details stored on this invoice.'|trans }}</p>
-                            </div>
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Company Details at Time of Purchase'|trans,
+                        subtitle: 'Review and correct the seller details stored on this invoice.'|trans
+                    } %}
+                        {% import 'macro_functions.html.twig' as mf %}
+                        {% block form_content %}
                             <div class="row g-3">
                                 <div class="col-lg-6">
                                     <label class="form-label" for="seller_company">{{ 'Company Name'|trans }}</label>
@@ -385,11 +586,12 @@
                                     <input class="form-control" id="seller_email" type="text" name="seller_email" value="{{ seller.email }}">
                                 </div>
                             </div>
-                        </div>
-                        <div class="card-footer d-flex justify-content-end">
+                        {% endblock %}
+
+                        {% block form_actions %}
                             <button type="submit" class="btn btn-primary">{{ 'Update Company Details'|trans }}</button>
-                        </div>
-                    </div>
+                        {% endblock %}
+                    {% endembed %}
                     <input type="hidden" name="id" value="{{ invoice.id }}">
                 </form>
             </div>
@@ -399,12 +601,12 @@
             <div class="card-body">
                 {% set buyer = invoice.buyer %}
                 <form method="post" action="{{ 'invoice/update'|api_url }}" {{ fb_api_form({message: 'Invoice Updated'|trans}) }}>
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex flex-column gap-1 mb-4">
-                                <h5 class="card-title mb-0">{{ 'Client Details at Time of Purchase'|trans }}</h5>
-                                <p class="text-secondary mb-0">{{ 'Review and correct the stored buyer details for this invoice.'|trans }}</p>
-                            </div>
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Client Details at Time of Purchase'|trans,
+                        subtitle: 'Review and correct the stored buyer details for this invoice.'|trans
+                    } %}
+                        {% import 'macro_functions.html.twig' as mf %}
+                        {% block form_content %}
                             <div class="row g-3">
                                 <div class="col-lg-6">
                                     <label class="form-label" for="buyer_first_name">{{ 'First Name'|trans }}</label>
@@ -455,11 +657,12 @@
                                     <input class="form-control" id="buyer_email" type="text" name="buyer_email" value="{{ buyer.email }}">
                                 </div>
                             </div>
-                        </div>
-                        <div class="card-footer d-flex justify-content-end">
+                        {% endblock %}
+
+                        {% block form_actions %}
                             <button type="submit" class="btn btn-primary">{{ 'Update Client Details'|trans }}</button>
-                        </div>
-                    </div>
+                        {% endblock %}
+                    {% endembed %}
                     <input type="hidden" name="id" value="{{ invoice.id }}">
                 </form>
             </div>
@@ -467,190 +670,6 @@
     </div>
         </div>
     </div>
-</div>
-
-<div class="card mb-3">
-    <div class="card-body">
-        <h5>{{ 'Invoice Items'|trans }}</h5>
-    </div>
-    {% if not invoice.approved %}
-    <form method="post" action="{{ 'invoice/update'|api_url }}" {{ fb_api_form({reload: true}) }}>
-        <table class="table card-table table-vcenter table-striped text-nowrap">
-            <thead>
-                <tr>
-                    <th>{{ 'Title'|trans }}</th>
-                    <th class="text-center w-10">{{ 'Quantity'|trans }}</th>
-                    <th class="text-center w-25">{{ 'Price'|trans }}</th>
-                    <th class="w-1">{{ 'Tax'|trans }}</th>
-                    <th class="w-1"></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for i, item in invoice.lines %}
-                <tr>
-                    <td>
-                        <input class="form-control" type="text" name="items[{{ item.id }}][title]" value="{{ item.title }}">
-                    </td>
-                    <td>
-                        <input class="form-control text-center" type="number" name="items[{{ item.id }}][quantity]" value="{{ item.quantity }}" min="1" max="1000" required>
-                    </td>
-                    <td>
-                        <div class="input-group">
-                            <input class="form-control" type="text" name="items[{{ item.id }}][price]" value="{{ item.price }}">
-                            <span class="input-group-text">{{ invoice.currency|currency_symbol }}</span>
-                        </td>
-                    <td class="text-center">
-                        <input class="form-check-input m-0 align-middle" type="checkbox" name="items[{{ item.id }}][taxed]" value="1"{% if item.taxed %} checked{% endif %}>
-                    </td>
-                    <td>
-                        <a class="btn btn-icon" href="{{ 'invoice/item_delete'|api_url(query: { 'id': item.id }) }}"
-                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
-                            <svg class="icon">
-                                <use xlink:href="#delete" />
-                            </svg>
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-                <tr>
-                    <td>
-                        <input class="form-control" type="text" name="new_item[title]" oninput="this.form['new_item[quantity]'].required = this.value.trim() !== ''">
-                    </td>
-                    <td>
-                        <input class="form-control text-center" type="number" name="new_item[quantity]" min="1" max="1000">
-                    </td>
-                    <td class="text-center">
-                        <div class="input-group">
-                            <input class="form-control" type="text" name="new_item[price]" oninput="this.form['new_item[quantity]'].required = this.value.trim() !== ''">
-                            <span class="input-group-text">{{ invoice.currency|currency_symbol }}</span>
-                        </div>
-                    </td>
-                    <td class="text-center">
-                        <input class="form-check-input m-0 align-middle" type="checkbox" name="new_item[taxed]" value="1">
-                    </td>
-                    <td></td>
-                </tr>
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="5" class="currency">
-                        {{ 'Subtotal'|trans }}: {{ invoice.subtotal|format_currency(invoice.currency ?? default_currency) }}
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="5" class="currency">
-                        {{ invoice.taxname }} {{ invoice.taxrate }}%: {{ invoice.tax|format_currency(invoice.currency ?? default_currency) }}
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="5" class="currency">
-                        {{ 'Total'|trans }}: {{ invoice.total|format_currency(invoice.currency ?? default_currency) }}
-                    </td>
-                </tr>
-            </tfoot>
-        </table>
-        <div class="card-footer d-flex gap-2">
-            {% if not invoice.approved %}
-            <a class="btn btn-success w-100" href="{{ 'invoice/approve'|api_url(query: { 'id': invoice.id }) }}"
-                {{ fb_api_link({redirect: 'invoice'|url}) }}>
-                <svg class="icon">
-                    <use xlink:href="#check" />
-                </svg>
-                {{ 'Approve'|trans }}
-            </a>
-            {% endif %}
-            <input type="hidden" name="id" value="{{ invoice.id }}">
-            <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-25">
-        </div>
-    </form>
-{% else %}
-    <table class="table card-table table-vcenter table-striped text-nowrap">
-        <thead>
-            <tr>
-                <th class="w-1"></th>
-                <th>{{ 'Title'|trans }}</th>
-                <th class="text-center">{{ 'Tax'|trans }}</th>
-                <th class="text-end w-1">{{ 'Total'|trans }}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for i, item in invoice.lines %}
-            <tr>
-                <td>{{ i + 1 }}</td>
-                <td>
-                {% if item.order_id %}
-                <a href='{{ "order/manage/#{item.order_id}"|url }}'>{{ item.title }} {% if item.quantity > 1 %} x {{ item.quantity }} {# item.unit #}{% endif %}</a>
-                {% else %}
-                {{ item.title }} {% if item.quantity > 1 %} x {{ item.quantity }} {# item.unit #}{% endif %}
-                {% endif %}
-                </td>
-                <td class="text-center">{{ item.tax|format_currency(invoice.currency ?? default_currency) }}</td>
-                <td class="fw-bold">{{  item.total|format_currency(invoice.currency ?? default_currency) }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-        <tfoot>
-            <tr>
-                <td colspan="5" class="text-end fw-bold">
-                    Subtotal: {{ invoice.subtotal|format_currency(invoice.currency ?? default_currency) }}
-                </td>
-            </tr>
-            <tr>
-                <td colspan="5" class="text-end fw-bold">
-                    {{ invoice.taxname }} {{ invoice.taxrate }}%: {{ invoice.tax|format_currency(invoice.currency ?? default_currency) }}
-                </td>
-            </tr>
-            <tr>
-                <td colspan="5" class="text-end fw-bold">
-                    Total: {{ invoice.total|format_currency(invoice.currency ?? default_currency) }}
-                </td>
-            </tr>
-        </tfoot>
-    </table>
-{% endif %}
-</div>
-    {% set transactions = admin.invoice_transaction_get_list({ 'invoice_id': invoice.id, 'per_page': 100 }).list %}
-    {% if transactions|length > 0 %}
-    <div class="card overflow-auto">
-        <div class="card-body">
-            <h5>{{ 'Transactions'|trans }}</h5>
-        </div>
-
-        <table class="table card-table table-vcenter table-striped text-nowrap">
-            <thead>
-                <tr>
-                    <th>{{ 'ID'|trans }}</th>
-                    <th>{{ 'Type'|trans }}</th>
-                    <th>{{ 'Gateway'|trans }}</th>
-                    <th>{{ 'Amount'|trans }}</th>
-                    <th>{{ 'Status'|trans }}</th>
-                    <th>{{ 'Date'|trans }}</th>
-                    <th class="w-1"></th>
-                </tr>
-            </thead>
-
-            <tbody>
-                {% for i, tx in transactions %}
-                <tr>
-                    <td>{{ tx.txn_id }}</td>
-                    <td>{{ tx.type }}</td>
-                    <td>{{ tx.gateway }}</td>
-                    <td>{{ tx.amount|format_currency(tx.currency ?? default_currency) }}</td>
-                    <td>{{ mf.status_badge(tx.status, 'transaction') }}</td>
-                    <td>{{ tx.created_at|format_datetime }}</td>
-                    <td>
-                        <a class="btn btn-icon" href='{{ "invoice/transaction/#{tx.id}"|url }}'>
-                            <svg class="icon">
-                                <use xlink:href="#edit" />
-                            </svg>
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% endif %}
 {% endblock %}
 
 {% block sidebar2 %}
