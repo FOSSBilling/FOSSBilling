@@ -26,17 +26,21 @@
 {% endblock %}
 
 {% block content %}
-<div class="card">
+<div class="p-3">
     <form method="post" action="{{ 'servicedomain/registrar_update'|api_url }}" {{ fb_api_form({message: 'Registrar Updated'|trans}) }}>
         {% embed 'partial_admin_form_card.html.twig' with {
-            title: 'Registrar Configuration'|trans,
-            subtitle: registrar.label,
-            body_class: 'pt-4'
+            title: registrar.title,
+            subtitle: 'Configure test mode, display title, and adapter-specific settings for this registrar.'|trans,
+            card_class: 'mb-0'
         } %}
             {% import 'macro_functions.html.twig' as mf %}
             {% block form_content %}
                 <div class="row g-3">
-                    <div class="col-lg-6">
+                    <div class="col-12">
+                        <label class="form-label">{{ 'Registrar Title'|trans }}</label>
+                        <input class="form-control" type="text" name="title" value="{{ registrar.title }}">
+                    </div>
+                    <div class="col-12">
                         <label class="form-label d-block">{{ 'Enable Test Mode'|trans }}</label>
                         <div class="d-flex flex-wrap gap-3">
                             <label class="form-check">
@@ -49,13 +53,13 @@
                             </label>
                         </div>
                     </div>
-                    <div class="col-lg-6">
-                        <label class="form-label">{{ 'Registrar Title'|trans }}</label>
-                        <input class="form-control" type="text" name="title" value="{{ registrar.title }}">
-                    </div>
                 </div>
 
                 <div class="mt-4">
+                    <div class="d-flex flex-column gap-1 mb-4">
+                        <h6 class="card-title mb-0">{{ 'Adapter Settings'|trans }}</h6>
+                        <p class="text-secondary mb-0">{{ 'Provide the credentials and connection details required by this registrar adapter.'|trans }}</p>
+                    </div>
                     {{ mf.build_form(registrar.form, registrar.config) }}
                 </div>
 

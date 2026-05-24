@@ -142,19 +142,19 @@
 								title: 'Permissions'|trans,
 								subtitle: 'Grant module access and fine-grained permissions for this staff account.'|trans
 							} %}
-								{% block form_content %}
-									<div class="d-flex flex-wrap justify-content-end gap-2 mb-4">
-										<button class="btn btn-secondary" type="button" onclick="toggleAll(true);">{{ 'Grant all permissions'|trans }}</button>
-										<button class="btn btn-danger" type="button" onclick="toggleAll(false);">{{ 'Revoke all permissions'|trans }}</button>
-									</div>
+								{% block form_header_actions %}
+									<button class="btn btn-secondary" type="button" onclick="toggleAll(true);">{{ 'Grant All Permissions'|trans }}</button>
+									<button class="btn btn-danger" type="button" onclick="toggleAll(false);">{{ 'Revoke All Permissions'|trans }}</button>
+								{% endblock %}
 
+								{% block form_content %}
 									<input type="hidden" name="permissions[default][all]" id="permissions-default-all" value="{% if prms.default.all %}1{% endif %}">
 
 									{% for modName, mod in mods|filter(mod => mod.permissions.hide_permissions is not true) %}
 										<section class="mb-4 pb-4 border-bottom">
 											<div class="row g-3">
 												<div class="col-lg-3">
-													<h6 class="card-title mb-0 text-capitalize">{{ modName }}</h6>
+													<h6 class="card-title mb-0">{{ modName|replace({'_': ' '})|title|trim }}</h6>
 												</div>
 												<div class="col-lg-9">
 													{% if not mod.permissions.can_always_access %}

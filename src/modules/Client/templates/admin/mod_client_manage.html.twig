@@ -692,7 +692,7 @@
                 {% endblock %}
             {% endembed %}
 
-            <div class="p-3 pt-0">
+            <div class="p-3">
                 <form method="post" action="{{ 'client/balance_add_funds'|api_url }}" {{ fb_api_form({ message: 'Funds Added'|trans}) }}>
                     {% embed 'partial_admin_form_card.html.twig' with {
                         title: 'Add Funds for Client'|trans,

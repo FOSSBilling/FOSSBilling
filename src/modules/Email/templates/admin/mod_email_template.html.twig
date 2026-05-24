@@ -141,23 +141,20 @@
                                 subtitle: 'Enable or disable this email template and group it under a category.'|trans
                             } %}
                                 {% block form_content %}
-                                    <div class="row g-3">
-                                        <div class="col-lg-6">
-                                            <label class="form-label d-block">{{ 'Enabled'|trans }}</label>
-                                            <div class="d-flex flex-wrap gap-3">
-                                                <label class="form-check">
-                                                    <input class="form-check-input" id="radioEnabledYes" type="radio" name="enabled" value="1"{% if template.enabled %} checked{% endif %}>
-                                                    <span class="form-check-label">{{ 'Yes'|trans }}</span>
-                                                </label>
-                                                <label class="form-check">
-                                                    <input class="form-check-input" id="radioEnabledNo" type="radio" name="enabled" value="0"{% if not template.enabled %} checked{% endif %}>
-                                                    <span class="form-check-label">{{ 'No'|trans }}</span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-6">
+                                    <div class="row g-4">
+                                        <div class="col-12">
                                             <label class="form-label">{{ 'Category'|trans }}</label>
                                             <input class="form-control" type="text" name="category" value="{{ template.category }}" required placeholder="General">
+                                            <div class="form-text">{{ 'Use a clear group name to keep related templates organized in the admin list.'|trans }}</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <input type="hidden" name="enabled" value="0">
+                                            <label class="form-label d-block">{{ 'Template Availability'|trans }}</label>
+                                            <label class="form-check form-switch">
+                                                <input class="form-check-input" id="inputTemplateEnabled" type="checkbox" name="enabled" value="1"{% if template.enabled %} checked{% endif %}>
+                                                <span class="form-check-label">{{ 'Enabled'|trans }}</span>
+                                            </label>
+                                            <div class="form-text">{{ 'Disable this template to stop it from being used when the related email event is triggered.'|trans }}</div>
                                         </div>
                                     </div>
                                 {% endblock %}

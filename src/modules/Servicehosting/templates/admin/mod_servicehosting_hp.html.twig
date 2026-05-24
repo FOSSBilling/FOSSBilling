@@ -21,12 +21,12 @@
 {% endblock %}
 
 {% block content %}
-<div class="card">
+<div class="p-3 d-flex flex-column gap-3">
     <form method="post" action="{{ 'servicehosting/hp_update'|api_url }}" {{ fb_api_form({message: 'Hosting Plan Updated'|trans}) }}>
         {% embed 'partial_admin_form_card.html.twig' with {
             title: hp.name,
             subtitle: 'Configure resource limits, manager-specific parameters, and extra provisioning fields for this hosting plan.'|trans,
-            body_class: 'pt-4'
+            card_class: 'mb-0'
         } %}
             {% block form_content %}
                 <div class="row g-3">
@@ -75,8 +75,10 @@
                 </div>
 
                 {% if hp.config|length > 0 %}
-                    <hr class="my-4">
-                    <h6 class="card-title text-secondary mb-3">{{ 'Server Manager Specific Parameters'|trans }}</h6>
+                    <div class="d-flex flex-column gap-1 mt-4 mb-4">
+                        <h6 class="card-title mb-0">{{ 'Server Manager Specific Parameters'|trans }}</h6>
+                        <p class="text-secondary mb-0">{{ 'Review adapter-specific values that are sent to the active hosting server manager for this plan.'|trans }}</p>
+                    </div>
                     <div class="row g-3">
                         {% for name, value in hp.config %}
                         <div class="col-lg-6">
@@ -96,31 +98,30 @@
         {% endembed %}
     </form>
 
-    <div class="p-3 pt-0">
-        <form method="post" action="{{ 'servicehosting/hp_update'|api_url }}" {{ fb_api_form({reload: true}) }}>
-            {% embed 'partial_admin_form_card.html.twig' with {
-                title: 'Hosting Plan Additional Parameters'|trans,
-                subtitle: 'Add extra provisioning parameters required by the active server manager for this hosting plan.'|trans
-            } %}
-                {% block form_content %}
-                    <div class="row g-3">
-                        <div class="col-lg-6">
-                            <label class="form-label">{{ 'Parameter Name'|trans }}</label>
-                            <input class="form-control" type="text" name="new_config_name">
-                        </div>
-                        <div class="col-lg-6">
-                            <label class="form-label">{{ 'Parameter Value'|trans }}</label>
-                            <textarea class="form-control" name="new_config_value" rows="1"></textarea>
-                        </div>
+    <form method="post" action="{{ 'servicehosting/hp_update'|api_url }}" {{ fb_api_form({message: 'Additional Parameter Added'|trans, reload: true}) }}>
+        {% embed 'partial_admin_form_card.html.twig' with {
+            title: 'Hosting Plan Additional Parameters'|trans,
+            subtitle: 'Add extra provisioning parameters required by the active server manager for this hosting plan.'|trans,
+            card_class: 'mb-0'
+        } %}
+            {% block form_content %}
+                <div class="row g-3">
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Parameter Name'|trans }}</label>
+                        <input class="form-control" type="text" name="new_config_name" required>
                     </div>
-                    <input type="hidden" name="id" value="{{ hp.id }}">
-                {% endblock %}
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Parameter Value'|trans }}</label>
+                        <textarea class="form-control" name="new_config_value" rows="1" required></textarea>
+                    </div>
+                </div>
+                <input type="hidden" name="id" value="{{ hp.id }}">
+            {% endblock %}
 
-                {% block form_actions %}
-                    <button class="btn btn-primary" type="submit">{{ 'Add New Field'|trans }}</button>
-                {% endblock %}
-            {% endembed %}
-        </form>
-    </div>
+            {% block form_actions %}
+                <button class="btn btn-primary" type="submit">{{ 'Add New Field'|trans }}</button>
+            {% endblock %}
+        {% endembed %}
+    </form>
 </div>
 {% endblock %}

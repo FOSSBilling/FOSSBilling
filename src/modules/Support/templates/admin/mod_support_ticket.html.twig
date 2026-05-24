@@ -49,12 +49,13 @@
     {% block detail_tab_content %}
         {% import 'macro_functions.html.twig' as mf %}
         <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-            <div class="card-body">
+            <div class="p-3 d-flex flex-column gap-3">
                 {% set task = ticket.rel %}
                 {% embed 'partial_admin_summary_card.html.twig' with {
                     title: 'Ticket Summary'|trans,
                     subtitle: 'Review the client, helpdesk, status, and any linked task or order context for this ticket.'|trans,
-                    centered_actions: true
+                    centered_actions: true,
+                    card_class: 'mb-0'
                 } %}
                     {% import 'macro_functions.html.twig' as mf %}
                     {% block summary_content %}
@@ -95,6 +96,78 @@
                         {% endif %}
                     {% endblock %}
                 {% endembed %}
+
+                <div class="card">
+                    <div class="card-body pb-3">
+                        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                            <div class="d-flex flex-column gap-1">
+                                <h5 class="card-title mb-0">{{ 'Conversation'|trans }}</h5>
+                                <p class="text-secondary mb-0">{{ 'Review the full message history and expand older replies when needed.'|trans }}</p>
+                            </div>
+                            <a href="#" class="btn btn-secondary" id="toggleMessages">
+                                <svg class="icon">
+                                    <use xlink:href="#eye" />
+                                </svg>
+                                {{ 'Show/Hide Messages'|trans }}
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body pt-0">
+                        <div class="conversation">
+                            {% for i, message in ticket.messages %}
+                            <div class="card {% if loop.first %}mt-2 {% endif %}mb-3 col-md-10 {% if ticket.first.author.email != message.author.email %}offset-md-2{% endif %} {{ loop.last ? 'last' : '' }}" id="{{ message.id == request_message ? 'direct-msg' : '' }}">
+                                <div class="card-header" style="cursor: pointer;">
+                                    {{ mf.avatar(message.author.email, 24, 'db-avatar avatar avatar-xs me-2') }}
+                                    {{ message.author.name }}
+                                    <a class="ms-2" href='{{ "support/ticket/#{ticket.id}/message/#{message.id}"|url }}'>
+                                        <svg class="icon">
+                                            <use xlink:href="#link" />
+                                        </svg>
+                                    </a>
+                                    <span class="ms-auto text-muted">{{ message.created_at|format_datetime }}</span>
+                                </div>
+                                <div class="card-body" style="display:{{ loop.last or loop.index + 1 == ticket.messages|length ? 'block' : 'none' }};">
+                                    {{ (message.content ?? '')|markdown_to_html }}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-0" id="reply-box">
+                    <form method="post" action="{{ 'support/ticket_reply'|api_url }}" {{ fb_api_form({ reload: true }) }}>
+                        <div class="card-body">
+                            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+                                <div class="d-flex flex-column gap-1">
+                                    <h5 class="card-title mb-0">{{ 'Respond as'|trans }} {{ profile.name }}</h5>
+                                    <p class="text-secondary mb-0">{{ 'Compose a reply, insert a canned response, and close the ticket when appropriate.'|trans }}</p>
+                                </div>
+                                <div>{{ include('mod_support_canned_selector.html.twig') }}</div>
+                            </div>
+
+                            <textarea class="editor-textarea" id="rt" name="content" rows="10" required>{{ 'Hello'|trans }} {{ ticket.client.first_name }},
+{{ canned_delay_message }}
+
+{{ profile.signature }}
+{{ ticket.helpdesk.signature }}</textarea>
+                        </div>
+                        <div class="card-footer d-flex flex-wrap align-items-center gap-2">
+                            <input type="hidden" name="id" value="{{ ticket.id }}">
+                            <input type="submit" value="{{ 'Post'|trans }}" class="btn btn-primary ms-auto">
+
+                            {% if ticket.messages|length > 2 and ticket.status != 'closed' %}
+                            <a class="btn btn-warning" href="{{ 'support/ticket_close'|api_url(query: { 'id': ticket.id }) }}"
+                                {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support'|url(query: { status: 'open' }) }) }}>
+                                <svg class="icon">
+                                    <use xlink:href="#check" />
+                                </svg>
+                                {{ 'Close Ticket'|trans }}
+                            </a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
 
@@ -137,38 +210,39 @@
         </div>
 
         <div class="tab-pane fade" id="tab-notes" role="tabpanel">
-            {% embed 'partial_admin_related_section.html.twig' with {
-                title: 'Internal Notes'|trans,
-                subtitle: 'Keep internal staff notes attached to this ticket and remove them when no longer needed.'|trans,
-                card_class: 'm-3 mb-0'
-            } %}
-                {% block section_content %}
-                    <div class="table-responsive">
-                        <table class="table card-table table-vcenter table-striped text-nowrap">
-                        {% for note in ticket.notes %}
-                            <tr>
-                                <td class="w-1"><a href='{{ "staff/manage/#{note.admin_id}"|url }}'>{{ note.author.name }}</a></td>
-                                <td>{{ note.note }}</td>
-                                <td class="w-1">
-                                    <a class="btn btn-icon" href="{{ 'support/note_delete'|api_url(query: { 'id': note.id }) }}"
-                                        {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true }) }}>
-                                        <svg class="icon"><use xlink:href="#delete" /></svg>
-                                    </a>
-                                </td>
-                            </tr>
-                        {% else %}
-                            <tr><td class="text-muted" colspan="3">{{ 'The list is empty'|trans }}</td></tr>
-                        {% endfor %}
-                        </table>
-                    </div>
-                {% endblock %}
-            {% endembed %}
+            <div class="p-3 d-flex flex-column gap-3">
+                {% embed 'partial_admin_related_section.html.twig' with {
+                    title: 'Internal Notes'|trans,
+                    subtitle: 'Keep internal staff notes attached to this ticket and remove them when no longer needed.'|trans,
+                    card_class: 'mb-0'
+                } %}
+                    {% block section_content %}
+                        <div class="table-responsive">
+                            <table class="table card-table table-vcenter table-striped text-nowrap">
+                            {% for note in ticket.notes %}
+                                <tr>
+                                    <td class="w-1"><a href='{{ "staff/manage/#{note.admin_id}"|url }}'>{{ note.author.name }}</a></td>
+                                    <td>{{ note.note }}</td>
+                                    <td class="w-1">
+                                        <a class="btn btn-icon" href="{{ 'support/note_delete'|api_url(query: { 'id': note.id }) }}"
+                                            {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true }) }}>
+                                            <svg class="icon"><use xlink:href="#delete" /></svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr><td class="text-muted" colspan="3">{{ 'The list is empty'|trans }}</td></tr>
+                            {% endfor %}
+                            </table>
+                        </div>
+                    {% endblock %}
+                {% endembed %}
 
-            <div class="p-3 pt-0">
                 <form method="post" action="{{ 'support/note_create'|api_url }}" {{ fb_api_form({ reload: true}) }}>
                     {% embed 'partial_admin_form_card.html.twig' with {
                         title: 'Add Internal Note'|trans,
-                        subtitle: 'Record a staff-only note against this ticket.'|trans
+                        subtitle: 'Record a staff-only note against this ticket.'|trans,
+                        card_class: 'mb-0'
                     } %}
                         {% block form_content %}
                             <label class="form-label" for="textareaNote">{{ 'Note'|trans }}</label>
@@ -181,7 +255,7 @@
                                 <svg class="icon">
                                     <use xlink:href="#plus" />
                                 </svg>
-                                {{ 'Add note'|trans }}
+                                {{ 'Add Note'|trans }}
                             </button>
                         {% endblock %}
                     {% endembed %}
@@ -203,6 +277,7 @@
                 {% endblock %}
 
                 {% block section_content %}
+                    {% import 'macro_functions.html.twig' as mf %}
                     <div class="table-responsive">
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
@@ -216,14 +291,14 @@
                             </thead>
                             <tbody>
                                 {% set tickets = admin.support_ticket_get_list({ 'per_page': 20, 'client_id': ticket.client.id, 'deep': 0, 'include_first': 0 }) %}
-                                {% for ticket in tickets.list %}
+                                {% for related_ticket in tickets.list %}
                                 <tr>
-                                    <td>{{ ticket.id }}</td>
-                                    <td>{{ ticket.helpdesk.name }}</td>
-                                    <td><a href='{{ "support/ticket/#{ticket.id}"|url }}'>{{ ticket.subject|truncate(30) }}</a></td>
-                                    <td>{{ mf.status_badge(ticket.status, 'ticket') }}</td>
+                                    <td>{{ related_ticket.id }}</td>
+                                    <td>{{ related_ticket.helpdesk.name }}</td>
+                                    <td><a href='{{ "support/ticket/#{related_ticket.id}"|url }}'>{{ related_ticket.subject|truncate(30) }}</a></td>
+                                    <td>{{ mf.status_badge(related_ticket.status, 'ticket') }}</td>
                                     <td>
-                                        <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}'>
+                                        <a class="btn btn-icon" href='{{ "support/ticket/#{related_ticket.id}"|url }}'>
                                             <svg class="icon"><use xlink:href="#edit" /></svg>
                                         </a>
                                     </td>
@@ -239,64 +314,6 @@
         </div>
     {% endblock %}
 {% endembed %}
-
-<div class="conversation">
-    {% for i, message in ticket.messages %}
-    <div class="card mb-3 col-md-10 {% if ticket.first.author.email != message.author.email %}offset-md-2{% endif %} {{ loop.last ? 'last' : '' }}" id="{{ message.id == request_message ? 'direct-msg' : '' }}">
-        <div class="card-header" style="cursor: pointer;">
-            {{ mf.avatar(message.author.email, 24, 'db-avatar avatar avatar-xs me-2') }}
-            {{ message.author.name }}
-            <a class="ms-2" href='{{ "support/ticket/#{ticket.id}/message/#{message.id}"|url }}'>
-                <svg class="icon">
-                    <use xlink:href="#link" />
-                </svg>
-            </a>
-            <span class="ms-auto text-muted">{{ message.created_at|format_datetime }}</span>
-        </div>
-        <div class="card-body" style="display:{{ loop.last or loop.index + 1 == ticket.messages|length ? 'block' : 'none' }};">
-            {{ (message.content ?? '')|markdown_to_html }}
-        </div>
-    </div>
-    {% endfor %}
-</div>
-
-<div class="card" id="reply-box">
-    <form method="post" action="{{ 'support/ticket_reply'|api_url }}" {{ fb_api_form({ reload: true }) }}>
-        <div class="card-body">
-            <div class="d-flex">
-                <h5>{{ 'Reply As'|trans }} {{ profile.name }}</h5>
-                <div class="ms-auto">{{ include('mod_support_canned_selector.html.twig') }}</div>
-            </div>
-
-            <textarea class="editor-textarea" id="rt" name="content" rows="10" required>{{ 'Hello'|trans }} {{ ticket.client.first_name }},
-{{ canned_delay_message }}
-
-{{ profile.signature }}
-{{ ticket.helpdesk.signature }}</textarea>
-        </div>
-        <div class="card-footer d-flex flex-wrap align-items-center gap-2">
-            <a href="#" class="btn btn-secondary me-auto" id="toggleMessages">
-                <svg class="icon">
-                    <use xlink:href="#eye" />
-                </svg>
-                {{ 'Show/Hide Messages'|trans }}
-            </a>
-
-            <input type="hidden" name="id" value="{{ ticket.id }}">
-            <input type="submit" value="{{ 'Post'|trans }}" class="btn btn-primary">
-
-            {% if ticket.messages|length > 2 and ticket.status != 'closed' %}
-            <a class="btn btn-danger" href="{{ 'support/ticket_close'|api_url(query: { 'id': ticket.id }) }}"
-                {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support'|url(query: { status: 'open' }) }) }}>
-                <svg class="icon">
-                    <use xlink:href="#check" />
-                </svg>
-                {{ 'Close Ticket'|trans }}
-            </a>
-            {% endif %}
-        </div>
-    </form>
-</div>
 {% endblock %}
 
 {% block js%}

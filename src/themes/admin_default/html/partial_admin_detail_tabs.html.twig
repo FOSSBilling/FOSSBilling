@@ -3,7 +3,7 @@
 {% set _detail_tab_content_fallback %}{% block detail_tab_content %}{% endblock %}{% endset %}
 {% set detail_tab_content = block('detail_tab_content')|trim %}
 
-<div class="card{% if outer_card_class|default('') %} {{ outer_card_class }}{% endif %}">
+<div class="card overflow-hidden{% if outer_card_class|default('') %} {{ outer_card_class }}{% endif %}">
     <div class="card-header">
         <div>
             <h3 class="card-title">{{ title }}</h3>
