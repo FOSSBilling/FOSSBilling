@@ -35,39 +35,31 @@
     <form method="post" action="{{ 'custompages/update'|api_url }}" {{ fb_api_form({message: 'Custom Page Updated'|trans}) }}>
         <div class="card-body">
             <input type="hidden" name="id" value="{{ page.id }}">
-            <div class="mb-3 row">
-                <label class="col-md-3 col-form-label">{{ 'Title'|trans }}</label>
-                <div class="col">
+            <div class="row g-3">
+                <div class="col-lg-6">
+                    <label class="form-label">{{ 'Title'|trans }}</label>
                     <input class="form-control" type="text" name="title" value="{{ page.title }}" required="required" placeholder="{{ 'Enter page title here.'|trans }}">
                 </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="col-md-3 col-form-label">{{ 'Meta Description'|trans }}</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="description" value="{{ page.description }}" required="required" placeholder="{{ 'Enter page meta description here.'|trans }}">
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="col-md-3 col-form-label">{{ 'Meta Keywords'|trans }}</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="keywords" value="{{ page.keywords }}" required="required" placeholder="{{ 'Enter page meta keywords here.'|trans }}">
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="col-md-3 col-form-label">{{ 'Slug'|trans }}</label>
-                <div class="col">
+                <div class="col-lg-6">
+                    <label class="form-label">{{ 'Slug'|trans }}</label>
                     <input class="form-control" type="text" name="slug" value="{{ page.slug }}" required="required" placeholder="{{ 'Enter page slug here.'|trans }}">
                 </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="col-md-3 col-form-label">{{ 'Content'|trans }}</label>
-                <div class="col">
+                <div class="col-12">
+                    <label class="form-label">{{ 'Meta Description'|trans }}</label>
+                    <input class="form-control" type="text" name="description" value="{{ page.description }}" required="required" placeholder="{{ 'Enter page meta description here.'|trans }}">
+                </div>
+                <div class="col-12">
+                    <label class="form-label">{{ 'Meta Keywords'|trans }}</label>
+                    <input class="form-control" type="text" name="keywords" value="{{ page.keywords }}" required="required" placeholder="{{ 'Enter page meta keywords here.'|trans }}">
+                </div>
+                <div class="col-12">
+                    <label class="form-label">{{ 'Content'|trans }}</label>
                     <textarea class="editor-textarea" name="content" cols="5" rows="5" required="required" placeholder="{{ 'Enter page content here.'|trans }}">{{ page.content }}</textarea>
                 </div>
             </div>
         </div>
-        <div class="card-footer text-end">
-            <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary"/>
+        <div class="card-footer d-flex justify-content-end">
+            <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
         </div>
     </form>
 </div>

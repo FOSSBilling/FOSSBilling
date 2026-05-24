@@ -1,17 +1,26 @@
 <div class="card-body">
-    <h3>{{ order.title }} {{ 'Management'|trans }}</h3>
+    <div class="mb-3">
+        <h3 class="card-title mb-1">{{ order.title }} {{ 'Management'|trans }}</h3>
+        <p class="text-secondary mb-0">{{ 'Update the custom service values stored against this order. These fields are defined by the selected custom service plugin.'|trans }}</p>
+    </div>
 
     <form method="post" action="{{ 'servicecustom/update'|api_url }}" {{ fb_api_form({message: 'Service Updated'|trans}) }}>
-        {% for name, value in service %}
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ name }}</label>
-                <div class="col">
-                    <textarea class="form-control" rows="2" name="config[{{ name }}]">{{ value }}</textarea>
+        <div class="row g-3">
+            {% for name, value in service %}
+                <div class="col-12">
+                    <label class="form-label">{{ name }}</label>
+                    <textarea class="form-control" rows="3" name="config[{{ name }}]">{{ value }}</textarea>
                 </div>
-            </div>
-        {% endfor %}
+            {% else %}
+                <div class="col-12">
+                    <div class="alert alert-secondary mb-0">{{ 'This service does not currently expose any editable configuration values.'|trans }}</div>
+                </div>
+            {% endfor %}
+        </div>
 
         <input type="hidden" name="order_id" value="{{ order.id }}">
-        <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
+        <div class="d-flex justify-content-end mt-4">
+            <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
+        </div>
     </form>
 </div>

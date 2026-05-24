@@ -28,31 +28,30 @@
 {% block content %}
 <div class="card">
     <div class="card-body">
-        <h5>{{ 'Canned Response'|trans }}</h5>
-        <p class="text-muted">{{ response.title }}</p>
-
         <form method="post" action="{{ 'support/canned_update'|api_url }}" {{ fb_api_form({ redirect: 'support/canned-responses'|url }) }}>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}:</label>
-                <div class="col">
+            <div class="mb-3">
+                <h3 class="card-title mb-1">{{ 'Canned Response'|trans }}</h3>
+                <p class="text-secondary mb-0">{{ response.title }}</p>
+            </div>
+            <div class="row g-3">
+                <div class="col-lg-6">
+                    <label class="form-label">{{ 'Category'|trans }}</label>
                     {{ mf.selectbox('category_id', admin.support_canned_category_pairs, response.category.id, 1) }}
                 </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
-                <div class="col">
+                <div class="col-lg-6">
+                    <label class="form-label">{{ 'Title'|trans }}</label>
                     <input class="form-control" type="text" name="title" value="{{ response.title }}" required>
                 </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Message'|trans }}:</label>
-                <div class="col">
+                <div class="col-12">
+                    <label class="form-label">{{ 'Message'|trans }}</label>
                     <textarea class="editor-textarea" name="content" rows="10">{{ response.content }}</textarea>
                 </div>
             </div>
 
             <input type="hidden" name="id" value="{{ response.id }}">
-            <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
+            <div class="d-flex justify-content-end mt-4">
+                <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
+            </div>
         </form>
     </div>
 </div>

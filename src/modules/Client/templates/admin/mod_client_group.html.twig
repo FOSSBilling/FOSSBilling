@@ -32,9 +32,9 @@
     {% if can_manage_groups %}
     <form method="post" action="{{ 'client/group_update'|api_url }}" {{ fb_api_form({redirect: 'client'|url}) }}>
         <div class="card-body">
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
-                <div class="col">
+            <div class="row g-3">
+                <div class="col-lg-6">
+                    <label class="form-label">{{ 'Title'|trans }}</label>
                     <input class="form-control" type="text" name="title" value="{{ group.title }}" required>
                 </div>
             </div>
@@ -42,20 +42,23 @@
 
         <input type="hidden" name="id" value="{{ group.id }}">
 
-        <div class="card-footer d-flex gap-2">
-            <a href="{{ 'client'|url }}" class="btn btn-secondary w-25">
+        <div class="card-footer d-flex flex-wrap gap-2 justify-content-between">
+            <a href="{{ 'client'|url }}" class="btn btn-secondary">
                 <svg class="icon">
                     <use xlink:href="#arrow-sm-left" />
                 </svg>
                 {{ 'Go Back'|trans }}
             </a>
-            <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
-            <a class="btn btn-danger w-25" href="{{ 'client/group_delete'|api_url(query: { 'id': group.id }) }}"
-                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'client'|url}) }}>
-                <svg class="icon">
-                    <use xlink:href="#delete" />
-                </svg>
-            </a>
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-danger" href="{{ 'client/group_delete'|api_url(query: { 'id': group.id }) }}"
+                    {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'client'|url}) }}>
+                    <svg class="icon">
+                        <use xlink:href="#delete" />
+                    </svg>
+                    {{ 'Delete'|trans }}
+                </a>
+                <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
+            </div>
         </div>
     </form>
     {% else %}

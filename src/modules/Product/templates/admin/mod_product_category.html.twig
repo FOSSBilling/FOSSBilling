@@ -29,37 +29,39 @@
 <div class="card">
     <form method="post" action="{{ 'product/category_update'|api_url }}" {{ fb_api_form({message: 'Category Updated'|trans}) }}>
         <div class="card-body">
-            <h3>{{ category.title }}</h3>
+            <div class="mb-3">
+                <h3 class="card-title mb-1">{{ category.title }}</h3>
+                <p class="text-secondary mb-0">{{ 'Update the category title, icon, and description shown on the products area.'|trans }}</p>
+            </div>
 
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
-                <div class="col">
+            <div class="row g-3">
+                <div class="col-lg-6">
+                    <label class="form-label">{{ 'Title'|trans }}</label>
                     <input class="form-control" type="text" name="title" value="{{ category.title }}" required>
                 </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Icon'|trans }}:</label>
-                <div class="col">
+                <div class="col-lg-6">
+                    <label class="form-label">{{ 'Icon'|trans }}</label>
                     <div class="input-group">
                         <input class="form-control" type="text" name="icon_url" id="bb-icon" value="{{ category.icon_url }}">
                     </div>
                 </div>
-            </div>
-            <div class="mb-3">
-                <textarea class="editor-textarea" name="description" rows="5">{{ category.description }}</textarea>
+                <div class="col-12">
+                    <label class="form-label">{{ 'Description'|trans }}</label>
+                    <textarea class="editor-textarea" name="description" rows="5">{{ category.description }}</textarea>
+                </div>
             </div>
         </div>
 
         <input type="hidden" name="id" value="{{ category.id }}">
 
-        <div class="card-footer d-flex gap-2">
-            <a href="{{ 'product'|url }}" class="btn btn-secondary w-25">
+        <div class="card-footer d-flex flex-wrap gap-2 justify-content-between">
+            <a href="{{ 'product'|url }}" class="btn btn-secondary">
                 <svg class="icon">
                     <use xlink:href="#arrow-sm-left" />
                 </svg>
                 {{ 'Go Back'|trans }}
             </a>
-            <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
+            <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
         </div>
     </form>
 </div>
