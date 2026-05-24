@@ -28,6 +28,8 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'view');
+
         $data['no_cron'] = true;
 
         [$sql, $params] = $this->getService()->getSearchQuery($data);
@@ -50,6 +52,8 @@ class Admin extends \Api_Abstract
      */
     public function get_pairs(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'view');
+
         return $this->getService()->getPairs($data);
     }
 
@@ -63,6 +67,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'ID was not passed'])]
     public function get($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'view');
+
         $model = $this->di['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
 
         return $this->getService()->toModel_AdminApiArray($model);

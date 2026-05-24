@@ -45,6 +45,11 @@ class Service implements InjectionAwareInterface
     public function getModulePermissions(): array
     {
         return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View staff details'),
+                'description' => __trans('Allows the staff member to view staff account details and listings.'),
+            ],
             'create_and_edit_admin' => [
                 'type' => 'bool',
                 'display_name' => __trans('Create and edit administrators'),

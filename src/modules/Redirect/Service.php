@@ -37,6 +37,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function getModulePermissions(): array
     {
         return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View redirects'),
+                'description' => __trans('Allows the staff member to view redirect rules.'),
+            ],
             'create_and_edit' => [
                 'type' => 'bool',
                 'display_name' => __trans('Create and edit redirects'),

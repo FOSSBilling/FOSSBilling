@@ -126,7 +126,7 @@ class Service implements InjectionAwareInterface
             && isset($config['disable_change_email'])
             && $config['disable_change_email']
         ) {
-            throw new \FOSSBilling\InformationException('Email address cannot be changed');
+            throw new InformationException('Email address cannot be changed');
         }
 
         if (!empty($email)) {
@@ -134,7 +134,7 @@ class Service implements InjectionAwareInterface
 
             $clientService = $this->di['mod_service']('client');
             if ($clientService->emailAlreadyRegistered($email, $client)) {
-                throw new \FOSSBilling\InformationException('This email address is already registered.');
+                throw new InformationException('This email address is already registered.');
             }
 
             $client->email = $email;

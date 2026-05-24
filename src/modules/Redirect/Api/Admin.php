@@ -26,6 +26,8 @@ class Admin extends \Api_Abstract
      */
     public function get_list()
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'view');
+
         return $this->getService()->getRedirects();
     }
 
@@ -35,6 +37,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Redirect ID was not passed'])]
     public function get($data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'view');
+
         return $this->getService()->toApiArray($this->getService()->get((int) $data['id']));
     }
 

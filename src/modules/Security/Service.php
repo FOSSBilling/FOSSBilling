@@ -36,7 +36,11 @@ class Service
     public function getModulePermissions(): array
     {
         return [
-            'can_always_access' => true,
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View security information'),
+                'description' => __trans('Allows the staff member to view security checks and perform IP lookups.'),
+            ],
             'run_checks' => [
                 'type' => 'bool',
                 'display_name' => __trans('Run security checks'),

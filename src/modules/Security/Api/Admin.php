@@ -19,11 +19,15 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ip' => 'You must specify an IP address to lookup.'])]
     public function ip_lookup(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'view');
+
         return $this->getService()->lookupIP($data['ip']);
     }
 
     public function list_checks(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'view');
+
         $result = [];
         $checkInterfaces = $this->getService()->getAllChecks();
         foreach ($checkInterfaces as $id => $interface) {
