@@ -671,18 +671,21 @@
 {% endblock %}
 
 {% block sidebar2 %}
-<div class="widget">
-    <div class="head">
-        <h2 class="dark-icon i-services">{{ 'Actions'|trans }}</h2>
-    </div>
-    <div class="block">
-        <button class="btn btn-primary" type="button" onclick="window.print()">
-            <span class="dark-icon i-print"></span> {{ 'Print'|trans }}</button>
-        {% if invoice.status == 'unpaid' %}
-        <a class="btn btn-primary" href="{{ 'invoice/delete'|api_url(query: { 'id': invoice.id }) }}"
-            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice'|url}) }}>
-            <span class="dark-icon i-bin"></span> {{ 'Delete'|trans }}</a>
-        {% endif %}
+<div class="card">
+    <div class="card-body">
+        <div class="d-flex flex-column gap-1 mb-4">
+            <h5 class="card-title mb-0">{{ 'Actions'|trans }}</h5>
+            <p class="text-secondary mb-0">{{ 'Print this invoice or remove it while it remains unpaid.'|trans }}</p>
+        </div>
+        <div class="d-grid gap-2">
+            <button class="btn btn-primary" type="button" onclick="window.print()">{{ 'Print'|trans }}</button>
+            {% if invoice.status == 'unpaid' %}
+                <a class="btn btn-danger" href="{{ 'invoice/delete'|api_url(query: { 'id': invoice.id }) }}"
+                    {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice'|url}) }}>
+                    {{ 'Delete'|trans }}
+                </a>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}
