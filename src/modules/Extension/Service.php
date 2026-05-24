@@ -41,7 +41,11 @@ class Service implements InjectionAwareInterface
     public function getModulePermissions(): array
     {
         return [
-            'can_always_access' => true,
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View extensions'),
+                'description' => __trans('Allows the staff member to view installed and available extensions, languages, and extension details.'),
+            ],
             'manage_extensions' => [
                 'type' => 'bool',
                 'display_name' => __trans('Manage extensions'),

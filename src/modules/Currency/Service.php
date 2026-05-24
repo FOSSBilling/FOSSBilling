@@ -51,7 +51,11 @@ class Service implements InjectionAwareInterface
     public function getModulePermissions(): array
     {
         return [
-            'can_always_access' => true,
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View currencies'),
+                'description' => __trans('Allows the staff member to view available currencies and their details.'),
+            ],
             'create' => [
                 'type' => 'bool',
                 'display_name' => __trans('Create Currencies'),
@@ -77,7 +81,6 @@ class Service implements InjectionAwareInterface
                 'display_name' => __trans('Update Currency Rates'),
                 'description' => __trans('Allows the staff member to refresh all currency conversion rates.'),
             ],
-            'manage_settings' => [],
         ];
     }
 

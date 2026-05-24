@@ -28,6 +28,8 @@ class Admin extends \Api_Abstract
      */
     public function get_list(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'view');
+
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
         $repo = $this->getService()->getCurrencyRepository();
 
@@ -43,6 +45,8 @@ class Admin extends \Api_Abstract
      */
     public function get_pairs(): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'view');
+
         $currencies = Currencies::getNames();
         foreach ($currencies as $currencyCode => $currencyName) {
             /** @var string $currencyCode */
@@ -64,6 +68,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Currency code is missing'])]
     public function get($data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'view');
+
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
         $repo = $this->getService()->getCurrencyRepository();
 
@@ -81,6 +87,8 @@ class Admin extends \Api_Abstract
      */
     public function get_default(): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'view');
+
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
         $repo = $this->getService()->getCurrencyRepository();
 
@@ -145,6 +153,8 @@ class Admin extends \Api_Abstract
      */
     public function is_cron_enabled(): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'view');
+
         return $this->getService()->isCronEnabled();
     }
 

@@ -30,6 +30,8 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'view');
+
         $service = $this->getService();
 
         return $service->getExtensionsList($data);
@@ -43,6 +45,8 @@ class Admin extends \Api_Abstract
      */
     public function get_latest($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'view');
+
         $type = $data['type'] ?? null;
 
         try {
@@ -62,6 +66,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['extension_id' => 'Extension ID was not passed'])]
     public function get_extension_readme($data): string
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'view');
+
         $extensionInfo = $this->di['extension_manager']->getExtension($data['extension_id']);
         $markdown = new \FOSSBilling\Twig\Markdown\FOSSBillingMarkdown($this->di);
 
@@ -89,6 +95,8 @@ class Admin extends \Api_Abstract
      */
     public function languages(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'view');
+
         $data['disabled'] = Tools::normalizeBoolean($data['disabled'] ?? false);
         $data['details'] = Tools::normalizeBoolean($data['details'] ?? true, true);
 
@@ -118,6 +126,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['locale_id' => 'Locale ID was not passed'])]
     public function locale_completion(array $data): int
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'view');
+
         return \FOSSBilling\i18n::getLocaleCompletionPercent($data['locale_id']);
     }
 
@@ -130,6 +140,8 @@ class Admin extends \Api_Abstract
      */
     public function update($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
+
         $ext = $this->_getExtension($data);
         $service = $this->getService();
 
@@ -150,6 +162,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Extension ID was not passed', 'type' => 'Extension type was not passed'])]
     public function activate($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
+
         $service = $this->getService();
 
         return $service->activateExistingExtension($data);
@@ -164,6 +178,8 @@ class Admin extends \Api_Abstract
      */
     public function deactivate($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
+
         $ext = $this->_getExtension($data);
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminDeactivateExtension', 'params' => ['id' => $ext->id]]);
@@ -183,6 +199,8 @@ class Admin extends \Api_Abstract
      */
     public function uninstall($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'uninstall_extensions');
+
         $ext = $this->_getExtension($data);
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminUninstallExtension', 'params' => ['id' => $ext->id]]);
 
@@ -201,6 +219,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Extension ID was not passed', 'type' => 'Extension type was not passed'])]
     public function install($data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
+
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInstallExtension', 'params' => $data]);
 
         $service = $this->getService();
@@ -253,6 +273,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ext' => 'Parameter "ext" was not passed'])]
     public function config_save($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
+
         return $this->getService()->setConfig($data);
     }
 

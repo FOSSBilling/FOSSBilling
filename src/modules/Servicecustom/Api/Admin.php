@@ -25,6 +25,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['order_id' => 'Order ID is required'])]
     public function update($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicecustom', 'manage');
+
         if (!isset($data['order_id'])) {
             throw new \FOSSBilling\Exception('Order ID is required');
         }
@@ -44,6 +46,8 @@ class Admin extends \Api_Abstract
      */
     public function __call($name, $arguments)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicecustom', 'manage');
+
         if (!isset($arguments[0])) {
             throw new \FOSSBilling\Exception('API call is missing arguments', null, 7103);
         }

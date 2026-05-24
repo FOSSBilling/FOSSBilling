@@ -46,7 +46,11 @@ class Service
     public function getModulePermissions(): array
     {
         return [
-            'can_always_access' => true,
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View system information'),
+                'description' => __trans('Allows the staff member to view system status, update availability, and other read-only system information.'),
+            ],
             'manage_settings' => [
                 'type' => 'bool',
                 'display_name' => __trans('Manage System Settings'),

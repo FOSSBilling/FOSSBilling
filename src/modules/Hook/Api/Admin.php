@@ -27,7 +27,7 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('hook', 'manage_hooks');
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('hook', 'view');
 
         $service = $this->getService();
         [$sql, $params] = $service->getSearchQuery($data);
