@@ -1,61 +1,72 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Login</title>
+    <title>{{ 'Contact us'|trans }}</title>
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    {{ include('partial_embed_styles.html.twig') }}
     <style type="text/css">
-        body { margin: 0; }
-        form {
-            border: 1px solid #D1D1D1;
+        .embed-shell--contact {
+            padding: 10px;
+            border-radius: 10px;
         }
-        fieldset {
-            border: 0px;
+
+        .embed-shell--contact .embed-title {
+            margin-bottom: 8px;
         }
-        legend {
-            padding-top: 15px;
+
+        .embed-shell--contact .embed-stack {
+            gap: 8px;
         }
-        label {
-            width: 100px;
-            display: block;
-            float: left;
+
+        .embed-shell--contact .embed-grid {
+            gap: 8px;
         }
-        p {
-            margin-top: 0px;
+
+        .embed-shell--contact .embed-textarea {
+            min-height: 78px;
         }
-        textarea, select, input {
-            border: 1px solid #D1D1D1;
-            padding: 5px;
-            -webkit-border-radius: 2px;
-            -moz-border-radius: 2px;
-            border-radius: 2px;
-            background-color: white;
-            width: 240px;
+
+        .embed-shell--contact .g-recaptcha,
+        .embed-shell--contact #recaptcha_widget {
+            margin-top: 2px;
+        }
+
+        .embed-shell--contact #recaptcha_response_field {
+            width: 100% !important;
+        }
+
+        .embed-shell--contact a.btn,
+        .embed-shell--contact input[type="submit"] {
+            width: auto !important;
         }
     </style>
 </head>
 
 <body>
-    <form method="post" action="" id="public-ticket-create">
-        <fieldset>
-            <p>
-                <label>{{ 'Name'|trans }}: </label>
-                <input type="text" name="name" value="{{ request.name }}" required="required">
-            </p>
+    <form method="post" action="" id="public-ticket-create" class="embed-shell embed-shell--contact">
+        <div class="embed-stack">
+            <h1 class="embed-title">{{ 'Contact us'|trans }}</h1>
 
-            <p>
-                <label>{{ 'Email'|trans }}: </label>
-                <input type="email" name="email" value="{{ request.email }}" required="required">
-            </p>
+            <div class="embed-grid">
+                <div class="embed-field">
+                    <label class="embed-label" for="embed-contact-name">{{ 'Name'|trans }}</label>
+                    <input id="embed-contact-name" class="embed-input" type="text" name="name" value="{{ request.name }}" required="required">
+                </div>
+                <div class="embed-field">
+                    <label class="embed-label" for="embed-contact-email">{{ 'Email'|trans }}</label>
+                    <input id="embed-contact-email" class="embed-input" type="email" name="email" value="{{ request.email }}" required="required">
+                </div>
+            </div>
 
-            <p>
-                <label>{{ 'Subject'|trans }}: </label>
-                <input type="text" name="subject" value="{{ request.subject }}" required="required">
-            </p>
+            <div class="embed-field">
+                <label class="embed-label" for="embed-contact-subject">{{ 'Subject'|trans }}</label>
+                <input id="embed-contact-subject" class="embed-input" type="text" name="subject" value="{{ request.subject }}" required="required">
+            </div>
 
-            <p>
-                <label>{{ 'Message'|trans }}: </label>
-                <textarea name="message" cols="5" rows="5" required="required">{{ request.message }}</textarea>
-            </p>
+            <div class="embed-field">
+                <label class="embed-label" for="embed-contact-message">{{ 'Message'|trans }}</label>
+                <textarea id="embed-contact-message" class="embed-textarea" name="message" cols="5" rows="5" required="required">{{ request.message }}</textarea>
+            </div>
 
 {% if guest.extension_is_on({ "mod": "antispam" }) %}
 {% set rc = guest.antispam_recaptcha %}
@@ -73,18 +84,17 @@
                         </script>
 
                          <div id="recaptcha_widget" style="display:none">
-
                            <div id="recaptcha_image"></div>
                            <div class="recaptcha_only_if_incorrect_sol" style="color:red">{{ 'Incorrect please try again'|trans }}</div>
 
-                           <p>
-                                <label>{{ 'Enter the words above'|trans }}</label>
-                                <br/>
-                                <input type="text" id="recaptcha_response_field" name="recaptcha_response_field" style="width: 245px"/>
-                                <a class="btn btn-primary" href="javascript:Recaptcha.reload()" style="float: right">
+                           <div class="embed-field">
+                                <label class="embed-label" for="recaptcha_response_field">{{ 'Enter the words above'|trans }}</label>
+                                <input class="embed-input" type="text" id="recaptcha_response_field" name="recaptcha_response_field" />
+                                <a class="embed-button" href="javascript:Recaptcha.reload()">
                                     <span class="dark-icon i-reload"></span>
+                                    {{ 'Reload challenge'|trans }}
                                 </a>
-                           </p>
+                           </div>
                          </div>
 
                         <script src="{{ server }}/challenge?k={{ rc.publickey }}"></script>
@@ -98,8 +108,8 @@
                 {% endif %}
             {% endif %}
 
-            <input class="btn btn-primary" type="submit" value="{{ 'Send'|trans }}" style="width: auto;"/>
-        </fieldset>
+            <button class="embed-button" type="submit">{{ 'Send'|trans }}</button>
+        </div>
 
         <input type="hidden" name="anti-spam" value="1" id="anti-spam" required="required"/>
     </form>

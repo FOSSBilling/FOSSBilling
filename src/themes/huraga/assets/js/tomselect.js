@@ -31,7 +31,7 @@ function localeSelectorTemplate(data, escape) {
 }
 
 export default function initLanguageSelector() {
-  const localeSelectorEl = document.querySelector('.js-language-selector');
+  const localeSelectorEl = document.querySelector('.js-locale-selector');
   if (localeSelectorEl === null) {
     return;
   }
@@ -39,7 +39,7 @@ export default function initLanguageSelector() {
   // Get saved language preference
   const savedLang = getCookie('fb_locale') || '';
 
-  new TomSelect('.js-language-selector', {
+  new TomSelect('.js-locale-selector', {
     copyClassesToDropdown: false,
     controlClass: 'ts-control locale',
     dropdownClass: 'dropdown-menu ts-dropdown locale-selector-dropdown',

@@ -13,7 +13,7 @@ final class AdminTest extends \BBTestCase
 
     public function setUp(): void
     {
-        $this->api = new Admin();
+        $this->api = $this->createAdminApi(Admin::class);
     }
 
     public function testChangePlan(): void
@@ -26,6 +26,7 @@ final class AdminTest extends \BBTestCase
         $apiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
+        $apiMock->setDi($this->getDi());
 
         $apiMock->expects($this->atLeastOnce())
             ->method('_getService')
@@ -66,6 +67,7 @@ final class AdminTest extends \BBTestCase
         $apiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
+        $apiMock->setDi($this->getDi());
 
         $apiMock->expects($this->atLeastOnce())
             ->method('_getService')
@@ -89,6 +91,7 @@ final class AdminTest extends \BBTestCase
         $apiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
+        $apiMock->setDi($this->getDi());
 
         $apiMock->expects($this->atLeastOnce())
             ->method('_getService')
@@ -112,6 +115,7 @@ final class AdminTest extends \BBTestCase
         $apiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
+        $apiMock->setDi($this->getDi());
 
         $apiMock->expects($this->atLeastOnce())
             ->method('_getService')
@@ -135,6 +139,7 @@ final class AdminTest extends \BBTestCase
         $apiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
+        $apiMock->setDi($this->getDi());
 
         $apiMock->expects($this->atLeastOnce())
             ->method('_getService')
@@ -158,6 +163,7 @@ final class AdminTest extends \BBTestCase
         $apiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
+        $apiMock->setDi($this->getDi());
 
         $apiMock->expects($this->atLeastOnce())
             ->method('_getService')
@@ -181,6 +187,7 @@ final class AdminTest extends \BBTestCase
         $apiMock = $this->getMockBuilder(Admin::class)
             ->onlyMethods(['_getService'])
             ->getMock();
+        $apiMock->setDi($this->getDi());
 
         $apiMock->expects($this->atLeastOnce())
             ->method('_getService')

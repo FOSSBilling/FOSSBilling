@@ -15,7 +15,7 @@ final class AdminTest extends \BBTestCase
     public function setUp(): void
     {
         $this->service = new \Box\Mod\Extension\Service();
-        $this->api = new Admin();
+        $this->api = $this->createAdminApi(Admin::class);
     }
 
     public function testGetList(): void
@@ -338,7 +338,18 @@ final class AdminTest extends \BBTestCase
         $serviceMock->expects($this->never())
             ->method('getConfig');
 
+        $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffServiceMock->expects($this->never())
+            ->method('checkPermissionsAndThrowException');
+
         $di = $this->getDi();
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {
+            if ($serviceName == 'Staff') {
+                return $staffServiceMock;
+            }
+
+            return false;
+        });
         $this->api->setDi($di);
 
         $this->api->setService($serviceMock);

@@ -1,7 +1,5 @@
 {% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
 
-{% import 'macro_functions.html.twig' as mf %}
-
 {% block meta_title %}{{ 'Cron Settings'|trans }}{% endblock %}
 
 {% set active_menu = 'system' %}
@@ -23,66 +21,74 @@
 {% endblock %}
 
 {% block content %}
+    {% set cron = admin.cron_info %}
+    {% set params = admin.extension_config_get({ 'ext': 'mod_cron' }) %}
     <div class="card">
         <div class="card-header">
             <div>
                 <h3 class="card-title">{{ 'Cron Settings'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Review cron status, confirm your schedule, and control whether the guest cron endpoint is available.'|trans }}</p>
             </div>
         </div>
-        <div class="card-body border-bottom">
-            <span class="card-subtitle">{{ 'Scheduled tasks must be enabled immediately after installation. Cron is responsible for sending your clients reminder about payments, domain renewal notices and many more.'|trans }}</span>
+        <div class="card-body">
+            <div class="alert alert-info" role="alert">
+                <strong class="me-1">{{ 'Recommended Schedule:'|trans }}</strong><code>*/5 * * * * php {{ cron.cron_path }}</code>
+            </div>
+
+            <div class="row row-cards">
+                <div class="col-xl-3 col-md-6">
+                    <section class="card card-sm h-100">
+                        <div class="card-body">
+                            <div class="text-secondary small mb-1">{{ 'Timezone'|trans }}</div>
+                            <div class="fw-semibold">{{ 'now'|format_date(pattern='zzz') }}</div>
+                        </div>
+                    </section>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <section class="card card-sm h-100">
+                        <div class="card-body">
+                            <div class="text-secondary small mb-1">{{ 'Time on Server'|trans }}</div>
+                            <div class="fw-semibold">{{ 'now'|format_datetime }}</div>
+                        </div>
+                    </section>
+                </div>
+                <div class="col-xl-6">
+                    <section class="card card-sm h-100">
+                        <div class="card-body">
+                            <div class="text-secondary small mb-1">{{ 'Last Scheduled Execution'|trans }}</div>
+                            {% if cron.last_cron_exec %}
+                                <div class="fw-semibold">{{ cron.last_cron_exec|format_datetime }}</div>
+                                <div class="text-secondary">{{ cron.last_cron_exec|timeago }} {{ 'ago'|trans }}</div>
+                            {% else %}
+                                <div class="fw-semibold">{{ 'Scheduled tasks were never executed'|trans }}</div>
+                            {% endif %}
+                        </div>
+                    </section>
+                </div>
+            </div>
         </div>
-        {% set cron = admin.cron_info %}
-        <div class="table-responsive">
-            <table class="table card-table table-vcenter table-striped text-nowrap">
-                <tbody>
-                <tr>
-                    <td class="w-50 text-end">{{ 'Timezone'|trans }}:</td>
-                    <td>{{ "now"|format_date(pattern='zzz') }}</td>
-                </tr>
-                <tr>
-                    <td class="text-end">{{ 'Time on Server'|trans }}:</td>
-                    <td>{{ "now"|format_datetime }}</td>
-                </tr>
-                <tr>
-                    <td class="text-end">{{ 'Last Time Scheduled Tasks Were Executed'|trans }}:</td>
-                    <td>
-                        {% if cron.last_cron_exec %}
-                            {{ cron.last_cron_exec|format_datetime }}
-                            ({{ cron.last_cron_exec|timeago }} ago)
-                        {% else %}
-                            {{ 'Scheduled tasks were never executed'|trans }}
-                        {% endif %}
-                    </td>
-                </tr>
-                <tr>
-                    <td class="text-end">{{ 'Recommended Crontab Setup'|trans }}:</td>
-                    <td><code>*/5 * * * * php {{ cron.cron_path }}</code></td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-        <div class="card-body container">
-            {% set params = admin.extension_config_get({ 'ext': 'mod_cron' }) %}
+        <div class="card-body border-top">
             <form method="post" action="{{ 'extension/config_save'|api_url }}" {{ fb_api_form({message: 'Configuration Updated'|trans}) }}>
                 <input type="hidden" name="ext" value="mod_cron">
-                <div class="row">
-                    <div class="col-3">
-                        <label>{{ 'Enable the Cron API Endpoint for Guests'|trans }}</label>
+                <div class="d-flex flex-column flex-lg-row align-items-lg-start justify-content-between gap-3 mb-3">
+                    <div>
+                        <h4 class="card-title mb-2">{{ 'Guest Cron Endpoint'|trans }}</h4>
+                        <p class="text-secondary mb-0">{{ 'If enabled, this guest URL can be used to execute scheduled tasks without an authenticated admin session.'|trans }}</p>
                     </div>
-                    <div class="col-1">
-                        <label class="form-check form-switch">
-                            <input class="form-check-input" name="guest_cron" type="checkbox" {% if params.guest_cron %} checked="checked"{% endif %}>
-                        </label>
-                    </div>
-
-                    <p class="text-muted">{{ 'If enabled, this URL can be used to execute the cronjob:'|trans }} {{ 'cron/run'|api_url(role: 'guest') }}</p>
-                    <input class="btn btn-primary w-25" type="submit" value="{{ 'Update'|trans }}">
+                    <label class="form-check form-switch form-switch-2 m-0">
+                        <input class="form-check-input" name="guest_cron" type="checkbox" {% if params.guest_cron %}checked="checked"{% endif %}>
+                        <span class="form-check-label">{{ 'Enable Guest Access'|trans }}</span>
+                    </label>
+                </div>
+                <label class="form-label" for="guest-cron-url">{{ 'Guest Cron URL'|trans }}</label>
+                <input id="guest-cron-url" class="form-control font-monospace" type="text" value="{{ 'cron/run'|api_url(role: 'guest') }}" readonly>
+                <div class="pt-3 text-end">
+                    <input class="btn btn-primary" type="submit" value="{{ 'Update'|trans }}">
                 </div>
             </form>
         </div>
-        <div class="card-footer text-center">
-            <a class="btn btn-primary" href="{{'cron/run'|api_url }}" target="_blank" {{ fb_api_link({message: 'Cron Executed'|trans}) }}>
+        <div class="card-footer d-flex justify-content-end">
+            <a class="btn btn-primary" href="{{ 'cron/run'|api_url }}" target="_blank" {{ fb_api_link({message: 'Cron Executed'|trans}) }}>
                 <svg class="icon icon-tabler">
                     <use xlink:href="#play"/>
                 </svg>

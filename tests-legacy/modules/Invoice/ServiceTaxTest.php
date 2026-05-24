@@ -225,10 +225,6 @@ final class ServiceTaxTest extends \BBTestCase
 
     public function testCreate(): void
     {
-        $systemService = $this->createMock(\Box\Mod\System\Service::class);
-        $systemService->expects($this->atLeastOnce())
-            ->method('checkLimits');
-
         $taxModel = new \Model_Tax();
         $taxModel->loadBean(new \DummyBean());
         $dbMock = $this->getMockBuilder('\Box_Database')
@@ -242,7 +238,6 @@ final class ServiceTaxTest extends \BBTestCase
             ->willReturn($newId);
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
         $this->service->setDi($di);

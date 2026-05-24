@@ -162,6 +162,7 @@ final class ServiceTest extends \BBTestCase
         $di['events_manager'] = $emMock;
         $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $clientServiceMock);
+        $di['mod_config'] = $di->protect(fn (): array => ['require_email_confirmation' => false]);
         $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
         $di['tools'] = $toolsMock;
 
@@ -182,13 +183,13 @@ final class ServiceTest extends \BBTestCase
             'address_2' => 'string',
             'phone_cc' => random_int(10, 300),
             'phone' => random_int(10000, 90000),
-            'country' => 'string',
+            'country' => 'US',
             'postcode' => 'string',
             'city' => 'string',
             'state' => 'string',
             'document_type' => 'passport',
             'document_nr' => random_int(100000, 900000),
-            'lang' => 'string',
+            'lang' => 'en_US',
             'notes' => 'string',
             'custom_1' => 'string',
             'custom_2' => 'string',

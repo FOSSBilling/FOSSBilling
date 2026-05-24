@@ -30,6 +30,8 @@ class Admin extends \Api_Abstract
      */
     public function get($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'view');
+
         $deep = isset($data['deep']) ? (bool) $data['deep'] : true;
         $order = $this->_getOrder($data);
 
@@ -46,6 +48,8 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'view');
+
         $orderConfig = $this->di['mod']('order')->getConfig();
         $data['hide_addons'] = (isset($orderConfig['show_addons']) && $orderConfig['show_addons']) ? 0 : 1;
 
@@ -85,6 +89,8 @@ class Admin extends \Api_Abstract
     ])]
     public function create($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+
         $markInvoicePaid = Tools::normalizeBoolean($data['mark_invoice_paid'] ?? false);
         $data['mark_invoice_paid'] = $markInvoicePaid;
 
@@ -122,6 +128,8 @@ class Admin extends \Api_Abstract
      */
     public function update($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+
         $order = $this->_getOrder($data);
 
         return $this->getService()->updateOrder($order, $data);
@@ -136,6 +144,8 @@ class Admin extends \Api_Abstract
      */
     public function activate($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+
         $order = $this->_getOrder($data);
 
         return $this->getService()->activateOrder($order, $data);
@@ -148,6 +158,8 @@ class Admin extends \Api_Abstract
      */
     public function renew($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+
         $order = $this->_getOrder($data);
 
         if ($order->status == \Model_ClientOrder::STATUS_PENDING_SETUP || $order->status == \Model_ClientOrder::STATUS_FAILED_SETUP) {
@@ -167,6 +179,8 @@ class Admin extends \Api_Abstract
      */
     public function suspend($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+
         $order = $this->_getOrder($data);
         $skip_event = Tools::normalizeBoolean($data['skip_event'] ?? false);
 
@@ -182,6 +196,8 @@ class Admin extends \Api_Abstract
      */
     public function unsuspend($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+
         $order = $this->_getOrder($data);
         if ($order->status != \Model_ClientOrder::STATUS_SUSPENDED) {
             throw new \FOSSBilling\InformationException('Only suspended orders can be unsuspended');
@@ -199,6 +215,8 @@ class Admin extends \Api_Abstract
      */
     public function cancel($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+
         $order = $this->_getOrder($data);
         $skip_event = Tools::normalizeBoolean($data['skip_event'] ?? false);
 
@@ -214,6 +232,8 @@ class Admin extends \Api_Abstract
      */
     public function uncancel($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+
         $order = $this->_getOrder($data);
         if ($order->status != \Model_ClientOrder::STATUS_CANCELED) {
             throw new \FOSSBilling\InformationException('Only canceled orders can be uncanceled');
@@ -231,6 +251,8 @@ class Admin extends \Api_Abstract
      */
     public function delete($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+
         $order = $this->_getOrder($data);
         $delete_addons = Tools::normalizeBoolean($data['delete_addons'] ?? false);
         $forceDelete = Tools::normalizeBoolean($data['force_delete'] ?? false);
@@ -252,6 +274,8 @@ class Admin extends \Api_Abstract
      */
     public function batch_suspend_expired($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+
         return $this->getService()->batchSuspendExpired();
     }
 
@@ -263,6 +287,8 @@ class Admin extends \Api_Abstract
      */
     public function batch_cancel_suspended($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+
         return $this->getService()->batchCancelSuspended();
     }
 
@@ -274,6 +300,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['config' => 'Order config not passed'])]
     public function update_config($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+
         $order = $this->_getOrder($data);
 
         if (!is_array($data['config'])) {
@@ -292,6 +320,8 @@ class Admin extends \Api_Abstract
      */
     public function service($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'view');
+
         $order = $this->_getOrder($data);
 
         return $this->getService()->getOrderServiceData($order, $this->getIdentity());
@@ -304,6 +334,8 @@ class Admin extends \Api_Abstract
      */
     public function status_history_get_list($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'view');
+
         $order = $this->_getOrder($data);
 
         $data['client_order_id'] = $order->id;
@@ -321,6 +353,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['status' => 'Order status was not passed'])]
     public function status_history_add($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+
         $order = $this->_getOrder($data);
 
         $notes = $data['notes'] ?? null;
@@ -336,6 +370,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Order history line ID was not passed'])]
     public function status_history_delete($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+
         return $this->getService()->orderStatusRm($data['id']);
     }
 
@@ -346,6 +382,8 @@ class Admin extends \Api_Abstract
      */
     public function get_statuses()
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'view');
+
         return $this->getService()->counter();
     }
 
@@ -354,6 +392,8 @@ class Admin extends \Api_Abstract
      */
     public function get_invoice_options($data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'view');
+
         return [
             'issue-invoice' => __trans('Automatically Issue Renewal Invoices'),
             'no-invoice' => __trans('Issue Invoices Manually'),
@@ -365,6 +405,8 @@ class Admin extends \Api_Abstract
      */
     public function get_status_pairs($data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'view');
+
         return [
             \Model_ClientOrder::STATUS_PENDING_SETUP => 'Pending Setup',
             \Model_ClientOrder::STATUS_FAILED_SETUP => 'Setup Failed',
@@ -379,6 +421,8 @@ class Admin extends \Api_Abstract
      */
     public function addons($data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'view');
+
         $model = $this->_getOrder($data);
         $list = $this->getService()->getOrderAddonsList($model);
         $result = [];
@@ -407,6 +451,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ids' => 'Order IDs were not passed'])]
     public function batch_delete($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+
         $delete_addons = Tools::normalizeBoolean($data['delete_addons'] ?? false);
 
         foreach ($data['ids'] as $id) {
@@ -418,6 +464,8 @@ class Admin extends \Api_Abstract
 
     public function export_csv($data): Response
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'export');
+
         $data['headers'] ??= [];
 
         return $this->getService()->exportCSV($data['headers']);

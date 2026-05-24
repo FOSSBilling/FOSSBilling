@@ -107,7 +107,7 @@
                             <div class="row">
                                 <div class="mb-3 col-md-5">
                                     <label class="form-label" for="phone_cc">{{ 'Phone Country Code'|trans }}</label>
-                                    <input type="text" class="form-control" name="phone_cc" id="phone_cc" value="{{ profile.phone_cc }}" {% if "phone" in required %} required {% endif %}>
+                                    <input type="text" class="form-control" name="phone_cc" id="phone_cc" value="{{ profile.phone_cc }}" inputmode="numeric" maxlength="3" pattern="[0-9]{1,3}" autocomplete="tel-country-code" {% if "phone" in required %} required {% endif %}>
                                 </div>
                                 <div class="mb-3 col-md-5">
                                     <label class="form-label" for="phone">{{ 'Phone Number'|trans }}</label>
@@ -132,7 +132,7 @@
                                 <div class="mb-3 col-md-5">
                                     <label class="form-label" for="country">{{ 'Country'|trans }}</label>
                                     <select class="form-select" id="country" name="country" {% if "country" in required %} required {% endif %}>
-                                        <option value="">{{ '-- Select country --'|trans }}</option>
+                                        <option value="">{{ '-- Select Country --'|trans }}</option>
                                         {% for val,label in guest.system_countries %}
                                             <option value="{{ val }}" label="{{ label|e }}"
                                                     {% if val == profile.country %}selected="selected"{% endif %}>{{ label|e }}</option>
@@ -210,7 +210,7 @@
                         <h5 class="card-title mb-1">{{ 'Currency'|trans }}</h5>
                         <p class="card-text fs-7 text-muted">{{ 'Your profile currency is defined after your first order. Once your currency is set, all your profile accounting will be managed in that currency and cannot be changed.'|trans }}</p>
                         {% if profile.currency %}
-                            <p>{{ 'Your profile currency is'|trans }} <strong>{{ profile.currency }}</strong></p>
+                            <p>{{ 'Your profile currency is'|trans }} <strong>{{ profile.currency|currency_name }}</strong></p>
                             <p>{{ 'You will need to create a new client profile to use an alternative currency.'|trans }}</p>
                         {% else %}
                             <div class="alert alert-info" role="alert">

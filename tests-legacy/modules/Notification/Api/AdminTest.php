@@ -42,7 +42,7 @@ final class AdminTest extends \BBTestCase
         $di = $this->getDi();
         $di['pager'] = $pager;
 
-        $api = new Admin();
+        $api = $this->createAdminApi(Admin::class);
         $api->setDi($di);
         $api->setService($service);
 
@@ -67,7 +67,7 @@ final class AdminTest extends \BBTestCase
             ->with($meta)
             ->willReturn(['id' => 5, 'meta_value' => 'Test']);
 
-        $api = new Admin();
+        $api = $this->createAdminApi(Admin::class);
         $api->setService($service);
 
         $result = $api->get(['id' => 5]);
@@ -82,7 +82,7 @@ final class AdminTest extends \BBTestCase
             ->with(9)
             ->willReturn(true);
 
-        $api = new Admin();
+        $api = $this->createAdminApi(Admin::class);
         $api->setService($service);
 
         $this->assertTrue($api->delete(['id' => 9]));

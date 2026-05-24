@@ -30,27 +30,6 @@ final class GuestTest extends TestCase
         $this->assertIsArray($result->getResult());
     }
 
-    public function testCountries(): void
-    {
-        $result = Request::makeRequest('guest/system/countries');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsArray($result->getResult());
-    }
-
-    public function testCountriesEunion(): void
-    {
-        $result = Request::makeRequest('guest/system/countries_eunion');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsArray($result->getResult());
-    }
-
-    public function testStates(): void
-    {
-        $result = Request::makeRequest('guest/system/states');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsArray($result->getResult());
-    }
-
     public function testPhoneCodes(): void
     {
         $result = Request::makeRequest('guest/system/phone_codes');

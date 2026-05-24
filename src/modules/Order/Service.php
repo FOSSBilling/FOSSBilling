@@ -31,6 +31,27 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View orders'),
+                'description' => __trans('Allows the staff member to view orders and order details.'),
+            ],
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage orders'),
+                'description' => __trans('Allows the staff member to create, update, delete, and change order statuses.'),
+            ],
+            'export' => [
+                'type' => 'bool',
+                'display_name' => __trans('Export orders'),
+                'description' => __trans('Allows the staff member to export order data as CSV.'),
+            ],
+        ];
+    }
+
     public function counter(): array
     {
         $sql = '
@@ -1066,7 +1087,12 @@ class Service implements InjectionAwareInterface
         $order->invoice_option = $data['invoice_option'] ?? $order->invoice_option;
         $order->title = $data['title'] ?? $order->title;
         $order->price = $data['price'] ?? $order->price;
-        $order->status = $data['status'] ?? $order->status;
+        if (isset($data['status']) && $data['status'] !== $order->status) {
+            if (!in_array($data['status'], \Model_ClientOrder::getValidStatuses(), true)) {
+                throw new InformationException('Invalid order status: :status', [':status:' => $data['status']]);
+            }
+            $order->status = $data['status'];
+        }
         $order->notes = $data['notes'] ?? $order->notes;
         $order->reason = $data['reason'] ?? $order->reason;
 
@@ -1487,6 +1513,10 @@ class Service implements InjectionAwareInterface
 
     public function orderStatusAdd(\Model_ClientOrder $order, $status, $notes = null): bool
     {
+        if (!in_array($status, \Model_ClientOrder::getValidStatuses(), true)) {
+            throw new InformationException('Invalid order status: :status', [':status:' => $status]);
+        }
+
         $bean = $this->di['db']->dispense('ClientOrderStatus');
         $bean->client_order_id = $order->id;
         $bean->status = $status;

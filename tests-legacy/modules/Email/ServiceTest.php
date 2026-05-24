@@ -120,6 +120,25 @@ final class ServiceTest extends \BBTestCase
                     ':client_id' => 5,
                 ],
             ],
+            [
+                [
+                    'id' => '15',
+                    'sender' => 'staff@example.com',
+                    'recipient' => 'client@example.com',
+                    'subject' => 'Invoice',
+                    'date_from' => '2026-01-10',
+                    'date_to' => '2026-01-12',
+                ],
+                'SELECT * FROM activity_client_email WHERE id = :id AND sender LIKE :filter_sender AND recipients LIKE :filter_recipient AND subject LIKE :filter_subject AND created_at >= :date_from AND created_at <= :date_to ORDER BY id DESC',
+                [
+                    ':id' => 15,
+                    ':filter_sender' => '%staff@example.com%',
+                    ':filter_recipient' => '%client@example.com%',
+                    ':filter_subject' => '%Invoice%',
+                    ':date_from' => '2026-01-10 00:00:00',
+                    ':date_to' => '2026-01-12 23:59:59',
+                ],
+            ],
         ];
     }
 
@@ -138,6 +157,67 @@ final class ServiceTest extends \BBTestCase
 
         $this->assertEquals($result[0], $query);
         $this->assertEquals($result[1], $bindings);
+    }
+
+    public static function queueGetSearchQueryProvider(): array
+    {
+        return [
+            [
+                [],
+                'SELECT * FROM mod_email_queue ORDER BY updated_at DESC',
+                [],
+            ],
+            [
+                [
+                    'search' => 'receipt',
+                ],
+                'SELECT * FROM mod_email_queue WHERE (recipient LIKE :recipient OR subject LIKE :subject OR content LIKE :content OR to_name LIKE :to_name) ORDER BY updated_at DESC',
+                [
+                    ':recipient' => '%receipt%',
+                    ':subject' => '%receipt%',
+                    ':content' => '%receipt%',
+                    ':to_name' => '%receipt%',
+                ],
+            ],
+            [
+                [
+                    'id' => '4',
+                    'recipient' => 'client@example.com',
+                    'subject' => 'Invoice',
+                    'status' => 'unsent',
+                    'tries' => '2',
+                    'date_from' => '2026-05-15',
+                    'date_to' => '2026-05-17',
+                ],
+                'SELECT * FROM mod_email_queue WHERE id = :id AND recipient LIKE :filter_recipient AND subject LIKE :filter_subject AND status = :status AND tries = :tries AND created_at >= :date_from AND created_at <= :date_to ORDER BY updated_at DESC',
+                [
+                    ':id' => 4,
+                    ':filter_recipient' => '%client@example.com%',
+                    ':filter_subject' => '%Invoice%',
+                    ':status' => 'unsent',
+                    ':tries' => 2,
+                    ':date_from' => '2026-05-15 00:00:00',
+                    ':date_to' => '2026-05-17 23:59:59',
+                ],
+            ],
+        ];
+    }
+
+    #[DataProvider('queueGetSearchQueryProvider')]
+    public function testQueueGetSearchQuery(array $data, string $query, array $bindings): void
+    {
+        $service = new \Box\Mod\Email\Service();
+        $di = $this->getDi();
+
+        $di['em'] = $this->createEmMock();
+        $service->setDi($di);
+        $result = $service->queueGetSearchQuery($data);
+
+        $this->assertIsString($result[0]);
+        $this->assertIsArray($result[1]);
+
+        $this->assertEquals($query, $result[0]);
+        $this->assertEquals($bindings, $result[1]);
     }
 
     public function testEmailFindOneForClientById(): void

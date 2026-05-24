@@ -46,7 +46,7 @@ final class AdminTest extends \BBTestCase
         $api->setDi($di);
         $di['api_admin'] = $api;
 
-        $activity = new \Box\Mod\Activity\Api\Admin();
+        $activity = $this->createAdminApi(\Box\Mod\Activity\Api\Admin::class);
         $activity->setDi($di);
         $activity->setService($service);
         $activity->log_get_list([]);
@@ -89,7 +89,7 @@ final class AdminTest extends \BBTestCase
         $api->setDi($di);
         $di['api_admin'] = $api;
 
-        $activity = new \Box\Mod\Activity\Api\Admin();
+        $activity = $this->createAdminApi(\Box\Mod\Activity\Api\Admin::class);
         $activity->setDi($di);
         $activity->setService($service);
         $activity->log_get_list([]);
@@ -99,7 +99,7 @@ final class AdminTest extends \BBTestCase
     {
         $di = $this->getDi();
 
-        $activity = new \Box\Mod\Activity\Api\Admin();
+        $activity = $this->createAdminApi(\Box\Mod\Activity\Api\Admin::class);
         $activity->setDi($di);
         $result = $activity->log([]);
         $this->assertFalse($result, 'Empty array key m');
@@ -114,7 +114,7 @@ final class AdminTest extends \BBTestCase
 
         $di = $this->getDi();
 
-        $adminApi = new \Box\Mod\Activity\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Activity\Api\Admin::class);
         $adminApi->setService($service);
         $adminApi->setDi($di);
         $result = $adminApi->log_email(['subject' => 'Proper subject']);
@@ -124,7 +124,7 @@ final class AdminTest extends \BBTestCase
 
     public function testLogEmailWithoutSubject(): void
     {
-        $activity = new \Box\Mod\Activity\Api\Admin();
+        $activity = $this->createAdminApi(\Box\Mod\Activity\Api\Admin::class);
         $result = $activity->log_email([]);
         $this->assertFalse($result);
     }

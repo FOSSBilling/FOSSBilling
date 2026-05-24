@@ -23,6 +23,8 @@ class Admin extends \Api_Abstract
      */
     public function update($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('serviceapikey', 'manage');
+
         return $this->getService()->updateApiKey($data);
     }
 
@@ -35,6 +37,8 @@ class Admin extends \Api_Abstract
      */
     public function reset($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('serviceapikey', 'manage');
+
         return $this->getService()->resetApiKey($data);
     }
 }

@@ -21,6 +21,8 @@ use FOSSBilling\PaginationOptions;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Intl\Countries;
+use Symfony\Component\Intl\Locales;
 
 class Admin extends \Api_Abstract
 {
@@ -282,6 +284,14 @@ class Admin extends \Api_Abstract
 
         $previousStatus = $client->status;
 
+        if (!empty($data['country']) && !Countries::exists($data['country'])) {
+            throw new InformationException('Invalid country code: :code', [':code' => $data['country']]);
+        }
+
+        if (!empty($data['lang']) && !Locales::exists($data['lang'])) {
+            throw new InformationException('Invalid locale code: :code', [':code' => $data['lang']]);
+        }
+
         $allowedFields = [
             'email', 'first_name', 'last_name', 'aid', 'gender', 'birthday',
             'company', 'company_vat', 'address_1', 'address_2', 'document_type',
@@ -468,6 +478,8 @@ class Admin extends \Api_Abstract
      */
     public function get_statuses($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
+
         $service = $this->di['mod_service']('client');
 
         return $service->counter();
@@ -480,6 +492,8 @@ class Admin extends \Api_Abstract
      */
     public function group_get_pairs($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
+
         $service = $this->di['mod_service']('client');
 
         return $service->getGroupPairs();
@@ -546,6 +560,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Group ID is missing'])]
     public function group_get($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_groups');
+
         $model = $this->di['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
 
         return $this->di['db']->toArray($model);

@@ -36,6 +36,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage custom services'),
+                'description' => __trans('Allows the staff member to update custom service configurations and call custom service methods.'),
+            ],
+        ];
+    }
+
     public function validateCustomForm(array &$data, array $product): void
     {
         if ($product['form_id']) {

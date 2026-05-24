@@ -29,6 +29,8 @@ class Admin extends \Api_Abstract
      */
     public function log_get_list($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('activity', 'view');
+
         $data['min_priority'] ??= 6;
         [$sql, $params] = $this->getService()->getSearchQuery($data);
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
@@ -56,6 +58,8 @@ class Admin extends \Api_Abstract
      */
     public function log($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('activity', 'manage');
+
         if (!isset($data['m'])) {
             return false;
         }
@@ -79,6 +83,8 @@ class Admin extends \Api_Abstract
      */
     public function log_email($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('activity', 'manage');
+
         if (!isset($data['subject'])) {
             error_log('Email was not logged. Subject not passed');
 

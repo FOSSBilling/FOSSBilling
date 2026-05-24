@@ -43,6 +43,32 @@ class Service implements InjectionAwareInterface
     /**
      * @return mixed[]
      */
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View products'),
+                'description' => __trans('Allows the staff member to view products, categories, and promotions.'),
+            ],
+            'manage_products' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage products'),
+                'description' => __trans('Allows the staff member to create, update, and delete products.'),
+            ],
+            'manage_categories' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage product categories'),
+                'description' => __trans('Allows the staff member to create, update, and delete product categories.'),
+            ],
+            'manage_promos' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage promotions'),
+                'description' => __trans('Allows the staff member to create, update, and delete promotional codes.'),
+            ],
+        ];
+    }
+
     public function getPairs($data): array
     {
         $sql = 'SELECT id, title
@@ -187,15 +213,13 @@ class Service implements InjectionAwareInterface
     {
         return [
             \Model_ProductPayment::FREE => 'Free',
-            \Model_ProductPayment::ONCE => 'One time',
+            \Model_ProductPayment::ONCE => 'One Time',
             \Model_ProductPayment::RECURRENT => 'Recurrent',
         ];
     }
 
     public function createProduct($title, $type, $categoryId = null): int
     {
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_Product', 5);
         $sql = 'SELECT MAX(priority) FROM product LIMIT 1';
         $priority = $this->di['db']->getCell($sql);
 
@@ -492,9 +516,6 @@ class Service implements InjectionAwareInterface
 
     public function createCategory($title, $description = null, $icon_url = null)
     {
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_ProductCategory', 2);
-
         $model = $this->di['db']->dispense('ProductCategory');
         $model->title = $title;
         $model->description = $description;
@@ -905,9 +926,6 @@ class Service implements InjectionAwareInterface
         if ($this->di['db']->findOne('Promo', 'code = :code', [':code' => $code])) {
             throw new \FOSSBilling\InformationException('This promotion code already exists.');
         }
-
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_Promo', 2);
 
         $model = $this->di['db']->dispense('Promo');
         $model->code = $code;

@@ -1,7 +1,5 @@
 {% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
 
-{% import 'macro_functions.html.twig' as mf %}
-
 {% block meta_title %}{{ 'Activity Settings'|trans }}{% endblock %}
 
 {% set active_menu = 'system' %}
@@ -26,28 +24,46 @@
 	{% set params = admin.extension_config_get({ 'ext': 'mod_activity' }) %}
 	<div class="card">
 		<div class="card-header">
-			<h3 class="card-title">{{ 'Activity Settings'|trans }}</h3>
+			<div>
+				<h3 class="card-title">{{ 'Activity Settings'|trans }}</h3>
+				<p class="card-subtitle">{{ 'Control how long system activity and sent email logs are retained before automatic cleanup.'|trans }}</p>
+			</div>
 		</div>
 
 		<form method="post" action="{{ 'extension/config_save'|api_url }}" {{ fb_api_form({message: 'Configuration Updated'|trans}) }}>
 			<div class="card-body">
 				<input type="hidden" name="ext" value="mod_activity">
-				<div class="mb-3">
-					<label class="form-label">{{ 'Activity Log Retention'|trans }}</label>
-					<div class="form-floating">
-						<input class="form-control" id="max_age" name="max_age" type="number" value="{{ params.max_age|default(90) }}">
-						<label for="max_age">{{ 'Number of days'|trans }}</label>
-					</div>
-					<small class="form-hint">{{ 'FOSSBilling will automatically remove activity logs that are older than the configured number of days. Set to 0 to disable this behavior'|trans }}</small>
+				<div class="alert alert-info" role="alert">
+					<strong class="me-1">{{ 'Information:'|trans }}</strong>{{ 'Set a retention period in days for automated cleanup. Use 0 to keep records indefinitely.'|trans }}
 				</div>
 
-				<div class="mb-3">
-					<label class="form-label">{{ 'Email Log Retention'|trans }}</label>
-					<div class="form-floating">
-						<input class="form-control" id="email_max_age" name="email_max_age" type="number" value="{{ params.email_max_age|default(0) }}">
-						<label for="email_max_age">{{ 'Number of days'|trans }}</label>
+				<div class="row row-cards">
+					<div class="col-lg-6">
+						<section class="card card-sm">
+							<div class="card-body">
+								<h4 class="card-title mb-2">{{ 'Activity Log Retention'|trans }}</h4>
+								<p class="text-secondary mb-3">{{ 'Automatically remove system activity logs older than the configured number of days.'|trans }}</p>
+								<label class="form-label" for="max_age">{{ 'Retention Period'|trans }}</label>
+								<div class="input-group">
+									<input class="form-control" id="max_age" name="max_age" type="number" min="0" value="{{ params.max_age|default(90) }}">
+									<span class="input-group-text">{{ 'days'|trans }}</span>
+								</div>
+							</div>
+						</section>
 					</div>
-					<small class="form-hint">{{ 'FOSSBilling will automatically remove sent email logs that are older than the configured number of days. Set to 0 to disable this behavior'|trans }}</small>
+					<div class="col-lg-6">
+						<section class="card card-sm">
+							<div class="card-body">
+								<h4 class="card-title mb-2">{{ 'Email Log Retention'|trans }}</h4>
+								<p class="text-secondary mb-3">{{ 'Automatically remove sent email history records older than the configured number of days.'|trans }}</p>
+								<label class="form-label" for="email_max_age">{{ 'Retention Period'|trans }}</label>
+								<div class="input-group">
+									<input class="form-control" id="email_max_age" name="email_max_age" type="number" min="0" value="{{ params.email_max_age|default(0) }}">
+									<span class="input-group-text">{{ 'days'|trans }}</span>
+								</div>
+							</div>
+						</section>
+					</div>
 				</div>
 			</div>
 

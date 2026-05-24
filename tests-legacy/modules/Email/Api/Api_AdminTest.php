@@ -61,7 +61,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testEmailGetList(): void
     {
-        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Email\Api\Admin::class);
         $emailService = new \Box\Mod\Email\Service();
 
         $willReturn = [
@@ -97,7 +97,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testEmailGet(): void
     {
-        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Email\Api\Admin::class);
 
         $data = [
             'id' => 1,
@@ -156,7 +156,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testSend(): void
     {
-        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Email\Api\Admin::class);
 
         $data = [
             'to' => 'to@example.com',
@@ -188,7 +188,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testResend(): void
     {
-        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Email\Api\Admin::class);
 
         $data = [
             'id' => 1,
@@ -221,7 +221,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testResendExceptionEmailNotFound(): void
     {
-        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Email\Api\Admin::class);
 
         $data = [
             'id' => 1,
@@ -243,7 +243,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testDeleteExceptionEmailNotFound(): void
     {
-        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Email\Api\Admin::class);
 
         $data = [
             'id' => 1,
@@ -265,7 +265,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testEmailDelete(): void
     {
-        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Email\Api\Admin::class);
         $emailService = new \Box\Mod\Email\Service();
 
         $data = [
@@ -301,7 +301,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTemplateGetList(): void
     {
-        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Email\Api\Admin::class);
         $willReturn = [
             'list' => [
                 [
@@ -337,7 +337,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTemplateGet(): void
     {
-        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Email\Api\Admin::class);
 
         $data = [
             'id' => 1,
@@ -363,7 +363,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTemplateDelete(): void
     {
-        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Email\Api\Admin::class);
 
         $data = [
             'id' => 1,
@@ -396,7 +396,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTemplateDeleteBuiltinTemplateException(): void
     {
-        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Email\Api\Admin::class);
 
         $data = [
             'id' => 1,
@@ -423,7 +423,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTemplateDeleteBuiltInWithoutDefault(): void
     {
-        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Email\Api\Admin::class);
 
         $data = [
             'id' => 1,
@@ -458,7 +458,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTemplateCreate(): void
     {
-        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Email\Api\Admin::class);
 
         $modelId = 1;
 
@@ -485,7 +485,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTemplateSendToNotSetException(): void
     {
-        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Email\Api\Admin::class);
 
         $di = $this->getDi();
         $adminApi->setDi($di);
@@ -495,7 +495,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTemplateUpdate(): void
     {
-        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Email\Api\Admin::class);
 
         $id = 1;
         $data = [
@@ -527,7 +527,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTemplateReset(): void
     {
-        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Email\Api\Admin::class);
 
         $id = 1;
         $data = [
@@ -549,7 +549,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testBatchTemplateGenerate(): void
     {
-        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Email\Api\Admin::class);
         $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['templateBatchGenerate'])->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('templateBatchGenerate')
@@ -564,7 +564,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testBatchTemplateDisable(): void
     {
-        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Email\Api\Admin::class);
         $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['templateBatchDisable'])->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('templateBatchDisable')
@@ -579,7 +579,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testBatchTemplateEnable(): void
     {
-        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Email\Api\Admin::class);
         $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['templateBatchEnable'])->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('templateBatchEnable')
@@ -594,7 +594,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testSendTest(): void
     {
-        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Email\Api\Admin::class);
         $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['sendTemplate'])->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('sendTemplate')
@@ -609,7 +609,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testBatchSendmail(): void
     {
-        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Email\Api\Admin::class);
         $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['batchSend'])->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('batchSend')
@@ -633,7 +633,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTemplateSend(): void
     {
-        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Email\Api\Admin::class);
         $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['sendTemplate'])->getMock();
         $emailService->expects($this->atLeastOnce())
             ->method('sendTemplate')
@@ -658,7 +658,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testTemplateRender(): void
     {
-        $adminApi = new \Box\Mod\Email\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Email\Api\Admin::class);
         $template = $this->createTemplateEntity('code');
 
         $emailService = $this->getMockBuilder(\Box\Mod\Email\Service::class)->onlyMethods(['getTemplate', 'templateToApiArray'])->getMock();

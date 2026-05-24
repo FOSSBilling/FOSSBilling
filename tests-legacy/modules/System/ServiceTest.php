@@ -129,12 +129,6 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testGetLanguages(): void
-    {
-        $result = $this->service->getLanguages(true);
-        $this->assertIsArray($result);
-    }
-
     public function testGetParams(): void
     {
         $expected = [
@@ -1048,49 +1042,6 @@ final class ServiceTest extends \BBTestCase
         $result = $this->service->getPeriod([]);
 
         $this->assertSame('-', $result);
-    }
-
-    public function testGetCountries(): void
-    {
-        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
-        $modMock->expects($this->atLeastOnce())
-            ->method('getConfig')
-            ->willReturn(['countries' => 'US']);
-
-        $di = $this->getDi();
-        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
-
-        $this->service->setDi($di);
-        $result = $this->service->getCountries();
-        $this->assertIsArray($result);
-    }
-
-    public function testGetEuCountries(): void
-    {
-        $modMock = $this->getMockBuilder('\\' . \FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
-        $modMock->expects($this->atLeastOnce())
-            ->method('getConfig')
-            ->willReturn(['countries' => 'US']);
-
-        $di = $this->getDi();
-        $di['mod'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $modMock);
-
-        $this->service->setDi($di);
-        $result = $this->service->getEuCountries();
-        $this->assertIsArray($result);
-    }
-
-    public function testGetStates(): void
-    {
-        $result = $this->service->getStates();
-        $this->assertIsArray($result);
-    }
-
-    public function testGetPhoneCodes(): void
-    {
-        $data = [];
-        $result = $this->service->getPhoneCodes($data);
-        $this->assertIsArray($result);
     }
 
     public function testGetPendingMessages(): void

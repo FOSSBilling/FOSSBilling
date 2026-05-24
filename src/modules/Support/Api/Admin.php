@@ -30,6 +30,8 @@ class Admin extends \Api_Abstract
      */
     public function ticket_get_list(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+
         [$sql, $bindings] = $this->getService()->getSearchQuery($data);
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
 
@@ -47,6 +49,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function ticket_get(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+
         $model = $this->di['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
 
         return $this->getService()->toApiArray($model, true, $this->getIdentity());
@@ -63,6 +67,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function ticket_update(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+
         $model = $this->di['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
 
         // Sanitize subject if provided
@@ -79,6 +85,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket message ID is missing', 'content' => 'Ticket message content is missing'])]
     public function ticket_message_update(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+
         $model = $this->di['db']->getExistingModelById('SupportTicketMessage', $data['id'], 'Ticket message not found');
 
         return $this->getService()->ticketMessageUpdate($model, $data['content']);
@@ -90,6 +98,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function ticket_delete(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+
         $model = $this->di['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
 
         return $this->getService()->rm($model);
@@ -103,6 +113,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket ID is missing', 'content' => 'Ticket message content is missing'])]
     public function ticket_reply(array $data): int
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+
         // Sanitize content to prevent XSS attacks
         $data['content'] = \FOSSBilling\Tools::sanitizeContent($data['content'], true);
 
@@ -117,6 +129,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function ticket_close(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+
         $ticket = $this->di['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
 
         if ($ticket->status == \Model_SupportTicket::CLOSED) {
@@ -137,6 +151,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['client_id' => 'Client ID is missing', 'content' => 'Ticket content required', 'subject' => 'Ticket subject required', 'support_helpdesk_id' => 'Ticket support_helpdesk_id is required'])]
     public function ticket_create(array $data): int
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+
         // Sanitize content to prevent XSS attacks
         $data['content'] = \FOSSBilling\Tools::sanitizeContent($data['content'], true);
 
@@ -154,6 +170,8 @@ class Admin extends \Api_Abstract
      */
     public function batch_ticket_auto_close($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+
         // Auto close support tickets
         $expiredArr = $this->getService()->getExpired();
 
@@ -175,6 +193,8 @@ class Admin extends \Api_Abstract
      */
     public function batch_public_ticket_auto_close($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+
         // Auto close public tickets
         $expired = $this->getService()->publicGetExpired();
         foreach ($expired as $model) {
@@ -191,6 +211,8 @@ class Admin extends \Api_Abstract
      */
     public function ticket_get_statuses(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+
         if (isset($data['titles'])) {
             return $this->getService()->getStatuses();
         }
@@ -203,6 +225,8 @@ class Admin extends \Api_Abstract
      */
     public function public_ticket_get_list(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+
         [$sql, $bindings] = $this->getService()->publicGetSearchQuery($data);
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
 
@@ -222,6 +246,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['name' => 'Name is required', 'email' => 'Email is required', 'subject' => 'Subject is required', 'message' => 'Message is required'])]
     public function public_ticket_create(array $data): int
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+
         $data['subject'] = \FOSSBilling\Tools::sanitizeContent($data['subject'], false);
         $data['message'] = \FOSSBilling\Tools::sanitizeContent($data['message'], true);
 
@@ -236,6 +262,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function public_ticket_get(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+
         $model = $this->di['db']->getExistingModelById('SupportPTicket', $data['id'], 'Ticket not found');
 
         return $this->getService()->publicToApiArray($model, true, $this->getIdentity());
@@ -249,6 +277,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function public_ticket_delete(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+
         $model = $this->di['db']->getExistingModelById('SupportPTicket', $data['id'], 'Ticket not found');
 
         return $this->getService()->publicRm($model);
@@ -262,6 +292,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function public_ticket_close(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+
         $ticket = $this->di['db']->getExistingModelById('SupportPTicket', $data['id'], 'Ticket not found');
 
         return $this->getService()->publicCloseTicket($ticket, $this->getIdentity());
@@ -278,6 +310,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function public_ticket_update(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+
         $model = $this->di['db']->getExistingModelById('SupportPTicket', $data['id'], 'Ticket not found');
 
         return $this->getService()->publicTicketUpdate($model, $data);
@@ -291,6 +325,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket ID is missing', 'content' => 'Ticket content required'])]
     public function public_ticket_reply(array $data): int
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+
         $ticket = $this->di['db']->getExistingModelById('SupportPTicket', $data['id'], 'Ticket not found');
 
         return $this->getService()->publicTicketReply($ticket, $this->getIdentity(), $data['content']);
@@ -301,6 +337,8 @@ class Admin extends \Api_Abstract
      */
     public function public_ticket_get_statuses(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+
         if (isset($data['titles'])) {
             return $this->getService()->publicGetStatuses();
         }
@@ -313,6 +351,8 @@ class Admin extends \Api_Abstract
      */
     public function helpdesk_get_list(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+
         [$sql, $bindings] = $this->getService()->helpdeskGetSearchQuery($data);
 
         return $this->di['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
@@ -323,6 +363,8 @@ class Admin extends \Api_Abstract
      */
     public function helpdesk_get_pairs(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+
         return $this->getService()->helpdeskGetPairs();
     }
 
@@ -334,6 +376,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Help desk ID is missing'])]
     public function helpdesk_get(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+
         $model = $this->di['db']->getExistingModelById('SupportHelpdesk', $data['id'], 'Help desk not found');
 
         return $this->getService()->helpdeskToApiArray($model, $this->getIdentity());
@@ -353,6 +397,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Help desk ID is missing'])]
     public function helpdesk_update(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_helpdesk');
+
         $model = $this->di['db']->getExistingModelById('SupportHelpdesk', $data['id'], 'Help desk not found');
 
         return $this->getService()->helpdeskUpdate($model, $data);
@@ -373,6 +419,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['name' => 'Help desk title is missing'])]
     public function helpdesk_create(array $data): int
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_helpdesk');
+
         return $this->getService()->helpdeskCreate($data);
     }
 
@@ -384,6 +432,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Help desk ID is missing'])]
     public function helpdesk_delete(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_helpdesk');
+
         $model = $this->di['db']->getExistingModelById('SupportHelpdesk', $data['id'], 'Help desk not found');
 
         return $this->getService()->helpdeskRm($model);
@@ -394,6 +444,8 @@ class Admin extends \Api_Abstract
      */
     public function canned_get_list(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+
         [$sql, $bindings] = $this->getService()->cannedGetSearchQuery($data);
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
 
@@ -410,6 +462,8 @@ class Admin extends \Api_Abstract
      */
     public function canned_pairs(): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+
         $res = $this->di['db']->getAssoc('SELECT id, title FROM support_pr_category WHERE 1');
         $list = [];
         foreach ($res as $id => $title) {
@@ -427,6 +481,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Canned reply ID is missing'])]
     public function canned_get(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+
         $model = $this->di['db']->getExistingModelById('SupportPr', $data['id'], 'Canned reply not found');
 
         return $this->getService()->cannedToApiArray($model);
@@ -440,6 +496,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Canned reply ID is missing'])]
     public function canned_delete(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_canned');
+
         $model = $this->di['db']->getExistingModelById('SupportPr', $data['id'], 'Canned reply not found');
 
         return $this->getService()->cannedRm($model);
@@ -455,6 +513,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['title' => 'Canned reply title is missing', 'category_id' => 'Canned reply category ID is missing'])]
     public function canned_create(array $data): int
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_canned');
+
         $content = $data['content'] ?? null;
 
         return $this->getService()->cannedCreate($data['title'], (int) $data['category_id'], $content);
@@ -472,6 +532,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Canned reply ID is missing'])]
     public function canned_update(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_canned');
+
         $model = $this->di['db']->getExistingModelById('SupportPr', $data['id'], 'Canned reply not found');
 
         return $this->getService()->cannedUpdate($model, $data);
@@ -482,6 +544,8 @@ class Admin extends \Api_Abstract
      */
     public function canned_category_pairs(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+
         return $this->di['db']->getAssoc('SELECT id, title FROM support_pr_category WHERE 1');
     }
 
@@ -493,6 +557,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Canned category ID is missing'])]
     public function canned_category_get(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+
         $model = $this->di['db']->getExistingModelById('SupportPrCategory', $data['id'], 'Canned category not found');
 
         return $this->getService()->cannedCategoryToApiArray($model);
@@ -508,6 +574,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Canned category ID is missing'])]
     public function canned_category_update(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_canned');
+
         $model = $this->di['db']->getExistingModelById('SupportPrCategory', $data['id'], 'Canned category not found');
 
         $title = $data['title'] ?? $model->title;
@@ -523,6 +591,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Canned category ID is missing'])]
     public function canned_category_delete(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_canned');
+
         $model = $this->di['db']->getExistingModelById('SupportPrCategory', $data['id'], 'Canned category not found');
 
         return $this->getService()->cannedCategoryRm($model);
@@ -538,6 +608,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['title' => 'Canned category title is missing'])]
     public function canned_category_create(array $data): int
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_canned');
+
         return $this->getService()->cannedCategoryCreate($data['title']);
     }
 
@@ -551,6 +623,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ticket_id' => 'ticket_ID is missing', 'note' => 'Note is missing'])]
     public function note_create(array $data): int
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+
         $ticket = $this->di['db']->getExistingModelById('SupportTicket', $data['ticket_id'], 'Ticket not found');
 
         return $this->getService()->noteCreate($ticket, $this->getIdentity(), $data['note']);
@@ -564,6 +638,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Note ID is missing'])]
     public function note_delete(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+
         $model = $this->di['db']->getExistingModelById('SupportTicketNote', $data['id'], 'Note not found');
 
         return $this->getService()->noteRm($model);
@@ -577,6 +653,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function task_complete(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+
         $model = $this->di['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
 
         return $this->getService()->ticketTaskComplete($model);
@@ -588,6 +666,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+
         foreach ($data['ids'] as $id) {
             $this->ticket_delete(['id' => $id]);
         }
@@ -601,6 +681,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete_public($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+
         foreach ($data['ids'] as $id) {
             $this->public_ticket_delete(['id' => $id]);
         }
@@ -616,9 +698,11 @@ class Admin extends \Api_Abstract
      */
     public function kb_article_get_list(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+
         $status = $data['status'] ?? null;
         $search = $data['search'] ?? null;
-        $cat = $data['cat'] ?? null;
+        $cat = $data['kb_article_category_id'] ?? $data['cat'] ?? null;
 
         $pager = $this->getService()->kbSearchArticles($status, $search, $cat, PaginationOptions::fromArray($data));
 
@@ -636,6 +720,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Article ID was not passed'])]
     public function kb_article_get(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+
         $model = $this->di['db']->findOne('SupportKbArticle', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_SupportKbArticle) {
@@ -654,6 +740,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['kb_article_category_id' => 'Article category ID was not passed', 'title' => 'Article title not passed'])]
     public function kb_article_create(array $data): int
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_kb');
+
         $articleCategoryId = (int) $data['kb_article_category_id'];
         // Sanitize title and content to prevent XSS attacks
         $title = \FOSSBilling\Tools::sanitizeContent($data['title'], false);
@@ -676,6 +764,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Article ID was not passed'])]
     public function kb_article_update(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_kb');
+
         $articleCategoryId = isset($data['kb_article_category_id']) ? (int) $data['kb_article_category_id'] : null;
         // Sanitize title and content to prevent XSS attacks
         $title = isset($data['title']) ? \FOSSBilling\Tools::sanitizeContent($data['title'], false) : null;
@@ -693,6 +783,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Article ID was not passed'])]
     public function kb_article_delete($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_kb');
+
         $model = $this->di['db']->findOne('SupportKbArticle', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_SupportKbArticle) {
@@ -709,6 +801,8 @@ class Admin extends \Api_Abstract
      */
     public function kb_category_get_list(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+
         [$sql, $bindings] = $this->getService()->kbCategoryGetSearchQuery($data);
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
 
@@ -726,6 +820,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function kb_category_get(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+
         $model = $this->di['db']->findOne('SupportKbArticleCategory', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_SupportKbArticleCategory) {
@@ -743,6 +839,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['title' => 'Category title not passed'])]
     public function kb_category_create(array $data): int
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_kb');
+
         $title = $data['title'];
         $description = $data['description'] ?? null;
 
@@ -759,6 +857,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function kb_category_update(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_kb');
+
         $model = $this->di['db']->findOne('SupportKbArticleCategory', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_SupportKbArticleCategory) {
@@ -778,6 +878,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function kb_category_delete(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_kb');
+
         $model = $this->di['db']->findOne('SupportKbArticleCategory', 'id = ?', [$data['id']]);
 
         if (!$model instanceof \Model_SupportKbArticleCategory) {
@@ -792,6 +894,8 @@ class Admin extends \Api_Abstract
      */
     public function kb_category_get_pairs(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+
         return $this->getService()->kbCategoryGetPairs();
     }
 }

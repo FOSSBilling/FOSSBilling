@@ -4,36 +4,46 @@
 
 {% block meta_title %}{{ 'Security Dashboard'|trans }}{% endblock %}
 
-{% set active_menu = 'system' %}
+{% set active_menu = 'security' %}
 {% set params = admin.system_get_params %}
 
 {% block content %}
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">{{ 'Security Dashboard'|trans }}</h3>
+            <div>
+                <h3 class="card-title">{{ 'Security Dashboard'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Run built-in security checks and review the current status of key platform safeguards.'|trans }}</p>
+            </div>
             <div class="card-actions">
                 <a class="btn btn-primary btn-3" href="{{ 'security/run_checks'|api_url }}" {{ fb_api_link({callback: 'setResults'}) }}>{{ "Run All Checks"|trans }}</a>
             </div>
         </div>
+        <div class="card-body border-top border-bottom py-3">
+            <p class="text-secondary mb-0">{{ 'Run all checks for a full snapshot, or execute individual checks while investigating one specific area.'|trans }}</p>
+        </div>
         <div class="table-responsive">
-            <table class="table sortable">
+            <table class="table card-table table-vcenter sortable">
                 <thead>
                     <tr>
-                        <th scope="col" class="no-sort"></th>
                         <th scope="col">{{ "Name"|trans }}</th>
                         <th scope="col">{{ "Description"|trans }}</th>
                         <th scope="col">{{ "Result"|trans }}</th>
+                        <th scope="col" class="no-sort w-1"></th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for check in admin.security_list_checks() %}
                     <tr>
-                        <td scope="row">
-                            <a class="btn btn-small btn-primary" href="{{ 'security/run_check'|api_url(query: { 'id': check.id, 'throw': true }) }}" {{ fb_api_link({callback: 'setResult'}) }}>{{ 'Run Check'|trans }}</a>
-                        </td>
                         <td scope="row">{{ check.name }}</td>
                         <td scope="row">{{ check.description }}</td>
-                        <td id="{{ check.id }}" scope="row"><div class="alert d-flex justify-content-center align-items-center"><span>?</span></div></td>
+                        <td id="{{ check.id }}" scope="row">
+                            <div class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded border text-secondary bg-body-tertiary">
+                                <span class="badge bg-secondary-lt text-secondary">{{ 'Not Run'|trans }}</span>
+                            </div>
+                        </td>
+                        <td class="text-end" scope="row">
+                            <a class="btn btn-outline-secondary btn-sm text-nowrap" href="{{ 'security/run_check'|api_url(query: { 'id': check.id, 'throw': true }) }}" {{ fb_api_link({callback: 'setResult'}) }}>{{ 'Run Check'|trans }}</a>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -46,25 +56,34 @@
 <script>
     function setResults(results) {
         Object.entries(results).forEach(([id, result]) => {
-            setResult(result)
+            setResult(result);
         });
     }
-    function setResult(result) {
-        const alertDiv = document.createElement('div');
 
-        if (result.result === "passed") {
-            alertDiv.classList.add('alert', 'alert-success');
-        } else if (result.result === "warning") {
-            alertDiv.classList.add('alert', 'alert-warning');
-        } else {
-            alertDiv.classList.add('alert', 'alert-danger');
+    function setResult(result) {
+        const existingDiv = document.getElementById(result.id);
+        let badgeClass = 'bg-danger-lt text-danger';
+        let label = `{{ 'Failed'|trans }}`;
+        const message = document.createElement('div');
+
+        message.className = 'small text-body-secondary';
+        message.textContent = result.message;
+
+        if (result.result === 'passed') {
+            badgeClass = 'bg-success-lt text-success';
+            label = `{{ 'Passed'|trans }}`;
+        } else if (result.result === 'warning') {
+            badgeClass = 'bg-warning-lt text-warning';
+            label = `{{ 'Warning'|trans }}`;
         }
 
-        alertDiv.setAttribute('role', 'alert');
-        alertDiv.innerText = result.message;
-        const existingDiv = document.getElementById(result.id);
-        existingDiv.innerHTML = "";
-        existingDiv.appendChild(alertDiv);
+        existingDiv.innerHTML = `
+            <div class="d-flex flex-column gap-2 rounded border p-3 bg-body-tertiary">
+                <div><span class="badge ${badgeClass}">${label}</span></div>
+            </div>
+        `;
+        existingDiv.querySelector('.d-flex').appendChild(message);
+        message.style.whiteSpace = 'pre-line';
     }
 </script>
 {% endblock %}

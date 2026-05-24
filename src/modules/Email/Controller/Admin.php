@@ -57,6 +57,13 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_email_history');
     }
 
+    public function get_index(\Box_App $app): string
+    {
+        $this->di['is_admin_logged'];
+
+        return $app->render('mod_email_settings');
+    }
+
     public function get_template(\Box_App $app, $id): string
     {
         $api = $this->di['api_admin'];

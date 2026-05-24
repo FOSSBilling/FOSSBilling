@@ -40,9 +40,35 @@ final class ServicePayGatewayTest extends \BBTestCase
         $result = $this->service->getSearchQuery($data);
         $this->assertIsArray($result);
         $this->assertIsString($result[0]);
-        $this->assertTrue(strpos($result[0], 'AND name LIKE :search') > 0);
+        $this->assertTrue(strpos($result[0], 'AND (name LIKE :search OR gateway LIKE :search)') > 0);
         $this->assertIsArray($result[1]);
         $this->assertEquals($expectedParams, $result[1]);
+    }
+
+    public function testGetSearchQueryWithBooleanFilters(): void
+    {
+        $di = $this->getDi();
+
+        $this->service->setDi($di);
+        $data = [
+            'enabled' => '1',
+            'allow_single' => '0',
+            'allow_recurrent' => '1',
+            'test_mode' => '0',
+        ];
+
+        [$sql, $params] = $this->service->getSearchQuery($data);
+
+        $this->assertStringContainsString('AND enabled = :enabled', $sql);
+        $this->assertStringContainsString('AND allow_single = :allow_single', $sql);
+        $this->assertStringContainsString('AND allow_recurrent = :allow_recurrent', $sql);
+        $this->assertStringContainsString('AND test_mode = :test_mode', $sql);
+        $this->assertSame([
+            ':enabled' => 1,
+            ':allow_single' => 0,
+            ':allow_recurrent' => 1,
+            ':test_mode' => 0,
+        ], $params);
     }
 
     public function testGetPairs(): void

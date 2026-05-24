@@ -32,6 +32,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['name' => 'Form name was not provided'])]
     public function create_form($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'manage');
+
         if (isset($data['type']) && !in_array(strtolower($data['type']), ['horizontal', 'default'])) {
             throw new \FOSSBilling\Exception('Form style was not found in predefined list', null, 3657);
         }
@@ -69,6 +71,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['type' => 'Form field type is invalid', 'form_id' => 'Form id was not passed'])]
     public function add_field($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'manage');
+
         $service = $this->getService();
         if (!isset($data['type']) || !$service->isValidFieldType($data['type'])) {
             throw new \FOSSBilling\Exception('Form field type is invalid', null, 2684);
@@ -89,6 +93,8 @@ class Admin extends \Api_Abstract
      */
     public function get_form($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'view');
+
         $required = [
             'id' => 'Form id was not passed',
         ];
@@ -108,6 +114,8 @@ class Admin extends \Api_Abstract
      */
     public function get_form_fields($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'view');
+
         $required = [
             'form_id' => 'Form id was not passed',
         ];
@@ -127,6 +135,8 @@ class Admin extends \Api_Abstract
      */
     public function get_field($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'view');
+
         $required = [
             'id' => 'Field id was not passed',
         ];
@@ -146,6 +156,8 @@ class Admin extends \Api_Abstract
      */
     public function get_forms()
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'view');
+
         $service = $this->getService();
 
         return $service->getForms();
@@ -158,6 +170,8 @@ class Admin extends \Api_Abstract
      */
     public function delete_form($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'manage');
+
         $required = [
             'id' => 'Form id was not passed',
         ];
@@ -176,6 +190,8 @@ class Admin extends \Api_Abstract
      */
     public function delete_field($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'manage');
+
         $required = [
             'id' => 'Field id was not passed',
         ];
@@ -215,6 +231,8 @@ class Admin extends \Api_Abstract
      */
     public function update_field($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'manage');
+
         $required = [
             'id' => 'Field id was not passed',
         ];
@@ -233,6 +251,8 @@ class Admin extends \Api_Abstract
      */
     public function get_pairs($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'view');
+
         $service = $this->getService();
 
         return $service->getFormPairs();
@@ -248,6 +268,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['form_id' => 'Form id was not passed', 'name' => 'Form name was not passed'])]
     public function copy_form($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'manage');
+
         $service = $this->getService();
 
         return $service->duplicateForm($data);
@@ -261,6 +283,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['form_id' => 'Form id was not passed', 'form_name' => 'Form name was not passed', 'type' => 'Form type was not passed'])]
     public function update_form_settings($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'manage');
+
         $type = $data['type'] ?? null;
         if ($type !== 'horizontal' && $type !== 'default') {
             throw new \FOSSBilling\Exception('Field type not supported', null, 3207);

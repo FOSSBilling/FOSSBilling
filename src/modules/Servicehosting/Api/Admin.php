@@ -27,6 +27,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['plan_id' => 'plan_id is missing'])]
     public function change_plan($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_accounts');
+
         [$order, $s] = $this->_getService($data);
         $plan = $this->di['db']->getExistingModelById('ServiceHostingHp', $data['plan_id'], 'Hosting plan not found');
 
@@ -40,6 +42,8 @@ class Admin extends \Api_Abstract
      */
     public function change_username($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_accounts');
+
         [$order, $s] = $this->_getService($data);
         $service = $this->getService();
 
@@ -51,6 +55,8 @@ class Admin extends \Api_Abstract
      */
     public function change_ip($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_accounts');
+
         [$order, $s] = $this->_getService($data);
         $service = $this->getService();
 
@@ -62,6 +68,8 @@ class Admin extends \Api_Abstract
      */
     public function change_domain($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_accounts');
+
         [$order, $s] = $this->_getService($data);
         $service = $this->getService();
 
@@ -73,6 +81,8 @@ class Admin extends \Api_Abstract
      */
     public function change_password($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_accounts');
+
         [$order, $s] = $this->_getService($data);
         $service = $this->getService();
 
@@ -84,6 +94,8 @@ class Admin extends \Api_Abstract
      */
     public function sync($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_accounts');
+
         [$order, $s] = $this->_getService($data);
         $service = $this->getService();
 
@@ -99,6 +111,8 @@ class Admin extends \Api_Abstract
      */
     public function update($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_accounts');
+
         [, $s] = $this->_getService($data);
         $service = $this->getService();
 
@@ -112,6 +126,8 @@ class Admin extends \Api_Abstract
      */
     public function manager_get_pairs($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'view_servers');
+
         return $this->getService()->getServerManagers();
     }
 
@@ -122,6 +138,8 @@ class Admin extends \Api_Abstract
      */
     public function server_get_pairs($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'view_servers');
+
         return $this->getService()->getServerPairs();
     }
 
@@ -132,6 +150,7 @@ class Admin extends \Api_Abstract
      */
     public function server_get_list($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'view_servers');
         [$sql, $params] = $this->getService()->getServersSearchQuery($data);
         $result = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
@@ -155,6 +174,7 @@ class Admin extends \Api_Abstract
      */
     public function account_get_list($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'view_servers');
         [$sql, $params] = $this->getService()->getAccountsSearchQuery($data);
         $result = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
         $orderService = $this->di['mod_service']('order');
@@ -209,6 +229,8 @@ class Admin extends \Api_Abstract
     ])]
     public function server_create($data): int
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_servers');
+
         $service = $this->getService();
 
         $data['config'] = [
@@ -229,6 +251,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Server ID was not passed'])]
     public function server_get($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'view_servers');
+
         $model = $this->di['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
         $service = $this->getService();
 
@@ -243,6 +267,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Server ID was not passed'])]
     public function server_delete($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_servers');
+
         $model = $this->di['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
 
         // check if server is not used by any service_hostings
@@ -279,6 +305,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Server ID was not passed'])]
     public function server_update($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_servers');
+
         $model = $this->di['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
         $service = $this->getService();
 
@@ -299,6 +327,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Server ID was not passed'])]
     public function server_test_connection($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_servers');
+
         $model = $this->di['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
 
         return (bool) $this->getService()->testConnection($model);
@@ -311,6 +341,8 @@ class Admin extends \Api_Abstract
      */
     public function hp_get_pairs($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_plans');
+
         return $this->getService()->getHpPairs();
     }
 
@@ -321,6 +353,7 @@ class Admin extends \Api_Abstract
      */
     public function hp_get_list($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_plans');
         [$sql, $params] = $this->getService()->getHpSearchQuery($data);
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
@@ -340,6 +373,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Hosting plan ID was not passed'])]
     public function hp_delete($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_plans');
+
         $model = $this->di['db']->getExistingModelById('ServiceHostingHp', $data['id'], 'Hosting plan not found');
 
         // check if hosting plan is not used by any service_hostings
@@ -364,6 +399,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Hosting plan ID was not passed'])]
     public function hp_get($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_plans');
+
         $model = $this->di['db']->getExistingModelById('ServiceHostingHp', $data['id'], 'Hosting plan not found');
 
         return $this->getService()->toHostingHpApiArray($model, true, $this->getIdentity());
@@ -379,6 +416,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Hosting plan ID was not passed'])]
     public function hp_update($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_plans');
+
         $model = $this->di['db']->getExistingModelById('ServiceHostingHp', $data['id'], 'Hosting plan not found');
 
         $service = $this->getService();
@@ -396,6 +435,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['name' => 'Hosting plan name was not passed'])]
     public function hp_create($data): int
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_plans');
+
         $service = $this->getService();
 
         return (int) $service->createHp($data['name'], $data);

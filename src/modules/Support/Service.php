@@ -29,6 +29,37 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View support tickets'),
+                'description' => __trans('Allows the staff member to view tickets, inquiries, helpdesks, canned responses, and knowledge base articles.'),
+            ],
+            'manage_tickets' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage tickets'),
+                'description' => __trans('Allows the staff member to create, update, reply to, close, and delete tickets and inquiries.'),
+            ],
+            'manage_helpdesk' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage helpdesks'),
+                'description' => __trans('Allows the staff member to create, update, and delete helpdesks.'),
+            ],
+            'manage_canned' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage canned responses'),
+                'description' => __trans('Allows the staff member to create, update, and delete canned responses and categories.'),
+            ],
+            'manage_kb' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage knowledge base'),
+                'description' => __trans('Allows the staff member to create, update, and delete knowledge base articles and categories.'),
+            ],
+        ];
+    }
+
     public static function onAfterClientOpenTicket(\Box_Event $event): void
     {
         $di = $event->getDi();
@@ -225,7 +256,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         return [
             \Model_SupportTicket::OPENED => 'Open',
-            \Model_SupportTicket::ONHOLD => 'On hold',
+            \Model_SupportTicket::ONHOLD => 'On Hold',
             \Model_SupportTicket::CLOSED => 'Closed',
         ];
     }
@@ -1225,7 +1256,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         return [
             \Model_SupportPTicket::OPENED => 'Open',
-            \Model_SupportPTicket::ONHOLD => 'On hold',
+            \Model_SupportPTicket::ONHOLD => 'On Hold',
             \Model_SupportPTicket::CLOSED => 'Closed',
         ];
     }
@@ -1603,15 +1634,28 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 ON spc.id = sp.support_pr_category_id';
 
         $search = $data['search'] ?? null;
+        $id = $data['id'] ?? null;
+        $categoryId = $data['category_id'] ?? null;
 
         $where = [];
         $bindings = [];
 
+        if ($id !== null && $id !== '') {
+            $where[] = 'sp.id = :id';
+            $bindings[':id'] = (int) $id;
+        }
+
         if ($search) {
             $search = '%' . $search . '%';
-            $where[] = '(title LIKE :title OR content LIKE :content)';
+            $where[] = '(sp.title LIKE :title OR sp.content LIKE :content OR spc.title LIKE :category_title)';
             $bindings[':title'] = $search;
             $bindings[':content'] = $search;
+            $bindings[':category_title'] = $search;
+        }
+
+        if ($categoryId !== null && $categoryId !== '') {
+            $where[] = 'sp.support_pr_category_id = :category_id';
+            $bindings[':category_id'] = (int) $categoryId;
         }
 
         if (!empty($where)) {
@@ -1689,9 +1733,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function cannedCreate(string $title, int $categoryId, ?string $content = null): int
     {
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_SupportPr', 5);
-
         $model = $this->di['db']->dispense('SupportPr');
         $model->support_pr_category_id = $categoryId;
         $model->title = $title;
@@ -2046,9 +2087,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function kbCreateCategory(string $title, ?string $description = null): int
     {
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_SupportKbArticleCategory', 2);
-
         $model = $this->di['db']->dispense('SupportKbArticleCategory');
         $model->title = $title;
         $model->description = $description;

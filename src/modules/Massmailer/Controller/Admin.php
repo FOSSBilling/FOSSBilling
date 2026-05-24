@@ -33,7 +33,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 [
                     'location' => 'extensions',
                     'index' => 4000,
-                    'label' => __trans('Mass mailer'),
+                    'label' => __trans('Mass Mailer'),
                     'uri' => $this->di['url']->adminLink('massmailer'),
                     'class' => '',
                 ],

@@ -10,165 +10,9 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('Core')]
 final class Api_AdminTest extends \BBTestCase
 {
-    public $availableCurrencies = [
-        'AED' => 'AED - United Arab Emirates dirham',
-        'AFN' => 'AFN - Afghan afghani',
-        'ALL' => 'ALL - Albanian lek',
-        'AMD' => 'AMD - Armenian dram',
-        'ANG' => 'ANG - Netherlands Antillean guilder',
-        'AOA' => 'AOA - Angolan kwanza',
-        'ARS' => 'ARS - Argentine peso',
-        'AUD' => 'AUD - Australian dollar',
-        'AWG' => 'AWG - Aruban florin',
-        'AZN' => 'AZN - Azerbaijani manat',
-        'BAM' => 'BAM - Bosnia and Herzegovina convertible mark',
-        'BBD' => 'BBD - Barbados dollar',
-        'BDT' => 'BDT - Bangladeshi taka',
-        'BGN' => 'BGN - Bulgarian lev',
-        'BHD' => 'BHD - Bahraini dinar',
-        'BIF' => 'BIF - Burundian franc',
-        'BMD' => 'BMD - Bermudian dollar',
-        'BND' => 'BND - Brunei dollar',
-        'BOB' => 'BOB - Boliviano',
-        'BRL' => 'BRL - Brazilian real',
-        'BSD' => 'BSD - Bahamian dollar',
-        'BTN' => 'BTN - Bhutanese ngultrum',
-        'BWP' => 'BWP - Botswana pula',
-        'BYR' => 'BYR - Belarusian ruble',
-        'BZD' => 'BZD - Belize dollar',
-        'CAD' => 'CAD - Canadian dollar',
-        'CDF' => 'CDF - Congolese franc',
-        'CHF' => 'CHF - Swiss franc',
-        'CLP' => 'CLP - Chilean peso',
-        'CNY' => 'CNY - Chinese yuan',
-        'COP' => 'COP - Colombian peso',
-        'COU' => 'COU - Unidad de Valor Real',
-        'CRC' => 'CRC - Costa Rican colon',
-        'CUC' => 'CUC - Cuban convertible peso',
-        'CUP' => 'CUP - Cuban peso',
-        'CVE' => 'CVE - Cape Verde escudo',
-        'CZK' => 'CZK - Czech koruna',
-        'DJF' => 'DJF - Djiboutian franc',
-        'DKK' => 'DKK - Danish krone',
-        'DOP' => 'DOP - Dominican peso',
-        'DZD' => 'DZD - Algerian dinar',
-        'EGP' => 'EGP - Egyptian pound',
-        'ERN' => 'ERN - Eritrean nakfa',
-        'ETB' => 'ETB - Ethiopian birr',
-        'EUR' => 'EUR - Euro',
-        'FJD' => 'FJD - Fiji dollar',
-        'FKP' => 'FKP - Falkland Islands pound',
-        'GBP' => 'GBP - Pound sterling',
-        'GEL' => 'GEL - Georgian lari',
-        'GHS' => 'GHS - Ghanaian cedi',
-        'GIP' => 'GIP - Gibraltar pound',
-        'GMD' => 'GMD - Gambian dalasi',
-        'GNF' => 'GNF - Guinean franc',
-        'GTQ' => 'GTQ - Guatemalan quetzal',
-        'GYD' => 'GYD - Guyanese dollar',
-        'HKD' => 'HKD - Hong Kong dollar',
-        'HNL' => 'HNL - Honduran lempira',
-        'HRK' => 'HRK - Croatian kuna',
-        'HTG' => 'HTG - Haitian gourde',
-        'HUF' => 'HUF - Hungarian forint',
-        'IDR' => 'IDR - Indonesian rupiah',
-        'ILS' => 'ILS - Israeli new sheqel',
-        'INR' => 'INR - Indian rupee',
-        'IQD' => 'IQD - Iraqi dinar',
-        'IRR' => 'IRR - Iranian rial',
-        'ISK' => 'ISK - Icelandic króna',
-        'JMD' => 'JMD - Jamaican dollar',
-        'JOD' => 'JOD - Jordanian dinar',
-        'JPY' => 'JPY - Japanese yen',
-        'KES' => 'KES - Kenyan shilling',
-        'KGS' => 'KGS - Kyrgyzstani som',
-        'KHR' => 'KHR - Cambodian riel',
-        'KMF' => 'KMF - Comoro franc',
-        'KPW' => 'KPW - North Korean won',
-        'KRW' => 'KRW - South Korean won',
-        'KWD' => 'KWD - Kuwaiti dinar',
-        'KYD' => 'KYD - Cayman Islands dollar',
-        'KZT' => 'KZT - Kazakhstani tenge',
-        'LAK' => 'LAK - Lao kip',
-        'LBP' => 'LBP - Lebanese pound',
-        'LKR' => 'LKR - Sri Lanka rupee',
-        'LRD' => 'LRD - Liberian dollar',
-        'LSL' => 'LSL - Lesotho loti',
-        'LYD' => 'LYD - Libyan dinar',
-        'MAD' => 'MAD - Moroccan dirham',
-        'MDL' => 'MDL - Moldovan leu',
-        'MGA' => 'MGA - Malagasy ariary',
-        'MKD' => 'MKD - Macedonian denar',
-        'MMK' => 'MMK - Myanma kyat',
-        'MNT' => 'MNT - Mongolian tugrik',
-        'MOP' => 'MOP - Macanese pataca',
-        'MRO' => 'MRO - Mauritanian ouguiya',
-        'MUR' => 'MUR - Mauritian rupee',
-        'MVR' => 'MVR - Maldivian rufiyaa',
-        'MWK' => 'MWK - Malawian kwacha',
-        'MXN' => 'MXN - Mexican peso',
-        'MYR' => 'MYR - Malaysian ringgit',
-        'MZN' => 'MZN - Mozambican metical',
-        'NAD' => 'NAD - Namibian dollar',
-        'NGN' => 'NGN - Nigerian naira',
-        'NIO' => 'NIO - Cordoba oro',
-        'NOK' => 'NOK - Norwegian krone',
-        'NPR' => 'NPR - Nepalese rupee',
-        'NZD' => 'NZD - New Zealand dollar',
-        'OMR' => 'OMR - Omani rial',
-        'PAB' => 'PAB - Panamanian balboa',
-        'PEN' => 'PEN - Peruvian nuevo sol',
-        'PGK' => 'PGK - Papua New Guinean kina',
-        'PHP' => 'PHP - Philippine peso',
-        'PKR' => 'PKR - Pakistani rupee',
-        'PLN' => 'PLN - Polish złoty',
-        'PYG' => 'PYG - Paraguayan guaraní',
-        'QAR' => 'QAR - Qatari rial',
-        'RON' => 'RON - Romanian new leu',
-        'RSD' => 'RSD - Serbian dinar',
-        'RUB' => 'RUB - Russian rouble',
-        'RWF' => 'RWF - Rwandan franc',
-        'SAR' => 'SAR - Saudi riyal',
-        'SBD' => 'SBD - Solomon Islands dollar',
-        'SCR' => 'SCR - Seychelles rupee',
-        'SDG' => 'SDG - Sudanese pound',
-        'SEK' => 'SEK - Swedish krona/kronor',
-        'SGD' => 'SGD - Singapore dollar',
-        'SHP' => 'SHP - Saint Helena pound',
-        'SLL' => 'SLL - Sierra Leonean leone',
-        'SOS' => 'SOS - Somali shilling',
-        'SRD' => 'SRD - Surinamese dollar',
-        'STD' => 'STD - São Tomé and Príncipe dobra',
-        'SYP' => 'SYP - Syrian pound',
-        'SZL' => 'SZL - Lilangeni',
-        'THB' => 'THB - Thai baht',
-        'TJS' => 'TJS - Tajikistani somoni',
-        'TMT' => 'TMT - Turkmenistani manat',
-        'TND' => 'TND - Tunisian dinar',
-        'TOP' => 'TOP - Tongan paʻanga',
-        'TRY' => 'TRY - Turkish lira',
-        'TTD' => 'TTD - Trinidad and Tobago dollar',
-        'TWD' => 'TWD - New Taiwan dollar',
-        'TZS' => 'TZS - Tanzanian shilling',
-        'UAH' => 'UAH - Ukrainian hryvnia',
-        'UGX' => 'UGX - Ugandan shilling',
-        'USD' => 'USD - United States dollar',
-        'UYU' => 'UYU - Uruguayan peso',
-        'UZS' => 'UZS - Uzbekistan som',
-        'VEF' => 'VEF - Venezuelan bolívar fuerte',
-        'VND' => 'VND - Vietnamese đồng',
-        'VUV' => 'VUV - Vanuatu vatu',
-        'WST' => 'WST - Samoan tala',
-        'XOF' => 'XOF - West African CFA franc',
-        'YER' => 'YER - Yemeni rial',
-        'ZAR' => 'ZAR - South African rand',
-        'ZMK' => 'ZMK - Zambian kwacha',
-        'ZWL' => 'ZWL - Zimbabwe dollar',
-    ];
-
     public function testGetList(): void
     {
-        $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Currency\Api\Admin::class);
 
         $willReturn = [
             'list' => ['id' => 1],
@@ -212,22 +56,20 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testGetPairs(): void
     {
-        $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Currency\Api\Admin::class);
+        $adminApi->setDi($this->getDi());
 
-        $service = $this->createMock(\Box\Mod\Currency\Service::class);
-        $service->expects($this->atLeastOnce())
-            ->method('getAvailableCurrencies')
-            ->willReturn($this->availableCurrencies);
-
-        $adminApi->setService($service);
         $result = $adminApi->get_pairs();
-        $this->assertEquals($result, $this->availableCurrencies);
         $this->assertIsArray($result);
+        $this->assertArrayHasKey('USD', $result);
+        $this->assertArrayHasKey('EUR', $result);
+        $this->assertStringContainsString('USD', $result['USD']);
+        $this->assertStringContainsString('EUR', $result['EUR']);
     }
 
     public function testGet(): void
     {
-        $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Currency\Api\Admin::class);
 
         $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
             ->disableOriginalConstructor()
@@ -236,7 +78,7 @@ final class Api_AdminTest extends \BBTestCase
             ->method('toApiArray')
             ->willReturn([
                 'code' => 'EUR',
-                'title' => 'Euro',
+                'name' => 'Euro',
                 'conversion_rate' => 1.0,
                 'default' => false,
             ]);
@@ -267,11 +109,11 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testGetDefault(): void
     {
-        $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Currency\Api\Admin::class);
 
         $returnArr = [
             'code' => 'EUR',
-            'title' => 'Euro',
+            'name' => 'Euro',
             'conversion_rate' => 3.4528,
             'default' => true,
         ];
@@ -301,7 +143,7 @@ final class Api_AdminTest extends \BBTestCase
         $this->assertIsArray($result);
         $this->assertEquals($result, $returnArr);
         $this->assertEquals('EUR', $returnArr['code']);
-        $this->assertEquals('Euro', $returnArr['title']);
+        $this->assertEquals('Euro', $returnArr['name']);
         $this->assertIsFloat($returnArr['conversion_rate']);
         $this->assertEquals(3.4528, $returnArr['conversion_rate']);
         $this->assertTrue($returnArr['default']);
@@ -315,30 +157,27 @@ final class Api_AdminTest extends \BBTestCase
                     'code' => 'EUR',
                 ],
                 'atLeastOnce',
-                'currency_exists', // use string flag instead of mock
-                'never',
+                'currency_exists',
             ],
             [
                 [
-                    'code' => 'NON', // Non existing currency
+                    'code' => 'NON',
                 ],
                 'atLeastOnce',
                 null,
-                'atLeastOnce',
             ],
         ];
     }
 
     #[DataProvider('CreateExceptionProvider')]
-    public function testCreateException(array $data, string $findOneByCodeCalled, ?string $findOneByCodeReturn, string $getAvailableCurrenciesCalled): void
+    public function testCreateException(array $data, string $findOneByCodeCalled, ?string $findOneByCodeReturn): void
     {
-        $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Currency\Api\Admin::class);
 
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
             ->getMock();
 
-        // Create mock if needed
         if ($findOneByCodeReturn === 'currency_exists') {
             $findOneByCodeReturn = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
                 ->disableOriginalConstructor()
@@ -354,10 +193,6 @@ final class Api_AdminTest extends \BBTestCase
             ->method('getCurrencyRepository')
             ->willReturn($repositoryMock);
 
-        $service->expects($this->$getAvailableCurrenciesCalled())
-            ->method('getAvailableCurrencies')
-            ->willReturn($this->availableCurrencies);
-
         $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffServiceMock->expects($this->once())
             ->method('checkPermissionsAndThrowException')
@@ -370,12 +205,12 @@ final class Api_AdminTest extends \BBTestCase
         $adminApi->setService($service);
         $adminApi->setDi($di);
         $this->expectException(\FOSSBilling\Exception::class);
-        $adminApi->create($data); // Expecting \FOSSBilling\Exception every time
+        $adminApi->create($data);
     }
 
     public function testCreate(): void
     {
-        $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Currency\Api\Admin::class);
 
         $data = [
             'code' => 'EUR',
@@ -392,9 +227,6 @@ final class Api_AdminTest extends \BBTestCase
         $service->expects($this->atLeastOnce())
             ->method('getCurrencyRepository')
             ->willReturn($repositoryMock);
-        $service->expects($this->atLeastOnce())
-            ->method('getAvailableCurrencies')
-            ->willReturn($this->availableCurrencies);
         $service->expects($this->atLeastOnce())
             ->method('createCurrency')
             ->willReturn($data['code']);
@@ -420,11 +252,10 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testUpdate(): void
     {
-        $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Currency\Api\Admin::class);
 
         $data = [
             'code' => 'EUR',
-            'title' => 'Euros',
             'conversion_rate' => 0.6,
         ];
 
@@ -456,11 +287,11 @@ final class Api_AdminTest extends \BBTestCase
      */
     public function testDeleteException(): void
     {
-        $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Currency\Api\Admin::class);
 
         $service = $this->createMock(\Box\Mod\Currency\Service::class);
         $service->expects($this->never())
-            ->method('deleteCurrencyByCode');
+            ->method('removeCurrency');
 
         $apiHandler = new \Api_Handler(new \Model_Admin());
         $reflection = new \ReflectionClass($apiHandler);
@@ -477,15 +308,15 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testDelete(): void
     {
-        $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Currency\Api\Admin::class);
 
         $data = [
             'code' => 'EUR',
         ];
 
-        $service = $this->getMockBuilder(\Box\Mod\Currency\Service::class)->onlyMethods(['deleteCurrencyByCode'])->getMock();
+        $service = $this->getMockBuilder(\Box\Mod\Currency\Service::class)->onlyMethods(['removeCurrency'])->getMock();
         $service->expects($this->atLeastOnce())
-            ->method('deleteCurrencyByCode')
+            ->method('removeCurrency')
             ->willReturn(true);
 
         $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
@@ -523,7 +354,7 @@ final class Api_AdminTest extends \BBTestCase
     #[DataProvider('SetDefaultExceptionProvider')]
     public function testSetDefaultException(array $data, string $getByCodeCalled, $getByCodeReturn): void
     {
-        $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Currency\Api\Admin::class);
 
         $repositoryMock = $this->getMockBuilder('\\' . \Box\Mod\Currency\Repository\CurrencyRepository::class)
             ->disableOriginalConstructor()
@@ -555,7 +386,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testSetDefault(): void
     {
-        $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Currency\Api\Admin::class);
 
         $model = $this->getMockBuilder('\\' . \Box\Mod\Currency\Entity\Currency::class)
             ->disableOriginalConstructor()
@@ -600,7 +431,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function testUpdateRates(): void
     {
-        $adminApi = new \Box\Mod\Currency\Api\Admin();
+        $adminApi = $this->createAdminApi(\Box\Mod\Currency\Api\Admin::class);
 
         $service = $this->createMock(\Box\Mod\Currency\Service::class);
         $service->expects($this->once())

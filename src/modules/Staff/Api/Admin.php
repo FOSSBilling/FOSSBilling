@@ -28,6 +28,8 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'view');
+
         $data['no_cron'] = true;
 
         [$sql, $params] = $this->getService()->getSearchQuery($data);
@@ -50,6 +52,8 @@ class Admin extends \Api_Abstract
      */
     public function get_pairs(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'view');
+
         return $this->getService()->getPairs($data);
     }
 
@@ -63,6 +67,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'ID was not passed'])]
     public function get($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'view');
+
         $model = $this->di['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
 
         return $this->getService()->toModel_AdminApiArray($model);
@@ -84,11 +90,13 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'ID was not passed'])]
     public function update($data)
     {
+        $model = $this->di['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
+        $role = $model->role === 'admin' ? 'admin' : 'staff';
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', $role === 'admin' ? 'create_and_edit_admin' : 'create_and_edit_staff');
+
         if (isset($data['email'])) {
             $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
         }
-
-        $model = $this->di['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
 
         return $this->getService()->update($model, $data);
     }
@@ -104,6 +112,8 @@ class Admin extends \Api_Abstract
     public function delete($data)
     {
         $model = $this->di['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
+        $role = $model->role === 'admin' ? 'admin' : 'staff';
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', $role === 'admin' ? 'delete_admin' : 'delete_staff');
 
         return $this->getService()->delete($model);
     }
@@ -127,6 +137,8 @@ class Admin extends \Api_Abstract
         $this->di['validator']->isPasswordStrong($data['password']);
 
         $model = $this->di['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
+        $role = $model->role === 'admin' ? 'admin' : 'staff';
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', $role === 'admin' ? 'reset_admin_password' : 'reset_staff_password');
 
         return $this->getService()->changePassword($model, $data['password']);
     }
@@ -148,6 +160,9 @@ class Admin extends \Api_Abstract
     ])]
     public function create($data)
     {
+        $role = $data['role'] ?? 'staff';
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', $role === 'admin' ? 'create_and_edit_admin' : 'create_and_edit_staff');
+
         $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
 
         $this->di['validator']->isPasswordStrong($data['password']);
@@ -176,6 +191,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'ID was not passed', 'permissions' => 'Missing "permissions" parameter'])]
     public function permissions_update($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_settings');
+
         $model = $this->di['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
 
         if (!is_array($data['permissions'])) {
@@ -196,6 +213,8 @@ class Admin extends \Api_Abstract
      */
     public function group_get_pairs($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'view');
+
         return $this->getService()->getAdminGroupPair();
     }
 
@@ -206,6 +225,8 @@ class Admin extends \Api_Abstract
      */
     public function group_get_list($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_groups');
+
         [$sql, $params] = $this->getService()->getAdminGroupSearchQuery($data);
         $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
@@ -227,6 +248,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['name' => 'Group name was not passed'])]
     public function group_create($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_groups');
+
         return $this->getService()->createGroup($data['name']);
     }
 
@@ -240,6 +263,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Group ID was not passed'])]
     public function group_get($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_groups');
+
         $model = $this->di['db']->getExistingModelById('AdminGroup', $data['id'], 'Group not found');
 
         return $this->getService()->toAdminGroupApiArray($model, true, $this->getIdentity());
@@ -255,6 +280,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Group ID was not passed'])]
     public function group_delete($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_groups');
+
         $model = $this->di['db']->getExistingModelById('AdminGroup', $data['id'], 'Group not found');
 
         return $this->getService()->deleteGroup($model);
@@ -272,6 +299,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Group ID was not passed'])]
     public function group_update($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_groups');
+
         $model = $this->di['db']->getExistingModelById('AdminGroup', $data['id'], 'Group not found');
 
         return $this->getService()->updateGroup($model, $data);

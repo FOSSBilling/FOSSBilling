@@ -32,7 +32,7 @@ final class AdminTest extends \BBTestCase
         $controllerAdmin->register($boxAppMock);
     }
 
-    public function testGetIndex(): void
+    public function testGetHistory(): void
     {
         $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
         $boxAppMock->expects($this->atLeastOnce())
@@ -46,5 +46,21 @@ final class AdminTest extends \BBTestCase
         $controllerAdmin->setDi($di);
 
         $controllerAdmin->get_history($boxAppMock);
+    }
+
+    public function testGetIndex(): void
+    {
+        $boxAppMock = $this->getMockBuilder('\Box_App')->disableOriginalConstructor()->getMock();
+        $boxAppMock->expects($this->atLeastOnce())
+            ->method('render')
+            ->with('mod_email_settings');
+
+        $controllerAdmin = new Admin();
+        $di = $this->getDi();
+        $di['is_admin_logged'] = true;
+
+        $controllerAdmin->setDi($di);
+
+        $controllerAdmin->get_index($boxAppMock);
     }
 }

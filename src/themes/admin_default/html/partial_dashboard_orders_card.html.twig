@@ -1,0 +1,84 @@
+{% import 'macro_functions.html.twig' as mf %}
+
+{% set ordersPerPageRaw = request.orders_per_page|default('5') %}
+{% if ordersPerPageRaw in dashboardPageSizes %}
+    {% set ordersPerPage = ordersPerPageRaw %}
+{% else %}
+    {% set ordersPerPage = '5' %}
+{% endif %}
+{% set ordersDashboardRequest = request|merge({ 'orders_per_page': null, 'dashboard_section': null })|filter(v => v is not null) %}
+{% set orders = admin.order_get_list({ 'per_page': ordersPerPage, 'page': 1, 'status': 'active' }) %}
+{% set ordersPageSizeOptions = ['5'] %}
+{% if orders.total > 5 %}
+    {% set ordersPageSizeOptions = ordersPageSizeOptions|merge(['10']) %}
+{% endif %}
+{% if orders.total > 10 %}
+    {% set ordersPageSizeOptions = ordersPageSizeOptions|merge(['20']) %}
+{% endif %}
+{% if ordersPerPage not in ordersPageSizeOptions %}
+    {% set ordersPerPage = ordersPageSizeOptions|last %}
+{% endif %}
+
+{% if orders.list|length > 0 %}
+<div class="col-lg-6" data-dashboard-card="orders">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">{{ 'Latest Orders'|trans }}</h3>
+            <div class="card-actions">
+                <a href="{{ 'order'|url }}" class="btn-action">
+                    <svg class="icon">
+                        <use xlink:href="#dots-vertical" />
+                    </svg>
+                </a>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table card-table table-vcenter text-nowrap table-hover">
+                <thead>
+                    <tr>
+                        <th>{{ 'Client'|trans }}</th>
+                        <th>{{ 'Order Title'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for order in orders.list %}
+                    <tr title="{{ order.created_at|timeago }} {{ 'ago'|trans }}">
+                        <td>
+                            <a href='{{ "client/manage/#{order.client.id}"|url }}'>
+                                {{ mf.avatar(order.client.email, 24, 'db-avatar avatar avatar-xs') }}
+                            </a>&nbsp;
+                            <a href='{{ "client/manage/#{order.client_id}"|url }}'>{{ order.client.first_name }} {{ order.client.last_name }}</a>
+                        </td>
+                        <td>
+                            <a href='{{ "order/manage/#{order.id}"|url }}'>{{ order.title|truncate(35) }}</a>
+                        </td>
+                    </tr>
+                {% else %}
+                <tr>
+                    <td class="text-muted text-center" colspan="2">{{ 'The list is empty'|trans }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if orders.total > 5 %}
+            <div class="card-footer d-flex align-items-center">
+                {% set ordersRecordSelectorOptions = [] %}
+                {% for pageSize in ordersPageSizeOptions %}
+                    {% set ordersRecordSelectorOptions = ordersRecordSelectorOptions|merge([{
+                        value: pageSize,
+                        active: pageSize == ordersPerPage,
+                        href: ''|url(query: ordersDashboardRequest|merge({ 'orders_per_page': pageSize })),
+                        attributes: { 'data-dashboard-section': 'orders' }
+                    }]) %}
+                {% endfor %}
+                {{ include('partial_record_selector.html.twig', {
+                    record_selector_current: ordersPerPage,
+                    record_selector_options: ordersRecordSelectorOptions
+                }) }}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}

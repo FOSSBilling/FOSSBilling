@@ -154,8 +154,12 @@
                     <div class="mb-3 row">
                         <div class="col-md-5">
                             <label for="whois_country" class="form-label">{{ 'Country'|trans }}</label>
-                            <input class="form-control" type="text" name="contact[country]" id="whois_country"
-                                   value="{{ request.country|default(service.contact.country) }}" required>
+                            <select class="form-select" name="contact[country]" id="whois_country" required>
+                                <option value="">{{ 'Select Country'|trans }}</option>
+                                {% for code, name in country_names() %}
+                                    <option value="{{ code }}" {% if (request.country|default(service.contact.country)) == code %}selected{% endif %}>{{ name }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                         <div class="col-md-5">
                             <label for="whois_city" class="form-label">{{ 'City'|trans }}</label>
@@ -180,7 +184,7 @@
                         <div class="col-md-5">
                             <label for="whois_phone_cc" class="form-label">{{ 'Phone Country Code'|trans }}</label>
                             <input class="form-control" type="text" name="contact[phone_cc]" id="whois_phone_cc"
-                                   value="{{ request.phone_cc|default(service.contact.phone_cc) }}" required>
+                                   value="{{ request.phone_cc|default(service.contact.phone_cc) }}" inputmode="numeric" maxlength="3" pattern="[0-9]{1,3}" autocomplete="tel-country-code" required>
                         </div>
                         <div class="col-md-5">
                             <label for="whois_phone" class="form-label">{{ 'Phone Number'|trans }}</label>

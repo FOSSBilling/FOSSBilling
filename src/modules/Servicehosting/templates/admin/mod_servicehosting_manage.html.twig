@@ -4,19 +4,20 @@
 {% set hp = service.hosting_plan %}
 
 <div class="card-body">
-    <h3>{{ 'Details'|trans }}</h3>
+    <div class="mb-3">
+        <h3 class="card-title mb-1">{{ 'Details'|trans }}</h3>
+        <p class="text-secondary mb-0">{{ 'Review the current hosting account, jump to the server control panel, and make targeted changes to the provisioned account.'|trans }}</p>
+    </div>
 </div>
 <table class="table card-table table-vcenter table-striped text-nowrap">
     <tbody>
         <tr>
             <td class="w-50 text-end">{{ 'Status'|trans }}:</td>
-            <td>{{ mf.status_name(order.status) }}</td>
+            <td>{{ mf.status_badge(order.status, 'order') }}</td>
         </tr>
         <tr>
             <td class="text-end">{{ 'Domain'|trans }}:</td>
-            <td>
-                <a target="_blank" href="https://{{ service.domain }}">{{ service.domain }}</a>
-            </td>
+            <td><a target="_blank" href="https://{{ service.domain }}">{{ service.domain }}</a></td>
         </tr>
         <tr>
             <td class="text-end">{{ 'Server Name'|trans }}:</td>
@@ -47,16 +48,16 @@
             <td>{{ server.ns2 }}</td>
         </tr>
         {% if server.ns3 %}
-        <tr>
-            <td class="text-end">{{ 'Nameserver 3'|trans }}:</td>
-            <td>{{ server.ns3 }}</td>
-        </tr>
+            <tr>
+                <td class="text-end">{{ 'Nameserver 3'|trans }}:</td>
+                <td>{{ server.ns3 }}</td>
+            </tr>
         {% endif %}
         {% if server.ns4 %}
-        <tr>
-            <td class="text-end">{{ 'Nameserver 4'|trans }}:</td>
-            <td>{{ server.ns4 }}</td>
-        </tr>
+            <tr>
+                <td class="text-end">{{ 'Nameserver 4'|trans }}:</td>
+                <td>{{ server.ns4 }}</td>
+            </tr>
         {% endif %}
         <tr>
             <td class="text-end">{{ 'Bandwidth'|trans }}:</td>
@@ -69,26 +70,25 @@
     </tbody>
 </table>
 
-<div class="card-footer text-center">
+<div class="card-footer d-flex flex-wrap gap-2 justify-content-end">
     {{ order_actions }}
     <a class="btn btn-primary" href="{{ server.cpanel_url }}" target="_blank">
-        <svg class="icon" width="24" height="24">
+        <svg class="icon">
             <use xlink:href="#server" />
         </svg>
         <span>{{ 'Jump to control panel'|trans }}</span>
     </a>
     {% if service.reseller %}
-    <a class="btn btn-primary" href="{{ server.reseller_cpanel_url }}" target="_blank">
-        <svg class="icon" width="24" height="24">
-            <use xlink:href="#server" />
-        </svg>
-        <span>{{ 'Reseller control panel'|trans }}</span>
-    </a>
+        <a class="btn btn-primary" href="{{ server.reseller_cpanel_url }}" target="_blank">
+            <svg class="icon">
+                <use xlink:href="#server" />
+            </svg>
+            <span>{{ 'Reseller control panel'|trans }}</span>
+        </a>
     {% endif %}
-
     <a class="btn btn-primary" href="{{ 'servicehosting/sync'|api_url(query: { 'order_id': order.id }) }}"
         {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, message: 'Account Synced'|trans}) }}>
-        <svg class="icon" width="24" height="24">
+        <svg class="icon">
             <use xlink:href="#refresh" />
         </svg>
         <span>{{ 'Sync with server'|trans }}</span>
@@ -96,82 +96,123 @@
 </div>
 
 <div class="card-body">
-    <h3>{{ 'Change Hosting Plan'|trans }}</h3>
-
-    <form method="post" action="{{ 'servicehosting/change_plan'|api_url }}" {{ fb_api_form({message: 'Hosting Plan Changed'|trans}) }}>
-        <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'New Hosting Plan'|trans }}:</label>
-            <div class="col">
-                {{ mf.selectbox('plan_id', admin.servicehosting_hp_get_pairs, hp.id, 1) }}
-            </div>
+    <div class="mb-5">
+        <div class="mb-3">
+            <h3 class="card-title mb-1">{{ 'Change Hosting Plan'|trans }}</h3>
+            <p class="text-secondary mb-0">{{ 'Move this account onto a different hosting plan available on the current server.'|trans }}</p>
         </div>
 
-        <input type="hidden" name="order_id" value="{{ order.id }}">
-        <input type="submit" value="{{ 'Change'|trans }}" class="btn btn-primary w-100">
-    </form>
-    <hr>
-
-    <h3>{{ 'Change Account Password'|trans }}</h3>
-    <form method="post" action="{{ 'servicehosting/change_password'|api_url }}" {{ fb_api_form({message: 'Account Password Changed'|trans}) }}>
-        <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Password'|trans }}:</label>
-            <div class="col">
-                <input class="form-control" type="password" name="password" required>
-            </div>
-        </div>
-        <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Password Confirm'|trans }}:</label>
-            <div class="col">
-                <input class="form-control" type="password" name="password_confirm" required>
-            </div>
-        </div>
-
-        <input type="hidden" name="order_id" value="{{ order.id }}">
-        <input type="submit" value="{{ 'Change'|trans }}" class="btn btn-primary w-100">
-    </form>
-    <hr>
-
-    <h3>{{ 'Change IP'|trans }}</h3>
-    <form method="post" action="{{ 'servicehosting/change_ip'|api_url }}" {{ fb_api_form({message: 'Account IP Changed'|trans}) }}>
-        <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'IP'|trans }}:</label>
-            <div class="col">
-                <input class="form-control" type="text" name="ip" value="{{ request.ip|default(service.ip) }}" required>
-            </div>
-        </div>
-
-        <input type="hidden" name="order_id" value="{{ order.id }}">
-        <button class="btn btn-primary w-100" type="submit">{{ 'Change'|trans }}</button>
-    </form>
-    <hr>
-
-    <h3>{{ 'Change Username'|trans }}</h3>
-    <form method="post" action="{{ 'servicehosting/change_username'|api_url }}" {{ fb_api_form({message: 'Account Username Changed'|trans}) }}>
-        <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Username'|trans }}:</label>
-            <div class="col">
-                <input class="form-control" type="text" name="username" value="{{ request.username|default(service.username) }}" required>
-            </div>
-        </div>
-
-        <input type="hidden" name="order_id" value="{{ order.id }}">
-        <button class="btn btn-primary w-100" type="submit">{{ 'Change'|trans }}</button>
-    </form>
-    <hr>
-
-    <h3>{{ 'Change Domain'|trans }}</h3>
-    <form method="post" action="{{ 'servicehosting/change_domain'|api_url }}" {{ fb_api_form({message: 'Account Domain Changed'|trans}) }}>
-        <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Domain'|trans }}:</label>
-            <div class="col">
-                <div class="input-group">
-                    <input class="form-control" type="text" name="sld" value="{{ request.domain|default(service.sld) }}" required>
-                    <input class="form-control" type="text" name="tld" value="{{ request.domain|default(service.tld) }}" required>
+        <form method="post" action="{{ 'servicehosting/change_plan'|api_url }}" {{ fb_api_form({message: 'Hosting Plan Changed'|trans}) }}>
+            <div class="row g-3">
+                <div class="col-lg-6">
+                    <label class="form-label">{{ 'New Hosting Plan'|trans }}</label>
+                    {{ mf.selectbox('plan_id', admin.servicehosting_hp_get_pairs, hp.id, 1) }}
                 </div>
             </div>
+
+            <input type="hidden" name="order_id" value="{{ order.id }}">
+            <div class="d-flex justify-content-end mt-3">
+                <button class="btn btn-primary" type="submit">{{ 'Change'|trans }}</button>
+            </div>
+        </form>
+    </div>
+
+    <hr class="my-4" />
+
+    <div class="mb-5">
+        <div class="mb-3">
+            <h3 class="card-title mb-1">{{ 'Change Account Password'|trans }}</h3>
+            <p class="text-secondary mb-0">{{ 'Set a new password for the hosting account on the remote server.'|trans }}</p>
         </div>
 
-        <input type="hidden" name="order_id" value="{{ order.id }}">
-        <button class="btn btn-primary w-100" type="submit">{{ 'Change'|trans }}</button>
-    </form>
+        <form method="post" action="{{ 'servicehosting/change_password'|api_url }}" {{ fb_api_form({message: 'Account Password Changed'|trans}) }}>
+            <div class="row g-3">
+                <div class="col-lg-6">
+                    <label class="form-label">{{ 'Password'|trans }}</label>
+                    <input class="form-control" type="password" name="password" required>
+                </div>
+                <div class="col-lg-6">
+                    <label class="form-label">{{ 'Password Confirm'|trans }}</label>
+                    <input class="form-control" type="password" name="password_confirm" required>
+                </div>
+            </div>
+
+            <input type="hidden" name="order_id" value="{{ order.id }}">
+            <div class="d-flex justify-content-end mt-3">
+                <button class="btn btn-primary" type="submit">{{ 'Change'|trans }}</button>
+            </div>
+        </form>
+    </div>
+
+    <hr class="my-4" />
+
+    <div class="mb-5">
+        <div class="mb-3">
+            <h3 class="card-title mb-1">{{ 'Change IP'|trans }}</h3>
+            <p class="text-secondary mb-0">{{ 'Update the primary IP address assigned to the hosting account.'|trans }}</p>
+        </div>
+
+        <form method="post" action="{{ 'servicehosting/change_ip'|api_url }}" {{ fb_api_form({message: 'Account IP Changed'|trans}) }}>
+            <div class="row g-3">
+                <div class="col-lg-6">
+                    <label class="form-label">{{ 'IP'|trans }}</label>
+                    <input class="form-control" type="text" name="ip" value="{{ request.ip|default(service.ip) }}" required>
+                </div>
+            </div>
+
+            <input type="hidden" name="order_id" value="{{ order.id }}">
+            <div class="d-flex justify-content-end mt-3">
+                <button class="btn btn-primary" type="submit">{{ 'Change'|trans }}</button>
+            </div>
+        </form>
+    </div>
+
+    <hr class="my-4" />
+
+    <div class="mb-5">
+        <div class="mb-3">
+            <h3 class="card-title mb-1">{{ 'Change Username'|trans }}</h3>
+            <p class="text-secondary mb-0">{{ 'Rename the hosting account username on the remote server.'|trans }}</p>
+        </div>
+
+        <form method="post" action="{{ 'servicehosting/change_username'|api_url }}" {{ fb_api_form({message: 'Account Username Changed'|trans}) }}>
+            <div class="row g-3">
+                <div class="col-lg-6">
+                    <label class="form-label">{{ 'Username'|trans }}</label>
+                    <input class="form-control" type="text" name="username" value="{{ request.username|default(service.username) }}" required>
+                </div>
+            </div>
+
+            <input type="hidden" name="order_id" value="{{ order.id }}">
+            <div class="d-flex justify-content-end mt-3">
+                <button class="btn btn-primary" type="submit">{{ 'Change'|trans }}</button>
+            </div>
+        </form>
+    </div>
+
+    <hr class="my-4" />
+
+    <div>
+        <div class="mb-3">
+            <h3 class="card-title mb-1">{{ 'Change Domain'|trans }}</h3>
+            <p class="text-secondary mb-0">{{ 'Update the domain assigned to the hosting account.'|trans }}</p>
+        </div>
+
+        <form method="post" action="{{ 'servicehosting/change_domain'|api_url }}" {{ fb_api_form({message: 'Account Domain Changed'|trans}) }}>
+            <div class="row g-3">
+                <div class="col-lg-8">
+                    <label class="form-label">{{ 'Domain'|trans }}</label>
+                    <div class="input-group">
+                        <input class="form-control" type="text" name="sld" value="{{ request.domain|default(service.sld) }}" required>
+                        <input class="form-control" type="text" name="tld" value="{{ request.domain|default(service.tld) }}" required>
+                    </div>
+                </div>
+            </div>
+
+            <input type="hidden" name="order_id" value="{{ order.id }}">
+            <div class="d-flex justify-content-end mt-3">
+                <button class="btn btn-primary" type="submit">{{ 'Change'|trans }}</button>
+            </div>
+        </form>
+    </div>
 </div>

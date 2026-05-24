@@ -53,7 +53,7 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
         $adminClient->setService($serviceMock);
         $adminClient->setDi($di);
         $data = [];
@@ -78,7 +78,7 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
         $adminClient->setDi($di);
 
         $data = ['id' => 1];
@@ -112,7 +112,7 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
         $adminClient->setService($serviceMock);
         $adminClient->setDi($di);
 
@@ -155,7 +155,7 @@ final class AdminTest extends \BBTestCase
         $di['logger'] = new \Box_Log();
         $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
 
-        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
         $adminClient->setDi($di);
 
         $data = ['id' => 1];
@@ -195,7 +195,7 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
         $adminClient->setDi($di);
         $adminClient->setService($serviceMock);
 
@@ -230,7 +230,7 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
         $adminClient->setDi($di);
         $adminClient->setService($serviceMock);
 
@@ -263,7 +263,7 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
         $adminClient->setDi($di);
         $adminClient->setService($serviceMock);
 
@@ -306,7 +306,7 @@ final class AdminTest extends \BBTestCase
         });
         $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
 
-        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
         $adminClient->setDi($di);
         $adminClient->setService($serviceMock);
         $result = $adminClient->delete($data);
@@ -331,7 +331,7 @@ final class AdminTest extends \BBTestCase
             'document_type' => 'doc',
             'document_nr' => '1',
             'notes' => 'none',
-            'country' => 'Moon',
+            'country' => 'US',
             'postcode' => 'IL-11123',
             'city' => 'Chicago',
             'state' => 'IL',
@@ -367,31 +367,27 @@ final class AdminTest extends \BBTestCase
 
         $serviceMock = $this->createMock(\Box\Mod\Client\Service::class);
         $serviceMock->expects($this->atLeastOnce())->method('emailAlreadyRegistered')->willReturn(false);
-        $serviceMock->expects($this->atLeastOnce())->method('canChangeCurrency')->willReturn(true);
 
         $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffServiceMock->expects($this->once())
             ->method('checkPermissionsAndThrowException')
             ->with('client', 'edit_profile');
 
-        $eventMock = $this->createMock('\\Box_EventManager');
+        $eventMock = $this->createMock('Box_EventManager');
         $eventMock->expects($this->atLeastOnce())->method('fire');
-
-        $toolsMock = $this->createMock(\FOSSBilling\Tools::class);
-        $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
-            'client' => $serviceMock,
-            'staff' => $staffServiceMock,
-        });
         $di['events_manager'] = $eventMock;
         $di['logger'] = new \Box_Log();
-        $di['tools'] = $toolsMock;
+        $di['mod_service'] = $di->protect(fn (string $name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($name)) {
+            'staff' => $staffServiceMock,
+            'client' => $serviceMock,
+        });
 
-        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
         $adminClient->setDi($di);
+        $adminClient->setService($serviceMock);
         $result = $adminClient->update($data);
         $this->assertTrue($result);
     }
@@ -414,7 +410,7 @@ final class AdminTest extends \BBTestCase
             'document_type' => 'doc',
             'document_nr' => '1',
             'notes' => 'none',
-            'country' => 'Moon',
+            'country' => 'US',
             'postcode' => 'IL-11123',
             'city' => 'Chicago',
             'state' => 'IL',
@@ -472,7 +468,7 @@ final class AdminTest extends \BBTestCase
         $toolsMock->expects($this->atLeastOnce())->method('validateAndSanitizeEmail');
         $di['tools'] = $toolsMock;
 
-        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
         $adminClient->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
@@ -483,7 +479,7 @@ final class AdminTest extends \BBTestCase
     public function testUpdateIdException(): void
     {
         $data = [];
-        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
 
         $di = $this->getDi();
 
@@ -542,7 +538,7 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
         $adminClient->setDi($di);
 
         $result = $adminClient->change_password($data);
@@ -556,7 +552,7 @@ final class AdminTest extends \BBTestCase
             'password' => 'strongPass',
             'password_confirm' => 'NotIdentical',
         ];
-        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
 
         $staffServiceMock = $this->createMock(\Box\Mod\Staff\Service::class);
         $staffServiceMock->expects($this->once())
@@ -625,7 +621,7 @@ final class AdminTest extends \BBTestCase
         });
         $di['pager'] = $pagerMock;
 
-        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
         $adminClient->setDi($di);
 
         $result = $adminClient->balance_get_list($data);
@@ -648,7 +644,7 @@ final class AdminTest extends \BBTestCase
             default => false,
         });
 
-        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
         $adminClient->setDi($di);
 
         $this->expectException(\FOSSBilling\InformationException::class);
@@ -684,7 +680,7 @@ final class AdminTest extends \BBTestCase
         });
         $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
 
-        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
         $adminClient->setDi($di);
 
         $result = $adminClient->balance_delete($data);
@@ -723,7 +719,7 @@ final class AdminTest extends \BBTestCase
 
         $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
 
-        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
         $adminClient->setDi($di);
 
         $result = $adminClient->balance_add_funds($data);
@@ -748,7 +744,7 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
         $adminClient->setDi($di);
         $adminClient->setService($serviceMock);
 
@@ -783,7 +779,7 @@ final class AdminTest extends \BBTestCase
         });
         $di['logger'] = new \Box_Log();
 
-        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
         $adminClient->setDi($di);
 
         $result = $adminClient->batch_expire_password_reminders();
@@ -821,7 +817,7 @@ final class AdminTest extends \BBTestCase
             'staff' => $staffServiceMock,
         });
 
-        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
         $adminClient->setDi($di);
         $adminClient->setService($serviceMock);
 
@@ -837,7 +833,7 @@ final class AdminTest extends \BBTestCase
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
 
-        $adminClient = new \Box\Mod\Client\Api\Admin();
+        $adminClient = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
         $adminClient->setDi($di);
 
         $result = $adminClient->get_statuses([]);
@@ -852,7 +848,7 @@ final class AdminTest extends \BBTestCase
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
+        $admin_Client = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
         $admin_Client->setDi($di);
 
         $result = $admin_Client->group_get_pairs([]);
@@ -876,7 +872,7 @@ final class AdminTest extends \BBTestCase
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => match (strtolower((string) $name)) {
             'staff' => $staffServiceMock,
         });
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
+        $admin_Client = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
         $admin_Client->setService($serviceMock);
         $admin_Client->setDi($di);
         $result = $admin_Client->group_create($data);
@@ -913,7 +909,7 @@ final class AdminTest extends \BBTestCase
 
         $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
+        $admin_Client = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
         $admin_Client->setDi($di);
 
         $result = $admin_Client->group_update($data);
@@ -955,7 +951,7 @@ final class AdminTest extends \BBTestCase
         });
         $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
+        $admin_Client = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
         $admin_Client->setDi($di);
         $admin_Client->setService($serviceMock);
 
@@ -982,7 +978,7 @@ final class AdminTest extends \BBTestCase
         $di['db'] = $dbMock;
         $di['validator'] = $this->createStub(\FOSSBilling\Validate::class);
 
-        $admin_Client = new \Box\Mod\Client\Api\Admin();
+        $admin_Client = $this->createAdminApi(\Box\Mod\Client\Api\Admin::class);
         $admin_Client->setDi($di);
 
         $result = $admin_Client->group_get($data);

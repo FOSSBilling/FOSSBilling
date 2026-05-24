@@ -1,7 +1,5 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
 
-{% import "macro_functions.html.twig" as mf %}
-
 {% block meta_title %}{{ 'SEO settings'|trans }}{% endblock %}
 
 {% set active_menu = 'system' %}
@@ -23,56 +21,55 @@
 {% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">{{ 'SEO Settings'|trans }}</h3>
-    </div>
+{% set info = admin.seo_info %}
 
-    {% set info = admin.seo_info %}
-
-    {% set params = admin.extension_config_get({ "ext": "mod_seo" }) %}
-    <form method="post" action="{{ 'extension/config_save'|api_url }}" {{ fb_api_form({message: 'Configuration Updated'|trans}) }}>
-        <input type="hidden" name="ext" value="mod_seo">
-        <div class="card-body">
-            <h3 class="card-title">{{ 'Enabled Engines'|trans }}</h3>
-
-            {% for i, engine in info.engines %}
-            <div class="row">
-                <label class="col-md-3 form-label">{{ engine.name }}</label>
-                <span class="col-md-5">
-                    <label class="form-check form-check-single form-switch">
-                        <input class="form-check-input" type="checkbox" name="sitemap_{{ engine.id }}" {% if engine.enabled %}checked="checked"{% endif %}>
-                    </label>
-                </span>
+<form method="post" action="{{ 'extension/config_save'|api_url }}" {{ fb_api_form({message: 'Configuration Updated'|trans}) }}>
+    <input type="hidden" name="ext" value="mod_seo">
+    {% embed 'partial_admin_form_card.html.twig' with {
+        title: 'SEO Settings'|trans,
+        subtitle: 'Choose which search engines should be pinged automatically when sitemap updates are available.'|trans
+    } %}
+        {% block form_content %}
+            <div class="mb-4">
+                <h5 class="card-title mb-1">{{ 'Enabled Search Engines'|trans }}</h5>
+                <p class="text-secondary mb-0">{{ 'Turn automatic pinging on or off for each supported search engine.'|trans }}</p>
             </div>
-            {% endfor %}
-        </div>
 
-        <div class="card-body border-bottom">
-            <span class="card-subtitle">{{ 'FOSSBilling will automatically ping every enabled search engine every 24 hours. Cron jobs must be working for this to work.'|trans }}</span>
-        </div>
+            <div class="d-flex flex-column gap-3 mb-4">
+                {% for engine in info.engines %}
+                    <div class="border rounded px-3 py-3">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                            <div>
+                                <div class="fw-semibold">{{ engine.name }}</div>
+                                <div class="text-secondary small">{{ 'Ping this search engine when sitemap updates are detected.'|trans }}</div>
+                            </div>
+                            <label class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" name="sitemap_{{ engine.id }}" {% if engine.enabled %}checked="checked"{% endif %}>
+                            </label>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
 
-        <div class="table-responsive">
-            <table class="table card-table table-vcenter table-striped text-nowrap">
-                <tbody>
-                    <tr>
-                        <td class="text-end">{{ 'Last time a ping was sent'|trans }}:</td>
-                        <td>
-                            {% if info.last_exec %}
-                                {{ info.last_exec|format_datetime }}
-                                ({{ info.last_exec|timeago }} ago)
-                            {% else %}
-                                {{ "A ping wasn't sent yet"|trans }}
-                            {% endif %}
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+            <div class="border rounded px-3 py-3">
+                <h5 class="card-title mb-1">{{ 'Automation Status'|trans }}</h5>
+                <p class="text-secondary mb-3">{{ 'FOSSBilling pings every enabled search engine automatically every 24 hours. Cron jobs must be working for this to run.'|trans }}</p>
+                <div class="d-flex flex-wrap gap-2 align-items-baseline">
+                    <span class="fw-semibold">{{ 'Last ping sent'|trans }}:</span>
+                    <span>
+                        {% if info.last_exec %}
+                            {{ info.last_exec|format_datetime }} ({{ info.last_exec|timeago }} {{ 'ago'|trans }})
+                        {% else %}
+                            {{ "A ping wasn't sent yet"|trans }}
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        {% endblock %}
 
-        <div class="card-footer text-end">
-            <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary">
-        </div>
-    </form>
-</div>
+        {% block form_actions %}
+            <button type="submit" class="btn btn-primary">{{ 'Update SEO Settings'|trans }}</button>
+        {% endblock %}
+    {% endembed %}
+</form>
 {% endblock %}

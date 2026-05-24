@@ -13,7 +13,7 @@ final class AdminTest extends \BBTestCase
 
     public function setUp(): void
     {
-        $this->api = new Admin();
+        $this->api = $this->createAdminApi(Admin::class);
     }
 
     private function createPaginationMock(): \PHPUnit\Framework\MockObject\MockObject

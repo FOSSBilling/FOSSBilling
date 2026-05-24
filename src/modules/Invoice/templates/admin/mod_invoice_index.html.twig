@@ -8,11 +8,19 @@
 {% set has_filter_panel = true %}
 {% set filter_panel_id = 'page-search-filters' %}
 {% set filter_panel_open = request_has_filters %}
+{% set new_invoice_action %}
+    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newInvoiceModal">
+        <svg class="icon">
+            <use xlink:href="#plus" />
+        </svg>
+        {{ 'New Invoice'|trans }}
+    </button>
+{% endset %}
 
 {% block top_content %}
 {% if not filter_panel_open %}
     {% set statuses = admin.invoice_get_statuses %}
-    <section class="row row-cards mb-3">
+    <section class="row row-cards mb-3 filter-panel-summary">
         <div class="col-sm-6 col-lg-3">
             <a class="card card-sm card-link" href="{{ 'invoice'|url(query: { 'status': 'unpaid' }) }}">
                 <div class="card-body">
@@ -74,111 +82,111 @@
 {% endblock %}
 
 {% block content %}
-    <ul class="nav nav-tabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-index" role="tab">{{ 'Invoices'|trans }}</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-new" role="tab">
-                <svg class="icon me-2">
-                    <use xlink:href="#plus" />
-                </svg>
-                {{ 'New Invoice'|trans }}
-            </button>
-        </li>
-    </ul>
-
     <div class="card">
-        <div class="tab-content">
-            <div class="tab-pane show active" id="tab-index" role="tabpanel">
-                {{ include('partial_search.html.twig') }}
-                <section id="{{ filter_panel_id }}" class="card-body border-bottom collapse{% if filter_panel_open %} show{% endif %}">
-                    <h5>{{ 'Filter Invoices'|trans }}</h5>
-                    <form method="get">
-                        <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Invoice ID'|trans }}</label>
-                            <div class="col">
-                                <input class="form-control" type="text" name="id" value="{{ request.id }}">
-                            </div>
-                        </div>
-                        <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Invoice Number'|trans }}</label>
-                            <div class="col">
-                                <input class="form-control" type="text" name="nr" value="{{ request.nr }}">
-                            </div>
-                        </div>
-                        <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label" for="client_id">{{ 'Client'|trans }}</label>
-                            <div class="col">
-                                <select class="form-control autocomplete-selector"
-                                        placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
-                                        id="client_id"
-                                        name="client_id"
-                                        data-resturl="/api/admin/client/get_pairs">
-                                {% if not request.client_id %}
-                                {% else %}
-                                    {% set client = admin.client_get({ 'id': request.client_id }) %}
-                                    <option value="{{ request.client_id }}" selected>{{ client.first_name }} {{ client.last_name }}</option>
-                                {% endif %}
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Currency'|trans }}</label>
-                            <div class="col">
-                                {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'All Currencies'|trans) }}
-                            </div>
-                        </div>
-                        <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}</label>
-                            <div class="col">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" id="radioStatusAll" type="radio" name="status" value=""{% if not request.status %} checked{% endif %}>
-                                    <label class="form-check-label" for="radioStatusAll">{{ 'All'|trans }}</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" id="radioStatusPaid" type="radio" name="status" value="paid"{% if request.status == 'paid' %} checked{% endif %}>
-                                    <label class="form-check-label" for="radioStatusPaid">{{ 'Paid'|trans }}</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" id="radioStatusUnpaid" type="radio" name="status" value="unpaid"{% if request.status == 'unpaid' %} checked{% endif %}>
-                                    <label class="form-check-label" for="radioStatusUnpaid">{{ 'Unpaid'|trans }}</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" id="radioStatusRefunded" type="radio" name="status" value="refunded"{% if request.status == 'refunded' %} checked{% endif %}>
-                                    <label class="form-check-label" for="radioStatusRefunded">{{ 'Refunded'|trans }}</label>
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'Invoices'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Manage invoices, review billing records, and prepare new invoices for clients.'|trans }}</p>
+            </div>
+        </div>
+        <div class="card-body pt-0 pb-0 px-0">
+            <div class="card border-0 shadow-none rounded-0">
+                {{ include('partial_search.html.twig', {
+                    search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
+                    search_toolbar_actions: new_invoice_action
+                }) }}
+                <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
+                    <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
+                        {% if request.search %}
+                            <input type="hidden" name="search" value="{{ request.search }}">
+                        {% endif %}
+                        <div class="row g-3">
+                            <div class="col-md-6 col-xl-3">
+                                <div>
+                                    <label class="form-label text-muted small mb-1" for="filter-invoice-id">{{ 'Invoice ID'|trans }}</label>
+                                    <input class="form-control" type="text" id="filter-invoice-id" name="id" value="{{ request.id }}" placeholder="{{ 'Invoice ID'|trans }}">
                                 </div>
                             </div>
-                        </div>
-                        <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label" for="issue_date">{{ 'Date Issued'|trans }}</label>
-                            <div class="col">
-                                <div class="input-group">
-                                    <div class="input-icon w-100">
-                                        <input class="form-control datepicker"
-                                               id="issue_date"
-                                               value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
-                                               data-name-from="date_from"
-                                               data-name-to="date_to"
-                                        >
-                                        <span class="input-icon-addon">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
-                                                <path d="M16 3l0 4"></path>
-                                                <path d="M8 3l0 4"></path>
-                                                <path d="M4 11l16 0"></path>
-                                                <path d="M11 15l1 0"></path>
-                                                <path d="M12 15l0 3"></path>
-                                            </svg>
-                                        </span>
+                            <div class="col-md-6 col-xl-3">
+                                <div>
+                                    <label class="form-label text-muted small mb-1" for="filter-invoice-number">{{ 'Invoice Number'|trans }}</label>
+                                    <input class="form-control" type="text" id="filter-invoice-number" name="nr" value="{{ request.nr }}" placeholder="{{ 'Invoice Number'|trans }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-xl-3">
+                                <div>
+                                    <label class="form-label text-muted small mb-1" for="client_id">{{ 'Client'|trans }}</label>
+                                    <select class="form-control autocomplete-selector"
+                                            placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
+                                            id="client_id"
+                                            name="client_id"
+                                            data-resturl="/api/admin/client/get_pairs">
+                                    {% if not request.client_id %}
+                                    {% else %}
+                                        {% set client = admin.client_get({ 'id': request.client_id }) %}
+                                        <option value="{{ request.client_id }}" selected>{{ client.first_name }} {{ client.last_name }}</option>
+                                    {% endif %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-xl-3">
+                                <div>
+                                    <label class="form-label text-muted small mb-1" for="currency">{{ 'Currency'|trans }}</label>
+                                    {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'All Currencies'|trans) }}
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-xl-4">
+                                <div>
+                                    <label class="form-label text-muted small mb-1" for="issue_date">{{ 'Date Issued'|trans }}</label>
+                                    <div class="input-group">
+                                        <div class="input-icon w-100">
+                                            <input class="form-control datepicker"
+                                                   id="issue_date"
+                                                   placeholder="{{ 'Select Date Range'|trans }}"
+                                                   value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
+                                                   data-name-from="date_from"
+                                                   data-name-to="date_to"
+                                            >
+                                            <span class="input-icon-addon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                    <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                                                    <path d="M16 3l0 4"></path>
+                                                    <path d="M8 3l0 4"></path>
+                                                    <path d="M4 11l16 0"></path>
+                                                    <path d="M11 15l1 0"></path>
+                                                    <path d="M12 15l0 3"></path>
+                                                </svg>
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            <div class="col-xl-8">
+                                <label class="form-label text-muted small mb-1">{{ 'Status'|trans }}</label>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <input class="btn-check" id="invoiceStatusAll" type="radio" name="status" value=""{% if not request.status %} checked{% endif %}>
+                                    <label class="btn btn-outline-primary" for="invoiceStatusAll">{{ 'All'|trans }}</label>
+
+                                    <input class="btn-check" id="invoiceStatusPaid" type="radio" name="status" value="paid"{% if request.status == 'paid' %} checked{% endif %}>
+                                    <label class="btn btn-outline-primary" for="invoiceStatusPaid">{{ 'Paid'|trans }}</label>
+
+                                    <input class="btn-check" id="invoiceStatusUnpaid" type="radio" name="status" value="unpaid"{% if request.status == 'unpaid' %} checked{% endif %}>
+                                    <label class="btn btn-outline-primary" for="invoiceStatusUnpaid">{{ 'Unpaid'|trans }}</label>
+
+                                    <input class="btn-check" id="invoiceStatusRefunded" type="radio" name="status" value="refunded"{% if request.status == 'refunded' %} checked{% endif %}>
+                                    <label class="btn btn-outline-primary" for="invoiceStatusRefunded">{{ 'Refunded'|trans }}</label>
+                                </div>
+                            </div>
                         </div>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-primary w-75" type="submit">{{ 'Filter'|trans }}</button>
-                            <a class="btn btn-danger w-25" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
+                            <button class="btn btn-primary" type="submit">
+                                <svg class="icon">
+                                    <use xlink:href="#filter" />
+                                </svg>
+                                {{ 'Apply Filters'|trans }}
+                            </button>
                         </div>
                     </form>
                 </section>
@@ -190,18 +198,18 @@
                                 <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-master-checkbox">
                             </th>
                             <th class="w-1">#</th>
-                            <th class="w-1"></th>
+                            <th class="w-1 no-sort"></th>
                             <th>{{ 'Name'|trans }}</th>
                             <th class="text-center">{{ 'Amount'|trans }}</th>
                             <th class="text-center">{{ 'Issued at'|trans }}</th>
                             <th class="text-center">{{ 'Due Date'|trans }}</th>
                             <th class="text-center">{{ 'Paid at'|trans }}</th>
                             <th>{{ 'Status'|trans }}</th>
-                            <th class="w-1"></th>
+                            <th class="w-1 no-sort"></th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% set invoices = admin.invoice_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+                        {% set invoices = admin.invoice_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
                         {% for invoice in invoices.list %}
                         <tr>
                             <td>
@@ -222,21 +230,7 @@
                             <td class="text-center">{{ invoice.created_at|date('Y-m-d') }}</td>
                             <td class="text-center">{% if invoice.due_at %}{{ invoice.due_at|date('Y-m-d') }}{% else %}-{% endif %}</td>
                             <td class="text-center">{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% else %}-{% endif %}</td>
-                            <td>
-                                {% if invoice.status == 'paid' %}
-                                    <span class="badge bg-success me-1"></span>
-                                {% endif %}
-                                {% if invoice.status == 'unpaid' %}
-                                    <span class="badge bg-danger me-1"></span>
-                                {% endif %}
-                                {% if invoice.status == 'refunded' %}
-                                    <span class="badge bg-warning me-1"></span>
-                                {% endif %}
-                                {% if invoice.status == 'canceled' %}
-                                    <span class="badge bg-secondary me-1"></span>
-                                {% endif %}
-                                {{ mf.status_name(invoice.status) }}
-                            </td>
+                            <td>{{ mf.status_badge(invoice.status, 'invoice') }}</td>
                             <td>
                                 <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
                                     <svg class="icon">
@@ -259,12 +253,14 @@
                     </tbody>
                 </table>
               </div>
-                <div class="card-footer d-flex align-items-center justify-content-between">
+                <div class="card-footer d-flex align-items-center justify-content-between gap-3 flex-wrap">
                     <div>
                         {% include "partial_batch_delete.html.twig" with { 'action': 'invoice/batch_delete' } %}
+                    </div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
                         {% include "partial_pagination.html.twig" with { 'list': invoices, 'url': 'invoice' } %}
                     </div>
-                    <div>
+                    <div class="d-flex align-items-center gap-2 ms-auto">
                         <a class="btn btn-secondary" href="{{ 'invoice/export_csv'|api_url(query: { CSRFToken: CSRFToken }) }}" title="{{ 'Export Invoices'|trans }}">
                             <svg class="icon">
                                 <use xlink:href="#download" />
@@ -273,17 +269,20 @@
                         </a>
                     </div>
                 </div>
-            </div>
 
-            <div class="tab-pane show" id="tab-new" role="tabpanel">
-                <div class="card-body">
-                    <form method="post" action="{{ 'invoice/prepare'|api_url }}" {{ fb_api_form({callback: 'onAfterInvoicePrepared'}) }}>
-                        <div class="form-group mb-3 row">
-                            <label class="form-label col-3 col-form-label" for="client_id">{{ 'Client'|trans }}</label>
-                            <div class="col">
+            <div class="modal modal-blur fade" id="newInvoiceModal" tabindex="-1" aria-labelledby="newInvoiceModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <form class="modal-content" method="post" action="{{ 'invoice/prepare'|api_url }}" {{ fb_api_form({callback: 'onAfterInvoicePrepared'}) }}>
+                        <div class="modal-header">
+                            <h3 class="modal-title" id="newInvoiceModalLabel">{{ 'Create New Invoice'|trans }}</h3>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label" for="client_id">{{ 'Client'|trans }}</label>
                                 {% if not request.client_id %}
                                     <select class="form-control autocomplete-selector"
-                                            placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
+                                            placeholder="{{ 'Start typing the client name or ID'|trans }}"
                                             id="client_id"
                                             name="client_id"
                                             data-resturl="/api/admin/client/get_pairs">
@@ -294,19 +293,20 @@
                                     <input type="hidden" name="client_id" value="{{ request.client_id }}" />
                                 {% endif %}
                             </div>
-                        </div>
-                        <div class="form-group mb-3 row">
-                            <label class="form-label col-3 col-form-label" for="product_id">{{ 'Product'|trans }}</label>
-                            <div class="col">
+                            <div class="mb-0">
+                                <label class="form-label" for="product_id">{{ 'Product'|trans }}</label>
                                 <select class="form-control autocomplete-selector"
-                                        placeholder="{{ 'Start Typing to Select Product (optional)'|trans }}"
+                                        placeholder="{{ 'Start typing to select product (optional)'|trans }}"
                                         id="product_id"
                                         name="product_id"
                                         data-resturl="/api/admin/product/get_pairs">
                                 </select>
                             </div>
                         </div>
-                        <input type="submit" value="{{ 'Prepare'|trans }}" class="btn btn-primary">
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                            <button type="submit" class="btn btn-primary">{{ 'Prepare'|trans }}</button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -321,9 +321,25 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        const invoiceForm = document.getElementById('tab-new').querySelector('form');
+        const modalElement = document.getElementById('newInvoiceModal');
+        const invoiceForm = modalElement?.querySelector('form');
         const productSelect = document.getElementById('product_id');
         let tomSelectInstance = null;
+        const modal = modalElement ? bootstrap.Modal.getOrCreateInstance(modalElement) : null;
+
+        if (window.location.hash === '#tab-new' && modal) {
+            modal.show();
+        }
+
+        modalElement?.addEventListener('hidden.bs.modal', function() {
+            if (window.location.hash !== '#tab-new') {
+                return;
+            }
+
+            const url = new URL(window.location.href);
+            url.hash = '';
+            window.history.replaceState({}, '', url);
+        });
 
         if (productSelect && productSelect.tomselect) {
             tomSelectInstance = productSelect.tomselect;
@@ -355,9 +371,9 @@
                 if (!itemsContainer) {
                     itemsContainer = document.createElement('div');
                     itemsContainer.id = 'selected-product-items';
-                    itemsContainer.className = 'card-body border-top';
+                    itemsContainer.className = 'border-top mt-4 pt-4';
                     itemsContainer.innerHTML = '<h6 class="mb-3">{{ 'Selected products to be added as invoice items'|trans }}</h6><div id="products-list"></div>';
-                    invoiceForm.querySelector('.card-body').appendChild(itemsContainer);
+                    invoiceForm.querySelector('.modal-body').appendChild(itemsContainer);
                 }
 
                 const productDiv = document.createElement('div');

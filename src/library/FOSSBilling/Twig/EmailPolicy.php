@@ -32,7 +32,9 @@ final class EmailPolicy
             // Twig Core - Utility
             'default', 'title', 'length', 'date',
             // IntlExtension
-            'format_currency', 'format_date',
+            'format_currency', 'format_date', 'format_datetime', 'format_number', 'format_time',
+            'currency_name', 'currency_symbol',
+            'country_name',
             // FOSSBillingExtension
             'url', 'daysleft', 'trans',
             // LegacyExtension
@@ -41,7 +43,9 @@ final class EmailPolicy
             'markdown_to_html',
         ];
 
-        $functions = [];
+        $functions = [
+            'country_names',
+        ];
 
         $methods = [];
 

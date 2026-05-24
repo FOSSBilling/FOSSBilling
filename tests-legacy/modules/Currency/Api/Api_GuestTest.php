@@ -44,7 +44,7 @@ final class Api_GuestTest extends \BBTestCase
     {
         $willReturn = [
             'code' => 'EUR',
-            'title' => 'Euro',
+            'name' => 'Euro',
             'conversion_rate' => 1.0,
             'default' => true,
         ];
@@ -73,7 +73,7 @@ final class Api_GuestTest extends \BBTestCase
 
         $willReturn = [
             'code' => 'EUR',
-            'title' => 'Euro',
+            'name' => 'Euro',
             'conversion_rate' => 1,
             'default' => 1,
         ];
@@ -189,7 +189,7 @@ final class Api_GuestTest extends \BBTestCase
     {
         $willReturn = [
             'code' => $data['code'],
-            'title' => 'Currency',
+            'name' => 'Currency',
             'conversion_rate' => 0.6,
             'default' => 1,
         ];

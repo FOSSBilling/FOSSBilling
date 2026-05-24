@@ -13,7 +13,7 @@ final class Api_AdminTest extends \BBTestCase
 
     public function setUp(): void
     {
-        $this->adminApi = new \Box\Mod\Servicedomain\Api\Admin();
+        $this->adminApi = $this->createAdminApi(\Box\Mod\Servicedomain\Api\Admin::class);
     }
 
     public function testUpdate(): void
@@ -23,6 +23,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $adminApiMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Api\Admin::class)
             ->onlyMethods(['_getService'])->getMock();
+        $adminApiMock->setDi($this->getDi());
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
 
@@ -46,6 +47,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $adminApiMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Api\Admin::class)
             ->onlyMethods(['_getService'])->getMock();
+        $adminApiMock->setDi($this->getDi());
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
 
@@ -69,6 +71,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $adminApiMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Api\Admin::class)
             ->onlyMethods(['_getService'])->getMock();
+        $adminApiMock->setDi($this->getDi());
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
 
@@ -92,6 +95,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $adminApiMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Api\Admin::class)
             ->onlyMethods(['_getService'])->getMock();
+        $adminApiMock->setDi($this->getDi());
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
 
@@ -115,6 +119,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $adminApiMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Api\Admin::class)
             ->onlyMethods(['_getService'])->getMock();
+        $adminApiMock->setDi($this->getDi());
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
 
@@ -138,6 +143,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $adminApiMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Api\Admin::class)
             ->onlyMethods(['_getService'])->getMock();
+        $adminApiMock->setDi($this->getDi());
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
 
@@ -161,6 +167,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $adminApiMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Api\Admin::class)
             ->onlyMethods(['_getService'])->getMock();
+        $adminApiMock->setDi($this->getDi());
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
 
@@ -184,6 +191,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $adminApiMock = $this->getMockBuilder(\Box\Mod\Servicedomain\Api\Admin::class)
             ->onlyMethods(['_getService'])->getMock();
+        $adminApiMock->setDi($this->getDi());
         $adminApiMock->expects($this->atLeastOnce())->method('_getService')
             ->willReturn($model);
 

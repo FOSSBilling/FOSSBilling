@@ -9,7 +9,7 @@ final class Api_AdminTest extends BBTestCase
 
     public function setUp(): void
     {
-        $this->api = new Box\Mod\Order\Api\Admin();
+        $this->api = $this->createAdminApi(Box\Mod\Order\Api\Admin::class);
     }
 
     public function testGet(): void
@@ -18,6 +18,7 @@ final class Api_AdminTest extends BBTestCase
         $order->loadBean(new DummyBean());
 
         $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock->setDi($this->getDi());
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
@@ -103,10 +104,22 @@ final class Api_AdminTest extends BBTestCase
         $serviceMock->expects($this->never())->method('createOrder');
 
         $staffServiceMock = $this->createMock(Box\Mod\Staff\Service::class);
-        $staffServiceMock->expects($this->once())
+        $staffServiceMock->expects($this->exactly(2))
             ->method('checkPermissionsAndThrowException')
-            ->with('invoice')
-            ->willThrowException(new FOSSBilling\InformationException('Denied', [], 403));
+            ->willReturnCallback(function (string $module, ?string $key = null): void {
+                static $permissionChecks = 0;
+                ++$permissionChecks;
+
+                if ($permissionChecks === 1) {
+                    $this->assertSame('order', $module);
+                    $this->assertSame('manage', $key);
+
+                    return;
+                }
+
+                $this->assertSame('invoice', $module);
+                throw new FOSSBilling\InformationException('Denied', [], 403);
+            });
 
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn (string $serviceName): PHPUnit\Framework\MockObject\MockObject => match ($serviceName) {
@@ -142,9 +155,21 @@ final class Api_AdminTest extends BBTestCase
             ->willReturn(55);
 
         $staffServiceMock = $this->createMock(Box\Mod\Staff\Service::class);
-        $staffServiceMock->expects($this->once())
+        $staffServiceMock->expects($this->exactly(2))
             ->method('checkPermissionsAndThrowException')
-            ->with('invoice');
+            ->willReturnCallback(function (string $module, ?string $key = null): void {
+                static $permissionChecks = 0;
+                ++$permissionChecks;
+
+                if ($permissionChecks === 1) {
+                    $this->assertSame('order', $module);
+                    $this->assertSame('manage', $key);
+
+                    return;
+                }
+
+                $this->assertSame('invoice', $module);
+            });
 
         $invoiceServiceMock = $this->getMockBuilder(Box\Mod\Invoice\Service::class)
             ->onlyMethods(['validateAdminMarkAsPaidRequest'])
@@ -195,9 +220,21 @@ final class Api_AdminTest extends BBTestCase
         $serviceMock->expects($this->never())->method('createOrder');
 
         $staffServiceMock = $this->createMock(Box\Mod\Staff\Service::class);
-        $staffServiceMock->expects($this->once())
+        $staffServiceMock->expects($this->exactly(2))
             ->method('checkPermissionsAndThrowException')
-            ->with('invoice');
+            ->willReturnCallback(function (string $module, ?string $key = null): void {
+                static $permissionChecks = 0;
+                ++$permissionChecks;
+
+                if ($permissionChecks === 1) {
+                    $this->assertSame('order', $module);
+                    $this->assertSame('manage', $key);
+
+                    return;
+                }
+
+                $this->assertSame('invoice', $module);
+            });
 
         $invoiceServiceMock = $this->getMockBuilder(Box\Mod\Invoice\Service::class)
             ->onlyMethods(['validateAdminMarkAsPaidRequest'])
@@ -233,6 +270,7 @@ final class Api_AdminTest extends BBTestCase
         $order->loadBean(new DummyBean());
 
         $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock->setDi($this->getDi());
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
@@ -259,6 +297,7 @@ final class Api_AdminTest extends BBTestCase
         $order->loadBean(new DummyBean());
 
         $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock->setDi($this->getDi());
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
@@ -285,6 +324,7 @@ final class Api_AdminTest extends BBTestCase
         $order->loadBean(new DummyBean());
 
         $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock->setDi($this->getDi());
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
@@ -309,6 +349,7 @@ final class Api_AdminTest extends BBTestCase
         $order->status = Model_ClientOrder::STATUS_PENDING_SETUP;
 
         $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder', 'activate'])->disableOriginalConstructor()->getMock();
+        $apiMock->setDi($this->getDi());
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
@@ -328,6 +369,7 @@ final class Api_AdminTest extends BBTestCase
         $order->loadBean(new DummyBean());
 
         $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock->setDi($this->getDi());
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
@@ -356,6 +398,7 @@ final class Api_AdminTest extends BBTestCase
         $order->status = Model_ClientOrder::STATUS_SUSPENDED;
 
         $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock->setDi($this->getDi());
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
@@ -380,6 +423,7 @@ final class Api_AdminTest extends BBTestCase
         $order->status = Model_ClientOrder::STATUS_ACTIVE;
 
         $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock->setDi($this->getDi());
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
@@ -404,6 +448,7 @@ final class Api_AdminTest extends BBTestCase
         $order->loadBean(new DummyBean());
 
         $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock->setDi($this->getDi());
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
@@ -431,6 +476,7 @@ final class Api_AdminTest extends BBTestCase
         $order->status = Model_ClientOrder::STATUS_CANCELED;
 
         $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock->setDi($this->getDi());
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
@@ -455,6 +501,7 @@ final class Api_AdminTest extends BBTestCase
         $order->status = Model_ClientOrder::STATUS_ACTIVE;
 
         $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock->setDi($this->getDi());
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
@@ -479,6 +526,7 @@ final class Api_AdminTest extends BBTestCase
         $order->loadBean(new DummyBean());
 
         $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock->setDi($this->getDi());
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
@@ -502,6 +550,7 @@ final class Api_AdminTest extends BBTestCase
         $order->loadBean(new DummyBean());
 
         $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock->setDi($this->getDi());
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
@@ -559,6 +608,7 @@ final class Api_AdminTest extends BBTestCase
         $order->loadBean(new DummyBean());
 
         $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock->setDi($this->getDi());
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
@@ -584,6 +634,7 @@ final class Api_AdminTest extends BBTestCase
         $order->loadBean(new DummyBean());
 
         $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock->setDi($this->getDi());
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
@@ -608,6 +659,7 @@ final class Api_AdminTest extends BBTestCase
         $order->loadBean(new DummyBean());
 
         $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock->setDi($this->getDi());
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
@@ -637,6 +689,7 @@ final class Api_AdminTest extends BBTestCase
         $order->loadBean(new DummyBean());
 
         $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock->setDi($this->getDi());
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
@@ -678,6 +731,7 @@ final class Api_AdminTest extends BBTestCase
         $order->loadBean(new DummyBean());
 
         $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock->setDi($this->getDi());
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
@@ -754,6 +808,7 @@ final class Api_AdminTest extends BBTestCase
         $order->loadBean(new DummyBean());
 
         $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
+        $apiMock->setDi($this->getDi());
         $apiMock->expects($this->atLeastOnce())
             ->method('_getOrder')
             ->willReturn($order);
@@ -804,6 +859,7 @@ final class Api_AdminTest extends BBTestCase
     public function testBatchDelete(): void
     {
         $activityMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['delete'])->getMock();
+        $activityMock->setDi($this->getDi());
         $activityMock->expects($this->atLeastOnce())
             ->method('delete')
             ->willReturn(true);

@@ -1,5 +1,5 @@
 <div class="modal modal-blur fade" id="formbuilder_field{{ field.id }}" aria-hidden="true" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg modal-fullscreen-md-down" role="document">
 
             <form class="modal-content" method="post" action="admin/formbuilder/update_field" name="field_form{{ field.id }}" {{ fb_api_form({reload: true}) }}>
                 <div class="modal-header">
@@ -10,122 +10,149 @@
                      <input type="hidden" name="id" value="{{ field.id }}">
                      <input type="hidden" name="form_id" value="{{ form.id }}">
                      <input type="hidden" name="type" value="{{ field.type }}">
-                    <div class="mb-3 row">
-                        <label class="col-md-3 col-form-label" for="name">{{ 'Name'|trans }}</label>
-                        <div class="col">
+                    <section class="mb-4 pb-4 border-bottom">
+                        <div class="mb-3">
+                            <h5 class="card-title mb-1">{{ 'Field Details'|trans }}</h5>
+                            <p class="text-secondary mb-0">{{ 'Update the field name, label, and description shown in this form.'|trans }}</p>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-lg-6">
+                                <label class="form-label" for="name">{{ 'Name'|trans }}</label>
                             <input class="form-control" type="text" name="name" value="{{field.name}}" id="name">
                             <small class="form-hint">{{ 'Please keep in mind that field name cannot start with a number. Special characters will be replaced with underscores ( _ )'|trans }}</small>
-                        </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="col-md-3 col-form-label" for="label">{{ 'Label'|trans }}</label>
-                        <div class="col">
+                            </div>
+                            <div class="col-lg-6">
+                                <label class="form-label" for="label">{{ 'Label'|trans }}</label>
                             <input class="form-control" type="text" name="label" value="{{ field.label }}" id="label">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label" for="description">{{ 'Description'|trans }}</label>
+                                <input class="form-control" type="text" name="description" value="{{ field.description}}" id="description">
+                            </div>
                         </div>
-                    </div>
-                    <div class="mb-3 row">
-                        {% if field.type == "checkbox" or field.type == "radio" or field.type == "select" %}
-                            <label class="col-md-3 col-form-label">{{ field.type|capitalize }} {{ 'Options'|trans }}</label>
-                            <div class="col">
-                                <div class="row">
-                                    <div class="col-6">
-                                        <label class="col-form-label">{{ 'Label'|trans }}</label>
-                                    </div>
-                                    <div class="col-6">
-                                        <label class="col-form-label">{{ 'Value'|trans }}</label>
-                                    </div>
+                    </section>
+
+                    {% if field.type == "checkbox" or field.type == "radio" or field.type == "select" %}
+                        <section class="mb-4 pb-4 border-bottom">
+                            <div class="mb-3">
+                                <h5 class="card-title mb-1">{{ field.type|capitalize }} {{ 'Options'|trans }}</h5>
+                                <p class="text-secondary mb-0">{{ 'Configure the labels and submitted values available for this field.'|trans }}</p>
+                            </div>
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <label class="form-label mb-0">{{ 'Label'|trans }}</label>
                                 </div>
+                                <div class="col-6">
+                                    <label class="form-label mb-0">{{ 'Value'|trans }}</label>
+                                </div>
+                            </div>
+                            <div class="d-flex flex-column gap-2">
                                 {% for k,v in field.options %}
-                                    <div class="row">
-                                        <div class="col-6 mb-2">
+                                    <div class="row g-2">
+                                        <div class="col-6">
                                             <input class="form-control" type="text" name="labels[]" value="{{ k }}">
                                         </div>
-                                        <div class="col-6 mb-2">
+                                        <div class="col-6">
                                             <input class="form-control" type="text" name="values[]" value="{{ v }}">
                                         </div>
                                     </div>
                                 {% endfor %}
-                                <div class="row copy-field">
-                                    <div class="col-6 mb-2">
+                                <div class="row g-2 copy-field">
+                                    <div class="col-6">
                                         <input class="form-control" type="text" name="labels[]">
                                     </div>
-                                    <div class="col-6 mb-2">
+                                    <div class="col-6">
                                         <input class="form-control" type="text" name="values[]">
                                     </div>
                                 </div>
-                                <div class="copy-field">
-                                    <a href="#" class="btn btn-outline-primary new-field" rel="{{ i }}">{{ '+ Add New Option'|trans }}</a>
-                                </div>
                             </div>
-                        {% endif %}
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="col-md-3 col-form-label">{{ 'Options'|trans }}</label>
-                        <div class="col pt-2">
-                            <label class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" name="required" value="1" id="required"
-                                       value="1" {{ (field.required == 1)? 'checked="checked"' : "" }}>
-                                <span class="form-check-label">{{ 'Required'|trans }}</span>
-                            </label>
-                            <label class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" name="hide_label" value="1"
-                                       id="hide_label" value="1" {{ (field.hide_label == 1)? 'checked="checked"' : "" }}>
-                                <span class="form-check-label">{{ 'Hide label'|trans }}</span>
-                            </label>
-                            <label class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" name="readonly" value="1" id="readonly"
-                                       value="1" {{ (field.readonly == 1)? 'checked="checked"' : "" }}>
-                                <span class="form-check-label">{{ 'Read only'|trans }}</span>
-                            </label>
-                        </div>
-                    </div>
+                            <div class="mt-3">
+                                <a href="#" class="btn btn-outline-primary new-field" rel="{{ i }}">{{ '+ Add New Option'|trans }}</a>
+                            </div>
+                        </section>
+                    {% endif %}
+
                     {% if field.type == "text" %}
-                        <div class="mb-3 row">
-                            <label class="col-md-3 col-form-label">{{ 'Additional settings'|trans }}</label>
-                            <div class="col">
-                                <label class="col-form-label" for="prefix">{{ 'Prefix'|trans }}</label>
-                                <div class="input-group">
+                        <section class="mb-4 pb-4 border-bottom">
+                            <div class="mb-3">
+                                <h5 class="card-title mb-1">{{ 'Additional Settings'|trans }}</h5>
+                                <p class="text-secondary mb-0">{{ 'Optionally prepend or append text around the field value.'|trans }}</p>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="prefix">{{ 'Prefix'|trans }}</label>
                                     <input id="prefix" class="col form-control" type="text"
                                            placeholder="{{ 'Prepend text'|trans }}"
                                            name="prefix"
                                            value="{{ field.prefix }}" id="prefix_text">
                                 </div>
-                            </div>
-                            <div class="col">
-                                <label class="col-form-label" for="suffix">{{ 'Suffix'|trans }}</label>
-                                <div class="input-group">
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="suffix">{{ 'Suffix'|trans }}</label>
                                     <input id="suffix" class="col form-control" type="text"
                                            placeholder="{{ 'Append text'|trans }}"
                                            name="suffix"
                                            value="{{ field.suffix }}" id="suffix_text">
                                 </div>
                             </div>
-                        </div>
+                        </section>
                     {% endif %}
                     {% if field.type == "textarea" %}
-                        <div class="mb-3 row">
-                            <label class="col-md-3 col-form-label">{{ 'Textarea size'|trans }}</label>
-                            <div class="col">
-                                <label class="col-form-label" for="textarea-width">{{ 'Width'|trans }}</label>
+                        <section class="mb-4 pb-4 border-bottom">
+                            <div class="mb-3">
+                                <h5 class="card-title mb-1">{{ 'Textarea Size'|trans }}</h5>
+                                <p class="text-secondary mb-0">{{ 'Set the default dimensions for this textarea field.'|trans }}</p>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="textarea-width">{{ 'Width'|trans }}</label>
                                 <div class="input-group">
                                     <input type="hidden" name="textarea_option[]" value="width">
                                     <input class="form-control" type="text" name="textarea_size[]" value="{{field.options.width}}" id="textarea-width">
                                     <span class="input-group-text">{{ 'px'|trans }}</span>
                                 </div>
-                            </div>
-                            <div class="col">
-                                <label class="col-form-label" for="textarea-height">{{ 'Height'|trans }}</label>
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="textarea-height">{{ 'Height'|trans }}</label>
                                 <div class="input-group">
                                     <input type="hidden" name="textarea_option[]" value="height">
                                     <input class="form-control" type="text" name="textarea_size[]" value="{{field.options.height}}" id="textarea-height">
                                     <span class="input-group-text">{{ 'px'|trans }}</span>
                                 </div>
+                                </div>
                             </div>
-                        </div>
+                        </section>
                     {% endif %}
-                    <div class="mb-3 row">
-                        <label class="col-md-3 col-form-label" for="default_value">{{ 'Default value'|trans }}</label>
-                        <div class="col">
+
+                    <section class="mb-4 pb-4 border-bottom">
+                        <div class="mb-3">
+                            <h5 class="card-title mb-1">{{ 'Field Behavior'|trans }}</h5>
+                            <p class="text-secondary mb-0">{{ 'Control whether this field is required, visible, or editable.'|trans }}</p>
+                        </div>
+                        <div class="d-flex flex-column gap-3">
+                            <label class="form-check form-switch form-switch-2">
+                                <input class="form-check-input" type="checkbox" name="required" value="1" id="required"
+                                       value="1" {{ (field.required == 1)? 'checked="checked"' : "" }}>
+                                <span class="form-check-label">{{ 'Required'|trans }}</span>
+                            </label>
+                            <label class="form-check form-switch form-switch-2">
+                                <input class="form-check-input" type="checkbox" name="hide_label" value="1"
+                                       id="hide_label" value="1" {{ (field.hide_label == 1)? 'checked="checked"' : "" }}>
+                                <span class="form-check-label">{{ 'Hide label'|trans }}</span>
+                            </label>
+                            <label class="form-check form-switch form-switch-2">
+                                <input class="form-check-input" type="checkbox" name="readonly" value="1" id="readonly"
+                                       value="1" {{ (field.readonly == 1)? 'checked="checked"' : "" }}>
+                                <span class="form-check-label">{{ 'Read only'|trans }}</span>
+                            </label>
+                        </div>
+                    </section>
+
+                    <section>
+                        <div class="mb-3">
+                            <h5 class="card-title mb-1">{{ 'Default Value'|trans }}</h5>
+                            <p class="text-secondary mb-0">{{ 'Choose the value shown before the form recipient changes this field.'|trans }}</p>
+                        </div>
+                        <div>
                             {% if field.type == "text" %}
                                 <div class="input-group">
                                     {% if field.prefix %}
@@ -175,13 +202,7 @@
                                 <textarea class="form-control" name="default_value" style="width: {{ field.options.width }}px; height: {{ field.options.height }}px;">{{ field.default_value }}</textarea>
                             {% endif %}
                         </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="col-md-3 col-form-label" for="label">{{ 'Description'|trans }}</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="description" value="{{ field.description}}" id="description">
-                        </div>
-                    </div>
+                    </section>
                 </div>
                 <div class="modal-footer">
                     <a href="#" class="btn btn-link link-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</a>

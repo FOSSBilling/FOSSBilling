@@ -22,6 +22,8 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'view');
+
         $themes = $this->getService()->getThemes();
 
         return ['list' => $themes];
@@ -32,6 +34,8 @@ class Admin extends \Api_Abstract
      */
     public function get_admin_list($data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'view');
+
         $themes = $this->getService()->getThemes(false);
 
         return ['list' => $themes];
@@ -42,6 +46,8 @@ class Admin extends \Api_Abstract
      */
     public function get_current(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'view');
+
         if ($this->isInvalidClientParameter($data['client'] ?? null)) {
             throw new \FOSSBilling\InformationException('Invalid "client" parameter.');
         }
@@ -75,6 +81,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Theme code was not passed'])]
     public function get($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'view');
+
         return $this->getService()->loadTheme($data['code']);
     }
 
@@ -84,6 +92,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Theme code was not passed'])]
     public function select($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'manage');
+
         $theme = $this->getService()->getTheme($data['code']);
 
         $systemService = $this->di['mod_service']('system');
@@ -107,6 +117,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Theme code was not passed', 'preset' => 'Preset name is missing'])]
     public function preset_delete($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'manage');
+
         $service = $this->getService();
 
         $theme = $service->getTheme($data['code']);
@@ -121,6 +133,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Theme code was not passed', 'preset' => 'Preset name is missing'])]
     public function preset_select($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'manage');
+
         $service = $this->getService();
         $theme = $service->getTheme($data['code']);
         $service->setCurrentThemePreset($theme, $data['preset']);

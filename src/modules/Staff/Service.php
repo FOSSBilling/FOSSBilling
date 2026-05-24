@@ -45,6 +45,11 @@ class Service implements InjectionAwareInterface
     public function getModulePermissions(): array
     {
         return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View staff details'),
+                'description' => __trans('Allows the staff member to view staff account details and listings.'),
+            ],
             'create_and_edit_admin' => [
                 'type' => 'bool',
                 'display_name' => __trans('Create and edit administrators'),
@@ -522,12 +527,19 @@ class Service implements InjectionAwareInterface
     {
         $query = 'SELECT * FROM admin';
 
+        $id = $data['id'] ?? null;
         $search = $data['search'] ?? null;
         $status = $data['status'] ?? null;
+        $admin_group_id = $data['admin_group_id'] ?? null;
         $no_cron = (bool) ($data['no_cron'] ?? false);
 
         $where = [];
         $bindings = [];
+
+        if ($id !== null && $id !== '') {
+            $where[] = 'id = :id';
+            $bindings[':id'] = (int) $id;
+        }
 
         if ($search) {
             $search = "%$search%";
@@ -539,6 +551,11 @@ class Service implements InjectionAwareInterface
         if ($status) {
             $where[] = 'status = :status';
             $bindings[':status'] = $status;
+        }
+
+        if ($admin_group_id !== null && $admin_group_id !== '') {
+            $where[] = 'admin_group_id = :admin_group_id';
+            $bindings[':admin_group_id'] = (int) $admin_group_id;
         }
 
         if ($no_cron) {
@@ -696,9 +713,6 @@ class Service implements InjectionAwareInterface
         // TODO: When it becomes possible to create other super admins, add a check for that here,
         $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
 
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_Admin', 3);
-
         $signature = $data['signature'] ?? null;
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffCreate', 'params' => $data]);
@@ -756,9 +770,6 @@ class Service implements InjectionAwareInterface
     public function createGroup($name): int
     {
         $this->checkPermissionsAndThrowException('staff', 'manage_groups');
-
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_AdminGroup', 2);
 
         $model = $this->di['db']->dispense('AdminGroup');
         $model->name = $name;
@@ -829,11 +840,21 @@ class Service implements InjectionAwareInterface
                 LEFT JOIN admin as a on m.admin_id = a.id
                 ';
 
+        $id = $data['id'] ?? null;
         $search = $data['search'] ?? null;
         $admin_id = $data['admin_id'] ?? null;
+        $ip = $data['ip'] ?? null;
+        $date_from = $data['date_from'] ?? null;
+        $date_to = $data['date_to'] ?? null;
 
         $where = [];
         $params = [];
+
+        if ($id !== null && $id !== '') {
+            $where[] = 'm.id = :event_id';
+            $params['event_id'] = (int) $id;
+        }
+
         if ($search) {
             $where[] = '(a.name LIKE :name OR a.id LIKE :id OR a.email LIKE :email)';
             $params['name'] = "%$search%";
@@ -844,6 +865,21 @@ class Service implements InjectionAwareInterface
         if ($admin_id) {
             $where[] = 'm.admin_id = :admin_id';
             $params['admin_id'] = $admin_id;
+        }
+
+        if ($ip !== null && $ip !== '') {
+            $where[] = 'm.ip LIKE :ip';
+            $params['ip'] = '%' . $ip . '%';
+        }
+
+        if ($date_from !== null && $date_from !== '') {
+            $where[] = 'm.created_at >= :date_from';
+            $params['date_from'] = date('Y-m-d 00:00:00', strtotime((string) $date_from));
+        }
+
+        if ($date_to !== null && $date_to !== '') {
+            $where[] = 'm.created_at <= :date_to';
+            $params['date_to'] = date('Y-m-d 23:59:59', strtotime((string) $date_to));
         }
 
         if (!empty($where)) {

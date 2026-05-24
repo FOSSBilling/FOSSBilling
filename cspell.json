@@ -45,7 +45,9 @@
         "hostable",
         "cooldown",
         "ONLYDIR",
-        "sandboxed"
+        "sandboxed",
+        "Segoe",
+        "minmax"
     ],
 
     "ignoreWords": [
@@ -310,6 +312,7 @@
         "datagrid",
         "buildmetadata",
         "endfilter",
+        "endembed",
         "darkmode",
         "Virtualmin",
         "strikethrough",
@@ -366,6 +369,8 @@
         "hostings",
         "rulesets",
         "describedby",
+        "inputmode",
+        "maxlength",
         "offcanvas",
         "newtx",
         "pwreset",

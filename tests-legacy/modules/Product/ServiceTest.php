@@ -153,7 +153,7 @@ final class ServiceTest extends \BBTestCase
     {
         $expected = [
             'free' => 'Free',
-            'once' => 'One time',
+            'once' => 'One Time',
             'recurrent' => 'Recurrent',
         ];
 
@@ -164,10 +164,6 @@ final class ServiceTest extends \BBTestCase
 
     public function testCreateProduct(): void
     {
-        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
-        $systemServiceMock->expects($this->atLeastOnce())
-            ->method('checkLimits');
-
         $modelPayment = new \Model_ProductPayment();
         $modelPayment->loadBean(new \DummyBean());
 
@@ -194,7 +190,6 @@ final class ServiceTest extends \BBTestCase
             ->method('slug');
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['db'] = $dbMock;
         $di['tools'] = $toolMock;
         $di['logger'] = new \Box_Log();
@@ -213,7 +208,7 @@ final class ServiceTest extends \BBTestCase
 
         $typesArr = [
             'free' => 'Free',
-            'once' => 'One time',
+            'once' => 'One Time',
             'recurrent' => 'Recurrent',
         ];
         $serviceMock->expects($this->atLeastOnce())
@@ -243,7 +238,7 @@ final class ServiceTest extends \BBTestCase
 
         $typesArr = [
             'free' => 'Free',
-            'once' => 'One time',
+            'once' => 'One Time',
             'recurrent' => 'Recurrent',
         ];
         $serviceMock->expects($this->atLeastOnce())
@@ -497,10 +492,6 @@ final class ServiceTest extends \BBTestCase
     {
         $newCategoryId = 1;
 
-        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
-        $systemServiceMock->expects($this->atLeastOnce())
-            ->method('checkLimits');
-
         $model = new \Model_ProductCategory();
         $model->loadBean(new \DummyBean());
 
@@ -515,7 +506,6 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);
@@ -595,10 +585,6 @@ final class ServiceTest extends \BBTestCase
 
     public function testCreatePromo(): void
     {
-        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
-        $systemServiceMock->expects($this->atLeastOnce())
-            ->method('checkLimits');
-
         $model = new \Model_Promo();
         $model->loadBean(new \DummyBean());
 
@@ -614,7 +600,6 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['logger'] = new \Box_Log();
 
         $this->service->setDi($di);

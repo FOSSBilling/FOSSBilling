@@ -40,6 +40,22 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View antispam settings'),
+                'description' => __trans('Allows the staff member to view antispam configuration and blocked IPs.'),
+            ],
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage antispam settings'),
+                'description' => __trans('Allows the staff member to block and unblock IP addresses.'),
+            ],
+        ];
+    }
+
     public static function onBeforeClientSignUp(\Box_Event $event): void
     {
         $di = $event->getDi();

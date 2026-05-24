@@ -609,16 +609,27 @@ final class ServiceTest extends \BBTestCase
             [[], 'SELECT ach.*, c.first_name, c.last_name, c.email', []],
             [
                 ['search' => 'sameValue'],
-                'c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR c.id LIKE :id',
+                'c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR c.email LIKE :email OR c.id LIKE :id',
                 [
                     ':first_name' => '%sameValue%',
                     ':last_name' => '%sameValue%',
+                    ':email' => '%sameValue%',
                     ':id' => 'sameValue'],
             ],
             [
                 ['client_id' => '1'],
                 'ach.client_id = :client_id',
                 [':client_id' => '1'],
+            ],
+            [
+                ['id' => '7'],
+                'ach.id = :event_id',
+                [':event_id' => 7],
+            ],
+            [
+                ['ip' => '192.0.2'],
+                'ach.ip LIKE :ip',
+                [':ip' => '%192.0.2%'],
             ],
         ];
     }
@@ -637,6 +648,23 @@ final class ServiceTest extends \BBTestCase
 
         $this->assertTrue(str_contains($sql, $expectedStr), $sql);
         $this->assertEquals([], array_diff_key($params, $expectedParams));
+    }
+
+    public function testGetHistorySearchQueryWithDateRangeFilters(): void
+    {
+        $clientService = new \Box\Mod\Client\Service();
+        $di = $this->getDi();
+
+        $clientService->setDi($di);
+        [$sql, $params] = $clientService->getHistorySearchQuery([
+            'date_from' => '2026-05-10',
+            'date_to' => '2026-05-12',
+        ]);
+
+        $this->assertStringContainsString('ach.created_at >= :date_from', $sql);
+        $this->assertStringContainsString('ach.created_at <= :date_to', $sql);
+        $this->assertSame('2026-05-10 00:00:00', $params[':date_from']);
+        $this->assertSame('2026-05-12 23:59:59', $params[':date_to']);
     }
 
     public function testCounter(): void

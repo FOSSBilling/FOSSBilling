@@ -20,9 +20,9 @@ document.addEventListener('DOMContentLoaded', () => {
   /**
    * Locale Selector
    */
-  const localeSelectorEl = document.querySelector('.js-language-selector');
+  const localeSelectorEl = document.querySelector('.js-locale-selector');
   if (localeSelectorEl !== null) {
-    const localeSelector = new TomSelect(".js-language-selector", {
+    const localeSelector = new TomSelect(".js-locale-selector", {
       copyClassesToDropdown: false,
       controlClass: "ts-control locale",
       dropdownClass: "dropdown-menu ts-dropdown locale-selector-dropdown",
@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      new TomSelect(autocompleteSelectorEl, {
+      const autocompleteSelector = new TomSelect(autocompleteSelectorEl, {
         copyClassesToDropdown: false,
         dropdownClass: "dropdown-menu ts-dropdown",
         optionClass: "dropdown-item",
@@ -104,6 +104,8 @@ document.addEventListener('DOMContentLoaded', () => {
           item: (item, escape) => `<span>${escape(item.label)}</span>`,
         },
       });
+
+      autocompleteSelector.wrapper.classList.add('autocomplete-selector-wrapper');
     });
   }
 

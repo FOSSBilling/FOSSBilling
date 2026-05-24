@@ -1,0 +1,34 @@
+{% set _section_action_fallback %}{% block section_action %}{% endblock %}{% endset %}
+{% set section_action = block('section_action')|trim %}
+{% set _section_footer_fallback %}{% block section_footer %}{% endblock %}{% endset %}
+{% set section_footer = block('section_footer')|trim %}
+
+<div class="card{% if card_class|default('') %} {{ card_class }}{% endif %}">
+    {% if title is defined or subtitle is defined or section_action %}
+        <div class="card-body{% if header_body_class|default('') %} {{ header_body_class }}{% else %} pb-3{% endif %}">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div>
+                    {% if title is defined and title %}
+                        <h5 class="card-title mb-1">{{ title }}</h5>
+                    {% endif %}
+                    {% if subtitle is defined and subtitle %}
+                        <p class="text-secondary mb-0">{{ subtitle }}</p>
+                    {% endif %}
+                </div>
+                {% if section_action %}
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        {{ section_action|raw }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+
+    {% block section_content %}{% endblock %}
+
+    {% if section_footer %}
+        <div class="card-footer{% if footer_class|default('') %} {{ footer_class }}{% endif %}">
+            {{ section_footer|raw }}
+        </div>
+    {% endif %}
+</div>

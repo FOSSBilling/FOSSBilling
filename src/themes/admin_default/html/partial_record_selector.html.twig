@@ -1,0 +1,19 @@
+<div class="dropdown">
+    <button type="button" class="btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+        <span class="me-1">{{ record_selector_current }}</span>
+        <span>{{ 'records'|trans }}</span>
+    </button>
+    <div class="dropdown-menu">
+        {% for option in record_selector_options %}
+            <a
+                class="dropdown-item {{ option.active ? 'active' : '' }}{% if option.class is defined and option.class %} {{ option.class }}{% endif %}"
+                href="{{ option.href }}"
+                {% for attrName, attrValue in option.attributes|default({}) %}
+                    {{ attrName }}="{{ attrValue|e('html_attr') }}"
+                {% endfor %}
+            >
+                {{ option.label|default(option.value ~ ' ' ~ 'records'|trans) }}
+            </a>
+        {% endfor %}
+    </div>
+</div>

@@ -55,7 +55,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 ],
                 [
                     'location' => 'invoice',
-                    'label' => __trans('Transaction Overview'),
+                    'label' => __trans('Transactions'),
                     'uri' => $this->di['url']->adminLink('invoice/transactions'),
                     'index' => 400,
                     'class' => '',

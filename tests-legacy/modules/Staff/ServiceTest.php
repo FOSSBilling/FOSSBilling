@@ -865,6 +865,16 @@ final class ServiceTest extends \BBTestCase
                 [':status' => 'active'],
             ],
             [
+                ['id' => '4'],
+                'id = :id',
+                [':id' => 4],
+            ],
+            [
+                ['admin_group_id' => '3'],
+                'admin_group_id = :admin_group_id',
+                [':admin_group_id' => 3],
+            ],
+            [
                 ['no_cron' => 'true'],
                 'role != :role',
                 [':role' => \Model_Admin::ROLE_CRON],
@@ -1124,10 +1134,6 @@ final class ServiceTest extends \BBTestCase
         $adminModel = new \Model_Admin();
         $adminModel->loadBean(new \DummyBean());
 
-        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
-        $systemServiceMock->expects($this->atLeastOnce())
-            ->method('checkLimits');
-
         $eventsMock = $this->createMock('\Box_EventManager');
         $eventsMock->expects($this->atLeastOnce())
             ->method('fire');
@@ -1157,7 +1163,6 @@ final class ServiceTest extends \BBTestCase
         $di['events_manager'] = $eventsMock;
         $di['logger'] = $logMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
 
         $di['password'] = $passwordMock;
 
@@ -1182,10 +1187,6 @@ final class ServiceTest extends \BBTestCase
 
         $adminModel = new \Model_Admin();
         $adminModel->loadBean(new \DummyBean());
-
-        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
-        $systemServiceMock->expects($this->atLeastOnce())
-            ->method('checkLimits');
 
         $eventsMock = $this->createMock('\Box_EventManager');
         $eventsMock->expects($this->atLeastOnce())
@@ -1216,7 +1217,6 @@ final class ServiceTest extends \BBTestCase
         $di['events_manager'] = $eventsMock;
         $di['logger'] = $logMock;
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
 
         $di['password'] = $passwordMock;
 
@@ -1279,10 +1279,6 @@ final class ServiceTest extends \BBTestCase
         $adminGroupModel->loadBean(new \DummyBean());
         $newGroupId = 1;
 
-        $systemServiceMock = $this->createMock(\Box\Mod\System\Service::class);
-        $systemServiceMock->expects($this->atLeastOnce())
-            ->method('checkLimits');
-
         $dbMock = $this->createMock('\Box_Database');
         $dbMock->expects($this->atLeastOnce())
             ->method('dispense')
@@ -1300,7 +1296,6 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
         $di['logger'] = new \Box_Log();
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
 
         $serviceMock->setDi($di);
 
@@ -1447,6 +1442,16 @@ final class ServiceTest extends \BBTestCase
                 'm.admin_id = :admin_id',
                 ['admin_id' => '2'],
             ],
+            [
+                ['id' => '6'],
+                'm.id = :event_id',
+                ['event_id' => 6],
+            ],
+            [
+                ['ip' => '203.0.113'],
+                'm.ip LIKE :ip',
+                ['ip' => '%203.0.113%'],
+            ],
         ];
     }
 
@@ -1463,6 +1468,23 @@ final class ServiceTest extends \BBTestCase
 
         $this->assertTrue(str_contains($result[0], $expectedStr), $result[0]);
         $this->assertEquals([], array_diff_key($result[1], $expectedParams));
+    }
+
+    public function testGetActivityAdminHistorySearchQueryWithDateRangeFilters(): void
+    {
+        $di = $this->getDi();
+
+        $service = new Service();
+        $service->setDi($di);
+        [$sql, $params] = $service->getActivityAdminHistorySearchQuery([
+            'date_from' => '2026-06-01',
+            'date_to' => '2026-06-02',
+        ]);
+
+        $this->assertStringContainsString('m.created_at >= :date_from', $sql);
+        $this->assertStringContainsString('m.created_at <= :date_to', $sql);
+        $this->assertSame('2026-06-01 00:00:00', $params['date_from']);
+        $this->assertSame('2026-06-02 23:59:59', $params['date_to']);
     }
 
     public function testToActivityAdminHistoryApiArray(): void

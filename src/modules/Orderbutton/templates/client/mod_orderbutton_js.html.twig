@@ -52,7 +52,7 @@
                         bootstrap.Collapse.getOrCreateInstance(paymentHtmlEl).show();
                     } else {
                         const link = '{{ "invoice/banklink"|url }}' + '/' + result.invoice_hash + '/' + result.gateway_id;
-                        document.getElementById('payment-html-inner').innerHTML = '<a href="' + link + '" target="_parent" id="redirect-to-gateway">Redirect to payment gateway</a>';
+                        document.getElementById('payment-html-inner').innerHTML = '<a href="' + link + '" target="_parent" id="redirect-to-gateway">Redirect to Payment Gateway</a>';
                         bootstrap.Collapse.getOrCreateInstance(checkoutEl).hide();
                         document.getElementById('checkout-inner').remove();
                         bootstrap.Collapse.getOrCreateInstance(paymentHtmlEl).show();

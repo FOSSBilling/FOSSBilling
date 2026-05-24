@@ -8,39 +8,31 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="name" value="{{ helpdesk.name }}" required>
-                        </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="new-helpdesk-name">{{ 'Title'|trans }}</label>
+                        <input class="form-control" id="new-helpdesk-name" type="text" name="name" value="{{ helpdesk.name }}" required>
                     </div>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Email'|trans }}</label>
-                        <div class="col">
-                            <input class="form-control" type="email" name="email" value="{{ helpdesk.email }}" required>
-                        </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="new-helpdesk-email">{{ 'Email'|trans }}</label>
+                        <input class="form-control" id="new-helpdesk-email" type="email" name="email" value="{{ helpdesk.email }}" required>
                     </div>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Signature'|trans }}</label>
-                        <div class="col">
-                            <textarea class="form-control" name="signature" rows="2">{{ helpdesk.signature }}</textarea>
-                        </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="new-helpdesk-signature">{{ 'Signature'|trans }}</label>
+                        <textarea class="form-control" id="new-helpdesk-signature" name="signature" rows="2">{{ helpdesk.signature }}</textarea>
                     </div>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Close Tickets After (in hours)'|trans }}</label>
-                        <div class="col">
-                            <input class="form-control" type="text" size="3" name="close_after" value="{{ helpdesk.close_after|default(48) }}" required>
-                            <small class="form-hint">{{ 'Define a very large number of hours to disable auto close ticket option.'|trans }}</small>
-                        </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="new-helpdesk-close-after">{{ 'Close Tickets After (in hours)'|trans }}</label>
+                        <input class="form-control" id="new-helpdesk-close-after" type="text" size="3" name="close_after" value="{{ helpdesk.close_after|default(48) }}" required>
+                        <small class="form-hint">{{ 'Define a very large number of hours to disable auto close ticket option.'|trans }}</small>
                     </div>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Tickets Can Be Reopened?'|trans }}</label>
-                        <div class="col">
-                            <div class="form-check form-check-inline">
+                    <div class="mb-3">
+                        <label class="form-label d-block">{{ 'Tickets Can Be Reopened?'|trans }}</label>
+                        <div class="d-flex gap-3">
+                            <div class="form-check">
                                 <input class="form-check-input" id="radioCanReopenYes" type="radio" name="can_reopen" value="1" checked>
                                 <label class="form-check-label" for="radioCanReopenYes">{{ 'Yes'|trans }}</label>
                             </div>
-                            <div class="form-check form-check-inline">
+                            <div class="form-check">
                                 <input class="form-check-input" id="radioCanReopenNo" type="radio" name="can_reopen" value="0">
                                 <label class="form-check-label" for="radioCanReopenNo">{{ 'No'|trans }}</label>
                             </div>
@@ -49,7 +41,7 @@
                 </div>
                 <div class="modal-footer">
                     <input type="hidden" name="id" value="{{ helpdesk.id }}">
-                    <button class="btn btn-primary w-100" type="submit">{{ 'Create'|trans }}</button>
+                    <button class="btn btn-primary" type="submit">{{ 'Create'|trans }}</button>
                 </div>
             </form>
         </div>

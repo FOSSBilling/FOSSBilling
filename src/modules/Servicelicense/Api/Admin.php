@@ -22,6 +22,8 @@ class Admin extends \Api_Abstract
      */
     public function plugin_get_pairs(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicelicense', 'manage');
+
         $plugins = $this->getService()->getLicensePlugins();
         $result = [];
         foreach ($plugins as $plugin) {
@@ -50,6 +52,8 @@ class Admin extends \Api_Abstract
      */
     public function update($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicelicense', 'manage');
+
         $s = $this->_getService($data);
 
         return $this->getService()->update($s, $data);
@@ -62,6 +66,8 @@ class Admin extends \Api_Abstract
      */
     public function reset($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicelicense', 'manage');
+
         $s = $this->_getService($data);
 
         return $this->getService()->reset($s);

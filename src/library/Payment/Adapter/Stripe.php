@@ -11,6 +11,7 @@ declare(strict_types=1);
  */
 
 use Stripe\StripeClient;
+use Symfony\Component\Intl\Currencies;
 
 class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 {
@@ -97,9 +98,30 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
     public function getAmountInCents(Model_Invoice $invoice)
     {
-        $invoiceService = $this->di['mod_service']('Invoice');
+        return $this->getAmountInMinorUnits($invoice);
+    }
 
-        return $invoiceService->getTotalWithTax($invoice) * 100;
+    public function getAmountInMinorUnits(Model_Invoice $invoice): int
+    {
+        $invoiceService = $this->di['mod_service']('Invoice');
+        $amount = $invoiceService->getTotalWithTax($invoice);
+        $multiplier = 10 ** $this->getCurrencyFractionDigits($invoice->currency);
+
+        return (int) round($amount * $multiplier);
+    }
+
+    private function getAmountFromMinorUnits(int $amount, string $currency): float
+    {
+        $divisor = 10 ** $this->getCurrencyFractionDigits($currency);
+
+        return $amount / $divisor;
+    }
+
+    private function getCurrencyFractionDigits(string $currency): int
+    {
+        $currency = strtoupper($currency);
+
+        return Currencies::exists($currency) ? Currencies::getFractionDigits($currency) : 2;
     }
 
     public function getInvoiceTitle(Model_Invoice $invoice)
@@ -158,7 +180,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
             $tx->txn_status = $charge->status;
             $tx->txn_id = $charge->id;
-            $tx->amount = $charge->amount / 100;
+            $tx->amount = $this->getAmountFromMinorUnits($charge->amount, $charge->currency);
             $tx->currency = $charge->currency;
 
             // Prevent duplicate processing for the same successful Stripe payment intent
@@ -259,7 +281,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     protected function _generateForm(Model_Invoice $invoice): string
     {
         $intent = $this->stripe->paymentIntents->create([
-            'amount' => $this->getAmountInCents($invoice),
+            'amount' => $this->getAmountInMinorUnits($invoice),
             'currency' => $invoice->currency,
             'description' => $this->getInvoiceTitle($invoice),
             'automatic_payment_methods' => ['enabled' => true],
@@ -272,7 +294,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         $pubKey = ($this->config['test_mode']) ? $this->config['test_pub_key'] : $this->config['pub_key'];
 
-        $dataAmount = $this->getAmountInCents($invoice);
+        $dataAmount = $this->getAmountInMinorUnits($invoice);
 
         $settingService = $this->di['mod_service']('System');
 

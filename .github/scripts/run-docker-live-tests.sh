@@ -76,7 +76,6 @@ install_payload=(
   -F "admin_email=${test_email}"
   -F "admin_password=${test_pass}"
   -F currency_code=USD
-  -F 'currency_title=US Dollar'
   -F "admin_api_token=${test_api_key}"
   -X POST
   "http://127.0.0.1/install/install.php?a=install"

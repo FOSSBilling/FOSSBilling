@@ -1,0 +1,27 @@
+{% set _detail_tabs_fallback %}{% block detail_tabs %}{% endblock %}{% endset %}
+{% set detail_tabs = block('detail_tabs')|trim %}
+{% set _detail_tab_content_fallback %}{% block detail_tab_content %}{% endblock %}{% endset %}
+{% set detail_tab_content = block('detail_tab_content')|trim %}
+
+<div class="card overflow-hidden{% if outer_card_class|default('') %} {{ outer_card_class }}{% endif %}">
+    <div class="card-header">
+        <div>
+            <h3 class="card-title">{{ title }}</h3>
+            {% if subtitle is defined and subtitle %}
+                <p class="card-subtitle">{{ subtitle }}</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body pt-3 pb-0 px-0">
+        <div class="card border-0 shadow-none rounded-0{% if inner_card_class|default('') %} {{ inner_card_class }}{% endif %}">
+            <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
+                <ul class="nav nav-pills card-header-pills" role="tablist">
+                    {{ detail_tabs|raw }}
+                </ul>
+            </div>
+            <div class="tab-content border-top{% if tab_content_class|default('') %} {{ tab_content_class }}{% endif %}">
+                {{ detail_tab_content|raw }}
+            </div>
+        </div>
+    </div>
+</div>

@@ -42,6 +42,47 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View invoices'),
+                'description' => __trans('Allows the staff member to view invoices and invoice details.'),
+            ],
+            'manage_invoices' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage invoices'),
+                'description' => __trans('Allows the staff member to create, update, delete, and manage invoices.'),
+            ],
+            'manage_transactions' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage transactions'),
+                'description' => __trans('Allows the staff member to view, create, update, delete, and process transactions.'),
+            ],
+            'manage_gateways' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage payment gateways'),
+                'description' => __trans('Allows the staff member to install, configure, and remove payment gateways.'),
+            ],
+            'manage_subscriptions' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage subscriptions'),
+                'description' => __trans('Allows the staff member to view, create, update, and delete subscriptions.'),
+            ],
+            'manage_tax' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage tax rules'),
+                'description' => __trans('Allows the staff member to create, update, and delete tax rules.'),
+            ],
+            'export' => [
+                'type' => 'bool',
+                'display_name' => __trans('Export invoice data'),
+                'description' => __trans('Allows the staff member to export invoice data as CSV.'),
+            ],
+        ];
+    }
+
     public function __construct()
     {
         $this->filesystem = new Filesystem();
@@ -1115,24 +1156,6 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        if ($order->price <= 0) {
-            throw new InformationException('Invoices are not generated for 0 amount orders.');
-        }
-
-        $client = $this->di['db']->getExistingModelById('Client', $order->client_id, 'Client not found');
-
-        // generate proforma
-        $proforma = $this->di['db']->dispense('Invoice');
-        $proforma->client_id = $client->id;
-        $proforma->status = \Model_Invoice::STATUS_UNPAID;
-        $proforma->currency = $order->currency;
-        $proforma->approved = false;
-        $proforma->created_at = date('Y-m-d H:i:s');
-        $proforma->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($proforma);
-
-        $this->setInvoiceDefaults($proforma);
-
         $price = $order->price;
         $line = [
             'price' => $order->price,
@@ -1165,6 +1188,24 @@ class Service implements InjectionAwareInterface
                 ];
             }
         }
+
+        if (($price * ($line['quantity'] ?? 1)) <= 0) {
+            throw new InformationException('Invoices are not generated for 0 amount orders.');
+        }
+
+        $client = $this->di['db']->getExistingModelById('Client', $order->client_id, 'Client not found');
+
+        // generate proforma after validating the resolved renewal amount
+        $proforma = $this->di['db']->dispense('Invoice');
+        $proforma->client_id = $client->id;
+        $proforma->status = \Model_Invoice::STATUS_UNPAID;
+        $proforma->currency = $order->currency;
+        $proforma->approved = false;
+        $proforma->created_at = date('Y-m-d H:i:s');
+        $proforma->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($proforma);
+
+        $this->setInvoiceDefaults($proforma);
 
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
         $invoiceItemService->generateFromOrder($proforma, $order, \Model_InvoiceItem::TASK_RENEW, $price, $line);

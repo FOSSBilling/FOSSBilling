@@ -134,7 +134,7 @@
                                             <br>
                                             {% if buyer.zip %}{{ buyer.zip }}{% endif %}
                                             {% if buyer.zip and buyer.country %}, {% endif %}
-                                            {% if buyer.country %}{{ guest.system_countries[buyer.country] }}{% endif %}
+                                            {% if buyer.country %}{{ buyer.country|country_name }}{% endif %}
                                         {% endif %}
                                     </dd>
                                 {% endif %}

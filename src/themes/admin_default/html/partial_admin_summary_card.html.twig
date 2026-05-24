@@ -1,0 +1,30 @@
+{% set _summary_actions_fallback %}{% block summary_actions %}{% endblock %}{% endset %}
+{% set summary_actions = block('summary_actions')|trim %}
+
+<div class="card{% if card_class|default('') %} {{ card_class }}{% endif %}">
+    <div class="card-body{% if body_class|default('') %} {{ body_class }}{% endif %}">
+        <div class="d-flex justify-content-between align-items-start gap-3">
+            <div class="d-flex flex-column gap-1">
+                <h5 class="card-title mb-0">{{ title }}</h5>
+                {% if subtitle is defined and subtitle %}
+                    <p class="text-secondary mb-0">{{ subtitle }}</p>
+                {% endif %}
+            </div>
+            {% block summary_header_aside %}{% endblock %}
+        </div>
+    </div>
+
+    {% block summary_content %}{% endblock %}
+
+    {% if summary_actions %}
+        <div class="card-footer{% if centered_actions|default(false) %} text-center{% endif %}">
+            {% if centered_actions|default(false) %}
+                <div class="btn-list justify-content-center">
+                    {{ summary_actions|raw }}
+                </div>
+            {% else %}
+                {{ summary_actions|raw }}
+            {% endif %}
+        </div>
+    {% endif %}
+</div>

@@ -26,6 +26,8 @@ class Admin extends \Api_Abstract
      */
     public function get_list(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'view');
+
         $qb = $this->getService()->getSearchQueryBuilder($data);
         $pager = $this->di['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
 
@@ -42,6 +44,8 @@ class Admin extends \Api_Abstract
      */
     public function get(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'view');
+
         $model = $this->_getMessage($data);
 
         return $this->getService()->toApiArray($model);
@@ -59,6 +63,8 @@ class Admin extends \Api_Abstract
      */
     public function update(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'create_and_edit');
+
         $model = $this->_getMessage($data);
 
         $model->setContent($data['content'] ?? $model->getContent());
@@ -96,6 +102,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['subject' => 'Message subject was not passed'])]
     public function create(array $data): int
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'create_and_edit');
+
         $default_content = '{% apply markdown_to_html %}
 Hi {{ c.first_name }} {{ c.last_name }},
 
@@ -145,6 +153,8 @@ Order our services at {{ "order"|url }}
      */
     public function send_test(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'send');
+
         $model = $this->_getMessage($data);
         $client_id = $this->_getTestClientId();
 
@@ -164,6 +174,8 @@ Order our services at {{ "order"|url }}
      */
     public function send(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'send');
+
         $model = $this->_getMessage($data);
 
         if (empty($model->getContent())) {
@@ -189,6 +201,8 @@ Order our services at {{ "order"|url }}
      */
     public function copy(array $data): int
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'create_and_edit');
+
         $model = $this->_getMessage($data);
 
         $copy = (new MassmailerMessage())
@@ -219,6 +233,8 @@ Order our services at {{ "order"|url }}
      */
     public function receivers(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'view');
+
         $model = $this->_getMessage($data);
 
         return $this->getService()->getMessageReceivers($model);
@@ -229,6 +245,8 @@ Order our services at {{ "order"|url }}
      */
     public function delete(array $data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'delete');
+
         $model = $this->_getMessage($data);
         $id = $model->getId();
 
@@ -247,6 +265,8 @@ Order our services at {{ "order"|url }}
      */
     public function preview(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'view');
+
         $model = $this->_getMessage($data);
         $client_id = $this->_getTestClientId();
         [$ps, $pc] = $this->getService()->getParsed($model, $client_id);
@@ -278,6 +298,8 @@ Order our services at {{ "order"|url }}
      */
     public function get_test_client(): string
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'view');
+
         try {
             $client = $this->di['mod_service']('client')->get(['id' => $this->_getTestClientId()]);
         } catch (\Exception) {

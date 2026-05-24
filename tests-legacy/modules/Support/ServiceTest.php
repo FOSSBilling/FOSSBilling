@@ -2341,6 +2341,27 @@ final class ServiceTest extends \BBTestCase
         $this->assertIsArray($bindings);
     }
 
+    public function testCannedGetSearchQueryWithCategoryAndIdFilters(): void
+    {
+        $di = $this->getDi();
+
+        $this->service->setDi($di);
+
+        $data = [
+            'id' => '3',
+            'category_id' => '7',
+        ];
+
+        [$query, $bindings] = $this->service->cannedGetSearchQuery($data);
+
+        $this->assertStringContainsString('sp.id = :id', $query);
+        $this->assertStringContainsString('sp.support_pr_category_id = :category_id', $query);
+        $this->assertSame([
+            ':id' => 3,
+            ':category_id' => 7,
+        ], $bindings);
+    }
+
     public function testCannedGetGroupedPairs(): void
     {
         $pairs = [
@@ -2514,13 +2535,7 @@ final class ServiceTest extends \BBTestCase
             ->method('store')
             ->willReturn($randId);
 
-        $systemServiceMock = $this->getMockBuilder(\Box\Mod\System\Service::class)
-            ->onlyMethods(['checkLimits'])->getMock();
-        $systemServiceMock->expects($this->atLeastOnce())->method('checkLimits')
-            ->willReturn(null);
-
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['db'] = $dbMock;
         $di['logger'] = $this->createMock('Box_Log');
         $this->service->setDi($di);
@@ -3221,16 +3236,10 @@ final class ServiceTest extends \BBTestCase
             ->method('slug')
             ->willReturn('article-slug');
 
-        $systemService = $this->createMock(\Box\Mod\System\Service::class);
-        $systemService->expects($this->atLeastOnce())
-            ->method('checkLimits')
-            ->willReturn(true);
-
         $di = $this->getDi();
         $di['db'] = $db;
         $di['tools'] = $tools;
         $di['logger'] = $di['logger'] = $this->createMock('Box_Log');
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $systemService);
         $service->setDi($di);
 
         $result = $service->kbCreateCategory('Title', 'Description');

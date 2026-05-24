@@ -42,6 +42,32 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'manage_accounts' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage hosting accounts'),
+                'description' => __trans('Allows the staff member to manage hosting accounts (change plan, password, domain, etc.).'),
+            ],
+            'view_servers' => [
+                'type' => 'bool',
+                'display_name' => __trans('View hosting servers'),
+                'description' => __trans('Allows the staff member to view hosting server details.'),
+            ],
+            'manage_servers' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage hosting servers'),
+                'description' => __trans('Allows the staff member to create, update, and delete hosting servers.'),
+            ],
+            'manage_plans' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage hosting plans'),
+                'description' => __trans('Allows the staff member to create, update, and delete hosting plans.'),
+            ],
+        ];
+    }
+
     public function getCartProductTitle($product, array $data)
     {
         try {

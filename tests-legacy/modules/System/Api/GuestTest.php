@@ -126,6 +126,60 @@ final class GuestTest extends \BBTestCase
         $this->assertSame('-', $result);
     }
 
+    public function testCountriesReturnsConfiguredAllowList(): void
+    {
+        $di = new \Pimple\Container();
+        $di['mod'] = $di->protect(fn (string $module) => new class {
+            public function getConfig(): array
+            {
+                return [
+                    'countries' => "US=United States\njp=Japan\nINVALID\nZZ=Invalid Country\nDE=",
+                ];
+            }
+        });
+
+        $this->api->setDi($di);
+
+        $this->assertSame([
+            'US' => 'United States',
+            'JP' => 'Japan',
+        ], $this->api->countries());
+    }
+
+    public function testCountriesFallsBackToSymfonyCountriesWhenNotConfigured(): void
+    {
+        $di = new \Pimple\Container();
+        $di['mod'] = $di->protect(fn (string $module) => new class {
+            public function getConfig(): array
+            {
+                return [];
+            }
+        });
+
+        $this->api->setDi($di);
+
+        $countries = $this->api->countries();
+        $this->assertArrayHasKey('US', $countries);
+        $this->assertArrayHasKey('JP', $countries);
+    }
+
+    public function testCountriesDoesNotExpandInvalidConfigurationToEveryCountry(): void
+    {
+        $di = new \Pimple\Container();
+        $di['mod'] = $di->protect(fn (string $module) => new class {
+            public function getConfig(): array
+            {
+                return [
+                    'countries' => "INVALID\nZZ=Invalid Country",
+                ];
+            }
+        });
+
+        $this->api->setDi($di);
+
+        $this->assertSame([], $this->api->countries());
+    }
+
     public function testGetPendingMessages(): void
     {
         $serviceMock = $this->createMock(\Box\Mod\System\Service::class);

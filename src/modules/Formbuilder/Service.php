@@ -29,6 +29,22 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View forms'),
+                'description' => __trans('Allows the staff member to view order forms and their fields.'),
+            ],
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage forms'),
+                'description' => __trans('Allows the staff member to create, update, and delete order forms and fields.'),
+            ],
+        ];
+    }
+
     private function getDbal(): Connection
     {
         return $this->di['dbal'];
@@ -37,12 +53,12 @@ class Service implements InjectionAwareInterface
     public function getFormFieldsTypes(): array
     {
         return [
-            'text' => 'Text input',
-            'url' => 'URL input',
+            'text' => 'Text Input',
+            'url' => 'URL Input',
             'select' => 'Dropdown',
-            'radio' => 'Radio select',
+            'radio' => 'Radio Select',
             'checkbox' => 'Checkbox',
-            'textarea' => 'Text area',
+            'textarea' => 'Text Area',
         ];
     }
 

@@ -1,27 +1,26 @@
-<div class="help">
-    <h2>{{ order.title }} {{ 'Management'|trans }}</h2>
-</div>
+<div class="card-body">
+    <div class="mb-3">
+        <h3 class="card-title mb-1">{{ order.title }} {{ 'Management'|trans }}</h3>
+        <p class="text-secondary mb-0">{{ 'Update the custom service values stored against this order. These fields are defined by the selected custom service plugin.'|trans }}</p>
+    </div>
 
-{#
-    "plugin" variable contains partial name, ie: plugin_PLUGINNAME_manage.html
-    "service" variable contains product configuration + order form values as key value pairs
-#}
-
-{# include plugin #}
-
-<form method="post" action="{{ 'servicecustom/update'|api_url }}" {{ fb_api_form({message: 'Service Updated'|trans}) }}>
-    <fieldset>
-        {% for name, value in service %}
-        <div class="rowElem">
-            <label class="topLabel">{{ name }}:</label>
-                <div class="formBottom">
-                    <textarea rows="2" name="config[{{ name }}]">{{ value }}</textarea>
+    <form method="post" action="{{ 'servicecustom/update'|api_url }}" {{ fb_api_form({message: 'Service Updated'|trans}) }}>
+        <div class="row g-3">
+            {% for name, value in service %}
+                <div class="col-12">
+                    <label class="form-label">{{ name }}</label>
+                    <textarea class="form-control" rows="3" name="config[{{ name }}]">{{ value }}</textarea>
                 </div>
-            <div class="fix"></div>
+            {% else %}
+                <div class="col-12">
+                    <div class="alert alert-secondary mb-0">{{ 'This service does not currently expose any editable configuration values.'|trans }}</div>
+                </div>
+            {% endfor %}
         </div>
-        {% endfor %}
 
         <input type="hidden" name="order_id" value="{{ order.id }}">
-        <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary submitForm">
-    </fieldset>
-</form>
+        <div class="d-flex justify-content-end mt-4">
+            <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
+        </div>
+    </form>
+</div>

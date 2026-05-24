@@ -29,6 +29,17 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage API keys'),
+                'description' => __trans('Allows the staff member to update and reset API keys.'),
+            ],
+        ];
+    }
+
     public function attachOrderConfig(\Model_Product $product, array $data): array
     {
         $config = json_decode($product->config ?? '', true) ?? [];

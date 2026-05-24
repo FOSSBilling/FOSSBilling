@@ -35,6 +35,22 @@ class LegacyExtension
         }
     }
 
+    #[AsTwigFilter('ip_country_code')]
+    public function ipCountryCode(?string $ip): string
+    {
+        if ($ip === null) {
+            return '';
+        }
+
+        try {
+            $record = $this->di['geoip']->country($ip);
+
+            return strtolower($record->isoCode ?? '');
+        } catch (\Exception) {
+            return '';
+        }
+    }
+
     #[AsTwigFilter('library_url', isSafe: ['html'])]
     public function twig_library_url($path): string
     {

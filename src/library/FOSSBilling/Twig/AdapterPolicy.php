@@ -22,7 +22,9 @@ final class AdapterPolicy
         $filters = [
             'escape', 'e',
             'default', 'title', 'length', 'date',
-            'format_currency', 'format_date',
+            'format_currency', 'format_date', 'format_datetime', 'format_number', 'format_time',
+            'currency_name', 'currency_symbol',
+            'country_name',
             'url', 'daysleft', 'trans',
             'period_title',
             'number_format',
@@ -32,7 +34,9 @@ final class AdapterPolicy
             'keys', 'length',
         ];
 
-        $functions = [];
+        $functions = [
+            'country_names',
+        ];
 
         $methods = [];
 

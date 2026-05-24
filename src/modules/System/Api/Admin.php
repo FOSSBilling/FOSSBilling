@@ -70,6 +70,10 @@ class Admin extends \Api_Abstract
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'update_params');
 
+        if (isset($data['locale']) && $data['locale'] !== '') {
+            Config::setProperty('i18n.locale', $data['locale']);
+        }
+
         Config::setProperty('i18n.auto_detect_locale', Tools::normalizeBoolean($data['auto_detect_locale'] ?? true, true));
 
         return true;
@@ -100,6 +104,12 @@ class Admin extends \Api_Abstract
      */
     public function cas_messages()
     {
+        try {
+            $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_settings');
+        } catch (\Throwable) {
+            return [];
+        }
+
         return $this->getService()->getCasMessages();
     }
 
@@ -110,6 +120,8 @@ class Admin extends \Api_Abstract
      */
     public function template_exists($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_settings');
+
         if (!isset($data['file'])) {
             return false;
         }
@@ -166,6 +178,8 @@ class Admin extends \Api_Abstract
      */
     public function update_available(): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'view');
+
         $updater = $this->di['updater'];
 
         return $updater->isUpdateAvailable();
@@ -176,6 +190,8 @@ class Admin extends \Api_Abstract
      */
     public function update_info(): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'view');
+
         $updater = $this->di['updater'];
 
         return $updater->getLatestVersionInfo();
@@ -241,6 +257,8 @@ class Admin extends \Api_Abstract
      */
     public function is_behind_on_patches(): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'view');
+
         $updater = $this->di['updater'];
 
         return $updater->isBehindOnDBPatches();
@@ -251,6 +269,8 @@ class Admin extends \Api_Abstract
      */
     public function instance_id(): string
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'view');
+
         return INSTANCE_ID;
     }
 
@@ -259,6 +279,8 @@ class Admin extends \Api_Abstract
      */
     public function error_reporting_enabled(): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'view');
+
         return (bool) Config::getProperty('debug_and_monitoring.report_errors', false);
     }
 
@@ -280,6 +302,8 @@ class Admin extends \Api_Abstract
      */
     public function last_error_reporting_change(): string
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'view');
+
         return \FOSSBilling\SentryHelper::last_change;
     }
 

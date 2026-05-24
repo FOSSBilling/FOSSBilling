@@ -90,6 +90,17 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage downloadable products'),
+                'description' => __trans('Allows the staff member to upload, update, and manage downloadable product files.'),
+            ],
+        ];
+    }
+
     private function getAllowedFileTypes(): array
     {
         return [

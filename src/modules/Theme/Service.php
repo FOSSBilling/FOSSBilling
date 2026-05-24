@@ -53,6 +53,22 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View themes'),
+                'description' => __trans('Allows the staff member to view available themes and their configuration.'),
+            ],
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage themes'),
+                'description' => __trans('Allows the staff member to select themes and manage presets.'),
+            ],
+        ];
+    }
+
     public function __construct()
     {
         $this->filesystem = new Filesystem();
@@ -242,7 +258,7 @@ class Service implements InjectionAwareInterface
             ['settings' => $settings],
             'Theme settings template',
             function (\Twig\Sandbox\SecurityError $e) use ($theme): void {
-                $this->di['logger']->setChannel('security')->warning('Theme settings template sandbox violation', [
+                $this->di['logger']->setChannel('security')->warn('Theme settings template sandbox violation', [
                     'theme' => $theme->getName(),
                     'error' => $e->getMessage(),
                 ]);
