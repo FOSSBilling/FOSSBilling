@@ -17,6 +17,9 @@
     ],
     "homepage": "https://fossbilling.org",
     "scripts": {
+        "post-install-cmd": [
+            "php src/vendor/symfony/intl/Resources/bin/compress || true"
+        ],
         "test": "phpunit",
         "phpstan": "phpstan analyze --memory-limit=512M",
         "phpstan:baseline": "phpstan analyze --generate-baseline",
