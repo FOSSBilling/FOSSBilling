@@ -128,6 +128,7 @@
                     <form method="post" action="{{ 'support/public_ticket_reply'|api_url }}"
                         {{ fb_api_form({ redirect: 'support/public-tickets'|url(query: { 'status': 'open' }) }) }}>
                         <div class="card-body">
+                            {% set public_ticket_recipient = ticket.author_name ? ticket.author_name : ticket.author_email %}
                             <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
                                 <div class="d-flex flex-column gap-1">
                                     <h5 class="card-title mb-0">{{ 'Respond as'|trans }} {{ profile.name }}</h5>
@@ -136,7 +137,7 @@
                                 <div>{{ include('mod_support_canned_selector.html.twig') }}</div>
                             </div>
 
-                            <textarea name="content" rows="10" required class="editor-textarea" id="rt">{{ 'Hello'|trans }} {{ ticket.client.first_name }},
+                            <textarea name="content" rows="10" required class="editor-textarea" id="rt">{{ 'Hello'|trans }} {{ public_ticket_recipient }},
 {{ canned_delay_message }}
 
 {{ profile.signature }}

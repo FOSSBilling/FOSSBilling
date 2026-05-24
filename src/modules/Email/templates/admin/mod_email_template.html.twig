@@ -115,7 +115,7 @@
                                         </div>
                                         {% if can_manage_templates %}
                                         <div class="d-flex gap-2">
-                                            <button class="btn btn-secondary" id="preview-button"{% if template.vars|length == 0 %} disabled{% endif %}>
+                                            <button class="btn btn-secondary" id="preview-button">
                                                 <svg class="icon">
                                                     <use xlink:href="#eye" />
                                                 </svg>
@@ -234,7 +234,14 @@
                             subtitle: 'Use this playground to try rendering example email template content.'|trans
                         } %}
                             {% block form_content %}
-                                <textarea class="form-control" id="email-sample-template" rows="20">{% autoescape false %}{% apply markdown_to_html %}
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label" for="email-sample-subject">{{ 'Example Subject'|trans }}</label>
+                                        <input class="form-control" id="email-sample-subject" type="text" value="{{ template.subject }}">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label" for="email-sample-template">{{ 'Example Message'|trans }}</label>
+                                        <textarea class="form-control" id="email-sample-template" rows="20">{% autoescape false %}{% apply markdown_to_html %}
 This is an example of markdown syntax in email template
 
 *Italic text*
@@ -263,6 +270,8 @@ You can event use IF statements in email templates: {% if 1 == 2 %}This will nev
 {# Comments in email templates. This text is not visible #}
 {# Uncomment the line below to see what is the output #}
 {% endapply %}{% endautoescape %}</textarea>
+                                    </div>
+                                </div>
                             {% endblock %}
 
                             {% block form_actions %}
@@ -325,15 +334,24 @@ document.addEventListener('DOMContentLoaded', function() {
     examplePreviewButton.addEventListener('click', function(e) {
         e.preventDefault();
 
-        const params = {
+        const subjectParams = {
+            _tpl: document.getElementById('email-sample-subject').value,
+            id: '{{ template.id }}',
+        };
+
+        const contentParams = {
             _tpl: document.getElementById('email-sample-template').value,
             id: '{{ template.id }}',
         };
 
-        API.admin.post('email/template_render', params, function(result) {
-            showEmailPreview('<em class="text-muted">{{ "No subject for example preview"|trans }}</em>', result);
+        API.admin.post('email/template_render', subjectParams, function(subject) {
+            API.admin.post('email/template_render', contentParams, function(content) {
+                showEmailPreview(subject, content);
+            }, function(error) {
+                FOSSBilling.message(`{{ 'Failed to render template'|trans }}: ${error.message}`, 'error');
+            });
         }, function(error) {
-            FOSSBilling.message(`{{ 'Failed to render template'|trans }}: ${error.message}`, 'error');
+            FOSSBilling.message(`{{ 'Failed to render email subject'|trans }}: ${error.message}`, 'error');
         });
     });
 });

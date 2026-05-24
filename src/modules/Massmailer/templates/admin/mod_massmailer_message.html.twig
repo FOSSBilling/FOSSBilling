@@ -5,29 +5,22 @@
 {% set active_menu = 'system' %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <div>
-            <h3 class="card-title">{{ msg.subject }}</h3>
-            <p class="card-subtitle">{{ 'Configure message metadata, define recipient filters, and preview the final mass-mail content before sending.'|trans }}</p>
-        </div>
-        <div class="card-actions">
-            <a href="{{ 'massmailer'|url }}" class="btn">
-                <svg class="icon">
-                    <use xlink:href="#arrow-back-up" />
-                </svg>
-                Back to List
-            </a>
-        </div>
-    </div>
-
+<div class="p-3 d-flex flex-column gap-3">
     <form method="post" action="admin/massmailer/update" id="msg-form" {{ fb_api_form({callback: 'onAfterMessageUpdate'}) }}>
-        <div class="p-3 pb-0">
             {% embed 'partial_admin_form_card.html.twig' with {
                 title: 'Message Details'|trans,
                 subtitle: 'Set the sender identity and subject line for this mass-mail message.',
                 card_class: 'mb-3'
             } %}
+                {% block form_header_actions %}
+                    <a href="{{ 'massmailer'|url }}" class="btn btn-secondary">
+                        <svg class="icon">
+                            <use xlink:href="#arrow-back-up" />
+                        </svg>
+                        {{ 'Back to List'|trans }}
+                    </a>
+                {% endblock %}
+
                 {% block form_content %}
                     <div class="row g-3">
                         <div class="col-lg-4">
@@ -48,13 +41,14 @@
 
             {% embed 'partial_admin_form_card.html.twig' with {
                 title: 'Recipients Filter'|trans,
-                subtitle: 'Select none to send this message to all clients.',
+                subtitle: 'Leave every filter empty to send this message to all clients.',
                 card_class: 'mb-3'
             } %}
                 {% block form_content %}
                     <div class="row g-4">
                         <div class="col-lg-6">
                             <label class="form-label">{{ 'Client Status'|trans }}</label>
+                            <div class="form-text mb-2">{{ 'Limit recipients to clients with these account states.'|trans }}</div>
                             <select class="form-select" name="filter[client_status][]" multiple="multiple" size="4">
                                 <option value="active" {% if 'active' in msg.filter.client_status %} selected="selected"{% endif %}>{{ 'Active'|trans }}</option>
                                 <option value="suspended" {% if 'suspended' in msg.filter.client_status %} selected="selected"{% endif %}>{{ 'Suspended'|trans }}</option>
@@ -63,6 +57,7 @@
                         </div>
                         <div class="col-lg-6">
                             <label class="form-label">{{ 'Client Groups'|trans }}</label>
+                            <div class="form-text mb-2">{{ 'Target only clients assigned to these groups.'|trans }}</div>
                             <select class="form-select" name="filter[client_groups][]" multiple="multiple" size="4">
                                 {% for id,label in admin.client_group_get_pairs %}
                                     <option value="{{id}}" {% if id in msg.filter.client_groups %} selected="selected"{% endif %}>{{label}}</option>
@@ -71,6 +66,7 @@
                         </div>
                         <div class="col-lg-6">
                             <label class="form-label">{{ 'Has Order With Status'|trans }}</label>
+                            <div class="form-text mb-2">{{ 'Match clients who have orders currently in these states.'|trans }}</div>
                             <select class="form-select" name="filter[has_order_with_status][]" multiple="multiple" size="6">
                                 {% for id,label in admin.order_get_status_pairs %}
                                     <option value="{{id}}" {% if id in msg.filter.has_order_with_status %} selected="selected"{% endif %}>{{label}}</option>
@@ -79,6 +75,7 @@
                         </div>
                         <div class="col-lg-6">
                             <label class="form-label">{{ 'Has Order'|trans }}</label>
+                            <div class="form-text mb-2">{{ 'Match clients who have purchased any of these products.'|trans }}</div>
                             <select class="form-select" name="filter[has_order][]" multiple="multiple" size="6">
                                 {% for id,label in admin.product_get_pairs %}
                                     <option value="{{id}}" {% if id in msg.filter.has_order %} selected="selected"{% endif %}>{{label}}</option>
@@ -94,27 +91,27 @@
             } %}
                 {% block form_content %}
                     <div class="card border-0 shadow-none rounded-0">
-                <div class="card-header bg-transparent px-0 pt-0 pb-3 border-0">
-                <ul class="nav nav-pills card-header-pills" id="content-tabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <a href="#tab-message" class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-message" aria-selected="true"
-                           role="tab">{{ 'Message'|trans }}</a></li>
-                    <li class="nav-item" role="presentation">
-                        <a href="#tab-preview" class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-preview" aria-selected="false" role="tab"
-                           tabindex="-1">
-                            {{ 'Preview'|trans }}
-                        </a>
-                    </li>
+                        <div class="card-header bg-transparent px-0 pt-0 pb-3 border-0">
+                            <ul class="nav nav-pills card-header-pills" id="content-tabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <a href="#tab-message" class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-message" aria-selected="true"
+                                       role="tab">{{ 'Message'|trans }}</a></li>
+                                <li class="nav-item" role="presentation">
+                                    <a href="#tab-preview" class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-preview" aria-selected="false" role="tab"
+                                       tabindex="-1">
+                                        {{ 'Preview'|trans }}
+                                    </a>
+                                </li>
 
-                    <li class="nav-item" role="presentation">
-                        <a href="#tab-preview" class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-recipients" aria-selected="false" role="tab"
-                           tabindex="-1" id="recipient-tab">
-                            {{ 'Recipients'|trans }}
-                        </a>
-                    </li>
-                </ul>
-                </div>
-                <div class="tab-content border-top">
+                                <li class="nav-item" role="presentation">
+                                    <a href="#tab-recipients" class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-recipients" aria-selected="false" role="tab"
+                                       tabindex="-1" id="recipient-tab">
+                                        {{ 'Recipients'|trans }}
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="tab-content border-top">
                         <div class="tab-pane fade show active" id="tab-message" role="tabpanel">
                             <div class="card-body">
                                 <textarea class="form-control" name="content" cols="5" rows="20"
@@ -123,22 +120,26 @@
                         </div>
                         <div class="tab-pane fade" id="tab-preview" role="tabpanel">
                             <div class="p-4" id="preview-banner">
-                                <h3>{{ 'Click on the update and preview button'|trans }}</h3>
+                                <h5 class="card-title mb-1">{{ 'Preview'|trans }}</h5>
+                                <p class="text-secondary mb-0">{{ 'Click'|trans }} <strong>{{ 'Update and Preview'|trans }}</strong> {{ 'to render the current message content and subject.'|trans }}</p>
                             </div>
                             <div class="d-none" id="preview">
-                                <div class="card-header">
-                                    <h3 class="card-title" id="preview-title"></h3>
+                                <div class="card-body border-bottom">
+                                    <h5 class="card-title mb-1" id="preview-title"></h5>
+                                    <p class="text-secondary mb-0">{{ 'Rendered message body using the current template and recipient filter context.'|trans }}</p>
                                 </div>
                                 <div class="card-body" id="preview-content"></div>
                             </div>
                         </div>
                         <div class="tab-pane fade" id="tab-recipients" role="tabpanel">
                             <div class="p-4" id="recipients-banner">
-                                <h3>{{ 'Click on the update and preview button'|trans }}</h3>
+                                <h5 class="card-title mb-1">{{ 'Recipients'|trans }}</h5>
+                                <p class="text-secondary mb-0">{{ 'Click'|trans }} <strong>{{ 'Update and Preview'|trans }}</strong> {{ 'to preview which clients match the current filters.'|trans }}</p>
                             </div>
                             <div class="d-none" id="recipients">
-                                <div class="card-header">
-                                    <h3 class="card-title">{{ 'Message Recipients'|trans }}</h3>
+                                <div class="card-body border-bottom">
+                                    <h5 class="card-title mb-1">{{ 'Message Recipients'|trans }}</h5>
+                                    <p class="text-secondary mb-0">{{ 'These clients currently match the selected audience filters.'|trans }}</p>
                                 </div>
                                 <div class="card-body">
                                     <ul class="list-group" id="recipient-list" style="max-height: 1000px; overflow-y: auto;">
@@ -146,21 +147,20 @@
                                 </div>
                             </div>
                         </div>
-                </div>
-            </div>
+                        </div>
+                    </div>
                 {% endblock %}
 
                 {% block form_actions %}
                     <div class="d-flex justify-content-between align-items-center w-100">
                         <div class="d-flex gap-2">
-                            <input type="submit" value="{{ 'Update and preview'|trans }}" class="btn btn-secondary">
-                            <input type="button" value="{{ 'Send test message'|trans }}" class="btn btn-success" id="send-test-msg">
+                            <input type="submit" value="{{ 'Update and Preview'|trans }}" class="btn btn-secondary">
+                            <input type="button" value="{{ 'Send Test Message'|trans }}" class="btn btn-success" id="send-test-msg">
                         </div>
-                        <input type="button" value="{{ 'Send message to clients'|trans }}" class="btn btn-primary" id="send-msg">
+                        <input type="button" value="{{ 'Send Message to Clients'|trans }}" class="btn btn-primary" id="send-msg">
                     </div>
                 {% endblock %}
             {% endembed %}
-        </div>
         <input type="hidden" name="id" value="{{ msg.id }}">
     </form>
 </div>
@@ -178,6 +178,7 @@
                 document.querySelector('#preview').classList.remove('d-none');
                 document.querySelector('#preview-title').textContent = result.subject;
                 document.querySelector('#preview-content').innerHTML = result.content;
+                document.getElementById('recipient-list').innerHTML = '';
 
                 result.recipients.forEach(function(recipient) {
                     const listItem = document.createElement('li');

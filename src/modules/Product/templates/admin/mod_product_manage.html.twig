@@ -56,19 +56,56 @@
                     } %}
                         {% import 'macro_functions.html.twig' as mf %}
                         {% block form_content %}
-                            <h6 class="card-title text-secondary mb-3">{{ 'Product Details'|trans }}</h6>
                             <div class="row g-3">
+                                <div class="col-lg-6">
+                                    <label class="form-label">{{ 'Title'|trans }}</label>
+                                    <input class="form-control" type="text" name="title" value="{{ product.title }}" required>
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label">{{ 'Slug'|trans }}</label>
+                                    <input class="form-control" type="text" name="slug" value="{{ product.slug }}" required>
+                                </div>
                                 <div class="col-lg-6">
                                     <label class="form-label">{{ 'Category'|trans }}</label>
                                     {{ mf.selectbox('product_category_id', guest.product_category_get_pairs, product.product_category_id, 0, 'None') }}
                                 </div>
-                                {% if guest.extension_is_on({ 'mod': 'formbuilder' }) %}
                                 <div class="col-lg-6">
+                                    <label class="form-label">{{ 'Icon/Image URL'|trans }}</label>
+                                    <input class="form-control" type="text" name="icon_url" id="bb-icon" value="{{ product.icon_url }}">
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label">{{ 'Status'|trans }}</label>
+                                    <select class="form-select" name="status">
+                                        <option value="enabled"{% if product.status == 'enabled' %} selected{% endif %}>{{ 'Enabled'|trans }}</option>
+                                        <option value="disabled"{% if product.status == 'disabled' %} selected{% endif %}>{{ 'Disabled'|trans }}</option>
+                                    </select>
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label">{{ 'Activation'|trans }}</label>
+                                    <select class="form-select" name="setup">
+                                        <option value="after_order"{% if product.setup == 'after_order' %} selected{% endif %}>{{ 'After Order is Placed'|trans }}</option>
+                                        <option value="after_payment"{% if product.setup == 'after_payment' %} selected{% endif %}>{{ 'After Payment is Received'|trans }}</option>
+                                        <option value="manual"{% if product.setup == 'manual' %} selected{% endif %}>{{ 'Manual Activation'|trans }}</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <input type="hidden" name="hidden" value="0">
+                                    <label class="form-label d-block">{{ 'Storefront Visibility'|trans }}</label>
+                                    <label class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="hidden" value="1"{% if product.hidden %} checked{% endif %} id="hidden-toggle">
+                                        <span class="form-check-label">{{ 'Hide this product from public order pages'|trans }}</span>
+                                    </label>
+                                    <div class="form-text">{{ 'Hidden products remain usable for existing orders and direct links, but they will not appear in normal product listings.'|trans }}</div>
+                                </div>
+                                {% if guest.extension_is_on({ 'mod': 'formbuilder' }) %}
+                                <div class="col-12">
                                     <label class="form-label">{{ 'Order Form'|trans }}</label>
                                     {% set tpl = 'mod_service' ~ product.type ~ '_order_form.html.twig' %}
                                     {% if guest.system_template_exists({ 'file': tpl }) %}
-                                        <div class="form-control-plaintext text-secondary py-2">
-                                            {{ 'Edit'|trans }} <code>{{ tpl }}</code> {{ 'to change the order form for'|trans }} <strong>{{ product.type }}</strong> {{ 'category products.'|trans }}
+                                        <div class="border rounded p-3 bg-body-tertiary">
+                                            <p class="text-secondary mb-2">{{ 'This product type uses a shared service-specific order form template.'|trans }}</p>
+                                            <div class="mb-2"><code>{{ tpl }}</code></div>
+                                            <div class="text-secondary">{{ 'Edit that template to change the order form for'|trans }} <strong>{{ product.type }}</strong> {{ 'products.'|trans }}</div>
                                         </div>
                                     {% else %}
                                         <div class="input-group">
@@ -90,78 +127,21 @@
                                     {% endif %}
                                 </div>
                                 {% endif %}
-                                <div class="col-lg-4">
-                                    <label class="form-label d-block">{{ 'Status'|trans }}</label>
-                                    <div class="d-flex flex-wrap gap-3">
-                                        <label class="form-check">
-                                            <input class="form-check-input" type="radio" id="statusEnabled" name="status" value="enabled"{% if product.status == 'enabled' %} checked{% endif %}>
-                                            <span class="form-check-label">{{ 'Enabled'|trans }}</span>
-                                        </label>
-                                        <label class="form-check">
-                                            <input class="form-check-input" type="radio" id="statusDisabled" name="status" value="disabled"{% if product.status == 'disabled' %} checked{% endif %}>
-                                            <span class="form-check-label">{{ 'Disabled'|trans }}</span>
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-lg-4">
-                                    <label class="form-label d-block">{{ 'Hidden'|trans }}</label>
-                                    <div class="d-flex flex-wrap gap-3">
-                                        <label class="form-check">
-                                            <input class="form-check-input" type="radio" name="hidden" value="1"{% if product.hidden %} checked{% endif %} id="hidden-yes">
-                                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
-                                        </label>
-                                        <label class="form-check">
-                                            <input class="form-check-input" type="radio" name="hidden" value="0"{% if not product.hidden %} checked{% endif %} id="hidden-no">
-                                            <span class="form-check-label">{{ 'No'|trans }}</span>
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-lg-4">
-                                    <label class="form-label d-block">{{ 'Activation'|trans }}</label>
-                                    <div class="d-flex flex-wrap gap-3">
-                                        <label class="form-check">
-                                            <input class="form-check-input" type="radio" name="setup" value="after_order"{% if product.setup == 'after_order' %} checked{% endif %} id="activation-after-order">
-                                            <span class="form-check-label">{{ 'After Order is Placed'|trans }}</span>
-                                        </label>
-                                        <label class="form-check">
-                                            <input class="form-check-input" type="radio" name="setup" value="after_payment"{% if product.setup == 'after_payment' %} checked{% endif %} id="activation-after-payment">
-                                            <span class="form-check-label">{{ 'After Payment is Received'|trans }}</span>
-                                        </label>
-                                        <label class="form-check">
-                                            <input class="form-check-input" type="radio" name="setup" value="manual"{% if product.setup == 'manual' %} checked{% endif %} id="activation-manual">
-                                            <span class="form-check-label">{{ 'Manual Activation'|trans }}</span>
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label">{{ 'Icon/Image URL'|trans }}</label>
-                                    <input class="form-control" type="text" name="icon_url" id="bb-icon" value="{{ product.icon_url }}">
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label">{{ 'Title'|trans }}</label>
-                                    <input class="form-control" type="text" name="title" value="{{ product.title }}" required>
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label">{{ 'Slug'|trans }}</label>
-                                    <input class="form-control" type="text" name="slug" value="{{ product.slug }}" required>
-                                </div>
                             </div>
 
-                            <hr class="my-4">
-                            <h6 class="card-title text-secondary mb-3">{{ 'Pricing and Stock Control'|trans }}</h6>
+                            <div class="d-flex flex-column gap-1 mt-4 mb-4">
+                                <h6 class="card-title mb-0">{{ 'Pricing and Stock Control'|trans }}</h6>
+                                <p class="text-secondary mb-0">{{ 'Control inventory limits and configure how this product is priced and billed.'|trans }}</p>
+                            </div>
                             <div class="row g-3">
                                 <div class="col-lg-6">
-                                    <label class="form-label d-block">{{ 'Enable Stock Control'|trans }}</label>
-                                    <div class="d-flex flex-wrap gap-3">
-                                        <label class="form-check">
-                                            <input class="form-check-input" type="radio" id="radioStockControlYes" name="stock_control" value="1"{% if product.stock_control %} checked{% endif %}>
-                                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
-                                        </label>
-                                        <label class="form-check">
-                                            <input class="form-check-input" type="radio" id="radioStockControlNo" name="stock_control" value="0"{% if not product.stock_control %} checked{% endif %}>
-                                            <span class="form-check-label">{{ 'No'|trans }}</span>
-                                        </label>
-                                    </div>
+                                    <input type="hidden" name="stock_control" value="0">
+                                    <label class="form-label d-block">{{ 'Stock Control'|trans }}</label>
+                                    <label class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="stock-control-toggle" name="stock_control" value="1"{% if product.stock_control %} checked{% endif %}>
+                                        <span class="form-check-label">{{ 'Track available stock for this product'|trans }}</span>
+                                    </label>
+                                    <div class="form-text">{{ 'When enabled, ordering can be limited by the quantity available below.'|trans }}</div>
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label">{{ 'Quantity in Stock'|trans }}</label>
@@ -173,13 +153,10 @@
                                 {{ include('partial_pricing.html.twig', { 'product': product }) }}
                             </div>
 
-                            <hr class="my-4">
-                            <h6 class="card-title text-secondary mb-3">{{ 'Description'|trans }}</h6>
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <label class="form-label">{{ 'Description'|trans }}</label>
-                                    <textarea class="editor-textarea" name="description" rows="5">{{ product.description }}</textarea>
-                                </div>
+                            <div class="mt-4">
+                                <label class="form-label">{{ 'Description'|trans }}</label>
+                                <div class="form-text mb-2">{{ 'Edit the client-facing description shown on the order page for this product.'|trans }}</div>
+                                <textarea class="editor-textarea" name="description" rows="5">{{ product.description }}</textarea>
                             </div>
 
                             <input type="hidden" name="id" value="{{ product.id }}">
@@ -196,10 +173,18 @@
         <div class="tab-pane fade" id="tab-config" role="tabpanel" aria-labelledby="config-tab">
             {% set service_partial = 'mod_service' ~ product.type ~ '_config.html.twig' %}
             {% if admin.system_template_exists({ 'file': service_partial }) %}
-                {{ include(service_partial, { 'product': product }) }}
+                <div class="p-3">
+                    {{ include(service_partial, { 'product': product }) }}
+                </div>
             {% else %}
-                <div class="card-body">
-                    <p class="text-muted mb-0">{{ 'No additional configuration for this product is required'|trans }}</p>
+                <div class="p-3">
+                    {% embed 'partial_admin_related_section.html.twig' with {
+                        title: 'Configuration'|trans,
+                        subtitle: 'This product type does not require any additional service-specific configuration.'|trans,
+                        card_class: 'mb-0'
+                    } %}
+                        {% block section_content %}{% endblock %}
+                    {% endembed %}
                 </div>
             {% endif %}
         </div>
@@ -213,33 +198,26 @@
                 } %}
                     {% block section_content %}
                         <input type="hidden" name="addons[]" value="">
-                        <div class="table-responsive">
-                            <table class="table card-table table-vcenter table-striped text-nowrap">
-                                <tbody>
-                                    {% for addon_id, addon_title in admin.product_addon_get_pairs %}
-                                    <tr>
-                                        <td class="w-1">
-                                            <input class="form-check-input" type="checkbox" name="addons[]" value="{{ addon_id }}" id="addon_{{ addon_id }}"{% if addon_id in assigned_addons %} checked{% endif %}>
-                                        </td>
-                                        <td>
-                                            <label for="addon_{{ addon_id }}">{{ addon_title }}</label>
-                                        </td>
-                                        <td class="w-1">
-                                            <a class="btn btn-icon" href='{{ "product/addon/#{addon_id}"|url }}'>
-                                                <svg class="icon">
-                                                    <use xlink:href="#edit" />
-                                                </svg>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    {% else %}
-                                    <tr>
-                                        <td class="text-muted" colspan="3">{{ 'The list is empty'|trans }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
+                        {% set addon_pairs = admin.product_addon_get_pairs %}
+                        {% if addon_pairs|length > 0 %}
+                            <div class="list-group list-group-flush">
+                                {% for addon_id, addon_title in addon_pairs %}
+                                <div class="list-group-item d-flex align-items-center gap-3">
+                                    <input class="form-check-input mt-0" type="checkbox" name="addons[]" value="{{ addon_id }}" id="addon_{{ addon_id }}"{% if addon_id in assigned_addons %} checked{% endif %}>
+                                    <label class="mb-0 flex-grow-1" for="addon_{{ addon_id }}">{{ addon_title }}</label>
+                                    <a class="btn btn-icon" href='{{ "product/addon/#{addon_id}"|url }}'>
+                                        <svg class="icon">
+                                            <use xlink:href="#edit" />
+                                        </svg>
+                                    </a>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="card-body pt-0">
+                                <p class="text-muted mb-0">{{ 'The list is empty'|trans }}</p>
+                            </div>
+                        {% endif %}
                     {% endblock %}
 
                     {% block section_footer %}
@@ -267,24 +245,16 @@
                 } %}
                     {% block section_content %}
                         <input type="hidden" name="upgrades[]" value=""/>
-                        <div class="table-responsive">
-                            <table class="table card-table table-vcenter table-striped text-nowrap">
-                                <tbody>
-                                    {% set products = admin.product_get_pairs %}
-                                    {% for id,ptitle in products %}
-                                    {% if id != product.id %}
-                                    <tr>
-                                        <td class="w-1">
-                                            <input class="form-check-input" type="checkbox" name="upgrades[]" value="{{id}}" id="upgrades{{ id }}" {% if product.upgrades[id] %} checked{% endif %}>
-                                        </td>
-                                        <td>
-                                            <label for="upgrades[{{ id }}]">{{ ptitle }}</label>
-                                        </td>
-                                    </tr>
-                                    {% endif %}
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                        {% set products = admin.product_get_pairs %}
+                        <div class="list-group list-group-flush">
+                            {% for id,ptitle in products %}
+                            {% if id != product.id %}
+                            <div class="list-group-item d-flex align-items-center gap-3">
+                                <input class="form-check-input mt-0" type="checkbox" name="upgrades[]" value="{{id}}" id="upgrades{{ id }}" {% if product.upgrades[id] %} checked{% endif %}>
+                                <label class="mb-0 flex-grow-1" for="upgrades{{ id }}">{{ ptitle }}</label>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
                         </div>
                     {% endblock %}
 
@@ -305,7 +275,7 @@
                 card_class: 'm-3'
             } %}
                 {% block section_content %}
-                    <div class="card-body pt-0">
+                    <div class="px-3 pb-3">
                         <div class="row g-3">
                             <div class="col-12">
                                 <label class="form-label">{{ 'Order Page (via ID)'|trans }}</label>
@@ -320,7 +290,7 @@
                 {% endblock %}
 
                 {% block section_footer %}
-                    <div class="d-flex justify-content-center">
+                    <div class="d-flex justify-content-end">
                         <a href='{{ "order/#{product.slug}"|url(area: 'client') }}' class="btn btn-primary" target="_blank">
                             <svg class="icon" width="24" height="24">
                                 <use xlink:href="#search" />
