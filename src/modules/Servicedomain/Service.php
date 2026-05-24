@@ -36,6 +36,27 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'manage_domains' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage domains'),
+                'description' => __trans('Allows the staff member to manage domain services (nameservers, contacts, privacy, transfers).'),
+            ],
+            'manage_tlds' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage TLDs'),
+                'description' => __trans('Allows the staff member to create, update, and delete TLDs and their pricing.'),
+            ],
+            'manage_registrars' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage registrars'),
+                'description' => __trans('Allows the staff member to install, update, and delete domain registrars.'),
+            ],
+        ];
+    }
+
     public function getCartProductTitle($product, array $data)
     {
         if (

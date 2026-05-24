@@ -42,6 +42,47 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View invoices'),
+                'description' => __trans('Allows the staff member to view invoices and invoice details.'),
+            ],
+            'manage_invoices' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage invoices'),
+                'description' => __trans('Allows the staff member to create, update, delete, and manage invoices.'),
+            ],
+            'manage_transactions' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage transactions'),
+                'description' => __trans('Allows the staff member to view, create, update, delete, and process transactions.'),
+            ],
+            'manage_gateways' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage payment gateways'),
+                'description' => __trans('Allows the staff member to install, configure, and remove payment gateways.'),
+            ],
+            'manage_subscriptions' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage subscriptions'),
+                'description' => __trans('Allows the staff member to view, create, update, and delete subscriptions.'),
+            ],
+            'manage_tax' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage tax rules'),
+                'description' => __trans('Allows the staff member to create, update, and delete tax rules.'),
+            ],
+            'export' => [
+                'type' => 'bool',
+                'display_name' => __trans('Export invoice data'),
+                'description' => __trans('Allows the staff member to export invoice data as CSV.'),
+            ],
+        ];
+    }
+
     public function __construct()
     {
         $this->filesystem = new Filesystem();
