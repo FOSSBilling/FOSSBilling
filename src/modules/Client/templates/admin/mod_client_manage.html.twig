@@ -461,8 +461,17 @@
         {% endif %}
 
         <div class="tab-pane fade" id="tab-orders" role="tabpanel">
-            <div class="card-body">
-                <h3>{{ 'Client Orders'|trans }}</h3>
+            <div class="card-body d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div>
+                    <h3 class="card-title mb-1">{{ 'Client Orders'|trans }}</h3>
+                    <p class="text-secondary mb-0">{{ 'Review the client’s active and historical orders, or create a new order directly for this client.'|trans }}</p>
+                </div>
+                <a href="{{ 'order'|url(query: { 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
+                    <svg class="icon">
+                        <use xlink:href="#plus" />
+                    </svg>
+                    {{ 'New Order'|trans }}
+                </a>
             </div>
 
             <div class="table-responsive">
@@ -505,19 +514,20 @@
                 </table>
             </div>
 
-            <div class="card-body">
-                <a href="{{ 'order'|url(query: { 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
-                    <svg class="icon">
-                        <use xlink:href="#plus" />
-                    </svg>
-                    {{ 'New order'|trans }}
-                </a>
-            </div>
         </div>
 
         <div class="tab-pane fade" id="tab-invoice" role="tabpanel">
-            <div class="card-body">
-                <h5>{{ 'Client Invoices'|trans }}</h5>
+            <div class="card-body d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div>
+                    <h3 class="card-title mb-1">{{ 'Client Invoices'|trans }}</h3>
+                    <p class="text-secondary mb-0">{{ 'Review invoices issued to this client or prepare a new invoice directly from the account view.'|trans }}</p>
+                </div>
+                <a href="{{ 'invoice'|url(query: { 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
+                    <svg class="icon">
+                        <use xlink:href="#plus" />
+                    </svg>
+                    {{ 'New Invoice'|trans }}
+                </a>
             </div>
 
             <div class="table-responsive">
@@ -559,20 +569,21 @@
                     </tbody>
                 </table>
 
-                <div class="card-body">
-                    <a class="btn btn-primary" {{ fb_api_link({href: 'invoice/prepare'|api_url(query: {'client_id': client.id}), callback: 'onAfterInvoicePrepared'}) }}>
-                        <svg class="icon">
-                            <use xlink:href="#plus" />
-                        </svg>
-                        {{ 'New Invoice'|trans }}
-                    </a>
-                </div>
             </div>
         </div>
 
         <div class="tab-pane fade" id="tab-support" role="tabpanel" aria-labelledby="support-tab">
-            <div class="card-body">
-                <h5>{{ 'Help Desk'|trans }}</h5>
+            <div class="card-body d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div>
+                    <h3 class="card-title mb-1">{{ 'Help Desk'|trans }}</h3>
+                    <p class="text-secondary mb-0">{{ 'Track the client’s support tickets and open a new ticket without leaving the client profile.'|trans }}</p>
+                </div>
+                <a href="{{ 'support'|url(query: { 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
+                    <svg class="icon">
+                        <use xlink:href="#plus" />
+                    </svg>
+                    {{ 'New Support Ticket'|trans }}
+                </a>
             </div>
 
             <div class="table-responsive">
@@ -613,20 +624,13 @@
                 </table>
             </div>
 
-            <div class="card-body">
-                <a href="{{ 'support'|url(query: { 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
-                    <svg class="icon">
-                        <use xlink:href="#plus" />
-                    </svg>
-                    {{ 'New support ticket'|trans }}
-                </a>
-            </div>
         </div>
 
         {% if can_manage_balance %}
         <div class="tab-pane fade" id="tab-balance" role="tabpanel" aria-labelledby="balance-tab">
             <div class="card-body">
-                <h5>{{ 'Client Payments History'|trans }}</h5>
+                <h3 class="card-title mb-1">{{ 'Client Payments History'|trans }}</h3>
+                <p class="text-secondary mb-0">{{ 'Review balance adjustments and record a manual credit for this client when needed.'|trans }}</p>
             </div>
 
             <div class="table-responsive">
@@ -694,7 +698,7 @@
                             <svg class="icon">
                                 <use xlink:href="#plus" />
                             </svg>
-                            {{ 'Add funds'|trans }}
+                            {{ 'Add Funds'|trans }}
                         </button>
                     </div>
                 </form>
@@ -705,7 +709,8 @@
         {% if can_view_client_login_history %}
         <div class="tab-pane fade" id="tab-history" role="tabpanel" aria-labelledby="history-tab">
             <div class="card-body">
-                <h5>{{ 'Login History'|trans }}</h5>
+                <h3 class="card-title mb-1">{{ 'Login History'|trans }}</h3>
+                <p class="text-secondary mb-0">{{ 'See recent client login activity, including originating IP address and detected country.'|trans }}</p>
             </div>
 
             <div class="table-responsive">
@@ -740,7 +745,8 @@
         {% if can_view_email_history %}
         <div class="tab-pane fade" id="tab-emails" role="tabpanel" aria-labelledby="emails-tab">
             <div class="card-body">
-                <h3>{{ 'Emails Sent to Client'|trans }}</h3>
+                <h3 class="card-title mb-1">{{ 'Emails Sent to Client'|trans }}</h3>
+                <p class="text-secondary mb-0">{{ 'Review outbound email history for this client and preview the rendered message content.'|trans }}</p>
             </div>
 
             <div class="table-responsive">
@@ -795,7 +801,8 @@
 
         <div class="tab-pane fade" id="tab-transactions" role="tabpanel" aria-labelledby="transactions-tab">
             <div class="card-body">
-                <h5>{{ 'Transactions Received'|trans }}</h5>
+                <h3 class="card-title mb-1">{{ 'Transactions Received'|trans }}</h3>
+                <p class="text-secondary mb-0">{{ 'Review payment transactions recorded against this client across all gateways.'|trans }}</p>
             </div>
 
             {% set transactions = admin.invoice_transaction_get_list({ 'client_id': client.id, 'per_page': 100 }).list %}

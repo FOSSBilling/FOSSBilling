@@ -72,93 +72,100 @@
 
     <div class="tab-content border-top">
         <div class="tab-pane fade show active" id="tab-info" role="tabpanel">
-            <div class="card-body overflow-auto">
-                <h3>{{ order.title }}</h3>
+            <div class="card-body">
+                <div class="card mb-0">
+                    <div class="card-body">
+                        <div class="d-flex flex-column gap-1">
+                            <h5 class="card-title mb-0">{{ 'Order Summary'|trans }}</h5>
+                            <p class="text-secondary mb-0">{{ 'Review core order, billing, and lifecycle details before taking action on this order.'|trans }}</p>
+                        </div>
+                    </div>
 
-                <table class="table card-table table-vcenter table-striped text-nowrap">
-                    <tbody>
-                        <tr>
-                            <td class="w-50 text-end">{{ 'Order'|trans }}</td>
-                            <td>#{{ order.id }} ({{ order.service_type }})</td>
-                        </tr>
-                        <tr>
-                            <td class="text-end">{{ 'Client'|trans }}</td>
-                            <td><a href='{{ "client/manage/#{order.client.id}"|url }}'>{{ order.client.first_name }} {{ order.client.last_name }}</a></td>
-                        </tr>
-                        <tr>
-                            <td class="text-end">{{ 'Title'|trans }}</td>
-                            <td><a href='{{ "product/manage/#{order.product_id}"|url }}'><strong>{{ order.title }}</strong></a></td>
-                        </tr>
-                        <tr>
-                            <td class="text-end">{{ 'Payment Amount'|trans }}</td>
-                            <td>{{ order.total|format_currency(order.currency ?? default_currency) }} {% if order.period %}{{ order.period|period_title }}{% endif %}{% if order.quantity > 1 %}({{ order.quantity }} x {{ order.price|format_currency(order.currency ?? default_currency) }}){% endif %}</td>
-                        </tr>
-                        {% if order.discount and order.discount > 0%}
-                        <tr>
-                            <td class="text-end">{{ 'Order Discount'|trans }}</td>
-                            <td>-{{ order.discount|format_currency(order.currency ?? default_currency) }} </td>
-                        </tr>
-                        <tr>
-                            <td class="text-end">{{ 'Payment Amount After Discount'|trans }}</td>
-                            <td>{{ (order.total - order.discount)|format_currency(order.currency ?? default_currency)}} </td>
-                        </tr>
-                        {% endif %}
-                        <tr>
-                            <td class="text-end">{{ 'Order Status'|trans }}</td>
-                            <td>{{ mf.status_badge(order.status, 'order') }}</td>
-                        </tr>
-                        {% if order.notes %}
-                        <tr>
-                            <td class="text-end">{{ 'Order Notes'|trans }}</td>
-                            <td>
-                                <svg class="icon">
-                                    <use xlink:href="#support" />
-                                </svg>
-                                <a>{{ order.notes }}</a>
-                            </td>
-                        </tr>
-                        {% endif %}
-                        <tr>
-                            <td class="text-end">{{ 'Order Date'|trans }}</td>
-                            <td>{{ order.created_at|format_date }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-end">{{ 'Activation Date'|trans }}</td>
-                            <td>{% if order.activated_at %}{{ order.activated_at|format_date }} ({{ order.activated_at|timeago }} {{ 'ago'|trans }}){% else %}-{% endif %}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-end">{{ 'Renewal Date'|trans }}</td>
-                            <td>{% if order.expires_at %}{{ order.expires_at|format_date }} ({{ order.expires_at|daysleft }} {{ 'day(s)'|trans }}){% else %}-{% endif %}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-end">{{ 'Order Group ID'|trans }}</td>
-                            <td>{{ order.group_id|default('-') }}</td>
-                        </tr>
-                        {% if order.promo_id %}
-                        <tr>
-                            <td class="text-end">{{ 'Order Promo Code'|trans }}</td>
-                            <td>
-                                {% set promo = admin.product_promo_get({ 'id': order.promo_id }) %}
-                                {{ promo.code }}
-                            </td>
-                        </tr>
-                        {% endif %}
-                        {% if order.active_tickets > 0 %}
-                        <tr>
-                            <td class="text-end">{{ 'Active Support Tickets'|trans }}</td>
-                            <td>
-                                <div class="num">
-                                    <a href="{{ 'support'|url(query: { 'status': 'open', 'order_id': order.id }) }}" class="redNum">{{ order.active_tickets }}</a>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <tbody>
+                                <tr>
+                                    <td class="w-50 text-end">{{ 'Order'|trans }}</td>
+                                    <td>#{{ order.id }} ({{ order.service_type }})</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end">{{ 'Client'|trans }}</td>
+                                    <td><a href='{{ "client/manage/#{order.client.id}"|url }}'>{{ order.client.first_name }} {{ order.client.last_name }}</a></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end">{{ 'Title'|trans }}</td>
+                                    <td><a href='{{ "product/manage/#{order.product_id}"|url }}'><strong>{{ order.title }}</strong></a></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end">{{ 'Payment Amount'|trans }}</td>
+                                    <td>{{ order.total|format_currency(order.currency ?? default_currency) }} {% if order.period %}{{ order.period|period_title }}{% endif %}{% if order.quantity > 1 %}({{ order.quantity }} x {{ order.price|format_currency(order.currency ?? default_currency) }}){% endif %}</td>
+                                </tr>
+                                {% if order.discount and order.discount > 0%}
+                                <tr>
+                                    <td class="text-end">{{ 'Order Discount'|trans }}</td>
+                                    <td>-{{ order.discount|format_currency(order.currency ?? default_currency) }} </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end">{{ 'Payment Amount After Discount'|trans }}</td>
+                                    <td>{{ (order.total - order.discount)|format_currency(order.currency ?? default_currency)}} </td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <td class="text-end">{{ 'Order Status'|trans }}</td>
+                                    <td>{{ mf.status_badge(order.status, 'order') }}</td>
+                                </tr>
+                                {% if order.notes %}
+                                <tr>
+                                    <td class="text-end">{{ 'Order Notes'|trans }}</td>
+                                    <td>
+                                        <svg class="icon">
+                                            <use xlink:href="#support" />
+                                        </svg>
+                                        <a>{{ order.notes }}</a>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <td class="text-end">{{ 'Order Date'|trans }}</td>
+                                    <td>{{ order.created_at|format_date }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end">{{ 'Activation Date'|trans }}</td>
+                                    <td>{% if order.activated_at %}{{ order.activated_at|format_date }} ({{ order.activated_at|timeago }} {{ 'ago'|trans }}){% else %}-{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end">{{ 'Renewal Date'|trans }}</td>
+                                    <td>{% if order.expires_at %}{{ order.expires_at|format_date }} ({{ order.expires_at|daysleft }} {{ 'day(s)'|trans }}){% else %}-{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end">{{ 'Order Group ID'|trans }}</td>
+                                    <td>{{ order.group_id|default('-') }}</td>
+                                </tr>
+                                {% if order.promo_id %}
+                                <tr>
+                                    <td class="text-end">{{ 'Order Promo Code'|trans }}</td>
+                                    <td>
+                                        {% set promo = admin.product_promo_get({ 'id': order.promo_id }) %}
+                                        {{ promo.code }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% if order.active_tickets > 0 %}
+                                <tr>
+                                    <td class="text-end">{{ 'Active Support Tickets'|trans }}</td>
+                                    <td>
+                                        <div class="num">
+                                            <a href="{{ 'support'|url(query: { 'status': 'open', 'order_id': order.id }) }}" class="redNum">{{ order.active_tickets }}</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
 
-            <div class="card-footer text-center">
-                {% set order_actions %}
+                    <div class="card-footer text-center">
+                        {% set order_actions %}
                     {% if order.status == 'pending_setup' or order.status == 'failed_setup' %}
                     <a class="btn btn-primary"
                         {{ fb_api_link({href: 'order/activate'|api_url(query: {id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
@@ -224,7 +231,7 @@
                     </a>
                     {% endif %}
 
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
                         <svg class="icon" width="24" height="24">
                             <use xlink:href="#delete" />
                         </svg>
@@ -242,8 +249,10 @@
                     {% endif %}
                 {% endset %}
 
-                <div class="btn-list justify-content-center">
-                    {{ order_actions }}
+                        <div class="btn-list justify-content-center">
+                            {{ order_actions }}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -265,7 +274,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
-                            <button type="submit" class="btn btn-primary">{{ 'Delete'|trans }}</button>
+                            <button type="submit" class="btn btn-danger">{{ 'Delete'|trans }}</button>
                         </div>
                     </form>
                 </div>
@@ -389,33 +398,39 @@
                             </div>
 
                             <input type="hidden" name="id" value="{{ order.id }}">
-                            <div class="row g-3">
+                            <div class="d-flex flex-column gap-2">
                                 {% for key, config in order.config %}
-                                    <div class="col-12">
-                                        <div class="border rounded p-3">
-                                            <label class="form-label fw-semibold d-block mb-3">{{ key }}</label>
+                                    <section class="row g-2 align-items-start">
+                                        <div class="col-xl-3">
+                                            <div class="font-monospace text-secondary small text-uppercase pt-1">{{ key }}</div>
+                                        </div>
+                                        <div class="col-xl-9">
                                             {% if config is iterable %}
-                                                <div class="row g-3">
+                                                <div class="d-flex flex-column gap-1">
                                                     {% for key2, config2 in config %}
-                                                        <div class="col-lg-6">
-                                                            <label class="form-label" for="config_{{ key }}_{{ key2 }}">{{ key2 }}</label>
-                                                            <input class="form-control"
-                                                                   id="config_{{ key }}_{{ key2 }}"
-                                                                   type="text"
-                                                                   name="config[{{ key }}][{{ key2 }}]"
-                                                                   value="{{ config2 }}"{% if config2 is null %} placeholder="null"{% endif %}>
+                                                        <div class="row g-2 align-items-center">
+                                                            <div class="col-lg-4">
+                                                                <label class="form-label font-monospace text-muted small mb-0" for="config_{{ key }}_{{ key2 }}">{{ key2 }}</label>
+                                                            </div>
+                                                            <div class="col-lg-8">
+                                                                <input class="form-control form-control-sm"
+                                                                       id="config_{{ key }}_{{ key2 }}"
+                                                                       type="text"
+                                                                       name="config[{{ key }}][{{ key2 }}]"
+                                                                       value="{{ config2 }}"{% if config2 is null %} placeholder="null"{% endif %}>
+                                                            </div>
                                                         </div>
                                                     {% endfor %}
                                                 </div>
                                             {% else %}
-                                                <input class="form-control"
+                                                <input class="form-control form-control-sm"
                                                        id="config_{{ key }}"
                                                        type="text"
                                                        name="config[{{ key }}]"
                                                        value="{{ config }}"{% if config is null %} placeholder="null"{% endif %}>
                                             {% endif %}
                                         </div>
-                                    </div>
+                                    </section>
                                 {% endfor %}
                             </div>
                         </div>
@@ -428,8 +443,9 @@
         </div>
 
         <div class="tab-pane fade" id="tab-addons" role="tabpanel">
-            <div class="card-body pb-0">
-                <h5>{{ 'Addons You Have Ordered With This Service'|trans }}</h5>
+            <div class="card-body pb-3">
+                <h3 class="card-title mb-1">{{ 'Order Addons'|trans }}</h3>
+                <p class="text-secondary mb-0">{{ 'Review additional products and services attached to this order and open them directly when needed.'|trans }}</p>
             </div>
             <div class="table-responsive">
                 <table class="table card-table table-vcenter table-striped text-nowrap">
@@ -477,8 +493,9 @@
         </div>
 
         <div class="tab-pane fade" id="tab-invoices" role="tabpanel">
-            <div class="card-body pb-0">
-                <h5>{{ 'Order Invoices'|trans }}</h5>
+            <div class="card-body pb-3">
+                <h3 class="card-title mb-1">{{ 'Order Invoices'|trans }}</h3>
+                <p class="text-secondary mb-0">{{ 'Review invoices generated for this order and open any invoice details directly from here.'|trans }}</p>
             </div>
             <div class="table-responsive">
                 <table class="table card-table table-vcenter table-striped text-nowrap">
@@ -511,7 +528,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
+                            <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -520,8 +537,9 @@
         </div>
 
         <div class="tab-pane fade" id="tab-status" role="tabpanel">
-            <div class="card-body">
-                <h5>{{ 'Order Status History'|trans }}</h5>
+            <div class="card-body pb-3">
+                <h3 class="card-title mb-1">{{ 'Order History'|trans }}</h3>
+                <p class="text-secondary mb-0">{{ 'Track status changes and internal notes recorded against this order over time.'|trans }}</p>
             </div>
             <div class="table-responsive">
                 <table class="table card-table table-vcenter table-striped text-nowrap">
@@ -565,8 +583,9 @@
         </div>
 
         <div class="tab-pane fade" id="tab-support" role="tabpanel">
-            <div class="card-body pb-0">
-                <h5>{{ 'Support Tickets Regarding This Order'|trans }}</h5>
+            <div class="card-body pb-3">
+                <h3 class="card-title mb-1">{{ 'Order Support Tickets'|trans }}</h3>
+                <p class="text-secondary mb-0">{{ 'Review support conversations linked to this order and open the relevant ticket details.'|trans }}</p>
             </div>
             <div class="table-responsive">
                 <table class="table card-table table-vcenter table-striped text-nowrap">
