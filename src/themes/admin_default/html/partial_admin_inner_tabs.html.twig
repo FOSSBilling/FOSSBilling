@@ -1,0 +1,15 @@
+{% set _inner_tabs_fallback %}{% block inner_tabs %}{% endblock %}{% endset %}
+{% set inner_tabs = block('inner_tabs')|trim %}
+{% set _inner_tab_content_fallback %}{% block inner_tab_content %}{% endblock %}{% endset %}
+{% set inner_tab_content = block('inner_tab_content')|trim %}
+
+<div class="card border-0 shadow-none rounded-0{% if card_class|default('') %} {{ card_class }}{% endif %}">
+    <div class="card-header bg-transparent px-0 pt-0 pb-3 border-0{% if header_class|default('') %} {{ header_class }}{% endif %}">
+        <ul class="nav nav-pills card-header-pills" role="tablist"{% if nav_id|default('') %} id="{{ nav_id }}"{% endif %}>
+            {{ inner_tabs|raw }}
+        </ul>
+    </div>
+    <div class="tab-content border-top{% if tab_content_class|default('') %} {{ tab_content_class }}{% endif %}">
+        {{ inner_tab_content|raw }}
+    </div>
+</div>

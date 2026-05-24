@@ -133,7 +133,10 @@
             </div>
             <div class="modal-body">
                 <section>
-                    <h6 class="text-uppercase text-secondary fw-semibold mb-3">{{ 'Notification Note'|trans }}</h6>
+                    <div class="mb-3">
+                        <h5 class="card-title mb-1">{{ 'Notification Note'|trans }}</h5>
+                        <p class="text-secondary mb-0">{{ 'Add a note or todo item to the notification timeline.'|trans }}</p>
+                    </div>
                     <label class="form-label" for="notification-note-message">{{ 'Note'|trans }}</label>
                     <textarea class="form-control" id="notification-note-message" name="message" rows="8" placeholder="{{ 'Add Note or Todo Task'|trans }}" required></textarea>
                 </section>

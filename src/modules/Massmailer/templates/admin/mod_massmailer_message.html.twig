@@ -90,65 +90,64 @@
                 title: 'Email Content'|trans
             } %}
                 {% block form_content %}
-                    <div class="card border-0 shadow-none rounded-0">
-                        <div class="card-header bg-transparent px-0 pt-0 pb-3 border-0">
-                            <ul class="nav nav-pills card-header-pills" id="content-tabs" role="tablist">
-                                <li class="nav-item" role="presentation">
-                                    <a href="#tab-message" class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-message" aria-selected="true"
-                                       role="tab">{{ 'Message'|trans }}</a></li>
-                                <li class="nav-item" role="presentation">
-                                    <a href="#tab-preview" class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-preview" aria-selected="false" role="tab"
-                                       tabindex="-1">
-                                        {{ 'Preview'|trans }}
-                                    </a>
-                                </li>
+                    {% embed 'partial_admin_inner_tabs.html.twig' with { nav_id: 'content-tabs' } %}
+                        {% block inner_tabs %}
+                            <li class="nav-item" role="presentation">
+                                <a href="#tab-message" class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-message" aria-selected="true"
+                                   role="tab">{{ 'Message'|trans }}</a>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <a href="#tab-preview" class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-preview" aria-selected="false" role="tab"
+                                   tabindex="-1">
+                                    {{ 'Preview'|trans }}
+                                </a>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <a href="#tab-recipients" class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-recipients" aria-selected="false" role="tab"
+                                   tabindex="-1" id="recipient-tab">
+                                    {{ 'Recipients'|trans }}
+                                </a>
+                            </li>
+                        {% endblock %}
 
-                                <li class="nav-item" role="presentation">
-                                    <a href="#tab-recipients" class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-recipients" aria-selected="false" role="tab"
-                                       tabindex="-1" id="recipient-tab">
-                                        {{ 'Recipients'|trans }}
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                        <div class="tab-content border-top">
-                        <div class="tab-pane fade show active" id="tab-message" role="tabpanel">
-                            <div class="card-body">
-                                <textarea class="form-control" name="content" cols="5" rows="20"
-                                          placeholder="Email content">{{ msg.content }}</textarea>
-                            </div>
-                        </div>
-                        <div class="tab-pane fade" id="tab-preview" role="tabpanel">
-                            <div class="p-4" id="preview-banner">
-                                <h5 class="card-title mb-1">{{ 'Preview'|trans }}</h5>
-                                <p class="text-secondary mb-0">{{ 'Click'|trans }} <strong>{{ 'Update and Preview'|trans }}</strong> {{ 'to render the current message content and subject.'|trans }}</p>
-                            </div>
-                            <div class="d-none" id="preview">
-                                <div class="card-body border-bottom">
-                                    <h5 class="card-title mb-1" id="preview-title"></h5>
-                                    <p class="text-secondary mb-0">{{ 'Rendered message body using the current template and recipient filter context.'|trans }}</p>
-                                </div>
-                                <div class="card-body" id="preview-content"></div>
-                            </div>
-                        </div>
-                        <div class="tab-pane fade" id="tab-recipients" role="tabpanel">
-                            <div class="p-4" id="recipients-banner">
-                                <h5 class="card-title mb-1">{{ 'Recipients'|trans }}</h5>
-                                <p class="text-secondary mb-0">{{ 'Click'|trans }} <strong>{{ 'Update and Preview'|trans }}</strong> {{ 'to preview which clients match the current filters.'|trans }}</p>
-                            </div>
-                            <div class="d-none" id="recipients">
-                                <div class="card-body border-bottom">
-                                    <h5 class="card-title mb-1">{{ 'Message Recipients'|trans }}</h5>
-                                    <p class="text-secondary mb-0">{{ 'These clients currently match the selected audience filters.'|trans }}</p>
-                                </div>
+                        {% block inner_tab_content %}
+                            <div class="tab-pane fade show active" id="tab-message" role="tabpanel">
                                 <div class="card-body">
-                                    <ul class="list-group" id="recipient-list" style="max-height: 1000px; overflow-y: auto;">
-                                    </ul>
+                                    <textarea class="form-control" name="content" cols="5" rows="20"
+                                              placeholder="Email content">{{ msg.content }}</textarea>
                                 </div>
                             </div>
-                        </div>
-                        </div>
-                    </div>
+                            <div class="tab-pane fade" id="tab-preview" role="tabpanel">
+                                <div class="p-4" id="preview-banner">
+                                    <h5 class="card-title mb-1">{{ 'Preview'|trans }}</h5>
+                                    <p class="text-secondary mb-0">{{ 'Click'|trans }} <strong>{{ 'Update and Preview'|trans }}</strong> {{ 'to render the current message content and subject.'|trans }}</p>
+                                </div>
+                                <div class="d-none" id="preview">
+                                    <div class="card-body border-bottom">
+                                        <h5 class="card-title mb-1" id="preview-title"></h5>
+                                        <p class="text-secondary mb-0">{{ 'Rendered message body using the current template and recipient filter context.'|trans }}</p>
+                                    </div>
+                                    <div class="card-body" id="preview-content"></div>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="tab-recipients" role="tabpanel">
+                                <div class="p-4" id="recipients-banner">
+                                    <h5 class="card-title mb-1">{{ 'Recipients'|trans }}</h5>
+                                    <p class="text-secondary mb-0">{{ 'Click'|trans }} <strong>{{ 'Update and Preview'|trans }}</strong> {{ 'to preview which clients match the current filters.'|trans }}</p>
+                                </div>
+                                <div class="d-none" id="recipients">
+                                    <div class="card-body border-bottom">
+                                        <h5 class="card-title mb-1">{{ 'Message Recipients'|trans }}</h5>
+                                        <p class="text-secondary mb-0">{{ 'These clients currently match the selected audience filters.'|trans }}</p>
+                                    </div>
+                                    <div class="card-body">
+                                        <ul class="list-group" id="recipient-list" style="max-height: 1000px; overflow-y: auto;">
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endblock %}
+                    {% endembed %}
                 {% endblock %}
 
                 {% block form_actions %}

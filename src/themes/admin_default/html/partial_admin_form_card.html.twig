@@ -1,5 +1,7 @@
 {% set _form_header_actions_fallback %}{% block form_header_actions %}{% endblock %}{% endset %}
 {% set form_header_actions = block('form_header_actions')|trim %}
+{% set _form_content_fallback %}{% block form_content %}{% endblock %}{% endset %}
+{% set form_content = block('form_content')|trim %}
 {% set _form_actions_fallback %}{% block form_actions %}{% endblock %}{% endset %}
 {% set form_actions = block('form_actions')|trim %}
 
@@ -18,8 +20,7 @@
                 </div>
             {% endif %}
         </div>
-
-        {% block form_content %}{% endblock %}
+        {{ form_content|raw }}
     </div>
 
     {% if form_actions %}

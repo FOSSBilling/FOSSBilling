@@ -24,45 +24,48 @@
 {% endblock %}
 
 {% block content %}
-<div class="card">
+<div class="p-3">
     <form method="post" action="{{ 'product/addon_update'|api_url }}" {{ fb_api_form({message: 'Addon Updated'|trans}) }}>
         {% embed 'partial_admin_form_card.html.twig' with {
             title: 'Edit Product Addon'|trans,
-            subtitle: 'Update the addon title, activation timing, availability, and pricing.'|trans,
-            body_class: 'pt-4'
+            subtitle: 'Update the addon title, availability, activation timing, and pricing.'|trans,
+            card_class: 'mb-0'
         } %}
             {% block form_content %}
                 <div class="row g-3">
                     <div class="col-lg-6">
-                        <label class="form-label d-block">{{ 'Status'|trans }}</label>
-                        <div class="d-flex flex-wrap gap-3">
-                            <label class="form-check"><input class="form-check-input" type="radio" id="statusEnabled" name="status" value="enabled"{% if product.status == 'enabled' %} checked{% endif %}><span class="form-check-label">{{ 'Enabled'|trans }}</span></label>
-                            <label class="form-check"><input class="form-check-input" type="radio" id="statusDisabled" name="status" value="disabled"{% if product.status == 'disabled' %} checked{% endif %}><span class="form-check-label">{{ 'Disabled'|trans }}</span></label>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <label class="form-label d-block">{{ 'Activation'|trans }}</label>
-                        <div class="d-flex flex-wrap gap-3">
-                            <label class="form-check"><input class="form-check-input" type="radio" id="setupAfterPlaced" name="setup" value="after_order"{% if product.setup == 'after_order' %} checked{% endif %}><span class="form-check-label">{{ 'After Order is Placed'|trans }}</span></label>
-                            <label class="form-check"><input class="form-check-input" type="radio" id="setupAfterReceived" name="setup" value="after_payment"{% if product.setup == 'after_payment' %} checked{% endif %}><span class="form-check-label">{{ 'After Payment is Received'|trans }}</span></label>
-                            <label class="form-check"><input class="form-check-input" type="radio" id="setupManual" name="setup" value="manual"{% if product.setup == 'manual' %} checked{% endif %}><span class="form-check-label">{{ 'Manual Activation'|trans }}</span></label>
-                        </div>
+                        <label class="form-label">{{ 'Title'|trans }}</label>
+                        <input class="form-control" type="text" name="title" value="{{ product.title }}" required>
                     </div>
                     <div class="col-lg-6">
                         <label class="form-label">{{ 'Icon'|trans }}</label>
                         <input class="form-control" type="text" name="icon_url" value="{{ product.icon_url }}">
                     </div>
                     <div class="col-lg-6">
-                        <label class="form-label">{{ 'Title'|trans }}</label>
-                        <input class="form-control" type="text" name="title" value="{{ product.title }}" required>
+                        <label class="form-label">{{ 'Status'|trans }}</label>
+                        <select class="form-select" name="status">
+                            <option value="enabled"{% if product.status == 'enabled' %} selected{% endif %}>{{ 'Enabled'|trans }}</option>
+                            <option value="disabled"{% if product.status == 'disabled' %} selected{% endif %}>{{ 'Disabled'|trans }}</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Activation'|trans }}</label>
+                        <select class="form-select" name="setup">
+                            <option value="after_order"{% if product.setup == 'after_order' %} selected{% endif %}>{{ 'After Order is Placed'|trans }}</option>
+                            <option value="after_payment"{% if product.setup == 'after_payment' %} selected{% endif %}>{{ 'After Payment is Received'|trans }}</option>
+                            <option value="manual"{% if product.setup == 'manual' %} selected{% endif %}>{{ 'Manual Activation'|trans }}</option>
+                        </select>
                     </div>
                     <div class="col-12">
                         <label class="form-label">{{ 'Description'|trans }}</label>
+                        <div class="form-text mb-2">{{ 'Describe what this addon provides on the order page and in client-facing product details.'|trans }}</div>
                         <textarea class="form-control" name="description" rows="5">{{ product.description }}</textarea>
                     </div>
                 </div>
 
-                {{ include('partial_pricing.html.twig', { 'product': product }) }}
+                <div class="mt-4">
+                    {{ include('partial_pricing.html.twig', { 'product': product }) }}
+                </div>
                 <input type="hidden" name="id" value="{{ product.id }}">
             {% endblock %}
 

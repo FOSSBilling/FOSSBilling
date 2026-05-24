@@ -149,7 +149,10 @@
         </div>
         <div class="card-body">
             <section class="mb-4 pb-4 border-bottom">
-                <h6 class="text-uppercase text-secondary fw-semibold mb-3">{{ 'Add Field Type'|trans }}</h6>
+                <div class="mb-3">
+                    <h5 class="card-title mb-1">{{ 'Add Field Type'|trans }}</h5>
+                    <p class="text-secondary mb-0">{{ 'Choose a field type to add it to this form and configure it further.'|trans }}</p>
+                </div>
                 <div class="d-flex gap-2 flex-wrap" id="fields">
                     <a class="btn btn-outline-primary" href="{{ 'formbuilder/add_field'|api_url(query: {'form_id': form.id, 'type': 'text' }) }}" {{ fb_api_link({reload: true}) }}>
                         <svg class="icon">
