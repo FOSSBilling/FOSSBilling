@@ -143,7 +143,7 @@ class Service
             [$slug, $id]
         )->fetchOne();
         if ($exists) {
-            exit(json_encode(['result' => null, 'error' => ['message' => 'You need to set unique slug.', 'code' => 9999]]));
+            throw new \FOSSBilling\Exception('You need to set unique slug.', 9999);
         }
         $this->di['dbal']->executeStatement(
             'UPDATE custom_pages SET title = ?, description = ?, keywords = ?, content = ?, slug = ? WHERE id = ?',
