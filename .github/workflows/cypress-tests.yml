@@ -1,0 +1,66 @@
+name: Cypress Tests
+
+on:
+  workflow_call:
+    inputs:
+      cypress-project-id:
+        required: false
+        type: string
+        default: ''
+    secrets:
+      CYPRESS_RECORD_KEY:
+        required: false
+
+jobs:
+  cypress-tests:
+    name: 'Cypress Tests'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CYPRESS_RECORDING_DISABLED: ${{ secrets.CYPRESS_RECORD_KEY == '' }}
+    steps:
+      - name: 'Checkout Repository'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: 'Lowercase github.repository'
+        run: |
+          echo "IMAGE_NAME=${GITHUB_REPOSITORY@L}" >> "${GITHUB_ENV}"
+
+      - name: 'Set up Docker Compose'
+        uses: docker/setup-compose-action@8cccb8c14b6500aaffebff1aa49c502c34d2e5e6 # v2.1.0
+
+      - name: 'Set up Docker Buildx'
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4
+
+      # This job runs checked-out Cypress code, so it only reads the registry cache.
+      - name: 'Build Docker Test Image'
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7
+        with:
+          build-args: |
+            PHP_VERSION=8.5
+            INSTALL_TRANSLATIONS=false
+          cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}-build-cache:cache-ci-8.5
+          context: .
+          load: true
+          tags: |
+            fossbilling:cypress-test
+          target: test
+
+      - name: 'Run Cypress Tests'
+        env:
+          CYPRESS_PROJECT_ID: ${{ inputs.cypress-project-id }}
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+        run: bash ./.github/scripts/run-docker-cypress-tests.sh fossbilling:cypress-test
+
+      - name: 'Upload Cypress Artifacts'
+        if: ${{ failure() && env.CYPRESS_RECORDING_DISABLED == 'true' }}
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
+        with:
+          name: cypress-artifacts
+          if-no-files-found: ignore
+          path: |
+            tests/e2e/cypress/screenshots
+            tests/e2e/cypress/videos
+            tests/e2e/cypress/downloads

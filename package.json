@@ -7,7 +7,10 @@
     "build": "npm run build-themes",
     "build-themes": "npm run build-admin_default && npm run build -w huraga",
     "build-huraga": "npm run build -w huraga",
-    "build-admin_default": "npm run build -w admin_default"
+    "build-admin_default": "npm run build -w admin_default",
+    "cy:open": "npm exec --yes cypress@15.15.0 -- open",
+    "cy:run": "npm exec --yes cypress@15.15.0 -- run",
+    "cy:run:record": "npm exec --yes cypress@15.15.0 -- run --record"
   },
   "repository": {
     "type": "git",

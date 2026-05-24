@@ -6,6 +6,7 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/../.." && pwd)"
 compose_file="${repo_root}/.github/docker/live-tests.compose.yml"
 project="fossbilling-live-${GITHUB_RUN_ID:-local}-$$"
+app_url="http://fossbilling-app/"
 
 db_name="fossbilling"
 db_user="root"
@@ -84,7 +85,7 @@ compose exec -T app curl -fsS "${install_payload[@]}" >/dev/null
 
 compose run --rm --no-deps \
   --env APP_ENV=test \
-  --env APP_URL="http://app/" \
+  --env APP_URL="${app_url}" \
   --env TEST_API_KEY="${test_api_key}" \
   app \
   sh -euxc "
