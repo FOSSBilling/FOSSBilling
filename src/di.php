@@ -82,7 +82,7 @@ $di['crypt'] = function () use ($di) {
  */
 $di['pdo'] = function () {
     $debugConfig = Config::getProperty('debug_and_monitoring', []);
-    $dbConfig = Config::getProperty('db');
+    $dbConfig = DriverManagerFactory::getDatabaseConfig();
     $driverOptions = [
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ];
