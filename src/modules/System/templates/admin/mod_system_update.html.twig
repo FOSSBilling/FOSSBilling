@@ -6,76 +6,141 @@
 
 {% block content %}
     {% set update_info = admin.system_update_info %}
-    <div class="card">
-        <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'Update FOSSBilling'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Review release notes, check for updates, and apply available platform updates.'|trans }}</p>
+    {% set isPreviewBranch = update_info['branch'] == 'preview' %}
+    {% set updateAvailable = admin.system_update_available %}
+    {% set canInstallUpdate = updateAvailable or isPreviewBranch %}
+    {% set behindOnPatches = admin.system_is_behind_on_patches %}
+    {% set updateType = update_info['update_type']|default(0) + 0 %}
+    {% if isPreviewBranch %}
+        {% set updateButtonLabel = 'Install Latest Preview Build'|trans %}
+        {% set updateButtonClass = 'btn-warning' %}
+        {% set updateConfirmTitle = 'Install latest preview build?'|trans %}
+        {% set updateModalType = 'danger' %}
+        {% set updateModalContent = 'Preview builds may contain unreleased changes, regressions, or incomplete migrations. Back up your files and database, and avoid using this on production installations unless you are prepared to troubleshoot issues.'|trans %}
+        {% set updateModalButton = 'Install Preview Build'|trans %}
+    {% else %}
+        {% set updateButtonLabel = 'Update FOSSBilling'|trans %}
+        {% set updateButtonClass = 'btn-primary' %}
+        {% set updateConfirmTitle = 'Are you sure?'|trans %}
+        {% set updateModalType = 'confirm' %}
+        {% set updateModalContent = 'This will download and install the latest available FOSSBilling release.'|trans %}
+        {% set updateModalButton = 'Update FOSSBilling'|trans %}
+    {% endif %}
+    <div class="row row-cards">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 w-100">
+                        <div>
+                            <h3 class="card-title">{{ 'FOSSBilling Updates'|trans }}</h3>
+                            <p class="card-subtitle">{{ isPreviewBranch ? 'Install preview builds and review update status.'|trans : 'Review release notes, check for updates, and apply available platform updates.'|trans }}</p>
+                        </div>
+                        {% if isPreviewBranch %}
+                            <span class="badge text-bg-warning">{{ 'Preview branch'|trans }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if canInstallUpdate %}
+                        {% if isPreviewBranch %}
+                            <h4 class="mb-2">{{ 'Preview Build Updates'|trans }}</h4>
+                            <div class="alert alert-warning" role="alert">
+                                <strong class="me-1">{{ 'Preview branch active:'|trans }}</strong>{{ 'Preview builds track unreleased development changes and may be unstable. Use them carefully, especially on production installations.'|trans }}
+                            </div>
+                            <p class="text-secondary mb-0">{{ 'Release notes are not available for preview builds.'|trans }}</p>
+                        {% else %}
+                            <h4 class="mb-0">{{ 'Update Release Notes'|trans }} ({{ FOSSBillingVersion }} => {{ update_info['version'] }})</h4>
+                            <p class="text-secondary mb-3">{{ 'Required PHP version:'|trans }} {{ update_info['minimum_php_version'] }}</p>
+                            {% if updateType == 2 %}
+                                <div class="alert alert-danger" role="alert">
+                                    <strong class="me-1">{{ 'Important:'|trans }}</strong>{{ 'This update is considered to be a major update, you should check the release notes for any breaking changes.'|trans }}
+                                </div>
+                            {% endif %}
+                            {% if updateType == 1 %}
+                                <div class="alert alert-warning" role="alert">
+                                    <strong class="me-1">{{ 'Warning:'|trans }}</strong>{{ 'This update is considered to be a minor update, there are low chances of incompatibilities.'|trans }}
+                                </div>
+                            {% endif %}
+                            {{ (update_info['release_notes'] ?? '')|markdown_to_html }}
+                        {% endif %}
+                    {% else %}
+                        <h2 class="card-title">{{ 'There Is No Update Available'|trans }}</h2>
+                        <p>{{ 'You appear to be running the latest version of FOSSBilling, so no action is needed at the moment. If you think this is a mistake, you may use the button below to check again.'|trans }}</p>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex flex-wrap gap-2">
+                        {% if canInstallUpdate %}
+                            <a class="btn {{ updateButtonClass }}" href="{{ 'system/update_core'|api_url }}"
+                                {{ fb_api_link({ modal: {type: updateModalType, title: updateConfirmTitle, content: updateModalContent, button: updateModalButton}, reload: true }) }}>
+                                <svg class="icon">
+                                    <use xlink:href="#download" />
+                                </svg>
+                                {{ updateButtonLabel }}
+                            </a>
+                        {% else %}
+                            <a class="btn btn-secondary disabled" aria-disabled="true">
+                                <svg class="icon">
+                                    <use xlink:href="#download" />
+                                </svg>
+                                {{ updateButtonLabel }}
+                            </a>
+                        {% endif %}
+                        {% if not isPreviewBranch %}
+                            <a class="btn btn-outline-secondary" href="{{ 'system/recheck_update'|api_url }}" {{ fb_api_link({ reload: true }) }}>
+                                <svg class="icon">
+                                    <use xlink:href="#refresh" />
+                                </svg>
+                                {{ 'Check for Updates'|trans }}
+                            </a>
+                        {% endif %}
+                    </div>
+                    {% if not isPreviewBranch %}
+                        <div class="d-flex flex-wrap gap-4 mt-3 text-secondary small">
+                            <div>{{ 'Last update check:'|trans }} {{ update_info['last_check']|format_datetime() }}.</div>
+                            <div>{{ 'Next update check:'|trans }} {{ update_info['next_check']|format_datetime() }}.</div>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
-        <div class="card-body">
-            {% if admin.system_update_available or update_info['branch'] == 'preview' %}
-                {% if update_info['branch'] == 'preview' %}
-                    <h4 class="mb-2">{{ 'Update Release Notes'|trans }}</h4>
-                    <p class="text-secondary mb-3">{{ 'Preview branch updates track the latest development changes. Review them carefully before updating a production instance.'|trans }}</p>
-                {% else %}
-                    <h4 class="mb-0">{{ 'Update Release Notes'|trans }} ({{ FOSSBillingVersion }} => {{ update_info['version'] }})</h4>
-                    <p class="text-secondary mb-3">{{ 'Required PHP version:'|trans }} {{ update_info['minimum_php_version'] }}</p>
-                {% endif %}
-                {% if update_info['update_type'] == 2 %}
-                    <div class="alert alert-danger" role="alert">
-                        <strong class="me-1">{{ 'Important:'|trans }}</strong>{{ 'This update is considered to be a major update, you should check the release notes for any breaking changes.'|trans }}
+
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 w-100">
+                        <div>
+                            <h3 class="card-title">{{ 'Database Patches'|trans }}</h3>
+                            <p class="card-subtitle">{{ 'Keep database structure and settings aligned with the installed FOSSBilling version.'|trans }}</p>
+                        </div>
+                        <span class="badge {{ behindOnPatches ? 'text-bg-warning' : 'text-bg-success' }}">{{ behindOnPatches ? 'Pending'|trans : 'Up to date'|trans }}</span>
                     </div>
-                {% endif %}
-                {% if update_info['update_type'] == 1 %}
-                    <div class="alert alert-warning" role="alert">
-                        <strong class="me-1">{{ 'Warning:'|trans }}</strong>{{ 'This update is considered to be a minor update, there are low chances of incompatibilities.'|trans }}
+                </div>
+                <div class="card-body">
+                    {% if behindOnPatches %}
+                        <div class="alert alert-warning" role="alert">
+                            <strong class="me-1">{{ 'Database patches pending:'|trans }}</strong>{{ 'Apply the pending database patches to keep this installation aligned with the installed FOSSBilling files.'|trans }}
+                        </div>
+                    {% endif %}
+                    <p>{{ 'Database patches are small migrations that update FOSSBilling database tables and settings after the application files change.'|trans }}</p>
+                    <p class="text-secondary mb-0">{{ 'They normally run automatically during updates. Use the manual action here when FOSSBilling reports pending patches or when troubleshooting update issues.'|trans }}</p>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex flex-wrap gap-2">
+                        <a class="btn {{ behindOnPatches ? 'btn-warning' : 'btn-outline-secondary' }}" href="{{ 'system/manual_update'|api_url }}"
+                            {{ fb_api_link({ message: 'Patches Applied and Configuration Updated'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans} }) }}>
+                            <svg class="icon">
+                                <use xlink:href="#cog-play" />
+                            </svg>
+                            {{ 'Apply Patches & Update Configuration'|trans }}
+                        </a>
                     </div>
-                {% endif %}
-                {{ (update_info['release_notes'] ?? '')|markdown_to_html }}
-            {% else %}
-                <h2 class="card-title">{{ 'There Is No Update Available'|trans }}</h2>
-                <p>{{ 'You appear to be running the latest version of FOSSBilling, so no action is needed at the moment. If you think this is a mistake, you may use the button below to check again.'|trans }}</p>
-            {% endif %}
-        </div>
-        <div class="card-footer">
-            <div class="d-flex flex-wrap gap-2">
-                {% if admin.system_update_available or update_info['branch'] == 'preview' %}
-                    <a class="btn btn-primary" href="{{ 'system/update_core'|api_url }}"
-                        {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true }) }}>
-                        <svg class="icon">
-                            <use xlink:href="#download" />
-                        </svg>
-                        {{ 'Update FOSSBilling'|trans }}
-                    </a>
-                {% else %}
-                    <a class="btn btn-secondary disabled" aria-disabled="true">
-                        <svg class="icon">
-                            <use xlink:href="#download" />
-                        </svg>
-                        {{ 'Update FOSSBilling'|trans }}
-                    </a>
-                {% endif %}
-                <a class="btn btn-outline-secondary" href="{{ 'system/recheck_update'|api_url }}" {{ fb_api_link({ reload: true }) }}>
-                    <svg class="icon">
-                        <use xlink:href="#refresh" />
-                    </svg>
-                    {{ 'Check for Updates'|trans }}
-                </a>
-                <a class="btn btn-outline-secondary" href="{{ 'system/manual_update'|api_url }}"
-                    {{ fb_api_link({ message: 'Patches Applied and Configuration Updated'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans} }) }}>
-                    <svg class="icon">
-                        <use xlink:href="#cog-play" />
-                    </svg>
-                    {{ 'Apply Patches & Update Configuration'|trans }}
-                </a>
-            </div>
-            <div class="alert alert-info mt-3 mb-0" role="alert">
-                {{ "Applying patches and updating the configuration should happen automatically. Use the manual action only if you are troubleshooting update issues."|trans }}
-            </div>
-            <div class="d-flex flex-wrap gap-4 mt-3 text-secondary small">
-                <div>{{ 'Last update check:'|trans }} {{ update_info['last_check']|format_datetime() }}.</div>
-                <div>{{ 'Next update check:'|trans }} {{ update_info['next_check']|format_datetime() }}.</div>
+                    {% if behindOnPatches %}
+                        <div class="alert alert-warning mt-3 mb-0" role="alert">
+                            {{ 'Pending database patches were detected. Apply them before troubleshooting other update issues.'|trans }}
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
