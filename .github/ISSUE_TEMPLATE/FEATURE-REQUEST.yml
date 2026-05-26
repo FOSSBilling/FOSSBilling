@@ -1,6 +1,6 @@
 name: Feature Request
 description: Suggest a focused improvement or new capability for FOSSBilling.
-title: ""
+title: "[Feature Request] "
 labels: ["feature request"]
 type: feature
 body:
