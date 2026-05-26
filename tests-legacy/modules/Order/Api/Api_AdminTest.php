@@ -118,6 +118,7 @@ final class Api_AdminTest extends BBTestCase
                 }
 
                 $this->assertSame('invoice', $module);
+
                 throw new FOSSBilling\InformationException('Denied', [], 403);
             });
 

@@ -2,7 +2,7 @@
 
 class BBTestCaseContainer extends Pimple\Container
 {
-    public function __construct(private readonly \Box\Mod\Staff\Service $staffService, array $values = [])
+    public function __construct(private readonly Box\Mod\Staff\Service $staffService, array $values = [])
     {
         parent::__construct($values);
     }
@@ -22,8 +22,9 @@ class BBTestCaseContainer extends Pimple\Container
         return false;
     }
 
-    #[\ReturnTypeWillChange]
-    public function offsetSet($id, $value)
+    #[ReturnTypeWillChange]
+    #[Override]
+    public function offsetSet($id, $value): void
     {
         if ($id === 'mod_service' && is_object($value) && method_exists($value, '__invoke')) {
             $value = $this->protect(function (...$args) use ($value) {
@@ -33,14 +34,14 @@ class BBTestCaseContainer extends Pimple\Container
 
                 try {
                     $resolvedService = $value(...$args);
-                } catch (\Throwable $resolutionError) {
+                } catch (Throwable $resolutionError) {
                 }
 
                 if ($serviceName === 'staff' && !$this->isStaffLikeService($resolvedService)) {
                     return $this->staffService;
                 }
 
-                if ($resolutionError instanceof \Throwable) {
+                if ($resolutionError instanceof Throwable) {
                     throw $resolutionError;
                 }
 
@@ -54,9 +55,9 @@ class BBTestCaseContainer extends Pimple\Container
 
 class BBTestCase extends PHPUnit\Framework\TestCase
 {
-    protected function createStaffServiceMock(): \Box\Mod\Staff\Service
+    protected function createStaffServiceMock(): Box\Mod\Staff\Service
     {
-        $staffService = $this->createMock(\Box\Mod\Staff\Service::class);
+        $staffService = $this->createMock(Box\Mod\Staff\Service::class);
         $staffService->expects($this->any())
             ->method('checkPermissionsAndThrowException');
 
@@ -71,7 +72,7 @@ class BBTestCase extends PHPUnit\Framework\TestCase
         $di['validator'] = (fn (): FOSSBilling\Validate => new FOSSBilling\Validate());
         $di['tools'] = (fn (): FOSSBilling\Tools => new FOSSBilling\Tools());
         $di['mod_service'] = $di->protect(
-            fn (string $service): \Box\Mod\Staff\Service => match (strtolower($service)) {
+            fn (string $service): Box\Mod\Staff\Service => match (strtolower($service)) {
                 'staff' => $staffService,
                 default => throw new Pimple\Exception\UnknownIdentifierException(sprintf('Identifier "%s" is not defined.', $service)),
             }

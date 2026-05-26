@@ -639,7 +639,7 @@ final class AdminTest extends \BBTestCase
             ->willThrowException(new \FOSSBilling\InformationException('denied'));
 
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn ($serviceName) => match (strtolower((string) $serviceName)) {
+        $di['mod_service'] = $di->protect(fn ($serviceName): \PHPUnit\Framework\MockObject\MockObject|false => match (strtolower((string) $serviceName)) {
             'staff' => $staffServiceMock,
             default => false,
         });

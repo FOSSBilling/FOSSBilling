@@ -96,7 +96,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         return $this->_generateForm($invoiceModel);
     }
 
-    public function getAmountInCents(Model_Invoice $invoice)
+    public function getAmountInCents(Model_Invoice $invoice): int
     {
         return $this->getAmountInMinorUnits($invoice);
     }
