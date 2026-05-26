@@ -129,7 +129,7 @@ final class GuestTest extends \BBTestCase
     public function testCountriesReturnsConfiguredAllowList(): void
     {
         $di = new \Pimple\Container();
-        $di['mod'] = $di->protect(fn (string $module) => new class {
+        $di['mod'] = $di->protect(fn (string $module): object => new class {
             public function getConfig(): array
             {
                 return [
@@ -149,7 +149,7 @@ final class GuestTest extends \BBTestCase
     public function testCountriesFallsBackToSymfonyCountriesWhenNotConfigured(): void
     {
         $di = new \Pimple\Container();
-        $di['mod'] = $di->protect(fn (string $module) => new class {
+        $di['mod'] = $di->protect(fn (string $module): object => new class {
             public function getConfig(): array
             {
                 return [];
@@ -166,7 +166,7 @@ final class GuestTest extends \BBTestCase
     public function testCountriesDoesNotExpandInvalidConfigurationToEveryCountry(): void
     {
         $di = new \Pimple\Container();
-        $di['mod'] = $di->protect(fn (string $module) => new class {
+        $di['mod'] = $di->protect(fn (string $module): object => new class {
             public function getConfig(): array
             {
                 return [

@@ -33,7 +33,7 @@ final class Api_GuestTest extends \BBTestCase
 
         $guestApi->setService($service);
 
-        $result = $guestApi->get_pairs([]);
+        $result = $guestApi->get_pairs();
         $this->assertEquals($result, $willReturn);
         $this->assertIsArray($result);
         $this->assertArrayHasKey('EUR', $result);
