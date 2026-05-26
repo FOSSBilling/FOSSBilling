@@ -745,6 +745,10 @@ const API = {
             return;
           }
 
+          if (linkElement.classList.contains('disabled') || linkElement.getAttribute('aria-disabled') === 'true') {
+            return;
+          }
+
           let apiData;
           try {
             apiData = Tools.parseDataAttr(linkElement.dataset.fbApi || '{}');

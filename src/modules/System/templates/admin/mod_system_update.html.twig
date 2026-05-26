@@ -81,9 +81,18 @@
                     {% endif %}
                 </div>
                 <div class="card-footer">
+                    {% if canInstallUpdate %}
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="update-backup-acknowledgement" data-update-backup-acknowledgement>
+                            <label class="form-check-label" for="update-backup-acknowledgement">
+                                {{ 'I have backed up the FOSSBilling files and database.'|trans }}
+                            </label>
+                            <div class="form-text">{{ 'The update button is enabled only after confirming that backups are available.'|trans }}</div>
+                        </div>
+                    {% endif %}
                     <div class="d-flex flex-wrap gap-2">
                         {% if canInstallUpdate %}
-                            <a class="btn {{ updateButtonClass }}" href="{{ 'system/update_core'|api_url }}"
+                            <a class="btn {{ updateButtonClass }} disabled" href="{{ 'system/update_core'|api_url }}" aria-disabled="true" data-update-requires-backup
                                 {{ fb_api_link({
                                     modal: {type: updateModalType, title: updateConfirmTitle, content: updateModalContent, button: updateModalButton},
                                     reload: true,
@@ -93,7 +102,7 @@
                                     loading: {
                                         target: '#update-progress',
                                         button: 'Updating FOSSBilling...'|trans,
-                                        message: 'The update is running and can take several minutes. Keep this tab open and do not retry unless an error is shown.'|trans,
+                                        message: 'The update is running and can take several minutes. Keep this tab open and do not retry unless an error is shown.'|trans
                                     }
                                 }) }}>
                                 <svg class="icon">
@@ -161,7 +170,7 @@
                                 loading: {
                                     target: '#patch-progress',
                                     button: 'Applying patches...'|trans,
-                                    message: 'Database and configuration patches are being applied. Keep this tab open until the request completes.'|trans,
+                                    message: 'Database and configuration patches are being applied. Keep this tab open until the request completes.'|trans
                                 }
                             }) }}>
                             <svg class="icon">
@@ -180,4 +189,26 @@
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const acknowledgement = document.querySelector('[data-update-backup-acknowledgement]');
+        const updateButton = document.querySelector('[data-update-requires-backup]');
+
+        if (!acknowledgement || !updateButton) {
+            return;
+        }
+
+        const updateButtonState = () => {
+            const disabled = !acknowledgement.checked;
+            updateButton.classList.toggle('disabled', disabled);
+            updateButton.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+        };
+
+        acknowledgement.addEventListener('change', updateButtonState);
+        updateButtonState();
+    });
+</script>
 {% endblock %}
