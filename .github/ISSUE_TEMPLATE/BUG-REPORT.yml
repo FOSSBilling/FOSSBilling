@@ -1,116 +1,104 @@
-name: Bug report
-description: Create a report to help us improve FOSSBilling
-title: "[Bug] Enter a short title of the issue you are having here"
-labels: [bug]
+name: Bug Report
+description: Report reproducible behavior that is not working as expected.
+title: "[Bug] "
+labels: ["bug"]
+type: bug
 body:
   - type: markdown
     attributes:
       value: |
-        # Bug reporting
+        Thanks for taking the time to report a bug.
 
-        - Please ensure that there is no existing issue for your bug, and fill out the title before continuing.
-        - **Important: DO NOT include any private/sensitive information such as email addresses, passwords, IP addresses, or hostnames.**
-        - You may find the error log for your installation under the `/data/log` folder. For the most part, we specifically want for the `error.log` file.
-        - Before attaching the error log, please validate that it does not contain any private or sensitive information.
-        
-        ## Instance ID and error reporting
-
-        This guide will ask you for your instance ID. If you do not have error reporting enabled, you may skip this step.
-        If you have error reporting enabled and do not know how to find the instance ID, please refer to the [documentation](https://fossbilling.org/docs/faq/error-reporting#what-is-the-instance-id-and-where-do-i-find-it).
-        
-        ### What not to send when using error reporting
-
-        If you have error reporting enabled and have provided us with the instance ID, please **do not** attach the `error.log` file to this ticket.
-        We have access to an error log that includes more information than the one you have and may gain acceess to it using the instance ID you provide.
-        By not attaching the `error.log` file, you are helping us keep your information private and secure.
-
-        If we require more information that wasn't already collected via error reporting, we will will specifically ask for you to share it with us.
-        Thanks!
-
-  - type: textarea
-    id: describe
+        Before submitting, please search existing issues. If you need help with installation, configuration, or general troubleshooting, use Discord instead. If this may be a security issue, report it privately through the security policy.
+  - type: checkboxes
+    id: preflight
     attributes:
-      label: Describe the bug
-      description: A clear and concise description of what the bug is.
-      placeholder: Tell us what you're facing! Include as much detail as possible.
-    validations:
-      required: true
-
-  - type: textarea
-    id: reproduce
-    attributes:
-      label: How to reproduce
-      description: What steps did you take when the bug occurred? Help us reproduce it!
-      placeholder: |
-        Steps to reproduce the behavior:
-        1. Go to '...'
-        2. Click on '....'
-        3. Scroll down to '....'
-        4. See error
-    validations:
-      required: true
-
-  - type: textarea
-    id: expected
-    attributes:
-      label: Expected behavior
-      description: A clear and concise description of what you expected to happen.
-      placeholder: What is the expected behavior of the action you took? Help us understand!
-    validations:
-      required: true
-
-  - type: textarea
-    id: screenshots
-    attributes:
-      label: Screenshots
-      description: If applicable, add screenshots to help explain your problem.
-      placeholder: Use the "Attach an image or video" button or link your images manually using the Markdown syntax, if you're familiar with it.
-
+      label: Preflight Checklist
+      options:
+        - label: I have searched existing issues and confirmed this has not already been reported.
+          required: true
+        - label: This is not a question, configuration problem, or support request.
+          required: true
+        - label: This is not a security vulnerability.
+          required: true
   - type: input
     id: version
     attributes:
-      label: FOSSBilling version
-      description: Please fill out the version of FOSSBilling you encountered this in.
-      placeholder: x.x.x (the latest stable release) / preview (the latest preview)
+      label: FOSSBilling Version
+      description: Include the exact version. You can usually find it at /api/guest/system/version on your installation.
+      placeholder: "0.7.2"
     validations:
       required: true
-
-  - type: input
-    id: ID
-    attributes:
-      label: FOSSBilling instance ID
-      description: If you have opted in to error reporting, providing your instance ID below allows us to provide better technical support for you.
-      placeholder: XXXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX
-
-  - type: input
-    id: module
-    attributes:
-      label: Module version
-      description: If the bug is related to a module, fill out the version of the module you encountered this in.
-
   - type: dropdown
-    id: device
+    id: area
     attributes:
-      label: Device
-      description: Please select the type of device you encountered the issue in.
-      multiple: true
+      label: Affected Area
+      description: Select the area that best matches the problem.
       options:
-        - Desktop
-        - Smartphone
-
+        - Admin Panel
+        - Client Area
+        - API
+        - Installation or Upgrade
+        - Payments and Invoicing
+        - Email and Notifications
+        - Extension or Module
+        - Documentation
+        - Other
+    validations:
+      required: true
   - type: textarea
-    id: info
+    id: summary
     attributes:
-      label: Information
-      description: Please complete the following information.
+      label: What Happened?
+      description: Describe the bug and the behavior you observed.
+      placeholder: "When I ..., FOSSBilling ..."
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to Reproduce
+      description: Provide exact steps so someone else can reproduce the issue.
       placeholder: |
-        - Device: [e.g. iPhone 6] (only applicable for smartphones)
-        - OS: [e.g. Fedora 37]
-        - Browser [e.g. chrome, safari]
-        - Version [e.g. 22]
-
+        1. Go to ...
+        2. Click ...
+        3. Enter ...
+        4. See ...
+    validations:
+      required: true
   - type: textarea
-    id: additional
+    id: expected
     attributes:
-      label: Additional context
-      description: Add any other context about the problem here.
+      label: Expected Behavior
+      description: Explain what you expected to happen instead.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Provide the details that apply to your installation.
+      value: |
+        - PHP Version:
+        - Database Type and Version:
+        - Web Server:
+        - Browser:
+        - Installation Method:
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs
+      description: Paste relevant log output, error messages, or stack traces. Remove secrets, tokens, passwords, and private customer data first.
+      render: shell
+  - type: textarea
+    id: media
+    attributes:
+      label: Screenshots or Screen Recordings
+      description: Drag and drop screenshots or recordings that show the problem, if applicable.
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Add links, related issues, recent changes, or anything else that may help.
