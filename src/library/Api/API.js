@@ -105,6 +105,12 @@ const Tools = {
       }
     };
 
+    const assertPositiveNumber = (value, key) => {
+      if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+        throw new Error(`data-fb-api.${key} must be a positive number.`);
+      }
+    };
+
     if (Object.prototype.hasOwnProperty.call(data, 'href')) {
       assertString(data.href, 'href');
     }
@@ -126,10 +132,33 @@ const Tools = {
     if (Object.prototype.hasOwnProperty.call(data, 'reload')) {
       assertBoolean(data.reload, 'reload');
     }
+    if (Object.prototype.hasOwnProperty.call(data, 'preventNavigation')) {
+      assertBoolean(data.preventNavigation, 'preventNavigation');
+    }
+    if (Object.prototype.hasOwnProperty.call(data, 'timeoutMs')) {
+      assertPositiveNumber(data.timeoutMs, 'timeoutMs');
+    }
+    if (Object.prototype.hasOwnProperty.call(data, 'timeoutMessage')) {
+      assertString(data.timeoutMessage, 'timeoutMessage');
+    }
     if (Object.prototype.hasOwnProperty.call(data, 'params')) {
       if (typeof data.params !== 'object' || data.params === null || Array.isArray(data.params)) {
         throw new Error('data-fb-api.params must be an object.');
       }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'loading')) {
+      const loading = data.loading;
+      if (typeof loading !== 'object' || loading === null || Array.isArray(loading)) {
+        throw new Error('data-fb-api.loading must be an object.');
+      }
+
+      const loadingStringFields = ['message', 'button', 'target', 'alertClass'];
+      loadingStringFields.forEach((field) => {
+        if (Object.prototype.hasOwnProperty.call(loading, field)) {
+          assertString(loading[field], `loading.${field}`);
+        }
+      });
     }
 
     if (Object.prototype.hasOwnProperty.call(data, 'modal')) {
@@ -305,9 +334,10 @@ const API = {
    * @param {function} [errorHandler] The function to call if the request is unsuccessful.
    * @param {boolean} [enableLoader=true] Enable or disable the usage of a loader. Custom themes simply need to provide one with the spinner-border class.
    * @param {number} [timeoutMs=30000] Timeout duration in milliseconds.
+   * @param {string|null} [timeoutMessage=null] Message to show when the request times out.
    * @documentation https://fossbilling.org/docs/api/javascript
    */
-  makeRequest: function (method, url, params, successHandler, errorHandler, enableLoader = true, timeoutMs = 30000) {
+  makeRequest: function (method, url, params, successHandler, errorHandler, enableLoader = true, timeoutMs = 30000, timeoutMessage = null) {
     let loader = enableLoader ? this._createLoader() : null;
 
     const controller = new AbortController();
@@ -429,7 +459,7 @@ const API = {
         let errorObj;
         if (error.name === 'AbortError') {
           errorObj = {
-            message: 'Request timed out after ' + (timeoutMs / 1000) + ' seconds',
+            message: timeoutMessage || 'Request timed out after ' + (timeoutMs / 1000) + ' seconds',
             code: 'timeout_error'
           };
         } else if (error.name === 'TypeError' && error.message.includes('NetworkError')) {
@@ -611,8 +641,109 @@ const API = {
 
     if (linkElements.length > 0) {
       linkElements.forEach(linkElement => {
+        let requestInProgress = false;
+        let loadingAlert = null;
+        let beforeUnloadHandler = null;
+        let originalHtml = null;
+        let originalAriaBusy = null;
+        let originalAriaDisabled = null;
+        let originallyDisabled = false;
+
+        const getLoadingTarget = (selector) => {
+          if (selector) {
+            try {
+              const target = document.querySelector(selector);
+              if (target) {
+                return target;
+              }
+            } catch (error) {
+              console.warn('Invalid loading target selector:', selector);
+            }
+          }
+
+          return linkElement.closest('.card-footer') || linkElement.parentElement;
+        };
+
+        const setLoadingState = (apiData) => {
+          requestInProgress = true;
+          originalHtml = linkElement.innerHTML;
+          originalAriaBusy = linkElement.getAttribute('aria-busy');
+          originalAriaDisabled = linkElement.getAttribute('aria-disabled');
+          originallyDisabled = linkElement.classList.contains('disabled');
+
+          linkElement.setAttribute('aria-busy', 'true');
+          linkElement.setAttribute('aria-disabled', 'true');
+          linkElement.classList.add('disabled');
+
+          if (apiData.loading?.button) {
+            const spinner = document.createElement('span');
+            spinner.className = 'spinner-border spinner-border-sm me-2';
+            spinner.setAttribute('aria-hidden', 'true');
+
+            linkElement.replaceChildren(spinner, document.createTextNode(apiData.loading.button));
+          }
+
+          if (apiData.loading?.message) {
+            const target = getLoadingTarget(apiData.loading.target);
+            if (target) {
+              loadingAlert = document.createElement('div');
+              loadingAlert.className = apiData.loading.alertClass || 'alert alert-info mt-3 mb-0';
+              loadingAlert.setAttribute('role', 'status');
+              loadingAlert.textContent = apiData.loading.message;
+              target.appendChild(loadingAlert);
+            }
+          }
+
+          if (apiData.preventNavigation) {
+            beforeUnloadHandler = (event) => {
+              event.preventDefault();
+              event.returnValue = '';
+            };
+            window.addEventListener('beforeunload', beforeUnloadHandler);
+          }
+        };
+
+        const resetLoadingState = () => {
+          if (!requestInProgress) {
+            return;
+          }
+
+          requestInProgress = false;
+
+          if (originalHtml !== null) {
+            linkElement.innerHTML = originalHtml;
+          }
+          if (originalAriaBusy === null) {
+            linkElement.removeAttribute('aria-busy');
+          } else {
+            linkElement.setAttribute('aria-busy', originalAriaBusy);
+          }
+          if (originalAriaDisabled === null) {
+            linkElement.removeAttribute('aria-disabled');
+          } else {
+            linkElement.setAttribute('aria-disabled', originalAriaDisabled);
+          }
+          if (!originallyDisabled) {
+            linkElement.classList.remove('disabled');
+          }
+
+          if (loadingAlert) {
+            loadingAlert.remove();
+            loadingAlert = null;
+          }
+
+          if (beforeUnloadHandler) {
+            window.removeEventListener('beforeunload', beforeUnloadHandler);
+            beforeUnloadHandler = null;
+          }
+        };
+
         linkElement.addEventListener('click', function (event) {
           event.preventDefault();
+
+          if (requestInProgress) {
+            return;
+          }
 
           let apiData;
           try {
@@ -629,13 +760,26 @@ const API = {
           }
 
           const handleApiRequest = (method, href, params = {}) => {
+            if (apiData.loading || apiData.preventNavigation) {
+              setLoadingState(apiData);
+            }
+
             const url = apiData.href || href;
             const mergedParams = apiData.params && typeof apiData.params === 'object'
               ? Object.assign({}, apiData.params, params)
               : params;
             API.makeRequest(method, Tools.getBaseURL(url), mergedParams,
-              (result) => API._afterComplete(linkElement, result),
-              (error) => FOSSBilling.message(`${error.message} (${error.code})`, 'error')
+              (result) => {
+                resetLoadingState();
+                API._afterComplete(linkElement, result);
+              },
+              (error) => {
+                resetLoadingState();
+                FOSSBilling.message(`${error.message} (${error.code})`, 'error');
+              },
+              true,
+              apiData.timeoutMs ?? 30000,
+              apiData.timeoutMessage ?? null
             );
           };
 

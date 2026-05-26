@@ -234,6 +234,10 @@ class Admin extends \Api_Abstract
 
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'system_update');
 
+        if (function_exists('set_time_limit')) {
+            set_time_limit(300);
+        }
+
         $new_version = $updater->getLatestVersion();
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminUpdateCore']);
         $updater->performUpdate();
@@ -252,6 +256,10 @@ class Admin extends \Api_Abstract
     public function manual_update(): bool
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'system_update');
+
+        if (function_exists('set_time_limit')) {
+            set_time_limit(180);
+        }
 
         $updater = $this->di['updater'];
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminManualUpdate']);

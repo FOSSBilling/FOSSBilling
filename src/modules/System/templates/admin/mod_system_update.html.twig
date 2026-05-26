@@ -26,9 +26,9 @@
     {% else %}
         {% set updateButtonLabel = 'Update FOSSBilling'|trans %}
         {% set updateButtonClass = 'btn-primary' %}
-        {% set updateConfirmTitle = 'Are you sure?'|trans %}
+        {% set updateConfirmTitle = 'Update FOSSBilling?'|trans %}
         {% set updateModalType = 'confirm' %}
-        {% set updateModalContent = 'This will download and install the latest available FOSSBilling release.'|trans %}
+        {% set updateModalContent = 'Before continuing, back up your FOSSBilling files and database. This will download and install the latest available FOSSBilling release, apply update patches, clear the cache, and log you out of the admin area.'|trans %}
         {% set updateModalButton = 'Update FOSSBilling'|trans %}
     {% endif %}
     <div class="row row-cards">
@@ -84,7 +84,18 @@
                     <div class="d-flex flex-wrap gap-2">
                         {% if canInstallUpdate %}
                             <a class="btn {{ updateButtonClass }}" href="{{ 'system/update_core'|api_url }}"
-                                {{ fb_api_link({ modal: {type: updateModalType, title: updateConfirmTitle, content: updateModalContent, button: updateModalButton}, reload: true }) }}>
+                                {{ fb_api_link({
+                                    modal: {type: updateModalType, title: updateConfirmTitle, content: updateModalContent, button: updateModalButton},
+                                    reload: true,
+                                    timeoutMs: 300000,
+                                    timeoutMessage: 'The update request took longer than expected. The server may still be finishing the update. Wait a minute before refreshing or trying again.'|trans,
+                                    preventNavigation: true,
+                                    loading: {
+                                        target: '#update-progress',
+                                        button: 'Updating FOSSBilling...'|trans,
+                                        message: 'The update is running and can take several minutes. Keep this tab open and do not retry unless an error is shown.'|trans,
+                                    }
+                                }) }}>
                                 <svg class="icon">
                                     <use xlink:href="#download" />
                                 </svg>
@@ -107,6 +118,7 @@
                             </a>
                         {% endif %}
                     </div>
+                    <div id="update-progress"></div>
                     {% if not isPreviewBranch %}
                         <div class="d-flex flex-wrap gap-4 mt-3 text-secondary small">
                             <div>{{ 'Last update check:'|trans }} {{ update_info['last_check']|format_datetime() }}.</div>
@@ -140,13 +152,25 @@
                 <div class="card-footer">
                     <div class="d-flex flex-wrap gap-2">
                         <a class="btn {{ behindOnPatches ? 'btn-warning' : 'btn-outline-secondary' }}" href="{{ 'system/manual_update'|api_url }}"
-                            {{ fb_api_link({ message: 'Patches Applied and Configuration Updated'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans} }) }}>
+                            {{ fb_api_link({
+                                message: 'Patches Applied and Configuration Updated'|trans,
+                                modal: {type: 'confirm', title: 'Are you sure?'|trans},
+                                timeoutMs: 180000,
+                                timeoutMessage: 'Applying patches took longer than expected. The server may still be finishing the patching process. Wait a minute before refreshing or trying again.'|trans,
+                                preventNavigation: true,
+                                loading: {
+                                    target: '#patch-progress',
+                                    button: 'Applying patches...'|trans,
+                                    message: 'Database and configuration patches are being applied. Keep this tab open until the request completes.'|trans,
+                                }
+                            }) }}>
                             <svg class="icon">
                                 <use xlink:href="#cog-play" />
                             </svg>
                             {{ 'Apply Patches & Update Configuration'|trans }}
                         </a>
                     </div>
+                    <div id="patch-progress"></div>
                     {% if behindOnPatches %}
                         <div class="alert alert-warning mt-3 mb-0" role="alert">
                             {{ 'Pending database patches were detected. Apply them before troubleshooting other update issues.'|trans }}
