@@ -8,7 +8,12 @@
     {% set update_info = admin.system_update_info %}
     {% set isPreviewBranch = update_info['branch'] == 'preview' %}
     {% set updateAvailable = admin.system_update_available %}
-    {% set canInstallUpdate = updateAvailable or isPreviewBranch %}
+    {% set updateCandidateAvailable = updateAvailable or isPreviewBranch %}
+    {% set phpVersionSupported = update_info['php_version_supported'] is defined ? update_info['php_version_supported'] : true %}
+    {% set minimumPhpVersion = update_info['minimum_php_version']|default('unknown') %}
+    {% set currentPhpVersion = update_info['current_php_version']|default(constant('PHP_VERSION')) %}
+    {% set previewCompareUrl = 'https://github.com/FOSSBilling/FOSSBilling/compare/' ~ FOSSBillingVersion ~ '...main' %}
+    {% set canInstallUpdate = updateCandidateAvailable and phpVersionSupported %}
     {% set behindOnPatches = admin.system_is_behind_on_patches %}
     {% set updateType = update_info['update_type']|default(0) + 0 %}
     {% if isPreviewBranch %}
@@ -41,16 +46,23 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    {% if canInstallUpdate %}
+                    {% if updateCandidateAvailable %}
+                        {% if not phpVersionSupported %}
+                            <div class="alert alert-danger" role="alert">
+                                <strong class="me-1">{{ 'PHP version not supported:'|trans }}</strong>{{ 'This update requires PHP %required%, but this server is running PHP %current%.'|trans({'%required%': minimumPhpVersion, '%current%': currentPhpVersion}) }}
+                            </div>
+                        {% endif %}
                         {% if isPreviewBranch %}
                             <h4 class="mb-2">{{ 'Preview Build Updates'|trans }}</h4>
                             <div class="alert alert-warning" role="alert">
                                 <strong class="me-1">{{ 'Preview branch active:'|trans }}</strong>{{ 'Preview builds track unreleased development changes and may be unstable. Use them carefully, especially on production installations.'|trans }}
                             </div>
-                            <p class="text-secondary mb-0">{{ 'Release notes are not available for preview builds.'|trans }}</p>
+                            <p class="text-secondary mb-0">
+                                {{ 'Release notes are not available for preview builds.'|trans }}
+                                <a class="ms-1" href="{{ previewCompareUrl }}" target="_blank" rel="noopener noreferrer">{{ 'View GitHub compare'|trans }}</a>
+                            </p>
                         {% else %}
                             <h4 class="mb-0">{{ 'Update Release Notes'|trans }} ({{ FOSSBillingVersion }} => {{ update_info['version'] }})</h4>
-                            <p class="text-secondary mb-3">{{ 'Required PHP version:'|trans }} {{ update_info['minimum_php_version'] }}</p>
                             {% if updateType == 2 %}
                                 <div class="alert alert-danger" role="alert">
                                     <strong class="me-1">{{ 'Important:'|trans }}</strong>{{ 'This update is considered to be a major update, you should check the release notes for any breaking changes.'|trans }}

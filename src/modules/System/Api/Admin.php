@@ -194,7 +194,17 @@ class Admin extends \Api_Abstract
 
         $updater = $this->di['updater'];
 
-        return $updater->getLatestVersionInfo();
+        $info = $updater->getLatestVersionInfo();
+        $requiredPhpVersion = $info['minimum_php_version'] ?? 'unknown';
+        if (!is_string($requiredPhpVersion) || $requiredPhpVersion === '') {
+            $requiredPhpVersion = 'unknown';
+        }
+
+        $info['minimum_php_version'] = $requiredPhpVersion;
+        $info['current_php_version'] = PHP_VERSION;
+        $info['php_version_supported'] = $requiredPhpVersion === 'unknown' || version_compare(PHP_VERSION, $requiredPhpVersion, '>=');
+
+        return $info;
     }
 
     /**

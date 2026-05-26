@@ -361,7 +361,7 @@ class Service
             error_log($e->getMessage());
         }
 
-        // Database patches are local to the installed code and can be pending even when no release update is available.
+        // Check if FOSSBilling is behind on database patches
         try {
             $updater = $this->di['updater'];
             if ($updater->isBehindOnDBPatches()) {
