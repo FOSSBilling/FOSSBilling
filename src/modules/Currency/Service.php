@@ -81,6 +81,7 @@ class Service implements InjectionAwareInterface
                 'display_name' => __trans('Update Currency Rates'),
                 'description' => __trans('Allows the staff member to refresh all currency conversion rates.'),
             ],
+            'manage_settings' => [],
         ];
     }
 
