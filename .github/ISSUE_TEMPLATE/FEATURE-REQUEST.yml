@@ -1,0 +1,74 @@
+name: Feature Request
+description: Suggest a focused improvement or new capability for FOSSBilling.
+title: "[Feature Request] "
+labels: ["feature request"]
+type: feature
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement.
+
+        Please search existing issues first. Clear use cases and tradeoffs make suggestions much easier to evaluate.
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight Checklist
+      options:
+        - label: I have searched existing issues and confirmed this has not already been suggested.
+          required: true
+        - label: This is a product or documentation improvement, not a support request.
+          required: true
+  - type: dropdown
+    id: type
+    attributes:
+      label: Request Type
+      options:
+        - New Feature
+        - Improvement to Existing Behavior
+        - Documentation Improvement
+        - Developer Experience
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected Area
+      options:
+        - Admin Panel
+        - Client Area
+        - API
+        - Installation or Upgrade
+        - Payments and Invoicing
+        - Email and Notifications
+        - Extension or Module
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Use Case
+      description: What are you trying to do, and what currently makes it difficult?
+      placeholder: "I want to ..., but currently ..."
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the behavior, workflow, or documentation change you would like to see.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe any workarounds, existing extensions, or alternative approaches you have considered.
+  - type: textarea
+    id: impact
+    attributes:
+      label: Additional Context
+      description: Add screenshots, examples, related issues, or details about who would benefit from this.
