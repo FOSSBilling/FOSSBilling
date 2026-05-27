@@ -215,7 +215,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $crypt = $this->di['crypt'];
         $salt = Config::getProperty('info.salt');
 
-        $hasUpdatedAt = $this->getDbalConnection()->createSchemaManager()->introspectTable($table)->hasColumn('updated_at');
+        $hasUpdatedAt = $this->getDbalConnection()->createSchemaManager()->introspectTableByUnquotedName($table)->hasColumn('updated_at');
 
         foreach ($rows as $row) {
             $encryptedValue = $row['encrypted_value'] ?? null;
@@ -846,7 +846,7 @@ class UpdatePatcher implements InjectionAwareInterface
     private function patch52(): void
     {
         $schemaManager = $this->getDbalConnection()->createSchemaManager();
-        $columns = array_map(static fn ($column) => $column->getName(), $schemaManager->listTableColumns('email_template'));
+        $columns = array_map(static fn ($column) => $column->getObjectName()->toString(), $schemaManager->introspectTableColumnsByUnquotedName('email_template'));
 
         if (!in_array('is_custom', $columns, true)) {
             $this->executeSql("ALTER TABLE `email_template` ADD COLUMN `is_custom` TINYINT(1) DEFAULT '0' AFTER `enabled`;");
@@ -964,7 +964,7 @@ class UpdatePatcher implements InjectionAwareInterface
     private function patch54(): void
     {
         $schemaManager = $this->getDbalConnection()->createSchemaManager();
-        $indexes = array_map(static fn ($index) => $index->getName(), $schemaManager->listTableIndexes('api_request'));
+        $indexes = array_map(static fn ($index) => $index->getObjectName()->toString(), $schemaManager->introspectTableIndexesByUnquotedName('api_request'));
 
         if (!in_array('api_request_ip_created', $indexes, true)) {
             $this->executeSql('ALTER TABLE `api_request` ADD INDEX `api_request_ip_created` (`ip`, `created_at`);');
@@ -1026,7 +1026,7 @@ class UpdatePatcher implements InjectionAwareInterface
     private function patch56(): void
     {
         $schemaManager = $this->getDbalConnection()->createSchemaManager();
-        $column = $schemaManager->introspectTable('tld')->getColumn('tld');
+        $column = $schemaManager->introspectTableByUnquotedName('tld')->getColumn('tld');
 
         if ($column->getLength() < 64) {
             $this->executeSql('ALTER TABLE `tld` MODIFY `tld` VARCHAR(64) DEFAULT NULL;');
@@ -1270,7 +1270,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch61(): void
     {
-        $table = $this->getDbalConnection()->createSchemaManager()->introspectTable('currency');
+        $table = $this->getDbalConnection()->createSchemaManager()->introspectTableByUnquotedName('currency');
         $columns = [];
 
         if ($table->hasColumn('format')) {
@@ -1297,7 +1297,7 @@ class UpdatePatcher implements InjectionAwareInterface
     private function patch63(): void
     {
         $schemaManager = $this->getDbalConnection()->createSchemaManager();
-        $table = $schemaManager->introspectTable('currency');
+        $table = $schemaManager->introspectTableByUnquotedName('currency');
 
         if ($table->hasColumn('title')) {
             $this->executeSql('ALTER TABLE currency DROP COLUMN title');
