@@ -23,6 +23,7 @@ use Symfony\Component\Uid\Uuid;
 class UpdatePatcher implements InjectionAwareInterface
 {
     private ?\Pimple\Container $di = null;
+    private ?Connection $dbal = null;
     private readonly Filesystem $filesystem;
 
     public function __construct()
@@ -42,6 +43,15 @@ class UpdatePatcher implements InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    private function getDbalConnection(): Connection
+    {
+        if ($this->di instanceof \Pimple\Container && $this->di->offsetExists('dbal')) {
+            return $this->di['dbal'];
+        }
+
+        return $this->dbal ??= DriverManagerFactory::getConnection();
     }
 
     public function availablePatches(): int
@@ -186,7 +196,7 @@ class UpdatePatcher implements InjectionAwareInterface
     private function executeSql(string $sql): void
     {
         try {
-            $this->di['dbal']->executeStatement($sql);
+            $this->getDbalConnection()->executeStatement($sql);
         } catch (\Exception $e) {
             // Log the error and then throw a user-friendly exception to prevent further patches from being applied.
             error_log($e->getMessage());
@@ -197,7 +207,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function migrateEncryptedColumn(string $table, string $idColumn, string $valueColumn, string $where, array $params = []): void
     {
-        $rows = $this->di['dbal']
+        $rows = $this->getDbalConnection()
             ->executeQuery("SELECT {$idColumn} AS id, {$valueColumn} AS encrypted_value FROM {$table} WHERE {$where}", $params)
             ->fetchAllAssociative();
 
@@ -205,7 +215,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $crypt = $this->di['crypt'];
         $salt = Config::getProperty('info.salt');
 
-        $hasUpdatedAt = $this->di['dbal']->createSchemaManager()->introspectTable($table)->hasColumn('updated_at');
+        $hasUpdatedAt = $this->getDbalConnection()->createSchemaManager()->introspectTable($table)->hasColumn('updated_at');
 
         foreach ($rows as $row) {
             $encryptedValue = $row['encrypted_value'] ?? null;
@@ -223,7 +233,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 $updateData['updated_at'] = date('Y-m-d H:i:s');
             }
 
-            $this->di['dbal']->update($table, $updateData, [
+            $this->getDbalConnection()->update($table, $updateData, [
                 $idColumn => $row['id'],
             ]);
         }
@@ -236,7 +246,7 @@ class UpdatePatcher implements InjectionAwareInterface
      */
     private function getPatchLevel(): ?int
     {
-        $query = $this->di['dbal']->createQueryBuilder();
+        $query = $this->getDbalConnection()->createQueryBuilder();
         $query
             ->select('value')
             ->from('setting')
@@ -256,7 +266,7 @@ class UpdatePatcher implements InjectionAwareInterface
      */
     private function setPatchLevel(int $patchLevel): void
     {
-        $query = $this->di['dbal']->createQueryBuilder();
+        $query = $this->getDbalConnection()->createQueryBuilder();
 
         if (is_null($this->getPatchLevel())) {
             $query
@@ -345,14 +355,14 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch25(): void
     {
-        $this->di['dbal']->createQueryBuilder()
+        $this->getDbalConnection()->createQueryBuilder()
             ->update('email_template')
             ->set('content', 'REPLACE(content, :old_filter, :new_filter)')
             ->setParameter('old_filter', '{% filter markdown %}')
             ->setParameter('new_filter', '{% apply markdown_to_html %}')
             ->executeStatement();
 
-        $this->di['dbal']->createQueryBuilder()
+        $this->getDbalConnection()->createQueryBuilder()
             ->update('email_template')
             ->set('content', 'REPLACE(content, :old_endfilter, :new_endfilter)')
             ->setParameter('old_endfilter', '{% endfilter %}')
@@ -363,7 +373,7 @@ class UpdatePatcher implements InjectionAwareInterface
     private function patch26(): void
     {
         // Migration steps from BoxBilling to FOSSBilling - added favicon settings.
-        $this->di['dbal']->createQueryBuilder()
+        $this->getDbalConnection()->createQueryBuilder()
             ->insert('setting')
             ->values([
                 'param' => ':param',
@@ -394,7 +404,7 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         // Patch to remove .html from email templates action code.
         // @see https://github.com/FOSSBilling/FOSSBilling/issues/863
-        $this->di['dbal']->createQueryBuilder()
+        $this->getDbalConnection()->createQueryBuilder()
             ->update('email_template')
             ->set('action_code', 'REPLACE(action_code, :search, :replace)')
             ->setParameter('search', '.html')
@@ -407,14 +417,14 @@ class UpdatePatcher implements InjectionAwareInterface
         // Patch to update email templates to use format_date/format_datetime filters
         // instead of removed bb_date/bb_datetime filters.
         // @see https://github.com/FOSSBilling/FOSSBilling/pull/948
-        $this->di['dbal']->createQueryBuilder()
+        $this->getDbalConnection()->createQueryBuilder()
             ->update('email_template')
             ->set('content', 'REPLACE(content, :search, :replace)')
             ->setParameter('search', 'bb_date')
             ->setParameter('replace', 'format_date')
             ->executeStatement();
 
-        $this->di['dbal']->createQueryBuilder()
+        $this->getDbalConnection()->createQueryBuilder()
             ->update('email_template')
             ->set('content', 'REPLACE(content, :search, :replace)')
             ->setParameter('search', 'bb_datetime')
@@ -590,7 +600,7 @@ class UpdatePatcher implements InjectionAwareInterface
         // @see https://github.com/FOSSBilling/FOSSBilling/pull/2189
         $ext_service = $this->di['mod_service']('extension');
 
-        $query = $this->di['dbal']->createQueryBuilder()
+        $query = $this->getDbalConnection()->createQueryBuilder()
             ->select('param', 'value')
             ->from('setting')
             ->executeQuery();
@@ -694,7 +704,7 @@ class UpdatePatcher implements InjectionAwareInterface
     private function patch48(): void
     {
         $filesystem = new Filesystem();
-        $dbal = $this->di['dbal'];
+        $dbal = $this->getDbalConnection();
 
         $oldUploadsPath = Path::join(PATH_ROOT, 'uploads');
         $newUploadsPath = Path::join(PATH_ROOT, 'data', 'uploads');
@@ -835,7 +845,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch52(): void
     {
-        $schemaManager = $this->di['dbal']->createSchemaManager();
+        $schemaManager = $this->getDbalConnection()->createSchemaManager();
         $columns = array_map(static fn ($column) => $column->getName(), $schemaManager->listTableColumns('email_template'));
 
         if (!in_array('is_custom', $columns, true)) {
@@ -846,11 +856,11 @@ class UpdatePatcher implements InjectionAwareInterface
             $this->executeSql("ALTER TABLE `email_template` ADD COLUMN `is_overridden` TINYINT(1) DEFAULT '0' COMMENT 'Whether subject/content have been customized from file defaults' AFTER `is_custom`;");
         }
 
-        $templates = $this->di['dbal']->executeQuery('SELECT id, action_code, subject, content FROM email_template')->fetchAllAssociative();
+        $templates = $this->getDbalConnection()->executeQuery('SELECT id, action_code, subject, content FROM email_template')->fetchAllAssociative();
         foreach ($templates as $template) {
             $default = $this->getDefaultEmailTemplateData((string) ($template['action_code'] ?? ''));
             if ($default === null) {
-                $this->di['dbal']->executeStatement('UPDATE email_template SET is_custom = :is_custom WHERE id = :id', [
+                $this->getDbalConnection()->executeStatement('UPDATE email_template SET is_custom = :is_custom WHERE id = :id', [
                     'is_custom' => 1,
                     'id' => $template['id'],
                 ]);
@@ -868,7 +878,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 $content = $default['content'];
             }
 
-            $this->di['dbal']->executeStatement('UPDATE email_template SET is_custom = :is_custom, is_overridden = :is_overridden, subject = :subject, content = :content WHERE id = :id', [
+            $this->getDbalConnection()->executeStatement('UPDATE email_template SET is_custom = :is_custom, is_overridden = :is_overridden, subject = :subject, content = :content WHERE id = :id', [
                 'is_custom' => 0,
                 'is_overridden' => $isOverridden ? 1 : 0,
                 'subject' => $subject,
@@ -880,7 +890,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch53(): void
     {
-        $dbal = $this->di['dbal'];
+        $dbal = $this->getDbalConnection();
         $tools = $this->di['tools'];
         $now = date('Y-m-d H:i:s');
 
@@ -953,7 +963,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch54(): void
     {
-        $schemaManager = $this->di['dbal']->createSchemaManager();
+        $schemaManager = $this->getDbalConnection()->createSchemaManager();
         $indexes = array_map(static fn ($index) => $index->getName(), $schemaManager->listTableIndexes('api_request'));
 
         if (!in_array('api_request_ip_created', $indexes, true)) {
@@ -1015,7 +1025,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch56(): void
     {
-        $schemaManager = $this->di['dbal']->createSchemaManager();
+        $schemaManager = $this->getDbalConnection()->createSchemaManager();
         $column = $schemaManager->introspectTable('tld')->getColumn('tld');
 
         if ($column->getLength() < 64) {
@@ -1112,7 +1122,7 @@ class UpdatePatcher implements InjectionAwareInterface
             'mod_support_ticket_staff_reply' => ['2fb0c49c240c05925211f0bd0e90b3de4ceab4287c1c89be6155f0a3d71d7811', '74aea13a2cbe71aee7b8071480fb4b6767d5690589070d1a06721002618ed29f'],
         ];
 
-        $templates = $this->di['dbal']->executeQuery(
+        $templates = $this->getDbalConnection()->executeQuery(
             'SELECT id, action_code, subject, content FROM email_template WHERE is_overridden = 1 AND is_custom = 0'
         )->fetchAllAssociative();
 
@@ -1135,7 +1145,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 continue;
             }
 
-            $this->di['dbal']->executeStatement(
+            $this->getDbalConnection()->executeStatement(
                 'UPDATE email_template SET is_overridden = 0, subject = :subject, content = :content WHERE id = :id',
                 [
                     'subject' => $default['subject'],
@@ -1148,7 +1158,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch58(): void
     {
-        $gateways = $this->di['dbal']->executeQuery(
+        $gateways = $this->getDbalConnection()->executeQuery(
             "SELECT id, config FROM pay_gateway WHERE gateway = 'Custom'"
         )->fetchAllAssociative();
 
@@ -1171,7 +1181,7 @@ class UpdatePatcher implements InjectionAwareInterface
             }
 
             if ($needsSave) {
-                $this->di['dbal']->update('pay_gateway', [
+                $this->getDbalConnection()->update('pay_gateway', [
                     'config' => json_encode($config, JSON_UNESCAPED_SLASHES),
                 ], ['id' => $gateway['id']]);
             }
@@ -1260,7 +1270,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch61(): void
     {
-        $table = $this->di['dbal']->createSchemaManager()->introspectTable('currency');
+        $table = $this->getDbalConnection()->createSchemaManager()->introspectTable('currency');
         $columns = [];
 
         if ($table->hasColumn('format')) {
@@ -1286,7 +1296,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch63(): void
     {
-        $schemaManager = $this->di['dbal']->createSchemaManager();
+        $schemaManager = $this->getDbalConnection()->createSchemaManager();
         $table = $schemaManager->introspectTable('currency');
 
         if ($table->hasColumn('title')) {

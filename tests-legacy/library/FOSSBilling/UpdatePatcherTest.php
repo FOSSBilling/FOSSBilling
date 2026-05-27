@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Doctrine\DBAL\Connection;
 use FOSSBilling\UpdatePatcher;
 use PHPUnit\Framework\Attributes\Group;
 
@@ -16,5 +17,20 @@ final class UpdatePatcherTest extends PHPUnit\Framework\TestCase
         $patcher->setDi($di);
 
         self::assertTrue($di->offsetExists('dbal'));
+    }
+
+    public function testDbalAccessCreatesConnectionWhenLegacyContainerWasInjectedBeforehand(): void
+    {
+        $di = new Pimple\Container();
+        $patcher = new UpdatePatcher();
+
+        $diProperty = new ReflectionProperty(UpdatePatcher::class, 'di');
+        $diProperty->setValue($patcher, $di);
+
+        $method = new ReflectionMethod(UpdatePatcher::class, 'getDbalConnection');
+        $connection = $method->invoke($patcher);
+
+        self::assertInstanceOf(Connection::class, $connection);
+        self::assertFalse($di->offsetExists('dbal'));
     }
 }
