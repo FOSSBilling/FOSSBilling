@@ -92,7 +92,7 @@
                     {% endif %}
                     <div class="d-flex flex-wrap gap-2">
                         {% if canInstallUpdate %}
-                            <a class="btn {{ updateButtonClass }} disabled" href="{{ 'system/update_core'|api_url }}" aria-disabled="true" data-update-requires-backup
+                            <a class="btn {{ updateButtonClass }} disabled" href="#" aria-disabled="true" data-update-requires-backup data-update-href="{{ 'system/update_core'|api_url }}"
                                 {{ fb_api_link({
                                     modal: {type: updateModalType, title: updateConfirmTitle, content: updateModalContent, button: updateModalButton},
                                     reload: true,
@@ -205,6 +205,7 @@
             const disabled = !acknowledgement.checked;
             updateButton.classList.toggle('disabled', disabled);
             updateButton.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+            updateButton.setAttribute('href', disabled ? '#' : (updateButton.dataset.updateHref ?? '#'));
         };
 
         acknowledgement.addEventListener('change', updateButtonState);
