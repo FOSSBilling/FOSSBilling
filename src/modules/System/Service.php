@@ -361,6 +361,25 @@ class Service
             error_log($e->getMessage());
         }
 
+        // Check if FOSSBilling is behind on database patches
+        try {
+            $updater = $this->di['updater'];
+            if ($updater->isBehindOnDBPatches()) {
+                $messages[] = $this->createAdminAlert(
+                    'warning',
+                    __trans('Your FOSSBilling database is behind on database patches. Apply the pending patches to avoid issues.'),
+                    __trans('Database Patches Pending'),
+                    [[
+                        'link' => $this->di['url']->adminLink('system/update'),
+                        'text' => __trans('Apply Patches'),
+                        'type' => 'warning',
+                    ]]
+                );
+            }
+        } catch (\Exception $e) {
+            error_log($e->getMessage());
+        }
+
         if (Environment::isProduction()) {
             $last_exec = $this->getParamValue('last_cron_exec');
             $cronUrl = $this->di['url']->adminLink('extension/settings/cron');

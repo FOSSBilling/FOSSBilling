@@ -194,7 +194,17 @@ class Admin extends \Api_Abstract
 
         $updater = $this->di['updater'];
 
-        return $updater->getLatestVersionInfo();
+        $info = $updater->getLatestVersionInfo();
+        $requiredPhpVersion = $info['minimum_php_version'] ?? 'unknown';
+        if (!is_string($requiredPhpVersion) || $requiredPhpVersion === '') {
+            $requiredPhpVersion = 'unknown';
+        }
+
+        $info['minimum_php_version'] = $requiredPhpVersion;
+        $info['current_php_version'] = PHP_VERSION;
+        $info['php_version_supported'] = $requiredPhpVersion === 'unknown' || version_compare(PHP_VERSION, $requiredPhpVersion, '>=');
+
+        return $info;
     }
 
     /**
@@ -224,6 +234,10 @@ class Admin extends \Api_Abstract
 
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'system_update');
 
+        if (function_exists('set_time_limit')) {
+            set_time_limit(300);
+        }
+
         $new_version = $updater->getLatestVersion();
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminUpdateCore']);
         $updater->performUpdate();
@@ -242,6 +256,10 @@ class Admin extends \Api_Abstract
     public function manual_update(): bool
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'system_update');
+
+        if (function_exists('set_time_limit')) {
+            set_time_limit(180);
+        }
 
         $updater = $this->di['updater'];
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminManualUpdate']);

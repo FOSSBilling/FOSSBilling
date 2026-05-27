@@ -212,6 +212,9 @@ final class ServiceTest extends \BBTestCase
         $updaterMock->expects($this->atLeastOnce())
             ->method('getLatestVersion')
             ->willReturn($latestVersion);
+        $updaterMock->expects($this->atLeastOnce())
+            ->method('isBehindOnDBPatches')
+            ->willReturn(false);
 
         $urlStub = new class {
             public function adminLink(string $path): string
@@ -256,6 +259,9 @@ final class ServiceTest extends \BBTestCase
         $updaterMock->expects($this->atLeastOnce())
             ->method('getLatestVersion')
             ->willReturn($latestVersion);
+        $updaterMock->expects($this->atLeastOnce())
+            ->method('isBehindOnDBPatches')
+            ->willReturn(false);
 
         $urlStub = new class {
             public function adminLink(string $path): string
