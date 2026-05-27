@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Doctrine\DBAL\Connection;
 use FOSSBilling\UpdatePatcher;
 use PHPUnit\Framework\Attributes\Group;
 
@@ -12,23 +13,24 @@ final class UpdatePatcherTest extends PHPUnit\Framework\TestCase
     {
         $di = new Pimple\Container();
 
-        self::assertFalse($di->offsetExists('dbal'));
-
         $patcher = new UpdatePatcher();
         $patcher->setDi($di);
 
         self::assertTrue($di->offsetExists('dbal'));
     }
 
-    public function testSetDiDoesNotOverrideExistingDbalEntry(): void
+    public function testDbalAccessCreatesConnectionWhenLegacyContainerWasInjectedBeforehand(): void
     {
         $di = new Pimple\Container();
-        $sentinel = new stdClass();
-        $di['dbal'] = $sentinel;
-
         $patcher = new UpdatePatcher();
-        $patcher->setDi($di);
 
-        self::assertSame($sentinel, $di['dbal']);
+        $diProperty = new ReflectionProperty(UpdatePatcher::class, 'di');
+        $diProperty->setValue($patcher, $di);
+
+        $method = new ReflectionMethod(UpdatePatcher::class, 'getDbalConnection');
+        $connection = $method->invoke($patcher);
+
+        self::assertInstanceOf(Connection::class, $connection);
+        self::assertFalse($di->offsetExists('dbal'));
     }
 }
