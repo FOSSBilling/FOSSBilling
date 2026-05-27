@@ -11,7 +11,9 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
+use FOSSBilling\Doctrine\DriverManagerFactory;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -30,6 +32,10 @@ class UpdatePatcher implements InjectionAwareInterface
 
     public function setDi(\Pimple\Container $di): void
     {
+        if (!$di->offsetExists('dbal')) {
+            $di['dbal'] = static fn (): Connection => DriverManagerFactory::getConnection();
+        }
+
         $this->di = $di;
     }
 
