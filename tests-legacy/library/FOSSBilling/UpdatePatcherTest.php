@@ -12,9 +12,23 @@ final class UpdatePatcherTest extends PHPUnit\Framework\TestCase
     {
         $di = new Pimple\Container();
 
+        self::assertFalse($di->offsetExists('dbal'));
+
         $patcher = new UpdatePatcher();
         $patcher->setDi($di);
 
         self::assertTrue($di->offsetExists('dbal'));
+    }
+
+    public function testSetDiDoesNotOverrideExistingDbalEntry(): void
+    {
+        $di = new Pimple\Container();
+        $sentinel = new stdClass();
+        $di['dbal'] = $sentinel;
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        self::assertSame($sentinel, $di['dbal']);
     }
 }
