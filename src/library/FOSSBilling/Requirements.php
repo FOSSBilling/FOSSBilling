@@ -35,7 +35,7 @@ class Requirements
         'suggested_extensions' => [
             'mbstring' => 'improved performance',
             'opcache' => 'improved performance',
-            'imagick' => 'improved performance',
+            'imagick' => 'PDF image processing performance',
             'bz2' => 'optional support for bzip2 archives',
             'simplexml' => 'the Plesk integration',
             'xml' => 'the Plesk integration',

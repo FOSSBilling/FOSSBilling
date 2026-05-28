@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\Http\RequestFactory;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 if (version_compare(PHP_VERSION, '8.3.0', '<')) {
@@ -13,7 +13,7 @@ if (version_compare(PHP_VERSION, '8.3.0', '<')) {
 
 require dirname(__DIR__) . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
 
-$request = RequestFactory::createFromGlobals();
+$request = Request::createFromGlobals();
 $installPath = rtrim(dirname((string) $request->server->get('PHP_SELF', '')), '/');
 
 (new RedirectResponse($installPath . '/install.php'))->send();

@@ -186,12 +186,16 @@ function init(): void
     $request = RequestFactory::createFromGlobals();
     RequestFactory::normalizeRoutePath($request);
 
-    // Check config exists, redirecting to installer or throwing an exception if not.
-    if (!$filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::join('install', 'install.php'))) {
+    // Check config exists and is valid, redirecting to installer or throwing an exception if not.
+    $configExists = $filesystem->exists(PATH_CONFIG);
+    $configIsValid = $configExists && Config::isConfigValid();
+    $installerExists = $filesystem->exists(Path::join('install', 'install.php'));
+
+    if (!$configExists && $installerExists) {
         $response = new RedirectResponse($request->getSchemeAndHttpHost() . $request->getBasePath() . '/install/install.php', 307);
         $response->send();
         exit;
-    } elseif (!$filesystem->exists(PATH_CONFIG) && !$filesystem->exists(Path::join('install', 'install.php'))) {
+    } elseif (!$configIsValid) {
         throw new Exception('The FOSSBilling configuration file is empty or invalid.', 3);
     }
 
