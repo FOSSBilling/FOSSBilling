@@ -10,7 +10,7 @@ import {
   removeDirContents,
   sassPlugin,
   sharedLoaders,
-} from '../../../frontend/build/esbuild-helpers.mjs';
+} from '../../../frontend/tools/esbuild-helpers.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
