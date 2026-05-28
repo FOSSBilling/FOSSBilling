@@ -28,7 +28,9 @@ FOSSBilling is a free and open-source billing and client management solution des
   * [dompdf](https://github.com/dompdf/dompdf): PDF generation for invoices and documents
   * [Pimple](https://github.com/silexphp/Pimple): Dependency injection container, see `src/di.php`.
 * **Frontend:** Modern JavaScript and CSS with npm package management. Key dependencies include:
-  * [Tabler.io](https://tabler.io): CSS framework for responsive design, based on [Bootstrap 5](https://getbootstrap.com/)
+  * [Tabler.io](https://tabler.io): CSS framework for the admin theme, based on [Bootstrap 5](https://getbootstrap.com/)
+  * [Bootstrap 5](https://getbootstrap.com/): CSS framework used directly by the Huraga client theme
+  * [CKEditor 5](https://ckeditor.com/ckeditor-5/): Shared rich text editor built into the core public assets
   * [Tom Select](https://tom-select.js.org/): Enhanced select boxes with search and tagging
   * [Autosize](http://www.jacklmoore.com/autosize/): Automatic textarea resizing
   * [Flag Icons](https://flagicons.lipis.dev/): Country flag icon library
@@ -56,6 +58,7 @@ FOSSBilling follows a modular architecture with clear separation of concerns:
   * Module templates are organized in `templates/admin/`, `templates/client/`, and `templates/email/` subdirectories.
 * **Themes:** Located in `src/themes/` for customizing the user interface
 * **Libraries:** Core libraries and third-party integrations in `src/library/`
+* **Public assets:** Located in `src/public/` for public core assets, branding assets, and gateway icons. Generated core browser assets are built into `src/public/assets`.
 * **Configuration:** Environment-specific configurations and dependency injection setup
 
 The application uses a modern PHP architecture with dependency injection, event-driven components, and a clean separation between business logic and presentation layers.
@@ -68,9 +71,11 @@ The application uses a modern PHP architecture with dependency injection, event-
   * curl, intl, mbstring, pdo, zlib
 * **Composer** for PHP dependency management
 * **Node.js and npm** for frontend asset management
+  * Docker and DDEV use Node.js 24, and `package.json` requires npm 11 or newer.
 * **MySQL/MariaDB** database server
 
 **Important:** If PHP is not installed or configured on the system, try using `ddev` to manage the development environment and run PHP/Composer commands.
+DDEV is configured with `docroot: src`, Node.js 24, MariaDB 10.11, and `data/uploads` as its upload directory. Its post-start hook installs Composer/npm dependencies and rebuilds frontend assets when needed.
 
 ### Dependencies
 
@@ -88,7 +93,7 @@ npm install
 
 ### Building Frontend Assets
 
-FOSSBilling uses esbuild for fast asset compilation. Build frontend assets for themes and modules:
+FOSSBilling uses esbuild for fast asset compilation. Build core frontend assets and theme assets:
 
 ```bash
 npm run build
@@ -100,7 +105,7 @@ This command builds assets for:
 * `admin_default` theme
 * `huraga` theme
 
-Build scripts are defined in each theme's `package.json` and use `esbuild.mjs` for configuration:
+The core build script is `frontend/esbuild.mjs`. Theme build scripts are defined in each theme's `package.json` and use local `esbuild.mjs` files for configuration:
 
 ```bash
 # Build only themes
@@ -114,14 +119,17 @@ npm run build-huraga
 **Theme Structure:**
 
 * **Core frontend**: Source lives in `frontend/` and builds the browser API wrapper, shared runtime, Markdown CSS, and editor assets into `src/public/assets`
+* **Shared build helpers**: Theme esbuild scripts import common loaders, Sass/PostCSS helpers, asset copying, and PurgeCSS helpers from `frontend/tools/esbuild-helpers.mjs`
 * **admin_default**: Uses `esbuild.mjs` with SVG sprite generation, SCSS compilation, and multiple asset types
 * **huraga**: Uses simplified `esbuild.mjs` for theme JS/CSS bundling
 
 **Development Mode:**
 
 ```bash
-# Watch mode for active development (rebuilds on file changes)
+# Theme development builds
 cd src/themes/admin_default && npm run dev
+
+# Watch mode for active Huraga development
 cd src/themes/huraga && npm run dev
 ```
 
@@ -130,7 +138,7 @@ cd src/themes/huraga && npm run dev
 **PHPUnit Tests:** Run the PHP test suite using PHPUnit:
 
 ```bash
-./src/vendor/bin/phpunit
+composer test
 ```
 
 The project has two test suites:
@@ -138,24 +146,26 @@ The project has two test suites:
 * **Library Tests:** Located in `tests-legacy/library/` for testing core library functionality
 * **Module Tests:** Located in `tests-legacy/modules/` for testing individual modules
 
+`phpunit.xml.dist` currently runs the legacy PHPUnit suites by default. The `tests/` directory contains newer test and end-to-end test structure, including Cypress tests under `tests/e2e`.
+
 ### Code Quality Tools
 
 **PHP-CS-Fixer:** Format PHP code according to PSR-12 standards:
 
 ```bash
-./src/vendor/bin/php-cs-fixer fix
+composer cs:fix
 ```
 
 **Rector:** Modernize and refactor PHP code automatically:
 
 ```bash
-./src/vendor/bin/rector
+composer rector:fix
 ```
 
 **PHPStan:** Run static analysis to catch potential issues:
 
 ```bash
-./src/vendor/bin/phpstan analyse
+composer phpstan
 ```
 
 ## Development Conventions
@@ -163,7 +173,7 @@ The project has two test suites:
 ### Coding Standards
 
 * **PHP:** Follows [PSR-12](https://www.php-fig.org/psr/psr-12/) coding standard
-  * Use PHP-CS-Fixer to automatically format code: `./vendor/bin/php-cs-fixer fix`
+  * Use PHP-CS-Fixer to automatically format code: `composer cs:fix` or `./src/vendor/bin/php-cs-fixer fix`
   * Static analysis with PHPStan helps catch potential issues
 * **Frontend:** Modern JavaScript (ES6+) and Sass for styling. Avoid jQuery.
 * **Commit Messages:** Follow the project's commit message conventions detailed in `CONTRIBUTING.md`
@@ -180,11 +190,13 @@ src/
 ├── library/                   # Core libraries and third-party integrations
 ├── modules/                   # Application modules (50+ modules)
 ├── themes/                    # UI themes (admin_default, huraga)
+├── public/                    # Public core assets, branding, and gateway icons
 ├── data/                      # Runtime data (cache, logs, uploads)
 ├── install/                   # Installation scripts and assets
 └── vendor/                    # Composer dependencies
 
-tests/                         # Modern test structure
+frontend/                      # Core frontend source and shared build tooling
+tests/                         # Modern and end-to-end test structure
 tests-legacy/                  # Legacy PHPUnit tests
 ```
 
@@ -201,6 +213,8 @@ tests-legacy/                  # Legacy PHPUnit tests
 * Check the available Twig filters and functions in `src/library/FOSSBilling/Twig/Extension/FOSSBillingExtension.php` and `src/library/FOSSBilling/Twig/Extension/LegacyExtension.php`. Use these where applicable.
   * `ApiExtension.php` provides `fb_api`, `fb_api_form`, `fb_api_link` helpers and `|api_url` filter.
   * Twig extensions use PHP 8 attributes (`#[AsTwigFunction]`, `#[AsTwigFilter]`).
+  * Use `|asset_url` for current-theme assets and `|public_asset_url` for shared core public assets in `src/public/assets`.
+  * Use `{{ wysiwyg('.selector') }}` for rich text editors. This loads the shared CKEditor bundle from `src/public/assets/editor`.
 * Global Twig variables include: `app_area` ('admin' or 'client'), `current_theme`, `guest`, `CSRFToken`, `request`, `FOSSBillingVersion`.
 * Email templates are rendered in a sandboxed Twig environment. Use `|markdown_to_html` filter for markdown content. The sandbox restricts available tags/filters - see `EmailPolicy.php` for allowed operations.
 
@@ -216,6 +230,7 @@ tests-legacy/                  # Legacy PHPUnit tests
 * If you need to interact with the API for means other than reading data, use the FOSSBilling API wrapper provided by `frontend/core/api.js` and loaded from `public/assets/js/api.js`. It provides `FOSSBilling.api.admin`, `FOSSBilling.api.client`, and `FOSSBilling.api.guest` namespaces with `get`, `post`, `put`, `delete`, `patch` methods. CSRFToken is automatically appended.
 * For HTML forms that submit to the API, use the `fb_api_form()` Twig function. Example: `<form {{ fb_api_form({message: 'Saved'|trans}) }}>`
 * For links that trigger API calls, use the `fb_api_link()` Twig function. Example: `<a href="..." {{ fb_api_link({modal: {type: 'confirm'}}) }}>`
+* `fb_api_form()` and `fb_api_link()` output `data-fb-api` attributes. The core API bundle automatically binds matching forms and links when it loads.
 * Use the `|api_url` filter to generate API URLs. Example: `{{ 'client/delete'|api_url({id: 1}) }}`
 
 ### Contributing Workflow
@@ -232,6 +247,8 @@ tests-legacy/                  # Legacy PHPUnit tests
 * **`CONTRIBUTING.md`:** Comprehensive contribution guidelines and development workflow
 * **`composer.json`:** PHP dependencies, scripts, and project metadata
 * **`package.json`:** Node.js dependencies, build scripts, and workspace configuration
+* **`frontend/`:** Core frontend source and shared esbuild helper code
+* **`src/public/`:** Public shared assets, default branding, and gateway icons
 * **`phpunit.xml.dist`:** PHPUnit testing configuration
 * **`phpstan.neon`:** PHPStan static analysis configuration
 * **`.php-cs-fixer.dist.php`:** PHP-CS-Fixer coding standards configuration
