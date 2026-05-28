@@ -187,10 +187,11 @@ function init(): void
     RequestFactory::normalizeRoutePath($request);
 
     // Check config exists and is valid, redirecting to installer or throwing an exception if not.
-    $configIsValid = $filesystem->exists(PATH_CONFIG) && Config::isConfigValid();
+    $configExists = $filesystem->exists(PATH_CONFIG);
+    $configIsValid = $configExists && Config::isConfigValid();
     $installerExists = $filesystem->exists(Path::join('install', 'install.php'));
 
-    if (!$configIsValid && $installerExists) {
+    if (!$configExists && $installerExists) {
         $response = new RedirectResponse($request->getSchemeAndHttpHost() . $request->getBasePath() . '/install/install.php', 307);
         $response->send();
         exit;
