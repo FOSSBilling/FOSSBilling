@@ -305,24 +305,24 @@ function _createApiRole (role) {
 
 /**
  * FOSSBilling API wrapper for JavaScript.
- * @documentation https://fossbilling.org/docs/api/javascript
+ * @documentation https://docs.fossbilling.org/extensions-and-development/javascript/
  */
 const API = {
   /**
    * Wrapper for the admin API.
-   * @documentation https://fossbilling.org/docs/api/javascript
+   * @documentation https://docs.fossbilling.org/extensions-and-development/javascript/
    */
   admin: _createApiRole('admin'),
 
   /**
    * Wrapper for the client API.
-   * @documentation https://fossbilling.org/docs/api/javascript
+   * @documentation https://docs.fossbilling.org/extensions-and-development/javascript/
    */
   client: _createApiRole('client'),
 
   /**
    * Wrapper for the guest API.
-   * @documentation https://fossbilling.org/docs/api/javascript
+   * @documentation https://docs.fossbilling.org/extensions-and-development/javascript/
    */
   guest: _createApiRole('guest'),
 
@@ -337,7 +337,7 @@ const API = {
    * @param {boolean} [enableLoader=true] Enable or disable the usage of a loader. Custom themes simply need to provide one with the spinner-border class.
    * @param {number} [timeoutMs=30000] Timeout duration in milliseconds.
    * @param {string|null} [timeoutMessage=null] Message to show when the request times out.
-   * @documentation https://fossbilling.org/docs/api/javascript
+   * @documentation https://docs.fossbilling.org/extensions-and-development/javascript/
    */
   makeRequest: function (method, url, params, successHandler, errorHandler, enableLoader = true, timeoutMs = 30000, timeoutMessage = null) {
     let loader = enableLoader ? this._createLoader() : null;
