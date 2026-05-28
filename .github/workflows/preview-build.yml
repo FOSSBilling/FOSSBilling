@@ -65,7 +65,9 @@ jobs:
 
       - name: 'Create Preview Build Archive'
         id: archive
-        run: tar -cf /tmp/build.tar -C ./release-tree ./
+        run: |
+          rm -f ./release-tree/provenance.json
+          tar -cf /tmp/build.tar -C ./release-tree ./
 
       - name: 'Upload Preview Build Archive'
         id: upload
