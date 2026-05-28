@@ -105,7 +105,16 @@ function hasDatabaseTables(): bool
         $statement = $pdo->query('SHOW TABLES');
 
         return $statement !== false && $statement->fetchColumn() !== false;
-    } catch (Throwable) {
+    } catch (Throwable $e) {
+        if ((bool) Config::getProperty('debug', false)) {
+            error_log(sprintf(
+                'hasDatabaseTables() failed to inspect configured database tables: %s in %s on line %d',
+                $e->getMessage(),
+                $e->getFile(),
+                $e->getLine(),
+            ));
+        }
+
         return true;
     }
 }
