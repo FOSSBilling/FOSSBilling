@@ -120,11 +120,14 @@ jobs:
           cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}:${{ inputs.cache-scope }}
           context: .
           outputs: type=local,dest=./release-tree
+          provenance: false
           target: release-artifact
 
       - name: 'Create Release Tree Archive'
         if: inputs.extract-release-tree && matrix.platform == 'linux/amd64'
-        run: tar -cf /tmp/build.tar -C ./release-tree ./
+        run: |
+          rm -f ./release-tree/provenance.json
+          tar -cf /tmp/build.tar -C ./release-tree ./
 
       - name: 'Upload Release Tree'
         if: inputs.extract-release-tree && matrix.platform == 'linux/amd64'
