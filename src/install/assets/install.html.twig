@@ -14,7 +14,7 @@
     {% else %}
         <h1>Install FOSSBilling</h1>
         <p class="installer-intro">Set up the database connection, create the first admin account, and choose the default billing options.</p>
-    
+
         <progress id="overall-progress" value="0" max="4"></progress>
 
         <hr />
@@ -116,17 +116,17 @@
                     <fieldset>
                         <label for="database_hostname">Database Hostname <span class="red">*</span></label>
                         <input type="text" id="database_hostname" name="database_hostname" value="{{ request.database_hostname|default(database_hostname)|default('localhost') }}" placeholder="localhost, mysql, db.domain.com, 12.34.56.78 ..." required>
-                        <small>Use the database service name in Docker environments, for example <strong>mysql</strong>.</small>
-    
+                        <small>Use the database service name in Docker environments, for example <strong>mariadb</strong>.</small>
+
                         <label for="database_port">Database Port <span class="red">*</span></label>
                         <input type="number" id="database_port" name="database_port" value="{{ request.database_port|default(3306) }}" placeholder="3306" required>
-    
+
                         <label for="database_name">Database Name <span class="red">*</span></label>
                         <input type="text" id="database_name" name="database_name" value="{{ request.database_name|default(database_name) }}" placeholder="fossbilling" required>
-    
+
                         <label for="database_username">Database Username <span class="red">*</span></label>
                         <input type="text" id="database_username" name="database_username" value="{{ request.database_username|default(database_username) }}" placeholder="fossbilling" required>
-    
+
                         <label for="database_password">Database Password <span class="red">*</span></label>
                         <input type="password" id="database_password" name="database_password" value="{{ request.database_password|default(database_password) }}" placeholder="Database password" required>
                     </fieldset>
@@ -136,15 +136,15 @@
                     <summary>Step 4 - Admin Account</summary>
 
                     <p>Create the first admin account. You will use this account to sign in to the admin area.</p>
-    
+
                     <fieldset>
                         {% set minLength = 8 %}
                         <label for="admin_name">Name <span class="red">*</span></label>
                         <input type="text" id="admin_name" name="admin_name" value="{{ request.admin_name|default(admin_name) }}" placeholder="Your name" required>
-    
+
                         <label for="admin_email">Email <span class="red">*</span></label>
                         <input type="email" id="admin_email" name="admin_email" value="{{ request.admin_email|default(admin_email) }}" placeholder="you@yourdomain.com" required>
-    
+
                         <label for="admin_password">Password <span class="red">*</span></label>
                         <input type="password" id="admin_password" name="admin_password" value="{{ request.admin_password|default(admin_password) }}" placeholder="Create a strong password" required minlength="{{ minLength }}">
                         <small>
@@ -163,7 +163,7 @@
                     <summary>Step 5 - Options</summary>
 
                     <p>Choose the primary currency for invoices, orders, and pricing. You can add more currencies later.</p>
-    
+
                     <fieldset>
                         <label for="currency_code">Currency Code <span class="red">*</span></label>
                         <input type="text" id="currency_code" name="currency_code" value="{{ request.currency_code|default(currency_code) }}" required>
@@ -189,7 +189,7 @@
                 </div>
         </form>
         {% endif %}
-        
+
         <!-- Below is the "learn more" modal for error and performance reporting -->
         <dialog id="learn-reporting">
             <article>
