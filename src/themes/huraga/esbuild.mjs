@@ -3,7 +3,6 @@ import { fileURLToPath } from 'url';
 import { dirname, resolve, join } from 'path';
 import { writeFile } from 'fs/promises';
 import {
-  copyAssets,
   ensureDir,
   postprocessCssFile,
   purgeCssFile,
@@ -36,11 +35,9 @@ async function build() {
     const buildDir = resolve(__dirname, 'assets/build');
     const jsDir = join(buildDir, 'js');
     const cssDir = join(buildDir, 'css');
-    const imgDir = join(buildDir, 'img');
 
     await ensureDir(jsDir);
     await ensureDir(cssDir);
-    await ensureDir(imgDir);
 
     await esbuild.build({
       entryPoints: [resolve(__dirname, 'assets/huraga.js')],
@@ -96,9 +93,6 @@ async function build() {
       area: 'client',
     });
 
-    await copyAssets(resolve(__dirname, 'assets/css'), cssDir, { exclude: new Set(['vendor.css']) });
-    await copyAssets(resolve(__dirname, 'assets/img'), imgDir);
-
     const manifest = {
       'build/huraga.js': '/themes/huraga/assets/build/js/huraga.js',
       'build/vendor.css': '/themes/huraga/assets/build/css/vendor.css',
@@ -122,14 +116,9 @@ async function watch() {
   const buildDir = resolve(__dirname, 'assets/build');
   const jsDir = join(buildDir, 'js');
   const cssDir = join(buildDir, 'css');
-  const imgDir = join(buildDir, 'img');
 
   await ensureDir(jsDir);
   await ensureDir(cssDir);
-  await ensureDir(imgDir);
-
-  await copyAssets(resolve(__dirname, 'assets/css'), cssDir, { exclude: new Set(['vendor.css']) });
-  await copyAssets(resolve(__dirname, 'assets/img'), imgDir);
 
   const jsContext = await esbuild.context({
     entryPoints: [resolve(__dirname, 'assets/huraga.js')],

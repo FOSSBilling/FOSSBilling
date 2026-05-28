@@ -1,11 +1,11 @@
 services:
   db:
-    image: mysql:8.4
+    image: mariadb:lts
     environment:
-      MYSQL_DATABASE: ${FOSSBILLING_DB_NAME:-fossbilling}
-      MYSQL_ROOT_PASSWORD: ${FOSSBILLING_DB_PASS:-root}
+      MARIADB_DATABASE: ${FOSSBILLING_DB_NAME:-fossbilling}
+      MARIADB_ROOT_PASSWORD: ${FOSSBILLING_DB_PASS:-root}
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping --host=127.0.0.1 --user=root --password=\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
+      test: ["CMD-SHELL", "mariadb-admin ping --host=127.0.0.1 --user=root --password=\"$${MARIADB_ROOT_PASSWORD}\" --silent"]
       interval: 2s
       timeout: 5s
       retries: 30
