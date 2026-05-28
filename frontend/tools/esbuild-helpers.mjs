@@ -3,7 +3,7 @@ import postcss from 'postcss';
 import * as sass from 'sass';
 import { PurgeCSS } from 'purgecss';
 import { dirname, join, resolve } from 'path';
-import { copyFile, mkdir, readFile, readdir, rm, writeFile } from 'fs/promises';
+import { mkdir, readFile, readdir, rm, writeFile } from 'fs/promises';
 
 export const sharedLoaders = {
   '.svg': 'file',
@@ -44,33 +44,6 @@ export async function removeDirContents(dir) {
     const entries = await readdir(dir, { withFileTypes: true });
     for (const entry of entries) {
       await rm(join(dir, entry.name), { recursive: true, force: true });
-    }
-  } catch (error) {
-    if (error.code !== 'ENOENT') {
-      throw error;
-    }
-  }
-}
-
-export async function copyAssets(srcDir, destDir, options = {}) {
-  const exclude = options.exclude || new Set();
-
-  try {
-    const entries = await readdir(srcDir, { withFileTypes: true });
-    for (const entry of entries) {
-      if (exclude.has(entry.name)) {
-        continue;
-      }
-
-      const srcPath = join(srcDir, entry.name);
-      const destPath = join(destDir, entry.name);
-
-      if (entry.isDirectory()) {
-        await ensureDir(destPath);
-        await copyAssets(srcPath, destPath, options);
-      } else {
-        await copyFile(srcPath, destPath);
-      }
     }
   } catch (error) {
     if (error.code !== 'ENOENT') {
