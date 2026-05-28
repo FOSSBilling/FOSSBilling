@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use FOSSBilling\Twig\Extension\FOSSBillingExtension;
+use Pimple\Container;
 
 #[PHPUnit\Framework\Attributes\Group('Core')]
 final class FOSSBillingExtensionTest extends PHPUnit\Framework\TestCase
@@ -11,7 +12,7 @@ final class FOSSBillingExtensionTest extends PHPUnit\Framework\TestCase
 
     protected function setUp(): void
     {
-        $this->extension = new FOSSBillingExtension(null);
+        $this->extension = new FOSSBillingExtension(new Container());
     }
 
     public function testTransWithoutValues(): void
@@ -63,5 +64,27 @@ final class FOSSBillingExtensionTest extends PHPUnit\Framework\TestCase
         $result = $this->extension->avatar(null, 32, 'avatar', '<strong>Fallback</strong>');
 
         $this->assertSame('&lt;strong&gt;Fallback&lt;/strong&gt;', $result);
+    }
+
+    public function testScriptTagEscapesPath(): void
+    {
+        $result = $this->extension->scriptTag('js/app".js');
+
+        $this->assertStringContainsString('src="js/app&quot;.js?', $result);
+    }
+
+    public function testStylesheetTagEscapesPathAndMedia(): void
+    {
+        $result = $this->extension->stylesheetTag('css/app".css', 'screen" media');
+
+        $this->assertStringContainsString('href="css/app&quot;.css?v=', $result);
+        $this->assertStringContainsString('media="screen&quot; media"', $result);
+    }
+
+    public function testTimeagoUsesPluralFormsWithoutSuffixingS(): void
+    {
+        $result = $this->extension->timeago(date('Y-m-d H:i:s', time() - 120));
+
+        $this->assertSame('2 minutes', $result);
     }
 }
