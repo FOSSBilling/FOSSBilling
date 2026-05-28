@@ -11,6 +11,9 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Twig\Extension;
 
+use Composer\InstalledVersions;
+use DiceBear\Avatar;
+use DiceBear\Style;
 use FOSSBilling\Environment as AppEnvironment;
 use FOSSBilling\Twig\Enum\AppArea;
 use Symfony\Component\Filesystem\Filesystem;
@@ -22,6 +25,8 @@ use Twig\Environment;
 class FOSSBillingExtension
 {
     private array $cacheBusters = [];
+    private ?Style $avatarStyle = null;
+    private array $avatarDataUris = [];
 
     public function __construct(private ?\Pimple\Container $di)
     {
@@ -202,6 +207,65 @@ class FOSSBillingExtension
         }
 
         return hash($algo, (string) $value);
+    }
+
+    #[AsTwigFunction('avatar', isSafe: ['html'])]
+    public function avatar(?string $email, int $size = 40, string $classes = 'avatar', ?string $fallback = null, string $tag = 'span'): string
+    {
+        if ($email === null || trim($email) === '') {
+            return htmlspecialchars($fallback ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        }
+
+        $tag = in_array($tag, ['span', 'div'], true) ? $tag : 'span';
+        $size = max(1, $size);
+        $dataUri = $this->getAvatarDataUri($this->hash($email), $size);
+        $styles = sprintf(
+            'width: %1$dpx; height: %1$dpx; background-image: url(%2$s); background-size: 100%% 100%%; background-position: center; background-repeat: no-repeat;',
+            $size,
+            $dataUri,
+        );
+
+        return sprintf(
+            '<%1$s class="%2$s" style="%3$s"></%1$s>',
+            $tag,
+            htmlspecialchars(trim('db-avatar ' . $classes), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+            htmlspecialchars($styles, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+        );
+    }
+
+    private function getAvatarDataUri(string $seed, int $size): string
+    {
+        $size = max(1, $size);
+        $cacheKey = $seed . ':' . $size;
+
+        if (isset($this->avatarDataUris[$cacheKey])) {
+            return $this->avatarDataUris[$cacheKey];
+        }
+
+        if (!$this->avatarStyle instanceof Style) {
+            $basePath = InstalledVersions::getInstallPath('dicebear/styles');
+
+            if ($basePath === null) {
+                throw new \RuntimeException('The dicebear/styles package is not installed.');
+            }
+
+            $definitionPath = Path::join($basePath, 'src/identicon.json');
+            $filesystem = new Filesystem();
+
+            if (!$filesystem->exists($definitionPath)) {
+                throw new \RuntimeException(sprintf('DiceBear style definition "%s" was not found.', $definitionPath));
+            }
+
+            $definition = json_decode($filesystem->readFile($definitionPath), true, flags: JSON_THROW_ON_ERROR);
+            $this->avatarStyle = new Style($definition);
+        }
+
+        $avatar = new Avatar($this->avatarStyle, [
+            'seed' => $seed,
+            'size' => $size,
+        ]);
+
+        return $this->avatarDataUris[$cacheKey] = $avatar->toDataUri();
     }
 
     #[AsTwigFilter('script_tag', isSafe: ['html'])]

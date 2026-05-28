@@ -1,5 +1,3 @@
-{% import 'macro_functions.html.twig' as mf %}
-
 {% set ordersPerPageRaw = request.orders_per_page|default('5') %}
 {% if ordersPerPageRaw in dashboardPageSizes %}
     {% set ordersPerPage = ordersPerPageRaw %}
@@ -46,7 +44,7 @@
                     <tr title="{{ order.created_at|timeago }} {{ 'ago'|trans }}">
                         <td>
                             <a href='{{ "client/manage/#{order.client.id}"|url }}'>
-                                {{ mf.avatar(order.client.email, 24, 'db-avatar avatar avatar-xs') }}
+                                {{ avatar(order.client.email, 24, 'avatar avatar-xs') }}
                             </a>&nbsp;
                             <a href='{{ "client/manage/#{order.client_id}"|url }}'>{{ order.client.first_name }} {{ order.client.last_name }}</a>
                         </td>

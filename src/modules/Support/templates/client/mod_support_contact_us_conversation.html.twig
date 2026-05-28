@@ -64,7 +64,7 @@
                             {{ message.author.name }}
                         </span>
                         <br/>
-                        {{ mf.avatar(message.author.email, 60, 'db-avatar img-thumbnail d-none d-md-block') }}
+                        {{ avatar(message.author.email, 60, 'img-thumbnail d-none d-md-block', null, 'div') }}
                     </div>
                     <div class="col-10">
                         <header>#{{ i+1 }} | {{ message.created_at|format_date }}

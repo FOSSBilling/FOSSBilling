@@ -186,14 +186,6 @@
     {% include "mod_wysiwyg_js.html.twig" with {"class":selector|trim('.#')} %}
 {% endmacro %}
 
-{% macro avatar(email, size, classes, fallback) %}
-    {% if email %}
-        <span class="db-avatar {{ classes|default('avatar') }}" data-avatar-seed="{{ email|hash('xxh128') }}" data-avatar-size="{{ size|default(40) }}"></span>
-    {% elseif fallback %}
-        {{ fallback }}
-    {% endif %}
-{% endmacro %}
-
 {% macro text_badge(label, badge_class) %}
     <span class="badge {{ badge_class }}">{{ label }}</span>
 {% endmacro %}

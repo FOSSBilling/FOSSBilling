@@ -22,13 +22,14 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   const localeSelectorEl = document.querySelector('.js-locale-selector');
   if (localeSelectorEl !== null) {
+    const selectedLang = FOSSBilling.cookieRead("fb_locale") || localeSelectorEl.value;
     const localeSelector = new TomSelect(".js-locale-selector", {
       copyClassesToDropdown: false,
       controlClass: "ts-control locale",
       dropdownClass: "dropdown-menu ts-dropdown locale-selector-dropdown",
       optionClass: "dropdown-item",
       controlInput: false,
-      items: [FOSSBilling.cookieRead("fb_locale")],
+      items: selectedLang ? [selectedLang] : [],
       render: {
         item: (data, escape) => createTomSelectTemplate(data, escape, { showIndicator: true }),
         option: (data, escape) => createTomSelectTemplate(data, escape, { showIndicator: true }),

@@ -117,7 +117,7 @@
                             {% for i, message in ticket.messages %}
                             <div class="card {% if loop.first %}mt-2 {% endif %}mb-3 col-md-10 {% if ticket.first.author.email != message.author.email %}offset-md-2{% endif %} {{ loop.last ? 'last' : '' }}" id="{{ message.id == request_message ? 'direct-msg' : '' }}">
                                 <div class="card-header" style="cursor: pointer;">
-                                    {{ mf.avatar(message.author.email, 24, 'db-avatar avatar avatar-xs me-2') }}
+                                    {{ avatar(message.author.email, 24, 'avatar avatar-xs me-2') }}
                                     {{ message.author.name }}
                                     <a class="ms-2" href='{{ "support/ticket/#{ticket.id}/message/#{message.id}"|url }}'>
                                         <svg class="icon">
