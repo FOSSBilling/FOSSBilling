@@ -91,6 +91,13 @@ final class FOSSBilling_ConfigTest extends PHPUnit\Framework\TestCase
         $this->assertSame('installed', $this->runInstallerInstalledCheck());
     }
 
+    public function testInstallerTreatsThrowingConfigAsAlreadyInstalled(): void
+    {
+        $this->writeRawConfig("<?php throw new RuntimeException('invalid config');");
+
+        $this->assertSame('installed', $this->runInstallerInstalledCheck());
+    }
+
     public function testInstallerTreatsExistingConfigAsNotInstalledInDebugMode(): void
     {
         $this->writeRawConfig("<?php return ['debug_and_monitoring' => ['debug' => true]];");
