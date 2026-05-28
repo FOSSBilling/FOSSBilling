@@ -45,6 +45,8 @@
         "ext-pdo": "*",
         "ext-zlib": "*",
         "antcms/antloader": "^2.0.5",
+        "dicebear/core": "^10.0",
+        "dicebear/styles": "^10.0",
         "doctrine/orm": "^3.6",
         "dompdf/dompdf": "^3.1.4",
         "egulias/email-validator": "^4.0.4",

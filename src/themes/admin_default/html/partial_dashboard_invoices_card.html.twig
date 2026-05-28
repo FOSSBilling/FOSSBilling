@@ -52,7 +52,7 @@
                         </td>
                         <td>
                             <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>
-                                {{ mf.avatar(invoice.buyer.email, 24, 'db-avatar avatar avatar-xs') }}
+                                {{ avatar(invoice.buyer.email, 24, 'avatar avatar-xs') }}
                             </a>&nbsp;
                             <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>{{ invoice.buyer.first_name }} {{ invoice.buyer.last_name }}</a>
                         </td>

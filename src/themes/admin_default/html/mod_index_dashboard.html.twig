@@ -1,7 +1,5 @@
 {% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
 
-{% import 'macro_functions.html.twig' as mf %}
-
 {% block meta_title %}{{ 'Dashboard'|trans }}{% endblock %}
 
 {% block content %}
@@ -370,7 +368,7 @@
                                         <tr>
                                             <td>
                                                 <a href='{{ "client/manage/#{event.client.id}"|url }}'>
-                                                    {{ mf.avatar(event.client.email, 24, 'db-avatar avatar avatar-xs') }}
+                                                    {{ avatar(event.client.email, 24, 'avatar avatar-xs') }}
                                                 </a>&nbsp;
                                                 <a href='{{ "client/manage/#{event.client.id}"|url }}'>{{ event.client.name|truncate(40) }}</a>
                                             </td>
@@ -403,7 +401,7 @@
                                         <tr>
                                             <td>
                                                 <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>
-                                                    {{ mf.avatar(event.staff.email, 24, 'db-avatar avatar avatar-xs') }}
+                                                    {{ avatar(event.staff.email, 24, 'avatar avatar-xs') }}
                                                 </a>&nbsp;
                                                 <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>{{ event.staff.name }}</a>
                                             </td>
@@ -472,12 +470,6 @@
                 }
 
                 currentCard.replaceWith(replacement);
-
-                if (globalThis.initAvatars) {
-                    globalThis.initAvatars(replacement);
-                } else if (globalThis.FOSSBilling?.initAvatars) {
-                    globalThis.FOSSBilling.initAvatars(replacement);
-                }
             } catch (error) {
                 window.location.href = link.href;
             }

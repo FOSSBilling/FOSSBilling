@@ -41,4 +41,27 @@ final class FOSSBillingExtensionTest extends PHPUnit\Framework\TestCase
 
         $this->assertSame('Hello %name%', $result);
     }
+
+    public function testAvatarRendersDataUriBackground(): void
+    {
+        $result = $this->extension->avatar('user@example.org', 32, 'avatar avatar-sm');
+
+        $this->assertStringStartsWith('<span class="db-avatar avatar avatar-sm" style="width: 32px; height: 32px; background-image: url(data:image/svg+xml;charset=utf-8,', $result);
+        $this->assertStringContainsString('background-repeat: no-repeat;', $result);
+    }
+
+    public function testAvatarIsDeterministic(): void
+    {
+        $first = $this->extension->avatar('user@example.org', 32, 'avatar avatar-sm');
+        $second = $this->extension->avatar('user@example.org', 32, 'avatar avatar-sm');
+
+        $this->assertSame($first, $second);
+    }
+
+    public function testAvatarReturnsFallbackWithoutEmail(): void
+    {
+        $result = $this->extension->avatar(null, 32, 'avatar', '<strong>Fallback</strong>');
+
+        $this->assertSame('&lt;strong&gt;Fallback&lt;/strong&gt;', $result);
+    }
 }

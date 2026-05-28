@@ -209,7 +209,7 @@
                                 <td><a href='{{ "order/manage/#{order.id}"|url }}'>#{{ order.id }}</a></td>
                                 <td>
                                     <a href='{{ "client/manage/#{order.client_id}"|url }}'>
-                                        {{ mf.avatar(order.client.email, 24, 'db-avatar avatar avatar-xs') }}
+                                        {{ avatar(order.client.email, 24, 'avatar avatar-xs') }}
                                     </a>
                                 </td>
                                 <td>

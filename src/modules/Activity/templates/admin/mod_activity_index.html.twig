@@ -190,14 +190,14 @@
                 <td class="d-none d-lg-table-cell">
                     {% if event.client %}
                     <a href='{{ "client/manage/#{event.client.id}"|url }}'>
-                        {{ mf.avatar(event.client.email, 20, 'db-avatar avatar avatar-sm d-none d-md-inline-block') }}
+                        {{ avatar(event.client.email, 20, 'avatar avatar-sm d-none d-md-inline-block') }}
                     </a>
                     {% elseif event.staff %}
                     <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>
-                        {{ mf.avatar(event.staff.email, 24, 'db-avatar avatar avatar-sm d-none d-md-inline-block') }}
+                        {{ avatar(event.staff.email, 24, 'avatar avatar-sm d-none d-md-inline-block') }}
                     </a>
                     {% else %}
-                    {{ mf.avatar('guest@fossbilling.org', 24, 'db-avatar avatar avatar-sm d-none d-md-inline-block') }}
+                    {{ avatar('guest@fossbilling.org', 24, 'avatar avatar-sm d-none d-md-inline-block') }}
                     {% endif %}
                 </td>
                 <td>

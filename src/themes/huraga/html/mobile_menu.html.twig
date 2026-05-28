@@ -1,4 +1,3 @@
-{% import "macro_functions.html.twig" as mf %}
 {% if settings.side_menu_dashboard %}
     <li class="nav-item">
         <a class="nav-link d-flex align-items-center gap-2" href="{{ '/'|url }}">
@@ -107,7 +106,7 @@
         {% if client %}
             <div class="dropdown">
                 <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    {{ mf.avatar(profile.email, 25, 'rounded-circle') }}
+                    {{ avatar(profile.email, 25, 'rounded-circle', null, 'div') }}
                     {% if profile.company %}
                         <span>{{ profile.first_name }} {{ profile.last_name }}|{{ profile.company }}</span>
                     {% else %}

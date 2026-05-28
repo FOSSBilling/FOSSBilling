@@ -84,7 +84,7 @@
                 } %}
                     {% import 'macro_functions.html.twig' as mf %}
                     {% block summary_header_aside %}
-                        {{ mf.avatar(client.email, 112, 'db-avatar avatar avatar-xl avatar-rounded shadow') }}
+                        {{ avatar(client.email, 112, 'avatar avatar-xl avatar-rounded shadow') }}
                     {% endblock %}
 
                     {% block summary_content %}

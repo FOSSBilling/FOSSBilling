@@ -1,5 +1,3 @@
-{% import 'macro_functions.html.twig' as mf %}
-
 {% set profile = admin.profile_get %}
 {% set company = guest.system_company %}
 {% set active_locale = guest.system_locale|default('en')|replace({'_': '-'}) %}
@@ -111,7 +109,7 @@
                             data-bs-toggle="dropdown"
                             aria-label="{{ 'Open user menu'|trans }}"
                             aria-expanded="false">
-                            {{ mf.avatar(profile.email, 32, 'db-avatar avatar avatar-sm') }}
+                            {{ avatar(profile.email, 32, 'avatar avatar-sm') }}
                             <div class="d-none d-xl-block ps-2">
                               <div>{{ profile.name }}</div>
                               <div class="mt-1 small text-muted">{{ profile.role }}</div>

@@ -1,5 +1,4 @@
 import './js/ui/modals';
-import { initAvatars } from './js/avatar.js';
 import { coloris, init } from '@melloware/coloris';
 import * as tabler from '@tabler/core/js/tabler.js';
 import './js/tomselect';
@@ -15,12 +14,6 @@ coloris({
   el: '#coloris-picker',
   alpha: false
 });
-
-globalThis.initAvatars = initAvatars;
-
-if (globalThis.FOSSBilling) {
-  globalThis.FOSSBilling.initAvatars = initAvatars;
-}
 
 
 /**
@@ -104,8 +97,6 @@ function handleClipboardResult(button, success) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  initAvatars();
-
   document.querySelectorAll('.js-theme-toggler').forEach(element => {
     element.addEventListener('click', event => {
       event.preventDefault();

@@ -77,14 +77,6 @@
     {% include "mod_wysiwyg_js.html.twig" with {"class":selector|trim('.#')} %}
 {% endmacro wysiwyg %}
 
-{% macro avatar(email, size, classes, fallback) %}
-{% if email %}
-<div class="db-avatar {{ classes|default('rounded-circle') }}" data-avatar-seed="{{ email|hash('xxh128') }}" data-avatar-size="{{ size|default(25) }}"{% if size %} style="width: {{ size }}px; height: {{ size }}px;"{% endif %}></div>
-{% elseif fallback %}
-{{ fallback }}
-{% endif %}
-{% endmacro %}
-
 {% macro status_badge(status, type) %}
 {% set status_title = status|replace({'_': " "})|title|trim %}
 {% if status_title == 'Active' %}

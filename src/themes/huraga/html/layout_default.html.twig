@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-{% import "macro_functions.html.twig" as mf %}
 {% set active_locale = guest.system_locale|default('en')|replace({'_': '-'}) %}
 {% set canonical_url = guest.system_current_url|url %}
 <html lang="{{ active_locale }}" data-bs-theme="{{ settings.theme|default('light') }}">
@@ -135,7 +134,7 @@
                                     <div class="dropdown client-dropdown">
                                         <button class="nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                             {% set avatar_size = 25 %}
-                                            <div class="db-avatar rounded-circle" data-avatar-seed="{{ profile.email|hash('xxh128') }}" data-avatar-size="{{ avatar_size }}" style="width: {{ avatar_size }}px; height: {{ avatar_size }}px; display: inline-block;"></div>
+                                            {{ avatar(profile.email, avatar_size, 'rounded-circle d-inline-block', null, 'div') }}
                                             <span class="ms-1">{% if profile.company %}{{ profile.first_name }} {{ profile.last_name }} ({{ profile.company }}){% else %}{{ profile.first_name }} {{ profile.last_name }}{% endif %}</span>
                                         </button>
                                         <ul class="dropdown-menu">
