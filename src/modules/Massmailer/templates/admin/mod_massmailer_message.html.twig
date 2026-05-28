@@ -169,7 +169,7 @@
 {% autoescape "js" %}
 <script>
     function onAfterMessageUpdate() {
-        API.admin.post('massmailer/preview', { id: {{ msg.id }}, include_recipients: 1 },
+        FOSSBilling.api.admin.post('massmailer/preview', { id: {{ msg.id }}, include_recipients: 1 },
             (result) => {
                 document.querySelector('#recipients-banner').classList.add('d-none');
                 document.querySelector('#preview-banner').classList.add('d-none');
@@ -199,7 +199,7 @@
             title: 'Send message to clients?',
             content: 'Are you sure you want to send this message to clients?',
             confirmCallback: () => {
-                API.admin.post('massmailer/send', { id: {{ msg.id }} },
+                FOSSBilling.api.admin.post('massmailer/send', { id: {{ msg.id }} },
                     (result) => {
                         FOSSBilling.message("{{ 'Message was added to mail queue and will be sent with scheduled tasks.'|trans }}");
                     });
@@ -213,7 +213,7 @@
             title: 'Send test message?',
             content: 'Are you sure you want to send a test message?',
             confirmCallback: () => {
-                API.admin.post('massmailer/send_test', { id: {{ msg.id }} },
+                FOSSBilling.api.admin.post('massmailer/send_test', { id: {{ msg.id }} },
                     (result) => {
                         FOSSBilling.message("{{ 'Message was sent.'|trans }}");
                     });

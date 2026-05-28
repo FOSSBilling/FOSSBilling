@@ -12,7 +12,8 @@
 
     <link rel="stylesheet" href="{{ 'build/css/vendor.css' | asset_url }}">
     <link rel="stylesheet" href="{{ 'build/css/fossbilling.css' | asset_url }}">
-    {{ "Api/API.js" | library_url | script_tag }}
+    {{ 'js/fossbilling.js' | public_asset_url | script_tag }}
+    {{ 'js/api.js' | public_asset_url | script_tag }}
     <script src="{{ 'build/js/fossbilling.js' | asset_url }}"></script>
 </head>
 

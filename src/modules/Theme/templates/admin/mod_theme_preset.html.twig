@@ -118,7 +118,7 @@
     <script>
         function onSelectedPresetChange() {
             let selectedPreset = document.querySelector('select[name="preset"]').value;
-            API.admin.post('theme/preset_select', { code: '{{ theme_code }}', preset: selectedPreset },
+            FOSSBilling.api.admin.post('theme/preset_select', { code: '{{ theme_code }}', preset: selectedPreset },
                 () => {
                     window.location.reload();
                 });

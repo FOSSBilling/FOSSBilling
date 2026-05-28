@@ -82,6 +82,7 @@ RUN --mount=type=cache,target=/root/.npm CYPRESS_INSTALL_BINARY=0 npm ci
 COPY src/themes/admin_default ./src/themes/admin_default
 COPY src/themes/huraga ./src/themes/huraga
 COPY src/modules ./src/modules
+COPY frontend ./frontend
 
 RUN NODE_ENV=production npm run build
 
@@ -99,6 +100,7 @@ ARG TRANSLATIONS_SHA256=
 COPY src ./src
 COPY README.md LICENSE ./src/
 COPY --from=php-vendor /app/src/vendor ./src/vendor
+COPY --from=frontend-assets /app/src/public/assets ./src/public/assets
 COPY --from=frontend-assets /app/src/themes/admin_default/assets/build ./src/themes/admin_default/assets/build
 COPY --from=frontend-assets /app/src/themes/huraga/assets/build ./src/themes/huraga/assets/build
 

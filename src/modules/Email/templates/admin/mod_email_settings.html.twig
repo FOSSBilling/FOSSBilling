@@ -576,7 +576,7 @@
         const emailTestButton = document.getElementById('emailTest');
         if (emailTestButton) {
             emailTestButton.addEventListener('click', function(event) {
-                API.admin.post('email/send_test', {},
+                FOSSBilling.api.admin.post('email/send_test', {},
                     () => {
                         FOSSBilling.message("{{ 'Email was successfully sent'|trans }}");
                     },

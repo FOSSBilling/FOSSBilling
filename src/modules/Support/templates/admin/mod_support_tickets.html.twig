@@ -366,7 +366,7 @@
         notes.addEventListener('click', function(e) {
             e.preventDefault();
 
-            API.admin.post('support/ticket_get', { id: e.currentTarget.getAttribute('rel') }, function(result){
+            FOSSBilling.api.admin.post('support/ticket_get', { id: e.currentTarget.getAttribute('rel') }, function(result){
                 var html = document.createElement('div');
 
                 result.notes.forEach(function(entry) {
@@ -388,4 +388,4 @@
 </script>
 {% endblock %}
 
-{% block head %}{{ mf.wysiwyg('.editor-textarea') }}{% endblock %}
+{% block head %}{{ wysiwyg('.editor-textarea') }}{% endblock %}

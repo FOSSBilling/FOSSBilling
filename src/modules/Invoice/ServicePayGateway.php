@@ -272,17 +272,17 @@ class ServicePayGateway implements InjectionAwareInterface
         $filename = $logoConfig['logo'] ?? 'default.png';
 
         $libraryPath = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', $filename);
-        $dataPath = Path::join(PATH_DATA, 'assets', 'gateways', $filename);
+        $publicPath = Path::join(PATH_ROOT, 'public', 'gateways', $filename);
 
         if ($this->filesystem->exists($libraryPath)) {
             return $this->di['tools']->url("/library/Payment/Adapter/{$filename}");
         }
 
-        if ($this->filesystem->exists($dataPath)) {
-            return $this->di['tools']->url("/data/assets/gateways/{$filename}");
+        if ($this->filesystem->exists($publicPath)) {
+            return $this->di['tools']->url("/public/gateways/{$filename}");
         }
 
-        return $this->di['tools']->url('/data/assets/gateways/default.png');
+        return $this->di['tools']->url('/public/gateways/default.png');
     }
 
     public function canPerformRecurrentPayment(\Model_PayGateway $model): bool

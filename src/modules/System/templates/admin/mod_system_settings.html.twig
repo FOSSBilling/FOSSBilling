@@ -1,7 +1,5 @@
 {% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
 
-{% import 'macro_functions.html.twig' as mf %}
-
 {% block meta_title %}{{ 'System Settings'|trans }}{% endblock %}
 
 {% set active_menu = 'system' %}
@@ -446,7 +444,7 @@
         el.innerHTML = `<strong class="me-1">{{ 'Information:'|trans }}</strong>{{ "Checking external IP..."|trans }}`;
         el.className = 'alert alert-info';
 
-        API.admin.get('system/env', { ip: true }, function (ip) {
+        FOSSBilling.api.admin.get('system/env', { ip: true }, function (ip) {
             if (ip) {
                 el.innerHTML = `<strong class="me-1">{{ 'Success:'|trans }}</strong>{{ 'With the current settings, your FOSSBilling instance will have an external IP address of: '|trans }}`;
                 el.appendChild(document.createTextNode(ip));
@@ -467,7 +465,7 @@
         // Show loading state first
         select.innerHTML = `<option disabled selected>{{ "Loading interfaces..."|trans }}</option>`;
 
-        API.admin.get('system/get_interface_ips', {}, function (interfaces) {
+        FOSSBilling.api.admin.get('system/get_interface_ips', {}, function (interfaces) {
             select.innerHTML = `<option value="0">{{ 'None (Default PHP Behavior)'|trans }}</option>`;
 
             interfaces.forEach(interface => {
@@ -505,4 +503,4 @@
 </script>
 {% endblock %}
 
-{% block head %}{{ mf.wysiwyg('.editor-textarea') }}{% endblock %}
+{% block head %}{{ wysiwyg('.editor-textarea') }}{% endblock %}

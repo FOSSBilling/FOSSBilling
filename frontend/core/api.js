@@ -11,6 +11,8 @@
 /**
  * Tools for the API wrapper.
  */
+const FOSSBilling = window.FOSSBilling = window.FOSSBilling || {};
+
 const Tools = {
   /**
    * Constructs the full URL for an API endpoint.
@@ -531,12 +533,12 @@ const API = {
     }
 
     if (apiData.hasOwnProperty('message')) {
-      FOSSBilling.message(apiData.message, "success");
+      FOSSBilling.ui.notify(apiData.message, "success");
       return;
     }
 
     if (result) {
-      FOSSBilling.message("Form Updated", "success");
+      FOSSBilling.ui.notify("Form Updated", "success");
       return;
     }
 
@@ -574,26 +576,22 @@ const API = {
 
     if (formElements.length > 0) {
       formElements.forEach(formElement => {
+        if (formElement.dataset.fbApiBound === 'true') {
+          return;
+        }
+
+        formElement.dataset.fbApiBound = 'true';
         formElement.addEventListener('submit', function (event) {
           event.preventDefault();
 
           const formData = new FormData(formElement);
 
-          if (typeof editors === 'object' && editors !== null && !Array.isArray(editors)) {
-            let editorContentOnRequiredAttr = true;
-            for (const name in editors) {
-              if (Object.prototype.hasOwnProperty.call(editors, name)) {
-                const editorConfig = editors[name];
-                if (editorConfig.required && editorConfig.editor.getData() === "") {
-                  editorContentOnRequiredAttr = false;
-                  break;
-                }
-                formData.set(name, editorConfig.editor.getData());
-              }
+          if (FOSSBilling.editor) {
+            if (!FOSSBilling.editor.validateForm(formElement)) {
+              return FOSSBilling.ui.notify('At least one of the required fields are empty.', 'error');
             }
-            if (!editorContentOnRequiredAttr) {
-              return FOSSBilling.message('At least one of the required fields are empty.', 'error');
-            }
+
+            FOSSBilling.editor.syncForm(formElement, formData);
           }
 
           const formMethod = (formElement.getAttribute('method') || 'post').toLowerCase();
@@ -625,7 +623,7 @@ const API = {
             },
             (error) => {
               toggleButtons(false);
-              FOSSBilling.message(`${error.message} (${error.code})`, 'error');
+              FOSSBilling.ui.notify(`${error.message} (${error.code})`, 'error');
             }
           );
         });
@@ -641,6 +639,11 @@ const API = {
 
     if (linkElements.length > 0) {
       linkElements.forEach(linkElement => {
+        if (linkElement.dataset.fbApiBound === 'true') {
+          return;
+        }
+
+        linkElement.dataset.fbApiBound = 'true';
         let requestInProgress = false;
         let loadingAlert = null;
         let beforeUnloadHandler = null;
@@ -754,7 +757,7 @@ const API = {
             apiData = Tools.parseDataAttr(linkElement.dataset.fbApi || '{}');
           } catch (error) {
             console.error('Failed to parse data-fb-api attribute:', error);
-            FOSSBilling.message('Invalid API configuration', 'error');
+            FOSSBilling.ui.notify('Invalid API configuration', 'error');
             return;
           }
 
@@ -779,7 +782,7 @@ const API = {
               },
               (error) => {
                 resetLoadingState();
-                FOSSBilling.message(`${error.message} (${error.code})`, 'error');
+                FOSSBilling.ui.notify(`${error.message} (${error.code})`, 'error');
               },
               true,
               apiData.timeoutMs ?? 30000,
@@ -821,3 +824,25 @@ const API = {
     }
   }
 };
+
+window.FOSSBilling = window.FOSSBilling || {};
+window.FOSSBilling.tools = Tools;
+window.FOSSBilling.api = API;
+
+const bindApiInteractions = () => {
+  if (document.querySelector('form[data-fb-api]')) {
+    API._apiForm();
+  }
+
+  if (document.querySelector('a[data-fb-api]')) {
+    API._apiLink();
+  }
+};
+
+if (typeof FOSSBilling.ready === 'function') {
+  FOSSBilling.ready(bindApiInteractions);
+} else if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bindApiInteractions);
+} else {
+  bindApiInteractions();
+}

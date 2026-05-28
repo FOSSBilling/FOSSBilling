@@ -179,7 +179,7 @@
                 const sld = document.querySelector('input[name="domain[register_sld]"]').value.toLowerCase();
                 const tld = document.querySelector('select[name="domain[register_tld]"]').value.toLowerCase();
 
-                API.guest.post('servicedomain/check', { sld: sld, tld: tld },
+                FOSSBilling.api.guest.post('servicedomain/check', { sld: sld, tld: tld },
                     function(result) {
                         setRegistrationPricing(tld);
                         const registerConfig = document.getElementById('register-config');
@@ -198,7 +198,7 @@
                 const sld = document.querySelector('input[name="domain[transfer_sld]"]').value.toLowerCase();
                 const tld = document.querySelector('select[name="domain[transfer_tld]"]').value.toLowerCase();
 
-                API.guest.post('servicedomain/can_be_transferred', { sld: sld, tld: tld },
+                FOSSBilling.api.guest.post('servicedomain/can_be_transferred', { sld: sld, tld: tld },
                     function(result) {
                         setTransferPricing(tld);
                         const transferConfig = document.getElementById('transfer-config');
@@ -210,7 +210,7 @@
         }
 
         function setRegistrationPricing(tld) {
-            API.guest.post('servicedomain/pricing', { tld: tld },
+            FOSSBilling.api.guest.post('servicedomain/pricing', { tld: tld },
                 function(result) {
                     const yearsSelect = document.getElementById('registration-years');
                     if (!yearsSelect) return;
@@ -244,7 +244,7 @@
         }
 
         function setTransferPricing(tld) {
-            API.guest.post('servicedomain/pricing', { tld: tld },
+            FOSSBilling.api.guest.post('servicedomain/pricing', { tld: tld },
                 function(result) {
                     const price = formatCurrency(result.price_transfer, {{ currency.conversion_rate }}, "{{ currency.code }}");
                     const transferPriceEl = document.getElementById('transfer-price');

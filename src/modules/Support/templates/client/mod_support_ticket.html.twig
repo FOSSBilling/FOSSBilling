@@ -5,8 +5,8 @@
 {% block meta_title %}{{ ticket.subject }}{% endblock %}
 
 {% block head %}
-    <link rel="stylesheet" href="{{ 'build/css/markdown.css' | asset_url }}">
-    {{ mf.wysiwyg('.editor-textarea') }}
+    {{ 'css/markdown.css' | public_asset_url | stylesheet_tag }}
+    {{ wysiwyg('.editor-textarea') }}
 {% endblock %}
 
 {% block body_class %}support-ticket{% endblock %}
@@ -160,7 +160,7 @@
 
             ticketReplyForm?.addEventListener('submit', (e) => {
                 e.preventDefault();
-                API.client.post('support/ticket_reply', Tools.serializeFormDataToObject(new FormData(ticketReplyForm)),
+                FOSSBilling.api.client.post('support/ticket_reply', FOSSBilling.tools.serializeFormDataToObject(new FormData(ticketReplyForm)),
                     () => {
                         flashMessage({
                             message: 'Posted reply',
@@ -174,7 +174,7 @@
             closeTicketBtn?.addEventListener('click', (e) => {
                 e.preventDefault();
                 toggleLoader();
-                API.client.post('support/ticket_close', Tools.serializeFormDataToObject(new FormData(ticketReplyForm)),
+                FOSSBilling.api.client.post('support/ticket_close', FOSSBilling.tools.serializeFormDataToObject(new FormData(ticketReplyForm)),
                     () => {
                         flashMessage({
                             message: 'Closed ticket #{{ ticket.id }}',
@@ -198,7 +198,7 @@
                     quote = quote.replace(/^\s*$(?:\r\n?|\n)/gm, '');
                     if (ticketReplyTextArea.editor) {
                         ticketReplyTextArea.editor.setData(quote);
-                        ticketReplyTextArea.editor.editing.view.focus();
+                        ticketReplyTextArea.editor.focus();
                     } else {
                         ticketReplyTextArea.textContent = quote;
                         ticketReplyTextArea.focus();
@@ -208,7 +208,7 @@
 
             document.getElementById('reply-to-btn')?.addEventListener('click', () => {
                 if (ticketReplyTextArea.editor) {
-                    ticketReplyTextArea.editor.editing.view.focus();
+                    ticketReplyTextArea.editor.focus();
                 } else {
                     ticketReplyTextArea.focus();
                 }

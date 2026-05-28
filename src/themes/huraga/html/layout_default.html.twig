@@ -28,7 +28,8 @@
     <link rel="stylesheet" href="{{ 'build/css/huraga.css' | asset_url }}">
     <link rel="shortcut icon" href="{{ guest.system_company.favicon_url }}">
 
-    {{ "Api/API.js" | library_url | script_tag }}
+    {{ 'js/fossbilling.js' | public_asset_url | script_tag }}
+    {{ 'js/api.js' | public_asset_url | script_tag }}
     <script src="{{ 'build/js/huraga.js' | asset_url }}"></script>
 
     {{ debug_bar_render_head() }}

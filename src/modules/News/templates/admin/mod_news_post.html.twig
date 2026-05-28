@@ -1,7 +1,5 @@
 {% extends 'layout_default.html.twig' %}
 
-{% import 'macro_functions.html.twig' as mf %}
-
 {% block meta_title %}{{ post.title }}{% endblock %}
 
 {% set active_menu = 'support' %}
@@ -132,4 +130,4 @@
 </div>
 {% endblock %}
 
-{% block head %}{{ mf.wysiwyg('.editor-textarea') }}{% endblock %}
+{% block head %}{{ wysiwyg('.editor-textarea') }}{% endblock %}

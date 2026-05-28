@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const currencySelector = document.querySelectorAll('select.currency_selector');
   currencySelector.forEach(function (select) {
     select.addEventListener('change', function () {
-      API.guest.post('cart/set_currency', {currency: select.value}, function(response) {
+      FOSSBilling.api.guest.post('cart/set_currency', {currency: select.value}, function(response) {
         location.reload()
       }, function(error) {
         FOSSBilling.message(error)
@@ -103,11 +103,4 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
-  // Attach event listeners to all forms and links with data-fb-api attribute.
-  if (document.querySelector("form[data-fb-api]")) {
-    API._apiForm();
-  };
-  if (document.querySelector("a[data-fb-api]")) {
-    API._apiLink();
-  }
 });

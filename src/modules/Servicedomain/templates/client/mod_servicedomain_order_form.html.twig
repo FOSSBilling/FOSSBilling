@@ -170,7 +170,7 @@
                 document.getElementById('domain-action').value = 'transfer';
                 const domain = sld + tld;
 
-                API.guest.post(
+                FOSSBilling.api.guest.post(
                     'servicedomain/can_be_transferred',
                     {sld: sld, tld: tld},
                     function (result) {
@@ -198,7 +198,7 @@
                 const tld = document.querySelector('select[name="register_tld"]').value.toLowerCase();
                 const domain = sld + tld;
                 document.getElementById('domain-action').value = 'register';
-                API.guest.post(
+                FOSSBilling.api.guest.post(
                     'servicedomain/check',
                     {sld: sld, tld: tld},
                     function (result) {
@@ -218,7 +218,7 @@
         }
 
         function setPricing(tld) {
-            API.guest.post(
+            FOSSBilling.api.guest.post(
                 'servicedomain/pricing',
                 {tld: tld},
                 function (result) {
@@ -257,7 +257,7 @@
         }
 
         function setTransferPricing(tld) {
-            API.guest.post(
+            FOSSBilling.api.guest.post(
                 'servicedomain/pricing',
                 {tld: tld},
                 function (result) {

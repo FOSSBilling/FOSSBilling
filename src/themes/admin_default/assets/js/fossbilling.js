@@ -1,7 +1,7 @@
 import backToTop from "./ui/backToTop";
 import { renderTimeSeriesSparkline } from "./ui/charts";
 
-globalThis.FOSSBilling = {
+globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
   message: (message, type = "info") => {
     const titles = {
       error: "Error",
@@ -67,33 +67,10 @@ globalThis.FOSSBilling = {
     toast.show();
   },
 
-  cookieCreate: function (name, value, days) {
-    let expires;
-    if (days) {
-      let date = new Date();
-      date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
-      expires = "; expires=" + date.toUTCString();
-    } else {
-      expires = "";
-    }
-    document.cookie = name + "=" + value + expires + "; path=/";
-  },
-
-  cookieRead: function (name) {
-    const nameEQ = name + "=";
-    const ca = document.cookie.split(";");
-    for (let i = 0; i < ca.length; i++) {
-      let c = ca[i];
-      while (c.charAt(0) == " ") c = c.substring(1, c.length);
-      if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
-    }
-    return null;
-  },
-
   charts: {
     renderTimeSeriesSparkline,
   }
-};
+});
 
   //===== Global ajax methods =====//
   document.addEventListener('DOMContentLoaded', function() {
@@ -106,14 +83,6 @@ globalThis.FOSSBilling = {
         FOSSBilling.message(message, 'error');
       }
     });
-
-    // Attach event listeners to all forms and links with data-fb-api attribute.
-    if (document.querySelector("form[data-fb-api]")) {
-      API._apiForm();
-    };
-    if (document.querySelector("a[data-fb-api]")) {
-      API._apiLink();
-    }
 
     // Initialize backToTop
     FOSSBilling.backToTop = backToTop;

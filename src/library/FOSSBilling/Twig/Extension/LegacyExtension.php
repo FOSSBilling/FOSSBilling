@@ -51,12 +51,6 @@ class LegacyExtension
         }
     }
 
-    #[AsTwigFilter('library_url', isSafe: ['html'])]
-    public function twig_library_url($path): string
-    {
-        return SYSTEM_URL . 'library/' . $path;
-    }
-
     #[AsTwigFilter('mod_asset_url')]
     public function modAssetUrl(string $asset, string $module): string
     {

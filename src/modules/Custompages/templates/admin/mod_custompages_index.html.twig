@@ -1,4 +1,3 @@
-{% import "macro_functions.html.twig" as mf %}
 {% extends "layout_default.html.twig" %}
 {% set active_menu = 'extensions' %}
 {% set has_filter_panel = true %}
@@ -177,7 +176,7 @@
     </div>
 {% endblock %}
 
-{% block head %}{{ mf.wysiwyg('.editor-textarea') }}{% endblock %}
+{% block head %}{{ wysiwyg('.editor-textarea') }}{% endblock %}
 
 {% block js %}
 <script>

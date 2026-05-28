@@ -428,6 +428,7 @@ class UpdatePatcher implements InjectionAwareInterface
             61 => 'patch61',
             62 => 'patch62',
             63 => 'patch63',
+            64 => 'patch64',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -456,7 +457,7 @@ class UpdatePatcher implements InjectionAwareInterface
             'INSERT INTO setting (param, value, public, category, hash, created_at, updated_at) VALUES (:param, :value, 0, :category, :hash, :created_at, :updated_at)',
             [
                 'param' => 'company_favicon',
-                'value' => 'themes/huraga/assets/favicon.ico',
+                'value' => 'public/branding/favicon.ico',
                 'category' => null,
                 'hash' => null,
                 'created_at' => '2023-01-08 12:00:00',
@@ -862,13 +863,13 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch49(): void
     {
-        $q = "UPDATE setting SET value = 'themes/huraga/assets/build/img/logo.svg' WHERE param = 'company_logo' AND value = 'themes/huraga/assets/img/logo.svg';";
+        $q = "UPDATE setting SET value = 'public/branding/logo.svg' WHERE param = 'company_logo' AND value = 'themes/huraga/assets/img/logo.svg';";
         $this->executeSql($q);
 
-        $q = "UPDATE setting SET value = 'themes/huraga/assets/build/img/logo_white.svg' WHERE param = 'company_logo_dark' AND value = 'themes/huraga/assets/img/logo_white.svg';";
+        $q = "UPDATE setting SET value = 'public/branding/logo-dark.svg' WHERE param = 'company_logo_dark' AND value = 'themes/huraga/assets/img/logo_white.svg';";
         $this->executeSql($q);
 
-        $q = "UPDATE setting SET value = 'themes/huraga/assets/build/favicon.ico' WHERE param = 'company_favicon' AND value = 'themes/huraga/assets/favicon.ico';";
+        $q = "UPDATE setting SET value = 'public/branding/favicon.ico' WHERE param = 'company_favicon' AND value = 'themes/huraga/assets/favicon.ico';";
         $this->executeSql($q);
     }
 
@@ -1338,6 +1339,106 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         if ($this->tableHasColumn('currency', 'title')) {
             $this->executeSql('ALTER TABLE currency DROP COLUMN title');
+        }
+    }
+
+    private function patch64(): void
+    {
+        $this->migrateGatewayAssetsToPublicDirectory();
+        $this->migrateDefaultBrandingAssetsToPublicDirectory();
+
+        $this->executeFileActions([
+            Path::join(PATH_LIBRARY, 'Api', 'API.js') => 'unlink',
+            Path::join(PATH_MODS, 'Wysiwyg') => 'unlink',
+            Path::join(PATH_THEMES, 'admin_default', 'html', 'mod_wysiwyg_js.html.twig') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'html', 'mod_wysiwyg_js.html.twig') => 'unlink',
+            Path::join(PATH_THEMES, 'admin_default', 'assets', 'js', 'wysiwyg.js') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'js', 'wysiwyg.js') => 'unlink',
+            Path::join(PATH_THEMES, 'admin_default', 'assets', 'build', 'js', 'wysiwyg.js') => 'unlink',
+            Path::join(PATH_THEMES, 'admin_default', 'assets', 'build', 'js', 'wysiwyg.js.map') => 'unlink',
+            Path::join(PATH_THEMES, 'admin_default', 'assets', 'build', 'js', 'wysiwyg.css') => 'unlink',
+            Path::join(PATH_THEMES, 'admin_default', 'assets', 'build', 'js', 'wysiwyg.css.map') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'js', 'wysiwyg.js') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'js', 'wysiwyg.js.map') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'js', 'wysiwyg.css') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'js', 'wysiwyg.css.map') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'css', 'markdown.css') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'css', 'markdown.css') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'css', 'markdown.css.map') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'img', 'logo.png') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'img', 'logo.svg') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'img', 'logo_white.svg') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'favicon.ico') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'img', 'logo.png') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'img', 'logo.svg') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'img', 'logo_white.svg') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'favicon.ico') => 'unlink',
+        ]);
+    }
+
+    private function migrateDefaultBrandingAssetsToPublicDirectory(): void
+    {
+        $settings = [
+            'company_logo' => [
+                'public/branding/logo.svg',
+                'themes/huraga/assets/img/logo.svg',
+                'themes/huraga/assets/build/img/logo.svg',
+            ],
+            'company_logo_dark' => [
+                'public/branding/logo-dark.svg',
+                'themes/huraga/assets/img/logo_white.svg',
+                'themes/huraga/assets/build/img/logo_white.svg',
+            ],
+            'company_favicon' => [
+                'public/branding/favicon.ico',
+                'themes/huraga/assets/favicon.ico',
+                'themes/huraga/assets/build/favicon.ico',
+            ],
+        ];
+
+        foreach ($settings as $param => $values) {
+            $newValue = $values[0];
+            $oldValues = array_slice($values, 1);
+
+            foreach ($oldValues as $oldValue) {
+                $this->executeSql('UPDATE setting SET value = :new_value WHERE param = :param AND value = :old_value', [
+                    'new_value' => $newValue,
+                    'param' => $param,
+                    'old_value' => $oldValue,
+                ]);
+            }
+        }
+    }
+
+    private function migrateGatewayAssetsToPublicDirectory(): void
+    {
+        $publicGatewayAssetsPath = Path::join(PATH_ROOT, 'public', 'gateways');
+        $oldGatewayAssetPaths = array_unique([
+            Path::join(PATH_ROOT, 'data', 'assets', 'gateways'),
+            Path::join(PATH_DATA, 'assets', 'gateways'),
+            Path::join(PATH_ROOT, 'public', 'assets', 'gateways'),
+        ]);
+
+        foreach ($oldGatewayAssetPaths as $oldGatewayAssetsPath) {
+            if (!$this->filesystem->exists($oldGatewayAssetsPath)) {
+                continue;
+            }
+
+            $this->filesystem->mkdir($publicGatewayAssetsPath, 0o755);
+
+            $finder = new Finder();
+            $finder->files()->in($oldGatewayAssetsPath)->depth('== 0');
+
+            foreach ($finder as $file) {
+                $target = Path::join($publicGatewayAssetsPath, $file->getFilename());
+                if (!$this->filesystem->exists($target)) {
+                    $this->filesystem->copy($file->getPathname(), $target);
+                }
+            }
+
+            $this->executeFileActions([
+                $oldGatewayAssetsPath => 'unlink',
+            ]);
         }
     }
 }
