@@ -91,6 +91,13 @@ final class FOSSBilling_ConfigTest extends PHPUnit\Framework\TestCase
         $this->assertSame('installed', $this->runInstallerInstalledCheck());
     }
 
+    public function testInstallerTreatsExistingConfigAsNotInstalledInDebugMode(): void
+    {
+        $this->writeRawConfig("<?php return ['debug_and_monitoring' => ['debug' => true]];");
+
+        $this->assertSame('not-installed', $this->runInstallerInstalledCheck());
+    }
+
     public function testInstallerAllowsInstallWhenConfigFileIsMissing(): void
     {
         $this->removeConfig();
@@ -128,11 +135,11 @@ final class FOSSBilling_ConfigTest extends PHPUnit\Framework\TestCase
     private function runInstallerInstalledCheck(): string
     {
         $code = <<<'PHP'
-require 'src/install/install.php';
-$request = Symfony\Component\HttpFoundation\Request::create('http://localhost/install/install.php', 'GET');
-$installer = new FOSSBilling_Installer($request);
-echo $installer->isAlreadyInstalled() ? 'installed' : 'not-installed';
-PHP;
+            require 'src/install/install.php';
+            $request = Symfony\Component\HttpFoundation\Request::create('http://localhost/install/install.php', 'GET');
+            $installer = new FOSSBilling_Installer($request);
+            echo $installer->isAlreadyInstalled() ? 'installed' : 'not-installed';
+            PHP;
 
         $pipes = [];
         $process = proc_open(

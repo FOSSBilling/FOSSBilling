@@ -304,7 +304,7 @@ class FOSSBillingExtension
     }
 
     #[AsTwigFilter('script_tag', isSafe: ['html'])]
-    public function scriptTag($path): string
+    public function scriptTag(string $path): string
     {
         if ($this->isAssetLoaded($path)) {
             return '';
@@ -312,11 +312,14 @@ class FOSSBillingExtension
 
         $this->markAssetAsLoaded($path);
 
-        return sprintf('<script src="%s?%s"></script>', $path, $this->getCacheBuster($path));
+        $escapedPath = htmlspecialchars((string) $path, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $escapedCacheBuster = htmlspecialchars((string) $this->getCacheBuster($path), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+
+        return sprintf('<script src="%s?%s"></script>', $escapedPath, $escapedCacheBuster);
     }
 
     #[AsTwigFilter('stylesheet_tag', isSafe: ['html'])]
-    public function stylesheetTag($path, $media = 'screen'): string
+    public function stylesheetTag(string $path, $media = 'screen'): string
     {
         if ($this->isAssetLoaded($path)) {
             return '';
@@ -324,7 +327,11 @@ class FOSSBillingExtension
 
         $this->markAssetAsLoaded($path);
 
-        return sprintf('<link rel="stylesheet" type="text/css" href="%s?v=%s" media="%s" />', $path, $this->getCacheBuster($path), $media);
+        $escapedPath = htmlspecialchars((string) $path, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $escapedCacheBuster = htmlspecialchars((string) $this->getCacheBuster($path), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $escapedMedia = htmlspecialchars((string) $media, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+
+        return sprintf('<link rel="stylesheet" type="text/css" href="%s?v=%s" media="%s" />', $escapedPath, $escapedCacheBuster, $escapedMedia);
     }
 
     #[AsTwigFilter('timeago')]
@@ -340,22 +347,23 @@ class FOSSBillingExtension
             return '-';
         }
         $tokens = [
-            315_705_600 => __trans('decade'),
-            31_570_560 => __trans('year'),
-            2_630_880 => __trans('month'),
-            604_800 => __trans('week'),
-            86400 => __trans('day'),
-            3600 => __trans('hour'),
-            60 => __trans('minute'),
-            1 => __trans('second'),
+            315_705_600 => ['one' => __trans('decade'), 'other' => __trans('decades')],
+            31_570_560 => ['one' => __trans('year'), 'other' => __trans('years')],
+            2_630_880 => ['one' => __trans('month'), 'other' => __trans('months')],
+            604_800 => ['one' => __trans('week'), 'other' => __trans('weeks')],
+            86400 => ['one' => __trans('day'), 'other' => __trans('days')],
+            3600 => ['one' => __trans('hour'), 'other' => __trans('hours')],
+            60 => ['one' => __trans('minute'), 'other' => __trans('minutes')],
+            1 => ['one' => __trans('second'), 'other' => __trans('seconds')],
         ];
-        foreach ($tokens as $unit => $text) {
+        foreach ($tokens as $unit => $forms) {
             if ($timeAgo < $unit) {
                 continue;
             }
             $numberOfUnits = floor($timeAgo / $unit);
+            $text = ($numberOfUnits === 1.0) ? $forms['one'] : $forms['other'];
 
-            return sprintf('%d %s%s', $numberOfUnits, $text, ($numberOfUnits > 1) ? 's' : '');
+            return sprintf('%d %s', $numberOfUnits, $text);
         }
 
         return '';
