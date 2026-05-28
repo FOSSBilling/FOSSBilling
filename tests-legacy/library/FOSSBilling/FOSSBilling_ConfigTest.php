@@ -84,6 +84,27 @@ final class FOSSBilling_ConfigTest extends PHPUnit\Framework\TestCase
         $this->assertFalse(FOSSBilling\Config::isConfigValid());
     }
 
+    public function testInstallerTreatsExistingInvalidConfigAsAlreadyInstalled(): void
+    {
+        $this->writeRawConfig("<?php return 'not-an-array';");
+
+        $this->assertSame('installed', $this->runInstallerInstalledCheck());
+    }
+
+    public function testInstallerTreatsExistingConfigAsNotInstalledInDebugMode(): void
+    {
+        $this->writeRawConfig("<?php return ['debug_and_monitoring' => ['debug' => true]];");
+
+        $this->assertSame('not-installed', $this->runInstallerInstalledCheck());
+    }
+
+    public function testInstallerAllowsInstallWhenConfigFileIsMissing(): void
+    {
+        $this->removeConfig();
+
+        $this->assertSame('not-installed', $this->runInstallerInstalledCheck());
+    }
+
     private function writeRawConfig(string $contents): void
     {
         $writeResult = file_put_contents(PATH_CONFIG, $contents);
@@ -96,5 +117,55 @@ final class FOSSBilling_ConfigTest extends PHPUnit\Framework\TestCase
         if (function_exists('opcache_invalidate')) {
             @opcache_invalidate(PATH_CONFIG, true);
         }
+    }
+
+    private function removeConfig(): void
+    {
+        if (!unlink(PATH_CONFIG)) {
+            self::fail('Failed to remove the FOSSBilling config file.');
+        }
+
+        clearstatcache(true, PATH_CONFIG);
+
+        if (function_exists('opcache_invalidate')) {
+            @opcache_invalidate(PATH_CONFIG, true);
+        }
+    }
+
+    private function runInstallerInstalledCheck(): string
+    {
+        $code = <<<'PHP'
+            require 'src/install/install.php';
+            $request = Symfony\Component\HttpFoundation\Request::create('http://localhost/install/install.php', 'GET');
+            $installer = new FOSSBilling_Installer($request);
+            echo $installer->isAlreadyInstalled() ? 'installed' : 'not-installed';
+            PHP;
+
+        $pipes = [];
+        $process = proc_open(
+            [PHP_BINARY, '-d', 'display_errors=1', '-r', $code],
+            [
+                1 => ['pipe', 'w'],
+                2 => ['pipe', 'w'],
+            ],
+            $pipes,
+            dirname(__DIR__, 3)
+        );
+
+        if (!is_resource($process)) {
+            self::fail('Failed to start installer check subprocess.');
+        }
+
+        $output = stream_get_contents($pipes[1]);
+        $errorOutput = stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+
+        $exitCode = proc_close($process);
+        if ($exitCode !== 0) {
+            self::fail(sprintf('Installer check subprocess failed with exit code %d: %s', $exitCode, $errorOutput));
+        }
+
+        return trim((string) $output);
     }
 }

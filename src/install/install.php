@@ -189,7 +189,7 @@ final class FOSSBilling_Installer
                         if (!$this->isDebug) {
                             $this->filesystem->remove(Path::join(PATH_INSTALL, 'install.php'));
                         }
-                    } catch (\Throwable) {
+                    } catch (Throwable) {
                         // Do nothing and fail silently. New warnings are presented on the installation completed page for a leftover install directory.
                     }
 
@@ -349,7 +349,7 @@ final class FOSSBilling_Installer
      */
     public function isAlreadyInstalled(): bool
     {
-        return !$this->isDebug && $this->getExistingConfig() !== null;
+        return !$this->isDebug && $this->filesystem->exists(PATH_CONFIG);
     }
 
     private function getExistingConfig(): ?array
@@ -360,7 +360,7 @@ final class FOSSBilling_Installer
 
         try {
             $config = require PATH_CONFIG;
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return null;
         }
 
