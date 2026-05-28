@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span>${escape(item.label)}</span>
                 <small class="text-body-secondary ms-1 lh-1">#${escape(item.value)}</small>
              </div>`;
-  }
+  };
 
   const autocompleteSelectorEls = document.querySelectorAll('.autocomplete-selector');
   if (autocompleteSelectorEls.length > 0) {
