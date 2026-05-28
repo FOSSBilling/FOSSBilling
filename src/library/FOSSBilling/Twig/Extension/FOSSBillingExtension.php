@@ -312,14 +312,14 @@ class FOSSBillingExtension
 
         $this->markAssetAsLoaded($path);
 
-        $escapedPath = htmlspecialchars((string) $path, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-        $escapedCacheBuster = htmlspecialchars((string) $this->getCacheBuster($path), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $escapedPath = htmlspecialchars($path, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $escapedCacheBuster = htmlspecialchars($this->getCacheBuster($path), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 
         return sprintf('<script src="%s?%s"></script>', $escapedPath, $escapedCacheBuster);
     }
 
     #[AsTwigFilter('stylesheet_tag', isSafe: ['html'])]
-    public function stylesheetTag(string $path, $media = 'screen'): string
+    public function stylesheetTag(string $path, string $media = 'screen'): string
     {
         if ($this->isAssetLoaded($path)) {
             return '';
@@ -327,9 +327,9 @@ class FOSSBillingExtension
 
         $this->markAssetAsLoaded($path);
 
-        $escapedPath = htmlspecialchars((string) $path, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-        $escapedCacheBuster = htmlspecialchars((string) $this->getCacheBuster($path), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-        $escapedMedia = htmlspecialchars((string) $media, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $escapedPath = htmlspecialchars($path, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $escapedCacheBuster = htmlspecialchars($this->getCacheBuster($path), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $escapedMedia = htmlspecialchars($media, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 
         return sprintf('<link rel="stylesheet" type="text/css" href="%s?v=%s" media="%s" />', $escapedPath, $escapedCacheBuster, $escapedMedia);
     }
@@ -360,8 +360,8 @@ class FOSSBillingExtension
             if ($timeAgo < $unit) {
                 continue;
             }
-            $numberOfUnits = floor($timeAgo / $unit);
-            $text = ($numberOfUnits === 1.0) ? $forms['one'] : $forms['other'];
+            $numberOfUnits = (int) floor($timeAgo / $unit);
+            $text = ($numberOfUnits === 1) ? $forms['one'] : $forms['other'];
 
             return sprintf('%d %s', $numberOfUnits, $text);
         }
