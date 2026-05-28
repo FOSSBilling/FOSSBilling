@@ -428,6 +428,7 @@ class UpdatePatcher implements InjectionAwareInterface
             61 => 'patch61',
             62 => 'patch62',
             63 => 'patch63',
+            64 => 'patch64',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1338,6 +1339,60 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         if ($this->tableHasColumn('currency', 'title')) {
             $this->executeSql('ALTER TABLE currency DROP COLUMN title');
+        }
+    }
+
+    private function patch64(): void
+    {
+        $this->migrateGatewayAssetsToPublicDirectory();
+
+        $this->executeFileActions([
+            Path::join(PATH_LIBRARY, 'Api', 'API.js') => 'unlink',
+            Path::join(PATH_MODS, 'Wysiwyg') => 'unlink',
+            Path::join(PATH_THEMES, 'admin_default', 'html', 'mod_wysiwyg_js.html.twig') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'html', 'mod_wysiwyg_js.html.twig') => 'unlink',
+            Path::join(PATH_THEMES, 'admin_default', 'assets', 'js', 'wysiwyg.js') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'js', 'wysiwyg.js') => 'unlink',
+            Path::join(PATH_THEMES, 'admin_default', 'assets', 'build', 'js', 'wysiwyg.js') => 'unlink',
+            Path::join(PATH_THEMES, 'admin_default', 'assets', 'build', 'js', 'wysiwyg.js.map') => 'unlink',
+            Path::join(PATH_THEMES, 'admin_default', 'assets', 'build', 'js', 'wysiwyg.css') => 'unlink',
+            Path::join(PATH_THEMES, 'admin_default', 'assets', 'build', 'js', 'wysiwyg.css.map') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'js', 'wysiwyg.js') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'js', 'wysiwyg.js.map') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'js', 'wysiwyg.css') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'js', 'wysiwyg.css.map') => 'unlink',
+        ]);
+    }
+
+    private function migrateGatewayAssetsToPublicDirectory(): void
+    {
+        $publicGatewayAssetsPath = Path::join(PATH_ROOT, 'public', 'gateways');
+        $oldGatewayAssetPaths = array_unique([
+            Path::join(PATH_ROOT, 'data', 'assets', 'gateways'),
+            Path::join(PATH_DATA, 'assets', 'gateways'),
+            Path::join(PATH_ROOT, 'public', 'assets', 'gateways'),
+        ]);
+
+        foreach ($oldGatewayAssetPaths as $oldGatewayAssetsPath) {
+            if (!$this->filesystem->exists($oldGatewayAssetsPath)) {
+                continue;
+            }
+
+            $this->filesystem->mkdir($publicGatewayAssetsPath, 0o755);
+
+            $finder = new Finder();
+            $finder->files()->in($oldGatewayAssetsPath)->depth('== 0');
+
+            foreach ($finder as $file) {
+                $target = Path::join($publicGatewayAssetsPath, $file->getFilename());
+                if (!$this->filesystem->exists($target)) {
+                    $this->filesystem->copy($file->getPathname(), $target);
+                }
+            }
+
+            $this->executeFileActions([
+                $oldGatewayAssetsPath => 'unlink',
+            ]);
         }
     }
 }
