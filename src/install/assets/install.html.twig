@@ -4,15 +4,16 @@
     {% if alreadyInstalled %}
         <h1 class='red'>Already installed</h1>
 
-        <p>FOSSBilling is already installed. If you are trying to reinstall, take the following steps:</p>
+        <p>FOSSBilling already has a valid configuration file. To run the installer again, reset this instance first:</p>
 
         <ol>
             <li>Delete your database tables or recreate your database.</li>
             <li>Delete <strong>config.php</strong>.</li>
-            <li>Refresh this page and you will see the installer.</li>
+            <li>Refresh this page to restart setup.</li>
         </ol>
     {% else %}
-        <p>Thank you for choosing FOSSBilling! Our installer will have you up and running in just a few more minutes. <br>Simply follow each step below and soon you'll have FOSSBilling installed.</p>
+        <h1>Install FOSSBilling</h1>
+        <p class="installer-intro">Set up the database connection, create the first admin account, and choose the default billing options.</p>
     
         <progress id="overall-progress" value="0" max="4"></progress>
 
@@ -20,141 +21,134 @@
 
         <form id='form' action="/install/install.php?a=install" method="post">
         <details {% if not canInstall %} open {% endif %} id="step-1">
-            <summary>Step 1) Agree to the FOSSBilling license and review error reporting options</summary>
+            <summary>Step 1 - License Agreement</summary>
 
-            <label for="agreement">
+            <div class="choice-row">
                 <input type="checkbox" id="agreement" name="agreement" required>
-                I agree to the <a href='https://github.com/FOSSBilling/FOSSBilling/blob/master/LICENSE' target='_blank' data-tooltip="Opens in a new tab.">Apache License version 2.0,</a> and acknowledge that this software is provided as-is.
-            </label>
-            <small>FOSSBilling is licensed under the Apache License version 2.0. You assume responsibility to verify its use and compliance with all local laws that may apply.</small>
-
-            <br><br>
-
-            <label for="error-reporting">
-                <input type="checkbox" id="error-reporting" name="error_reporting">
-                (Optional) Enable automated error reporting to help improve FOSSBilling.
-            </label>
-            <small><a href="#" data-target="learn-reporting" onClick="toggleModal(event)">Learn more</a></small>
+                <label for="agreement">I agree to the <a href='https://github.com/FOSSBilling/FOSSBilling/blob/master/LICENSE' target='_blank' data-tooltip="Opens in a new tab.">Apache License version 2.0,</a> and acknowledge that this software is provided as-is.</label>
+            </div>
         </details>
 
         <details {% if not canInstall %} open {% endif %} id="step-2">
-            <summary>Step 2) Check system requirements</summary>
+            <summary>Step 2 - System Requirements</summary>
             {% if canInstall %}
-                <p class="green">All basic requirements to install FOSSBilling are met.</p>
+                <p class="green">This environment meets the basic installation requirements.</p>
             {% else %}
-                <p class="red">Installation is blocked because you do not meet one or more system requirements.</p>
+                <p class="red">Installation is blocked until the failed requirements below are fixed.</p>
             {% endif %}
 
-            <table role="grid">
-                <thead>
-                    <tr>
-                        <th scope="col">Requirement</th>
-                        <th scope="col">Result</th>
-                        <th scope="col"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% if is_subfolder %}
+            <div class="requirements-table-wrapper">
+                <table role="grid">
+                    <thead>
                         <tr>
-                            <td>Subfolder detection</td>
-                            <td class="red">FAIL</td>
-                            <td>FOSSBilling does not support installing in a subfolder. Please move the application to your host document root. Refer to the <a href='https://fossbilling.org/docs/troubleshooting#subfolder-installations' data-tooltip="Opens in a new tab." target='_blank'>troubleshooting documentation</a> for more information.</td>
+                            <th scope="col">Requirement</th>
+                            <th scope="col">Result</th>
+                            <th scope="col"></th>
                         </tr>
-                    {% endif %}
-                    <tr>
-                        <td>Operating system</td>
-                        <td class="{{ os_ok ? 'green' : 'orange'}}">{{ os }}</td>
-                        <td>{% if not os_ok %}FOSSBilling might not work properly on your operating system{% endif %}</td>
-                    </tr>
-                    <tr>
-                        <td>PHP version</td>
-                        <td class="{{ compatibility.php_version.isOk ? 'green' : 'red'}}">{{ compatibility.php_version.version }}</td>
-                        <td>{% if not compatibility.php_version.isOk %} Required PHP version >={{ compatibility.php_version.min_version }}{% endif %}</td>
-                    </tr>
-                    {% for ext, loaded in compatibility.required_extensions %}
+                    </thead>
+                    <tbody>
+                        {% if is_subfolder %}
+                            <tr>
+                                <td>Subfolder detection</td>
+                                <td class="red">FAIL</td>
+                                <td>FOSSBilling must be installed at the host document root, not in a subfolder. See the <a href='https://fossbilling.org/docs/troubleshooting#subfolder-installations' data-tooltip="Opens in a new tab." target='_blank'>troubleshooting documentation</a>.</td>
+                            </tr>
+                        {% endif %}
                         <tr>
-                            <td>PHP extension: <strong>{{ ext }}</strong></td>
-                            <td class="{{ loaded ? 'green' : 'red'}}">{{ loaded ? 'OK' : 'FAIL'}}</td>
-                            <td>{% if not loaded %}Contact your server administrator to enable the <strong>{{ ext }}</strong> PHP extension{% endif %}</td>
+                            <td>Operating system</td>
+                            <td class="{{ os_ok ? 'green' : 'orange'}}">{{ os }}</td>
+                            <td>{% if not os_ok %}FOSSBilling may not work correctly on this operating system.{% endif %}</td>
                         </tr>
-                    {% endfor %}
-                    {% for ext, info in compatibility.suggested_extensions %}
-                        {% if not info.loaded %}
+                        <tr>
+                            <td>PHP version</td>
+                            <td class="{{ compatibility.php_version.isOk ? 'green' : 'red'}}">{{ compatibility.php_version.version }}</td>
+                            <td>{% if not compatibility.php_version.isOk %}PHP {{ compatibility.php_version.min_version }} or newer is required.{% endif %}</td>
+                        </tr>
+                        {% for ext, loaded in compatibility.required_extensions %}
                             <tr>
                                 <td>PHP extension: <strong>{{ ext }}</strong></td>
-                                <td class="{{ info.loaded ? 'green' : 'orange'}}">{{ info.loaded ? 'OK' : 'WARN'}}</td>
-                                <td>{% if not info.loaded %}We recommend enabling the <strong>{{ ext }}</strong> PHP extension for: {{ info.message }}.{% endif %}</td>
+                                <td class="{{ loaded ? 'green' : 'red'}}">{{ loaded ? 'OK' : 'FAIL'}}</td>
+                                <td>{% if not loaded %}Enable the <strong>{{ ext }}</strong> PHP extension before continuing.{% endif %}</td>
                             </tr>
-                        {% endif %}
-                    {% endfor %}
-                    {% for file, writable in compatibility.files %}
-                        {% if not writable %}
-                            <tr>
-                                <td>{{ file }}</td>
-                                <td class="red">FAIL</td>
-                                <td>Permissions are incorrect, preventing FOSSBilling from writing to this file name. <a href="https://fossbilling.org/docs/troubleshooting#permission-issues" target="_blank">(Troubleshooting)</a></td>
-                            </tr>
-                        {% endif %}
-                    {% endfor %}
-                    {% for folder, writable in compatibility.folders %}
-                        {% if not writable %}
-                            <tr>
-                                <td>{{ folder }}</td>
-                                <td class="red">FAIL</td>
-                                <td>Please make sure that directory exists and is writable. <a href="https://fossbilling.org/docs/troubleshooting#permission-issues" target="_blank">(Troubleshooting)</a></td>
-                            </tr>
-                        {% endif %}
-                    {% endfor %}
-                </tbody>
-            </table>
+                        {% endfor %}
+                        {% for ext, info in compatibility.suggested_extensions %}
+                            {% if not info.loaded %}
+                                <tr>
+                                    <td>PHP extension: <strong>{{ ext }}</strong></td>
+                                    <td class="{{ info.loaded ? 'green' : 'orange'}}">{{ info.loaded ? 'OK' : 'WARN'}}</td>
+                                    <td>{% if not info.loaded %}Optional: {{ info.message }}.{% endif %}</td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                        {% for file, writable in compatibility.files %}
+                            {% if not writable %}
+                                <tr>
+                                    <td>{{ file }}</td>
+                                    <td class="red">FAIL</td>
+                                    <td>FOSSBilling cannot write to this file. <a href="https://fossbilling.org/docs/troubleshooting#permission-issues" target="_blank">Permission troubleshooting</a></td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                        {% for folder, writable in compatibility.folders %}
+                            {% if not writable %}
+                                <tr>
+                                    <td>{{ folder }}</td>
+                                    <td class="red">FAIL</td>
+                                    <td>Make sure this directory exists and is writable. <a href="https://fossbilling.org/docs/troubleshooting#permission-issues" target="_blank">Permission troubleshooting</a></td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </details>
 
         {% if canInstall == false %}
 
-        <p>Meet all the system requirements, then refresh the page to see the setup form.</p>
+        <p>Fix the failed requirements, then refresh this page to continue setup.</p>
 
         {% else %}
                 <details id="step-3">
-                    <summary>Step 3) Enter database details</summary>
+                    <summary>Step 3 - Database Connection</summary>
 
-                    <p>Enter your MySQL connection information.</p>
+                    <p>Enter the MySQL or MariaDB database details FOSSBilling should use.</p>
 
                     <fieldset>
-                        <label for="database_hostname">Database hostname <span class="red">*</span></label>
+                        <label for="database_hostname">Database Hostname <span class="red">*</span></label>
                         <input type="text" id="database_hostname" name="database_hostname" value="{{ request.database_hostname|default(database_hostname)|default('localhost') }}" placeholder="localhost, mysql, db.domain.com, 12.34.56.78 ..." required>
-                        <small>Usually <strong>localhost</strong>. For Docker, use <strong>mysql</strong>.</small>
+                        <small>Use the database service name in Docker environments, for example <strong>mysql</strong>.</small>
     
-                        <label for="database_port">Database port <span class="red">*</span></label>
-                        <input type="number" id="database_port" name="database_port" value="{{ request.database_port|default(3306) }}" placeholder="Usually 3306." required>
+                        <label for="database_port">Database Port <span class="red">*</span></label>
+                        <input type="number" id="database_port" name="database_port" value="{{ request.database_port|default(3306) }}" placeholder="3306" required>
     
-                        <label for="database_name">Database name <span class="red">*</span></label>
-                        <input type="text" id="database_name" name="database_name" value="{{ request.database_name|default(database_name) }}" placeholder="Enter the name of the database." required>
+                        <label for="database_name">Database Name <span class="red">*</span></label>
+                        <input type="text" id="database_name" name="database_name" value="{{ request.database_name|default(database_name) }}" placeholder="fossbilling" required>
     
-                        <label for="database_username">Database username <span class="red">*</span></label>
-                        <input type="text" id="database_username" name="database_username" value="{{ request.database_username|default(database_username) }}" placeholder="Enter the MySQL username." required>
+                        <label for="database_username">Database Username <span class="red">*</span></label>
+                        <input type="text" id="database_username" name="database_username" value="{{ request.database_username|default(database_username) }}" placeholder="fossbilling" required>
     
-                        <label for="database_password">Database password <span class="red">*</span></label>
-                        <input type="password" id="database_password" name="database_password" value="{{ request.database_password|default(database_password) }}" placeholder="Enter the MySQL password." required>
+                        <label for="database_password">Database Password <span class="red">*</span></label>
+                        <input type="password" id="database_password" name="database_password" value="{{ request.database_password|default(database_password) }}" placeholder="Database password" required>
                     </fieldset>
                 </details>
 
                 <details id="step-4">
-                    <summary>Step 4) Configure your administrator account</summary>
+                    <summary>Step 4 - Admin Account</summary>
 
-                    <p>Create your administrator login details below.</p>
+                    <p>Create the first admin account. You will use this account to sign in to the admin area.</p>
     
                     <fieldset>
                         {% set minLength = 8 %}
                         <label for="admin_name">Name <span class="red">*</span></label>
-                        <input type="text" id="admin_name" name="admin_name" value="{{ request.admin_name|default(admin_name) }}" placeholder="Display name of your account." required>
+                        <input type="text" id="admin_name" name="admin_name" value="{{ request.admin_name|default(admin_name) }}" placeholder="Your name" required>
     
                         <label for="admin_email">Email <span class="red">*</span></label>
                         <input type="email" id="admin_email" name="admin_email" value="{{ request.admin_email|default(admin_email) }}" placeholder="you@yourdomain.com" required>
     
                         <label for="admin_password">Password <span class="red">*</span></label>
-                        <input type="password" id="admin_password" name="admin_password" value="{{ request.admin_password|default(admin_password) }}" placeholder="Use a strong, secure password." required minlength="{{ minLength }}">
+                        <input type="password" id="admin_password" name="admin_password" value="{{ request.admin_password|default(admin_password) }}" placeholder="Create a strong password" required minlength="{{ minLength }}">
                         <small>
-                            Password must:
+                            Password requirements:
                             <ul>
                                 <li>Be at least {{ minLength }} characters long</li>
                                 <li>Contain at least one number</li>
@@ -166,26 +160,32 @@
                 </details>
 
                 <details id="step-5">
-                    <summary>Step 5) Configure the default currency</summary>
+                    <summary>Step 5 - Options</summary>
 
-                    <p>Configure your default currency.</p>
+                    <p>Choose the primary currency for invoices, orders, and pricing. You can add more currencies later.</p>
     
                     <fieldset>
-                        <label for="currency_code">Code <span class="red">*</span></label>
+                        <label for="currency_code">Currency Code <span class="red">*</span></label>
                         <input type="text" id="currency_code" name="currency_code" value="{{ request.currency_code|default(currency_code) }}" required>
-    
                     </fieldset>
+
+                    <div class="choice-row">
+                        <input type="checkbox" id="error-reporting" name="error_reporting">
+                        <label for="error-reporting">Enable automated error reporting to help improve FOSSBilling.</label>
+                    </div>
+                    <small class="choice-help">Optional. <a href="#" data-target="learn-reporting" onClick="toggleModal(event)">Learn more</a></small>
                 </details>
 
-                <div>
+                <div class="installer-actions">
                     <progress id='progress' style='display:none;'></progress>
 
-                    <button class="button-inline float-left-margin secondary" id="backButton" type="button" disabled>Back</button>
-                    <button class="button-inline float-right-margin" id='nextButton' type="button">Next</button>
+                    <button class="secondary" id="backButton" type="button" disabled>Back</button>
+                    <button id='nextButton' type="button">Next</button>
 
-                    <button class="button-inline float-right-margin" id='button' type="submit" hidden="true">Install</button>
-                    <br>
-                    <p id="time-note" class="float-right-margin" hidden="true">Installation may take up to 30 seconds depending on the speed of your system.</p>
+                    <button id='button' type="submit" hidden="true">Install</button>
+                </div>
+                <div>
+                    <p id="time-note" class="installer-note" hidden="true">Installation can take a short moment while database tables and default templates are created.</p>
                 </div>
         </form>
         {% endif %}
@@ -200,10 +200,10 @@
                     onClick="toggleModal(event)">
                 </a>
                 <h3>Error reporting</h3>
-                <p>FOSSBilling optionally includes automated error reporting which allows us to improve the software and offer better technical support.</p>
-                <p>Reports are collected using <a href="https://sentry.io/welcome/" target='_blank' data-tooltip="Opens in a new tab.">Sentry.io</a> and data is <a href="https://sentry.io/security/" target='_blank' data-tooltip="Opens in a new tab.">retained securely</a> for up to 90 days.</p>
-                <p>Automated data scrubbing and filtering is used to prevent sensitive information from being recorded.</p> 
-                <p>See <a href="https://fossbilling.org/docs/faq/error-reporting" target='_blank' data-tooltip="Opens in a new tab.">the FOSSBilling documentation</a> for information on what's collected and why you should enable it.</p>
+                <p>Automated error reporting helps the FOSSBilling team identify defects and improve stability.</p>
+                <p>Reports are collected using <a href="https://sentry.io/welcome/" target='_blank' data-tooltip="Opens in a new tab.">Sentry.io</a> and retained for up to 90 days under Sentry's <a href="https://sentry.io/security/" target='_blank' data-tooltip="Opens in a new tab.">security practices</a>.</p>
+                <p>Data scrubbing and filtering are applied to reduce the chance of sensitive information being recorded.</p>
+                <p>See <a href="https://docs.fossbilling.org/maintenance/error-reporting/" target='_blank' data-tooltip="Opens in a new tab.">the FOSSBilling documentation</a> for details about what is collected.</p>
                 <footer>
                     <a href="#confirm"
                         role="button"
@@ -221,6 +221,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             var currentStep = 1;
+            var completedStep = 0;
             const button = document.getElementById('button');
             const timeNote = document.getElementById('time-note');
             const progress = document.getElementById('progress');
@@ -232,10 +233,19 @@
             const step3 = document.getElementById("step-3");
             const step4 = document.getElementById("step-4");
             const step5 = document.getElementById("step-5");
+            const steps = [step1, step2, step3, step4, step5];
 
-            function isStepAllowed(step) {
-                for (let i = (step - 1); i >= 1; i--) {
-                    if(!checkRequiredInputs(i)){
+            function isStepAllowed(step, reportValidity = false) {
+                for (let i = 1; i < step; i++) {
+                    if(!checkRequiredInputs(i, false)){
+                        if (reportValidity) {
+                            currentStep = i;
+                            updateStepVisibility(currentStep);
+                            updateButtons();
+                            updateProgress();
+                            setTimeout(() => checkRequiredInputs(i, true), 0);
+                        }
+
                         return false;
                     }
                 }
@@ -243,18 +253,19 @@
             }
 
             function updateStepVisibility(step) {
-                [step1, step2, step3, step4, step5].forEach((stepElement, index) => {
+                steps.forEach((stepElement, index) => {
                     stepElement.open = index + 1 === step ? true : false;
                 });
             }
 
-            function checkRequiredInputs(step) {
+            function checkRequiredInputs(step, reportValidity = false) {
                 const stepForm = document.getElementById(`step-${step}`);
                 var requiredInputs = stepForm.querySelectorAll('input[required]');
                 var allowed = true;
 
                 requiredInputs.forEach(function (input) {
-                    if (!input.reportValidity()) {
+                    const isValid = reportValidity ? input.reportValidity() : input.checkValidity();
+                    if (!isValid) {
                         allowed = false;
                     }
                 });
@@ -279,7 +290,7 @@
 
             function updateProgress() {
                 const overallProgress = document.getElementById('overall-progress');
-                overallProgress.value = (currentStep-1);
+                overallProgress.value = completedStep;
             }
 
             updateButtons();
@@ -297,12 +308,12 @@
                     currentStep--;
                     updateStepVisibility(currentStep);
                     updateButtons();
-                    updateProgress();
                 }
             });
 
             nextButton.addEventListener('click', () => {
-                if({{ canInstall ? 'true' : 'false' }} && isStepAllowed(currentStep + 1)){
+                if({{ canInstall ? 'true' : 'false' }} && isStepAllowed(currentStep + 1, true)){
+                    completedStep = Math.max(completedStep, currentStep);
                     currentStep++;
                     updateStepVisibility(currentStep);
                     updateButtons();
@@ -310,23 +321,16 @@
                 }
             });
 
-            // Event delegation to handle step clicks.
-            function handleStepToggle(stepElement, step) {
-                stepElement.addEventListener("toggle", function(event) {
-                    if (!isStepAllowed(step)) {
-                        event.preventDefault();
+            steps.forEach((stepElement, index) => {
+                stepElement.addEventListener('toggle', () => {
+                    if (!stepElement.open || currentStep === index + 1) {
+                        return;
                     }
+
+                    currentStep = index + 1;
+                    updateStepVisibility(currentStep);
+                    updateButtons();
                 });
-                stepElement.addEventListener("click", function(event) {
-                    if (!isStepAllowed(step)) {
-                        event.preventDefault();
-                    }
-                });
-            }
-    
-            // Use event delegation for every step
-            [step2, step3, step4, step5].forEach((stepElement, index) => {
-                handleStepToggle(stepElement, index + 2);
             });
         });
     </script>
