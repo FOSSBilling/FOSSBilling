@@ -2,6 +2,7 @@ name: fossbilling.dev
 type: php
 docroot: src
 php_version: "8.3"
+nodejs_version: "24"
 webserver_type: nginx-fpm
 xdebug_enabled: false
 additional_hostnames: []
@@ -9,6 +10,8 @@ additional_fqdns: []
 database:
     type: mariadb
     version: "10.11"
+upload_dirs:
+    - data/uploads
 use_dns_when_possible: true
 composer_version: "2"
 web_environment:
