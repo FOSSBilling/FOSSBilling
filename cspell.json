@@ -446,7 +446,8 @@
         "Paidsupport",
         "paidsupport",
         "Sparkline",
-        "dicebear"
+        "dicebear",
+        "miterlimit"
     ],
     "ignorePaths": [
         "tests-legacy/**",
