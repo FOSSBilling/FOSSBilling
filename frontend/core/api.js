@@ -576,6 +576,11 @@ const API = {
 
     if (formElements.length > 0) {
       formElements.forEach(formElement => {
+        if (formElement.dataset.fbApiBound === 'true') {
+          return;
+        }
+
+        formElement.dataset.fbApiBound = 'true';
         formElement.addEventListener('submit', function (event) {
           event.preventDefault();
 
@@ -634,6 +639,11 @@ const API = {
 
     if (linkElements.length > 0) {
       linkElements.forEach(linkElement => {
+        if (linkElement.dataset.fbApiBound === 'true') {
+          return;
+        }
+
+        linkElement.dataset.fbApiBound = 'true';
         let requestInProgress = false;
         let loadingAlert = null;
         let beforeUnloadHandler = null;
@@ -818,3 +828,21 @@ const API = {
 window.FOSSBilling = window.FOSSBilling || {};
 window.FOSSBilling.tools = Tools;
 window.FOSSBilling.api = API;
+
+const bindApiInteractions = () => {
+  if (document.querySelector('form[data-fb-api]')) {
+    API._apiForm();
+  }
+
+  if (document.querySelector('a[data-fb-api]')) {
+    API._apiLink();
+  }
+};
+
+if (typeof FOSSBilling.ready === 'function') {
+  FOSSBilling.ready(bindApiInteractions);
+} else if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bindApiInteractions);
+} else {
+  bindApiInteractions();
+}

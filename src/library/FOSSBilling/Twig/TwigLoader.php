@@ -48,7 +48,7 @@ class TwigLoader extends FilesystemLoader
         $this->setPaths($paths);
 
         // Add additional path to load symbols if they exist.
-        $symbolPath = Path::join($themePath, 'build', 'symbol');
+        $symbolPath = Path::join($themePath, 'assets', 'build', 'symbol');
         if ($this->filesystem->exists($symbolPath)) {
             $this->prependPath($symbolPath, 'symbol');
         }

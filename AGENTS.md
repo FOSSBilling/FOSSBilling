@@ -96,6 +96,7 @@ npm run build
 
 This command builds assets for:
 
+* Core public browser assets in `src/public/assets`
 * `admin_default` theme
 * `huraga` theme
 
@@ -112,9 +113,9 @@ npm run build-huraga
 
 **Theme Structure:**
 
+* **Core frontend**: Source lives in `frontend/` and builds the browser API wrapper, shared runtime, Markdown CSS, and editor assets into `src/public/assets`
 * **admin_default**: Uses `esbuild.mjs` with SVG sprite generation, SCSS compilation, and multiple asset types
-* **huraga**: Uses simplified `esbuild.mjs` for basic JS/CSS bundling
-* **Theme-owned editor assets**: Rich text editor bundles are built within the relevant theme instead of a shared module
+* **huraga**: Uses simplified `esbuild.mjs` for theme JS/CSS bundling
 
 **Development Mode:**
 
@@ -212,7 +213,7 @@ tests-legacy/                  # Legacy PHPUnit tests
     * `{{ admin.support_ticket_get_list({ 'status': 'active' }) }}` => Reads into /api/admin/support/ticket_get_list?status=active
     * `{{ client.order_get({ 'id': 1 }) }}` => Reads into /api/client/order/get?id=1
     * `{{ guest.system_version }}` => Reads into /api/guest/system/version
-* If you need to interact with the API for means other than reading data, use the FOSSBilling API Wrapper in `src/library/Api/API.js`. It provides `API.admin`, `API.client`, and `API.guest` namespaces with `get`, `post`, `put`, `delete`, `patch` methods. CSRFToken is automatically appended.
+* If you need to interact with the API for means other than reading data, use the FOSSBilling API wrapper provided by `frontend/core/api.js` and loaded from `public/assets/js/api.js`. It provides `FOSSBilling.api.admin`, `FOSSBilling.api.client`, and `FOSSBilling.api.guest` namespaces with `get`, `post`, `put`, `delete`, `patch` methods. CSRFToken is automatically appended.
 * For HTML forms that submit to the API, use the `fb_api_form()` Twig function. Example: `<form {{ fb_api_form({message: 'Saved'|trans}) }}>`
 * For links that trigger API calls, use the `fb_api_link()` Twig function. Example: `<a href="..." {{ fb_api_link({modal: {type: 'confirm'}}) }}>`
 * Use the `|api_url` filter to generate API URLs. Example: `{{ 'client/delete'|api_url({id: 1}) }}`

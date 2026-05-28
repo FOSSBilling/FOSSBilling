@@ -103,11 +103,4 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
-  // Attach event listeners to all forms and links with data-fb-api attribute.
-  if (document.querySelector("form[data-fb-api]")) {
-    FOSSBilling.api._apiForm();
-  };
-  if (document.querySelector("a[data-fb-api]")) {
-    FOSSBilling.api._apiLink();
-  }
 });

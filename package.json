@@ -25,8 +25,13 @@
     "src/themes/admin_default"
   ],
   "devDependencies": {
+    "autoprefixer": "10.5.0",
     "ckeditor5": "48.1.1",
-    "esbuild": "0.28.0"
+    "esbuild": "0.28.0",
+    "github-markdown-css": "^5.7.0",
+    "postcss": "8.5.15",
+    "purgecss": "8.0.0",
+    "sass": "1.100.0"
   },
   "config": {
     "platform": {

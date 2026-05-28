@@ -5,7 +5,7 @@
 {% block meta_title %}{{ ticket.subject }}{% endblock %}
 
 {% block head %}
-    <link rel="stylesheet" href="{{ 'build/css/markdown.css' | asset_url }}">
+    {{ 'css/markdown.css' | public_asset_url | stylesheet_tag }}
     {{ wysiwyg('.editor-textarea') }}
 {% endblock %}
 

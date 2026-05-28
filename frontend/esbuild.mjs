@@ -20,6 +20,7 @@ const sharedOptions = {
 
 async function build() {
   await mkdir(resolve(outputDir, 'js'), { recursive: true });
+  await mkdir(resolve(outputDir, 'css'), { recursive: true });
   await mkdir(resolve(outputDir, 'editor'), { recursive: true });
 
   await esbuild.build({
@@ -47,9 +48,16 @@ async function build() {
     },
   });
 
+  await esbuild.build({
+    ...sharedOptions,
+    entryPoints: [resolve(__dirname, 'styles/markdown.css')],
+    outfile: resolve(outputDir, 'css/markdown.css'),
+  });
+
   const manifest = {
     'js/fossbilling.js': '/public/assets/js/fossbilling.js',
     'js/api.js': '/public/assets/js/api.js',
+    'css/markdown.css': '/public/assets/css/markdown.css',
     'editor/ckeditor.js': '/public/assets/editor/ckeditor.js',
     'editor/ckeditor.css': '/public/assets/editor/ckeditor.css',
   };

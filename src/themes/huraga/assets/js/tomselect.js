@@ -36,7 +36,7 @@ export default function initLanguageSelector() {
     return;
   }
 
-  const selectedLang = getCookie('fb_locale') || localeSelectorEl.value;
+  const selectedLang = FOSSBilling.cookieRead('fb_locale') || localeSelectorEl.value;
 
   new TomSelect('.js-locale-selector', {
     copyClassesToDropdown: false,
@@ -50,28 +50,8 @@ export default function initLanguageSelector() {
       option: (data, escape) => localeSelectorTemplate(data, escape),
     },
     onItemAdd: (value) => {
-      setCookie('fb_locale', value, 365);
+      FOSSBilling.cookieCreate('fb_locale', value, 365);
       window.location.reload();
     },
   });
-}
-
-function getCookie(name) {
-  var nameEQ = name + '=';
-  var ca = document.cookie.split(';');
-  for (var i = 0; i < ca.length; i++) {
-    var c = ca[i];
-    while (c.charAt(0) == ' ') c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
-  }
-  return null;
-}
-
-function setCookie(name, value, days) {
-  if (days) {
-    var date = new Date();
-    date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
-    var expires = '; expires=' + date.toGMTString();
-  } else var expires = '';
-  document.cookie = name + '=' + value + expires + '; path=/ ';
 }
