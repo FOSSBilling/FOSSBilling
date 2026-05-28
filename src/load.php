@@ -79,6 +79,38 @@ function checkWebServer(): void
 }
 
 /*
+ * Check whether the configured database has existing tables.
+ */
+function hasDatabaseTables(): bool
+{
+    $dbConfig = Config::getProperty('db', []);
+    if (!is_array($dbConfig) || ($dbConfig['driver'] ?? '') !== 'pdo_mysql') {
+        return true;
+    }
+
+    $host = $dbConfig['host'] ?? '';
+    $database = $dbConfig['name'] ?? '';
+    $port = $dbConfig['port'] ?? '3306';
+    if ($host === '' || $database === '') {
+        return true;
+    }
+
+    try {
+        $pdo = new PDO(
+            sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $host, $port, $database),
+            $dbConfig['user'] ?? '',
+            $dbConfig['password'] ?? '',
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION],
+        );
+        $statement = $pdo->query('SHOW TABLES');
+
+        return $statement !== false && $statement->fetchColumn() !== false;
+    } catch (Throwable) {
+        return true;
+    }
+}
+
+/*
  * Error handler.
  */
 function errorHandler(int $number, string $message, string $file, int $line): bool
@@ -197,6 +229,12 @@ function init(): void
         exit;
     } elseif (!$configIsValid) {
         throw new Exception('The FOSSBilling configuration file is empty or invalid.', 3);
+    }
+
+    if (Environment::isDevelopment() && Config::getProperty('debug_and_monitoring.debug', false) && $installerExists && !hasDatabaseTables()) {
+        $response = new RedirectResponse($request->getSchemeAndHttpHost() . $request->getBasePath() . '/install/install.php', 307);
+        $response->send();
+        exit;
     }
 
     RequestFactory::configureFromConfig($request);
