@@ -22,7 +22,24 @@ class Config
 
     public static function getConfig(): array
     {
-        return include PATH_CONFIG;
+        $config = include PATH_CONFIG;
+
+        if (!is_array($config)) {
+            throw new \RuntimeException('The FOSSBilling configuration file is empty or invalid.', 3);
+        }
+
+        return $config;
+    }
+
+    public static function isConfigValid(): bool
+    {
+        try {
+            self::getConfig();
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /**

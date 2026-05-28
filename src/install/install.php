@@ -109,11 +109,9 @@ final class FOSSBilling_Installer
         require_once 'session.php';
         $this->session = new Session();
         $this->filesystem = new Filesystem();
-        if ($this->filesystem->exists(PATH_CONFIG)) {
-            $config = require PATH_CONFIG;
-            if (is_array($config)) {
-                $this->isDebug = (bool) ($config['debug_and_monitoring']['debug'] ?? false);
-            }
+        $config = $this->getExistingConfig();
+        if ($config !== null) {
+            $this->isDebug = (bool) ($config['debug_and_monitoring']['debug'] ?? false);
         }
 
         $action = $this->request->query->get('a', 'index');
@@ -177,24 +175,25 @@ final class FOSSBilling_Installer
                     $this->generateEmailTemplates();
                     session_destroy();
 
-                    // Try to remove install folder
-                    try {
-                        // Delete install directory only if debug mode is NOT enabled.
-                        if (!$this->isDebug) {
-                            $this->filesystem->remove(Path::normalize(__DIR__ . '/install.php'));
-                        }
-                    } catch (Exception) {
-                        // Do nothing and fail silently. New warnings are presented on the installation completed page for a leftover install directory.
-                    }
-
-                    return new Response($this->render(PAGE_RESULT, [
+                    $result = $this->render(PAGE_RESULT, [
                         'success' => true,
                         'config_file_path' => PATH_CONFIG,
                         'cron_path' => PATH_CRON,
                         'install_module_path' => PATH_INSTALL,
                         'url_customer' => SYSTEM_URL,
                         'url_admin' => URL_ADMIN,
-                    ]));
+                    ]);
+
+                    // Delete install directory only if debug mode is NOT enabled.
+                    try {
+                        if (!$this->isDebug) {
+                            $this->filesystem->remove(PATH_INSTALL);
+                        }
+                    } catch (\Throwable) {
+                        // Do nothing and fail silently. New warnings are presented on the installation completed page for a leftover install directory.
+                    }
+
+                    return new Response($result);
                 } catch (Exception $e) {
                     // Route to result page with exception information
                     return new Response($this->render(PAGE_RESULT, [
@@ -350,7 +349,22 @@ final class FOSSBilling_Installer
      */
     public function isAlreadyInstalled(): bool
     {
-        return !$this->isDebug && $this->filesystem->exists(PATH_CONFIG);
+        return !$this->isDebug && $this->getExistingConfig() !== null;
+    }
+
+    private function getExistingConfig(): ?array
+    {
+        if (!$this->filesystem->exists(PATH_CONFIG)) {
+            return null;
+        }
+
+        try {
+            $config = require PATH_CONFIG;
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return is_array($config) ? $config : null;
     }
 
     /**
@@ -423,6 +437,10 @@ final class FOSSBilling_Installer
             $this->filesystem->dumpFile(PATH_CONFIG, $output);
         } catch (IOException) {
             throw new Exception('Configuration file is not writable or does not exist. Please create the file at ' . PATH_CONFIG . ' and make it writable', 101);
+        }
+        clearstatcache(true, PATH_CONFIG);
+        if (function_exists('opcache_invalidate')) {
+            opcache_invalidate(PATH_CONFIG, true);
         }
 
         // Installation completed successfully
