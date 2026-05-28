@@ -73,10 +73,6 @@
 {% endmacro status_name %}
 
 
-{% macro wysiwyg(selector) %}
-    {% include "mod_wysiwyg_js.html.twig" with {"class":selector|trim('.#')} %}
-{% endmacro wysiwyg %}
-
 {% macro status_badge(status, type) %}
 {% set status_title = status|replace({'_': " "})|title|trim %}
 {% if status_title == 'Active' %}

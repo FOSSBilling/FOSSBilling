@@ -1,7 +1,7 @@
 import backToTop from "./ui/backToTop";
 import { renderTimeSeriesSparkline } from "./ui/charts";
 
-globalThis.FOSSBilling = {
+globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
   message: (message, type = "info") => {
     const titles = {
       error: "Error",
@@ -93,7 +93,7 @@ globalThis.FOSSBilling = {
   charts: {
     renderTimeSeriesSparkline,
   }
-};
+});
 
   //===== Global ajax methods =====//
   document.addEventListener('DOMContentLoaded', function() {
@@ -109,10 +109,10 @@ globalThis.FOSSBilling = {
 
     // Attach event listeners to all forms and links with data-fb-api attribute.
     if (document.querySelector("form[data-fb-api]")) {
-      API._apiForm();
+      FOSSBilling.api._apiForm();
     };
     if (document.querySelector("a[data-fb-api]")) {
-      API._apiLink();
+      FOSSBilling.api._apiLink();
     }
 
     // Initialize backToTop

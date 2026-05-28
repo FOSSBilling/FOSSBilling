@@ -252,22 +252,22 @@
 
             const formData = new FormData(formElement);
             const data = formElement.getAttribute('method').toLowerCase() !== 'get'
-                ? Tools.serializeFormDataToJSON(formData)
-                : Tools.serializeFormData(formData);
+                ? FOSSBilling.tools.serializeFormDataToJSON(formData)
+                : FOSSBilling.tools.serializeFormData(formData);
 
-            API.makeRequest(
+            FOSSBilling.api.makeRequest(
                 formElement.getAttribute('method'),
-                Tools.getBaseURL(formElement.getAttribute('action')),
+                FOSSBilling.tools.getBaseURL(formElement.getAttribute('action')),
                 data,
-                (result) => API._afterComplete(formElement, result),
+                (result) => FOSSBilling.api._afterComplete(formElement, result),
                 (error) => {
                     FOSSBilling.message(`${error.message} (${error.code})`, 'error');
                 }
             );
 
-            API.makeRequest(
+            FOSSBilling.api.makeRequest(
                 formElement.getAttribute('method'),
-                Tools.getBaseURL('admin/servicehosting/server_test_connection'),
+                FOSSBilling.tools.getBaseURL('admin/servicehosting/server_test_connection'),
                 { id: {{ server.id }} },
                 () => {
                     FOSSBilling.message(`{{ 'Server connected'|trans }}`, 'message');

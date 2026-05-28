@@ -4,7 +4,8 @@
   "homepage": "https://fossbilling.org",
   "license": "Apache License 2.0",
   "scripts": {
-    "build": "npm run build-themes",
+    "build": "npm run build-core && npm run build-themes",
+    "build-core": "node ./frontend/esbuild.mjs",
     "build-themes": "npm run build-admin_default && npm run build -w huraga",
     "build-huraga": "npm run build -w huraga",
     "build-admin_default": "npm run build -w admin_default",
@@ -23,6 +24,10 @@
     "src/themes/huraga",
     "src/themes/admin_default"
   ],
+  "devDependencies": {
+    "ckeditor5": "48.1.1",
+    "esbuild": "0.28.0"
+  },
   "config": {
     "platform": {
       "php": "8.3"

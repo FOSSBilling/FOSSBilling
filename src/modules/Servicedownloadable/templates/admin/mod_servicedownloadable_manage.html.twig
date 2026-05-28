@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const formData = new FormData(form);
-        API.admin.post('servicedownloadable/upload', formData,
+        FOSSBilling.api.admin.post('servicedownloadable/upload', formData,
             function () {
                 if (submitButton) {
                     submitButton.disabled = false;

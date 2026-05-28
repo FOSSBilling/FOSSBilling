@@ -56,7 +56,7 @@
             resendBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 toggleLoader();
-                API.client.post('email/resend',
+                FOSSBilling.api.client.post('email/resend',
                     {id: resendBtn.dataset.id },
                     () => {
                         flashMessage({
@@ -77,7 +77,7 @@
                 e.preventDefault();
                 if (confirm('Are you sure?')) {
                     toggleLoader();
-                    API.client.post('email/delete',
+                    FOSSBilling.api.client.post('email/delete',
                         {id: deleteBtn.dataset.id },
                         () => {
                             flashMessage({

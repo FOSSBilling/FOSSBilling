@@ -241,7 +241,7 @@
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('domain-lock').addEventListener('click', function(event) {
-            API.admin.post('servicedomain/lock', { order_id: {{ order.id }} },
+            FOSSBilling.api.admin.post('servicedomain/lock', { order_id: {{ order.id }} },
                 (result) => {
                     FOSSBilling.message("{{ 'Domain locked'|trans }}");
 
@@ -253,7 +253,7 @@
         });
 
         document.getElementById('domain-unlock').addEventListener('click', function(event) {
-            API.admin.post('servicedomain/unlock', { order_id: {{ order.id }} },
+            FOSSBilling.api.admin.post('servicedomain/unlock', { order_id: {{ order.id }} },
                 (result) => {
                     FOSSBilling.message("{{ 'Domain unlocked'|trans }}");
 
@@ -265,7 +265,7 @@
         });
 
         document.getElementById('domain-enable-pp').addEventListener('click', function(event) {
-            API.admin.post('servicedomain/enable_privacy_protection',{ order_id: {{ order.id }} },
+            FOSSBilling.api.admin.post('servicedomain/enable_privacy_protection',{ order_id: {{ order.id }} },
                 (result) => {
                     FOSSBilling.message("{{ 'Privacy protection enabled'|trans }}");
 
@@ -277,7 +277,7 @@
         });
 
         document.getElementById('domain-disable-pp').addEventListener('click', function(event) {
-            API.admin.post('servicedomain/disable_privacy_protection', { order_id: {{ order.id }} },
+            FOSSBilling.api.admin.post('servicedomain/disable_privacy_protection', { order_id: {{ order.id }} },
                 (result) => {
                     FOSSBilling.message("{{ 'Privacy protection disabled'|trans }}");
 
@@ -289,7 +289,7 @@
         });
 
         document.getElementById('get-epp').addEventListener('click', function(event) {
-            API.admin.post('servicedomain/get_transfer_code', { order_id: {{ order.id}} },
+            FOSSBilling.api.admin.post('servicedomain/get_transfer_code', { order_id: {{ order.id}} },
                 (result) => {
                     FOSSBilling.message("{{ 'Domain transfer code is: '|trans }}" + result);
                 });

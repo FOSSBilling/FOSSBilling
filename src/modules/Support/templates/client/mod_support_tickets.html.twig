@@ -9,7 +9,7 @@
 {% block breadcrumb %}<li class="breadcrumb-item active" aria-current="page">{{ 'Support Tickets'|trans }}</li>{% endblock %}
 
 {% block head %}
-    {{ mf.wysiwyg('.editor-textarea') }}
+    {{ wysiwyg('.editor-textarea') }}
 {% endblock %}
 
 {% block content %}
@@ -113,7 +113,7 @@
             let submitTicket = document.getElementById('ticket-submit');
             submitTicket.addEventListener('submit', (event) => {
                 event.preventDefault();
-                API.client.post('support/ticket_create', Tools.serializeFormDataToObject(new FormData(submitTicket)),
+                FOSSBilling.api.client.post('support/ticket_create', FOSSBilling.tools.serializeFormDataToObject(new FormData(submitTicket)),
                     (res) => {
                         window.location = "{{ 'support/ticket'|url }}" + '/' + res
                     },

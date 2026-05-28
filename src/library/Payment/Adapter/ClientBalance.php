@@ -71,7 +71,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
 
         return "<script>
                 document.addEventListener('DOMContentLoaded', function() {
-                    API.makeRequest('POST', '$ipnUrl', {}, function () {
+                    FOSSBilling.api.makeRequest('POST', '$ipnUrl', {}, function () {
                         window.location.href = '$invoiceUrl';
                     }, function (error) {
                         console.error('Payment callback failed:', error);

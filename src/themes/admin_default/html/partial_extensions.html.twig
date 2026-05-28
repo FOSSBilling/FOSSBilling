@@ -81,7 +81,7 @@
             readme = document.getElementById("extension-readme");
             readme.innerText = "{{ 'Fetching extension details.'|trans }}";
 
-            API.admin.post('extension/get_extension_readme', { extension_id: extensionID },
+            FOSSBilling.api.admin.post('extension/get_extension_readme', { extension_id: extensionID },
                 (result) => {
                     readme.innerHTML = result;
                 });

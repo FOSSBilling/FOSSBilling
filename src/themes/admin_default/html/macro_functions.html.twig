@@ -182,10 +182,6 @@
 </div>
 {% endmacro table_search %}
 
-{% macro wysiwyg(selector) %}
-    {% include "mod_wysiwyg_js.html.twig" with {"class":selector|trim('.#')} %}
-{% endmacro %}
-
 {% macro text_badge(label, badge_class) %}
     <span class="badge {{ badge_class }}">{{ label }}</span>
 {% endmacro %}

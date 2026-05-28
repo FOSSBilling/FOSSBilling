@@ -314,11 +314,11 @@ document.addEventListener('DOMContentLoaded', function() {
         let contentResult = '';
 
         // Render subject
-        API.admin.post('email/template_render', subjectParams, function(subject) {
+        FOSSBilling.api.admin.post('email/template_render', subjectParams, function(subject) {
             subjectResult = subject;
 
             // Render content
-            API.admin.post('email/template_render', contentParams, function(content) {
+            FOSSBilling.api.admin.post('email/template_render', contentParams, function(content) {
                 contentResult = content;
                 showEmailPreview(subjectResult, contentResult);
             }, function(error) {
@@ -344,8 +344,8 @@ document.addEventListener('DOMContentLoaded', function() {
             id: '{{ template.id }}',
         };
 
-        API.admin.post('email/template_render', subjectParams, function(subject) {
-            API.admin.post('email/template_render', contentParams, function(content) {
+        FOSSBilling.api.admin.post('email/template_render', subjectParams, function(subject) {
+            FOSSBilling.api.admin.post('email/template_render', contentParams, function(content) {
                 showEmailPreview(subject, content);
             }, function(error) {
                 FOSSBilling.message(`{{ 'Failed to render template'|trans }}: ${error.message}`, 'error');

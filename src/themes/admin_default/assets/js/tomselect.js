@@ -169,16 +169,13 @@ document.addEventListener('DOMContentLoaded', () => {
               return;
             }
 
-            // Fallback to registry approach
-            if (window.FOSSBilling?.editors) {
-              Object.values(window.FOSSBilling.editors).forEach(editor => {
-                if (editor?.setData) {
-                  editor.setData(content);
-                }
+            if (window.FOSSBilling?.editor) {
+              window.FOSSBilling.editor.all().forEach(editor => {
+                editor.setData(content);
               });
+              return;
             }
 
-            // Last fallback: try to find any editor in the document
             document.querySelectorAll('[data-editor]').forEach(el => {
               if (el.editor?.setData) {
                 el.editor.setData(content);

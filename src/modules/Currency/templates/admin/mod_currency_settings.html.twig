@@ -303,7 +303,7 @@
         var price = document.querySelector('input[name="amount"]').value;
         var code = document.querySelector('select[name="to"]').value;
 
-        API.guest.post('currency/format', { price: price, code: code },
+        FOSSBilling.api.guest.post('currency/format', { price: price, code: code },
             (result) => {
                 document.getElementById('converted_result').value = result;
             });

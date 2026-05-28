@@ -16,7 +16,7 @@
 {% set upgradables = client.order_upgradables({ 'id': order.id }) %}
 
 {% block head %}
-    {{ mf.wysiwyg('.editor-textarea') }}
+    {{ wysiwyg('.editor-textarea') }}
 {% endblock %}
 
 {% block content %}
@@ -288,7 +288,7 @@
             cancelRequestForm.addEventListener('submit', function(event) {
                 event.preventDefault();
 
-                API.client.post('support/ticket_create', Tools.serializeFormDataToObject(new FormData(cancelRequestForm)),
+                FOSSBilling.api.client.post('support/ticket_create', FOSSBilling.tools.serializeFormDataToObject(new FormData(cancelRequestForm)),
                     () => {
                         FOSSBilling.message('Service cancellation request received');
                         const cancelRequestModal = bootstrap.Modal.getInstance(document.getElementById('cancel-request-modal'))
@@ -302,7 +302,7 @@
             upgradeRequestForm.addEventListener('submit', function(event) {
                 event.preventDefault();
 
-                API.client.post('support/ticket_create', Tools.serializeFormDataToObject(new FormData(upgradeRequestForm)),
+                FOSSBilling.api.client.post('support/ticket_create', FOSSBilling.tools.serializeFormDataToObject(new FormData(upgradeRequestForm)),
                     () => {
                         FOSSBilling.message('Service upgrade request received');
                         const upgradeRequestModal = bootstrap.Modal.getInstance(document.getElementById('upgrade-request-modal'))
@@ -316,7 +316,7 @@
             openTicketForm.addEventListener('submit', function(event) {
                 event.preventDefault();
 
-                API.client.post('support/ticket_create', Tools.serializeFormDataToObject(new FormData(openTicketForm)),
+                FOSSBilling.api.client.post('support/ticket_create', FOSSBilling.tools.serializeFormDataToObject(new FormData(openTicketForm)),
                     () => {
                         FOSSBilling.message('Ticket was submitted. If you want to track conversation please go to support section');
                         let openTicketModal = bootstrap.Modal.getInstance(document.getElementById('open-ticket-modal'));
@@ -335,7 +335,7 @@
                 event.preventDefault();
 
                 if (confirm("This will generate new invoice. Are you sure you want to continue?")) {
-                    API.client.post('invoice/renewal_invoice', { order_id: {{ order.id }} },
+                    FOSSBilling.api.client.post('invoice/renewal_invoice', { order_id: {{ order.id }} },
                         (result) => {
                             window.location = "{{ 'invoice'|url }}" + '/' + result;
                         });

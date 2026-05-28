@@ -342,13 +342,13 @@
 
         document.querySelectorAll('.shd select').forEach(function(select) {
             select.addEventListener('change', function() {
-                API.admin.get('support/ticket_update', { id: {{ ticket.id }}, support_helpdesk_id: this.value });
+                FOSSBilling.api.admin.get('support/ticket_update', { id: {{ ticket.id }}, support_helpdesk_id: this.value });
             });
         });
 
         document.querySelectorAll('input.tst').forEach(function(element) {
             element.addEventListener('click', function() {
-                API.admin.get('support/ticket_update', {id: {{ ticket.id }}, status: this.value });
+                FOSSBilling.api.admin.get('support/ticket_update', {id: {{ ticket.id }}, status: this.value });
             });
         });
 
@@ -388,4 +388,4 @@
 </script>
 {% endblock %}
 
-{% block head %}{{ mf.wysiwyg('.editor-textarea') }}{% endblock %}
+{% block head %}{{ wysiwyg('.editor-textarea') }}{% endblock %}

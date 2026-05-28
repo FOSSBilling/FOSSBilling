@@ -185,6 +185,12 @@ class FOSSBillingExtension
         return SYSTEM_URL . 'themes/' . $themeCode . '/assets/' . $asset;
     }
 
+    #[AsTwigFilter('public_asset_url', isSafe: ['html'])]
+    public function publicAssetUrl(string $asset): string
+    {
+        return SYSTEM_URL . 'public/assets/' . ltrim($asset, '/');
+    }
+
     #[AsTwigFilter('daysleft')]
     public function daysleft(string $dateTime): int
     {
@@ -266,6 +272,35 @@ class FOSSBillingExtension
         ]);
 
         return $this->avatarDataUris[$cacheKey] = $avatar->toDataUri();
+    }
+
+    #[AsTwigFunction('wysiwyg', isSafe: ['html'])]
+    public function wysiwyg(string $selector, array $options = []): string
+    {
+        $options['adapter'] ??= 'ckeditor';
+
+        $selectorJson = json_encode($selector, JSON_THROW_ON_ERROR | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+        $optionsJson = json_encode($options, JSON_THROW_ON_ERROR | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+
+        return implode("\n", [
+            $this->stylesheetTag($this->publicAssetUrl('editor/ckeditor.css')),
+            $this->scriptTag($this->publicAssetUrl('editor/ckeditor.js')),
+            <<<HTML
+<script>
+    FOSSBilling.ready(function () {
+        FOSSBilling.editor.init({$selectorJson}, {$optionsJson});
+
+        if (document.documentElement.getAttribute('data-bs-theme') === 'dark' || localStorage.getItem('theme') === 'dark') {
+            setTimeout(function () {
+                document.querySelectorAll('.ck-editor__main').forEach(function (element) {
+                    element.style.color = '#1d273b';
+                });
+            }, 1000);
+        }
+    });
+</script>
+HTML,
+        ]);
     }
 
     #[AsTwigFilter('script_tag', isSafe: ['html'])]

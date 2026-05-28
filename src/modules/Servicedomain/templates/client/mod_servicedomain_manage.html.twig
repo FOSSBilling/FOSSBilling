@@ -219,7 +219,7 @@
                 document.getElementById('domain-lock').addEventListener('click', function(event) {
                     event.preventDefault();
 
-                    API.client.post('servicedomain/lock', { order_id: {{ order.id }} },
+                    FOSSBilling.api.client.post('servicedomain/lock', { order_id: {{ order.id }} },
                         () => {
                             FOSSBilling.message('Domain locked');
 
@@ -233,7 +233,7 @@
                 document.getElementById('domain-unlock').addEventListener('click', function(event) {
                     event.preventDefault();
 
-                    API.client.post('servicedomain/unlock', { order_id: {{ order.id }} },
+                    FOSSBilling.api.client.post('servicedomain/unlock', { order_id: {{ order.id }} },
                         () => {
                             FOSSBilling.message('Domain unlocked');
 
@@ -247,7 +247,7 @@
                 document.getElementById('domain-enable-pp').addEventListener('click', function(event) {
                     event.preventDefault();
 
-                    API.client.post('servicedomain/enable_privacy_protection', { order_id: {{ order.id }} },
+                    FOSSBilling.api.client.post('servicedomain/enable_privacy_protection', { order_id: {{ order.id }} },
                         (result) =>{
                             FOSSBilling.message('Privacy Protection enabled');
 
@@ -262,7 +262,7 @@
                 document.getElementById('domain-disable-pp').addEventListener('click', function(event) {
                     event.preventDefault();
 
-                    API.client.post('servicedomain/disable_privacy_protection', { order_id: {{ order.id }} },
+                    FOSSBilling.api.client.post('servicedomain/disable_privacy_protection', { order_id: {{ order.id }} },
                         (result) => {
                             FOSSBilling.message('Privacy Protection disabled');
 
@@ -278,7 +278,7 @@
                 document.getElementById('get-epp').addEventListener('click', function(event) {
                     event.preventDefault();
 
-                    API.client.post('servicedomain/get_transfer_code', { order_id: {{ order.id }} },
+                    FOSSBilling.api.client.post('servicedomain/get_transfer_code', { order_id: {{ order.id }} },
                         (result) => {
                             FOSSBilling.message('Domain transfer code is: ' + result);
                         });

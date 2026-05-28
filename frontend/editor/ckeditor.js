@@ -1,8 +1,9 @@
 /**
- * Only include the features, styles, and translations needed to keep the bundle size down.
- * @see {@link https://ckeditor.com/docs/ckeditor5/latest/getting-started/setup/optimizing-build-size.html}
+ * Default FOSSBilling rich text editor adapter.
+ *
+ * CKEditor is intentionally kept behind the FOSSBilling.editor adapter
+ * contract so themes and modules do not depend on CKEditor directly.
  */
-
 import { Autoformat } from '@ckeditor/ckeditor5-autoformat/dist/index.js';
 import { AutoImage, Image, ImageStyle, ImageInsertViaUrl, ImageToolbar } from '@ckeditor/ckeditor5-image/dist/index.js';
 import { BlockQuote } from '@ckeditor/ckeditor5-block-quote/dist/index.js';
@@ -47,7 +48,7 @@ import '@ckeditor/ckeditor5-paste-from-office/dist/index.css';
 import '@ckeditor/ckeditor5-source-editing/dist/index.css';
 import '@ckeditor/ckeditor5-table/dist/index.css';
 
-export default class CKEditor extends ClassicEditor {
+class FOSSBillingCKEditor extends ClassicEditor {
   static builtinPlugins = [
     Autoformat,
     AutoImage,
@@ -94,3 +95,11 @@ export default class CKEditor extends ClassicEditor {
     },
   };
 }
+
+window.FOSSBilling.editor.registerAdapter('ckeditor', {
+  create(element, options = {}) {
+    const { adapter, ...editorOptions } = options;
+
+    return FOSSBillingCKEditor.create(element, editorOptions);
+  },
+});
