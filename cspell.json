@@ -445,7 +445,8 @@
         "striptags",
         "Paidsupport",
         "paidsupport",
-        "Sparkline"
+        "Sparkline",
+        "dicebear"
     ],
     "ignorePaths": [
         "tests-legacy/**",
