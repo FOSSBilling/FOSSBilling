@@ -346,6 +346,10 @@ final class FOSSBilling_Installer
 
     /**
      * Check if we are already installed.
+     *
+     * Any existing config file must block the public installer. If the file is
+     * invalid, a server administrator must repair or remove it manually before
+     * installation can proceed.
      */
     public function isAlreadyInstalled(): bool
     {
