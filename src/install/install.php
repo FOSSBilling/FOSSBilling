@@ -349,7 +349,7 @@ final class FOSSBilling_Installer
      */
     public function isAlreadyInstalled(): bool
     {
-        return !$this->isDebug && $this->getExistingConfig() !== null;
+        return !$this->isDebug && $this->filesystem->exists(PATH_CONFIG);
     }
 
     private function getExistingConfig(): ?array
