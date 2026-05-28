@@ -184,10 +184,10 @@ final class FOSSBilling_Installer
                         'url_admin' => URL_ADMIN,
                     ]);
 
-                    // Delete install directory only if debug mode is NOT enabled.
+                    // Delete only the installer entry point if debug mode is NOT enabled, so completion page assets remain available.
                     try {
                         if (!$this->isDebug) {
-                            $this->filesystem->remove(PATH_INSTALL);
+                            $this->filesystem->remove(Path::join(PATH_INSTALL, 'install.php'));
                         }
                     } catch (\Throwable) {
                         // Do nothing and fail silently. New warnings are presented on the installation completed page for a leftover install directory.
