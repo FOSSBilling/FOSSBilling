@@ -16,9 +16,9 @@
     {% set updateType = update_info['update_type']|default(0) + 0 %}
     {% if isPreviewBranch %}
         {% set updateButtonLabel = 'Install Latest Preview Build'|trans %}
-        {% set updateButtonClass = 'btn-warning' %}
+        {% set updateButtonClass = 'btn-primary' %}
         {% set updateConfirmTitle = 'Install latest preview build?'|trans %}
-        {% set updateModalType = 'danger' %}
+        {% set updateModalType = 'confirm' %}
         {% set updateModalContent = 'Preview builds may contain unreleased changes, regressions, or incomplete migrations. Back up your files and database, and avoid using this on production installations unless you are prepared to troubleshoot issues.'|trans %}
         {% set updateModalButton = 'Install Preview Build'|trans %}
     {% else %}
@@ -39,7 +39,7 @@
                             <p class="card-subtitle">{{ isPreviewBranch ? 'Install preview builds and review update status.'|trans : 'Review release notes, check for updates, and apply available platform updates.'|trans }}</p>
                         </div>
                         {% if isPreviewBranch %}
-                            <span class="badge text-bg-warning">{{ 'Preview branch'|trans }}</span>
+                            <span class="badge badge-outline text-warning">{{ 'Preview Branch'|trans }}</span>
                         {% endif %}
                     </div>
                 </div>
@@ -53,22 +53,22 @@
                         {% if isPreviewBranch %}
                             <h4 class="mb-2">{{ 'Preview Build Updates'|trans }}</h4>
                             <div class="alert alert-warning" role="alert">
-                                <strong class="me-1">{{ 'Preview branch active:'|trans }}</strong>{{ 'Preview builds track unreleased development changes and may be unstable. Use them carefully, especially on production installations.'|trans }}
+                                {{ 'Preview builds track unreleased development changes and may be unstable. It is not recommended to use them in production environments.'|trans }}
                             </div>
                             <p class="text-secondary mb-0">
                                 {{ 'Release notes are not available for preview builds.'|trans }}
-                                <a class="ms-1" href="{{ previewCompareUrl }}" target="_blank" rel="noopener noreferrer">{{ 'View GitHub compare'|trans }}</a>
+                                <a class="ms-1" href="{{ previewCompareUrl }}" target="_blank" rel="noopener noreferrer">{{ 'View GitHub Comparison'|trans }}</a>
                             </p>
                         {% else %}
                             <h4 class="mb-0">{{ 'Update Release Notes'|trans }} ({{ FOSSBillingVersion }} => {{ update_info['version'] }})</h4>
                             {% if updateType == 2 %}
-                                <div class="alert alert-danger" role="alert">
+                                <div class="alert alert-warning" role="alert">
                                     <strong class="me-1">{{ 'Important:'|trans }}</strong>{{ 'This update is considered to be a major update, you should check the release notes for any breaking changes.'|trans }}
                                 </div>
                             {% endif %}
                             {% if updateType == 1 %}
-                                <div class="alert alert-warning" role="alert">
-                                    <strong class="me-1">{{ 'Warning:'|trans }}</strong>{{ 'This update is considered to be a minor update, there are low chances of incompatibilities.'|trans }}
+                                <div class="alert alert-info" role="alert">
+                                    <strong class="me-1">{{ 'Information:'|trans }}</strong>{{ 'This update is considered to be a minor update, there are low chances of incompatibilities.'|trans }}
                                 </div>
                             {% endif %}
                             {{ (update_info['release_notes'] ?? '')|markdown_to_html }}
@@ -141,16 +141,16 @@
                 <div class="card-header">
                     <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 w-100">
                         <div>
-                            <h3 class="card-title">{{ 'Database Patches'|trans }}</h3>
+                            <h3 class="card-title">{{ 'Database & Configuration Patches'|trans }}</h3>
                             <p class="card-subtitle">{{ 'Keep database structure and settings aligned with the installed FOSSBilling version.'|trans }}</p>
                         </div>
-                        <span class="badge {{ behindOnPatches ? 'text-bg-warning' : 'text-bg-success' }}">{{ behindOnPatches ? 'Pending'|trans : 'Up to date'|trans }}</span>
+                        <span class="badge {{ behindOnPatches ? 'badge-outline text-warning' : 'badge-outline text-success' }}">{{ behindOnPatches ? 'Pending'|trans : 'Up to Date'|trans }}</span>
                     </div>
                 </div>
                 <div class="card-body">
                     {% if behindOnPatches %}
                         <div class="alert alert-warning" role="alert">
-                            <strong class="me-1">{{ 'Database patches pending:'|trans }}</strong>{{ 'Apply the pending database patches to keep this installation aligned with the installed FOSSBilling files.'|trans }}
+                            <strong class="me-1">{{ 'Database Patches Pending:'|trans }}</strong>{{ 'Apply the pending database patches to keep this installation aligned with the installed FOSSBilling files.'|trans }}
                         </div>
                     {% endif %}
                     <p>{{ 'Database patches are small migrations that update FOSSBilling database tables and settings after the application files change.'|trans }}</p>
@@ -158,7 +158,7 @@
                 </div>
                 <div class="card-footer">
                     <div class="d-flex flex-wrap gap-2">
-                        <a class="btn {{ behindOnPatches ? 'btn-warning' : 'btn-outline-secondary' }}" href="{{ 'system/manual_update'|api_url }}"
+                        <a class="btn {{ behindOnPatches ? 'btn-success' : 'btn-secondary' }}" href="{{ 'system/manual_update'|api_url }}"
                             {{ fb_api_link({
                                 message: 'Patches Applied and Configuration Updated'|trans,
                                 modal: {type: 'confirm', title: 'Are you sure?'|trans},
@@ -178,11 +178,6 @@
                         </a>
                     </div>
                     <div id="patch-progress"></div>
-                    {% if behindOnPatches %}
-                        <div class="alert alert-warning mt-3 mb-0" role="alert">
-                            {{ 'Pending database patches were detected. Apply them before troubleshooting other update issues.'|trans }}
-                        </div>
-                    {% endif %}
                 </div>
             </div>
         </div>
