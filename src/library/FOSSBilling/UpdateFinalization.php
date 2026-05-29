@@ -276,7 +276,7 @@ class UpdateFinalization implements InjectionAwareInterface
         )));
 
         $config['maintenance_mode'] = $maintenanceMode;
-        Config::setConfig($config);
+        Config::setConfig($config, false);
     }
 
     private function restoreMaintenanceMode(array $state): void
@@ -284,7 +284,7 @@ class UpdateFinalization implements InjectionAwareInterface
         $config = Config::getConfig();
 
         $config['maintenance_mode'] = self::normalizeMaintenanceMode($state['maintenance_mode'] ?? []);
-        Config::setConfig($config);
+        Config::setConfig($config, false);
     }
 
     private function getFinalizationAllowedUrls(): array

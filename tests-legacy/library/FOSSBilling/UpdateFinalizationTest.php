@@ -36,6 +36,7 @@ final class UpdateFinalizationTest extends PHPUnit\Framework\TestCase
         }
 
         $this->restoreOptionalFile($this->statePath, $this->originalState);
+        $this->filesystem->remove(Path::join(PATH_CACHE, 'downloaded-update.zip'));
         $this->filesystem->remove(Path::changeExtension(PATH_CONFIG, 'old.php'));
     }
 
@@ -49,6 +50,9 @@ final class UpdateFinalizationTest extends PHPUnit\Framework\TestCase
         ];
         Config::setConfig($config);
 
+        $cacheFile = Path::join(PATH_CACHE, 'downloaded-update.zip');
+        $this->filesystem->dumpFile($cacheFile, 'archive contents');
+
         $finalization = new UpdateFinalization();
         $state = $finalization->ensureCurrentVersionFinalization();
 
@@ -61,6 +65,7 @@ final class UpdateFinalizationTest extends PHPUnit\Framework\TestCase
         $updatedConfig = Config::getConfig();
         self::assertTrue($updatedConfig['maintenance_mode']['enabled']);
         self::assertContains(rtrim(ADMIN_PREFIX, '/') . '/system/update/finalize', $updatedConfig['maintenance_mode']['allowed_urls']);
+        self::assertFileExists($cacheFile);
     }
 
     public function testCompletingFinalizationRestoresMaintenanceAndWritesCompleteState(): void
