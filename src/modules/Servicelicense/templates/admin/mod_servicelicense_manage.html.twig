@@ -17,7 +17,7 @@
             </tr>
             <tr>
                 <td class="text-end">{{ 'Last ping'|trans }}:</td>
-                <td>{{ service.pinged_at|format_date }} ({{ service.pinged_at|timeago }} ago)</td>
+                <td>{% if service.pinged_at %}{{ service.pinged_at|format_date }} ({{ service.pinged_at|timeago }} {{ 'ago'|trans }}){% else %}-{% endif %}</td>
             </tr>
         </tbody>
     </table>
