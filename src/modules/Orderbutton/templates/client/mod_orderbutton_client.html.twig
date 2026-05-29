@@ -61,33 +61,32 @@
                             </div>
 
                             <div class="row">
-                                <div class="form-floating col-md-7 mb-3">
-                                    <input class="form-control form-control-sm" type="text" name="first_name" id="first-name"
-                                           required="required"
-                                           value="{{ request.first_name }}"
-                                           placeholder="{{ 'First Name'|trans }}">
-                                    <label for="first-name" class="ms-2">{{ 'First Name'|trans }}</label>
-                                </div>
-                            </div>
+                                <div class="col-md-7">
+                                    <div class="row">
+                                        <div class="form-floating col-md-6 mb-3">
+                                            <input class="form-control form-control-sm" type="text" name="first_name" id="first-name"
+                                                   required="required"
+                                                   value="{{ request.first_name }}"
+                                                   placeholder="{{ 'First Name'|trans }}">
+                                            <label for="first-name" class="ms-2">{{ 'First Name'|trans }}</label>
+                                        </div>
 
-                            {% if 'last_name' in r %}
-                            <div class="row">
-                                <div class="form-floating col-md-7 mb-3">
-                                    <input class="form-control form-control-sm" type="text" name="last_name" id="last_name"
-                                           required="required"
-                                           value="{{ request.last_name }}"
-                                           placeholder="{{ 'Last Name'|trans }}">
-                                    <label for="last_name" class="ms-2">{{ 'Last Name'|trans }}</label>
+                                        <div class="form-floating col-md-6 mb-3">
+                                            <input class="form-control form-control-sm" type="text" name="last_name" id="last_name"
+                                                   value="{{ request.last_name }}"
+                                                   placeholder="{{ 'Last Name'|trans }}"{% if 'last_name' in r %} required="required"{% endif %}>
+                                            <label for="last_name" class="ms-2">{{ 'Last Name'|trans }}</label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            {% endif %}
 
                             {% if 'company' in r %}
                                 <div class="row">
                                     <div class="form-floating col-md-7 mb-3">
                                         <input class="form-control form-control-sm" type="text" name="company" id="company"
                                                required="required"
-                                               value="{{ request.last_name }}"
+                                               value="{{ request.company }}"
                                                placeholder="{{ 'Company'|trans }}">
                                         <label for="company" class="ms-2">{{ 'Company'|trans }}</label>
                                     </div>
