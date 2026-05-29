@@ -26,6 +26,7 @@ class Guest extends \Api_Abstract
             'enabled' => $config['captcha_enabled'] ?? false,
             'version' => $config['captcha_version'] ?? null,
             'captcha_provider' => $config['captcha_provider'] ?? 'recaptcha_v2',
+            'recaptcha_v3_threshold' => $config['captcha_recaptcha_v3_threshold'] ?? 0.5,
             'turnstile_site_key' => $config['turnstile_site_key'] ?? null,
             'hcaptcha_site_key' => $config['hcaptcha_site_key'] ?? null,
         ];

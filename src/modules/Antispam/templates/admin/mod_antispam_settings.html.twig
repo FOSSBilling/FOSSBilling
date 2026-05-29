@@ -78,6 +78,7 @@
                                         <label class="form-label" for="provider-select">{{ 'CAPTCHA Provider'|trans }}</label>
                                         <select name="captcha_provider" class="form-select" id="provider-select">
                                             <option value="recaptcha_v2" {% if not params.captcha_provider or params.captcha_provider == 'recaptcha_v2' %}selected{% endif %}>{{ 'Google reCAPTCHA v2'|trans }}</option>
+                                            <option value="recaptcha_v3" {% if params.captcha_provider == 'recaptcha_v3' %}selected{% endif %}>{{ 'Google reCAPTCHA v3'|trans }}</option>
                                             <option value="turnstile" {% if params.captcha_provider == 'turnstile' %}selected{% endif %}>{{ 'Cloudflare Turnstile'|trans }}</option>
                                             <option value="hcaptcha" {% if params.captcha_provider == 'hcaptcha' %}selected{% endif %}>{{ 'hCaptcha'|trans }}</option>
                                         </select>
@@ -87,12 +88,17 @@
                                 <div id="recaptcha_v2_settings" class="mt-3">
                                     <div class="row g-3">
                                         <div class="col-lg-6">
-                                            <label class="form-label" for="captcha_recaptcha_publickey">{{ 'reCAPTCHA Public Key'|trans }}</label>
+                                            <label class="form-label" for="captcha_recaptcha_publickey">{{ 'reCAPTCHA Site Key'|trans }}</label>
                                             <input class="form-control" type="text" id="captcha_recaptcha_publickey" name="captcha_recaptcha_publickey" value="{{ params.captcha_recaptcha_publickey }}">
                                         </div>
                                         <div class="col-lg-6">
                                             <label class="form-label" for="captcha_recaptcha_privatekey">{{ 'reCAPTCHA Secret Key'|trans }}</label>
                                             <input class="form-control" type="text" id="captcha_recaptcha_privatekey" name="captcha_recaptcha_privatekey" value="{{ params.captcha_recaptcha_privatekey }}">
+                                        </div>
+                                        <div class="col-lg-6" id="recaptcha_v3_threshold_wrap">
+                                            <label class="form-label" for="captcha_recaptcha_v3_threshold">{{ 'reCAPTCHA v3 Minimum Score'|trans }}</label>
+                                            <input class="form-control" type="number" id="captcha_recaptcha_v3_threshold" name="captcha_recaptcha_v3_threshold" value="{{ params.captcha_recaptcha_v3_threshold|default(0.5) }}" min="0" max="1" step="0.1">
+                                            <small class="form-hint">{{ 'Google returns a score from 0.0 to 1.0. Higher thresholds are stricter.'|trans }}</small>
                                         </div>
                                     </div>
                                 </div>
@@ -198,7 +204,8 @@ document.addEventListener('DOMContentLoaded', function () {
     function toggleProviderSettings() {
         const selectedProvider = document.getElementById('provider-select').value;
 
-        document.getElementById('recaptcha_v2_settings').style.display = selectedProvider === 'recaptcha_v2' ? 'block' : 'none';
+        document.getElementById('recaptcha_v2_settings').style.display = selectedProvider === 'recaptcha_v2' || selectedProvider === 'recaptcha_v3' ? 'block' : 'none';
+        document.getElementById('recaptcha_v3_threshold_wrap').style.display = selectedProvider === 'recaptcha_v3' ? 'block' : 'none';
         document.getElementById('turnstile_settings').style.display = selectedProvider === 'turnstile' ? 'block' : 'none';
         document.getElementById('hcaptcha_settings').style.display = selectedProvider === 'hcaptcha' ? 'block' : 'none';
     }

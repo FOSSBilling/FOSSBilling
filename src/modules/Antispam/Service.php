@@ -154,7 +154,7 @@ class Service implements InjectionAwareInterface
         if (isset($config['captcha_enabled']) && $config['captcha_enabled']) {
             $provider = $config['captcha_provider'] ?? 'recaptcha_v2';
 
-            if ($provider === 'recaptcha_v2') {
+            if ($provider === 'recaptcha_v2' || $provider === 'recaptcha_v3') {
                 if (!isset($config['captcha_recaptcha_privatekey']) || $config['captcha_recaptcha_privatekey'] == '') {
                     throw new \FOSSBilling\InformationException("To use reCAPTCHA you must get an API key from <a href='https://www.google.com/recaptcha/admin/create'>here</a>");
                 }
@@ -175,6 +175,22 @@ class Service implements InjectionAwareInterface
 
                 if (!isset($content['success']) || $content['success'] !== true) {
                     throw new \FOSSBilling\InformationException('reCAPTCHA verification failed.');
+                }
+
+                if ($provider === 'recaptcha_v3') {
+                    $threshold = isset($config['captcha_recaptcha_v3_threshold'])
+                        ? min(1.0, max(0.0, (float) $config['captcha_recaptcha_v3_threshold']))
+                        : 0.5;
+                    $score = isset($content['score']) ? (float) $content['score'] : 0.0;
+
+                    if ($score < $threshold) {
+                        throw new \FOSSBilling\InformationException('reCAPTCHA verification failed.');
+                    }
+
+                    $action = $params['g-recaptcha-action'] ?? '';
+                    if (($content['action'] ?? null) !== $action) {
+                        throw new \FOSSBilling\InformationException('reCAPTCHA verification failed.');
+                    }
                 }
             } elseif ($provider === 'turnstile') {
                 if (empty($config['turnstile_secret_key'])) {
