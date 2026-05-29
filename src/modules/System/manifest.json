@@ -2,7 +2,7 @@
   "id": "system",
   "type": "mod",
   "name": "System",
-  "description": "FOSSBilling core module",
+  "description": "Configures global system behavior including localization, company details, caching and other settings.",
   "icon_url": "icon.svg",
   "version": "1.0.0"
 }
