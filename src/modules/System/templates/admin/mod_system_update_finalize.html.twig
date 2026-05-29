@@ -32,13 +32,12 @@
                             </div>
                         </div>
                     {% else %}
-                        {% set targetVersion = state.target_version|default(FOSSBillingVersion) %}
                         {% if finalized %}
-                            <p>{{ 'FOSSBilling has successfully applied the patches for version %version%.'|trans({'%version%': targetVersion}) }}</p>
+                            <p>{{ 'FOSSBilling has successfully applied the patches for version %version%.'|trans({'%version%': FOSSBillingVersion}) }}</p>
                         {% elseif finalization.pending_patches is same as(null) or finalization.pending_patches is same as(0) %}
-                            <p>{{ 'You are updating your system to FOSSBilling %target_version%. The system needs to check and apply any pending update patches before you can proceed.'|trans({'%target_version%': targetVersion}) }}</p>
+                            <p>{{ 'You are updating your system to FOSSBilling %target_version%. The system needs to check and apply any pending update patches before you can proceed.'|trans({'%target_version%': FOSSBillingVersion}) }}</p>
                         {% else %}
-                            <p>{{ 'You are updating your system to FOSSBilling %target_version%. The system needs to run %count% update patches before you can proceed.'|trans({'%target_version%': targetVersion, '%count%': finalization.pending_patches}) }}</p>
+                            <p>{{ 'You are updating your system to FOSSBilling %target_version%. The system needs to run %count% update patches before you can proceed.'|trans({'%target_version%': FOSSBillingVersion, '%count%': finalization.pending_patches}) }}</p>
                         {% endif %}
 
                         {% if not finalized %}
