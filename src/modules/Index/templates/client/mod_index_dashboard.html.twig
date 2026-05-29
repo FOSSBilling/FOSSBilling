@@ -1,4 +1,5 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% set active_menu = 'dashboard' %}
 
 {% block meta_title %}{{ 'Client Area'|trans }}{% endblock %}
 {% block page_header %}{{ 'Dashboard'|trans }}{% endblock %}

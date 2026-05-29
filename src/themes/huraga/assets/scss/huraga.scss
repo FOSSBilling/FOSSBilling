@@ -263,6 +263,16 @@ body {
     color: var(--bs-primary) !important;
 }
 
+.nav-link.active,
+.offcanvas-item.active > .nav-link {
+    color: var(--bs-primary) !important;
+    font-weight: 600;
+}
+
+.offcanvas-item.active {
+    background: rgba(var(--bs-primary-rgb), 0.08);
+}
+
 // Client profile dropdown - inline with nav items, transparent background
 .client-dropdown {
     .nav-link.dropdown-toggle {

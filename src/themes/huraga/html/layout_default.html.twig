@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 {% set active_locale = guest.system_locale|default('en')|replace({'_': '-'}) %}
 {% set canonical_url = guest.system_current_url|url %}
+{% set current_active_menu = active_menu|default('') %}
 <html lang="{{ active_locale }}" data-bs-theme="{{ settings.theme|default('light') }}">
 <head>
     <meta charset="utf-8">
@@ -113,19 +114,19 @@
 
                         {% if settings.top_menu_dashboard %}
                             <li class="nav-item d-md-flex">
-                                <a class="nav-link" href="{{ ''|url }}">{{ 'Dashboard'|trans }}</a>
+                                <a class="nav-link{% if current_active_menu == 'dashboard' %} active{% endif %}" href="{{ ''|url }}"{% if current_active_menu == 'dashboard' %} aria-current="page"{% endif %}>{{ 'Dashboard'|trans }}</a>
                             </li>
                         {% endif %}
 
                         {% if settings.top_menu_order %}
                             <li class="nav-item d-md-flex">
-                                <a class="nav-link" href="{{ 'order'|url }}">{{ 'Order'|trans }}</a>
+                                <a class="nav-link{% if current_active_menu == 'order' %} active{% endif %}" href="{{ 'order'|url }}"{% if current_active_menu == 'order' %} aria-current="page"{% endif %}>{{ 'Order'|trans }}</a>
                             </li>
                         {% endif %}
 
                         {% if settings.top_menu_profile and not client %}
                             <li class="nav-item d-md-flex">
-                                <a class="nav-link" href="{{ 'login'|url }}">{{ 'Login'|trans }}</a>
+                                <a class="nav-link{% if current_active_menu == 'login' %} active{% endif %}" href="{{ 'login'|url }}"{% if current_active_menu == 'login' %} aria-current="page"{% endif %}>{{ 'Login'|trans }}</a>
                             </li>
                         {% endif %}
 

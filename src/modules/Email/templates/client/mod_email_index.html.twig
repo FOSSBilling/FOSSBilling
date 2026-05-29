@@ -1,4 +1,5 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% set active_menu = 'emails' %}
 
 {% block meta_title %}{{ 'Emails'|trans }}{% endblock %}
 {% block breadcrumb %}

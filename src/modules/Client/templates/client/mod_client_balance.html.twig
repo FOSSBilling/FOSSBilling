@@ -1,4 +1,5 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% set active_menu = 'payments' %}
 
 {% block meta_title %}{{ 'Wallet'|trans }}{% endblock %}
 {% block breadcrumb %} <li class="breadcrumb-item active" aria-current="page">{{ 'Wallet'|trans }}</li>{% endblock %}
