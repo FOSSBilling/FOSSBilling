@@ -3,6 +3,6 @@
   "type": "mod",
   "name": "Currency",
   "icon_url": "icon.svg",
-  "description": "FOSSBilling core module",
+  "description": "Manages currencies, exchange rates, formatting, and default billing currency settings.",
   "version": "1.0.0"
 }
