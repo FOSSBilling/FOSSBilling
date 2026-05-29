@@ -249,7 +249,7 @@ class Admin extends \Api_Abstract
 
     public function update_finalization_status(): array
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'view');
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'system_update');
 
         return $this->di['update_finalization']->getStatus();
     }
