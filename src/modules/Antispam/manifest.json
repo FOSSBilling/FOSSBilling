@@ -4,7 +4,7 @@
     "name": "Anti-Spam",
     "description": "Used to prevent spam using reCAPTCHA, StopForumSpam.com, disposable email domain blocking, honeypot fields, and IP blocking.",
     "icon_url": "icon.svg",
-    "project_url": "https://fossbilling.org/",
+    "project_url": "https://docs.fossbilling.org/admin-guide/anti-spam/",
     "homepage_url": "https://fossbilling.org/",
     "author": "FOSSBilling",
     "author_url": "https://fossbilling.org/",
