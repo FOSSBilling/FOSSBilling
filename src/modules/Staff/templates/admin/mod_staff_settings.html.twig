@@ -233,7 +233,7 @@
                                     </a>
                                     <a class="btn btn-icon" href="{{ 'staff/group_delete'|api_url(query: { 'id': group.id }) }}"
                                         data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
-                                        {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'extension/settings/staff'|url}) }}>
+                                        {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'extension/settings/staff#tab-groups'|url}) }}>
                                         <svg class="icon">
                                             <use xlink:href="#delete"/>
                                         </svg>
@@ -305,7 +305,7 @@
 
     <div class="modal fade" id="newStaffGroupModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <form method="post" action="{{ 'staff/group_create'|api_url }}" class="modal-content" {{ fb_api_form({redirect: 'extension/settings/staff'|url}) }}>
+            <form method="post" action="{{ 'staff/group_create'|api_url }}" class="modal-content" {{ fb_api_form({redirect: 'extension/settings/staff#tab-groups'|url}) }}>
                 <div class="modal-header">
                     <h5 class="modal-title">{{ 'New Group'|trans }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>

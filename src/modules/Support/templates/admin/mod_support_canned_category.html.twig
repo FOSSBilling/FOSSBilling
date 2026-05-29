@@ -28,7 +28,7 @@
 
 {% block content %}
 <div class="card">
-    <form method="post" action="{{ 'support/canned_category_update'|api_url }}" {{ fb_api_form({ redirect: 'support/canned-responses'|url }) }}>
+    <form method="post" action="{{ 'support/canned_category_update'|api_url }}" {{ fb_api_form({ redirect: 'support/canned-responses#tab-categories'|url }) }}>
         {% embed 'partial_admin_form_card.html.twig' with {
             title: 'Canned Category'|trans,
             subtitle: category.title,

@@ -173,7 +173,7 @@
                                                 </svg>
                                             </a>
                                             <a class="btn btn-icon" href="{{ 'support/kb_category_delete'|api_url(query: { 'id': cat_id }) }}"
-                                                {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/kb'|url }) }}>
+                                                {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/kb#tab-categories'|url }) }}>
                                                 <svg class="icon">
                                                     <use xlink:href="#delete" />
                                                 </svg>
@@ -247,7 +247,7 @@
 
         <div class="modal modal-blur fade" id="newKbCategoryModal" tabindex="-1" aria-labelledby="newKbCategoryModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-md-down">
-                <form class="modal-content fb-modal-form" method="post" action="{{ 'support/kb_category_create'|api_url }}" {{ fb_api_form({ reload: true }) }}>
+                <form class="modal-content fb-modal-form" method="post" action="{{ 'support/kb_category_create'|api_url }}" {{ fb_api_form({ redirect: 'support/kb#tab-categories'|url }) }}>
                     <div class="modal-header">
                         <h3 class="modal-title" id="newKbCategoryModalLabel">{{ 'Create New Category'|trans }}</h3>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
