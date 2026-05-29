@@ -547,6 +547,13 @@ $di['updater'] = function () use ($di) {
     return $updater;
 };
 
+$di['update_finalization'] = function () use ($di) {
+    $finalization = new FOSSBilling\UpdateFinalization();
+    $finalization->setDi($di);
+
+    return $finalization;
+};
+
 /*
  * Creates a new server manager object and returns it.
  *

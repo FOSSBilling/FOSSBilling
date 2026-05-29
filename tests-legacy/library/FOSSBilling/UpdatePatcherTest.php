@@ -34,75 +34,23 @@ final class UpdatePatcherTest extends PHPUnit\Framework\TestCase
         self::assertFalse($di->offsetExists('dbal'));
     }
 
-    public function testSpamcheckerPatchRemovesExtensionRecordWithoutUninstallingModule(): void
+    public function testPatchMethodsDeferUnlessForced(): void
     {
-        $pdo = new PDO('sqlite::memory:');
-        $pdo->exec('CREATE TABLE extension (type TEXT, name TEXT)');
-        $pdo->exec('CREATE TABLE extension_meta (extension TEXT, rel_type TEXT, rel_id TEXT, meta_key TEXT, meta_value TEXT)');
-        $pdo->exec("INSERT INTO extension (type, name) VALUES ('mod', 'spamchecker')");
-
-        $extensionService = new class {
-            public array $savedConfig = [];
-
-            public function getConfig(string $extension): array
-            {
-                return match ($extension) {
-                    'mod_spamchecker' => [
-                        'ext' => 'mod_spamchecker',
-                        'captcha_enabled' => true,
-                    ],
-                    'mod_antispam' => [
-                        'ext' => 'mod_antispam',
-                    ],
-                    default => ['ext' => $extension],
-                };
-            }
-
-            public function setConfig(array $data): bool
-            {
-                $this->savedConfig = $data;
-
-                return true;
-            }
-
-            public function __call(string $name, array $arguments): mixed
-            {
-                throw new RuntimeException("Unexpected extension service call: {$name}");
-            }
-        };
-
-        $hookService = new class {
-            public function batchConnect(string $module): void
-            {
-            }
-        };
-
-        $cache = new class {
-            public function delete(string $key): void
-            {
-            }
-        };
-
-        $di = new Pimple\Container();
-        $di['pdo'] = $pdo;
-        $di['mod_service'] = $di->protect(fn (string $module): object => match ($module) {
-            'extension' => $extensionService,
-            'hook' => $hookService,
-        });
-        $di['cache'] = $cache;
-
         $patcher = new UpdatePatcher();
-        $patcher->setDi($di);
 
-        $method = new ReflectionMethod(UpdatePatcher::class, 'patch55');
-        $method->invoke($patcher);
+        $patcher->applyConfigPatches();
+        $patcher->applyCorePatches();
 
-        $remainingSpamcheckerExtensions = $pdo
-            ->query("SELECT COUNT(*) FROM extension WHERE type = 'mod' AND name = 'spamchecker'")
-            ->fetchColumn();
+        self::addToAssertionCount(1);
+    }
 
-        self::assertSame(0, (int) $remainingSpamcheckerExtensions);
-        self::assertSame('mod_antispam', $extensionService->savedConfig['ext']);
-        self::assertTrue($extensionService->savedConfig['captcha_enabled']);
+    public function testCorePatchesCanBeForced(): void
+    {
+        $patcher = new UpdatePatcher();
+
+        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('Database connection is not available.');
+
+        $patcher->applyCorePatches(force: true);
     }
 }

@@ -54,6 +54,19 @@ final class ClientTestSessionDouble
     }
 }
 
+final class ClientTestUpdateFinalizationDouble
+{
+    public function isRequired(): bool
+    {
+        return false;
+    }
+
+    public function isAdminApiCallAllowed(string $class, string $method): bool
+    {
+        return true;
+    }
+}
+
 final class TestableClient extends Client
 {
     public bool $hasValidSession = false;
@@ -282,6 +295,7 @@ final class ClientTest extends \BBTestCase
         $this->di['request'] = $request;
         $this->di['rate_limiter'] = $rateLimiter;
         $this->di['session'] = new ClientTestSessionDouble($sessionData);
+        $this->di['update_finalization'] = new ClientTestUpdateFinalizationDouble();
         $this->di['api'] = $this->di->protect(fn (string $role): object => $api);
 
         $controller = new TestableClient();

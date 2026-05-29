@@ -52,11 +52,13 @@ class RunPatcher extends Command implements \FOSSBilling\InjectionAwareInterface
 
         $patcher = new UpdatePatcher();
         $patcher->setDi($this->di);
+        $finalization = $this->di['update_finalization'];
+        $finalizationRequired = $finalization->isRequired();
 
         $version = Version::VERSION;
         $latestPatchLevel = $patcher->latestPatchLevel();
         $cacheItem = $this->di['cache']->getItem('updatePatcher');
-        if ($cacheItem->isHit()) {
+        if (!$finalizationRequired && $cacheItem->isHit()) {
             $cachedState = $cacheItem->get();
             if (
                 is_array($cachedState)
@@ -70,17 +72,14 @@ class RunPatcher extends Command implements \FOSSBilling\InjectionAwareInterface
         }
 
         try {
-            $output->writeln('Clearing runtime cache...');
-            $this->di['mod_service']('system')->clearCache();
-
-            $output->writeln('Applying config patches...');
-            $patcher->applyConfigPatches();
-
-            $output->writeln('Applying core patches...');
-            $patcher->applyCorePatches();
-
-            $output->writeln('Clearing runtime cache...');
-            $this->di['mod_service']('system')->clearCache();
+            if ($finalizationRequired) {
+                $output->writeln('Finalizing pending update...');
+                $finalization->finalizeAndComplete();
+            } else {
+                $output->writeln('Applying patches and clearing runtime cache...');
+                $finalization->finalizeUpdate();
+                $finalization->writeCompleteState();
+            }
 
             $cacheItem->set([
                 self::CACHE_VERSION_KEY => $version,

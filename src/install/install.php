@@ -56,8 +56,9 @@ define('PATH_CONFIG_SAMPLE', Path::join(PATH_ROOT, 'config-sample.php'));
 define('PATH_CRON', Path::join(PATH_ROOT, 'cron.php'));
 define('PATH_LANGS', Path::join(PATH_ROOT, 'locale'));
 define('PATH_MODS', Path::join(PATH_ROOT, 'modules'));
-define('PATH_CACHE', Path::join(PATH_ROOT, 'data', 'cache'));
-define('PATH_LOG', Path::join(PATH_ROOT, 'data', 'log'));
+define('PATH_DATA', Path::join(PATH_ROOT, 'data'));
+define('PATH_CACHE', Path::join(PATH_DATA, 'cache'));
+define('PATH_LOG', Path::join(PATH_DATA, 'log'));
 define('HURAGA_CONFIG', Path::join(PATH_THEMES, 'huraga', 'config', 'settings_data.json'));
 define('HURAGA_CONFIG_TEMPLATE', Path::join(PATH_THEMES, 'huraga', 'config', 'settings_data.json.example'));
 define('PATH_HTACCESS', Path::join(PATH_ROOT, '.htaccess'));
@@ -446,6 +447,7 @@ final class FOSSBilling_Installer
         if (function_exists('opcache_invalidate')) {
             opcache_invalidate(PATH_CONFIG, true);
         }
+        (new FOSSBilling\UpdateFinalization())->writeCompleteState();
 
         // Installation completed successfully
         return true;
@@ -468,7 +470,7 @@ final class FOSSBilling_Installer
         $data['update_branch'] = $updateBranch;
         $data['info']['instance_id'] = Uuid::v4()->toString();
         $data['url'] = str_replace(['https://', 'http://'], '', SYSTEM_URL);
-        $data['path_data'] = Path::join(PATH_ROOT, 'data');
+        $data['path_data'] = PATH_DATA;
         $data['db'] = [
             'driver' => 'pdo_mysql',
             'host' => $this->session->get('database_hostname'),
