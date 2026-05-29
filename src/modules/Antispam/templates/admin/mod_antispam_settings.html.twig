@@ -28,6 +28,14 @@
                 <h3 class="card-title">{{ 'Anti-Spam Settings'|trans }}</h3>
                 <p class="card-subtitle">{{ 'Configure anti-spam checks for signups, contact forms, public tickets, and automated abuse protection.'|trans }}</p>
             </div>
+            <div class="card-actions">
+                <a href="https://docs.fossbilling.org/admin-guide/anti-spam/" target="_blank" rel="noopener" class="btn btn-outline-primary">
+                    <svg class="icon">
+                        <use xlink:href="#help" />
+                    </svg>
+                    {{ 'Read the documentation'|trans }}
+                </a>
+            </div>
         </div>
 
         <form method="post" action="{{ 'extension/config_save'|api_url(role: 'admin') }}" {{ fb_api_form({message: 'Configuration Updated'|trans}) }}>
