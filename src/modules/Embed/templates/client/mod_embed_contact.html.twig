@@ -68,45 +68,7 @@
                 <textarea id="embed-contact-message" class="embed-textarea" name="message" cols="5" rows="5" required="required">{{ request.message }}</textarea>
             </div>
 
-{% if guest.extension_is_on({ "mod": "antispam" }) %}
-{% set rc = guest.antispam_recaptcha %}
-                {% if rc.enabled %}
-                    {% if rc.version == 2 %}
-                        <script src='https://www.google.com/recaptcha/api.js' async defer></script>
-                        <div class="g-recaptcha" data-sitekey="{{ rc.publickey }}"></div>
-                    {% else %}
-                        {% set server = "https://www.google.com/recaptcha/api" %}
-                        <script>
-                            var RecaptchaOptions = {
-                            theme : 'custom',
-                            custom_theme_widget: 'recaptcha_widget'
-                         };
-                        </script>
-
-                         <div id="recaptcha_widget" style="display:none">
-                           <div id="recaptcha_image"></div>
-                           <div class="recaptcha_only_if_incorrect_sol" style="color:red">{{ 'Incorrect please try again'|trans }}</div>
-
-                           <div class="embed-field">
-                                <label class="embed-label" for="recaptcha_response_field">{{ 'Enter the words above'|trans }}</label>
-                                <input class="embed-input" type="text" id="recaptcha_response_field" name="recaptcha_response_field" />
-                                <a class="embed-button" href="javascript:Recaptcha.reload()">
-                                    <span class="dark-icon i-reload"></span>
-                                    {{ 'Reload challenge'|trans }}
-                                </a>
-                           </div>
-                         </div>
-
-                        <script src="{{ server }}/challenge?k={{ rc.publickey }}"></script>
-
-                        <noscript>
-                            <iframe src="{{ server }}/noscript?k={{ rc.publickey }}" height="300" width="500" frameborder="0"></iframe><br/>
-                            <textarea name="recaptcha_challenge_field" rows="3" cols="40"></textarea>
-                            <input type="hidden" name="recaptcha_response_field" value="manual_challenge"/>
-                        </noscript>
-                    {% endif %}
-                {% endif %}
-            {% endif %}
+            {{ include('mod_antispam_recaptcha.html.twig') }}
 
             <button class="embed-button" type="submit">{{ 'Send'|trans }}</button>
         </div>
