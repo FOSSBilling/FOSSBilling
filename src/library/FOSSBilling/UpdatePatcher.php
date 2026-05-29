@@ -1060,7 +1060,11 @@ class UpdatePatcher implements InjectionAwareInterface
 
             $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_spamchecker' AND meta_key = 'config'");
 
-            $this->executeSql("DELETE FROM extension WHERE type = 'mod' AND name = 'spamchecker'");
+            $spamcheckerExt = $extService->findExtension('mod', 'spamchecker');
+            if ($spamcheckerExt instanceof \Model_Extension) {
+                $extService->deactivate($spamcheckerExt);
+                $extService->uninstall('mod', 'spamchecker');
+            }
 
             $this->di['cache']->delete('config_mod_spamchecker');
             $this->di['cache']->delete('config_mod_antispam');
