@@ -446,7 +446,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             ':status2' => \Model_SupportTicket::ONHOLD,
         ];
 
-        return $this->di['db']->getCell($query, $bindings);
+        return (int) $this->di['db']->getCell($query, $bindings);
     }
 
     public function checkIfTaskAlreadyExists(\Model_Client $client, int $rel_id, string $rel_type, string $rel_task): bool
