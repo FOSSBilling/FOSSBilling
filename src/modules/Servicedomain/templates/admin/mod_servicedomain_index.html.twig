@@ -95,7 +95,7 @@
                                                 </svg>
                                             </a>
                                             <a class="btn btn-icon" href="{{ 'servicedomain/tld_delete'|api_url(query: { 'tld': tld.tld }) }}"
-                                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'servicedomain#tab-tlds'|url}) }}>
                                                 <svg class="icon">
                                                     <use xlink:href="#delete" />
                                                 </svg>
@@ -137,7 +137,7 @@
                                             <a href='{{ "servicedomain/registrar/#{registrar.id}"|url }}'>{{ registrar.title }}</a>
                                         </td>
                                         <td>
-                                            <a class="btn btn-icon" href="{{ 'servicedomain/registrar_copy'|api_url(query: { 'id': registrar.id }) }}" title="{{ 'Copy'|trans }}" {{ fb_api_link({reload: true}) }}>
+                                            <a class="btn btn-icon" href="{{ 'servicedomain/registrar_copy'|api_url(query: { 'id': registrar.id }) }}" title="{{ 'Copy'|trans }}" {{ fb_api_link({redirect: 'servicedomain#tab-registrars'|url}) }}>
                                                 <svg class="icon">
                                                     <use xlink:href="#copy" />
                                                 </svg>
@@ -148,7 +148,7 @@
                                                 </svg>
                                             </a>
                                             <a class="btn btn-icon" href="{{ 'servicedomain/registrar_delete'|api_url(query: { 'id': registrar.id }) }}"
-                                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'servicedomain#tab-registrars'|url}) }}>
                                                 <svg class="icon">
                                                     <use xlink:href="#delete" />
                                                 </svg>
@@ -211,7 +211,7 @@
 
         <div class="modal modal-blur fade" id="newTldModal" tabindex="-1" aria-labelledby="newTldModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-md-down modal-xl">
-                <form class="modal-content fb-modal-form" method="post" action="{{ 'servicedomain/tld_create'|api_url }}" {{ fb_api_form({reload: true}) }}>
+                <form class="modal-content fb-modal-form" method="post" action="{{ 'servicedomain/tld_create'|api_url }}" {{ fb_api_form({redirect: 'servicedomain#tab-tlds'|url}) }}>
                     <div class="modal-header">
                         <h3 class="modal-title" id="newTldModalLabel">{{ 'Add New Top Level Domain'|trans }}</h3>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>

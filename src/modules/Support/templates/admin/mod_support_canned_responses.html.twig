@@ -170,7 +170,7 @@
                                 </svg>
                             </a>
                             <a class="btn btn-icon" href="{{ 'support/canned_category_delete'|api_url(query: { 'id': cat_id }) }}"
-                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/canned-responses'|url}) }}>
+                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/canned-responses#tab-categories'|url}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -231,7 +231,7 @@
 
         <div class="modal modal-blur fade" id="newCannedCategoryModal" tabindex="-1" aria-labelledby="newCannedCategoryModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
-                <form class="modal-content" method="post" action="{{ 'support/canned_category_create'|api_url }}" {{ fb_api_form({redirect: 'support/canned-responses'|url}) }}>
+                <form class="modal-content" method="post" action="{{ 'support/canned_category_create'|api_url }}" {{ fb_api_form({redirect: 'support/canned-responses#tab-categories'|url}) }}>
                     <div class="modal-header">
                         <h3 class="modal-title" id="newCannedCategoryModalLabel">{{ 'Create New Category'|trans }}</h3>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>

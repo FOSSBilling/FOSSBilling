@@ -144,7 +144,7 @@
                                             </a>
                                             <a class="btn btn-icon" href="{{ 'servicehosting/hp_delete'|api_url(query: { 'id': hp.id }) }}"
                                                 data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Delete the Plan'|trans }}"
-                                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'servicehosting'|url}) }}>
+                                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'servicehosting#tab-plans'|url}) }}>
                                                 <svg class="icon">
                                                     <use xlink:href="#delete" />
                                                 </svg>

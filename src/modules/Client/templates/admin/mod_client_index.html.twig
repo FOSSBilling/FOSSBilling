@@ -343,7 +343,7 @@
                                     </svg>
                                 </a>
                                 <a class="btn btn-icon"
-                                    {{ fb_api_link({href: 'client/group_delete'|api_url(query: {'id': id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                                    {{ fb_api_link({href: 'client/group_delete'|api_url(query: {'id': id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'client#tab-groups'|url}) }}>
                                     <svg class="icon">
                                         <use xlink:href="#delete" />
                                     </svg>
@@ -362,7 +362,7 @@
 
             <div class="modal modal-blur fade" id="newGroupModal" tabindex="-1" aria-labelledby="newGroupModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered modal-sm">
-                    <form class="modal-content" method="post" action="{{ 'client/group_create'|api_url }}" {{ fb_api_form({ redirect: 'client'|url}) }}>
+                    <form class="modal-content" method="post" action="{{ 'client/group_create'|api_url }}" {{ fb_api_form({ redirect: 'client#tab-groups'|url}) }}>
                         <div class="modal-header">
                             <h3 class="modal-title" id="newGroupModalLabel">{{ 'Create New Group'|trans }}</h3>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
