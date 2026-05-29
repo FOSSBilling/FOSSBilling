@@ -335,8 +335,12 @@ class FOSSBillingExtension
     }
 
     #[AsTwigFilter('timeago')]
-    public function timeago(string $dateTime): string
+    public function timeago(?string $dateTime): string
     {
+        if ($dateTime === null) {
+            return '';
+        }
+
         $timestamp = strtotime($dateTime);
         if ($timestamp === false) {
             return '';
