@@ -17,18 +17,20 @@
     {% else %}
     {% set alerts = admin.system_cas_messages()|merge(admin.system_messages()) %}
     {% for alert in alerts %}
+    {% set alertIcon = {danger: 'alert-triangle', warning: 'alert-triangle', success: 'circle-check', info: 'info'}[alert.type]|default('info') %}
     <div class="alert alert-{{ alert.type }} {{ alert.dismissible ? "alert-dismissible" : "" }} fade show mb-3" role="alert">
+        <div class="alert-icon">
+            <svg class="icon alert-icon icon-2" aria-hidden="true">
+                <use xlink:href="{{ 'build/symbol/icons-sprite.svg'|asset_url }}#{{ alertIcon }}" />
+            </svg>
+        </div>
         {% if alert.title %}
             <strong>{{ alert.title }}</strong>{% if alert.message %} {% endif %}
         {% endif %}
         {{ alert.message }}
-        {% if alert.buttons|length > 0 %}
-            <div class="btn-list mt-2">
-            {% for button in alert.buttons %}
-                <a href="{{ button.link }}" class="btn {{ button.type ? "btn-" ~ button.type : "" }}">{{ button.text }}</a>
-            {% endfor %}
-            </div>
-        {% endif %}
+        {% for button in alert.buttons %}
+            <a href="{{ button.link }}" class="alert-action">{{ button.text }}</a>
+        {% endfor %}
         {% if alert.dismissible %}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ 'Close'|trans }}"></button>
         {% endif %}
