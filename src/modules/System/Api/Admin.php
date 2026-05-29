@@ -241,9 +241,40 @@ class Admin extends \Api_Abstract
         $new_version = $updater->getLatestVersion();
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminUpdateCore']);
         $updater->performUpdate();
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminUpdateCore']);
 
-        $this->di['logger']->info('Updated FOSSBilling from %s to %s', \FOSSBilling\Version::VERSION, $new_version);
+        $this->di['logger']->info('Installed FOSSBilling update files from %s to %s. Update finalization is pending.', \FOSSBilling\Version::VERSION, $new_version);
+
+        return true;
+    }
+
+    public function update_finalization_status(): array
+    {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'view');
+
+        return $this->di['update_finalization']->getStatus();
+    }
+
+    public function finalize_update(): bool
+    {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'system_update');
+
+        if (function_exists('set_time_limit')) {
+            set_time_limit(180);
+        }
+
+        $this->di['update_finalization']->finalizeUpdate();
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminUpdateCore']);
+        $this->di['logger']->info('Finalized FOSSBilling update to %s.', \FOSSBilling\Version::VERSION);
+
+        return true;
+    }
+
+    public function complete_update_finalization(): bool
+    {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'system_update');
+
+        $this->di['update_finalization']->completeFinalization();
+        $this->di['logger']->info('Completed FOSSBilling update finalization for %s.', \FOSSBilling\Version::VERSION);
 
         return true;
     }

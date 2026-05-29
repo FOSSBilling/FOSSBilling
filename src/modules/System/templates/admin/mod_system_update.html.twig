@@ -19,14 +19,14 @@
         {% set updateButtonClass = 'btn-primary' %}
         {% set updateConfirmTitle = 'Install latest preview build?'|trans %}
         {% set updateModalType = 'confirm' %}
-        {% set updateModalContent = 'Preview builds may contain unreleased changes, regressions, or incomplete migrations. Back up your files and database, and avoid using this on production installations unless you are prepared to troubleshoot issues.'|trans %}
+        {% set updateModalContent = 'Preview builds may contain unreleased changes, regressions, or incomplete migrations. Back up your files and database, and avoid using this on production installations unless you are prepared to troubleshoot issues. After the files are installed, FOSSBilling will require update finalization before normal usage resumes.'|trans %}
         {% set updateModalButton = 'Install Preview Build'|trans %}
     {% else %}
         {% set updateButtonLabel = 'Update FOSSBilling'|trans %}
         {% set updateButtonClass = 'btn-primary' %}
         {% set updateConfirmTitle = 'Update FOSSBilling?'|trans %}
         {% set updateModalType = 'confirm' %}
-        {% set updateModalContent = 'Before continuing, back up your FOSSBilling files and database. This will download and install the latest available FOSSBilling release, apply update patches, clear the cache, and log you out of the admin area.'|trans %}
+        {% set updateModalContent = 'Before continuing, back up your FOSSBilling files and database. This will download and install the latest available FOSSBilling release, enable maintenance mode, clear the cache, and log you out of the admin area. After logging back in, you will be asked to finalize the update.'|trans %}
         {% set updateModalButton = 'Update FOSSBilling'|trans %}
     {% endif %}
     <div class="row row-cards">
@@ -36,7 +36,7 @@
                     <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 w-100">
                         <div>
                             <h3 class="card-title">{{ 'FOSSBilling Updates'|trans }}</h3>
-                            <p class="card-subtitle">{{ isPreviewBranch ? 'Install preview builds and review update status.'|trans : 'Review release notes, check for updates, and apply available platform updates.'|trans }}</p>
+                            <p class="card-subtitle">{{ isPreviewBranch ? 'Install preview builds and review update status.'|trans : 'Review release notes, check for updates, and install available platform updates.'|trans }}</p>
                         </div>
                         {% if isPreviewBranch %}
                             <span class="badge badge-outline text-warning">{{ 'Preview Branch'|trans }}</span>
@@ -154,7 +154,7 @@
                         </div>
                     {% endif %}
                     <p>{{ 'Database patches are small migrations that update FOSSBilling database tables and settings after the application files change.'|trans }}</p>
-                    <p class="text-secondary mb-0">{{ 'They normally run automatically during updates. Use the manual action here when FOSSBilling reports pending patches or when troubleshooting update issues.'|trans }}</p>
+                    <p class="text-secondary mb-0">{{ 'They now run during update finalization after the new application files are installed. Use the manual action here only when FOSSBilling reports pending patches or when troubleshooting update issues.'|trans }}</p>
                 </div>
                 <div class="card-footer">
                     <div class="d-flex flex-wrap gap-2">

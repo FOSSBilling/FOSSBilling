@@ -276,6 +276,10 @@ function init(): void
     global $di;
     $di = require Path::join(PATH_ROOT, 'di.php');
 
+    if (!Environment::isCLI() && !Environment::isTesting()) {
+        $di['update_finalization']->ensureCurrentVersionFinalization();
+    }
+
     // Now that the config file is loaded, we can enable Sentry.
     SentryHelper::registerSentry();
 }

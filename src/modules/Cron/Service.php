@@ -58,6 +58,12 @@ class Service
 
     public function runCrons(): bool
     {
+        if ($this->di['update_finalization']->isRequired()) {
+            $this->di['logger']->setChannel('cron')->warning('Skipped cron execution because update finalization is pending.');
+
+            throw new \FOSSBilling\InformationException('Update finalization is pending. Cron jobs are paused until finalization is completed.', [], 503);
+        }
+
         $api = $this->di['api_system'];
         $this->di['logger']->setChannel('cron')->info('Started executing cron jobs.');
 

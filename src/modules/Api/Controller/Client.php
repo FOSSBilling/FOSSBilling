@@ -116,6 +116,13 @@ class Client implements InjectionAwareInterface
         }
     }
 
+    private function checkUpdateFinalization(string $role, string $class, string $method): void
+    {
+        if ($role === 'admin' && $this->di['update_finalization']->isRequired() && !$this->di['update_finalization']->isAdminApiCallAllowed($class, $method)) {
+            throw new \FOSSBilling\InformationException('FOSSBilling update finalization is pending. Complete finalization before using the admin API.', [], 503);
+        }
+    }
+
     private function checkRateLimit(string $role, ?string $method = null, bool $useAuthenticatedSubject = true): bool
     {
         $subject = (string) $this->_getIp();
@@ -205,6 +212,7 @@ class Client implements InjectionAwareInterface
             }
         }
 
+        $this->checkUpdateFinalization($role, $class, $method);
         $this->checkRateLimit($role, $method);
 
         $api = $this->di['api']($role);
@@ -458,6 +466,8 @@ class Client implements InjectionAwareInterface
                 if ($e instanceof RateLimitException && $e->hasRetryAfter()) {
                     $headers['Retry-After'] = (string) $e->getRetryAfterSeconds();
                 }
+            } elseif ($code == 503) {
+                $statusCode = 503;
             } elseif ($code == 701 || $code == 879) {
                 $statusCode = 400;
             }
