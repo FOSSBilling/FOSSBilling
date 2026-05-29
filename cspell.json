@@ -47,7 +47,8 @@
         "ONLYDIR",
         "sandboxed",
         "Segoe",
-        "minmax"
+        "minmax",
+        "grecaptcha"
     ],
 
     "ignoreWords": [
