@@ -34,9 +34,9 @@ final class FOSSBilling_DriverManagerFactoryTest extends PHPUnit\Framework\TestC
         $connection = DriverManagerFactory::getConnection();
 
         self::assertSame('pdo_mysql', $dbConfig['driver']);
-        self::assertSame('3306', $dbConfig['port']);
+        self::assertSame(3306, $dbConfig['port']);
         self::assertSame('pdo_mysql', $connection->getParams()['driver']);
-        self::assertSame('3306', $connection->getParams()['port']);
+        self::assertSame(3306, $connection->getParams()['port']);
     }
 
     protected function tearDown(): void

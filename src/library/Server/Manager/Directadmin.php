@@ -104,20 +104,14 @@ class Server_Manager_Directadmin extends Server_Manager
 
     /**
      * Returns the port number for the DirectAdmin server.
-     * If the port is set in the configuration, verify that it's a valid port number (0 - 65535).
-     * If a valid port is not set in the configuration, it defaults to '2222'.
+     * If the port is set in the configuration, verify that it's a valid port number (1 - 65535).
+     * If a valid port is not set in the configuration, it defaults to 2222.
      *
-     * @return int|string the port number
+     * @return int the port number
      */
-    public function getPort(): int|string
+    public function getPort(): int
     {
-        $port = $this->_config['port'];
-
-        if (filter_var($port, FILTER_VALIDATE_INT) !== false && $port >= 0 && $port <= 65535) {
-            return $this->_config['port'];
-        }
-
-        return 2222;
+        return FOSSBilling\Tools::normalizePort($this->_config['port'] ?? null, 2222);
     }
 
     /**
