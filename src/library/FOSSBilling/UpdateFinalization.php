@@ -18,11 +18,11 @@ use Symfony\Component\Filesystem\Path;
 /**
  * Coordinates the post-update finalization flow.
  *
- * The single state file under PATH_DATA, update-finalization.json, records both
+ * The state file under PATH_DATA, update-finalization.json, records both
  * pending finalization work and the last version that completed finalization.
  * If the file is missing or contains a completed version that does not match the
  * currently installed files, the current code creates a pending state. This is
- * how updates from old versions and manual file uploads are forced through
+ * how updates from old versions and manual file uploads are forced to go through
  * finalization even though they could not create pending state before files changed.
  */
 class UpdateFinalization implements InjectionAwareInterface
@@ -33,12 +33,25 @@ class UpdateFinalization implements InjectionAwareInterface
     private const string STATUS_FINALIZED = 'finalized';
     private const string STATUS_COMPLETE = 'complete';
 
+    private const array ALLOWED_ADMIN_PATHS = [
+        'staff/login',
+        'system/update/finalize',
+    ];
+    private const array ALLOWED_ADMIN_API_CALLS = [
+        'system_update_finalization_status',
+        'system_finalize_update',
+        'system_complete_update_finalization',
+        'profile_logout',
+    ];
+
     private ?\Pimple\Container $di = null;
     private readonly Filesystem $filesystem;
+    private readonly string $statePath;
 
     public function __construct()
     {
         $this->filesystem = new Filesystem();
+        $this->statePath = Path::join(PATH_DATA, self::STATE_FILENAME);
     }
 
     public function setDi(\Pimple\Container $di): void
@@ -49,11 +62,6 @@ class UpdateFinalization implements InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
-    }
-
-    public function getStatePath(): string
-    {
-        return Path::join(PATH_DATA, self::STATE_FILENAME);
     }
 
     public function isRequired(bool $ensure = true): bool
@@ -124,7 +132,7 @@ class UpdateFinalization implements InjectionAwareInterface
             'created_at' => date(DATE_ATOM),
             'finalized_at' => null,
             'completed_at' => null,
-            'maintenance_mode' => $this->getCurrentMaintenanceMode(),
+            'maintenance_mode' => self::normalizeMaintenanceMode(Config::getProperty('maintenance_mode', [])),
         ];
 
         // Write the pending state before enabling maintenance mode so a failed
@@ -148,10 +156,7 @@ class UpdateFinalization implements InjectionAwareInterface
         try {
             $this->clearCache();
 
-            $patcher = new UpdatePatcher();
-            if ($this->di instanceof \Pimple\Container) {
-                $patcher->setDi($this->di);
-            }
+            $patcher = $this->createPatcher();
             $patcher->applyConfigPatches();
             $patcher->applyCorePatches();
 
@@ -210,52 +215,40 @@ class UpdateFinalization implements InjectionAwareInterface
 
     public function writeCompleteState(?array $state = null): void
     {
-        $this->filesystem->mkdir(PATH_DATA, 0o755);
-        $this->filesystem->dumpFile($this->getStatePath(), self::encodeJson([
+        $timestamp = date(DATE_ATOM);
+
+        $this->writeState([
             'status' => self::STATUS_COMPLETE,
             'version' => Version::VERSION,
             'from_version' => $state['from_version'] ?? null,
             'target_version' => $state['target_version'] ?? Version::VERSION,
-            'finalized_at' => $state['finalized_at'] ?? date(DATE_ATOM),
-            'completed_at' => $state['completed_at'] ?? date(DATE_ATOM),
-        ]));
+            'finalized_at' => $state['finalized_at'] ?? $timestamp,
+            'completed_at' => $state['completed_at'] ?? $timestamp,
+        ]);
     }
 
     public function isAdminPathAllowed(string $path): bool
     {
         $path = trim($path, '/');
 
-        return in_array($path, [
-            'staff/login',
-            'system/update/finalize',
-        ], true);
+        return in_array($path, self::ALLOWED_ADMIN_PATHS, true);
     }
 
     public function isAdminApiCallAllowed(string $class, string $method): bool
     {
         $call = str_starts_with($method, $class . '_') ? $method : "{$class}_{$method}";
 
-        return in_array($call, [
-            'system_update_finalization_status',
-            'system_finalize_update',
-            'system_complete_update_finalization',
-            'profile_logout',
-        ], true);
+        return in_array($call, self::ALLOWED_ADMIN_API_CALLS, true);
     }
 
     private function readState(): ?array
     {
-        return $this->readJsonFile($this->getStatePath());
-    }
-
-    private function readJsonFile(string $path): ?array
-    {
-        if (!$this->filesystem->exists($path)) {
+        if (!$this->filesystem->exists($this->statePath)) {
             return null;
         }
 
         try {
-            $decoded = json_decode($this->filesystem->readFile($path), true, 512, JSON_THROW_ON_ERROR);
+            $decoded = json_decode($this->filesystem->readFile($this->statePath), true, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException|IOException) {
             return null;
         }
@@ -266,23 +259,13 @@ class UpdateFinalization implements InjectionAwareInterface
     private function writeState(array $state): void
     {
         $this->filesystem->mkdir(PATH_DATA, 0o755);
-        $this->filesystem->dumpFile($this->getStatePath(), self::encodeJson($state));
-    }
-
-    private function getCurrentMaintenanceMode(): array
-    {
-        $maintenanceMode = Config::getProperty('maintenance_mode', []);
-
-        return is_array($maintenanceMode) ? $maintenanceMode : [];
+        $this->filesystem->dumpFile($this->statePath, self::encodeJson($state));
     }
 
     private function enableMaintenanceMode(): void
     {
         $config = Config::getConfig();
-        $maintenanceMode = $config['maintenance_mode'] ?? [];
-        if (!is_array($maintenanceMode)) {
-            $maintenanceMode = [];
-        }
+        $maintenanceMode = self::normalizeMaintenanceMode($config['maintenance_mode'] ?? []);
 
         $maintenanceMode['enabled'] = true;
         // Keep login and finalization reachable while every other public/client
@@ -299,9 +282,8 @@ class UpdateFinalization implements InjectionAwareInterface
     private function restoreMaintenanceMode(array $state): void
     {
         $config = Config::getConfig();
-        $previous = $state['maintenance_mode'] ?? [];
 
-        $config['maintenance_mode'] = is_array($previous) ? $previous : [];
+        $config['maintenance_mode'] = self::normalizeMaintenanceMode($state['maintenance_mode'] ?? []);
         Config::setConfig($config);
     }
 
@@ -309,10 +291,10 @@ class UpdateFinalization implements InjectionAwareInterface
     {
         $adminPrefix = defined('ADMIN_PREFIX') ? rtrim(ADMIN_PREFIX, '/') : '/admin';
 
-        return [
-            $adminPrefix . '/staff/login',
-            $adminPrefix . '/system/update/finalize',
-        ];
+        return array_map(
+            static fn (string $path): string => $adminPrefix . '/' . $path,
+            self::ALLOWED_ADMIN_PATHS
+        );
     }
 
     private function getAvailablePatchCount(): ?int
@@ -320,15 +302,20 @@ class UpdateFinalization implements InjectionAwareInterface
         try {
             // Patch counting depends on the database being reachable. During early
             // recovery paths it is better to show an unknown count than to block the page.
-            $patcher = new UpdatePatcher();
-            if ($this->di instanceof \Pimple\Container) {
-                $patcher->setDi($this->di);
-            }
-
-            return $patcher->availablePatches();
+            return $this->createPatcher()->availablePatches();
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    private function createPatcher(): UpdatePatcher
+    {
+        $patcher = new UpdatePatcher();
+        if ($this->di instanceof \Pimple\Container) {
+            $patcher->setDi($this->di);
+        }
+
+        return $patcher;
     }
 
     private function clearCache(): void
@@ -360,5 +347,10 @@ class UpdateFinalization implements InjectionAwareInterface
     private static function encodeJson(array $data): string
     {
         return json_encode($data, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL;
+    }
+
+    private static function normalizeMaintenanceMode(mixed $maintenanceMode): array
+    {
+        return is_array($maintenanceMode) ? $maintenanceMode : [];
     }
 }

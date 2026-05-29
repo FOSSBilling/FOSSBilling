@@ -20,7 +20,7 @@ final class UpdateFinalizationTest extends PHPUnit\Framework\TestCase
     protected function setUp(): void
     {
         $this->filesystem = new Filesystem();
-        $this->statePath = (new UpdateFinalization())->getStatePath();
+        $this->statePath = Path::join(PATH_DATA, UpdateFinalization::STATE_FILENAME);
         $this->originalConfig = $this->filesystem->readFile(PATH_CONFIG);
         $this->originalState = $this->readOptionalFile($this->statePath);
 

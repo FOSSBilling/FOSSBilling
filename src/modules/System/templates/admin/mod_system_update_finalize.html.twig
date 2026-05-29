@@ -12,8 +12,8 @@
     <div class="page page-center">
         <div class="container-tight py-4">
             <div class="text-center mb-4">
-                <div class="h1 mb-1">{{ 'Hello'|trans }}</div>
-                <p class="text-secondary mb-0">{{ 'Welcome to FOSSBilling %version%.'|trans({'%version%': FOSSBillingVersion}) }}</p>
+                <div class="h1 mb-1">{{ 'Welcome to FOSSBilling %version%'|trans({'%version%': FOSSBillingVersion}) }}</div>
+                <p class="text-secondary mb-0">{{ 'Your update is installed. One final step is required before you use FOSSBilling.'|trans }}</p>
             </div>
 
             <div class="card card-md">
@@ -32,43 +32,16 @@
                             </div>
                         </div>
                     {% else %}
-                        <div class="d-flex align-items-start gap-3 mb-3">
-                            <span class="avatar avatar-md bg-primary text-primary-fg">
-                                <svg class="icon">
-                                    <use xlink:href="#info" />
-                                </svg>
-                            </span>
-                            <div>
-                                <h2 class="card-title mb-1">{{ finalized ? 'Review Your Updated Installation'|trans : 'Finalize Your Update'|trans }}</h2>
-                                <p class="text-secondary mb-0">{{ finalized ? 'Review important settings, then finish finalization to reopen the installation.'|trans : 'FOSSBilling needs to apply update patches with the newly installed code before normal admin usage resumes.'|trans }}</p>
-                            </div>
-                        </div>
-
-                        <div class="datagrid mb-3">
-                            <div class="datagrid-item">
-                                <div class="datagrid-title">{{ 'From Version'|trans }}</div>
-                                <div class="datagrid-content">{{ state.from_version|default('Unknown'|trans) }}</div>
-                            </div>
-                            <div class="datagrid-item">
-                                <div class="datagrid-title">{{ 'Current Version'|trans }}</div>
-                                <div class="datagrid-content">{{ state.target_version|default(FOSSBillingVersion) }}</div>
-                            </div>
-                            <div class="datagrid-item">
-                                <div class="datagrid-title">{{ 'Update Branch'|trans }}</div>
-                                <div class="datagrid-content">{{ state.branch|default('release') }}</div>
-                            </div>
-                            <div class="datagrid-item">
-                                <div class="datagrid-title">{{ 'Pending Patches'|trans }}</div>
-                                <div class="datagrid-content">{{ finalization.pending_patches is same as(null) ? 'Unknown'|trans : finalization.pending_patches }}</div>
-                            </div>
-                        </div>
-
-                        <div class="alert alert-warning" role="alert">
-                            <strong class="me-1">{{ 'Maintenance mode is active.'|trans }}</strong>{{ 'Public traffic remains paused until finalization is finished.'|trans }}
-                        </div>
+                        {% set targetVersion = state.target_version|default(FOSSBillingVersion) %}
+                        {% if finalized %}
+                            <p>{{ 'FOSSBilling has applied the update patches for version %version%. Finish finalization to reopen the installation.'|trans({'%version%': targetVersion}) }}</p>
+                        {% elseif finalization.pending_patches is same as(null) or finalization.pending_patches is same as(0) %}
+                            <p>{{ 'You are updating your system to FOSSBilling %target_version%. The system needs to check and apply any pending update patches before you can proceed.'|trans({'%target_version%': targetVersion}) }}</p>
+                        {% else %}
+                            <p>{{ 'You are updating your system to FOSSBilling %target_version%. The system needs to run %count% update patches before you can proceed.'|trans({'%target_version%': targetVersion, '%count%': finalization.pending_patches}) }}</p>
+                        {% endif %}
 
                         {% if not finalized %}
-                            <p>{{ 'Finalization applies database and configuration patches, clears runtime caches, and removes installer files if they are present.'|trans }}</p>
                             <div class="d-grid">
                                 <a class="btn btn-primary" href="{{ 'system/finalize_update'|api_url }}"
                                     {{ fb_api_link({
@@ -85,38 +58,12 @@
                                     <svg class="icon">
                                         <use xlink:href="#cog-play" />
                                     </svg>
-                                    {{ 'Run Finalization'|trans }}
+                                    {{ 'Continue'|trans }}
                                 </a>
                             </div>
                             <div id="finalization-progress"></div>
                         {% else %}
-                            {% if updateType == 2 %}
-                                <div class="alert alert-info" role="alert">
-                                    <strong class="me-1">{{ 'Major update:'|trans }}</strong>{{ 'Review the settings below before reopening the installation.'|trans }}
-                                </div>
-                            {% endif %}
-
-                            <p class="text-secondary">{{ 'After finishing, revisit these areas if this update introduced changes that affect your installation.'|trans }}</p>
-                            <div class="list-group list-group-flush mb-3">
-                                <div class="list-group-item">
-                                    <div class="row align-items-center">
-                                        <div class="col">{{ 'Security and rate limiting settings'|trans }}</div>
-                                        <div class="col-auto text-secondary">{{ 'Recommended'|trans }}</div>
-                                    </div>
-                                </div>
-                                <div class="list-group-item">
-                                    <div class="row align-items-center">
-                                        <div class="col">{{ 'Error reporting and system settings'|trans }}</div>
-                                        <div class="col-auto text-secondary">{{ 'Optional'|trans }}</div>
-                                    </div>
-                                </div>
-                                <div class="list-group-item">
-                                    <div class="row align-items-center">
-                                        <div class="col">{{ 'Localization and company settings'|trans }}</div>
-                                        <div class="col-auto text-secondary">{{ 'Optional'|trans }}</div>
-                                    </div>
-                                </div>
-                            </div>
+                            <p>{{ 'Proceeding will restore the maintenance mode setting to its previous state and return you to the dashboard.'|trans }}</p>
 
                             <div class="d-grid">
                                 <a class="btn btn-success" href="{{ 'system/complete_update_finalization'|api_url }}"
@@ -131,7 +78,7 @@
                                     <svg class="icon">
                                         <use xlink:href="#check" />
                                     </svg>
-                                    {{ 'Finish Finalization'|trans }}
+                                    {{ 'Continue'|trans }}
                                 </a>
                             </div>
                         {% endif %}
