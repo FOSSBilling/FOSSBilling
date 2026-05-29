@@ -56,8 +56,15 @@ class UpdatePatcher implements InjectionAwareInterface
     /**
      * Apply configuration file patches.
      */
-    public function applyConfigPatches(): void
+    public function applyConfigPatches(bool $force = false): void
     {
+        // Legacy auto-updaters call this after extracting new files.
+        // Make it no-op unless the request is coming from the new post-update hello screen.
+        // This makes old versions automatically defer to the new hello screen without running the patches.
+        if (!$force) {
+            return;
+        }
+
         $currentConfig = Config::getConfig();
 
         if (empty($currentConfig)) {
@@ -140,8 +147,13 @@ class UpdatePatcher implements InjectionAwareInterface
     /**
      * Apply all relevant patches to current FOSSBilling instance.
      */
-    public function applyCorePatches(): void
+    public function applyCorePatches(bool $force = false): void
     {
+        // See applyConfigPatches(): no-argument calls are deferred to the new post-update screen.
+        if (!$force) {
+            return;
+        }
+
         $patchLevel = $this->getPatchLevel();
         $patches = $this->getPatches($patchLevel);
         foreach ($patches as $patchLevel => $patch) {

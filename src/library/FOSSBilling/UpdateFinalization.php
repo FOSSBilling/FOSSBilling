@@ -157,8 +157,8 @@ class UpdateFinalization implements InjectionAwareInterface
             $this->clearCache();
 
             $patcher = $this->createPatcher();
-            $patcher->applyConfigPatches();
-            $patcher->applyCorePatches();
+            $patcher->applyConfigPatches(force: true);
+            $patcher->applyCorePatches(force: true);
 
             $this->filesystem->remove(Path::join(PATH_ROOT, 'install'));
             $this->clearCache();

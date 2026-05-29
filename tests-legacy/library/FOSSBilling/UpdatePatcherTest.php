@@ -34,6 +34,26 @@ final class UpdatePatcherTest extends PHPUnit\Framework\TestCase
         self::assertFalse($di->offsetExists('dbal'));
     }
 
+    public function testPatchMethodsDeferUnlessForced(): void
+    {
+        $patcher = new UpdatePatcher();
+
+        $patcher->applyConfigPatches();
+        $patcher->applyCorePatches();
+
+        self::addToAssertionCount(1);
+    }
+
+    public function testCorePatchesCanBeForced(): void
+    {
+        $patcher = new UpdatePatcher();
+
+        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('Database connection is not available.');
+
+        $patcher->applyCorePatches(force: true);
+    }
+
     public function testSpamcheckerPatchRemovesExtensionRecordWithoutUninstallingModule(): void
     {
         $pdo = new PDO('sqlite::memory:');

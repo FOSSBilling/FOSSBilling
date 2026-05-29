@@ -206,8 +206,8 @@ class Update implements InjectionAwareInterface
         // Apply system patches and migrate configuration file.
         $patcher = new UpdatePatcher();
         $patcher->setDi($this->di);
-        $patcher->applyConfigPatches();
-        $patcher->applyCorePatches();
+        $patcher->applyConfigPatches(force: true);
+        $patcher->applyCorePatches(force: true);
 
         try {
             $this->filesystem->remove(PATH_CACHE);
