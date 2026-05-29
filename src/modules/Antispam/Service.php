@@ -178,19 +178,23 @@ class Service implements InjectionAwareInterface
                 }
 
                 if ($provider === 'recaptcha_v3') {
-                    $threshold = isset($config['captcha_recaptcha_v3_threshold'])
-                        ? min(1.0, max(0.0, (float) $config['captcha_recaptcha_v3_threshold']))
-                        : 0.5;
-                    $score = isset($content['score']) ? (float) $content['score'] : 0.0;
+$threshold = (float) ($config['captcha_recaptcha_v3_threshold'] ?? 0.5);
+if (!is_finite($threshold)) {
+    $threshold = 0.5;
+}
+$threshold = min(1.0, max(0.0, $threshold));
+$score = isset($content['score']) ? (float) $content['score'] : 0.0;
 
                     if ($score < $threshold) {
                         throw new \FOSSBilling\InformationException('reCAPTCHA verification failed.');
                     }
 
-                    $action = $params['g-recaptcha-action'] ?? '';
-                    if (($content['action'] ?? null) !== $action) {
-                        throw new \FOSSBilling\InformationException('reCAPTCHA verification failed.');
-                    }
+$expectedAction = 'fossbilling_submit';
+$action = $params['g-recaptcha-action'] ?? $expectedAction;
+
+if ($action !== $expectedAction || ($content['action'] ?? null) !== $expectedAction) {
+    throw new \FOSSBilling\InformationException('reCAPTCHA verification failed.');
+}
                 }
             } elseif ($provider === 'turnstile') {
                 if (empty($config['turnstile_secret_key'])) {
