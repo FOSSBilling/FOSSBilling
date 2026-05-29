@@ -6,6 +6,7 @@
 /src/config.php
 /src/data/log/*
 /src/data/cache/*
+/src/data/update-finalization.json
 !/src/data/cache/.gitkeep
 /src/public/assets
 /src/vendor/*

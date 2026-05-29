@@ -21,3 +21,4 @@ src/data/cache/*
 !src/data/cache/.gitkeep
 src/data/log/*
 !src/data/log/index.html
+src/data/update-finalization.json
