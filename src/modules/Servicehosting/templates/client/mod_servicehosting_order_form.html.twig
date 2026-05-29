@@ -173,6 +173,22 @@
 
         // Domain registration check
         const domainCheck = document.getElementById('domain-check');
+        const registerSldInput = document.querySelector('input[name="domain[register_sld]"]');
+        let domainChecked = false;
+
+        if (registerSldInput) {
+            registerSldInput.addEventListener('input', function() {
+                if (domainChecked) {
+                    domainChecked = false;
+                    if (domainCheck) domainCheck.style.display = '';
+                    const registerConfig = document.getElementById('register-config');
+                    if (registerConfig) registerConfig.style.display = 'none';
+                    const yearsSelect = document.getElementById('registration-years');
+                    if (yearsSelect) yearsSelect.innerHTML = '';
+                }
+            });
+        }
+
         if (domainCheck) {
             domainCheck.addEventListener('click', function(event) {
                 event.preventDefault();
@@ -184,6 +200,7 @@
                         setRegistrationPricing(tld);
                         const registerConfig = document.getElementById('register-config');
                         if (registerConfig) fadeIn(registerConfig);
+                        domainChecked = true;
                         domainCheck.style.display = 'none';
                     },
                 );
@@ -192,6 +209,20 @@
 
         // Domain transfer check
         const transferCheck = document.getElementById('transfer-check');
+        const transferSldInput = document.querySelector('input[name="domain[transfer_sld]"]');
+        let transferChecked = false;
+
+        if (transferSldInput) {
+            transferSldInput.addEventListener('input', function() {
+                if (transferChecked) {
+                    transferChecked = false;
+                    if (transferCheck) transferCheck.style.display = '';
+                    const transferConfig = document.getElementById('transfer-config');
+                    if (transferConfig) transferConfig.style.display = 'none';
+                }
+            });
+        }
+
         if (transferCheck) {
             transferCheck.addEventListener('click', function(event) {
                 event.preventDefault();
@@ -203,6 +234,7 @@
                         setTransferPricing(tld);
                         const transferConfig = document.getElementById('transfer-config');
                         if (transferConfig) fadeIn(transferConfig);
+                        transferChecked = true;
                         transferCheck.style.display = 'none';
                     },
                 );
