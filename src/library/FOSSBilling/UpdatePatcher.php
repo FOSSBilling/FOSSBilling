@@ -798,7 +798,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch48(): void
     {
-        $filesystem = new Filesystem();
+        $filesystem = $this->filesystem;
 
         $oldUploadsPath = Path::join(PATH_ROOT, 'uploads');
         $newUploadsPath = Path::join(PATH_ROOT, 'data', 'uploads');
