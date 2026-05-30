@@ -7,14 +7,17 @@
 {% set allow_register = product.config.allow_domain_register ?? true %}
 {% set allow_transfer = product.config.allow_domain_transfer ?? true %}
 {% set allow_own = product.config.allow_domain_own ?? true %}
+{% set allow_subdomain = product.config.allow_subdomain ?? false %}
+{% set subdomain_base_domain = product.config.subdomain_base_domain ?? null %}
 
 {# Determine which options are actually available #}
 {% set can_register = allow_register and tlds is not empty %}
 {% set can_transfer = allow_transfer and transfer_tlds is not empty %}
 {% set can_own = allow_own %}
+{% set can_subdomain = allow_subdomain and subdomain_base_domain %}
 
 {# Only show domain configuration section if at least one option is available #}
-{% set show_domain_config = can_register or can_transfer or can_own %}
+{% set show_domain_config = can_register or can_transfer or can_own or can_subdomain %}
 
 {# Determine which option should be active by default #}
 {% set default_action = null %}
@@ -24,6 +27,8 @@
     {% set default_action = 'transfer' %}
 {% elseif can_own %}
     {% set default_action = 'owndomain' %}
+{% elseif can_subdomain %}
+    {% set default_action = 'subdomain' %}
 {% endif %}
 
 <h5 class="mb-1">{{ product_details }}</h5>
@@ -48,6 +53,11 @@
             <a class="nav-link me-3 py-1 px-2 fs-7{% if default_action == 'owndomain' %} active{% endif %}" href="#"
                id="owndomain-tab" data-bs-toggle="tab" data-bs-target="#owndomain-tab-pane"
                role="tab" aria-controls="owndomain-tab-pane" data-action="owndomain">{{ 'Own domain'|trans }}</a>
+        {% endif %}
+        {% if can_subdomain %}
+            <a class="nav-link me-3 py-1 px-2 fs-7{% if default_action == 'subdomain' %} active{% endif %}" href="#"
+               id="subdomain-tab" data-bs-toggle="tab" data-bs-target="#subdomain-tab-pane"
+               role="tab" aria-controls="subdomain-tab-pane" data-action="subdomain">{{ 'Free subdomain'|trans }}</a>
         {% endif %}
     </nav>
 
@@ -128,6 +138,24 @@
                                    placeholder=".com">
                         </div>
                         <p class="fs-7 text-muted mt-2">{{ 'You will need to update your nameservers to point to our servers.'|trans }}</p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if can_subdomain %}
+            <div class="tab-pane{% if default_action == 'subdomain' %} show active{% endif %}" id="subdomain-tab-pane"
+                 role="tabpanel" aria-labelledby="subdomain-tab" tabindex="0">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <label class="form-label">{{ 'Choose your free subdomain'|trans }}</label>
+                        <div class="input-group" style="max-width: 420px;">
+                            <input class="form-control form-control-sm" type="text" name="domain[subdomain_sld]"
+                                   value="{{ request.subdomain_sld }}"
+                                   placeholder="{{ 'Subdomain'|trans }}">
+                            <span class="input-group-text input-group-text-sm">.{{ subdomain_base_domain|trim('.') }}</span>
+                        </div>
+                        <p class="fs-7 text-muted mt-2">{{ 'This free subdomain is provided by us. No domain registration or transfer will be added to this order.'|trans }}</p>
                     </div>
                 </div>
             </div>

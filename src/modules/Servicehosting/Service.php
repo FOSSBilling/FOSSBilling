@@ -71,6 +71,7 @@ class Service implements InjectionAwareInterface
     public function getCartProductTitle($product, array $data)
     {
         try {
+            $data = array_merge(json_decode($product->config ?? '', true) ?? [], $data);
             [$sld, $tld] = $this->_getDomainTuple($data);
 
             return __trans(':hosting for :domain', [':hosting' => $product->title, ':domain' => $sld . $tld]);
@@ -622,6 +623,28 @@ class Service implements InjectionAwareInterface
             $tld = str_contains((string) $data['domain']['owndomain_tld'], '.') ? $data['domain']['owndomain_tld'] : '.' . $data['domain']['owndomain_tld'];
         }
 
+        if ($data['domain']['action'] == 'subdomain') {
+            $required = [
+                'subdomain_sld' => 'Hosting product must have defined subdomain_sld parameter',
+                'subdomain_base_domain' => 'Hosting product must have a subdomain base domain configured',
+            ];
+            $this->di['validator']->checkRequiredParamsForArray($required, $data['domain'] + $data);
+
+            $subdomain = strtolower(trim((string) $data['domain']['subdomain_sld']));
+            $baseDomain = strtolower(trim((string) $data['subdomain_base_domain'], '.'));
+
+            if (!$this->di['validator']->isSldValid($subdomain)) {
+                throw new InformationException('Subdomain name is invalid.');
+            }
+
+            if (!preg_match('/^(?!-)(?:[a-z0-9-]{1,63}\.)+[a-z0-9-]{2,63}$/i', $baseDomain)) {
+                throw new InformationException('Subdomain base domain is invalid.');
+            }
+
+            $sld = $subdomain;
+            $tld = '.' . $baseDomain;
+        }
+
         if ($data['domain']['action'] == 'register') {
             $required = [
                 'register_sld' => 'Hosting product must have defined register_sld parameter',
@@ -1078,6 +1101,8 @@ class Service implements InjectionAwareInterface
     {
         $c = json_decode($product->config ?? '', true) ?? [];
 
+        $data = array_merge($c, $data);
+
         if (isset($data['domain']['action'])) {
             $this->validateDomainAction($data, $c);
         }
@@ -1086,7 +1111,7 @@ class Service implements InjectionAwareInterface
         $data['sld'] = $sld;
         $data['tld'] = $tld;
 
-        return array_merge($c, $data);
+        return $data;
     }
 
     /**
@@ -1105,11 +1130,14 @@ class Service implements InjectionAwareInterface
         $allowRegister = $productConfig['allow_domain_register'] ?? true;
         $allowTransfer = $productConfig['allow_domain_transfer'] ?? true;
         $allowOwn = $productConfig['allow_domain_own'] ?? true;
+        $allowSubdomain = $productConfig['allow_subdomain'] ?? false;
 
         match ($action) {
             'register' => $allowRegister || throw new InformationException('Domain registration is not available for this product.'),
             'transfer' => $allowTransfer || throw new InformationException('Domain transfer is not available for this product.'),
             'owndomain' => $allowOwn || throw new InformationException('Using your own domain is not allowed for this product.'),
+            'subdomain' => ($allowSubdomain && !empty($productConfig['subdomain_base_domain']))
+                || throw new InformationException('Subdomain ordering is not available for this product.'),
             default => throw new InformationException('Invalid domain action specified.'),
         };
     }
@@ -1123,6 +1151,10 @@ class Service implements InjectionAwareInterface
 
         $dc = $data['domain'];
         $action = $dc['action'];
+
+        if ($action == 'subdomain') {
+            return false;
+        }
 
         $drepo = $this->di['mod_service']('servicedomain');
         $drepo->validateOrderData($dc);
