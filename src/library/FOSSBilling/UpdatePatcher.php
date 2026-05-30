@@ -1479,21 +1479,28 @@ class UpdatePatcher implements InjectionAwareInterface
     private function migrateDownloadableServiceStorageKeys(): void
     {
         $services = $this->fetchAll('SELECT sd.id, sd.filename, sd.stored_filename, co.id AS order_id, co.config AS order_config FROM service_downloadable sd LEFT JOIN client_order co ON sd.id = co.service_id AND co.service_type = "downloadable" WHERE sd.filename IS NOT NULL AND sd.filename != ""');
+        $processedServiceUpdates = [];
 
         foreach ($services as $service) {
             if (!empty($service['stored_filename'])) {
                 $storedFilename = (string) $service['stored_filename'];
             } else {
-                $storedFilename = $this->copyLegacyDownloadableFile((string) $service['filename']);
-                if ($storedFilename === null) {
-                    continue;
-                }
+                $serviceId = (int) $service['id'];
+                if (isset($processedServiceUpdates[$serviceId])) {
+                    $storedFilename = $this->buildDownloadableStoragePath((string) $service['filename']);
+                } else {
+                    $storedFilename = $this->copyLegacyDownloadableFile((string) $service['filename']);
+                    if ($storedFilename === null) {
+                        continue;
+                    }
 
-                $this->executeSql('UPDATE service_downloadable SET stored_filename = :stored_filename, updated_at = :updated_at WHERE id = :id', [
-                    'stored_filename' => $storedFilename,
-                    'updated_at' => date('Y-m-d H:i:s'),
-                    'id' => $service['id'],
-                ]);
+                    $this->executeSql('UPDATE service_downloadable SET stored_filename = :stored_filename, updated_at = :updated_at WHERE id = :id', [
+                        'stored_filename' => $storedFilename,
+                        'updated_at' => date('Y-m-d H:i:s'),
+                        'id' => $service['id'],
+                    ]);
+                    $processedServiceUpdates[$serviceId] = true;
+                }
             }
 
             if (empty($service['order_id'])) {
