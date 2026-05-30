@@ -11,14 +11,18 @@ declare(strict_types=1);
  */
 
 /**
- * @method void emerg(string $message)
+ * @method void emergency(string $message)
  * @method void alert(string $message)
- * @method void crit(string $message)
- * @method void err(string $message)
- * @method void warn(string $message)
+ * @method void critical(string $message)
+ * @method void error(string $message)
+ * @method void warning(string $message)
  * @method void notice(string $message)
  * @method void info(string $message)
  * @method void debug(string $message)
+ * @method void emerg(string $message) Legacy alias for emergency()
+ * @method void crit(string $message) Legacy alias for critical()
+ * @method void err(string $message) Legacy alias for error()
+ * @method void warn(string $message) Legacy alias for warning()
  */
 class Box_Log implements FOSSBilling\InjectionAwareInterface
 {
@@ -32,14 +36,21 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
     final public const int DEBUG = 7; // Debug: debug messages
 
     protected array $_priorities = [
-        self::EMERG => 'EMERG',
+        self::EMERG => 'EMERGENCY',
         self::ALERT => 'ALERT',
-        self::CRIT => 'CRIT',
-        self::ERR => 'ERR',
-        self::WARN => 'WARN',
+        self::CRIT => 'CRITICAL',
+        self::ERR => 'ERROR',
+        self::WARN => 'WARNING',
         self::NOTICE => 'NOTICE',
         self::INFO => 'INFO',
         self::DEBUG => 'DEBUG',
+    ];
+
+    private const array PRIORITY_ALIASES = [
+        'EMERG' => 'EMERGENCY',
+        'CRIT' => 'CRITICAL',
+        'ERR' => 'ERROR',
+        'WARN' => 'WARNING',
     ];
 
     protected ?Pimple\Container $di = null;
@@ -88,8 +99,9 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
     public function __call($method, $params): void
     {
         $priority = strtoupper((string) $method);
+        $priority = self::PRIORITY_ALIASES[$priority] ?? $priority;
         $params = $this->maskParams($params);
-        if (($priority = array_search($priority, $this->_priorities)) !== false) {
+        if (($priority = array_search($priority, $this->_priorities, true)) !== false) {
             switch (FOSSBilling\Tools::safeCount($params)) {
                 case 0:
                     throw new FOSSBilling\Exception('Missing log message');
