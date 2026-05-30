@@ -630,7 +630,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $data['transfer_code'] = $model->transfer_code;
 
             $tldRegistrar = $this->di['db']->load('TldRegistrar', $model->tld_registrar_id);
-            $data['registrar'] = $tldRegistrar->name;
+            $data['registrar'] = $tldRegistrar instanceof \Model_TldRegistrar ? $tldRegistrar->name : null;
         }
 
         return $data;
@@ -900,7 +900,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             $result['registrar'] = [
                 'id' => $model->tld_registrar_id,
-                'title' => $tldRegistrar->name,
+                'title' => $tldRegistrar instanceof \Model_TldRegistrar ? $tldRegistrar->name : null,
             ];
         }
 
@@ -1061,6 +1061,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         if ($count > 0) {
             throw new \FOSSBilling\InformationException('Registrar is used by :count: domains', [':count:' => $count], 707);
+        }
+
+        $tlds = $this->di['db']->find('Tld', 'tld_registrar_id = :registrar_id', [':registrar_id' => $model->id]);
+        $count = \FOSSBilling\Tools::safeCount($tlds);
+
+        if ($count > 0) {
+            throw new \FOSSBilling\InformationException('Registrar is used by :count: TLDs', [':count:' => $count], 707);
         }
 
         $name = $model->name;

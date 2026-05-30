@@ -86,7 +86,11 @@
                                             {{ 'Active:'|trans }} {% if tld.active %}{{ 'Yes'|trans }}{% else %}{{ 'No'|trans }}{% endif %}
                                         </td>
                                         <td>
-                                            <a href='{{ "servicedomain/registrar/#{tld.registrar.id}"|url }}'>{{ tld.registrar.title }}</a>
+                                            {% if tld.registrar.title %}
+                                                <a href='{{ "servicedomain/registrar/#{tld.registrar.id}"|url }}'>{{ tld.registrar.title }}</a>
+                                            {% else %}
+                                                <span class="text-danger">{{ 'Registrar missing'|trans }}</span>
+                                            {% endif %}
                                         </td>
                                         <td>
                                             <a class="btn btn-icon" href='{{ "servicedomain/id/#{tld.id}"|url }}'>
