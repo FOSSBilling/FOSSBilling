@@ -389,26 +389,18 @@ class UpdatePatcher implements InjectionAwareInterface
      */
     private function setPatchLevel(int $patchLevel): void
     {
-        if (is_null($this->getPatchLevel())) {
-            $this->executeSql(
-                'INSERT INTO setting (param, value, public, created_at, updated_at) VALUES (:param, :value, 0, :created_at, :updated_at)',
-                [
-                    'param' => 'last_patch',
-                    'value' => $patchLevel,
-                    'created_at' => date('Y-m-d H:i:s'),
-                    'updated_at' => date('Y-m-d H:i:s'),
-                ]
-            );
-        } else {
-            $this->executeSql(
-                'UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param',
-                [
-                    'param' => 'last_patch',
-                    'value' => $patchLevel,
-                    'updated_at' => date('Y-m-d H:i:s'),
-                ]
-            );
-        }
+        $now = date('Y-m-d H:i:s');
+
+        $this->executeSql(
+            'INSERT INTO setting (param, value, public, created_at, updated_at) VALUES (:param, :value, 0, :created_at, :updated_at)
+             ON DUPLICATE KEY UPDATE value = :value, updated_at = :updated_at',
+            [
+                'param' => 'last_patch',
+                'value' => $patchLevel,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
     }
 
     /**
