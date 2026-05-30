@@ -320,6 +320,8 @@ class UpdatePatcher implements InjectionAwareInterface
     private function migrateEncryptedColumn(string $table, string $idColumn, string $valueColumn, string $where, array $params = []): void
     {
         $rawTable = $table;
+        $rawIdColumn = $idColumn;
+        $rawValueColumn = $valueColumn;
         $quotedTable = $this->quoteIdentifier($table);
         $idColumn = $this->quoteIdentifier($idColumn);
         $valueColumn = $this->quoteIdentifier($valueColumn);
@@ -355,13 +357,13 @@ class UpdatePatcher implements InjectionAwareInterface
                 continue;
             }
 
-            $updateData = [$valueColumn => $crypt->encrypt($decryptedValue, $salt)];
+            $updateData = [$rawValueColumn => $crypt->encrypt($decryptedValue, $salt)];
             if ($hasUpdatedAt) {
                 $updateData['updated_at'] = date('Y-m-d H:i:s');
             }
 
             $this->updateTable($table, $updateData, [
-                $idColumn => $row['id'],
+                $rawIdColumn => $row['id'],
             ]);
         }
     }
