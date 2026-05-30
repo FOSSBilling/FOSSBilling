@@ -72,9 +72,9 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    private function maskParams(array|string $params, int $depthLimit = 15): array|string
+    private function maskParams(mixed $params, int $depthLimit = 15): mixed
     {
-        if (is_string($params)) {
+        if (!is_array($params)) {
             return $params;
         }
 
@@ -83,10 +83,10 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
         }
 
         foreach ($params as $key => $value) {
-            if (is_array($value)) {
-                $params[$key] = $this->maskParams($value, $depthLimit - 1);
-            } elseif (in_array(strtolower((string) $key), $this->_maskedKeys)) {
+            if (in_array(strtolower((string) $key), $this->_maskedKeys)) {
                 $params[$key] = '********';
+            } elseif (is_array($value)) {
+                $params[$key] = $this->maskParams($value, $depthLimit - 1);
             }
         }
 
@@ -100,7 +100,6 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
     {
         $priority = strtoupper((string) $method);
         $priority = self::PRIORITY_ALIASES[$priority] ?? $priority;
-        $params = $this->maskParams($params);
         if (($priority = array_search($priority, $this->_priorities, true)) !== false) {
             switch (FOSSBilling\Tools::safeCount($params)) {
                 case 0:
@@ -111,6 +110,8 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
                     break;
                 default:
                     $message = array_shift($params);
+                    $params = $this->maskParams($params);
+
                     $message = vsprintf($message, array_values($params));
                     if (!$message) {
                         throw new LogicException('Number of placeholders does not match number of variables');
@@ -130,12 +131,12 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
     public function log($message, $priority, array|string|null $extras = null): void
     {
         // sanity checks
-        if (empty($this->_writers)) {
-            return;
-        }
-
         if (!isset($this->_priorities[$priority])) {
             throw new FOSSBilling\Exception('Bad log priority');
+        }
+
+        if (empty($this->_writers)) {
+            return;
         }
 
         if ($this->_min_priority && $priority > $this->_min_priority) {
@@ -143,6 +144,7 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
         }
 
         $event = $this->_packEvent($message, $priority);
+        $extras = $this->maskParams($extras);
 
         // Check to see if any extra information was passed
         if (!empty($extras)) {
@@ -150,7 +152,9 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
             if (is_array($extras)) {
                 foreach ($extras as $key => $value) {
                     if (is_string($key)) {
-                        $event[$key] = $value;
+                        if (!array_key_exists($key, $event)) {
+                            $event[$key] = $value;
+                        }
                     } else {
                         $info[] = $value;
                     }
@@ -170,7 +174,11 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
 
         // send to each writer
         foreach ($this->_writers as $writer) {
-            $writer->write($event, $this->_channel);
+            try {
+                $writer->write($event, $this->_channel);
+            } catch (Throwable $e) {
+                error_log($e->getMessage());
+            }
         }
     }
 
