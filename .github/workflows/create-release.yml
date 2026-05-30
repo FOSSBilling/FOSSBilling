@@ -25,6 +25,15 @@ on:
         required: true
         default: false
         type: boolean
+      release_notes:
+        description: 'Release notes mode; copilot uses BYOK provider settings'
+        required: true
+        default: github
+        type: choice
+        options:
+          - copilot
+          - github
+          - none
 
 concurrency:
   group: create-release-${{ inputs.version }}
@@ -35,7 +44,7 @@ jobs:
     name: 'Create Release'
     if: ${{ github.repository == 'FOSSBilling/FOSSBilling' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - name: 'Validate Release Inputs'
         env:
@@ -55,8 +64,120 @@ jobs:
       - name: 'Checkout Repository'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
+          fetch-depth: 0
           ref: ${{ inputs.target_ref }}
           persist-credentials: false
+
+      - name: 'Prepare Release Notes Context'
+        id: notes-context
+        if: ${{ inputs.release_notes != 'none' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          mkdir -p release-notes-context
+
+          previous_tag="$(
+            git tag --merged HEAD --sort=-v:refname \
+              | grep -Ev "^${RELEASE_VERSION}$" \
+              | head -n 1
+          )"
+
+          if [[ -z "${previous_tag}" ]]; then
+            echo "Could not determine a previous tag to diff from."
+            exit 1
+          fi
+
+          echo "previous_tag=${previous_tag}" >> "${GITHUB_OUTPUT}"
+
+          gh api "repos/${REPOSITORY}/releases" \
+            --jq '.[0:5] | map({tag_name, name, draft, prerelease, published_at, body})' \
+            > release-notes-context/recent-releases.json
+
+          if gh api "repos/${REPOSITORY}/releases/tags/${RELEASE_VERSION}" > release-notes-context/current-release.json 2>/dev/null; then
+            jq -r '.body // ""' release-notes-context/current-release.json > release-notes-context/current-release-notes.md
+          else
+            printf '{}\n' > release-notes-context/current-release.json
+            printf '\n' > release-notes-context/current-release-notes.md
+          fi
+
+          git log --reverse --date=short \
+            --pretty=format:'%h %ad %an%n%s%n%b%n---END-COMMIT---' \
+            "${previous_tag}..HEAD" \
+            > release-notes-context/git-log.txt
+
+          gh api "repos/${REPOSITORY}/releases/generate-notes" \
+            -f tag_name="${RELEASE_VERSION}" \
+            -f target_commitish="$(git rev-parse HEAD)" \
+            -f previous_tag_name="${previous_tag}" \
+            --jq '.body' \
+            > release-notes-context/github-generated-notes.md
+            --jq '.body' \
+            > release-notes-context/github-generated-notes.md
+
+      - name: 'Generate GitHub Release Notes'
+        if: ${{ inputs.release_notes == 'github' }}
+        run: cp release-notes-context/github-generated-notes.md release-notes.md
+
+      - name: 'Set up Node.js for Copilot CLI'
+        if: ${{ inputs.release_notes == 'copilot' }}
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: 'npm'
+      - name: 'Install Copilot CLI'
+        if: ${{ inputs.release_notes == 'copilot' }}
+        run: npm install -g @github/copilot@1.0.56
+
+      - name: 'Generate Curated Release Notes'
+        if: ${{ inputs.release_notes == 'copilot' }}
+        env:
+          COPILOT_MODEL: ${{ vars.COPILOT_MODEL }}
+          COPILOT_OFFLINE: true
+          COPILOT_PROVIDER_API_KEY: ${{ secrets.COPILOT_PROVIDER_API_KEY }}
+          COPILOT_PROVIDER_BASE_URL: ${{ vars.COPILOT_PROVIDER_BASE_URL }}
+          COPILOT_PROVIDER_TYPE: ${{ vars.COPILOT_PROVIDER_TYPE }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          PREVIOUS_TAG: ${{ steps.notes-context.outputs.previous_tag }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          if [[ -z "${COPILOT_PROVIDER_BASE_URL}" || -z "${COPILOT_MODEL}" ]]; then
+            echo "The copilot release notes mode requires COPILOT_PROVIDER_BASE_URL and COPILOT_MODEL Actions variables."
+            exit 1
+          fi
+
+          cat > release-notes-context/prompt.md <<EOF
+          Generate polished FOSSBilling release notes in release-notes.md.
+
+          Release version: ${RELEASE_VERSION}
+          Previous tag: ${PREVIOUS_TAG}
+
+          Inputs are in release-notes-context/:
+          - release-notes-guidelines.md: project release-note style and section rules.
+          - recent-releases.json: the five most recent releases or drafts for tone and structure.
+          - current-release-notes.md: existing notes for this release or draft, if any.
+          - github-generated-notes.md: GitHub's generated baseline for this tag range.
+          - git-log.txt: commits from the previous tag to the target revision.
+
+          Requirements:
+          - Diff from ${PREVIOUS_TAG} to ${RELEASE_VERSION}.
+          - Use existing current-release-notes.md as context, but rewrite it if needed.
+          - Follow release-notes-guidelines.md.
+          - Preserve accurate PR numbers, issue references, and security-sensitive wording.
+          - Group user-facing changes by the guideline sections.
+          - Remove duplicates and omit internal noise that does not help users upgrade or understand the release.
+          - Do not invent changes.
+          - Write only the final Markdown body to release-notes.md.
+          EOF
+
+          cp .github/release-notes-guidelines.md release-notes-context/release-notes-guidelines.md
+
+          copilot -p "$(cat release-notes-context/prompt.md)" \
+            --allow-tool='shell(cat:*)' \
+            --allow-tool=write \
+            --no-ask-user
 
       - name: 'Set Registry Cache Image'
         run: echo "CACHE_IMAGE=ghcr.io/${GITHUB_REPOSITORY@L}-build-cache" >> "${GITHUB_ENV}"
@@ -94,6 +215,7 @@ jobs:
           TARGET_REF: ${{ inputs.target_ref }}
           IS_DRAFT: ${{ inputs.draft }}
           IS_PRERELEASE: ${{ inputs.prerelease }}
+          RELEASE_NOTES: ${{ inputs.release_notes }}
           REPOSITORY: ${{ github.repository }}
         run: |
           asset="./dist/FOSSBilling-${RELEASE_VERSION}.zip"
@@ -102,6 +224,13 @@ jobs:
             gh release upload "${RELEASE_VERSION}" "${asset}" \
               --repo "${REPOSITORY}" \
               --clobber
+
+            if [[ "${RELEASE_NOTES}" != "none" ]]; then
+              gh release edit "${RELEASE_VERSION}" \
+                --repo "${REPOSITORY}" \
+                --notes-file release-notes.md
+            fi
+
             echo "operation=updated" >> "${GITHUB_OUTPUT}"
             exit 0
           fi
@@ -112,8 +241,13 @@ jobs:
             --repo "${REPOSITORY}"
             --title "${RELEASE_VERSION}"
             --target "${TARGET_REF}"
-            --generate-notes
           )
+
+          if [[ "${RELEASE_NOTES}" != "none" ]]; then
+            release_args+=(--notes-file release-notes.md)
+          else
+            release_args+=(--notes "")
+          fi
 
           if [[ "${IS_DRAFT}" == "true" ]]; then
             release_args+=(--draft)
@@ -138,6 +272,8 @@ jobs:
           | Target ref | `${{ inputs.target_ref }}` |
           | Draft | `${{ inputs.draft }}` |
           | Prerelease | `${{ inputs.prerelease }}` |
+          | Release notes | `${{ inputs.release_notes }}` |
+          | Previous tag | `${{ steps.notes-context.outputs.previous_tag || 'n/a' }}` |
           | Archive | `FOSSBilling-${{ inputs.version }}.zip` |
           | Docker build | `${{ steps.build.outcome }}` |
           | Archive creation | `${{ steps.archive.outcome }}` |
