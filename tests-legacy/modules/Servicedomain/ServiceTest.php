@@ -1523,6 +1523,35 @@ final class ServiceTest extends \BBTestCase
         $this->assertArrayNotHasKey('registrar', $result);
     }
 
+    public function testTldToApiArrayHandlesMissingRegistrar(): void
+    {
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('load')
+            ->willReturn(null);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $model = new \Model_Tld();
+        $model->loadBean(new \DummyBean());
+        $model->tld = '.com';
+        $model->price_registration = 1;
+        $model->price_renew = 1;
+        $model->price_transfer = 1;
+        $model->active = 1;
+        $model->allow_register = 1;
+        $model->allow_transfer = 1;
+        $model->min_years = 2;
+        $model->tld_registrar_id = 1;
+
+        $result = $this->service->tldToApiArray($model, new \Model_Admin());
+
+        $this->assertSame(1, $result['registrar']['id']);
+        $this->assertNull($result['registrar']['title']);
+    }
+
     public function testTldFindOneByTld(): void
     {
         $tldModel = new \Model_Tld();
@@ -1728,6 +1757,30 @@ final class ServiceTest extends \BBTestCase
         $dbMock->expects($this->atLeastOnce())
             ->method('find')
             ->willReturn([$serviceDomainModel]);
+        $dbMock->expects($this->never())
+            ->method('trash')
+            ->willReturn(null);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $model = new \Model_TldRegistrar();
+        $model->loadBean(new \DummyBean());
+        $model->id = 1;
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->service->registrarRm($model);
+    }
+
+    public function testRegistrarRmHasTldsException(): void
+    {
+        $tldModel = new \Model_Tld();
+        $tldModel->loadBean(new \DummyBean());
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->exactly(2))
+            ->method('find')
+            ->willReturnOnConsecutiveCalls([], [$tldModel]);
         $dbMock->expects($this->never())
             ->method('trash')
             ->willReturn(null);

@@ -13,8 +13,11 @@
                 </svg>
             </a>
         </li>
-        <li>
+        <li class="breadcrumb-item">
             <a href="{{ 'servicedomain'|url }}">{{ 'Domain Management'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'servicedomain'|url }}">{{ 'TLDs'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ tld.tld }}</li>
     </ol>
