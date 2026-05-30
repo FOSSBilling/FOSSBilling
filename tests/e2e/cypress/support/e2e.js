@@ -53,10 +53,14 @@ Cypress.Commands.add('testClient', (overrides = {}) => {
     expect(response.body.error).to.eq(null);
     expect(response.body.result, 'client id').to.exist;
 
-    return {
+    const createdClient = {
       ...client,
       id: response.body.result,
     };
+
+    return cy.clearCookies()
+      .then(() => cy.clearLocalStorage())
+      .then(() => createdClient);
   });
 });
 
