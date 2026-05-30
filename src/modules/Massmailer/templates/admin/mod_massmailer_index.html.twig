@@ -95,7 +95,13 @@
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {% set msgs = admin.massmailer_get_list({ "per_page": 25, "page": request.page }|merge(request)) %}
+                                {% set msgs = admin.massmailer_get_list({
+                                    "per_page": 25,
+                                    "page": request.page,
+                                    "id": request.id,
+                                    "status": request.status,
+                                    "search": request.search
+                                }) %}
                                 {% for i, msg in msgs.list %}
                                     <tr>
                                         <td>{{ msg.subject }}</td>
@@ -151,16 +157,17 @@
                                         <div class="col-lg-8">
                                             <label class="form-label" for="test_client_id">{{ 'Client to Send Test Email'|trans }}</label>
                                             {% set test_client_email = admin.massmailer_get_test_client %}
+                                            {% set has_test_client = params.test_client_id and test_client_email != 'Unknown' %}
                                             <select class="form-control autocomplete-selector"
                                                     placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
                                                     id="test_client_id"
                                                     name="test_client_id"
                                                     data-resturl="/api/admin/client/get_pairs">
-                                                {% if params.test_client_id and test_client_email != 'Unknown' %}
+                                                {% if has_test_client %}
                                                     <option value="{{ params.test_client_id }}" selected>{{ test_client_email }}</option>
                                                 {% endif %}
                                             </select>
-                                            {% if params.test_client_id and test_client_email != 'Unknown' %}
+                                            {% if has_test_client %}
                                                 <div class="form-text">{{ 'Test emails will be sent to:'|trans }} {{ test_client_email }}</div>
                                             {% endif %}
                                         </div>
