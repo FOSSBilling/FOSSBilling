@@ -820,7 +820,7 @@ class UpdatePatcher implements InjectionAwareInterface
         foreach ($products as $product) {
             $productConfig = json_decode((string) $product['config'], true) ?: [];
 
-            if (isset($productConfig['filename']) && !empty($productConfig['filename'])) {
+            if (!empty($productConfig['filename'])) {
                 continue;
             }
 
