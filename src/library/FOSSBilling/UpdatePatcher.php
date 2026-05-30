@@ -389,26 +389,18 @@ class UpdatePatcher implements InjectionAwareInterface
      */
     private function setPatchLevel(int $patchLevel): void
     {
-        if (is_null($this->getPatchLevel())) {
-            $this->executeSql(
-                'INSERT INTO setting (param, value, public, created_at, updated_at) VALUES (:param, :value, 0, :created_at, :updated_at)',
-                [
-                    'param' => 'last_patch',
-                    'value' => $patchLevel,
-                    'created_at' => date('Y-m-d H:i:s'),
-                    'updated_at' => date('Y-m-d H:i:s'),
-                ]
-            );
-        } else {
-            $this->executeSql(
-                'UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param',
-                [
-                    'param' => 'last_patch',
-                    'value' => $patchLevel,
-                    'updated_at' => date('Y-m-d H:i:s'),
-                ]
-            );
-        }
+        $now = date('Y-m-d H:i:s');
+
+        $this->executeSql(
+            'INSERT INTO setting (param, value, public, created_at, updated_at) VALUES (:param, :value, 0, :created_at, :updated_at)
+             ON DUPLICATE KEY UPDATE value = :value, updated_at = :updated_at',
+            [
+                'param' => 'last_patch',
+                'value' => $patchLevel,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
     }
 
     /**
@@ -798,7 +790,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch48(): void
     {
-        $filesystem = new Filesystem();
+        $filesystem = $this->filesystem;
 
         $oldUploadsPath = Path::join(PATH_ROOT, 'uploads');
         $newUploadsPath = Path::join(PATH_ROOT, 'data', 'uploads');
@@ -820,7 +812,7 @@ class UpdatePatcher implements InjectionAwareInterface
         foreach ($products as $product) {
             $productConfig = json_decode((string) $product['config'], true) ?: [];
 
-            if (isset($productConfig['filename']) && !empty($productConfig['filename'])) {
+            if (!empty($productConfig['filename'])) {
                 continue;
             }
 
@@ -1479,21 +1471,28 @@ class UpdatePatcher implements InjectionAwareInterface
     private function migrateDownloadableServiceStorageKeys(): void
     {
         $services = $this->fetchAll('SELECT sd.id, sd.filename, sd.stored_filename, co.id AS order_id, co.config AS order_config FROM service_downloadable sd LEFT JOIN client_order co ON sd.id = co.service_id AND co.service_type = "downloadable" WHERE sd.filename IS NOT NULL AND sd.filename != ""');
+        $processedServiceUpdates = [];
 
         foreach ($services as $service) {
             if (!empty($service['stored_filename'])) {
                 $storedFilename = (string) $service['stored_filename'];
             } else {
-                $storedFilename = $this->copyLegacyDownloadableFile((string) $service['filename']);
-                if ($storedFilename === null) {
-                    continue;
-                }
+                $serviceId = (int) $service['id'];
+                if (isset($processedServiceUpdates[$serviceId])) {
+                    $storedFilename = $this->copyLegacyDownloadableFile((string) $service['filename']);
+                } else {
+                    $storedFilename = $this->copyLegacyDownloadableFile((string) $service['filename']);
+                    if ($storedFilename === null) {
+                        continue;
+                    }
 
-                $this->executeSql('UPDATE service_downloadable SET stored_filename = :stored_filename, updated_at = :updated_at WHERE id = :id', [
-                    'stored_filename' => $storedFilename,
-                    'updated_at' => date('Y-m-d H:i:s'),
-                    'id' => $service['id'],
-                ]);
+                    $this->executeSql('UPDATE service_downloadable SET stored_filename = :stored_filename, updated_at = :updated_at WHERE id = :id', [
+                        'stored_filename' => $storedFilename,
+                        'updated_at' => date('Y-m-d H:i:s'),
+                        'id' => $service['id'],
+                    ]);
+                    $processedServiceUpdates[$serviceId] = true;
+                }
             }
 
             if (empty($service['order_id'])) {
