@@ -152,7 +152,7 @@ class Service implements InjectionAwareInterface
         $this->di['validator']->checkRequiredParamsForArray($required, $config);
 
         $data['filename'] = $config['filename'];
-        $data[self::STORED_FILENAME_CONFIG_KEY] = $config[self::STORED_FILENAME_CONFIG_KEY];
+        $data[self::STORED_FILENAME_CONFIG_KEY] = $this->validateStoredFilename($config[self::STORED_FILENAME_CONFIG_KEY]);
 
         return array_merge($config, $data);
     }
@@ -164,6 +164,7 @@ class Service implements InjectionAwareInterface
             self::STORED_FILENAME_CONFIG_KEY => 'Stored filename is missing in product config',
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
+        $data[self::STORED_FILENAME_CONFIG_KEY] = $this->validateStoredFilename($data[self::STORED_FILENAME_CONFIG_KEY]);
     }
 
     /**
@@ -253,18 +254,32 @@ class Service implements InjectionAwareInterface
         ];
 
         if ($identity instanceof \Model_Admin) {
-            $result['path'] = Path::join(PATH_UPLOADS, $model->stored_filename);
+            $result['path'] = $this->getStoredFilePath($model->stored_filename);
             $result['downloads'] = $model->downloads;
         }
 
         return $result;
     }
 
+    private function validateStoredFilename(mixed $storedFilename): string
+    {
+        if (!is_string($storedFilename) || preg_match('/\A[a-f0-9]{64}\z/', $storedFilename) !== 1) {
+            throw new \FOSSBilling\Exception('File is not available at the moment. Please contact support.', null, 404);
+        }
+
+        return $storedFilename;
+    }
+
+    private function getStoredFilePath(mixed $storedFilename): string
+    {
+        return Path::join(PATH_UPLOADS, $this->validateStoredFilename($storedFilename));
+    }
+
     private function generateStoredFilename(): string
     {
         do {
             $storedFilename = bin2hex(random_bytes(32));
-            $filePath = Path::join(PATH_UPLOADS, $storedFilename);
+            $filePath = $this->getStoredFilePath($storedFilename);
         } while ($this->filesystem->exists($filePath));
 
         return $storedFilename;
@@ -304,10 +319,15 @@ class Service implements InjectionAwareInterface
         return $count > 0;
     }
 
+    private function isValidStoredFilename(mixed $storedFilename): bool
+    {
+        return is_string($storedFilename) && preg_match('/\A[a-f0-9]{64}\z/', $storedFilename) === 1;
+    }
+
     private function removeStoredFileIfOrphaned(string $storedFilename): void
     {
-        if (!$this->isStoredFilenameReferenced($storedFilename)) {
-            $filePath = Path::join(PATH_UPLOADS, $storedFilename);
+        if ($this->isValidStoredFilename($storedFilename) && !$this->isStoredFilenameReferenced($storedFilename)) {
+            $filePath = $this->getStoredFilePath($storedFilename);
             if ($this->filesystem->exists($filePath)) {
                 $this->filesystem->remove($filePath);
             }
@@ -420,6 +440,8 @@ class Service implements InjectionAwareInterface
             }
         }
 
+        $storedFilename = $this->validateStoredFilename($storedFilename);
+
         $serviceDownloadable->filename = $fileName;
         $serviceDownloadable->stored_filename = $storedFilename;
         $serviceDownloadable->updated_at = date('Y-m-d H:i:s');
@@ -463,7 +485,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
         }
 
-        $filePath = Path::join(PATH_UPLOADS, $storedFilename);
+        $filePath = $this->getStoredFilePath($storedFilename);
         if (!$this->filesystem->exists($filePath)) {
             throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
         }
@@ -514,7 +536,7 @@ class Service implements InjectionAwareInterface
         }
 
         $fileName = $config['filename'];
-        $filePath = Path::join(PATH_UPLOADS, $config[self::STORED_FILENAME_CONFIG_KEY]);
+        $filePath = $this->getStoredFilePath($config[self::STORED_FILENAME_CONFIG_KEY]);
 
         if (!$this->filesystem->exists($filePath)) {
             throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
