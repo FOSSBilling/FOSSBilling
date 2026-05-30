@@ -123,7 +123,7 @@
                                     </tr>
                                 {% else %}
                                     <tr>
-                                        <td class="text-center py-3" colspan="5">
+                                        <td class="text-center py-3" colspan="4">
                                             <h4>{{ 'The list is empty'|trans }}</h4>
                                         </td>
                                     </tr>
@@ -160,7 +160,7 @@
                                                     <option value="{{ params.test_client_id }}" selected>{{ test_client_email }}</option>
                                                 {% endif %}
                                             </select>
-                                            <div class="form-text">{{ 'Test emails will be sent to:'|trans }} {{ test_client_email|trans }}</div>
+                                            <div class="form-text">{{ 'Test emails will be sent to:'|trans }} {{ test_client_email }}</div>
                                         </div>
                                     </div>
                                 {% endblock %}
