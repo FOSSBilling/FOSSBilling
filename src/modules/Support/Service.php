@@ -78,7 +78,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->err($exc->getMessage());
+            $di['logger']->error($exc->getMessage());
         }
     }
 
@@ -100,7 +100,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->err($exc->getMessage());
+            $di['logger']->error($exc->getMessage());
         }
     }
 
@@ -122,7 +122,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->err($exc->getMessage());
+            $di['logger']->error($exc->getMessage());
         }
     }
 
@@ -144,7 +144,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->err($exc->getMessage());
+            $di['logger']->error($exc->getMessage());
         }
     }
 
@@ -166,7 +166,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->err($exc->getMessage());
+            $di['logger']->error($exc->getMessage());
         }
     }
 
@@ -189,7 +189,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->err($exc->getMessage());
+            $di['logger']->error($exc->getMessage());
         }
     }
 
@@ -212,7 +212,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->err($exc->getMessage());
+            $di['logger']->error($exc->getMessage());
         }
     }
 
@@ -235,7 +235,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->err($exc->getMessage());
+            $di['logger']->error($exc->getMessage());
         }
     }
 
@@ -716,7 +716,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $data['helpdesk'] = $helpdesk ? $this->helpdeskToApiArray($helpdesk, $identity) : null;
 
             if (!isset($clients[$ticket['client_id']])) {
-                $this->di['logger']->err('Missing client for ticket ' . $ticket['id']);
+                $this->di['logger']->error('Missing client for ticket ' . $ticket['id']);
                 $data['client'] = [];
             } else {
                 $data['client'] = $clients[$ticket['client_id']];
@@ -780,7 +780,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if ($client instanceof \Model_Client) {
             return $this->clientToTicketApiArray($client, $identity);
         }
-        $this->di['logger']->err('Missing client for ticket ' . $ticket->id);
+        $this->di['logger']->error('Missing client for ticket ' . $ticket->id);
 
         return [];
     }
@@ -1226,7 +1226,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 $this->ticketReply($ticket, $admin, $canned['content']);
             }
         } catch (\Exception $e) {
-            $this->di['logger']->err($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
     }
 

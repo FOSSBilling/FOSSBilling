@@ -375,7 +375,7 @@ final class ServiceTest extends \BBTestCase
             {
             }
 
-            public function warn(...$args): void
+            public function warning(...$args): void
             {
             }
         };

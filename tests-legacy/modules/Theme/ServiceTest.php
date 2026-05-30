@@ -452,7 +452,7 @@ final class ServiceTest extends \BBTestCase
                 return $this;
             }
 
-            public function warn(string $message, array $context = []): void
+            public function warning(string $message, array $context = []): void
             {
             }
         };
