@@ -107,10 +107,10 @@
                                 <div class="row">
                                     <div class="form-floating col-md-7 mb-3">
                                         <select class="form-select form-select-sm" name="gender" id="gender">
-                                            <option value="male">Male</option>
-                                            <option value="female">Female</option>
-                                            <option value="nonbinary">Non-binary</option>
-                                            <option value="other">Other</option>
+                                            <option value="male">{{ 'Male'|trans }}</option>
+                                            <option value="female">{{ 'Female'|trans }}</option>
+                                            <option value="nonbinary">{{ 'Non-binary'|trans }}</option>
+                                            <option value="other">{{ 'Other'|trans }}</option>
                                         </select>
                                         <label for="gender" class="ms-2">{{ 'You are'|trans }}</label>
                                     </div>
@@ -150,7 +150,7 @@
                             <div class="row">
                                 <div class="form-floating col-md-7 mb-3">
                                     <input class="form-control form-control-sm" type="text" name="address_2" id="address_2"
-                                           value="{{ request.address_1 }}"
+                                          value="{{ request.address_2 }}"
                                            placeholder="{{ 'Address 2'|trans }}">
                                     <label for="address_2" class="ms-2">{{ 'Address 2'|trans }}</label>
                                 </div>
