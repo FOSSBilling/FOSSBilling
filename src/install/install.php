@@ -149,7 +149,7 @@ final class FOSSBilling_Installer
                     // Set if they've opted into error reporting
                     $this->session->set('error_reporting', $this->request->request->get('error_reporting'));
 
-                    $this->session->set('system_url', $this->normalizeSystemUrl($this->request->request->get('system_url')));
+                    $this->session->set('system_url', $this->normalizeSystemUrl($this->request->request->get('system_url', SYSTEM_URL)));
                     $trustedProxyEnabled = $this->isChecked($this->request->request->get('trusted_proxy_enabled'));
                     $this->session->set('trusted_proxy_enabled', $trustedProxyEnabled);
                     if ($trustedProxyEnabled) {
