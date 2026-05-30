@@ -222,14 +222,14 @@
         let transferChecked = false;
 
         const resetTransferCheck = () => {
-             if (!transferChecked) {
-                 return;
-             }
-             transferChecked = false;
-             if (transferCheck) transferCheck.style.display = '';
-             const transferConfig = document.getElementById('transfer-config');
-             if (transferConfig) transferConfig.style.display = 'none';
-         };
+            if (!transferChecked) {
+                return;
+            }
+            transferChecked = false;
+            if (transferCheck) transferCheck.style.display = '';
+            const transferConfig = document.getElementById('transfer-config');
+            if (transferConfig) transferConfig.style.display = 'none';
+        };
 
         if (transferSldInput) {
            transferSldInput.addEventListener('input', resetTransferCheck);
