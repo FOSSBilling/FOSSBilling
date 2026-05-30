@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace Box\Mod\Client\Api;
 
 use FOSSBilling\Security\RandomizedTimeFloor;
+use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Guest extends \Api_Abstract
@@ -24,7 +25,6 @@ class Guest extends \Api_Abstract
     /**
      * Client signup action.
      *
-     * @optional bool $auto_login - Auto login client after signup
      * @optional string $last_name - last name
      * @optional string $aid - Alternative id. Usually used by import tools.
      * @optional string $gender - Gender - values: male|female|nonbinary|other
@@ -87,10 +87,10 @@ class Guest extends \Api_Abstract
             $service->sendEmailConfirmationForClient($client);
         }
 
-        if ($data['auto_login'] ?? 0) {
+        if (Tools::normalizeBoolean($config['auto_login_after_signup'] ?? true, true)) {
             try {
                 $this->login(['email' => $client->email, 'password' => $data['password']]);
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 error_log($e->getMessage());
             }
         }
