@@ -289,7 +289,7 @@ class UpdateFinalization implements InjectionAwareInterface
 
     private function getFinalizationAllowedUrls(): array
     {
-        $adminPrefix = defined('ADMIN_PREFIX') ? rtrim(ADMIN_PREFIX, '/') : '/admin';
+        $adminPrefix = defined('ADMIN_PREFIX') ? rtrim((string) ADMIN_PREFIX, '/') : '/admin';
 
         return array_map(
             static fn (string $path): string => $adminPrefix . '/' . $path,
