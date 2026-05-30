@@ -274,8 +274,13 @@ final class ServiceTest extends \BBTestCase
         try {
             $this->assertSame('PRODUCT_A_CONTENT', file_get_contents($pathA));
             $this->assertSame('PRODUCT_B_CONTENT', file_get_contents($pathB));
-            $this->assertSame('PRODUCT_A_CONTENT', $this->service->sendProductFile($productA)->getContent());
-            $this->assertSame('PRODUCT_B_CONTENT', $this->service->sendProductFile($productB)->getContent());
+            $productAResponse = $this->service->sendProductFile($productA);
+            $productBResponse = $this->service->sendProductFile($productB);
+
+            $this->assertInstanceOf(\Symfony\Component\HttpFoundation\BinaryFileResponse::class, $productAResponse);
+            $this->assertInstanceOf(\Symfony\Component\HttpFoundation\BinaryFileResponse::class, $productBResponse);
+            $this->assertSame('PRODUCT_A_CONTENT', file_get_contents($productAResponse->getFile()->getPathname()));
+            $this->assertSame('PRODUCT_B_CONTENT', file_get_contents($productBResponse->getFile()->getPathname()));
         } finally {
             @unlink($pathA);
             @unlink($pathB);
