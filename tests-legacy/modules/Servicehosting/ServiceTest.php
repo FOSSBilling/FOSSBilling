@@ -111,6 +111,32 @@ final class ServiceTest extends \BBTestCase
         $this->assertSame('.example.com', $result['tld']);
     }
 
+    public function testPrependOrderConfigUsesConfiguredFreeSubdomainBaseDomain(): void
+    {
+        $product = new \Model_Product();
+        $product->loadBean(new \DummyBean());
+        $product->config = json_encode([
+            'server_id' => 1,
+            'hosting_plan_id' => 2,
+            'allow_subdomain' => true,
+            'subdomain_base_domain' => 'example.com',
+        ]);
+
+        $this->service->setDi($this->getDi());
+
+        $result = $this->service->prependOrderConfig($product, [
+            'subdomain_base_domain' => 'attacker.example',
+            'domain' => [
+                'action' => 'subdomain',
+                'subdomain_sld' => 'customer',
+            ],
+        ]);
+
+        $this->assertSame('example.com', $result['subdomain_base_domain']);
+        $this->assertSame('customer', $result['sld']);
+        $this->assertSame('.example.com', $result['tld']);
+    }
+
     public function testPrependOrderConfigRequiresFreeSubdomainName(): void
     {
         $product = new \Model_Product();
