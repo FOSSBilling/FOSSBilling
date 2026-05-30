@@ -330,7 +330,7 @@ class UpdatePatcher implements InjectionAwareInterface
             || str_contains($where, '/*')
             || str_contains($where, '*/')
             || str_contains($where, '`')
-            || !preg_match("/^[A-Za-z0-9_:'\\s<>=!().,%+-]+$/", $where)
+            || !preg_match('/^[A-Za-z0-9_:\\s<>=!().,%+-]++$/', $where)
         ) {
             throw new Exception('Invalid SQL WHERE clause fragment.');
         }
@@ -905,9 +905,12 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch50(): void
     {
-        $this->migrateEncryptedColumn('email_template', 'id', 'vars', "vars IS NOT NULL AND vars != ''");
-        $this->migrateEncryptedColumn('extension_meta', 'id', 'meta_value', "meta_key = :meta_key AND meta_value IS NOT NULL AND meta_value != ''", [
+        $this->migrateEncryptedColumn('email_template', 'id', 'vars', 'vars IS NOT NULL AND vars != :empty', [
+            'empty' => '',
+        ]);
+        $this->migrateEncryptedColumn('extension_meta', 'id', 'meta_value', 'meta_key = :meta_key AND meta_value IS NOT NULL AND meta_value != :empty', [
             'meta_key' => 'config',
+            'empty' => '',
         ]);
     }
 
@@ -1301,7 +1304,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $template = $this->filesystem->readFile($path);
 
         $subject = ucwords(str_replace('_', ' ', $code));
-        preg_match('#{%.?block subject.?%}(.*?){%.?endblock.?%}#s', $template, $subjectMatches);
+        preg_match('#{%\\s*block subject\\s*%}(.*?){%\\s*endblock\\s*%}#s', $template, $subjectMatches);
         if (isset($subjectMatches[1])) {
             $subject = $subjectMatches[1];
         }
