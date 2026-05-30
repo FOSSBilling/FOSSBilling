@@ -130,7 +130,7 @@ final class ServiceTest extends \BBTestCase
 
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
-        $productModel->config = '{"filename": "test.txt"}';
+        $productModel->config = '{"filename": "test.txt", "stored_filename": "stored-test.txt"}';
 
         $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
@@ -151,6 +151,7 @@ final class ServiceTest extends \BBTestCase
         $updatedConfig = json_decode($productModel->config, true);
         $this->assertIsArray($updatedConfig);
         $this->assertEquals('test.txt', $updatedConfig['filename']);
+        $this->assertEquals('stored-test.txt', $updatedConfig['stored_filename']);
         $this->assertTrue($updatedConfig['update_orders']);
         $this->assertNotNull($productModel->updated_at);
     }

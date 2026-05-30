@@ -16,6 +16,7 @@ use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -399,6 +400,7 @@ class Service implements InjectionAwareInterface
     public function updateProductFile(\Model_ServiceDownloadable $serviceDownloadable, \Model_ClientOrder $order, ?string $filename = null, ?string $storedFilename = null): bool
     {
         $request = $this->di['request'];
+        $oldStoredFilename = $serviceDownloadable->stored_filename ?? null;
 
         // If filename is provided, use it directly (file was already uploaded in uploadProductFile)
         if ($filename !== null) {
@@ -416,8 +418,6 @@ class Service implements InjectionAwareInterface
             }
 
             $this->validateFileUpload($file);
-
-            $oldStoredFilename = $serviceDownloadable->stored_filename ?? null;
             $storedFilename = $this->storeUploadedFile($file);
         } else {
             $fileName = null;
@@ -495,7 +495,7 @@ class Service implements InjectionAwareInterface
         $serviceDownloadable->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($serviceDownloadable);
 
-        $response = new Response($this->filesystem->readFile($filePath));
+        $response = new BinaryFileResponse($filePath);
 
         $disposition = $response->headers->makeDisposition(
             HeaderUtils::DISPOSITION_ATTACHMENT,
@@ -510,7 +510,7 @@ class Service implements InjectionAwareInterface
         return $response;
     }
 
-    public function saveProductConfig(\Model_Product $productModel, $data): bool
+    public function saveProductConfig(\Model_Product $productModel, array $data): bool
     {
         $config = json_decode($productModel->config ?? '', true) ?: [];
         $config['update_orders'] = Tools::normalizeBoolean($data['update_orders'] ?? false);
@@ -542,7 +542,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
         }
 
-        $response = new Response($this->filesystem->readFile($filePath));
+        $response = new BinaryFileResponse($filePath);
 
         $disposition = $response->headers->makeDisposition(
             HeaderUtils::DISPOSITION_ATTACHMENT,
