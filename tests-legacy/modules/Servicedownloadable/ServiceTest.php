@@ -20,7 +20,7 @@ final class ServiceTest extends \BBTestCase
     {
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
-        $productModel->config = '{"filename" : "temp/asdcxTest.txt", "stored_filename": "stored-temp-file"}';
+        $productModel->config = '{"filename" : "temp/asdcxTest.txt", "stored_filename": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}';
 
         $data = [];
 
@@ -36,11 +36,29 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
+    public function testAttachOrderConfigRejectsInvalidStoredFilename(): void
+    {
+        $productModel = new \Model_Product();
+        $productModel->loadBean(new \DummyBean());
+        $productModel->config = '{"filename" : "download.txt", "stored_filename": "../config.php"}';
+
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
+
+        $di = $this->getDi();
+        $di['validator'] = $validatorMock;
+        $this->service->setDi($di);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+
+        $data = [];
+        $this->service->attachOrderConfig($productModel, $data);
+    }
+
     public function testActionCreate(): void
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
-        $clientOrderModel->config = '{"filename" : "temp/asdcxTest.txt", "stored_filename": "stored-temp-file"}';
+        $clientOrderModel->config = '{"filename" : "temp/asdcxTest.txt", "stored_filename": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}';
 
         $model = new \Model_ServiceDownloadable();
         $model->loadBean(new \DummyBean());
@@ -62,7 +80,25 @@ final class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
         $result = $this->service->action_create($clientOrderModel);
         $this->assertInstanceOf('\Model_ServiceDownloadable', $result);
-        $this->assertSame('stored-temp-file', $result->stored_filename);
+        $this->assertSame('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', $result->stored_filename);
+    }
+
+    public function testActionCreateRejectsInvalidStoredFilename(): void
+    {
+        $clientOrderModel = new \Model_ClientOrder();
+        $clientOrderModel->loadBean(new \DummyBean());
+        $clientOrderModel->config = '{"filename" : "download.txt", "stored_filename": "../config.php"}';
+
+        $validatorMock = $this->createMock(\FOSSBilling\Validate::class);
+
+        $di = $this->getDi();
+        $di['validator'] = $validatorMock;
+
+        $this->service->setDi($di);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+
+        $this->service->action_create($clientOrderModel);
     }
 
     public function testActionDelete(): void
@@ -258,6 +294,56 @@ final class ServiceTest extends \BBTestCase
         $this->service->sendProductFile($product);
     }
 
+    public function testSendProductFileRejectsTraversalStoredFilename(): void
+    {
+        $di = $this->createUploadDi();
+        $this->service->setDi($di);
+
+        $product = $this->createProductModel('{"filename": "download.txt", "stored_filename": "../config.php"}');
+
+        $this->expectException(\FOSSBilling\Exception::class);
+
+        $this->service->sendProductFile($product);
+    }
+
+    public function testSendFileRejectsTraversalStoredFilename(): void
+    {
+        $di = $this->createUploadDi();
+        $this->service->setDi($di);
+
+        $serviceDownloadable = new \Model_ServiceDownloadable();
+        $serviceDownloadable->loadBean(new \DummyBean());
+        $serviceDownloadable->filename = 'download.txt';
+        $serviceDownloadable->stored_filename = '../config.php';
+
+        $this->expectException(\FOSSBilling\Exception::class);
+
+        $this->service->sendFile($serviceDownloadable);
+    }
+
+    public function testReplacingProductFileDoesNotDeleteInvalidOldStoredFilenameOutsideUploads(): void
+    {
+        $di = $this->createUploadDi();
+        $this->service->setDi($di);
+
+        $outsidePath = \Symfony\Component\Filesystem\Path::join(dirname(PATH_UPLOADS), 'downloadable-secret.txt');
+        file_put_contents($outsidePath, 'SECRET');
+
+        $product = $this->createProductModel(json_encode([
+            'filename' => 'old.txt',
+            'stored_filename' => '../downloadable-secret.txt',
+        ]));
+
+        try {
+            $this->uploadFile($di, $product, 'download.txt', 'NEW_CONTENT');
+
+            $this->assertFileExists($outsidePath);
+            $this->assertSame('SECRET', file_get_contents($outsidePath));
+        } finally {
+            @unlink($outsidePath);
+        }
+    }
+
     private function invokeValidateFileUpload(\Symfony\Component\HttpFoundation\File\UploadedFile $file): void
     {
         $reflection = new \ReflectionMethod(Service::class, 'validateFileUpload');
@@ -271,6 +357,11 @@ final class ServiceTest extends \BBTestCase
             public function store($model): int
             {
                 return 1;
+            }
+
+            public function getCell(string $query, array $bindings = []): int
+            {
+                return 0;
             }
         };
         $di['logger'] = new class {
