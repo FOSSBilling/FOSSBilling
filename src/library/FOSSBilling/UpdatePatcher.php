@@ -454,6 +454,7 @@ class UpdatePatcher implements InjectionAwareInterface
             63 => 'patch63',
             64 => 'patch64',
             65 => 'patch65',
+            66 => 'patch66',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1414,6 +1415,20 @@ class UpdatePatcher implements InjectionAwareInterface
         $this->migrateDownloadableProductStorageKeys();
         $this->migrateDownloadableServiceStorageKeys();
         $this->migrateDownloadableOrderStorageKeys();
+    }
+
+    private function patch66(): void
+    {
+        // The original removal/migration patches for these modules only handled their data
+        // migrations. Installations that already ran those patches need a new patch level
+        // to clean up stale extension records and module directories left on disk.
+        $this->executeSql("DELETE FROM extension_meta WHERE extension IN ('mod_paidsupport', 'mod_servicemembership') OR (rel_type = 'mod' AND LOWER(rel_id) IN ('paidsupport', 'servicemembership'))");
+        $this->executeSql("DELETE FROM extension WHERE type = 'mod' AND LOWER(name) IN ('paidsupport', 'servicemembership')");
+
+        $this->executeFileActions([
+            Path::join(PATH_MODS, 'Paidsupport') => 'unlink',
+            Path::join(PATH_MODS, 'Servicemembership') => 'unlink',
+        ]);
     }
 
     private function generateDownloadableStoredFilename(): string
