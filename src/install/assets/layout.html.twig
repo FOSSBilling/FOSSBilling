@@ -6,7 +6,6 @@
         <link href="./assets/css/pico.min.css" rel="stylesheet">
         <script src="./assets/js/modal.js"></script>
         <title>FOSSBilling Installation</title>
-        <base href="{{ constant('URL_INSTALL') }}"/>
         <style type="text/css">
             :root {
                 --fb-brand: #1c7ed6;
@@ -154,6 +153,22 @@
                 display: block;
                 margin-left: calc(1.75rem + 0.75rem);
             }
+            .option-section {
+                border-top: 1px solid var(--fb-border);
+                padding-top: 1rem;
+            }
+            .option-section.first-option-section {
+                border-top: 0;
+                padding-top: 0;
+            }
+            .option-section h3 {
+                font-size: 1.1rem;
+                margin-bottom: 0.35rem;
+            }
+            .option-section p {
+                color: var(--fb-muted);
+                margin-bottom: 0.75rem;
+            }
             .requirements-table-wrapper {
                 max-width: calc(100% - 2.5rem);
                 overflow-x: auto;
@@ -247,7 +262,7 @@
             <nav class="installer-nav">
                 <ul>
                     <li>
-                    <a href="{{ constant('URL_INSTALL') }}" title="FOSSBilling">
+                    <a href="./install.php" title="FOSSBilling">
                         <img class="installer-logo-light" src="../public/branding/logo.svg" alt="FOSSBilling logo" height="50" width="238">
                         <img class="installer-logo-dark" src="../public/branding/logo-dark.svg" alt="FOSSBilling logo" height="50" width="238">
                     </a></li>
