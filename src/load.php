@@ -90,7 +90,7 @@ function hasDatabaseTables(): bool
 
     $host = $dbConfig['host'] ?? '';
     $database = $dbConfig['name'] ?? '';
-    $port = $dbConfig['port'] ?? '3306';
+    $port = Tools::normalizePort($dbConfig['port'] ?? null, 3306);
     if ($host === '' || $database === '') {
         return true;
     }

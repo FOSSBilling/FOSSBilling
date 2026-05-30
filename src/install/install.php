@@ -152,7 +152,11 @@ final class FOSSBilling_Installer
                     $this->session->set('currency_code', $this->request->request->get('currency_code'));
                     // Handle database information
                     $this->session->set('database_hostname', $this->request->request->get('database_hostname'));
-                    $this->session->set('database_port', $this->request->request->get('database_port'));
+                    $databasePort = FOSSBilling\Tools::normalizePort($this->request->request->get('database_port'));
+                    if ($databasePort === null) {
+                        throw new Exception('Database port is invalid.');
+                    }
+                    $this->session->set('database_port', $databasePort);
                     $this->session->set('database_name', $this->request->request->get('database_name'));
                     $this->session->set('database_username', $this->request->request->get('database_username'));
                     $this->session->set('database_password', $this->request->request->get('database_password'));
@@ -267,7 +271,9 @@ final class FOSSBilling_Installer
         $databaseName = $this->quoteMysqlIdentifier((string) $this->session->get('database_name'));
 
         // Open the connection
-        $this->pdo = new PDO('mysql:host=' . $this->session->get('database_hostname') . ';' . $this->session->get('database_port'),
+        $databasePort = FOSSBilling\Tools::normalizePort($this->session->get('database_port'), 3306);
+
+        $this->pdo = new PDO('mysql:host=' . $this->session->get('database_hostname') . ';port=' . $databasePort,
             $this->session->get('database_username'),
             $this->session->get('database_password'),
             [
@@ -474,7 +480,7 @@ final class FOSSBilling_Installer
         $data['db'] = [
             'driver' => 'pdo_mysql',
             'host' => $this->session->get('database_hostname'),
-            'port' => $this->session->get('database_port'),
+            'port' => FOSSBilling\Tools::normalizePort($this->session->get('database_port'), 3306),
             'name' => $this->session->get('database_name'),
             'user' => $this->session->get('database_username'),
             'password' => $this->session->get('database_password'),

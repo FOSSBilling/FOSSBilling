@@ -63,9 +63,7 @@ class Server_Manager_CWP extends Server_Manager
         }
         $this->_config['accesshash'] = trim((string) $this->_config['accesshash']);
 
-        if (empty($this->_config['port'])) {
-            $this->_config['port'] = '2304';
-        }
+        $this->_config['port'] = FOSSBilling\Tools::normalizePort($this->_config['port'] ?? null, 2304);
     }
 
     /**

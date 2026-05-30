@@ -96,7 +96,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['i18n']['date_format'] ??= 'medium';
         $newConfig['i18n']['time_format'] ??= 'short';
         $newConfig['db']['driver'] ??= 'pdo_mysql';
-        $newConfig['db']['port'] ??= '3306';
+        $newConfig['db']['port'] = Tools::normalizePort($newConfig['db']['port'] ?? null, 3306);
         unset(
             $newConfig['api']['rate_span'],
             $newConfig['api']['rate_limit'],
