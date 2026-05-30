@@ -79,8 +79,8 @@ require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Autoloader.php');
 $loader = new FOSSBilling\AutoLoader();
 $loader->register();
 
-$preConfigProxyConfig = RequestFactory::getPreConfigProxyConfig($_SERVER);
-$request = RequestFactory::createFromGlobals($preConfigProxyConfig);
+$preConfigProxyCandidate = RequestFactory::getPreConfigProxyCandidate($_SERVER);
+$request = RequestFactory::createFromGlobals();
 $url = $request->getSchemeAndHttpHost() . $request->getRequestUri();
 $current_url = Path::getDirectory($url);
 $root_url = str_replace('/install', '', $current_url) . '/';
@@ -91,7 +91,7 @@ const URL_ADMIN = SYSTEM_URL . 'admin';
 // Load action and initialize the installer
 $action = $request->query->get('a', 'index');
 $action = is_string($action) && $action !== '' ? $action : 'index';
-$installer = new FOSSBilling_Installer($request, $preConfigProxyConfig);
+$installer = new FOSSBilling_Installer($request, $preConfigProxyCandidate);
 
 // Run the installer only in non-CLI mode
 if (!Environment::isCLI()) {
@@ -106,7 +106,7 @@ final class FOSSBilling_Installer
     private bool $isDebug = false;
     private readonly Filesystem $filesystem;
 
-    public function __construct(private readonly Request $request, private readonly array $preConfigProxyConfig = [])
+    public function __construct(private readonly Request $request, private readonly array $preConfigProxyCandidate = [])
     {
         require_once 'session.php';
         $this->session = new Session();
@@ -136,7 +136,7 @@ final class FOSSBilling_Installer
             case 'install':
                 // Make sure this is a POST request
                 if (!$this->request->isMethod('POST')) {
-                    return new RedirectResponse(URL_INSTALL);
+                    return new RedirectResponse('./install.php');
                 }
 
                 // Installer validation
@@ -148,6 +148,17 @@ final class FOSSBilling_Installer
 
                     // Set if they've opted into error reporting
                     $this->session->set('error_reporting', $this->request->request->get('error_reporting'));
+
+                    $this->session->set('system_url', $this->normalizeSystemUrl($this->request->request->get('system_url')));
+                    $trustedProxyEnabled = $this->isChecked($this->request->request->get('trusted_proxy_enabled'));
+                    $this->session->set('trusted_proxy_enabled', $trustedProxyEnabled);
+                    if ($trustedProxyEnabled) {
+                        $this->session->set('trusted_proxy_proxies', $this->normalizeTrustedProxyProxies($this->request->request->get('trusted_proxy_proxies')));
+                        $this->session->set('trusted_proxy_headers', $this->normalizeTrustedProxyHeaders($this->request->request->get('trusted_proxy_headers')));
+                    } else {
+                        $this->session->set('trusted_proxy_proxies', []);
+                        $this->session->set('trusted_proxy_headers', 'x_forwarded');
+                    }
 
                     // Set up default currency before validation to preserve user selection if validation fails
                     $this->session->set('currency_code', $this->request->request->get('currency_code'));
@@ -175,6 +186,7 @@ final class FOSSBilling_Installer
                     }
 
                     $this->validateAdmin();
+                    $selectedSystemUrl = $this->getSelectedSystemUrl();
 
                     // Attempt installation
                     $this->install();
@@ -186,8 +198,8 @@ final class FOSSBilling_Installer
                         'config_file_path' => PATH_CONFIG,
                         'cron_path' => PATH_CRON,
                         'install_module_path' => PATH_INSTALL,
-                        'url_customer' => SYSTEM_URL,
-                        'url_admin' => URL_ADMIN,
+                        'url_customer' => $selectedSystemUrl,
+                        'url_admin' => rtrim($selectedSystemUrl, '/') . '/admin',
                     ]);
 
                     // Delete only the installer entry point if debug mode is NOT enabled, so completion page assets remain available.
@@ -230,9 +242,13 @@ final class FOSSBilling_Installer
                     'install_module_path' => PATH_INSTALL,
                     'cron_path' => PATH_CRON,
                     'config_file_path' => PATH_CONFIG,
-                    'live_site' => SYSTEM_URL,
+                    'system_url' => $this->session->get('system_url') ?: SYSTEM_URL,
                     'admin_site' => URL_ADMIN,
                     'domain' => SYSTEM_URL,
+                    'proxy_candidate' => $this->preConfigProxyCandidate,
+                    'trusted_proxy_enabled' => (bool) $this->session->get('trusted_proxy_enabled'),
+                    'trusted_proxy_proxies' => implode(', ', $this->session->get('trusted_proxy_proxies') ?: ($this->preConfigProxyCandidate['proxies'] ?? [])),
+                    'trusted_proxy_headers' => $this->session->get('trusted_proxy_headers') ?: ($this->preConfigProxyCandidate['headers'] ?? 'x_forwarded'),
                 ];
 
                 return new Response($this->render(PAGE_INSTALL, $vars));
@@ -460,6 +476,70 @@ final class FOSSBilling_Installer
         return true;
     }
 
+    private function getSelectedSystemUrl(): string
+    {
+        $systemUrl = $this->session->get('system_url');
+        if (is_string($systemUrl) && $systemUrl !== '') {
+            return $systemUrl;
+        }
+
+        return $this->normalizeSystemUrl(SYSTEM_URL);
+    }
+
+    private function normalizeSystemUrl(mixed $url): string
+    {
+        $url = trim((string) $url);
+        if ($url === '') {
+            throw new InvalidArgumentException('The FOSSBilling URL is required.');
+        }
+
+        if (!str_contains($url, '://')) {
+            $url = 'https://' . $url;
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts) || !isset($parts['scheme'], $parts['host']) || !in_array(strtolower($parts['scheme']), ['http', 'https'], true)) {
+            throw new InvalidArgumentException('The FOSSBilling URL must be a valid HTTP or HTTPS URL.');
+        }
+
+        $path = $parts['path'] ?? '/';
+        if ($path === '') {
+            $path = '/';
+        }
+
+        $normalizedUrl = strtolower($parts['scheme']) . '://' . $parts['host'];
+        if (isset($parts['port'])) {
+            $normalizedUrl .= ':' . $parts['port'];
+        }
+
+        return rtrim($normalizedUrl . '/' . trim($path, '/'), '/') . '/';
+    }
+
+    private function normalizeTrustedProxyProxies(mixed $proxies): array
+    {
+        $proxyList = preg_split('/[\s,]+/', trim((string) $proxies), -1, PREG_SPLIT_NO_EMPTY);
+        if ($proxyList === false || $proxyList === []) {
+            throw new InvalidArgumentException('At least one trusted proxy IP address is required when reverse proxy trust is enabled.');
+        }
+
+        return array_values(array_unique(array_map(trim(...), $proxyList)));
+    }
+
+    private function normalizeTrustedProxyHeaders(mixed $headers): string
+    {
+        $headers = trim((string) $headers);
+        if (!in_array($headers, ['x_forwarded', 'forwarded', 'aws_elb', 'traefik'], true)) {
+            throw new InvalidArgumentException('The trusted proxy header format is invalid.');
+        }
+
+        return $headers;
+    }
+
+    private function isChecked(mixed $value): bool
+    {
+        return in_array($value, ['1', 1, true, 'true', 'on', 'yes'], true);
+    }
+
     /**
      * Generate the `config.php` file using the `config-sample.php` as a template.
      */
@@ -469,17 +549,22 @@ final class FOSSBilling_Installer
 
         // Load default sample config
         $data = require PATH_CONFIG_SAMPLE;
+        $systemUrl = $this->getSelectedSystemUrl();
 
         // Handle dynamic configs
-        $data['security']['force_https'] = str_starts_with(SYSTEM_URL, 'https://');
-        if (($this->preConfigProxyConfig['enabled'] ?? false) === true) {
-            $data['security']['trusted_proxies'] = $this->preConfigProxyConfig;
+        $data['security']['force_https'] = str_starts_with($systemUrl, 'https://');
+        if ($this->session->get('trusted_proxy_enabled') === true) {
+            $data['security']['trusted_proxies'] = [
+                'enabled' => true,
+                'proxies' => $this->session->get('trusted_proxy_proxies') ?: [],
+                'headers' => $this->session->get('trusted_proxy_headers') ?: 'x_forwarded',
+            ];
         }
         $data['debug_and_monitoring']['report_errors'] = (bool) $this->session->get('error_reporting');
         $data['debug_and_monitoring']['debug'] = $this->isDebug;
         $data['update_branch'] = $updateBranch;
         $data['info']['instance_id'] = Uuid::v4()->toString();
-        $data['url'] = str_replace(['https://', 'http://'], '', SYSTEM_URL);
+        $data['url'] = str_replace(['https://', 'http://'], '', $systemUrl);
         $data['path_data'] = PATH_DATA;
         $data['db'] = [
             'driver' => 'pdo_mysql',
