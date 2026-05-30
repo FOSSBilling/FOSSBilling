@@ -1,5 +1,5 @@
 describe('client authentication', () => {
-  it('creates a new client account and logs in with it', () => {
+  it('creates a new client account and automatically logs in', () => {
     const suffix = `${Date.now()}-${Cypress._.random(100000, 999999)}`;
     const client = {
       first_name: 'Cypress',
@@ -22,8 +22,15 @@ describe('client authentication', () => {
     });
 
     cy.location('pathname', { timeout: 10000 }).should('eq', '/');
-    cy.contains('body', 'Login').should('be.visible');
-
-    cy.loginAsClient(client);
+    cy.getCookie('csrf_token').should('exist').then((cookie) => {
+      cy.request({
+        url: '/api/client/profile/get',
+        qs: { CSRFToken: cookie.value },
+      }).then((response) => {
+        expect(response.status).to.eq(200);
+        expect(response.body.error).to.eq(null);
+        expect(response.body.result.email).to.eq(client.email);
+      });
+    });
   });
 });
