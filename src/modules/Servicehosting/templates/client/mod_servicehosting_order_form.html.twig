@@ -174,21 +174,29 @@
         // Domain registration check
         const domainCheck = document.getElementById('domain-check');
         const registerSldInput = document.querySelector('input[name="domain[register_sld]"]');
+        const registerTldSelect = document.querySelector('select[name="domain[register_tld]"]');
         let domainChecked = false;
 
+        const resetRegisterCheck = () => {
+            if (!domainChecked) {
+                return;
+            }
+
+            domainChecked = false;
+            if (domainCheck) domainCheck.style.display = '';
+            const registerConfig = document.getElementById('register-config');
+            if (registerConfig) registerConfig.style.display = 'none';
+            const yearsSelect = document.getElementById('registration-years');
+            if (yearsSelect) yearsSelect.innerHTML = '';
+        };
+
         if (registerSldInput) {
-            registerSldInput.addEventListener('input', function() {
-                if (domainChecked) {
-                    domainChecked = false;
-                    if (domainCheck) domainCheck.style.display = '';
-                    const registerConfig = document.getElementById('register-config');
-                    if (registerConfig) registerConfig.style.display = 'none';
-                    const yearsSelect = document.getElementById('registration-years');
-                    if (yearsSelect) yearsSelect.innerHTML = '';
-                }
-            });
+            registerSldInput.addEventListener('input', resetRegisterCheck);
         }
 
+        if (registerTldSelect) {
+            registerTldSelect.addEventListener('change', resetRegisterCheck);
+        }
         if (domainCheck) {
             domainCheck.addEventListener('click', function(event) {
                 event.preventDefault();
