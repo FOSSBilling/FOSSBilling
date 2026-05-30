@@ -572,7 +572,7 @@ class Service implements InjectionAwareInterface
             $result['username'] = $model->username;
             $result['password'] = $model->password;
             $result['accesshash'] = $model->accesshash;
-            $result['port'] = FOSSBilling\Tools::normalizePort($model->port);
+            $result['port'] = Tools::normalizePort($model->port);
             $result['passwordLength'] = $model->passwordLength;
             $result['created_at'] = $model->created_at;
             $result['updated_at'] = $model->updated_at;
@@ -774,7 +774,7 @@ class Service implements InjectionAwareInterface
         $model->username = $data['username'] ?? null;
         $model->password = $data['password'] ?? null;
         $model->accesshash = $data['accesshash'] ?? null;
-        $model->port = FOSSBilling\Tools::normalizePort($data['port'] ?? null);
+        $model->port = Tools::normalizePort($data['port'] ?? null);
         $model->config = isset($data['config']) ? json_encode($data['config']) : null;
         $model->passwordLength = is_numeric($data['passwordLength'] ?? '') ? intval($data['passwordLength']) : null;
         $model->secure = $data['secure'] ?? 1;
@@ -816,7 +816,7 @@ class Service implements InjectionAwareInterface
         $model->ns3 = $data['ns3'] ?? $model->ns3;
         $model->ns4 = $data['ns4'] ?? $model->ns4;
         $model->manager = $data['manager'] ?? $model->manager;
-        $port = FOSSBilling\Tools::normalizePort($data['port'] ?? null);
+        $port = Tools::normalizePort($data['port'] ?? null);
         $model->port = $port ?? $model->port;
         $model->config = isset($data['config']) ? json_encode($data['config']) : $model->config;
         $model->secure = $data['secure'] ?? $model->secure;
@@ -845,7 +845,7 @@ class Service implements InjectionAwareInterface
         $config = [];
         $config['ip'] = $model->ip;
         $config['host'] = $model->hostname;
-        $config['port'] = FOSSBilling\Tools::normalizePort($model->port);
+        $config['port'] = Tools::normalizePort($model->port);
         $config['config'] = [];
         $config['config'] = json_decode($model->config ?? '', true) ?? [];
         $config['secure'] = $model->secure;
