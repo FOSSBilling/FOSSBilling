@@ -41,15 +41,30 @@ final class RequestFactory
 
     public static function getPreConfigProxyConfig(array $server): array
     {
+        // Forwarded headers are client-controlled until trusted proxies are explicitly configured.
+        return [];
+    }
+
+    public static function getPreConfigProxyCandidate(array $server): array
+    {
         $remoteAddress = trim((string) ($server['REMOTE_ADDR'] ?? ''));
-        if ($remoteAddress === '' || !self::hasForwardedHeaders($server) || !self::isLocalNetworkAddress($remoteAddress)) {
+        if ($remoteAddress === '' || !self::hasForwardedHeaders($server)) {
             return [];
         }
 
+        $headers = self::getForwardedHeaderValues($server);
+        $forwardedHeader = trim((string) ($server['HTTP_FORWARDED'] ?? ''));
+        $headerMode = $forwardedHeader !== '' ? 'forwarded' : 'x_forwarded';
+        $suggestedUrl = self::getForwardedUrlSuggestion($server, $headerMode);
+
         return [
-            'enabled' => true,
+            'detected' => true,
+            'remote_addr' => $remoteAddress,
+            'remote_addr_is_private' => self::isLocalNetworkAddress($remoteAddress),
             'proxies' => [$remoteAddress],
-            'headers' => isset($server['HTTP_FORWARDED']) ? 'forwarded' : 'x_forwarded',
+            'headers' => $headerMode,
+            'header_values' => $headers,
+            'suggested_url' => $suggestedUrl,
         ];
     }
 
@@ -135,12 +150,76 @@ final class RequestFactory
 
     private static function hasForwardedHeaders(array $server): bool
     {
-        return isset($server['HTTP_FORWARDED'])
-            || isset($server['HTTP_X_FORWARDED_FOR'])
-            || isset($server['HTTP_X_FORWARDED_HOST'])
-            || isset($server['HTTP_X_FORWARDED_PROTO'])
-            || isset($server['HTTP_X_FORWARDED_PORT'])
-            || isset($server['HTTP_X_FORWARDED_PREFIX']);
+        return self::getForwardedHeaderValues($server) !== [];
+    }
+
+    private static function getForwardedHeaderValues(array $server): array
+    {
+        $headers = [
+            'Forwarded' => $server['HTTP_FORWARDED'] ?? null,
+            'X-Forwarded-For' => $server['HTTP_X_FORWARDED_FOR'] ?? null,
+            'X-Forwarded-Host' => $server['HTTP_X_FORWARDED_HOST'] ?? null,
+            'X-Forwarded-Proto' => $server['HTTP_X_FORWARDED_PROTO'] ?? null,
+            'X-Forwarded-Port' => $server['HTTP_X_FORWARDED_PORT'] ?? null,
+            'X-Forwarded-Prefix' => $server['HTTP_X_FORWARDED_PREFIX'] ?? null,
+        ];
+
+        return array_filter($headers, static fn (mixed $value): bool => $value !== null && trim((string) $value) !== '');
+    }
+
+    private static function getForwardedUrlSuggestion(array $server, string $headerMode): ?string
+    {
+        $scheme = null;
+        $host = null;
+
+        if ($headerMode === 'forwarded') {
+            $forwardedValues = self::parseForwardedHeader((string) ($server['HTTP_FORWARDED'] ?? ''));
+            $scheme = $forwardedValues['proto'] ?? null;
+            $host = $forwardedValues['host'] ?? null;
+        } else {
+            $scheme = self::getFirstHeaderValue($server['HTTP_X_FORWARDED_PROTO'] ?? null);
+            $host = self::getFirstHeaderValue($server['HTTP_X_FORWARDED_HOST'] ?? null);
+            $port = self::getFirstHeaderValue($server['HTTP_X_FORWARDED_PORT'] ?? null);
+            if ($host !== null && $port !== null && !str_contains($host, ':') && !in_array($port, ['80', '443'], true)) {
+                $host .= ':' . $port;
+            }
+        }
+
+        if ($scheme === null || $host === null || !in_array(strtolower($scheme), ['http', 'https'], true)) {
+            return null;
+        }
+
+        $prefix = self::getFirstHeaderValue($server['HTTP_X_FORWARDED_PREFIX'] ?? null) ?? '';
+        $path = trim($prefix, '/');
+
+        return strtolower($scheme) . '://' . trim($host, " \t\n\r\0\x0B\"'") . ($path === '' ? '/' : '/' . $path . '/');
+    }
+
+    private static function parseForwardedHeader(string $header): array
+    {
+        $firstForwardedValue = explode(',', $header)[0] ?? '';
+        $values = [];
+
+        foreach (explode(';', $firstForwardedValue) as $part) {
+            [$key, $value] = array_pad(explode('=', $part, 2), 2, null);
+            $key = strtolower(trim((string) $key));
+            $value = trim((string) $value, " \t\n\r\0\x0B\"");
+            if ($key !== '' && $value !== '') {
+                $values[$key] = $value;
+            }
+        }
+
+        return $values;
+    }
+
+    private static function getFirstHeaderValue(mixed $value): ?string
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return null;
+        }
+
+        return trim(explode(',', $value)[0]);
     }
 
     private static function isLocalNetworkAddress(string $address): bool

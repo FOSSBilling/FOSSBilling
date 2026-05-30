@@ -27,7 +27,7 @@ final class RequestFactoryTest extends PHPUnit\Framework\TestCase
         $this->assertFalse($request->isSecure());
     }
 
-    public function testPreConfigProxyConfigTrustsForwardedHeadersFromLocalNetworkProxy(): void
+    public function testPreConfigProxyConfigDoesNotInferTrustFromLocalNetworkForwardedHeaders(): void
     {
         $proxyConfig = RequestFactory::getPreConfigProxyConfig([
             'REMOTE_ADDR' => '172.18.0.5',
@@ -42,13 +42,43 @@ final class RequestFactoryTest extends PHPUnit\Framework\TestCase
 
         RequestFactory::configure($request, $proxyConfig);
 
+        $this->assertSame([], $proxyConfig);
+        $this->assertFalse($request->isSecure());
+        $this->assertSame('internal.example', $request->getHost());
+    }
+
+    public function testPreConfigProxyCandidateReportsForwardedHeaderDetailsWithoutTrustingThem(): void
+    {
+        $proxyCandidate = RequestFactory::getPreConfigProxyCandidate([
+            'REMOTE_ADDR' => '172.18.0.5',
+            'HTTP_X_FORWARDED_FOR' => '203.0.113.10',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+            'HTTP_X_FORWARDED_HOST' => 'billing.example.com',
+        ]);
+
         $this->assertSame([
-            'enabled' => true,
+            'detected' => true,
+            'remote_addr' => '172.18.0.5',
+            'remote_addr_is_private' => true,
             'proxies' => ['172.18.0.5'],
             'headers' => 'x_forwarded',
-        ], $proxyConfig);
-        $this->assertTrue($request->isSecure());
-        $this->assertSame('billing.example.com', $request->getHost());
+            'header_values' => [
+                'X-Forwarded-For' => '203.0.113.10',
+                'X-Forwarded-Host' => 'billing.example.com',
+                'X-Forwarded-Proto' => 'https',
+            ],
+            'suggested_url' => 'https://billing.example.com/',
+        ], $proxyCandidate);
+    }
+
+    public function testPreConfigProxyCandidateIgnoresEmptyForwardedHeaders(): void
+    {
+        $proxyCandidate = RequestFactory::getPreConfigProxyCandidate([
+            'REMOTE_ADDR' => '172.18.0.5',
+            'HTTP_FORWARDED' => '',
+        ]);
+
+        $this->assertSame([], $proxyCandidate);
     }
 
     public function testPreConfigProxyConfigDoesNotTrustForwardedHeadersFromPublicAddress(): void
@@ -120,6 +150,50 @@ final class RequestFactoryTest extends PHPUnit\Framework\TestCase
 
         $this->assertTrue($request->isSecure());
         $this->assertSame('billing.example.com', $request->getHost());
+    }
+
+    public function testConfigureSupportsAwsElbHeaderMode(): void
+    {
+        $request = Request::create('http://internal.example/admin', 'GET', [], [], [], [
+            'REMOTE_ADDR' => '198.51.100.10',
+            'HTTP_X_FORWARDED_FOR' => '203.0.113.9',
+            'HTTP_X_FORWARDED_HOST' => 'billing.example.com',
+            'HTTP_X_FORWARDED_PORT' => '443',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+
+        RequestFactory::configure($request, [
+            'enabled' => true,
+            'proxies' => ['198.51.100.10'],
+            'headers' => 'aws_elb',
+        ]);
+
+        $this->assertSame('203.0.113.9', $request->getClientIp());
+        $this->assertTrue($request->isSecure());
+        $this->assertSame('internal.example', $request->getHost());
+    }
+
+    public function testConfigureSupportsTraefikHeaderMode(): void
+    {
+        $request = Request::create('http://internal.example/admin', 'GET', [], [], [], [
+            'REMOTE_ADDR' => '198.51.100.10',
+            'HTTP_X_FORWARDED_FOR' => '203.0.113.9',
+            'HTTP_X_FORWARDED_HOST' => 'billing.example.com',
+            'HTTP_X_FORWARDED_PORT' => '443',
+            'HTTP_X_FORWARDED_PREFIX' => '/billing',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+
+        RequestFactory::configure($request, [
+            'enabled' => true,
+            'proxies' => ['198.51.100.10'],
+            'headers' => 'traefik',
+        ]);
+
+        $this->assertSame('203.0.113.9', $request->getClientIp());
+        $this->assertTrue($request->isSecure());
+        $this->assertSame('billing.example.com', $request->getHost());
+        $this->assertSame('/billing', $request->getBaseUrl());
     }
 
     public function testConfigureRejectsUnknownTrustedProxyHeaderMode(): void
