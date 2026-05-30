@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use PHPUnit\Framework\Attributes\Group;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
 
 #[Group('Core')]
 final class FOSSBilling_ConfigTest extends PHPUnit\Framework\TestCase
@@ -64,6 +66,29 @@ final class FOSSBilling_ConfigTest extends PHPUnit\Framework\TestCase
         } finally {
             @unlink($filePath);
             unset($GLOBALS['config_injection_test']);
+        }
+    }
+
+    public function testSetConfigWithoutCacheClearRefreshesConfigReadsAndPreservesCacheFiles(): void
+    {
+        $filesystem = new Filesystem();
+        $cacheFile = Path::join(PATH_CACHE, 'config-cache-preservation-test.txt');
+        $filesystem->dumpFile($cacheFile, 'preserve me');
+
+        try {
+            $config = FOSSBilling\Config::getConfig();
+            $config['maintenance_mode'] = [
+                'enabled' => true,
+                'allowed_urls' => [],
+                'allowed_ips' => [],
+            ];
+
+            FOSSBilling\Config::setConfig($config, false);
+
+            $this->assertFileExists($cacheFile);
+            $this->assertTrue(FOSSBilling\Config::getProperty('maintenance_mode.enabled', false));
+        } finally {
+            $filesystem->remove($cacheFile);
         }
     }
 
