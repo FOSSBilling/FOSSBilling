@@ -109,8 +109,10 @@ jobs:
 
           gh api "repos/${REPOSITORY}/releases/generate-notes" \
             -f tag_name="${RELEASE_VERSION}" \
-            -f target_commitish="${GITHUB_SHA}" \
+            -f target_commitish="$(git rev-parse HEAD)" \
             -f previous_tag_name="${previous_tag}" \
+            --jq '.body' \
+            > release-notes-context/github-generated-notes.md
             --jq '.body' \
             > release-notes-context/github-generated-notes.md
 
