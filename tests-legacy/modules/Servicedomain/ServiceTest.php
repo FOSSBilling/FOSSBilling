@@ -84,8 +84,7 @@ final class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $result = $this->service->validateOrderData($data);
-        $this->assertNull($result);
+        $this->service->validateOrderData($data);
     }
 
     public static function validateOrderDateTransferExceptionsProvider(): array
@@ -157,8 +156,7 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->setDi($di);
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $result = $serviceMock->validateOrderData($data);
-        $this->assertNull($result);
+        $serviceMock->validateOrderData($data);
     }
 
     public static function validateOrderDateRegisterExceptionsProvider(): array
@@ -536,9 +534,7 @@ final class ServiceTest extends \BBTestCase
         $order->client_id = 1;
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $result = $this->service->action_renew($order);
-
-        $this->assertTrue($result);
+        $this->service->action_renew($order);
     }
 
     public function testActionSuspend(): void
@@ -612,9 +608,7 @@ final class ServiceTest extends \BBTestCase
         $order->client_id = 1;
 
         $this->expectException(\FOSSBilling\Exception::class);
-        $result = $this->service->action_cancel($order);
-
-        $this->assertTrue($result);
+        $this->service->action_cancel($order);
     }
 
     public function testActionUncancel(): void
@@ -1242,7 +1236,7 @@ final class ServiceTest extends \BBTestCase
         $di = $this->getDi();
         $di['mod_service'] = $di->protect(fn ($name): \PHPUnit\Framework\MockObject\MockObject => $systemServiceMock);
         $di['db'] = $dbMock;
-        $di['logger'] = $di['logger'] = $this->createMock('Box_Log');
+        $di['logger'] = $this->createMock('Box_Log');
         $serviceMock->setDi($di);
 
         $result = $serviceMock->batchSyncExpirationDates();
