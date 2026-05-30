@@ -1456,7 +1456,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function migrateDownloadableServiceStorageKeys(): void
     {
-        $services = $this->fetchAll('SELECT sd.id, sd.filename, sd.stored_filename, co.id AS order_id, co.config AS order_config FROM service_downloadable sd LEFT JOIN client_order co ON sd.id = co.service_id WHERE sd.filename IS NOT NULL AND sd.filename != ""');
+        $services = $this->fetchAll('SELECT sd.id, sd.filename, sd.stored_filename, co.id AS order_id, co.config AS order_config FROM service_downloadable sd LEFT JOIN client_order co ON sd.id = co.service_id AND co.service_type = "downloadable" WHERE sd.filename IS NOT NULL AND sd.filename != ""');
 
         foreach ($services as $service) {
             if (!empty($service['stored_filename'])) {
