@@ -224,7 +224,7 @@ function init(): void
     // Initialize required Symfony components.
     global $filesystem, $request;
     $filesystem = new Filesystem();
-    $request = RequestFactory::createFromGlobals();
+    $request = RequestFactory::createFromGlobals(RequestFactory::getPreConfigProxyConfig($_SERVER));
     RequestFactory::normalizeRoutePath($request);
 
     // Check config exists and is valid, redirecting to installer or throwing an exception if not.
