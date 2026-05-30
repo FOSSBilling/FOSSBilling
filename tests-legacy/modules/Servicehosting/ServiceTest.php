@@ -17,7 +17,7 @@ final class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
-    public static function validateOrdertDataProvider(): array
+    public static function validateOrderDataProvider(): array
     {
         return [
             ['server_id', 'Hosting product is not configured completely. Configure server for hosting product.', 701],
@@ -27,7 +27,7 @@ final class ServiceTest extends \BBTestCase
         ];
     }
 
-    #[DataProvider('validateOrdertDataProvider')]
+    #[DataProvider('validateOrderDataProvider')]
     public function testValidateOrderData(string $field, string $exceptionMessage, int $excCode): void
     {
         $data = [
@@ -107,6 +107,32 @@ final class ServiceTest extends \BBTestCase
             ],
         ]);
 
+        $this->assertSame('customer', $result['sld']);
+        $this->assertSame('.example.com', $result['tld']);
+    }
+
+    public function testPrependOrderConfigUsesConfiguredFreeSubdomainBaseDomain(): void
+    {
+        $product = new \Model_Product();
+        $product->loadBean(new \DummyBean());
+        $product->config = json_encode([
+            'server_id' => 1,
+            'hosting_plan_id' => 2,
+            'allow_subdomain' => true,
+            'subdomain_base_domain' => 'example.com',
+        ]);
+
+        $this->service->setDi($this->getDi());
+
+        $result = $this->service->prependOrderConfig($product, [
+            'subdomain_base_domain' => 'attacker.example',
+            'domain' => [
+                'action' => 'subdomain',
+                'subdomain_sld' => 'customer',
+            ],
+        ]);
+
+        $this->assertSame('example.com', $result['subdomain_base_domain']);
         $this->assertSame('customer', $result['sld']);
         $this->assertSame('.example.com', $result['tld']);
     }
@@ -1119,7 +1145,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetHpSearchQuery(): void
     {
-        $result = $this->service->getServersSearchQuery([]);
+        $result = $this->service->getHpSearchQuery([]);
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
         $this->assertSame([], $result[1]);
