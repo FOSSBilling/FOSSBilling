@@ -57,61 +57,61 @@
                 <div class="col-12">
                     <label class="form-label">{{ 'Validate IP'|trans }}</label>
                     <div class="d-flex flex-wrap gap-3 pt-1 mb-2">
-                        <label class="form-check">
+                        <label class="form-check" for="validateIPYes">
                             <input type="radio" class="form-check-input" name="validate_ip" id="validateIPYes" value="1"{% if service.validate_ip %} checked{% endif %}>
                             <span class="form-check-label">{{ 'Yes'|trans }}</span>
                         </label>
-                        <label class="form-check">
+                        <label class="form-check" for="validateIPNo">
                             <input type="radio" class="form-check-input" name="validate_ip" id="validateIPNo" value="0"{% if not service.validate_ip %} checked{% endif %}>
                             <span class="form-check-label">{{ 'No'|trans }}</span>
                         </label>
                     </div>
-                    <textarea class="form-control" name="ips" rows="3" placeholder="{{ 'One IP address per line'|trans }}">{% for value in service.ips %}{{ value }}{{ constant('PHP_EOL') }}{% endfor %}</textarea>
+                    <textarea class="form-control" name="ips" rows="3" placeholder="{{ 'One IP address per line'|trans }}">{% for value in service.ips %}{{ value }}{{ "\n" }}{% endfor %}</textarea>
                 </div>
 
                 <div class="col-12">
                     <label class="form-label">{{ 'Validate Host'|trans }}</label>
                     <div class="d-flex flex-wrap gap-3 pt-1 mb-2">
-                        <label class="form-check">
+                        <label class="form-check" for="validateHostYes">
                             <input type="radio" class="form-check-input" name="validate_host" id="validateHostYes" value="1"{% if service.validate_host %} checked{% endif %}>
                             <span class="form-check-label">{{ 'Yes'|trans }}</span>
                         </label>
-                        <label class="form-check">
+                        <label class="form-check" for="validateHostNo">
                             <input type="radio" class="form-check-input" name="validate_host" id="validateHostNo" value="0"{% if not service.validate_host %} checked{% endif %}>
                             <span class="form-check-label">{{ 'No'|trans }}</span>
                         </label>
                     </div>
-                    <textarea class="form-control" name="hosts" rows="3" placeholder="{{ 'One host per line'|trans }}">{% for value in service.hosts %}{{ value }}{{ constant('PHP_EOL') }}{% endfor %}</textarea>
+                    <textarea class="form-control" name="hosts" rows="3" placeholder="{{ 'One host per line'|trans }}">{% for value in service.hosts %}{{ value }}{{ "\n" }}{% endfor %}</textarea>
                 </div>
 
                 <div class="col-12">
                     <label class="form-label">{{ 'Validate Path'|trans }}</label>
                     <div class="d-flex flex-wrap gap-3 pt-1 mb-2">
-                        <label class="form-check">
+                        <label class="form-check" for="validatePathYes">
                             <input type="radio" class="form-check-input" name="validate_path" id="validatePathYes" value="1"{% if service.validate_path %} checked{% endif %}>
                             <span class="form-check-label">{{ 'Yes'|trans }}</span>
                         </label>
-                        <label class="form-check">
+                        <label class="form-check" for="validatePathNo">
                             <input type="radio" class="form-check-input" name="validate_path" id="validatePathNo" value="0"{% if not service.validate_path %} checked{% endif %}>
                             <span class="form-check-label">{{ 'No'|trans }}</span>
                         </label>
                     </div>
-                    <textarea class="form-control" name="paths" rows="3" placeholder="{{ 'One path per line'|trans }}">{% for value in service.paths %}{{ value }}{{ constant('PHP_EOL') }}{% endfor %}</textarea>
+                    <textarea class="form-control" name="paths" rows="3" placeholder="{{ 'One path per line'|trans }}">{% for value in service.paths %}{{ value }}{{ "\n" }}{% endfor %}</textarea>
                 </div>
 
                 <div class="col-12">
                     <label class="form-label">{{ 'Validate Version'|trans }}</label>
                     <div class="d-flex flex-wrap gap-3 pt-1 mb-2">
-                        <label class="form-check">
+                        <label class="form-check" for="validateVerYes">
                             <input type="radio" class="form-check-input" name="validate_version" id="validateVerYes" value="1"{% if service.validate_version %} checked{% endif %}>
                             <span class="form-check-label">{{ 'Yes'|trans }}</span>
                         </label>
-                        <label class="form-check">
+                        <label class="form-check" for="validateVerNo">
                             <input type="radio" class="form-check-input" name="validate_version" id="validateVerNo" value="0"{% if not service.validate_version %} checked{% endif %}>
                             <span class="form-check-label">{{ 'No'|trans }}</span>
                         </label>
                     </div>
-                    <textarea class="form-control" name="versions" rows="3" placeholder="{{ 'One version per line'|trans }}">{% for value in service.versions %}{{ value }}{{ constant('PHP_EOL') }}{% endfor %}</textarea>
+                    <textarea class="form-control" name="versions" rows="3" placeholder="{{ 'One version per line'|trans }}">{% for value in service.versions %}{{ value }}{{ "\n" }}{% endfor %}</textarea>
                 </div>
             </div>
         </div>

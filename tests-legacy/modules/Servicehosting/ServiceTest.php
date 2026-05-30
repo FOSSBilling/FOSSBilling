@@ -17,7 +17,7 @@ final class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
-    public static function validateOrdertDataProvider(): array
+    public static function validateOrderDataProvider(): array
     {
         return [
             ['server_id', 'Hosting product is not configured completely. Configure server for hosting product.', 701],
@@ -27,7 +27,7 @@ final class ServiceTest extends \BBTestCase
         ];
     }
 
-    #[DataProvider('validateOrdertDataProvider')]
+    #[DataProvider('validateOrderDataProvider')]
     public function testValidateOrderData(string $field, string $exceptionMessage, int $excCode): void
     {
         $data = [
@@ -1119,7 +1119,7 @@ final class ServiceTest extends \BBTestCase
 
     public function testGetHpSearchQuery(): void
     {
-        $result = $this->service->getServersSearchQuery([]);
+        $result = $this->service->getHpSearchQuery([]);
         $this->assertIsString($result[0]);
         $this->assertIsArray($result[1]);
         $this->assertSame([], $result[1]);
