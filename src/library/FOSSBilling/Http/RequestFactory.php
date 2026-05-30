@@ -53,7 +53,8 @@ final class RequestFactory
         }
 
         $headers = self::getForwardedHeaderValues($server);
-        $headerMode = isset($server['HTTP_FORWARDED']) ? 'forwarded' : 'x_forwarded';
+        $forwardedHeader = trim((string) ($server['HTTP_FORWARDED'] ?? ''));
+        $headerMode = $forwardedHeader !== '' ? 'forwarded' : 'x_forwarded';
         $suggestedUrl = self::getForwardedUrlSuggestion($server, $headerMode);
 
         return [
