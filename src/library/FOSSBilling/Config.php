@@ -113,18 +113,15 @@ class Config
             throw new Exception('An error occurred when writing the updated configuration file.');
         }
 
-        if ($clearCache) {
-            // If opcache is installed and enabled, invalidate the cache for the config file
-            if (function_exists('opcache_invalidate') && function_exists('opcache_compile_file')) {
-                try {
-                    $filesystem->touch(PATH_CACHE);
-                } catch (\Exception) {
-                    // Silently ignore if touch fails
-                }
-                @opcache_invalidate(PATH_CONFIG, true);
-                @opcache_compile_file(PATH_CONFIG);
-            }
+        // If opcache is installed and enabled, always invalidate the cache for the config file.
+        // This must happen even when the FOSSBilling cache directory is preserved, otherwise
+        // runtimes with delayed or disabled timestamp validation can keep reading stale config values.
+        if (function_exists('opcache_invalidate') && function_exists('opcache_compile_file')) {
+            @opcache_invalidate(PATH_CONFIG, true);
+            @opcache_compile_file(PATH_CONFIG);
+        }
 
+        if ($clearCache) {
             try {
                 $filesystem->remove(PATH_CACHE);
                 $filesystem->mkdir(PATH_CACHE, 0o755);
