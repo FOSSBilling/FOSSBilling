@@ -650,7 +650,7 @@ class Service implements InjectionAwareInterface
 
         if ($data['domain']['action'] == 'subdomain') {
             $required = [
-                'subdomain_sld' => 'Hosting product must have defined subdomain_sld parameter',
+                'subdomain_sld' => 'Subdomain name is required.',
                 'subdomain_base_domain' => 'Hosting product must have a subdomain base domain configured',
             ];
             $this->di['validator']->checkRequiredParamsForArray($required, $data['domain'] + $data);
@@ -662,7 +662,7 @@ class Service implements InjectionAwareInterface
                 throw new InformationException('Subdomain name is invalid.');
             }
 
-            if (!preg_match('/^(?!-)(?:[a-z0-9-]{1,63}\.)+[a-z0-9-]{2,63}$/i', $baseDomain)) {
+            if (!preg_match('/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])$/i', $baseDomain)) {
                 throw new InformationException('Subdomain base domain is invalid.');
             }
 
