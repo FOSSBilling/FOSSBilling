@@ -150,12 +150,7 @@ final class RequestFactory
 
     private static function hasForwardedHeaders(array $server): bool
     {
-        return isset($server['HTTP_FORWARDED'])
-            || isset($server['HTTP_X_FORWARDED_FOR'])
-            || isset($server['HTTP_X_FORWARDED_HOST'])
-            || isset($server['HTTP_X_FORWARDED_PROTO'])
-            || isset($server['HTTP_X_FORWARDED_PORT'])
-            || isset($server['HTTP_X_FORWARDED_PREFIX']);
+        return self::getForwardedHeaderValues($server) !== [];
     }
 
     private static function getForwardedHeaderValues(array $server): array

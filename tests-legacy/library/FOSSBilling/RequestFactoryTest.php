@@ -71,6 +71,16 @@ final class RequestFactoryTest extends PHPUnit\Framework\TestCase
         ], $proxyCandidate);
     }
 
+    public function testPreConfigProxyCandidateIgnoresEmptyForwardedHeaders(): void
+    {
+        $proxyCandidate = RequestFactory::getPreConfigProxyCandidate([
+            'REMOTE_ADDR' => '172.18.0.5',
+            'HTTP_FORWARDED' => '',
+        ]);
+
+        $this->assertSame([], $proxyCandidate);
+    }
+
     public function testPreConfigProxyConfigDoesNotTrustForwardedHeadersFromPublicAddress(): void
     {
         $proxyConfig = RequestFactory::getPreConfigProxyConfig([
