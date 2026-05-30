@@ -23,6 +23,7 @@
 {% block content %}
     {% set params = admin.extension_config_get({ 'ext': 'mod_client' }) %}
     {% set required_fields = params.required|default([]) %}
+    {% set auto_login_after_signup = params.auto_login_after_signup is not defined or params.auto_login_after_signup == true %}
     <div class="card">
         <div class="card-header">
             <div>
@@ -65,6 +66,12 @@
                                                     <span class="form-check-label">{{ 'Require Email Confirmation'|trans }}</span>
                                                 </label>
                                                 <small class="form-hint">{{ 'After enabling this feature, existing users who have not yet confirmed their email addresses will also need to do so.'|trans }}</small>
+                                                <input type="hidden" name="auto_login_after_signup" value="0">
+                                                <label class="form-check form-switch form-switch-2">
+                                                    <input class="form-check-input" name="auto_login_after_signup" value="1" type="checkbox" {% if auto_login_after_signup %}checked="checked"{% endif %}>
+                                                    <span class="form-check-label">{{ 'Auto Login After Signup'|trans }}</span>
+                                                </label>
+                                                <small class="form-hint">{{ 'Automatically log clients in after successful registration.'|trans }}</small>
                                                 <label class="form-check form-switch form-switch-2">
                                                     <input class="form-check-input" name="disable_change_email" type="checkbox" {% if params.disable_change_email %}checked="checked"{% endif %}>
                                                     <span class="form-check-label">{{ 'Disable Email Change'|trans }}</span>
