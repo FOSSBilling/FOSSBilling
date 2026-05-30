@@ -128,7 +128,7 @@ jobs:
           cache: 'npm'
       - name: 'Install Copilot CLI'
         if: ${{ inputs.release_notes == 'copilot' }}
-        run: npm install -g @github/copilot
+        run: npm install -g @github/copilot@1.0.56
 
       - name: 'Generate Curated Release Notes'
         if: ${{ inputs.release_notes == 'copilot' }}
