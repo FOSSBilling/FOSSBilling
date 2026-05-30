@@ -218,17 +218,25 @@
         // Domain transfer check
         const transferCheck = document.getElementById('transfer-check');
         const transferSldInput = document.querySelector('input[name="domain[transfer_sld]"]');
+        const transferTldSelect = document.querySelector('select[name="domain[transfer_tld]"]');
         let transferChecked = false;
 
+        const resetTransferCheck = () => {
+             if (!transferChecked) {
+                 return;
+             }
+             transferChecked = false;
+             if (transferCheck) transferCheck.style.display = '';
+             const transferConfig = document.getElementById('transfer-config');
+             if (transferConfig) transferConfig.style.display = 'none';
+         };
+
         if (transferSldInput) {
-            transferSldInput.addEventListener('input', function() {
-                if (transferChecked) {
-                    transferChecked = false;
-                    if (transferCheck) transferCheck.style.display = '';
-                    const transferConfig = document.getElementById('transfer-config');
-                    if (transferConfig) transferConfig.style.display = 'none';
-                }
-            });
+           transferSldInput.addEventListener('input', resetTransferCheck);
+        }
+
+        if (transferTldSelect) {
+            transferTldSelect.addEventListener('change', resetTransferCheck);
         }
 
         if (transferCheck) {
