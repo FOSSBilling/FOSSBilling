@@ -233,7 +233,7 @@ function init(): void
     $installerExists = $filesystem->exists(Path::join('install', 'install.php'));
 
     if (!$configExists && $installerExists) {
-        $response = new RedirectResponse($request->getSchemeAndHttpHost() . $request->getBasePath() . '/install/install.php', 307);
+        $response = new RedirectResponse($request->getBasePath() . '/install/install.php', 307);
         $response->send();
         exit;
     } elseif (!$configIsValid) {
@@ -241,7 +241,7 @@ function init(): void
     }
 
     if (Environment::isDevelopment() && Config::getProperty('debug_and_monitoring.debug', false) && $installerExists && !hasDatabaseTables()) {
-        $response = new RedirectResponse($request->getSchemeAndHttpHost() . $request->getBasePath() . '/install/install.php', 307);
+        $response = new RedirectResponse($request->getBasePath() . '/install/install.php', 307);
         $response->send();
         exit;
     }
