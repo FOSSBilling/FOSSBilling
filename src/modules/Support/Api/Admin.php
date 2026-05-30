@@ -327,6 +327,8 @@ class Admin extends \Api_Abstract
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
 
+        $data['content'] = \FOSSBilling\Tools::sanitizeContent($data['content'], true);
+
         $ticket = $this->di['db']->getExistingModelById('SupportPTicket', $data['id'], 'Ticket not found');
 
         return $this->getService()->publicTicketReply($ticket, $this->getIdentity(), $data['content']);

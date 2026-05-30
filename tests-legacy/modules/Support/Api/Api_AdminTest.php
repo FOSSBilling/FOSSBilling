@@ -618,6 +618,11 @@ final class Api_AdminTest extends \BBTestCase
         $serviceMock = $this->getMockBuilder(\Box\Mod\Support\Service::class)
             ->onlyMethods(['publicTicketReply'])->getMock();
         $serviceMock->expects($this->atLeastOnce())->method('publicTicketReply')
+            ->with(
+                $this->isInstanceOf(\Model_SupportPTicket::class),
+                $this->isInstanceOf(\Model_Admin::class),
+                \FOSSBilling\Tools::sanitizeContent('<script>alert(1)</script><p>Content</p>', true)
+            )
             ->willReturn(1);
 
         $di = $this->getDi();
@@ -629,7 +634,7 @@ final class Api_AdminTest extends \BBTestCase
 
         $data = [
             'id' => 1,
-            'content' => 'Content',
+            'content' => '<script>alert(1)</script><p>Content</p>',
         ];
         $result = $this->adminApi->public_ticket_reply($data);
 
