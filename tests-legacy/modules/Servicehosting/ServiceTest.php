@@ -87,6 +87,73 @@ final class ServiceTest extends \BBTestCase
         $this->service->action_create($orderModel);
     }
 
+    public function testPrependOrderConfigSupportsFreeSubdomain(): void
+    {
+        $product = new \Model_Product();
+        $product->loadBean(new \DummyBean());
+        $product->config = json_encode([
+            'server_id' => 1,
+            'hosting_plan_id' => 2,
+            'allow_subdomain' => true,
+            'subdomain_base_domain' => 'example.com',
+        ]);
+
+        $this->service->setDi($this->getDi());
+
+        $result = $this->service->prependOrderConfig($product, [
+            'domain' => [
+                'action' => 'subdomain',
+                'subdomain_sld' => 'customer',
+            ],
+        ]);
+
+        $this->assertSame('customer', $result['sld']);
+        $this->assertSame('.example.com', $result['tld']);
+    }
+
+    public function testPrependOrderConfigRequiresFreeSubdomainName(): void
+    {
+        $product = new \Model_Product();
+        $product->loadBean(new \DummyBean());
+        $product->config = json_encode([
+            'allow_subdomain' => true,
+            'subdomain_base_domain' => 'example.com',
+        ]);
+
+        $this->service->setDi($this->getDi());
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('Subdomain name is required.');
+
+        $this->service->prependOrderConfig($product, [
+            'domain' => [
+                'action' => 'subdomain',
+            ],
+        ]);
+    }
+
+    public function testPrependOrderConfigRejectsInvalidFreeSubdomainBaseDomain(): void
+    {
+        $product = new \Model_Product();
+        $product->loadBean(new \DummyBean());
+        $product->config = json_encode([
+            'allow_subdomain' => true,
+            'subdomain_base_domain' => 'foo-.example.com',
+        ]);
+
+        $this->service->setDi($this->getDi());
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('Subdomain base domain is invalid.');
+
+        $this->service->prependOrderConfig($product, [
+            'domain' => [
+                'action' => 'subdomain',
+                'subdomain_sld' => 'customer',
+            ],
+        ]);
+    }
+
     //    public function testAction_activate()
     //    {
     //        $orderModel = new \Model_ClientOrder();

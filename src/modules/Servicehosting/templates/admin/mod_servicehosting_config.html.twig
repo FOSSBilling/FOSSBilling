@@ -40,7 +40,7 @@
                 <p class="text-secondary mb-0">{{ 'Select which domain options are available to customers when ordering this product.'|trans }}</p>
             </div>
             <div class="row g-3">
-                <div class="col-lg-4">
+                <div class="col-lg-3">
                     <label class="form-label">{{ 'Allow Domain Registration'|trans }}</label>
                     <div class="d-flex flex-wrap gap-3 pt-1">
                         <label class="form-check">
@@ -53,7 +53,7 @@
                         </label>
                     </div>
                 </div>
-                <div class="col-lg-4">
+                <div class="col-lg-3">
                     <label class="form-label">{{ 'Allow Domain Transfer'|trans }}</label>
                     <div class="d-flex flex-wrap gap-3 pt-1">
                         <label class="form-check">
@@ -66,7 +66,7 @@
                         </label>
                     </div>
                 </div>
-                <div class="col-lg-4">
+                <div class="col-lg-3">
                     <label class="form-label">{{ 'Allow Using Own Domain'|trans }}</label>
                     <div class="d-flex flex-wrap gap-3 pt-1">
                         <label class="form-check">
@@ -78,6 +78,24 @@
                             <span class="form-check-label">{{ 'No'|trans }}</span>
                         </label>
                     </div>
+                </div>
+                <div class="col-lg-3">
+                    <label class="form-label">{{ 'Offer Free Subdomains'|trans }}</label>
+                    <div class="d-flex flex-wrap gap-3 pt-1">
+                        <label class="form-check">
+                            <input class="form-check-input" id="radioAllowSubdomainYes" type="radio" name="config[allow_subdomain]" value="1"{% if product.config.allow_subdomain %} checked{% endif %}>
+                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                        </label>
+                        <label class="form-check">
+                            <input class="form-check-input" id="radioAllowSubdomainNo" type="radio" name="config[allow_subdomain]" value="0"{% if not product.config.allow_subdomain %} checked{% endif %}>
+                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="col-lg-6 subdomain-base-row{% if not product.config.allow_subdomain %} d-none{% endif %}">
+                    <label class="form-label">{{ 'Free Subdomain Base Domain'|trans }}</label>
+                    <input class="form-control" type="text" name="config[subdomain_base_domain]" value="{{ product.config.subdomain_base_domain }}" placeholder="example.com">
+                    <div class="form-hint">{{ 'Customers can use a free subdomain provided by you, such as username.example.com, without registering or transferring a domain.'|trans }}</div>
                 </div>
             </div>
 
@@ -258,10 +276,13 @@
     const freeTldsInputs = document.querySelectorAll('input[name="config[free_tlds][]"]');
     const domainOptionsWarning = document.getElementById('domain-options-warning');
     const hostingSettingsForm = document.getElementById('hosting-settings-form');
+    const subdomainBaseRow = document.querySelector('.subdomain-base-row');
+    const subdomainBaseInput = document.querySelector('input[name="config[subdomain_base_domain]"]');
     const domainOptionRadios = document.querySelectorAll(
         'input[name="config[allow_domain_register]"], ' +
         'input[name="config[allow_domain_transfer]"], ' +
-        'input[name="config[allow_domain_own]"]'
+        'input[name="config[allow_domain_own]"], ' +
+        'input[name="config[allow_subdomain]"]'
     );
 
     function syncFreeDomainFields(isFree) {
@@ -287,9 +308,12 @@
         const registerEnabled = document.querySelector('input[name="config[allow_domain_register]"][value="1"]').checked;
         const transferEnabled = document.querySelector('input[name="config[allow_domain_transfer]"][value="1"]').checked;
         const ownEnabled = document.querySelector('input[name="config[allow_domain_own]"][value="1"]').checked;
+        const subdomainEnabled = document.querySelector('input[name="config[allow_subdomain]"][value="1"]').checked;
 
-        const allDisabled = !registerEnabled && !transferEnabled && !ownEnabled;
+        const allDisabled = !registerEnabled && !transferEnabled && !ownEnabled && !subdomainEnabled;
         domainOptionsWarning.classList.toggle('d-none', !allDisabled);
+        subdomainBaseRow.classList.toggle('d-none', !subdomainEnabled);
+        subdomainBaseInput.required = subdomainEnabled;
 
         return !allDisabled;
     }

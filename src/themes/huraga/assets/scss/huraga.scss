@@ -269,6 +269,10 @@ body {
     font-weight: 600;
 }
 
+.nav-pills .nav-link.active {
+    color: var(--bs-nav-pills-link-active-color) !important;
+}
+
 .offcanvas-item.active {
     background: rgba(var(--bs-primary-rgb), 0.08);
 }

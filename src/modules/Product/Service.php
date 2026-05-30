@@ -159,6 +159,8 @@ class Service implements InjectionAwareInterface
             'allow_domain_register',
             'allow_domain_transfer',
             'allow_domain_own',
+            'allow_subdomain',
+            'subdomain_base_domain',
         ];
 
         return array_intersect_key($config, array_flip($publicConfigKeys));
