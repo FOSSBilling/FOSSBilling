@@ -656,7 +656,7 @@ class Service implements InjectionAwareInterface
             $this->di['validator']->checkRequiredParamsForArray($required, $data['domain'] + $data);
 
             $subdomain = strtolower(trim((string) $data['domain']['subdomain_sld']));
-            $baseDomain = strtolower(trim((string) $data['subdomain_base_domain'], '.'));
+            $baseDomain = strtolower(trim(trim((string) $data['subdomain_base_domain']), '.'));
 
             if (!$this->di['validator']->isSldValid($subdomain)) {
                 throw new InformationException('Subdomain name is invalid.');
