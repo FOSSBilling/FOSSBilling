@@ -113,8 +113,6 @@ jobs:
             -f previous_tag_name="${previous_tag}" \
             --jq '.body' \
             > release-notes-context/github-generated-notes.md
-            --jq '.body' \
-            > release-notes-context/github-generated-notes.md
 
       - name: 'Generate GitHub Release Notes'
         if: ${{ inputs.release_notes == 'github' }}
