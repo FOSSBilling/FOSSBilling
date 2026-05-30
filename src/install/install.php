@@ -79,7 +79,8 @@ require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Autoloader.php');
 $loader = new FOSSBilling\AutoLoader();
 $loader->register();
 
-$request = RequestFactory::createFromGlobals();
+$preConfigProxyConfig = RequestFactory::getPreConfigProxyConfig($_SERVER);
+$request = RequestFactory::createFromGlobals($preConfigProxyConfig);
 $url = $request->getSchemeAndHttpHost() . $request->getRequestUri();
 $current_url = Path::getDirectory($url);
 $root_url = str_replace('/install', '', $current_url) . '/';
@@ -90,7 +91,7 @@ const URL_ADMIN = SYSTEM_URL . 'admin';
 // Load action and initialize the installer
 $action = $request->query->get('a', 'index');
 $action = is_string($action) && $action !== '' ? $action : 'index';
-$installer = new FOSSBilling_Installer($request);
+$installer = new FOSSBilling_Installer($request, $preConfigProxyConfig);
 
 // Run the installer only in non-CLI mode
 if (!Environment::isCLI()) {
@@ -105,7 +106,7 @@ final class FOSSBilling_Installer
     private bool $isDebug = false;
     private readonly Filesystem $filesystem;
 
-    public function __construct(private readonly Request $request)
+    public function __construct(private readonly Request $request, private readonly array $preConfigProxyConfig = [])
     {
         require_once 'session.php';
         $this->session = new Session();
@@ -471,6 +472,9 @@ final class FOSSBilling_Installer
 
         // Handle dynamic configs
         $data['security']['force_https'] = str_starts_with(SYSTEM_URL, 'https://');
+        if (($this->preConfigProxyConfig['enabled'] ?? false) === true) {
+            $data['security']['trusted_proxies'] = $this->preConfigProxyConfig;
+        }
         $data['debug_and_monitoring']['report_errors'] = (bool) $this->session->get('error_reporting');
         $data['debug_and_monitoring']['debug'] = $this->isDebug;
         $data['update_branch'] = $updateBranch;
