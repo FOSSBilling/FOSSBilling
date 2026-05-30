@@ -97,6 +97,31 @@ class Service implements InjectionAwareInterface
         if (!isset($data['tld']) || empty($data['tld'])) {
             throw new InformationException('Domain extension is invalid.', null, 704);
         }
+
+        if (($data['domain']['action'] ?? null) === 'subdomain') {
+            $this->assertSubdomainAvailable($data['sld'], $data['tld']);
+        }
+    }
+
+    private function assertSubdomainAvailable(string $sld, string $tld): void
+    {
+        $query = 'SELECT COUNT(*)
+            FROM service_hosting sh
+            INNER JOIN client_order co ON co.service_id = sh.id AND co.service_type = :service_type
+            WHERE LOWER(sh.sld) = LOWER(:sld)
+                AND LOWER(sh.tld) = LOWER(:tld)
+                AND co.status != :canceled_status';
+
+        $count = (int) $this->di['db']->getCell($query, [
+            ':service_type' => \Model_ProductTable::HOSTING,
+            ':sld' => $sld,
+            ':tld' => $tld,
+            ':canceled_status' => \Model_ClientOrder::STATUS_CANCELED,
+        ]);
+
+        if ($count > 0) {
+            throw new InformationException('This free subdomain is already in use.');
+        }
     }
 
     /**

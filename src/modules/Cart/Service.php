@@ -119,15 +119,17 @@ class Service implements InjectionAwareInterface
         unset($data['id']);
         unset($data['addons']);
 
+        $productConfig = json_decode($product->config ?? '', true) ?? [];
+
         // Collect all domains that will be added: top-level (direct domain product) and
         // nested under $data['domain'] (domain bundled with a hosting product).
         $domainsBeingAdded = [];
-        $topDomain = $this->extractDomainFromConfig($data);
+        $topDomain = $this->extractDomainFromConfig($data, $productConfig);
         if ($topDomain !== null) {
             $domainsBeingAdded[] = $topDomain;
         }
         if (isset($data['domain']) && is_array($data['domain'])) {
-            $nestedDomain = $this->extractDomainFromConfig($data['domain']);
+            $nestedDomain = $this->extractDomainFromConfig($data['domain'], $data + $productConfig);
             if ($nestedDomain !== null) {
                 $domainsBeingAdded[] = $nestedDomain;
             }
@@ -143,7 +145,7 @@ class Service implements InjectionAwareInterface
                 // Check both top-level and nested domain shapes in the existing item's config.
                 $candidates = [$this->extractDomainFromConfig($itemConfig)];
                 if (isset($itemConfig['domain']) && is_array($itemConfig['domain'])) {
-                    $candidates[] = $this->extractDomainFromConfig($itemConfig['domain']);
+                    $candidates[] = $this->extractDomainFromConfig($itemConfig['domain'], $itemConfig);
                 }
                 foreach ($candidates as $existing) {
                     if ($existing === null) {
@@ -305,15 +307,22 @@ class Service implements InjectionAwareInterface
 
     /**
      * Extract a normalized "sld+tld" domain string from a config array.
-     * Handles both register_* and transfer_* key pairs.
+     * Handles register_*, transfer_*, and free subdomain key pairs.
      * Returns null when the config does not describe a domain.
      */
-    private function extractDomainFromConfig(array $config): ?string
+    private function extractDomainFromConfig(array $config, array $parentConfig = []): ?string
     {
         $sld = $config['register_sld'] ?? $config['transfer_sld'] ?? null;
         $tld = $config['register_tld'] ?? $config['transfer_tld'] ?? null;
         if ($sld !== null && $tld !== null) {
-            return $sld . $tld;
+            return strtolower($sld . $tld);
+        }
+
+        if (($config['action'] ?? null) === 'subdomain' && isset($config['subdomain_sld'])) {
+            $baseDomain = $config['subdomain_base_domain'] ?? $parentConfig['subdomain_base_domain'] ?? null;
+            if ($baseDomain !== null) {
+                return strtolower($config['subdomain_sld'] . '.' . trim((string) $baseDomain, '.'));
+            }
         }
 
         return null;
