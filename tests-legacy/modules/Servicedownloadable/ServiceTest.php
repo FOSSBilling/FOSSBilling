@@ -130,7 +130,7 @@ final class ServiceTest extends \BBTestCase
 
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
-        $productModel->config = '{"filename": "test.txt"}';
+        $productModel->config = '{"filename": "test.txt", "stored_filename": "stored-test.txt"}';
 
         $dbMock = $this->createMock(\Box_Database::class);
         $dbMock->expects($this->atLeastOnce())
@@ -151,6 +151,7 @@ final class ServiceTest extends \BBTestCase
         $updatedConfig = json_decode($productModel->config, true);
         $this->assertIsArray($updatedConfig);
         $this->assertEquals('test.txt', $updatedConfig['filename']);
+        $this->assertEquals('stored-test.txt', $updatedConfig['stored_filename']);
         $this->assertTrue($updatedConfig['update_orders']);
         $this->assertNotNull($productModel->updated_at);
     }
@@ -273,8 +274,13 @@ final class ServiceTest extends \BBTestCase
         try {
             $this->assertSame('PRODUCT_A_CONTENT', file_get_contents($pathA));
             $this->assertSame('PRODUCT_B_CONTENT', file_get_contents($pathB));
-            $this->assertSame('PRODUCT_A_CONTENT', $this->service->sendProductFile($productA)->getContent());
-            $this->assertSame('PRODUCT_B_CONTENT', $this->service->sendProductFile($productB)->getContent());
+            $productAResponse = $this->service->sendProductFile($productA);
+            $productBResponse = $this->service->sendProductFile($productB);
+
+            $this->assertInstanceOf(\Symfony\Component\HttpFoundation\BinaryFileResponse::class, $productAResponse);
+            $this->assertInstanceOf(\Symfony\Component\HttpFoundation\BinaryFileResponse::class, $productBResponse);
+            $this->assertSame('PRODUCT_A_CONTENT', file_get_contents($productAResponse->getFile()->getPathname()));
+            $this->assertSame('PRODUCT_B_CONTENT', file_get_contents($productBResponse->getFile()->getPathname()));
         } finally {
             @unlink($pathA);
             @unlink($pathB);
