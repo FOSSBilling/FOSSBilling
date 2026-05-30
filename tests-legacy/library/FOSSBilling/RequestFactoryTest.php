@@ -142,6 +142,50 @@ final class RequestFactoryTest extends PHPUnit\Framework\TestCase
         $this->assertSame('billing.example.com', $request->getHost());
     }
 
+    public function testConfigureSupportsAwsElbHeaderMode(): void
+    {
+        $request = Request::create('http://internal.example/admin', 'GET', [], [], [], [
+            'REMOTE_ADDR' => '198.51.100.10',
+            'HTTP_X_FORWARDED_FOR' => '203.0.113.9',
+            'HTTP_X_FORWARDED_HOST' => 'billing.example.com',
+            'HTTP_X_FORWARDED_PORT' => '443',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+
+        RequestFactory::configure($request, [
+            'enabled' => true,
+            'proxies' => ['198.51.100.10'],
+            'headers' => 'aws_elb',
+        ]);
+
+        $this->assertSame('203.0.113.9', $request->getClientIp());
+        $this->assertTrue($request->isSecure());
+        $this->assertSame('internal.example', $request->getHost());
+    }
+
+    public function testConfigureSupportsTraefikHeaderMode(): void
+    {
+        $request = Request::create('http://internal.example/admin', 'GET', [], [], [], [
+            'REMOTE_ADDR' => '198.51.100.10',
+            'HTTP_X_FORWARDED_FOR' => '203.0.113.9',
+            'HTTP_X_FORWARDED_HOST' => 'billing.example.com',
+            'HTTP_X_FORWARDED_PORT' => '443',
+            'HTTP_X_FORWARDED_PREFIX' => '/billing',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+
+        RequestFactory::configure($request, [
+            'enabled' => true,
+            'proxies' => ['198.51.100.10'],
+            'headers' => 'traefik',
+        ]);
+
+        $this->assertSame('203.0.113.9', $request->getClientIp());
+        $this->assertTrue($request->isSecure());
+        $this->assertSame('billing.example.com', $request->getHost());
+        $this->assertSame('/billing', $request->getBaseUrl());
+    }
+
     public function testConfigureRejectsUnknownTrustedProxyHeaderMode(): void
     {
         $request = Request::create('http://billing.example.com/admin');

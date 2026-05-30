@@ -162,74 +162,89 @@
                 <details id="step-5">
                     <summary>Step 5 - Options</summary>
 
-                    <p>Choose the primary currency for invoices, orders, and pricing. You can add more currencies later.</p>
-
-                    <fieldset>
-                        <label for="currency_code">Currency Code <span class="red">*</span></label>
-                        <input type="text" id="currency_code" name="currency_code" value="{{ request.currency_code|default(currency_code) }}" required>
-
-                        <label for="system_url">FOSSBilling URL <span class="red">*</span></label>
-                        <input type="url" id="system_url" name="system_url" value="{{ request.system_url|default(system_url) }}" placeholder="https://billing.example.com/" required>
-                        <small>This is the public URL customers and staff should use to access FOSSBilling.</small>
-                    </fieldset>
-
-                    {% if proxy_candidate.detected|default(false) %}
-                        <hr />
-                        <p><strong>Reverse proxy headers detected</strong></p>
-                        <p>Enable this only if the address below is a reverse proxy you control and it removes untrusted forwarded headers from client requests.</p>
-
-                        <div class="requirements-table-wrapper">
-                            <table role="grid">
-                                <tbody>
-                                    <tr>
-                                        <td>Server received request from</td>
-                                        <td><code>{{ proxy_candidate.remote_addr }}</code>{% if proxy_candidate.remote_addr_is_private %} (private/local address){% endif %}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Detected header mode</td>
-                                        <td><code>{{ proxy_candidate.headers }}</code></td>
-                                    </tr>
-                                    {% if proxy_candidate.suggested_url %}
-                                        <tr>
-                                            <td>Suggested public URL</td>
-                                            <td><code>{{ proxy_candidate.suggested_url }}</code></td>
-                                        </tr>
-                                    {% endif %}
-                                    {% for header, value in proxy_candidate.header_values %}
-                                        <tr>
-                                            <td>{{ header }}</td>
-                                            <td><code>{{ value }}</code></td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="choice-row">
-                            <input type="checkbox" id="trusted_proxy_enabled" name="trusted_proxy_enabled" value="1" {% if request.trusted_proxy_enabled|default(trusted_proxy_enabled) %} checked {% endif %}>
-                            <label for="trusted_proxy_enabled">Trust this reverse proxy configuration.</label>
-                        </div>
+                    <section class="option-section first-option-section">
+                        <h3>Billing</h3>
+                        <p>Set the default currency used for invoices, orders, and product pricing. You can add more currencies later.</p>
 
                         <fieldset>
-                            <label for="trusted_proxy_proxies">Trusted proxy IP addresses</label>
-                            <input type="text" id="trusted_proxy_proxies" name="trusted_proxy_proxies" value="{{ request.trusted_proxy_proxies|default(trusted_proxy_proxies) }}" placeholder="172.18.0.5">
-
-                            <label for="trusted_proxy_headers">Trusted forwarded header format</label>
-                            <select id="trusted_proxy_headers" name="trusted_proxy_headers">
-                                {% set selectedProxyHeaders = request.trusted_proxy_headers|default(trusted_proxy_headers) %}
-                                <option value="x_forwarded" {% if selectedProxyHeaders == 'x_forwarded' %} selected {% endif %}>X-Forwarded-* headers</option>
-                                <option value="forwarded" {% if selectedProxyHeaders == 'forwarded' %} selected {% endif %}>Forwarded header</option>
-                                <option value="aws_elb" {% if selectedProxyHeaders == 'aws_elb' %} selected {% endif %}>AWS ELB headers</option>
-                                <option value="traefik" {% if selectedProxyHeaders == 'traefik' %} selected {% endif %}>Traefik headers</option>
-                            </select>
+                            <label for="currency_code">Currency Code <span class="red">*</span></label>
+                            <input type="text" id="currency_code" name="currency_code" value="{{ request.currency_code|default(currency_code) }}" required>
                         </fieldset>
+                    </section>
+
+                    <section class="option-section">
+                        <h3>Public URL</h3>
+                        <p>Confirm the address customers and staff should use to access this FOSSBilling installation.</p>
+
+                        <fieldset>
+                            <label for="system_url">FOSSBilling URL <span class="red">*</span></label>
+                            <input type="url" id="system_url" name="system_url" value="{{ request.system_url|default(system_url) }}" placeholder="https://billing.example.com/" required>
+                        </fieldset>
+                    </section>
+
+                    {% if proxy_candidate.detected|default(false) %}
+                        <section class="option-section">
+                            <h3>Reverse Proxy</h3>
+                            <p>Forwarded headers were detected. Only enable trust if the address below is a reverse proxy you control and it removes untrusted forwarded headers from client requests.</p>
+
+                            <div class="requirements-table-wrapper">
+                                <table role="grid">
+                                    <tbody>
+                                        <tr>
+                                            <td>Server received request from</td>
+                                            <td><code>{{ proxy_candidate.remote_addr }}</code>{% if proxy_candidate.remote_addr_is_private %} (private/local address){% endif %}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Detected header mode</td>
+                                            <td><code>{{ proxy_candidate.headers }}</code></td>
+                                        </tr>
+                                        {% if proxy_candidate.suggested_url %}
+                                            <tr>
+                                                <td>Suggested public URL</td>
+                                                <td><code>{{ proxy_candidate.suggested_url }}</code></td>
+                                            </tr>
+                                        {% endif %}
+                                        {% for header, value in proxy_candidate.header_values %}
+                                            <tr>
+                                                <td>{{ header }}</td>
+                                                <td><code>{{ value }}</code></td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="choice-row">
+                                <input type="checkbox" id="trusted_proxy_enabled" name="trusted_proxy_enabled" value="1" {% if request.trusted_proxy_enabled|default(trusted_proxy_enabled) %} checked {% endif %}>
+                                <label for="trusted_proxy_enabled">Trust this reverse proxy configuration.</label>
+                            </div>
+
+                            <fieldset>
+                                <label for="trusted_proxy_proxies">Trusted proxy IP addresses</label>
+                                <input type="text" id="trusted_proxy_proxies" name="trusted_proxy_proxies" value="{{ request.trusted_proxy_proxies|default(trusted_proxy_proxies) }}" placeholder="172.18.0.5">
+
+                                <label for="trusted_proxy_headers">Trusted forwarded header format</label>
+                                <select id="trusted_proxy_headers" name="trusted_proxy_headers">
+                                    {% set selectedProxyHeaders = request.trusted_proxy_headers|default(trusted_proxy_headers) %}
+                                    <option value="x_forwarded" {% if selectedProxyHeaders == 'x_forwarded' %} selected {% endif %}>X-Forwarded-* headers</option>
+                                    <option value="forwarded" {% if selectedProxyHeaders == 'forwarded' %} selected {% endif %}>Forwarded header</option>
+                                    <option value="aws_elb" {% if selectedProxyHeaders == 'aws_elb' %} selected {% endif %}>AWS ELB headers</option>
+                                    <option value="traefik" {% if selectedProxyHeaders == 'traefik' %} selected {% endif %}>Traefik headers</option>
+                                </select>
+                            </fieldset>
+                        </section>
                     {% endif %}
 
-                    <div class="choice-row">
-                        <input type="checkbox" id="error-reporting" name="error_reporting">
-                        <label for="error-reporting">Enable automated error reporting to help improve FOSSBilling.</label>
-                    </div>
-                    <small class="choice-help">Optional. <a href="#" data-target="learn-reporting" onClick="toggleModal(event)">Learn more</a></small>
+                    <section class="option-section">
+                        <h3>Diagnostics</h3>
+                        <p>Choose whether this installation can send scrubbed error reports to help maintainers identify defects.</p>
+
+                        <div class="choice-row">
+                            <input type="checkbox" id="error-reporting" name="error_reporting">
+                            <label for="error-reporting">Enable automated error reporting.</label>
+                        </div>
+                        <small class="choice-help">Optional. <a href="#" data-target="learn-reporting" onClick="toggleModal(event)">Learn more</a></small>
+                    </section>
                 </details>
 
                 <div class="installer-actions">
