@@ -176,9 +176,6 @@ jobs:
 
           copilot -p "$(cat release-notes-context/prompt.md)" \
             --allow-tool='shell(cat:*)' \
-            --allow-tool='shell(git:*)' \
-            --allow-tool='shell(gh:*)' \
-            --allow-tool='shell(jq:*)' \
             --allow-tool=write \
             --no-ask-user
 
