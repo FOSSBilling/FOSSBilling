@@ -264,7 +264,7 @@ class Service implements InjectionAwareInterface
     private function validateStoredFilename(mixed $storedFilename): string
     {
         if (!is_string($storedFilename) || preg_match('/\A[a-f0-9]{64}\z/', $storedFilename) !== 1) {
-            throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
+            throw new \FOSSBilling\Exception('File is not available at the moment. Please contact support.', null, 404);
         }
 
         return $storedFilename;
