@@ -326,7 +326,7 @@ class Service implements InjectionAwareInterface
 
     private function removeStoredFileIfOrphaned(string $storedFilename): void
     {
-        if (!$this->isStoredFilenameReferenced($storedFilename) && $this->isValidStoredFilename($storedFilename)) {
+        if ($this->isValidStoredFilename($storedFilename) && !$this->isStoredFilenameReferenced($storedFilename)) {
             $filePath = $this->getStoredFilePath($storedFilename);
             if ($this->filesystem->exists($filePath)) {
                 $this->filesystem->remove($filePath);
