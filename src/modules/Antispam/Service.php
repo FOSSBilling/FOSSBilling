@@ -132,8 +132,6 @@ class Service implements InjectionAwareInterface
         $data = [
             'ip' => $params['ip'] ?? null,
             'email' => $params['email'] ?? null,
-            'recaptcha_challenge_field' => $params['recaptcha_challenge_field'] ?? null,
-            'recaptcha_response_field' => $params['recaptcha_response_field'] ?? null,
         ];
 
         $config = $di['mod_config']('Antispam');
@@ -312,7 +310,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Your IP address is blacklisted in the Stop Forum Spam database');
         }
 
-        return false;
+        return true;
     }
 
     /**
@@ -370,7 +368,7 @@ class Service implements InjectionAwareInterface
                 return [];
             }
 
-            @$database = file($dbPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            $database = file($dbPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
             $this->filesystem->remove($dbPath);
             if (!$database) {
                 $item->expiresAfter(3600);

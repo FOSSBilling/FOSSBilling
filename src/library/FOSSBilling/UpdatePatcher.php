@@ -319,6 +319,22 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function migrateEncryptedColumn(string $table, string $idColumn, string $valueColumn, string $where, array $params = []): void
     {
+        $table = $this->quoteIdentifier($table);
+        $idColumn = $this->quoteIdentifier($idColumn);
+        $valueColumn = $this->quoteIdentifier($valueColumn);
+
+        // This method expects a static SQL predicate fragment with bound parameters in $params.
+        if (
+            str_contains($where, ';')
+            || str_contains($where, '--')
+            || str_contains($where, '/*')
+            || str_contains($where, '*/')
+            || str_contains($where, '`')
+            || !preg_match('/^[A-Za-z0-9_:\\s<>=!().,%+-]++$/', $where)
+        ) {
+            throw new Exception('Invalid SQL WHERE clause fragment.');
+        }
+
         $rows = $this->fetchAll("SELECT {$idColumn} AS id, {$valueColumn} AS encrypted_value FROM {$table} WHERE {$where}", $params);
 
         /** @var \Box_Crypt $crypt */
@@ -620,7 +636,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch37(): void
     {
-        // Patch to complete remove the outdated queue module.
+        // Patch to completely remove the outdated queue module.
         // @see https://github.com/FOSSBilling/FOSSBilling/pull/1777
 
         try {
@@ -785,7 +801,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $newUploadsPath = Path::join(PATH_ROOT, 'data', 'uploads');
 
         if ($filesystem->exists($oldUploadsPath) && $filesystem->exists($newUploadsPath)) {
-            foreach (glob($oldUploadsPath . '/*') as $oldFile) {
+            foreach (glob($oldUploadsPath . '/*') ?: [] as $oldFile) {
                 if (is_file($oldFile)) {
                     $filename = basename($oldFile);
                     $newFilePath = Path::join($newUploadsPath, $filename);
@@ -889,9 +905,12 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch50(): void
     {
-        $this->migrateEncryptedColumn('email_template', 'id', 'vars', "vars IS NOT NULL AND vars != ''");
-        $this->migrateEncryptedColumn('extension_meta', 'id', 'meta_value', "meta_key = :meta_key AND meta_value IS NOT NULL AND meta_value != ''", [
+        $this->migrateEncryptedColumn('email_template', 'id', 'vars', 'vars IS NOT NULL AND vars != :empty', [
+            'empty' => '',
+        ]);
+        $this->migrateEncryptedColumn('extension_meta', 'id', 'meta_value', 'meta_key = :meta_key AND meta_value IS NOT NULL AND meta_value != :empty', [
             'meta_key' => 'config',
+            'empty' => '',
         ]);
     }
 
@@ -1285,7 +1304,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $template = $this->filesystem->readFile($path);
 
         $subject = ucwords(str_replace('_', ' ', $code));
-        preg_match('#{%.?block subject.?%}((.*?)+){%.?endblock.?%}#', $template, $subjectMatches);
+        preg_match('#{%\\s*block subject\\s*%}(.*?){%\\s*endblock\\s*%}#s', $template, $subjectMatches);
         if (isset($subjectMatches[1])) {
             $subject = $subjectMatches[1];
         }
@@ -1320,7 +1339,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_paidsupport' AND meta_key = 'config'");
 
         if ($this->di !== null && $this->di->offsetExists('cache')) {
-            $this->di['cache']->deleteItem('config_mod_paidsupport');
+            $this->di['cache']->delete('config_mod_paidsupport');
         }
     }
 

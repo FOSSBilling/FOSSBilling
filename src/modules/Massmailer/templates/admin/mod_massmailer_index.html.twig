@@ -34,7 +34,7 @@
                                role="tab">{{ 'Messages'|trans }}</a>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <a href="#tab-settings" class="nav-link" data-bs-toggle="tab" aria-selected="true" role="tab">
+                            <a href="#tab-settings" class="nav-link" data-bs-toggle="tab" aria-selected="false" role="tab">
                                 <svg class="icon me-2">
                                     <use xlink:href="#cog"/>
                                 </svg>
@@ -160,7 +160,9 @@
                                                     <option value="{{ params.test_client_id }}" selected>{{ test_client_email }}</option>
                                                 {% endif %}
                                             </select>
-                                            <div class="form-text">{{ 'Test emails will be sent to:'|trans }} {{ test_client_email }}</div>
+                                            {% if params.test_client_id and test_client_email != 'Unknown' %}
+                                                <div class="form-text">{{ 'Test emails will be sent to:'|trans }} {{ test_client_email }}</div>
+                                            {% endif %}
                                         </div>
                                     </div>
                                 {% endblock %}
