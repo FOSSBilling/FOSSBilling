@@ -90,7 +90,7 @@ class Guest extends \Api_Abstract
         if (Tools::normalizeBoolean($config['auto_login_after_signup'] ?? true, true)) {
             try {
                 $this->login(['email' => $client->email, 'password' => $data['password']]);
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 error_log($e->getMessage());
             }
         }
