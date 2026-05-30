@@ -50,7 +50,6 @@ final class UpdatePatcherTest extends PHPUnit\Framework\TestCase
 
         $this->expectException(FOSSBilling\Exception::class);
         $this->expectExceptionMessage('Database connection is not available.');
-
         $patcher->applyCorePatches(force: true);
     }
 }

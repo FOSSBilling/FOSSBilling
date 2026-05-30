@@ -319,7 +319,8 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function migrateEncryptedColumn(string $table, string $idColumn, string $valueColumn, string $where, array $params = []): void
     {
-        $table = $this->quoteIdentifier($table);
+        $rawTable = $table;
+        $quotedTable = $this->quoteIdentifier($table);
         $idColumn = $this->quoteIdentifier($idColumn);
         $valueColumn = $this->quoteIdentifier($valueColumn);
 
@@ -335,13 +336,13 @@ class UpdatePatcher implements InjectionAwareInterface
             throw new Exception('Invalid SQL WHERE clause fragment.');
         }
 
-        $rows = $this->fetchAll("SELECT {$idColumn} AS id, {$valueColumn} AS encrypted_value FROM {$table} WHERE {$where}", $params);
+        $rows = $this->fetchAll("SELECT {$idColumn} AS id, {$valueColumn} AS encrypted_value FROM {$quotedTable} WHERE {$where}", $params);
 
         /** @var \Box_Crypt $crypt */
         $crypt = $this->di['crypt'];
         $salt = Config::getProperty('info.salt');
 
-        $hasUpdatedAt = $this->tableHasColumn($table, 'updated_at');
+        $hasUpdatedAt = $this->tableHasColumn($rawTable, 'updated_at');
 
         foreach ($rows as $row) {
             $encryptedValue = $row['encrypted_value'] ?? null;
