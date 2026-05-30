@@ -1128,6 +1128,10 @@ class Service implements InjectionAwareInterface
 
         $data = array_merge($c, $data);
 
+        if (($data['domain']['action'] ?? null) === 'subdomain' && array_key_exists('subdomain_base_domain', $c)) {
+            $data['subdomain_base_domain'] = $c['subdomain_base_domain'];
+        }
+
         if (isset($data['domain']['action'])) {
             $this->validateDomainAction($data, $c);
         }
