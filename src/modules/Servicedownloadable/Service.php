@@ -278,6 +278,42 @@ class Service implements InjectionAwareInterface
         return $storedFilename;
     }
 
+    private function isStoredFilenameReferenced(string $storedFilename): bool
+    {
+        $count = (int) $this->di['db']->getCell(
+            'SELECT COUNT(*) FROM service_downloadable WHERE stored_filename = :stored_filename',
+            [':stored_filename' => $storedFilename]
+        );
+        if ($count > 0) {
+            return true;
+        }
+
+        $count = (int) $this->di['db']->getCell(
+            'SELECT COUNT(*) FROM product WHERE config LIKE :pattern',
+            [':pattern' => '%' . $storedFilename . '%']
+        );
+        if ($count > 0) {
+            return true;
+        }
+
+        $count = (int) $this->di['db']->getCell(
+            'SELECT COUNT(*) FROM client_order WHERE config LIKE :pattern',
+            [':pattern' => '%' . $storedFilename . '%']
+        );
+
+        return $count > 0;
+    }
+
+    private function removeStoredFileIfOrphaned(string $storedFilename): void
+    {
+        if (!$this->isStoredFilenameReferenced($storedFilename)) {
+            $filePath = Path::join(PATH_UPLOADS, $storedFilename);
+            if ($this->filesystem->exists($filePath)) {
+                $this->filesystem->remove($filePath);
+            }
+        }
+    }
+
     public function uploadProductFile(\Model_Product $productModel): bool
     {
         $productService = $this->di['mod_service']('product');
@@ -299,6 +335,7 @@ class Service implements InjectionAwareInterface
         $storedFilename = $this->storeUploadedFile($file);
 
         $config = json_decode($productModel->config ?? '', true) ?? [];
+        $oldStoredFilename = $config[self::STORED_FILENAME_CONFIG_KEY] ?? null;
 
         // Check if update_orders is true and update all orders
         if (isset($config['update_orders']) && $config['update_orders']) {
@@ -329,6 +366,10 @@ class Service implements InjectionAwareInterface
 
         $this->di['logger']->info('Uploaded new file for product %s', $productModel->id);
 
+        if ($oldStoredFilename !== null && $oldStoredFilename !== $storedFilename) {
+            $this->removeStoredFileIfOrphaned($oldStoredFilename);
+        }
+
         return true;
     }
 
@@ -356,6 +397,7 @@ class Service implements InjectionAwareInterface
 
             $this->validateFileUpload($file);
 
+            $oldStoredFilename = $serviceDownloadable->stored_filename ?? null;
             $storedFilename = $this->storeUploadedFile($file);
         } else {
             $fileName = null;
@@ -391,6 +433,10 @@ class Service implements InjectionAwareInterface
         $this->di['db']->store($order);
 
         $this->di['logger']->info('Uploaded new file for order %s', $order->id);
+
+        if (isset($oldStoredFilename) && $oldStoredFilename !== $storedFilename) {
+            $this->removeStoredFileIfOrphaned($oldStoredFilename);
+        }
 
         return true;
     }
