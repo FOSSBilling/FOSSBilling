@@ -20,7 +20,7 @@ final class ServiceTest extends \BBTestCase
     {
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
-        $productModel->config = '{"filename" : "temp/asdcxTest.txt"}';
+        $productModel->config = '{"filename" : "temp/asdcxTest.txt", "stored_filename": "stored-temp-file"}';
 
         $data = [];
 
@@ -40,7 +40,7 @@ final class ServiceTest extends \BBTestCase
     {
         $clientOrderModel = new \Model_ClientOrder();
         $clientOrderModel->loadBean(new \DummyBean());
-        $clientOrderModel->config = '{"filename" : "temp/asdcxTest.txt"}';
+        $clientOrderModel->config = '{"filename" : "temp/asdcxTest.txt", "stored_filename": "stored-temp-file"}';
 
         $model = new \Model_ServiceDownloadable();
         $model->loadBean(new \DummyBean());
@@ -62,6 +62,7 @@ final class ServiceTest extends \BBTestCase
         $this->service->setDi($di);
         $result = $this->service->action_create($clientOrderModel);
         $this->assertInstanceOf('\Model_ServiceDownloadable', $result);
+        $this->assertSame('stored-temp-file', $result->stored_filename);
     }
 
     public function testActionDelete(): void
@@ -212,9 +213,103 @@ final class ServiceTest extends \BBTestCase
         $this->invokeValidateFileUpload($file);
     }
 
+    public function testUploadsWithSameOriginalFilenameUseSeparateStoredFiles(): void
+    {
+        $di = $this->createUploadDi();
+        $this->service->setDi($di);
+
+        $productA = $this->createProductModel(null);
+        $productB = $this->createProductModel(null);
+
+        $this->uploadFile($di, $productA, 'download.txt', 'PRODUCT_A_CONTENT');
+        $this->uploadFile($di, $productB, 'download.txt', 'PRODUCT_B_CONTENT');
+
+        $configA = json_decode($productA->config, true);
+        $configB = json_decode($productB->config, true);
+
+        $this->assertSame('download.txt', $configA['filename']);
+        $this->assertSame('download.txt', $configB['filename']);
+        $this->assertNotSame($configA['stored_filename'], $configB['stored_filename']);
+
+        $pathA = \Symfony\Component\Filesystem\Path::join(PATH_UPLOADS, $configA['stored_filename']);
+        $pathB = \Symfony\Component\Filesystem\Path::join(PATH_UPLOADS, $configB['stored_filename']);
+
+        try {
+            $this->assertSame('PRODUCT_A_CONTENT', file_get_contents($pathA));
+            $this->assertSame('PRODUCT_B_CONTENT', file_get_contents($pathB));
+            $this->assertSame('PRODUCT_A_CONTENT', $this->service->sendProductFile($productA)->getContent());
+            $this->assertSame('PRODUCT_B_CONTENT', $this->service->sendProductFile($productB)->getContent());
+        } finally {
+            @unlink($pathA);
+            @unlink($pathB);
+        }
+    }
+
+    public function testSendProductFileRequiresStoredFilename(): void
+    {
+        $di = $this->createUploadDi();
+        $this->service->setDi($di);
+
+        $product = $this->createProductModel('{"filename": "legacy.txt"}');
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('No file associated with this product.');
+
+        $this->service->sendProductFile($product);
+    }
+
     private function invokeValidateFileUpload(\Symfony\Component\HttpFoundation\File\UploadedFile $file): void
     {
         $reflection = new \ReflectionMethod(Service::class, 'validateFileUpload');
         $reflection->invoke($this->service, $file);
+    }
+
+    private function createUploadDi(): \Pimple\Container
+    {
+        $di = new \Pimple\Container();
+        $di['db'] = new class {
+            public function store($model): int
+            {
+                return 1;
+            }
+        };
+        $di['logger'] = new class {
+            public function info(...$args): void
+            {
+            }
+
+            public function warn(...$args): void
+            {
+            }
+        };
+        $di['mod_service'] = $di->protect(fn (): object => new class {
+            public function getOrdersForProduct(\Model_Product $product): array
+            {
+                return [];
+            }
+        });
+
+        return $di;
+    }
+
+    private function createProductModel(?string $config): \Model_Product
+    {
+        $product = new \Model_Product();
+        $product->loadBean(new \DummyBean());
+        $product->id = random_int(1000, 9999);
+        $product->config = $config;
+
+        return $product;
+    }
+
+    private function uploadFile(\Pimple\Container $di, \Model_Product $product, string $filename, string $contents): void
+    {
+        $temporaryFile = tempnam(sys_get_temp_dir(), 'fb-downloadable-');
+        file_put_contents($temporaryFile, $contents);
+
+        $file = new \Symfony\Component\HttpFoundation\File\UploadedFile($temporaryFile, $filename, 'text/plain', UPLOAD_ERR_OK, true);
+        $di['request'] = new \Symfony\Component\HttpFoundation\Request([], [], [], [], ['file_data' => $file]);
+
+        $this->service->uploadProductFile($product);
     }
 }
