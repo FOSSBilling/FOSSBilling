@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace FOSSBilling\Http;
 
 use FOSSBilling\Config;
+use Symfony\Component\HttpFoundation\IpUtils;
 use Symfony\Component\HttpFoundation\Request;
 
 final class RequestFactory
@@ -36,6 +37,20 @@ final class RequestFactory
     public static function configureFromConfig(Request $request): Request
     {
         return self::configure($request, self::getProxyConfigFromAppConfig());
+    }
+
+    public static function getPreConfigProxyConfig(array $server): array
+    {
+        $remoteAddress = trim((string) ($server['REMOTE_ADDR'] ?? ''));
+        if ($remoteAddress === '' || !self::hasForwardedHeaders($server) || !self::isLocalNetworkAddress($remoteAddress)) {
+            return [];
+        }
+
+        return [
+            'enabled' => true,
+            'proxies' => [$remoteAddress],
+            'headers' => isset($server['HTTP_FORWARDED']) ? 'forwarded' : 'x_forwarded',
+        ];
     }
 
     public static function normalizeRoutePath(Request $request): string
@@ -116,5 +131,27 @@ final class RequestFactory
             'traefik' => Request::HEADER_X_FORWARDED_TRAEFIK,
             default => throw new \InvalidArgumentException('Invalid trusted proxy header configuration.'),
         };
+    }
+
+    private static function hasForwardedHeaders(array $server): bool
+    {
+        return isset($server['HTTP_FORWARDED'])
+            || isset($server['HTTP_X_FORWARDED_FOR'])
+            || isset($server['HTTP_X_FORWARDED_HOST'])
+            || isset($server['HTTP_X_FORWARDED_PROTO'])
+            || isset($server['HTTP_X_FORWARDED_PORT'])
+            || isset($server['HTTP_X_FORWARDED_PREFIX']);
+    }
+
+    private static function isLocalNetworkAddress(string $address): bool
+    {
+        return IpUtils::checkIp($address, [
+            '127.0.0.0/8',
+            '10.0.0.0/8',
+            '172.16.0.0/12',
+            '192.168.0.0/16',
+            '::1/128',
+            'fc00::/7',
+        ]);
     }
 }

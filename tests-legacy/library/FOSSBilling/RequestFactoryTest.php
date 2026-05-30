@@ -27,6 +27,50 @@ final class RequestFactoryTest extends PHPUnit\Framework\TestCase
         $this->assertFalse($request->isSecure());
     }
 
+    public function testPreConfigProxyConfigTrustsForwardedHeadersFromLocalNetworkProxy(): void
+    {
+        $proxyConfig = RequestFactory::getPreConfigProxyConfig([
+            'REMOTE_ADDR' => '172.18.0.5',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+            'HTTP_X_FORWARDED_HOST' => 'billing.example.com',
+        ]);
+        $request = Request::create('http://internal.example/install/install.php', 'GET', [], [], [], [
+            'REMOTE_ADDR' => '172.18.0.5',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+            'HTTP_X_FORWARDED_HOST' => 'billing.example.com',
+        ]);
+
+        RequestFactory::configure($request, $proxyConfig);
+
+        $this->assertSame([
+            'enabled' => true,
+            'proxies' => ['172.18.0.5'],
+            'headers' => 'x_forwarded',
+        ], $proxyConfig);
+        $this->assertTrue($request->isSecure());
+        $this->assertSame('billing.example.com', $request->getHost());
+    }
+
+    public function testPreConfigProxyConfigDoesNotTrustForwardedHeadersFromPublicAddress(): void
+    {
+        $proxyConfig = RequestFactory::getPreConfigProxyConfig([
+            'REMOTE_ADDR' => '198.51.100.10',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+            'HTTP_X_FORWARDED_HOST' => 'billing.example.com',
+        ]);
+        $request = Request::create('http://internal.example/install/install.php', 'GET', [], [], [], [
+            'REMOTE_ADDR' => '198.51.100.10',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+            'HTTP_X_FORWARDED_HOST' => 'billing.example.com',
+        ]);
+
+        RequestFactory::configure($request, $proxyConfig);
+
+        $this->assertSame([], $proxyConfig);
+        $this->assertFalse($request->isSecure());
+        $this->assertSame('internal.example', $request->getHost());
+    }
+
     public function testConfigureTrustsForwardedProtoFromConfiguredTrustedProxy(): void
     {
         $request = Request::create('http://billing.example.com/admin', 'GET', [], [], [], [
