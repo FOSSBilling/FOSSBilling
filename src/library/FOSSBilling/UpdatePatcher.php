@@ -1479,7 +1479,7 @@ class UpdatePatcher implements InjectionAwareInterface
             } else {
                 $serviceId = (int) $service['id'];
                 if (isset($processedServiceUpdates[$serviceId])) {
-                    $storedFilename = $this->buildDownloadableStoragePath((string) $service['filename']);
+                    $storedFilename = $this->copyLegacyDownloadableFile((string) $service['filename']);
                 } else {
                     $storedFilename = $this->copyLegacyDownloadableFile((string) $service['filename']);
                     if ($storedFilename === null) {
