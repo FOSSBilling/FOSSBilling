@@ -938,6 +938,7 @@ CREATE TABLE `service_downloadable` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `client_id` bigint(20) DEFAULT NULL,
   `filename` varchar(100) DEFAULT NULL,
+  `stored_filename` varchar(100) DEFAULT NULL,
   `downloads` int(11) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,

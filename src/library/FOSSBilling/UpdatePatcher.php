@@ -21,6 +21,7 @@ class UpdatePatcher implements InjectionAwareInterface
 {
     private ?\Pimple\Container $di = null;
     private readonly Filesystem $filesystem;
+    private array $downloadableStorageMigrationMap = [];
 
     public function __construct()
     {
@@ -441,6 +442,7 @@ class UpdatePatcher implements InjectionAwareInterface
             62 => 'patch62',
             63 => 'patch63',
             64 => 'patch64',
+            65 => 'patch65',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1386,6 +1388,133 @@ class UpdatePatcher implements InjectionAwareInterface
             Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'img', 'logo_white.svg') => 'unlink',
             Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'favicon.ico') => 'unlink',
         ]);
+    }
+
+    private function patch65(): void
+    {
+        if (!$this->tableHasColumn('service_downloadable', 'stored_filename')) {
+            $this->executeSql('ALTER TABLE `service_downloadable` ADD COLUMN `stored_filename` VARCHAR(100) DEFAULT NULL AFTER `filename`;');
+        }
+
+        $this->downloadableStorageMigrationMap = [];
+        $this->migrateDownloadableProductStorageKeys();
+        $this->migrateDownloadableServiceStorageKeys();
+        $this->migrateDownloadableOrderStorageKeys();
+    }
+
+    private function generateDownloadableStoredFilename(): string
+    {
+        do {
+            $storedFilename = bin2hex(random_bytes(32));
+            $filePath = Path::join(PATH_UPLOADS, $storedFilename);
+        } while ($this->filesystem->exists($filePath));
+
+        return $storedFilename;
+    }
+
+    private function copyLegacyDownloadableFile(string $filename): ?string
+    {
+        if (isset($this->downloadableStorageMigrationMap[$filename])) {
+            return $this->downloadableStorageMigrationMap[$filename];
+        }
+
+        $legacyPath = Path::join(PATH_UPLOADS, md5($filename));
+        if (!$this->filesystem->exists($legacyPath)) {
+            return null;
+        }
+
+        $storedFilename = $this->generateDownloadableStoredFilename();
+        $this->filesystem->copy($legacyPath, Path::join(PATH_UPLOADS, $storedFilename));
+        $this->downloadableStorageMigrationMap[$filename] = $storedFilename;
+
+        return $storedFilename;
+    }
+
+    private function migrateDownloadableProductStorageKeys(): void
+    {
+        $products = $this->fetchAll("SELECT id, config FROM product WHERE type = 'downloadable'");
+
+        foreach ($products as $product) {
+            $config = json_decode((string) $product['config'], true) ?: [];
+            if (!isset($config['filename']) || isset($config['stored_filename'])) {
+                continue;
+            }
+
+            $storedFilename = $this->copyLegacyDownloadableFile((string) $config['filename']);
+            if ($storedFilename === null) {
+                continue;
+            }
+
+            $config['stored_filename'] = $storedFilename;
+            $this->executeSql('UPDATE product SET config = :config, updated_at = :updated_at WHERE id = :id', [
+                'config' => json_encode($config),
+                'updated_at' => date('Y-m-d H:i:s'),
+                'id' => $product['id'],
+            ]);
+        }
+    }
+
+    private function migrateDownloadableServiceStorageKeys(): void
+    {
+        $services = $this->fetchAll('SELECT sd.id, sd.filename, sd.stored_filename, co.id AS order_id, co.config AS order_config FROM service_downloadable sd LEFT JOIN client_order co ON sd.id = co.service_id WHERE sd.filename IS NOT NULL AND sd.filename != ""');
+
+        foreach ($services as $service) {
+            if (!empty($service['stored_filename'])) {
+                $storedFilename = (string) $service['stored_filename'];
+            } else {
+                $storedFilename = $this->copyLegacyDownloadableFile((string) $service['filename']);
+                if ($storedFilename === null) {
+                    continue;
+                }
+
+                $this->executeSql('UPDATE service_downloadable SET stored_filename = :stored_filename, updated_at = :updated_at WHERE id = :id', [
+                    'stored_filename' => $storedFilename,
+                    'updated_at' => date('Y-m-d H:i:s'),
+                    'id' => $service['id'],
+                ]);
+            }
+
+            if (empty($service['order_id'])) {
+                continue;
+            }
+
+            $orderConfig = json_decode($service['order_config'] ?? '', true) ?: [];
+            if (isset($orderConfig['stored_filename'])) {
+                continue;
+            }
+
+            $orderConfig['filename'] = $orderConfig['filename'] ?? $service['filename'];
+            $orderConfig['stored_filename'] = $storedFilename;
+            $this->executeSql('UPDATE client_order SET config = :config, updated_at = :updated_at WHERE id = :id', [
+                'config' => json_encode($orderConfig),
+                'updated_at' => date('Y-m-d H:i:s'),
+                'id' => $service['order_id'],
+            ]);
+        }
+    }
+
+    private function migrateDownloadableOrderStorageKeys(): void
+    {
+        $orders = $this->fetchAll("SELECT id, config FROM client_order WHERE service_type = 'downloadable' AND config LIKE '%filename%'");
+
+        foreach ($orders as $order) {
+            $config = json_decode($order['config'] ?? '', true) ?: [];
+            if (!isset($config['filename']) || isset($config['stored_filename'])) {
+                continue;
+            }
+
+            $storedFilename = $this->copyLegacyDownloadableFile((string) $config['filename']);
+            if ($storedFilename === null) {
+                continue;
+            }
+
+            $config['stored_filename'] = $storedFilename;
+            $this->executeSql('UPDATE client_order SET config = :config, updated_at = :updated_at WHERE id = :id', [
+                'config' => json_encode($config),
+                'updated_at' => date('Y-m-d H:i:s'),
+                'id' => $order['id'],
+            ]);
+        }
     }
 
     private function migrateDefaultBrandingAssetsToPublicDirectory(): void
