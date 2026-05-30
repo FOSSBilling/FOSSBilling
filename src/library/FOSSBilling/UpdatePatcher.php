@@ -1483,7 +1483,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 continue;
             }
 
-            $orderConfig['filename'] = $orderConfig['filename'] ?? $service['filename'];
+            $orderConfig['filename'] ??= $service['filename'];
             $orderConfig['stored_filename'] = $storedFilename;
             $this->executeSql('UPDATE client_order SET config = :config, updated_at = :updated_at WHERE id = :id', [
                 'config' => json_encode($orderConfig),
