@@ -523,7 +523,14 @@ const API = {
     }
 
     if (apiData.hasOwnProperty('redirect')) {
-      window.location = apiData.redirect;
+      const redirectUrl = new URL(apiData.redirect, window.location.href);
+
+      if (redirectUrl.href === window.location.href) {
+        window.location.reload();
+      } else {
+        window.location = redirectUrl.href;
+      }
+
       return;
     }
 

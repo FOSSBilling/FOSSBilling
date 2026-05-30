@@ -65,15 +65,9 @@ class Server_Manager_Hestia extends Server_Manager
         return 'https://' . $this->_config['host'] . ':' . $this->getPort() . '/';
     }
 
-    public function getPort(): int|string
+    public function getPort(): int
     {
-        $port = $this->_config['port'];
-
-        if (filter_var($port, FILTER_VALIDATE_INT) !== false && $port >= 0 && $port <= 65535) {
-            return $this->_config['port'];
-        }
-
-        return 8083;
+        return FOSSBilling\Tools::normalizePort($this->_config['port'] ?? null, 8083);
     }
 
     #[Override]

@@ -1,4 +1,5 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% set active_menu = 'services' %}
 
 {% import "macro_functions.html.twig" as mf %}
 
@@ -122,7 +123,7 @@
             {# Service management #}
             {% set service = null %}
             {{ render_widgets('client.order.manage.service.before', { 'order': order, 'service': service }) }}
-            {% if guest.system_template_exists({ 'file': service_partial }) %}
+            {% if order.status == 'active' and guest.system_template_exists({ 'file': service_partial }) %}
                 {% set service = client.order_service({ 'id': order.id }) %}
                 {{ include(service_partial, { 'order': order, 'service': service }) }}
             {% endif %}

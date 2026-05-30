@@ -94,6 +94,37 @@ final class FOSSBilling_ToolsTest extends PHPUnit\Framework\TestCase
         $this->assertFalse(FOSSBilling\Tools::normalizeBoolean('maybe'));
     }
 
+    public function testNormalizePortAcceptsIntegersAndNumericStrings(): void
+    {
+        $this->assertSame(1, FOSSBilling\Tools::normalizePort(1));
+        $this->assertSame(443, FOSSBilling\Tools::normalizePort('443'));
+        $this->assertSame(65535, FOSSBilling\Tools::normalizePort('65535'));
+    }
+
+    public function testNormalizePortTrimsWhitespace(): void
+    {
+        $this->assertSame(3306, FOSSBilling\Tools::normalizePort(' 3306 '));
+        $this->assertSame(587, FOSSBilling\Tools::normalizePort("\n587\t"));
+    }
+
+    public function testNormalizePortRejectsInvalidValues(): void
+    {
+        $this->assertNull(FOSSBilling\Tools::normalizePort(0));
+        $this->assertNull(FOSSBilling\Tools::normalizePort(65536));
+        $this->assertNull(FOSSBilling\Tools::normalizePort('-1'));
+        $this->assertNull(FOSSBilling\Tools::normalizePort('8443abc'));
+        $this->assertNull(FOSSBilling\Tools::normalizePort(''));
+        $this->assertNull(FOSSBilling\Tools::normalizePort(null));
+        $this->assertNull(FOSSBilling\Tools::normalizePort([]));
+    }
+
+    public function testNormalizePortReturnsDefaultForInvalidValues(): void
+    {
+        $this->assertSame(3306, FOSSBilling\Tools::normalizePort(null, 3306));
+        $this->assertSame(2087, FOSSBilling\Tools::normalizePort('invalid', 2087));
+        $this->assertSame(8443, FOSSBilling\Tools::normalizePort(65536, 8443));
+    }
+
     public function testIsValidHttpInterfaceAcceptsIpAndHostnameFormats(): void
     {
         $this->assertTrue(FOSSBilling\Tools::isValidHttpInterface('192.0.2.25'));

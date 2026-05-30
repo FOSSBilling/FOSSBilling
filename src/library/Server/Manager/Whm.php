@@ -73,7 +73,7 @@ class Server_Manager_Whm extends Server_Manager
         }
 
         // If port not set, use WHM default.
-        $this->_config['port'] = empty($this->_config['port']) ? '2087' : $this->_config['port'];
+        $this->_config['port'] = FOSSBilling\Tools::normalizePort($this->_config['port'] ?? null, 2087);
     }
 
     /**

@@ -27,6 +27,7 @@ class Admin extends \Api_Abstract
             'captcha_provider' => $config['captcha_provider'] ?? 'recaptcha_v2',
             'captcha_recaptcha_publickey' => $config['captcha_recaptcha_publickey'] ?? null,
             'captcha_recaptcha_privatekey' => $config['captcha_recaptcha_privatekey'] ?? null,
+            'captcha_recaptcha_v3_threshold' => $config['captcha_recaptcha_v3_threshold'] ?? 0.5,
             'turnstile_site_key' => $config['turnstile_site_key'] ?? null,
             'turnstile_secret_key' => $config['turnstile_secret_key'] ?? null,
             'hcaptcha_site_key' => $config['hcaptcha_site_key'] ?? null,

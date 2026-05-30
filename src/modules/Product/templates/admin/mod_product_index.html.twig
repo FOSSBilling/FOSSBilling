@@ -135,7 +135,7 @@
                                 </svg>
                             </a>
                             <a class="btn btn-icon" href="{{ 'product/category_delete'|api_url(query: { 'id': cat_id }) }}"
-                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product'|url}) }}>
+                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product#tab-categories'|url}) }}>
                                 <svg class="icon">
                                     <use xlink:href="#delete" />
                                 </svg>
@@ -186,7 +186,7 @@
 
         <div class="modal modal-blur fade" id="newCategoryModal" tabindex="-1" aria-labelledby="newCategoryModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
-                <form class="modal-content" method="post" action="{{ 'product/category_create'|api_url }}" {{ fb_api_form({redirect: 'product'|url}) }}>
+                <form class="modal-content" method="post" action="{{ 'product/category_create'|api_url }}" {{ fb_api_form({redirect: 'product#tab-categories'|url}) }}>
                     <div class="modal-header">
                         <h3 class="modal-title" id="newCategoryModalLabel">{{ 'Create New Category'|trans }}</h3>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>

@@ -2,7 +2,7 @@
   "id": "invoice",
   "type": "mod",
   "name": "Invoices",
-  "description": "FOSSBilling core module",
+  "description": "Controls invoice numbering, tax behavior, payment gateways, and billing document preferences.",
   "icon_url": "icon.svg",
   "version": "1.0.0"
 }

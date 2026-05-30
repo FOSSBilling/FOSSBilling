@@ -1,6 +1,7 @@
 {% set profile = admin.profile_get %}
 {% set company = guest.system_company %}
 {% set active_locale = guest.system_locale|default('en')|replace({'_': '-'}) %}
+{% set current_active_menu = active_menu|default('') %}
 
 <!DOCTYPE html>
 <html lang="{{ active_locale }}" data-bs-theme="dark">
@@ -135,8 +136,8 @@
                         <div class="container-xl">
                              {% set navigation = admin.extension_get_navigation({ 'url': guest.system_current_url }) %}
                              <ul class="navbar-nav">
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{{ '/'|url }}">
+                                <li class="nav-item{% if current_active_menu == 'dashboard' %} active{% endif %}">
+                                    <a class="nav-link{% if current_active_menu == 'dashboard' %} active{% endif %}" href="{{ '/'|url }}"{% if current_active_menu == 'dashboard' %} aria-current="page"{% endif %}>
                                         <span class="d-none d-xxl-block me-1">
                                             <svg class="icon">
                                                 <use xlink:href="#home" />
@@ -147,8 +148,8 @@
                                   </li>
                              {% for location, group in navigation %}
                              {% if group.subpages %}
-                                <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle" href="{{ group.uri ?: '#' }}" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false" >
+                                <li class="nav-item dropdown{% if current_active_menu == location %} active{% endif %}">
+                                    <a class="nav-link dropdown-toggle{% if current_active_menu == location %} active{% endif %}" href="{{ group.uri ?: '#' }}" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false"{% if current_active_menu == location %} aria-current="page"{% endif %}>
                                         <svg class="icon icon-tabler icon-tabler-arrow-back-up d-none d-xxl-block me-1">
                                             <use xlink:href="#{{ group.class }}" />
                                          </svg>

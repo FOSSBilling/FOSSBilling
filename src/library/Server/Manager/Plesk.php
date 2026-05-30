@@ -33,7 +33,7 @@ class Server_Manager_Plesk extends Server_Manager
      */
     public function init(): void
     {
-        $this->_config['port'] = empty($this->_config['port']) ? 8443 : $this->_config['port'];
+        $this->_config['port'] = FOSSBilling\Tools::normalizePort($this->_config['port'] ?? null, 8443);
         $this->_client = new Client($this->_config['host'], $this->_config['port']);
         $this->_client->setCredentials($this->_config['username'], $this->_config['password']);
     }

@@ -15,6 +15,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use FOSSBilling\Config;
 use FOSSBilling\Exception;
+use FOSSBilling\Tools;
 
 class DriverManagerFactory
 {
@@ -53,7 +54,7 @@ class DriverManagerFactory
         }
 
         $dbConfig['driver'] ??= self::normalizeDriver($dbConfig['type'] ?? 'pdo_mysql');
-        $dbConfig['port'] ??= '3306';
+        $dbConfig['port'] = Tools::normalizePort($dbConfig['port'] ?? null, 3306);
 
         return $dbConfig;
     }
