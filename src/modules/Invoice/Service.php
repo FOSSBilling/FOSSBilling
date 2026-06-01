@@ -448,6 +448,10 @@ class Service implements InjectionAwareInterface
 
         try {
             $invoiceModel = $di['db']->load('Invoice', $params['id'] ?? 0);
+            if (!$invoiceModel instanceof \Model_Invoice) {
+                return;
+            }
+
             $invoice = $service->toApiArray($invoiceModel, true);
             $email = [];
             $email['to_client'] = $invoiceModel->client_id;

@@ -1443,7 +1443,9 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         $this->executeSql(
-            'INSERT INTO setting (param, value, public, category, hash, created_at, updated_at) VALUES (:param, :value, 0, :category, :hash, :created_at, :updated_at)',
+            'INSERT INTO setting (param, value, public, category, hash, created_at, updated_at)
+             VALUES (:param, :value, 0, :category, :hash, :created_at, :updated_at)
+             ON DUPLICATE KEY UPDATE value = VALUES(value), updated_at = VALUES(updated_at)',
             [
                 'param' => 'invoice_hash_lifetime_days',
                 'value' => '90',
@@ -1456,11 +1458,11 @@ class UpdatePatcher implements InjectionAwareInterface
 
         // Destructive migration: NULL legacy invoice hashes that fall outside the
         // modern 30-60 lowercase hex format enforced by the new guest API regex
-        // validation. Affected rows:
-        //   - 2017-era SHA-1 (40 hex)
-        //   - 2021-era MD5 (32 hex)
-        //   - 2022-era SHA-256 (64 hex)
+        // validation. Hashes that fall within the 30-60 char range (including
+        // 32-char MD5 and 40-char SHA-1) are preserved. Affected rows:
+        //   - 2022-era SHA-256 (64 hex, just over the upper bound)
         //   - 2023-era 200-254 hex
+        //   - Any hash containing non-lowercase-hex characters
         // These links would be rejected by the new API anyway, so leaving them
         // in place creates dead links in customer email archives. The
         // extendInvoiceHashLifetime() helper regenerates a valid modern hash
