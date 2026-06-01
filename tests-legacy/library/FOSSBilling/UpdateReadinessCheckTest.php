@@ -33,14 +33,13 @@ final class UpdateReadinessCheckTest extends TestCase
             Path::join($this->dataDir, 'cache'),
             Path::join($this->dataDir, 'log'),
             Path::join($this->dataDir, 'uploads'),
-            Path::join($this->root, 'src'),
-            Path::join($this->root, 'src', 'install'),
-            Path::join($this->root, 'src', 'vendor'),
-            Path::join($this->root, 'src', 'library'),
-            Path::join($this->root, 'src', 'modules'),
-            Path::join($this->root, 'src', 'themes'),
-            Path::join($this->root, 'src', 'public'),
-            Path::join($this->root, 'src', 'locale'),
+            Path::join($this->root, 'install'),
+            Path::join($this->root, 'vendor'),
+            Path::join($this->root, 'library'),
+            Path::join($this->root, 'modules'),
+            Path::join($this->root, 'themes'),
+            Path::join($this->root, 'public'),
+            Path::join($this->root, 'locale'),
         ]);
 
         $this->fs->dumpFile($this->configPath, "<?php\nreturn [];\n");
