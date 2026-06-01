@@ -57,9 +57,16 @@ class Admin extends \Api_Abstract
 
         $guestCron = !empty($data['guest_cron']);
 
+        // This endpoint is specific to the cron module; don't allow writing config for arbitrary extensions.
+        $data = [
+            'ext' => 'mod_cron',
+            'guest_cron' => $guestCron,
+        ];
+
         if ($guestCron) {
             $existing = $this->getMod()->getConfig();
-            $data['cron_hash'] = $existing['cron_hash'] ?: bin2hex(random_bytes(32));
+            $existingHash = (string) ($existing['cron_hash'] ?? '');
+            $data['cron_hash'] = $existingHash !== '' ? $existingHash : bin2hex(random_bytes(32));
         } else {
             $data['cron_hash'] = '';
         }
