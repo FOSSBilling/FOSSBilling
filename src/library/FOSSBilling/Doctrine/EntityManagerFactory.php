@@ -43,7 +43,7 @@ class EntityManagerFactory
         $config->setNamingStrategy(new UnderscoreNamingStrategy(CASE_LOWER)); // Consistency with already existing RedBean tables
 
         // Enable native lazy loading if PHP version supports it (8.4+).
-        if (PHP_VERSION_ID > 80400) {
+        if (PHP_VERSION_ID >= 80400) {
             $config->enableNativeLazyObjects(true);
         } else {
             $config->setProxyDir(Path::join(PATH_CACHE, 'doctrine', 'proxies'));
