@@ -354,7 +354,7 @@ class Admin extends \Api_Abstract
 
     public function batch_sendmail()
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'send_emails');
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'send_emails', null, $this->identity);
 
         $extensionService = $this->di['mod_service']('extension');
         if ($extensionService->isExtensionActive('mod', 'demo')) {

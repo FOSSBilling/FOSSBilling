@@ -68,23 +68,27 @@
             </div>
         </div>
         <div class="card-body border-top">
-            <form method="post" action="{{ 'extension/config_save'|api_url }}" {{ fb_api_form({message: 'Configuration Updated'|trans}) }}>
+            <form id="guest-cron-form" method="post" action="{{ 'cron/save_settings'|api_url }}" {{ fb_api_form({message: 'Configuration Updated'|trans, reload: true}) }}>
                 <input type="hidden" name="ext" value="mod_cron">
                 <div class="d-flex flex-column flex-lg-row align-items-lg-start justify-content-between gap-3 mb-3">
                     <div>
                         <h4 class="card-title mb-2">{{ 'Guest Cron Endpoint'|trans }}</h4>
-                        <p class="text-secondary mb-0">{{ 'If enabled, this guest URL can be used to execute scheduled tasks without an authenticated admin session.'|trans }}</p>
+                        <p class="text-secondary mb-0">{{ 'Toggle to enable or disable the guest cron URL. A security hash is generated automatically when enabled.'|trans }}</p>
                     </div>
                     <label class="form-check form-switch form-switch-2 m-0">
-                        <input class="form-check-input" name="guest_cron" type="checkbox" {% if params.guest_cron %}checked="checked"{% endif %}>
+                        <input class="form-check-input" name="guest_cron" type="checkbox" {% if params.guest_cron %}checked="checked"{% endif %} onchange="document.getElementById('guest-cron-form').requestSubmit()">
                         <span class="form-check-label">{{ 'Enable Guest Access'|trans }}</span>
                     </label>
                 </div>
-                <label class="form-label" for="guest-cron-url">{{ 'Guest Cron URL'|trans }}</label>
-                <input id="guest-cron-url" class="form-control font-monospace" type="text" value="{{ 'cron/run'|api_url(role: 'guest') }}" readonly>
-                <div class="pt-3 text-end">
-                    <input class="btn btn-primary" type="submit" value="{{ 'Update'|trans }}">
-                </div>
+                {% if params.guest_cron and params.cron_hash %}
+                    <label class="form-label" for="guest-cron-url">{{ 'Guest Cron URL'|trans }}</label>
+                    <input id="guest-cron-url" class="form-control font-monospace mb-2" type="text" value="{{ 'cron/run'|api_url(role: 'guest', query: {hash: params.cron_hash}) }}" readonly>
+                    <div class="d-flex justify-content-end mb-3">
+                        <a class="btn btn-outline-warning" href="{{ 'cron/regenerate_cron_hash'|api_url }}" {{ fb_api_link({message: 'Hash Regenerated'|trans, reload: true}) }}>
+                            {{ 'Regenerate Hash'|trans }}
+                        </a>
+                    </div>
+                {% endif %}
             </form>
         </div>
         <div class="card-footer d-flex justify-content-end">
