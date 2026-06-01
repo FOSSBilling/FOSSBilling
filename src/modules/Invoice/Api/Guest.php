@@ -31,12 +31,19 @@ class Guest extends \Api_Abstract
     #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
     public function get($data)
     {
+        if (!preg_match('/^[a-f0-9]{30,60}$/', (string) $data['hash'])) {
+            throw new \FOSSBilling\Exception('Invalid invoice hash', null, 4001);
+        }
+
+        $this->di['rate_limiter']->consumeOrThrow('invoice_get_ip', (string) $this->getIp());
+        $this->di['rate_limiter']->consumeOrThrow('invoice_get_hash', (string) $data['hash']);
+
         $model = $this->di['db']->findOne('Invoice', 'hash = :hash', ['hash' => $data['hash']]);
         if (!$model) {
             throw new \FOSSBilling\Exception('Invoice was not found');
         }
         $service = $this->getService();
-        $service->checkInvoiceAuth($model->client_id, InvoiceOperation::READ);
+        $service->checkInvoiceAuth($model, InvoiceOperation::READ);
 
         return $service->toApiArray($model, true, $this->getIdentity());
     }
@@ -75,6 +82,10 @@ class Guest extends \Api_Abstract
             throw new \FOSSBilling\Exception('Invoice hash not passed. Missing param hash', null, 810);
         }
 
+        if (!preg_match('/^[a-f0-9]{30,60}$/', (string) $data['hash'])) {
+            throw new \FOSSBilling\Exception('Invalid invoice hash', null, 4001);
+        }
+
         if (empty($data['gateway_id'])) {
             throw new \FOSSBilling\Exception('Payment method not found. Missing param gateway_id', null, 811);
         }
@@ -93,6 +104,10 @@ class Guest extends \Api_Abstract
     #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
     public function pdf($data)
     {
+        if (!preg_match('/^[a-f0-9]{30,60}$/', (string) $data['hash'])) {
+            throw new \FOSSBilling\Exception('Invalid invoice hash', null, 4001);
+        }
+
         $this->di['rate_limiter']->consumeOrThrow('invoice_pdf_ip', (string) $this->getIp());
         $this->di['rate_limiter']->consumeOrThrow('invoice_pdf_hash', (string) $data['hash']);
 

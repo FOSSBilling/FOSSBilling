@@ -33,9 +33,12 @@ final class ClientTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
 
+        $identity = new \Model_Admin();
+        $identity->loadBean(new \DummyBean());
+
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
-        $this->api->setIdentity(new \Model_Admin());
+        $this->api->setIdentity($identity);
 
         $data['hash'] = md5('1');
         $result = $this->api->get($data);
@@ -54,8 +57,10 @@ final class ClientTest extends \BBTestCase
         $di = $this->getDi();
         $di['db'] = $dbMock;
 
+        $identity = new \Model_Admin();
+        $identity->loadBean(new \DummyBean());
         $this->api->setDi($di);
-        $this->api->setIdentity(new \Model_Admin());
+        $this->api->setIdentity($identity);
 
         $data['hash'] = md5('1');
         $this->expectException(\FOSSBilling\Exception::class);

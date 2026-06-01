@@ -22,6 +22,30 @@ final class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
+    private function getMockSystemServiceForAuth(): \Box\Mod\System\Service
+    {
+        $systemService = $this->createMock(\Box\Mod\System\Service::class);
+        $systemService->method('getParamValue')
+            ->willReturnCallback(static function (string $param, mixed $default = null): mixed {
+                if ($param === 'invoice_accessible_from_hash') {
+                    return '0';
+                }
+
+                return $default;
+            });
+
+        return $systemService;
+    }
+
+    private function getMockUnauthenticatedAuth(): \Box_Authorization
+    {
+        $auth = $this->createMock(\Box_Authorization::class);
+        $auth->method('isAdminLoggedIn')->willReturn(false);
+        $auth->method('isClientLoggedIn')->willReturn(false);
+
+        return $auth;
+    }
+
     public static function dataForSearchQuery(): array
     {
         return [
@@ -290,7 +314,7 @@ final class ServiceTest extends \BBTestCase
     public function testOnAfterAdminInvoiceReminderSent(): void
     {
         $serviceMock = $this->getMockBuilder(Service::class)
-            ->onlyMethods(['toApiArray'])
+            ->onlyMethods(['toApiArray', 'extendInvoiceHashLifetime'])
             ->getMock();
         $arr = [
             'total' => 1,
@@ -301,6 +325,8 @@ final class ServiceTest extends \BBTestCase
         $serviceMock->expects($this->atLeastOnce())
             ->method('toApiArray')
             ->willReturn($arr);
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('extendInvoiceHashLifetime');
 
         $eventMock = $this->getMockBuilder('\Box_Event')
             ->disableOriginalConstructor()
@@ -366,14 +392,32 @@ final class ServiceTest extends \BBTestCase
                 'invoice' => $params,
             ]);
 
+        $invoiceService = $this->getMockBuilder(Service::class)
+            ->onlyMethods(['extendInvoiceHashLifetime'])
+            ->getMock();
+        $invoiceService->expects($this->atLeastOnce())
+            ->method('extendInvoiceHashLifetime');
+
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('load')
+            ->with('Invoice', 1)
+            ->willReturn($invoiceModel);
+
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService) {
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $invoiceService) {
             if ($serviceName === 'email') {
                 return $emailService;
+            }
+            if ($serviceName === 'invoice') {
+                return $invoiceService;
             }
 
             throw new \RuntimeException('Unexpected service request: ' . $serviceName);
         });
+        $di['db'] = $dbMock;
 
         $this->service->setDi($di);
         $eventMock->expects($this->atLeastOnce())
@@ -406,14 +450,31 @@ final class ServiceTest extends \BBTestCase
         $emailService->expects($this->never())
             ->method('sendTemplate');
 
+        $invoiceService = $this->getMockBuilder(Service::class)
+            ->onlyMethods(['extendInvoiceHashLifetime'])
+            ->getMock();
+        $invoiceService->expects($this->atLeastOnce())
+            ->method('extendInvoiceHashLifetime');
+
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('load')
+            ->willReturn($invoiceModel);
+
         $di = $this->getDi();
-        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService) {
+        $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $invoiceService) {
             if ($serviceName === 'email') {
                 return $emailService;
+            }
+            if ($serviceName === 'invoice') {
+                return $invoiceService;
             }
 
             throw new \RuntimeException('Unexpected service request: ' . $serviceName);
         });
+        $di['db'] = $dbMock;
 
         $this->service->setDi($di);
         $eventMock->expects($this->atLeastOnce())
@@ -2035,6 +2096,8 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn ($serviceName): ?\Box\Mod\System\Service => $serviceName === 'system' ? $this->getMockSystemServiceForAuth() : null);
+        $di['auth'] = $this->getMockUnauthenticatedAuth();
 
         $this->service->setDi($di);
 
@@ -2067,6 +2130,8 @@ final class ServiceTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn ($serviceName): ?\Box\Mod\System\Service => $serviceName === 'system' ? $this->getMockSystemServiceForAuth() : null);
+        $di['auth'] = $this->getMockUnauthenticatedAuth();
 
         $this->service->setDi($di);
 
@@ -2137,9 +2202,13 @@ final class ServiceTest extends \BBTestCase
             if ($sub == 'Subscription') {
                 return $subcribeService;
             }
+            if ($serviceName === 'system') {
+                return $this->getMockSystemServiceForAuth();
+            }
         });
         $di['api_admin'] = new \Api_Handler(new \Model_Admin());
         $di['logger'] = new \Box_Log();
+        $di['auth'] = $this->getMockUnauthenticatedAuth();
 
         $serviceMock->setDi($di);
         $result = $serviceMock->processInvoice($data);
@@ -2168,6 +2237,139 @@ final class ServiceTest extends \BBTestCase
 
         $result = $this->service->addNote($invoiceModel, $note);
         $this->assertTrue($result);
+    }
+
+    public function testCheckInvoiceAuthAllowsAdminEvenWhenExpired(): void
+    {
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        $invoiceModel->client_id = 5;
+        $invoiceModel->hash_expires_at = date('Y-m-d H:i:s', strtotime('-1 day'));
+
+        $auth = $this->createMock(\Box_Authorization::class);
+        $auth->method('isAdminLoggedIn')->willReturn(true);
+        $auth->method('isClientLoggedIn')->willReturn(false);
+
+        $di = $this->getDi();
+        $di['auth'] = $auth;
+        $this->service->setDi($di);
+
+        $this->service->checkInvoiceAuth($invoiceModel, InvoiceOperation::READ);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testCheckInvoiceAuthAllowsOwnerEvenWhenExpired(): void
+    {
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        $invoiceModel->client_id = 5;
+        $invoiceModel->hash_expires_at = date('Y-m-d H:i:s', strtotime('-1 day'));
+
+        $clientModel = new \Model_Client();
+        $clientModel->loadBean(new \DummyBean());
+        $clientModel->id = 5;
+
+        $auth = $this->createMock(\Box_Authorization::class);
+        $auth->method('isAdminLoggedIn')->willReturn(false);
+        $auth->method('isClientLoggedIn')->willReturn(true);
+
+        $di = $this->getDi();
+        $di['auth'] = $auth;
+        $di['loggedin_client'] = $clientModel;
+        $di['mod_service'] = $di->protect(fn ($serviceName) => $serviceName === 'system' ? $this->getMockSystemServiceForAuth() : null);
+        $this->service->setDi($di);
+
+        $this->service->checkInvoiceAuth($invoiceModel, InvoiceOperation::READ);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testCheckInvoiceAuthAllowsGuestWhenNotExpired(): void
+    {
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        $invoiceModel->client_id = 5;
+        $invoiceModel->hash_expires_at = date('Y-m-d H:i:s', strtotime('+30 days'));
+
+        $systemService = $this->createMock(\Box\Mod\System\Service::class);
+        $systemService->method('getParamValue')
+            ->willReturnCallback(static function (string $param, mixed $default = null): mixed {
+                if ($param === 'invoice_accessible_from_hash') {
+                    return '1';
+                }
+
+                return $default;
+            });
+
+        $di = $this->getDi();
+        $di['auth'] = $this->getMockUnauthenticatedAuth();
+        $di['mod_service'] = $di->protect(fn ($serviceName) => $serviceName === 'system' ? $systemService : null);
+        $this->service->setDi($di);
+
+        $this->service->checkInvoiceAuth($invoiceModel, InvoiceOperation::READ);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testCheckInvoiceAuthAllowsGuestWhenNoExpirationSet(): void
+    {
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        $invoiceModel->client_id = 5;
+        $invoiceModel->hash_expires_at = null;
+
+        $systemService = $this->createMock(\Box\Mod\System\Service::class);
+        $systemService->method('getParamValue')
+            ->willReturnCallback(static function (string $param, mixed $default = null): mixed {
+                if ($param === 'invoice_accessible_from_hash') {
+                    return '1';
+                }
+
+                return $default;
+            });
+
+        $di = $this->getDi();
+        $di['auth'] = $this->getMockUnauthenticatedAuth();
+        $di['mod_service'] = $di->protect(fn ($serviceName) => $serviceName === 'system' ? $systemService : null);
+        $this->service->setDi($di);
+
+        $this->service->checkInvoiceAuth($invoiceModel, InvoiceOperation::READ);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testComputeHashExpirationReturnsFutureDateByDefault(): void
+    {
+        $systemService = $this->createMock(\Box\Mod\System\Service::class);
+        $systemService->method('getParamValue')
+            ->with('invoice_hash_lifetime_days', '90')
+            ->willReturn('90');
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn ($serviceName) => $serviceName === 'system' ? $systemService : null);
+        $this->service->setDi($di);
+
+        $reflection = new \ReflectionClass($this->service);
+        $method = $reflection->getMethod('computeHashExpiration');
+        $result = $method->invoke($this->service);
+
+        $this->assertNotNull($result);
+        $this->assertGreaterThan(time(), strtotime($result));
+    }
+
+    public function testComputeHashExpirationReturnsNullWhenLifetimeZero(): void
+    {
+        $systemService = $this->createMock(\Box\Mod\System\Service::class);
+        $systemService->method('getParamValue')
+            ->with('invoice_hash_lifetime_days', '90')
+            ->willReturn('0');
+
+        $di = $this->getDi();
+        $di['mod_service'] = $di->protect(fn ($serviceName) => $serviceName === 'system' ? $systemService : null);
+        $this->service->setDi($di);
+
+        $reflection = new \ReflectionClass($this->service);
+        $method = $reflection->getMethod('computeHashExpiration');
+        $result = $method->invoke($this->service);
+
+        $this->assertNull($result);
     }
 
     public function testFindAllUnpaid(): void
@@ -2498,5 +2700,107 @@ final class ServiceTest extends \BBTestCase
         $this->assertInstanceOf(Response::class, $response);
         $this->assertSame('application/pdf', $response->headers->get('Content-Type'));
         $this->assertStringContainsString('inline;', (string) $response->headers->get('Content-Disposition'));
+    }
+
+    public function testExtendInvoiceHashLifetimeRegeneratesLegacyHash(): void
+    {
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        // 64-char legacy format (SHA-256 era). 40-char SHA-1 and 32-char
+        // MD5 actually match the modern regex and are preserved.
+        $invoiceModel->hash = str_repeat('a', 64);
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->with($this->callback(function (\Model_Invoice $invoice): bool {
+                $this->assertNotSame(
+                    str_repeat('a', 64),
+                    $invoice->hash,
+                    'Legacy 64-char SHA-256 hash must be replaced with a modern 30-60 char hex hash'
+                );
+                $this->assertMatchesRegularExpression(
+                    '/^[a-f0-9]{30,60}$/',
+                    $invoice->hash,
+                    'New hash must be lowercase hex in the 30-60 char range'
+                );
+                $this->assertNotNull($invoice->hash_expires_at, 'hash_expires_at must be stamped');
+
+                return true;
+            }));
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (string $service): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($service)) {
+            'system' => $this->getMockSystemServiceForAuth(),
+            default => throw new \Pimple\Exception\UnknownIdentifierException(sprintf('Identifier "%s" is not defined.', $service)),
+        });
+
+        $this->service->setDi($di);
+        $this->service->extendInvoiceHashLifetime($invoiceModel);
+    }
+
+    public function testExtendInvoiceHashLifetimeRegeneratesNullHash(): void
+    {
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        $invoiceModel->hash = null;
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->with($this->callback(function (\Model_Invoice $invoice): bool {
+                $this->assertNotNull($invoice->hash, 'Null hash must be replaced');
+                $this->assertMatchesRegularExpression(
+                    '/^[a-f0-9]{30,60}$/',
+                    $invoice->hash,
+                    'New hash must be lowercase hex in the 30-60 char range'
+                );
+
+                return true;
+            }));
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (string $service): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($service)) {
+            'system' => $this->getMockSystemServiceForAuth(),
+            default => throw new \Pimple\Exception\UnknownIdentifierException(sprintf('Identifier "%s" is not defined.', $service)),
+        });
+
+        $this->service->setDi($di);
+        $this->service->extendInvoiceHashLifetime($invoiceModel);
+    }
+
+    public function testExtendInvoiceHashLifetimePreservesModernHash(): void
+    {
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        // Valid modern 30-60 char lowercase hex hash
+        $modernHash = bin2hex(random_bytes(20));
+        $invoiceModel->hash = $modernHash;
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->with($this->callback(function (\Model_Invoice $invoice) use ($modernHash): bool {
+                $this->assertSame(
+                    $modernHash,
+                    $invoice->hash,
+                    'Modern hash must be preserved as-is, not regenerated'
+                );
+                $this->assertNotNull($invoice->hash_expires_at, 'hash_expires_at must still be stamped');
+
+                return true;
+            }));
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (string $service): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($service)) {
+            'system' => $this->getMockSystemServiceForAuth(),
+            default => throw new \Pimple\Exception\UnknownIdentifierException(sprintf('Identifier "%s" is not defined.', $service)),
+        });
+
+        $this->service->setDi($di);
+        $this->service->extendInvoiceHashLifetime($invoiceModel);
     }
 }
