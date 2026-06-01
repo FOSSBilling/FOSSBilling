@@ -426,7 +426,7 @@ class Service implements InjectionAwareInterface
                 $emailService->sendTemplate($email);
             }
 
-            // Re-sending the created-email extends the hash lifetime so the
+            // Sending the created-email extends the hash lifetime so the
             // recipient has a fresh window to act on the link.
             $invoiceModel = $di['db']->load('Invoice', $params['id'] ?? 0);
             if ($invoiceModel instanceof \Model_Invoice) {
