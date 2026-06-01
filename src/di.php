@@ -120,18 +120,12 @@ $di['db'] = function () use ($di) {
     RedBeanPHP\R::setup($di['pdo']);
     RedBeanPHP\Util\DispenseHelper::setEnforceNamingPolicy(false);
 
-    // SECURITY: Force RedBean to bind string literals as PDO::PARAM_STR
-    // rather than letting it auto-coerce them to PDO::PARAM_INT. Without
-    // this, a query such as `WHERE hash = :hash` with a short numeric
-    // string value (e.g. '107') will be sent to MySQL as an integer, and
-    // MySQL will silently coerce the VARCHAR column to a leading-digits
-    // comparison, matching rows whose hash starts with digits even though
-    // the hashes are different. This is the root cause of the invoice
-    // hash enumeration issue: /api/guest/invoice/get?hash=107 could
-    // resolve to an invoice whose actual hash was '107baed04c...'.
-    // This call must not be removed; see tests-legacy/library/RedBeanBindingTest.php.
-    /** @phpstan-ignore-next-line RedBean's Adapter::getDatabase() returns the abstract Driver, but the concrete RPDO is what implements setUseStringOnlyBinding. */
-    \RedBeanPHP\Facade::getDatabaseAdapter()->getDatabase()->setUseStringOnlyBinding(true);
+    // SECURITY: bind string literals as PARAM_STR, not PARAM_INT. Without
+    // this, ?hash=107 in /api/guest/invoice/get resolves to the invoice
+    // whose hash starts with '107' because MySQL coerces VARCHAR against
+    // int to a leading-digits match. Do not remove; see RedBeanBindingTest.
+    /* @phpstan-ignore-next-line Adapter::getDatabase() returns the abstract Driver; the concrete RPDO implements setUseStringOnlyBinding. */
+    Facade::getDatabaseAdapter()->getDatabase()->setUseStringOnlyBinding(true);
 
     $helper = new Box_BeanHelper();
     $helper->setDi($di);

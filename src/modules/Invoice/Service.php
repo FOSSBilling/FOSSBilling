@@ -428,12 +428,10 @@ class Service implements InjectionAwareInterface
 
             // Re-sending the created-email extends the hash lifetime so the
             // recipient has a fresh window to act on the link.
-            if (isset($params['id'])) {
-                $invoiceModel = $di['db']->load('Invoice', (int) $params['id']);
-                if ($invoiceModel instanceof \Model_Invoice) {
-                    $service = $di['mod_service']('invoice');
-                    $service->extendInvoiceHashLifetime($invoiceModel);
-                }
+            $invoiceModel = $di['db']->load('Invoice', $params['id'] ?? 0);
+            if ($invoiceModel instanceof \Model_Invoice) {
+                $service = $di['mod_service']('invoice');
+                $service->extendInvoiceHashLifetime($invoiceModel);
             }
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
@@ -460,9 +458,7 @@ class Service implements InjectionAwareInterface
 
             // Sending a payment reminder also re-extends the hash lifetime
             // since the recipient is being re-engaged via the same link.
-            if ($invoiceModel instanceof \Model_Invoice) {
-                $service->extendInvoiceHashLifetime($invoiceModel);
-            }
+            $service->extendInvoiceHashLifetime($invoiceModel);
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
         }
@@ -1771,9 +1767,8 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Computes the hash_expires_at timestamp for a new or re-sent invoice hash.
-     * Returns null when the admin has disabled hash expiration by setting
-     * invoice_hash_lifetime_days to 0.
+     * Computes the hash_expires_at timestamp. Returns null when the admin
+     * has disabled hash expiration (invoice_hash_lifetime_days = 0).
      */
     private function computeHashExpiration(): ?string
     {
@@ -1787,15 +1782,9 @@ class Service implements InjectionAwareInterface
 
     /**
      * Re-stamps hash_expires_at on an existing invoice using the current
-     * invoice_hash_lifetime_days setting. Used by the email-resend event
-     * hooks so that recipients get a fresh expiration window.
-     *
-     * Also self-heals invoices whose stored hash is empty or does not
-     * match the modern 30-60 lowercase hex format. patch67 NULLs such
-     * legacy hashes (SHA-1, MD5, full SHA-256, 200-254 hex) to prevent
-     * dead magic links in archived emails; this method regenerates a
-     * valid modern hash so the next email re-send produces a working
-     * link without manual SQL intervention.
+     * invoice_hash_lifetime_days setting. Also self-heals invoices whose
+     * hash is empty or in a legacy format (patch67 NULLs those) by
+     * generating a fresh modern hash.
      */
     public function extendInvoiceHashLifetime(\Model_Invoice $invoice): void
     {

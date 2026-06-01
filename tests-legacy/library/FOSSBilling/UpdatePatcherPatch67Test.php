@@ -2,24 +2,13 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\UpdatePatcher;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('Core')]
 /**
  * Regression tests for the destructive hash migration in patch67.
- *
- * patch67 adds the invoice.hash_expires_at column, the
- * invoice_hash_lifetime_days setting, and a destructive UPDATE that
- * NULLs any legacy invoice.hash outside the modern 30-60 lowercase hex
- * format. This addresses the numeric-prefix hash enumeration root cause
- * (see RedBeanBindingTest for the underlying fix).
- *
- * A full integration test would require a live MySQL database (the
- * UPDATE uses MySQL-specific REGEXP syntax), so we assert on the source
- * directly: the method must be registered, must add the right column
- * and setting, and must include the destructive UPDATE. Removing any of
- * these is a deliberate code review decision, not a silent refactor.
+ * Asserts on the source because the UPDATE uses MySQL-specific REGEXP
+ * syntax and cannot be exercised against SQLite in unit tests.
  */
 final class UpdatePatcherPatch67Test extends PHPUnit\Framework\TestCase
 {
@@ -45,7 +34,7 @@ final class UpdatePatcherPatch67Test extends PHPUnit\Framework\TestCase
     {
         $contents = (string) file_get_contents($this->patcherPath);
         $this->assertStringContainsString(
-            "ADD COLUMN `hash_expires_at`",
+            'ADD COLUMN `hash_expires_at`',
             $contents,
             'patch67 must add the hash_expires_at column so the new lifetime logic has somewhere to store the expiry.'
         );

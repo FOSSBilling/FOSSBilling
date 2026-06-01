@@ -131,7 +131,7 @@ final class GuestTest extends \BBTestCase
     public function testPdf(): void
     {
         $data = [
-            'hash' => '',
+            'hash' => str_repeat('a', 40),
         ];
         $response = new Response('pdf', 200, ['Content-Type' => 'application/pdf']);
         $serviceMock = $this->createMock(\Box\Mod\Invoice\Service::class);

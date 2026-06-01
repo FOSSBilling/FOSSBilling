@@ -3,16 +3,9 @@
 declare(strict_types=1);
 
 /**
- * Regression test for the RedBean string-to-int type-coercion fix in
- * src/di.php. The fix disables RedBean's automatic promotion of string
- * literals to PDO::PARAM_INT, which is what allowed ?hash=107 in
- * /api/guest/invoice/get to resolve to an invoice whose actual hash
- * started with the digits '107' (MySQL silently truncates VARCHAR
- * comparisons against integer values to a leading-digits match).
- *
- * Full DI bootstrap is too heavy for a unit test, so we assert on the
- * source instead: removing the call from src/di.php must be a conscious
- * code review decision, not a silent refactor.
+ * Regression test for the RedBean string-only binding fix in src/di.php.
+ * Asserts on the source rather than booting the full DI container so
+ * that removing the call must be a deliberate code review decision.
  */
 final class RedBeanBindingTest extends BBTestCase
 {
@@ -25,11 +18,11 @@ final class RedBeanBindingTest extends BBTestCase
         $this->assertNotFalse($contents, 'src/di.php must be readable');
 
         $this->assertStringContainsString(
-            "setUseStringOnlyBinding(true)",
+            'setUseStringOnlyBinding(true)',
             $contents,
             'src/di.php must enable RedBean string-only binding to prevent '
             . 'auto-promotion of string literals to PDO::PARAM_INT, which '
-            . 'caused the invoice hash enumeration vulnerability (CVE-pending).'
+            . 'caused the invoice hash enumeration vulnerability.'
         );
     }
 }

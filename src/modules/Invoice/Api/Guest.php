@@ -31,7 +31,7 @@ class Guest extends \Api_Abstract
     #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
     public function get($data)
     {
-        if (!empty($data['hash']) && !preg_match('/^[a-f0-9]{30,60}$/', (string) $data['hash'])) {
+        if (!preg_match('/^[a-f0-9]{30,60}$/', (string) $data['hash'])) {
             throw new \FOSSBilling\Exception('Invalid invoice hash', null, 4001);
         }
 
@@ -104,7 +104,7 @@ class Guest extends \Api_Abstract
     #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
     public function pdf($data)
     {
-        if (!empty($data['hash']) && !preg_match('/^[a-f0-9]{30,60}$/', (string) $data['hash'])) {
+        if (!preg_match('/^[a-f0-9]{30,60}$/', (string) $data['hash'])) {
             throw new \FOSSBilling\Exception('Invalid invoice hash', null, 4001);
         }
 

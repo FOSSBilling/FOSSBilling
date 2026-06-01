@@ -22,11 +22,6 @@ final class ServiceTest extends \BBTestCase
         $this->service = new Service();
     }
 
-    /**
-     * Returns a minimal system service mock that returns the default values
-     * expected by checkInvoiceAuth. Use this in tests that exercise
-     * processInvoice or other paths that call checkInvoiceAuth.
-     */
     private function getMockSystemServiceForAuth(): \Box\Mod\System\Service
     {
         $systemService = $this->createMock(\Box\Mod\System\Service::class);
@@ -42,11 +37,6 @@ final class ServiceTest extends \BBTestCase
         return $systemService;
     }
 
-    /**
-     * Returns a minimal auth service mock that treats the request as
-     * unauthenticated (neither admin nor client logged in). Use this in
-     * tests that exercise checkInvoiceAuth through processInvoice.
-     */
     private function getMockUnauthenticatedAuth(): \Box_Authorization
     {
         $auth = $this->createMock(\Box_Authorization::class);
@@ -2717,10 +2707,8 @@ final class ServiceTest extends \BBTestCase
     {
         $invoiceModel = new \Model_Invoice();
         $invoiceModel->loadBean(new \DummyBean());
-        // 2022-era SHA-256 (64 hex) - one of the legacy formats patch67 NULLs.
-        // 40-char SHA-1 and 32-char MD5 actually match the modern regex
-        // (30-60 hex) so they would be preserved; only lengths outside
-        // [30, 60] or non-hex strings trigger the self-heal path.
+        // 64-char legacy format (SHA-256 era). 40-char SHA-1 and 32-char
+        // MD5 actually match the modern regex and are preserved.
         $invoiceModel->hash = str_repeat('a', 64);
 
         $dbMock = $this->createMock('\Box_Database');
