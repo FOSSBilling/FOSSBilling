@@ -31,6 +31,13 @@ class Guest extends \Api_Abstract
     #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
     public function get($data)
     {
+        if (!empty($data['hash']) && !preg_match('/^[a-f0-9]{30,60}$/', (string) $data['hash'])) {
+            throw new \FOSSBilling\Exception('Invalid invoice hash', null, 4001);
+        }
+
+        $this->di['rate_limiter']->consumeOrThrow('invoice_get_ip', (string) $this->getIp());
+        $this->di['rate_limiter']->consumeOrThrow('invoice_get_hash', (string) $data['hash']);
+
         $model = $this->di['db']->findOne('Invoice', 'hash = :hash', ['hash' => $data['hash']]);
         if (!$model) {
             throw new \FOSSBilling\Exception('Invoice was not found');
