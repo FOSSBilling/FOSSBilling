@@ -128,10 +128,16 @@ class Service implements InjectionAwareInterface
 
             // stock control
             'allow_quantity_select' => $model->allow_quantity_select,
+
+            // The custom order form attached to this product. Public so the
+            // guest checkout template can render it on the product
+            // configuration step. The form's contents are themselves public
+            // (guest.formbuilder_get returns the full form), so hiding the
+            // ID would only break checkout.
+            'form_id' => $model->form_id,
         ];
 
         if ($isAdmin) {
-            $result['form_id'] = $model->form_id;
             $result['created_at'] = $model->created_at;
             $result['updated_at'] = $model->updated_at;
             $result['addons'] = $addons;

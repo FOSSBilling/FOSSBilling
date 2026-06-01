@@ -101,6 +101,99 @@ final class ServiceTest extends \BBTestCase
         $this->assertIsArray($result);
     }
 
+    public function testToApiArrayExposesFormIdToGuests(): void
+    {
+        $serviceMock = $this->getMockBuilder(Service::class)
+            ->onlyMethods([
+                'getStartingFromPrice',
+                'toProductPaymentApiArray',
+            ])
+            ->getMock();
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getStartingFromPrice');
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('toProductPaymentApiArray')
+            ->willReturn([
+                'type' => 'free',
+                \Model_ProductPayment::FREE => ['price' => 0, 'setup' => 0],
+            ]);
+
+        $model = new \Model_Product();
+        $model->loadBean(new \DummyBean());
+        $model->product_payment_id = 2;
+        $model->config = '{}';
+        $model->form_id = 42;
+
+        $modelProductPayment = new \Model_ProductPayment();
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('load')
+            ->willReturn($modelProductPayment);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
+
+        $model->setDi($di);
+        $serviceMock->setDi($di);
+
+        $result = $serviceMock->toApiArray($model, true, null);
+        $this->assertArrayHasKey('form_id', $result);
+        $this->assertSame(42, $result['form_id']);
+    }
+
+    public function testToApiArrayOmitsAdminOnlyFieldsFromGuests(): void
+    {
+        $serviceMock = $this->getMockBuilder(Service::class)
+            ->onlyMethods([
+                'getStartingFromPrice',
+                'toProductPaymentApiArray',
+            ])
+            ->getMock();
+
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getStartingFromPrice');
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('toProductPaymentApiArray')
+            ->willReturn([
+                'type' => 'free',
+                \Model_ProductPayment::FREE => ['price' => 0, 'setup' => 0],
+            ]);
+
+        $model = new \Model_Product();
+        $model->loadBean(new \DummyBean());
+        $model->product_payment_id = 2;
+        $model->config = '{}';
+
+        $modelProductPayment = new \Model_ProductPayment();
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('load')
+            ->willReturn($modelProductPayment);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $serviceMock);
+
+        $model->setDi($di);
+        $serviceMock->setDi($di);
+
+        $result = $serviceMock->toApiArray($model, true, null);
+        $this->assertArrayNotHasKey('created_at', $result);
+        $this->assertArrayNotHasKey('updated_at', $result);
+        $this->assertArrayNotHasKey('stock_control', $result);
+        $this->assertArrayNotHasKey('quantity_in_stock', $result);
+        $this->assertArrayNotHasKey('upgrades', $result);
+        $this->assertArrayNotHasKey('status', $result);
+        $this->assertArrayNotHasKey('hidden', $result);
+        $this->assertArrayNotHasKey('setup', $result);
+        $this->assertArrayNotHasKey('addons', $result);
+        $this->assertArrayNotHasKey('category', $result);
+    }
+
     public function testGetTypes(): void
     {
         $modArray = [
