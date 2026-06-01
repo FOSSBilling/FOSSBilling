@@ -43,7 +43,7 @@ class Guest extends \Api_Abstract
             throw new \FOSSBilling\Exception('Invoice was not found');
         }
         $service = $this->getService();
-        $service->checkInvoiceAuth($model->client_id, InvoiceOperation::READ);
+        $service->checkInvoiceAuth($model, InvoiceOperation::READ);
 
         return $service->toApiArray($model, true, $this->getIdentity());
     }

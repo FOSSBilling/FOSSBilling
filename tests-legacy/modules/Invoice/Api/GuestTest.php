@@ -33,6 +33,7 @@ final class GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
 
         $this->api->setDi($di);
         $this->api->setService($serviceMock);
@@ -54,6 +55,7 @@ final class GuestTest extends \BBTestCase
 
         $di = $this->getDi();
         $di['db'] = $dbMock;
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
 
         $this->api->setDi($di);
         $this->api->setIdentity(new \Model_Admin());
@@ -145,6 +147,53 @@ final class GuestTest extends \BBTestCase
 
         $result = $this->api->pdf($data);
         $this->assertSame($response, $result);
+    }
+
+    public function testGetRejectsMalformedHash(): void
+    {
+        $di = $this->getDi();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
+        $this->api->setDi($di);
+        $this->api->setIdentity(new \Model_Admin());
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionCode(4001);
+        $this->expectExceptionMessage('Invalid invoice hash');
+        $this->api->get(['hash' => 'NOT-HEX-!!!']);
+    }
+
+    public function testGetRejectsTooShortHash(): void
+    {
+        $di = $this->getDi();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
+        $this->api->setDi($di);
+        $this->api->setIdentity(new \Model_Admin());
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionCode(4001);
+        $this->api->get(['hash' => 'abcdef1234']);
+    }
+
+    public function testPaymentRejectsMalformedHash(): void
+    {
+        $di = $this->getDi();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
+        $this->api->setDi($di);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionCode(4001);
+        $this->api->payment(['hash' => 'NOT-HEX-!!!', 'gateway_id' => 1]);
+    }
+
+    public function testPdfRejectsMalformedHash(): void
+    {
+        $di = $this->getDi();
+        $di['rate_limiter'] = $this->getAllowedRateLimiter();
+        $this->api->setDi($di);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionCode(4001);
+        $this->api->pdf(['hash' => 'NOT-HEX-!!!']);
     }
 
     private function getAllowedRateLimiter(): object

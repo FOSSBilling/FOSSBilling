@@ -245,6 +245,7 @@ class Service implements InjectionAwareInterface
         $result['serie_nr'] = $result['serie'] . sprintf('%0' . $invoice_number_padding . 's', $nr);
 
         $result['hash'] = $row['hash'];
+        $result['hash_expires_at'] = $row['hash_expires_at'] ?? null;
         $result['gateway_id'] = $row['gateway_id'];
         $result['taxname'] = $row['taxname'];
         $result['taxrate'] = $row['taxrate'];
@@ -424,6 +425,16 @@ class Service implements InjectionAwareInterface
                 $emailService = $di['mod_service']('email');
                 $emailService->sendTemplate($email);
             }
+
+            // Re-sending the created-email extends the hash lifetime so the
+            // recipient has a fresh window to act on the link.
+            if (isset($params['id'])) {
+                $invoiceModel = $di['db']->load('Invoice', (int) $params['id']);
+                if ($invoiceModel instanceof \Model_Invoice) {
+                    $service = $di['mod_service']('invoice');
+                    $service->extendInvoiceHashLifetime($invoiceModel);
+                }
+            }
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
         }
@@ -446,6 +457,12 @@ class Service implements InjectionAwareInterface
             $email['invoice'] = $invoice;
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
+
+            // Sending a payment reminder also re-extends the hash lifetime
+            // since the recipient is being re-engaged via the same link.
+            if ($invoiceModel instanceof \Model_Invoice) {
+                $service->extendInvoiceHashLifetime($invoiceModel);
+            }
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
         }
@@ -740,6 +757,7 @@ class Service implements InjectionAwareInterface
         $model->serie = $systemService->getParamValue('invoice_series');
         $model->nr = $this->getNextInvoiceNumber();
         $model->hash = bin2hex(random_bytes(random_int(15, 30)));
+        $model->hash_expires_at = $this->computeHashExpiration();
 
         $taxtitle = '';
         $taxService = $this->di['mod_service']('Invoice', 'Tax');
@@ -888,6 +906,7 @@ class Service implements InjectionAwareInterface
                 $new = $this->di['db']->dispense('Invoice');
                 $new->client_id = $invoice->client_id;
                 $new->hash = bin2hex(random_bytes(random_int(15, 30)));
+                $new->hash_expires_at = $this->computeHashExpiration();
                 $new->status = \Model_Invoice::STATUS_REFUNDED;
                 $new->currency = $invoice->currency;
                 $new->approved = true;
@@ -1391,7 +1410,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Invoice not found', null, 812);
         }
 
-        $this->checkInvoiceAuth($invoice->client_id, InvoiceOperation::PAYMENT);
+        $this->checkInvoiceAuth($invoice, InvoiceOperation::PAYMENT);
 
         $gtw = $this->di['db']->load('PayGateway', $data['gateway_id']);
         if (!$gtw instanceof \Model_PayGateway) {
@@ -1462,7 +1481,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Invoice not found');
         }
 
-        $this->checkInvoiceAuth($invoice->client_id, InvoiceOperation::READ);
+        $this->checkInvoiceAuth($invoice, InvoiceOperation::READ);
 
         if (isset($invoice->currency)) {
             $currencyCode = $invoice->currency;
@@ -1712,27 +1731,79 @@ class Service implements InjectionAwareInterface
         return $this->di['csv_response_factory']->create('invoice', 'invoices.csv', $headers);
     }
 
-    public function checkInvoiceAuth(?int $invoiceClientId, InvoiceOperation $operation = InvoiceOperation::READ): void
+    public function checkInvoiceAuth(\Model_Invoice $invoice, InvoiceOperation $operation = InvoiceOperation::READ): void
     {
+        if ($this->di['auth']->isAdminLoggedIn() || Environment::isCLI()) {
+            return;
+        }
+
+        $invoiceClientId = $invoice->client_id;
         $systemService = $this->di['mod_service']('system');
         $hash_access = $systemService->getParamValue('invoice_accessible_from_hash', '0');
-
         $hashAccessAllowed = $hash_access === '1' && in_array($operation, [InvoiceOperation::READ, InvoiceOperation::PAYMENT], true);
 
-        if (!$this->di['auth']->isAdminLoggedIn() && !$hashAccessAllowed && !Environment::isCLI()) {
+        $client = null;
+        if ($this->di['auth']->isClientLoggedIn()) {
             $client = $this->di['loggedin_client'];
-            if ($invoiceClientId != $client->id) {
-                // Then either give an appropriate API response or redirect to the login page.
-                $api_str = '/api/';
-                $url = RequestFactory::getRoutePath($this->di['request']);
-                if (strncasecmp($url, $api_str, strlen($api_str)) === 0) {
-                    throw new InformationException('You do not have permission to perform this action', [], 403);
-                }
-                $invoiceLink = $this->di['url']->link('invoice');
-
-                throw new HttpResponseException(new RedirectResponse($invoiceLink));
-            }
         }
+        $isOwner = $client !== null && (int) $invoiceClientId === (int) $client->id;
+
+        if (!$isOwner && $this->isHashExpired($invoice)) {
+            $api_str = '/api/';
+            $url = RequestFactory::getRoutePath($this->di['request']);
+            if (strncasecmp($url, $api_str, strlen($api_str)) === 0) {
+                throw new InformationException('This invoice link has expired', [], 403);
+            }
+
+            throw new HttpResponseException(new RedirectResponse($this->di['url']->link('invoice')));
+        }
+
+        if (!$hashAccessAllowed && !$isOwner) {
+            $api_str = '/api/';
+            $url = RequestFactory::getRoutePath($this->di['request']);
+            if (strncasecmp($url, $api_str, strlen($api_str)) === 0) {
+                throw new InformationException('You do not have permission to perform this action', [], 403);
+            }
+            $invoiceLink = $this->di['url']->link('invoice');
+
+            throw new HttpResponseException(new RedirectResponse($invoiceLink));
+        }
+    }
+
+    /**
+     * Computes the hash_expires_at timestamp for a new or re-sent invoice hash.
+     * Returns null when the admin has disabled hash expiration by setting
+     * invoice_hash_lifetime_days to 0.
+     */
+    private function computeHashExpiration(): ?string
+    {
+        $days = (int) $this->di['mod_service']('system')->getParamValue('invoice_hash_lifetime_days', '90');
+        if ($days <= 0) {
+            return null;
+        }
+
+        return date('Y-m-d H:i:s', strtotime("+{$days} days"));
+    }
+
+    /**
+     * Re-stamps hash_expires_at on an existing invoice using the current
+     * invoice_hash_lifetime_days setting. Used by the email-resend event
+     * hooks so that recipients get a fresh expiration window.
+     */
+    public function extendInvoiceHashLifetime(\Model_Invoice $invoice): void
+    {
+        $invoice->hash_expires_at = $this->computeHashExpiration();
+        $this->di['db']->store($invoice);
+    }
+
+    private function isHashExpired(\Model_Invoice $invoice): bool
+    {
+        $expires = $invoice->hash_expires_at ?? null;
+        if (empty($expires)) {
+            return false;
+        }
+
+        return strtotime((string) $expires) < time();
     }
 
     // Start of PDF related functions

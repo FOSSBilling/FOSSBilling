@@ -115,7 +115,13 @@
                             <input class="form-check-input" type="checkbox" name="invoice_accessible_from_hash" value="1" {% if params.invoice_accessible_from_hash == '1' %}checked{% endif %}>
                             <span class="form-check-label">{{ 'Allow Access Without Authentication Using Invoice Hash'|trans }}</span>
                         </label>
-                        <small class="form-hint">{{ "If enabled, invoices can be accessed by anyone who knows the invoice hash, although it's quite a long hash and would not be brute-forceable."|trans }}</small>
+                        <small class="form-hint">{{ "If enabled, invoices can be accessed by anyone who knows the invoice hash. The hash is a 30-60 character random hex string and is unfeasible to brute-force, but the link exposes the buyer's name, email, full address, phone, country and company/VAT. Use the lifetime setting below to automatically expire links."|trans }}</small>
+
+                        <div class="mt-3">
+                            <label class="form-label" for="invoice_hash_lifetime_days">{{ 'Invoice hash lifetime (days)'|trans }}</label>
+                            <input class="form-control" type="number" min="0" id="invoice_hash_lifetime_days" name="invoice_hash_lifetime_days" value="{{ params.invoice_hash_lifetime_days|default('90') }}">
+                            <small class="form-hint">{{ 'Number of days an invoice hash link remains valid after issue. Set to 0 to never expire. The lifetime is automatically extended when the invoice email is re-sent.'|trans }}</small>
+                        </div>
                     </div>
                 </div>
             </div>

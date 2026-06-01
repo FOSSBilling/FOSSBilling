@@ -333,7 +333,8 @@ VALUES
 	(28,'funds_min_amount','10',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(29,'funds_max_amount','200',0,NULL,NULL,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
 	(30,'company_favicon','public/branding/favicon.ico',0,NULL,NULL,'2023-01-08 12:00:00','2023-01-08 12:00:00'),
-    (31,'hide_company_public',1,0,NULL,NULL,'2023-07-31 12:00:00', '2023-07-31 12:00:00');
+	(31,'hide_company_public',1,0,NULL,NULL,'2023-07-31 12:00:00', '2023-07-31 12:00:00'),
+	(32,'invoice_hash_lifetime_days','90',0,NULL,NULL,'2026-06-01 12:00:00','2026-06-01 12:00:00');
 
 /*!40000 ALTER TABLE `setting` ENABLE KEYS */;
 UNLOCK TABLES;

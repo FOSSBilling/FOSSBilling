@@ -455,6 +455,7 @@ class UpdatePatcher implements InjectionAwareInterface
             64 => 'patch64',
             65 => 'patch65',
             66 => 'patch66',
+            67 => 'patch67',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1429,6 +1430,47 @@ class UpdatePatcher implements InjectionAwareInterface
             Path::join(PATH_MODS, 'Paidsupport') => 'unlink',
             Path::join(PATH_MODS, 'Servicemembership') => 'unlink',
         ]);
+    }
+
+    private function patch67(): void
+    {
+        // Add hash_expires_at column to invoice table. New invoices (and resends of
+        // existing ones) get a hash_expires_at value computed from the
+        // invoice_hash_lifetime_days system setting. NULL means "never expires"
+        // and is the default for pre-existing rows.
+        if (!$this->tableHasColumn('invoice', 'hash_expires_at')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD COLUMN `hash_expires_at` DATETIME DEFAULT NULL AFTER `updated_at`');
+        }
+
+        $this->executeSql(
+            'INSERT INTO setting (param, value, public, category, hash, created_at, updated_at) VALUES (:param, :value, 0, :category, :hash, :created_at, :updated_at)',
+            [
+                'param' => 'invoice_hash_lifetime_days',
+                'value' => '90',
+                'category' => null,
+                'hash' => null,
+                'created_at' => '2026-06-01 12:00:00',
+                'updated_at' => '2026-06-01 12:00:00',
+            ]
+        );
+
+        // Destructive migration: NULL legacy invoice hashes that fall outside the
+        // modern 30-60 lowercase hex format enforced by the new guest API regex
+        // validation. Affected rows:
+        //   - 2017-era SHA-1 (40 hex)
+        //   - 2021-era MD5 (32 hex)
+        //   - 2022-era SHA-256 (64 hex)
+        //   - 2023-era 200-254 hex
+        // These links would be rejected by the new API anyway, so leaving them
+        // in place creates dead links in customer email archives. The
+        // extendInvoiceHashLifetime() helper regenerates a valid modern hash
+        // automatically when an admin re-sends the invoice, restoring magic-link
+        // access without manual intervention.
+        $this->executeSql(
+            "UPDATE invoice SET hash = NULL
+             WHERE hash IS NOT NULL
+               AND (LENGTH(hash) < 30 OR LENGTH(hash) > 60 OR hash NOT REGEXP '^[a-f0-9]+$')"
+        );
     }
 
     private function generateDownloadableStoredFilename(): string
