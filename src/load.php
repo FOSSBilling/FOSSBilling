@@ -203,7 +203,9 @@ function preInit(): void
     $pathUploads = Path::join(PATH_ROOT, 'data', 'uploads');
     if (getenv('APP_ENV') === 'test') {
         $pathUploads = Path::join(sys_get_temp_dir(), 'fossbilling_test_data', 'uploads');
-        @mkdir($pathUploads, 0o755, true);
+        if (!is_dir($pathUploads) && !mkdir($pathUploads, 0o755, true) && !is_dir($pathUploads)) {
+            throw new Exception(sprintf('Unable to create uploads directory for tests: "%s".', $pathUploads));
+        }
     }
     define('PATH_UPLOADS', $pathUploads);
     define('PATH_CONFIG', Path::join(PATH_ROOT, 'config.php'));
