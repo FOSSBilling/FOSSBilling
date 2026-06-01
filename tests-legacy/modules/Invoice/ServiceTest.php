@@ -2290,7 +2290,6 @@ final class ServiceTest extends \BBTestCase
         $invoiceModel->client_id = 5;
         $invoiceModel->hash_expires_at = date('Y-m-d H:i:s', strtotime('+30 days'));
 
-        $systemService = $this->getMockSystemServiceForAuth();
         $systemService = $this->createMock(\Box\Mod\System\Service::class);
         $systemService->method('getParamValue')
             ->willReturnCallback(static function (string $param, mixed $default = null): mixed {
