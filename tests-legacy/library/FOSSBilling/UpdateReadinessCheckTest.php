@@ -183,6 +183,12 @@ final class UpdateReadinessCheckTest extends TestCase
 
     private function makeUnwritable(string $path): void
     {
+        // chmod mode bits are bypassed by the kernel for root, so the
+        // "make it unwritable" simulation cannot reproduce the
+        // non-root web server case when the test runner is root.
+        if (getmyuid() === 0) {
+            $this->markTestSkipped('Cannot simulate unwritable paths when running as root; chmod mode bits are ignored by the kernel.');
+        }
         chmod($path, 0o500);
         $this->created[] = $path;
     }
