@@ -200,7 +200,12 @@ function preInit(): void
     define('PATH_THEMES', Path::join(PATH_ROOT, 'themes'));
     define('PATH_MODS', Path::join(PATH_ROOT, 'modules'));
     define('PATH_LANGS', Path::join(PATH_ROOT, 'locale'));
-    define('PATH_UPLOADS', Path::join(PATH_ROOT, 'data', 'uploads'));
+    $pathUploads = Path::join(PATH_ROOT, 'data', 'uploads');
+    if (getenv('APP_ENV') === 'test') {
+        $pathUploads = Path::join(sys_get_temp_dir(), 'fossbilling_test_data', 'uploads');
+        @mkdir($pathUploads, 0o755, true);
+    }
+    define('PATH_UPLOADS', $pathUploads);
     define('PATH_CONFIG', Path::join(PATH_ROOT, 'config.php'));
 
     // Load required FOSSBilling libraries.
@@ -252,7 +257,14 @@ function init(): void
     date_default_timezone_set(Config::getProperty('i18n.timezone', 'UTC'));
     define('ADMIN_PREFIX', Config::getProperty('admin_area_prefix'));
     define('DEBUG', (bool) Config::getProperty('debug_and_monitoring.debug', false));
-    define('PATH_DATA', Path::normalize(Config::getProperty('path_data')));
+    $pathData = Path::normalize(Config::getProperty('path_data'));
+    if (Environment::isTesting()) {
+        $pathData = Path::join(sys_get_temp_dir(), 'fossbilling_test_data');
+        @mkdir(Path::join($pathData, 'cache'), 0o755, true);
+        @mkdir(Path::join($pathData, 'log'), 0o755, true);
+        @mkdir($pathData, 0o755, true);
+    }
+    define('PATH_DATA', $pathData);
     define('PATH_CACHE', Path::join(PATH_DATA, 'cache'));
     define('PATH_LOG', Path::join(PATH_DATA, 'log'));
     define('INSTANCE_ID', Config::getProperty('info.instance_id', 'Unknown'));
