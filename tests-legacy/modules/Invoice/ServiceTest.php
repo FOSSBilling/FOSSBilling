@@ -2712,4 +2712,108 @@ final class ServiceTest extends \BBTestCase
         $this->assertSame('application/pdf', $response->headers->get('Content-Type'));
         $this->assertStringContainsString('inline;', (string) $response->headers->get('Content-Disposition'));
     }
+
+    public function testExtendInvoiceHashLifetimeRegeneratesLegacyHash(): void
+    {
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        // 2022-era SHA-256 (64 hex) - one of the legacy formats patch67 NULLs.
+        // 40-char SHA-1 and 32-char MD5 actually match the modern regex
+        // (30-60 hex) so they would be preserved; only lengths outside
+        // [30, 60] or non-hex strings trigger the self-heal path.
+        $invoiceModel->hash = str_repeat('a', 64);
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->with($this->callback(function (\Model_Invoice $invoice): bool {
+                $this->assertNotSame(
+                    str_repeat('a', 64),
+                    $invoice->hash,
+                    'Legacy 64-char SHA-256 hash must be replaced with a modern 30-60 char hex hash'
+                );
+                $this->assertMatchesRegularExpression(
+                    '/^[a-f0-9]{30,60}$/',
+                    $invoice->hash,
+                    'New hash must be lowercase hex in the 30-60 char range'
+                );
+                $this->assertNotNull($invoice->hash_expires_at, 'hash_expires_at must be stamped');
+
+                return true;
+            }));
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (string $service): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($service)) {
+            'system' => $this->getMockSystemServiceForAuth(),
+            default => throw new \Pimple\Exception\UnknownIdentifierException(sprintf('Identifier "%s" is not defined.', $service)),
+        });
+
+        $this->service->setDi($di);
+        $this->service->extendInvoiceHashLifetime($invoiceModel);
+    }
+
+    public function testExtendInvoiceHashLifetimeRegeneratesNullHash(): void
+    {
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        $invoiceModel->hash = null;
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->with($this->callback(function (\Model_Invoice $invoice): bool {
+                $this->assertNotNull($invoice->hash, 'Null hash must be replaced');
+                $this->assertMatchesRegularExpression(
+                    '/^[a-f0-9]{30,60}$/',
+                    $invoice->hash,
+                    'New hash must be lowercase hex in the 30-60 char range'
+                );
+
+                return true;
+            }));
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (string $service): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($service)) {
+            'system' => $this->getMockSystemServiceForAuth(),
+            default => throw new \Pimple\Exception\UnknownIdentifierException(sprintf('Identifier "%s" is not defined.', $service)),
+        });
+
+        $this->service->setDi($di);
+        $this->service->extendInvoiceHashLifetime($invoiceModel);
+    }
+
+    public function testExtendInvoiceHashLifetimePreservesModernHash(): void
+    {
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        // Valid modern 30-60 char lowercase hex hash
+        $modernHash = bin2hex(random_bytes(20));
+        $invoiceModel->hash = $modernHash;
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store')
+            ->with($this->callback(function (\Model_Invoice $invoice) use ($modernHash): bool {
+                $this->assertSame(
+                    $modernHash,
+                    $invoice->hash,
+                    'Modern hash must be preserved as-is, not regenerated'
+                );
+                $this->assertNotNull($invoice->hash_expires_at, 'hash_expires_at must still be stamped');
+
+                return true;
+            }));
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (string $service): \PHPUnit\Framework\MockObject\MockObject => match (strtolower($service)) {
+            'system' => $this->getMockSystemServiceForAuth(),
+            default => throw new \Pimple\Exception\UnknownIdentifierException(sprintf('Identifier "%s" is not defined.', $service)),
+        });
+
+        $this->service->setDi($di);
+        $this->service->extendInvoiceHashLifetime($invoiceModel);
+    }
 }

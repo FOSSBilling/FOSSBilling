@@ -121,6 +121,7 @@
                             <label class="form-label" for="invoice_hash_lifetime_days">{{ 'Invoice hash lifetime (days)'|trans }}</label>
                             <input class="form-control" type="number" min="0" id="invoice_hash_lifetime_days" name="invoice_hash_lifetime_days" value="{{ params.invoice_hash_lifetime_days|default('90') }}">
                             <small class="form-hint">{{ 'Number of days an invoice hash link remains valid after issue. Set to 0 to never expire. The lifetime is automatically extended when the invoice email is re-sent.'|trans }}</small>
+                            <small class="form-hint mt-2 d-block">{{ 'On upgrade, any legacy hash from older FOSSBilling versions (40-char SHA-1, 32-char MD5, 64-char SHA-256, or 200-254 hex) is automatically cleared. Re-sending the invoice email regenerates a valid 30-60 char hex hash.'|trans }}</small>
                         </div>
                     </div>
                 </div>
