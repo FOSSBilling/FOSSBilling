@@ -37,8 +37,7 @@ final class UpdateReadinessCheck
     ) {
         $this->filesystem = new Filesystem();
         $this->configDir = Path::getDirectory($pathConfig);
-        $this->installDir = Path::join($this->pathRoot, 'src', 'install');
-    }
+        $this->installDir = Path::join($this->pathRoot, 'install');
 
     /**
      * Run all checks. Returns a structured result safe to expose to the
