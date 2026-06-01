@@ -23,7 +23,7 @@ class Guest extends \Api_Abstract
     /**
      * Runs cron if the guest API cron endpoint is enabled via the module's settings.
      */
-    public function run($data): bool
+    public function run(array $data = []): bool
     {
         $config = $this->getMod()->getConfig();
         $allowGuest = $config['guest_cron'] ?? false;
