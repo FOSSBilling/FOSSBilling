@@ -41,7 +41,7 @@ class Guest extends \Api_Abstract
             throw new InformationException('You do not have permission to perform this action', [], 403);
         }
 
-        if (is_null($this->getService()->getLastExecutionTime())) {
+        if (!is_null($this->getService()->getLastExecutionTime())) {
             $t1 = new \DateTime($this->getService()->getLastExecutionTime());
             $t2 = new \DateTime('-1min');
 
