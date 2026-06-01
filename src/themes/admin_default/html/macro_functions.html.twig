@@ -11,6 +11,9 @@
                 {% set field_required = false %}
             {% endif %}
         {% endfor %}
+        {% if field_required and element[1].required_when.test_mode is defined and attribute(ctx, 'test_mode') is null %}
+            {% set field_required = false %}
+        {% endif %}
     {% elseif element[1].required is defined %}
         {% set field_required = element[1].required != 'false' %}
     {% else %}

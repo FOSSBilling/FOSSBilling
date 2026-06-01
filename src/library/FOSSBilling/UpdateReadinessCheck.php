@@ -50,14 +50,12 @@ final class UpdateReadinessCheck
     {
         $issues = [];
 
-        // Files the update writes to.
         $configFile = Path::join($this->configDir, 'config.php');
         $issues = array_merge($issues, $this->checkFile($configFile, 'config.php (used to enable maintenance mode and persist configuration)'));
 
         $dataFile = Path::join($this->pathData, 'update-finalization.json');
         $issues = array_merge($issues, $this->checkFileOrParentDir($dataFile, 'data/update-finalization.json (used to track the update state machine)'));
 
-        // Folders the update writes to.
         $writableFolders = [
             $this->pathData => 'data/',
             Path::join($this->pathData, 'cache') => 'data/cache/ (download destination for the update archive)',
@@ -93,14 +91,14 @@ final class UpdateReadinessCheck
     {
         if (!$this->filesystem->exists($path)) {
             if (!$this->filesystem->exists($this->configDir) || !$this->isWritable($this->configDir)) {
-                return [$this->issue($path, 'file', 'missing', sprintf('Required file does not exist and its parent directory is not writable (%s).', $description))];
+                return [['path' => $path, 'type' => 'file', 'reason' => 'missing', 'message' => sprintf('Required file does not exist and its parent directory is not writable (%s).', $description)]];
             }
 
             return [];
         }
 
         if (!$this->isWritable($path)) {
-            return [$this->issue($path, 'file', 'not_writable', sprintf('File is not writable by the web server user (%s).', $description))];
+            return [['path' => $path, 'type' => 'file', 'reason' => 'not_writable', 'message' => sprintf('File is not writable by the web server user (%s).', $description)]];
         }
 
         return [];
@@ -113,7 +111,7 @@ final class UpdateReadinessCheck
     {
         if ($this->filesystem->exists($path)) {
             if (!$this->isWritable($path)) {
-                return [$this->issue($path, 'file', 'not_writable', sprintf('File is not writable by the web server user (%s).', $description))];
+                return [['path' => $path, 'type' => 'file', 'reason' => 'not_writable', 'message' => sprintf('File is not writable by the web server user (%s).', $description)]];
             }
 
             return [];
@@ -121,7 +119,7 @@ final class UpdateReadinessCheck
 
         $parent = Path::getDirectory($path);
         if (!$this->filesystem->exists($parent) || !$this->isWritable($parent)) {
-            return [$this->issue($path, 'file', 'not_writable', sprintf('File does not exist and its parent directory is not writable (%s).', $description))];
+            return [['path' => $path, 'type' => 'file', 'reason' => 'not_writable', 'message' => sprintf('File does not exist and its parent directory is not writable (%s).', $description)]];
         }
 
         return [];
@@ -133,11 +131,11 @@ final class UpdateReadinessCheck
     private function checkFolder(string $path, string $description): array
     {
         if (!$this->filesystem->exists($path)) {
-            return [$this->issue($path, 'folder', 'missing', sprintf('Required folder does not exist (%s).', $description))];
+            return [['path' => $path, 'type' => 'folder', 'reason' => 'missing', 'message' => sprintf('Required folder does not exist (%s).', $description)]];
         }
 
         if (!$this->isWritable($path)) {
-            return [$this->issue($path, 'folder', 'not_writable', sprintf('Folder is not writable by the web server user (%s).', $description))];
+            return [['path' => $path, 'type' => 'folder', 'reason' => 'not_writable', 'message' => sprintf('Folder is not writable by the web server user (%s).', $description)]];
         }
 
         // Write/delete a probe file to surface SELinux denials and other
@@ -148,7 +146,7 @@ final class UpdateReadinessCheck
             $this->filesystem->dumpFile($probe, 'probe');
             $this->filesystem->remove($probe);
         } catch (\Throwable) {
-            return [$this->issue($path, 'folder', 'not_writable', sprintf('Folder is reported as writable but a test write failed (%s). This is often caused by SELinux or filesystem ACL restrictions.', $description))];
+            return [['path' => $path, 'type' => 'folder', 'reason' => 'not_writable', 'message' => sprintf('Folder is reported as writable but a test write failed (%s). This is often caused by SELinux or filesystem ACL restrictions.', $description)]];
         }
 
         return [];
@@ -164,12 +162,12 @@ final class UpdateReadinessCheck
         }
 
         if (!$this->isWritable($path)) {
-            return [$this->issue($path, 'folder', 'not_removable', sprintf('Folder is not writable and cannot be removed by the update (%s).', $description))];
+            return [['path' => $path, 'type' => 'folder', 'reason' => 'not_removable', 'message' => sprintf('Folder is not writable and cannot be removed by the update (%s).', $description)]];
         }
 
         $parent = Path::getDirectory($path);
         if ($parent === '' || !$this->isWritable($parent)) {
-            return [$this->issue($path, 'folder', 'not_removable', sprintf('Folder exists but its parent directory is not writable, so it cannot be removed (%s).', $description))];
+            return [['path' => $path, 'type' => 'folder', 'reason' => 'not_removable', 'message' => sprintf('Folder exists but its parent directory is not writable, so it cannot be removed (%s).', $description)]];
         }
 
         return [];
@@ -182,18 +180,5 @@ final class UpdateReadinessCheck
         }
 
         return true;
-    }
-
-    /**
-     * @return array{path: string, type: string, reason: string, message: string}
-     */
-    private function issue(string $path, string $type, string $reason, string $message): array
-    {
-        return [
-            'path' => $path,
-            'type' => $type,
-            'reason' => $reason,
-            'message' => $message,
-        ];
     }
 }

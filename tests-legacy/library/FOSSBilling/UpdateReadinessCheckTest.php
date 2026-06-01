@@ -204,7 +204,7 @@ final class UpdateReadinessCheckTest extends TestCase
     {
         foreach ($issues as $issue) {
             if ($issue['path'] === $path && $issue['type'] === $type) {
-                $this->assertTrue(true);
+                $this->addToAssertionCount(1);
 
                 return;
             }
