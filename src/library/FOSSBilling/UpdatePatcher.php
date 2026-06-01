@@ -1445,8 +1445,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $this->executeSql(
             'INSERT INTO setting (param, value, public, category, hash, created_at, updated_at)
              VALUES (:param, :value, 0, :category, :hash, :created_at, :updated_at)
-             ON DUPLICATE KEY UPDATE value = VALUES(value), updated_at = VALUES(updated_at)',
-            [
+             ON DUPLICATE KEY UPDATE value = :value, updated_at = :updated_at',
                 'param' => 'invoice_hash_lifetime_days',
                 'value' => '90',
                 'category' => null,
