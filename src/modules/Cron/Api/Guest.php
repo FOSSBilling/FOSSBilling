@@ -23,7 +23,7 @@ class Guest extends \Api_Abstract
     /**
      * Runs cron if the guest API cron endpoint is enabled via the module's settings.
      */
-    public function run(): bool
+    public function run($data): bool
     {
         $config = $this->getMod()->getConfig();
         $allowGuest = $config['guest_cron'] ?? false;
@@ -31,11 +31,20 @@ class Guest extends \Api_Abstract
             throw new InformationException('You do not have permission to perform this action', [], 403);
         }
 
+        $cronHash = $config['cron_hash'] ?? '';
+        if ($cronHash === '') {
+            throw new InformationException('Guest cron is enabled but no security hash has been configured', [], 403);
+        }
+
+        $providedHash = $data['hash'] ?? '';
+        if (!is_string($providedHash) || !hash_equals($cronHash, $providedHash)) {
+            throw new InformationException('You do not have permission to perform this action', [], 403);
+        }
+
         if (is_null($this->getService()->getLastExecutionTime())) {
             $t1 = new \DateTime($this->getService()->getLastExecutionTime());
             $t2 = new \DateTime('-1min');
 
-            // Ensure this can't be used to run cron more than 1 time every minute.
             if ($t1 >= $t2) {
                 return false;
             }

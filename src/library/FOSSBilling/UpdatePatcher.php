@@ -456,6 +456,7 @@ class UpdatePatcher implements InjectionAwareInterface
             65 => 'patch65',
             66 => 'patch66',
             67 => 'patch67',
+            68 => 'patch68',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1472,6 +1473,35 @@ class UpdatePatcher implements InjectionAwareInterface
             "UPDATE invoice SET hash = NULL
              WHERE hash IS NOT NULL
                AND (LENGTH(hash) < 30 OR LENGTH(hash) > 60 OR hash NOT REGEXP '^[a-f0-9]+$')"
+        );
+    }
+
+    private function patch68(): void
+    {
+        $row = $this->fetchOne(
+            "SELECT meta_value FROM extension_meta WHERE extension = 'mod_cron' AND meta_key = 'config'",
+        );
+
+        if (!is_string($row) || $row === '') {
+            return;
+        }
+
+        $configJson = $this->di['crypt']->decrypt($row, Config::getProperty('info.salt'));
+        if (!is_string($configJson)) {
+            return;
+        }
+
+        $config = json_decode($configJson, true);
+        if (!is_array($config) || empty($config['guest_cron']) || !empty($config['cron_hash'])) {
+            return;
+        }
+
+        $config['cron_hash'] = bin2hex(random_bytes(32));
+        $encrypted = $this->di['crypt']->encrypt(json_encode($config, JSON_THROW_ON_ERROR), Config::getProperty('info.salt'));
+
+        $this->executeSql(
+            "UPDATE extension_meta SET meta_value = :config WHERE extension = 'mod_cron' AND meta_key = 'config'",
+            ['config' => $encrypted],
         );
     }
 
