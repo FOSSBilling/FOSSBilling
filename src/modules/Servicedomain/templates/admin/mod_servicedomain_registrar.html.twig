@@ -60,7 +60,7 @@
                         <h6 class="card-title mb-0">{{ 'Adapter Settings'|trans }}</h6>
                         <p class="text-secondary mb-0">{{ 'Provide the credentials and connection details required by this registrar adapter.'|trans }}</p>
                     </div>
-                    {{ mf.build_form(registrar.form, registrar.config) }}
+                    {{ mf.build_form(registrar.form, registrar.config, {'test_mode': registrar.test_mode}) }}
                 </div>
 
                 <input type="hidden" name="id" value="{{ registrar.id }}">
@@ -72,4 +72,39 @@
         {% endembed %}
     </form>
 </div>
+{% endblock %}
+
+{% block js %}
+<script>
+    (function () {
+        const testModeYes = document.getElementById('radioTestModeYes');
+        const testModeNo = document.getElementById('radioTestModeNo');
+
+        if (!testModeYes || !testModeNo) {
+            return;
+        }
+
+        const managedInputs = document.querySelectorAll('[data-required-when-test-mode]');
+
+        if (managedInputs.length === 0) {
+            return;
+        }
+
+        function updateRequiredStates() {
+            const testMode = testModeYes.checked;
+
+            managedInputs.forEach(function (input) {
+                const requiredTestMode = input.getAttribute('data-required-when-test-mode');
+                if (String(testMode) === requiredTestMode) {
+                    input.setAttribute('required', '');
+                } else {
+                    input.removeAttribute('required');
+                }
+            });
+        }
+
+        testModeYes.addEventListener('change', updateRequiredStates);
+        testModeNo.addEventListener('change', updateRequiredStates);
+    })();
+</script>
 {% endblock %}

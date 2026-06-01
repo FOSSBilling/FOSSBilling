@@ -72,6 +72,22 @@
                 {% block form_content %}
                     <div class="d-flex flex-column gap-4">
                         {% for name, element in gateway.form %}
+                            {% set field_required = false %}
+                            {% if element[1].required_when is defined and element[1].required_when is iterable %}
+                                {% set field_required = true %}
+                                {% for cond_key, cond_value in element[1].required_when %}
+                                    {% if attribute(gateway, cond_key) is null or attribute(gateway, cond_key) != cond_value %}
+                                        {% set field_required = false %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% if field_required and element[1].required_when.test_mode is defined and gateway.test_mode is null %}
+                                    {% set field_required = false %}
+                                {% endif %}
+                            {% elseif element[1].required is defined %}
+                                {% set field_required = element[1].required != 'false' %}
+                            {% else %}
+                                {% set field_required = true %}
+                            {% endif %}
                             <div>
                                 {% if element[0] == 'select' %}
                                     <label class="form-label" for="gateway-config-{{ name }}">{{ element[1].label }}</label>
@@ -103,11 +119,17 @@
                                 {% elseif element[0] == 'textarea' %}
                                     <label class="form-label" for="gateway-config-{{ name }}">{{ element[1].label }}</label>
                                     {% if element[1].description %}<div class="form-text mb-2">{{ (element[1].description ?? '')|markdown_to_html }}</div>{% endif %}
-                                    <textarea class="form-control" id="gateway-config-{{ name }}" name="config[{{ name }}]" rows="8"{% if element[1].required is defined and element[1].required != 'false' %} required{% endif %}>{{ gateway.config[name] }}</textarea>
+                                    <textarea class="form-control" id="gateway-config-{{ name }}" name="config[{{ name }}]" rows="8"
+                                        {% if field_required %} required{% endif %}
+                                        {% if element[1].required_when is defined and element[1].required_when.enabled is defined %} data-required-when-enabled="{{ element[1].required_when.enabled ? 'true' : 'false' }}"{% endif %}
+                                        {% if element[1].required_when is defined and element[1].required_when.test_mode is defined %} data-required-when-test-mode="{{ element[1].required_when.test_mode ? 'true' : 'false' }}"{% endif %}>{{ gateway.config[name] }}</textarea>
                                 {% else %}
                                     <label class="form-label" for="gateway-config-{{ name }}">{{ element[1].label }}</label>
                                     {% if element[1].description %}<div class="form-text mb-2">{{ (element[1].description ?? '')|markdown_to_html }}</div>{% endif %}
-                                    <input class="form-control" id="gateway-config-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ gateway.config[name] }}"{% if element[1].required is defined and element[1].required != 'false' %} required{% endif %}>
+                                    <input class="form-control" id="gateway-config-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ gateway.config[name] }}"
+                                        {% if field_required %} required{% endif %}
+                                        {% if element[1].required_when is defined and element[1].required_when.enabled is defined %} data-required-when-enabled="{{ element[1].required_when.enabled ? 'true' : 'false' }}"{% endif %}
+                                        {% if element[1].required_when is defined and element[1].required_when.test_mode is defined %} data-required-when-test-mode="{{ element[1].required_when.test_mode ? 'true' : 'false' }}"{% endif %}>
                                 {% endif %}
                             </div>
                         {% endfor %}
@@ -179,4 +201,66 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block js %}
+<script>
+    (function () {
+        const enabledCheckbox = document.querySelector('input[type="checkbox"][name="enabled"]');
+        const testModeCheckbox = document.querySelector('input[type="checkbox"][name="test_mode"]');
+
+        if (!enabledCheckbox && !testModeCheckbox) {
+            return;
+        }
+
+        const managedInputs = document.querySelectorAll(
+            '[data-required-when-enabled], [data-required-when-test-mode]'
+        );
+
+        if (managedInputs.length === 0) {
+            return;
+        }
+
+        function updateRequiredStates() {
+            const enabledChecked = enabledCheckbox ? enabledCheckbox.checked : null;
+            const testModeChecked = testModeCheckbox ? testModeCheckbox.checked : null;
+
+            managedInputs.forEach(function (input) {
+                const requiredEnabled = input.getAttribute('data-required-when-enabled');
+                const requiredTestMode = input.getAttribute('data-required-when-test-mode');
+
+                let required = true;
+
+                if (requiredEnabled !== null) {
+                    if (enabledChecked === null) {
+                        required = false;
+                    } else if (String(enabledChecked) !== requiredEnabled) {
+                        required = false;
+                    }
+                }
+
+                if (required && requiredTestMode !== null) {
+                    if (testModeChecked === null) {
+                        required = false;
+                    } else if (String(testModeChecked) !== requiredTestMode) {
+                        required = false;
+                    }
+                }
+
+                if (required) {
+                    input.setAttribute('required', '');
+                } else {
+                    input.removeAttribute('required');
+                }
+            });
+        }
+
+        if (enabledCheckbox) {
+            enabledCheckbox.addEventListener('change', updateRequiredStates);
+        }
+        if (testModeCheckbox) {
+            testModeCheckbox.addEventListener('change', updateRequiredStates);
+        }
+    })();
+</script>
 {% endblock %}
