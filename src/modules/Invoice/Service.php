@@ -1714,10 +1714,6 @@ class Service implements InjectionAwareInterface
 
     public function checkInvoiceAuth(?int $invoiceClientId, InvoiceOperation $operation = InvoiceOperation::READ): void
     {
-        if ($invoiceClientId === null) {
-            return;
-        }
-
         $systemService = $this->di['mod_service']('system');
         $hash_access = $systemService->getParamValue('invoice_accessible_from_hash', '0');
 
