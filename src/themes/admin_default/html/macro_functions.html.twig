@@ -1,24 +1,26 @@
+{% macro compute_field_required(element, context) %}
+    {% set result = false %}
+    {% if element[1].required_when is defined and element[1].required_when is iterable %}
+        {% set result = true %}
+        {% for cond_key, cond_value in element[1].required_when %}
+            {% if attribute(context, cond_key) is null or attribute(context, cond_key) != cond_value %}
+                {% set result = false %}
+            {% endif %}
+        {% endfor %}
+    {% elseif element[1].required is defined %}
+        {% set result = element[1].required != 'false' %}
+    {% else %}
+        {% set result = true %}
+    {% endif %}
+    {{ result ? 'true' : 'false' }}
+{% endmacro %}
+
 {% macro build_form(elements, values, context) %}
     {% set ctx = context|default({}) %}
     <div class="row g-3">
     {% for name, element in elements %}
     {% set field_class = element[0] == 'textarea' ? 'col-12' : 'col-lg-6' %}
-    {% set field_required = false %}
-    {% if element[1].required_when is defined and element[1].required_when is iterable %}
-        {% set field_required = true %}
-        {% for cond_key, cond_value in element[1].required_when %}
-            {% if attribute(ctx, cond_key) is null or attribute(ctx, cond_key) != cond_value %}
-                {% set field_required = false %}
-            {% endif %}
-        {% endfor %}
-        {% if field_required and element[1].required_when.test_mode is defined and attribute(ctx, 'test_mode') is null %}
-            {% set field_required = false %}
-        {% endif %}
-    {% elseif element[1].required is defined %}
-        {% set field_required = element[1].required != 'false' %}
-    {% else %}
-        {% set field_required = true %}
-    {% endif %}
+    {% set field_required = _self.compute_field_required(element, ctx) == 'true' %}
     <div class="{{ field_class }}">
         {% if element[0] == 'select' %}
             <label class="form-label">{{ element[1].label }}</label>

@@ -1,4 +1,5 @@
 {% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+{% import 'macro_functions.html.twig' as mf %}
 
 {% block meta_title %}{{ 'Gateway'|trans }} {{ gateway.title }}{% endblock %}
 
@@ -72,22 +73,7 @@
                 {% block form_content %}
                     <div class="d-flex flex-column gap-4">
                         {% for name, element in gateway.form %}
-                            {% set field_required = false %}
-                            {% if element[1].required_when is defined and element[1].required_when is iterable %}
-                                {% set field_required = true %}
-                                {% for cond_key, cond_value in element[1].required_when %}
-                                    {% if attribute(gateway, cond_key) is null or attribute(gateway, cond_key) != cond_value %}
-                                        {% set field_required = false %}
-                                    {% endif %}
-                                {% endfor %}
-                                {% if field_required and element[1].required_when.test_mode is defined and gateway.test_mode is null %}
-                                    {% set field_required = false %}
-                                {% endif %}
-                            {% elseif element[1].required is defined %}
-                                {% set field_required = element[1].required != 'false' %}
-                            {% else %}
-                                {% set field_required = true %}
-                            {% endif %}
+                            {% set field_required = mf.compute_field_required(element, gateway) == 'true' %}
                             <div>
                                 {% if element[0] == 'select' %}
                                     <label class="form-label" for="gateway-config-{{ name }}">{{ element[1].label }}</label>

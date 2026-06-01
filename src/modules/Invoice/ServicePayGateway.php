@@ -252,17 +252,16 @@ class ServicePayGateway implements InjectionAwareInterface
         $adapterConfig = $config;
         $adapterConfig['test_mode'] = $testMode;
 
-        $validationModel = clone $model;
-        $validationModel->test_mode = $testMode;
-
         try {
-            $class = $this->getAdapterClassName($validationModel);
+            $class = $this->getAdapterClassName($model);
             if (!class_exists($class)) {
                 return;
             }
             new $class($adapterConfig);
         } catch (\Payment_Exception $e) {
             throw new \FOSSBilling\Exception($e->getMessage(), null, 819);
+        } catch (\Throwable $e) {
+            throw new \FOSSBilling\Exception('Payment gateway configuration error: ' . $e->getMessage(), null, 819);
         }
     }
 
