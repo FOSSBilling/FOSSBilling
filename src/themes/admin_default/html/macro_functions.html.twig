@@ -7,10 +7,17 @@
                 {% set result = false %}
             {% endif %}
         {% endfor %}
+    {% if element[1].required_when is defined and element[1].required_when is iterable %}
+        {% set result = true %}
+        {% for cond_key, cond_value in element[1].required_when %}
+            {% if attribute(context, cond_key) is null or attribute(context, cond_key) != cond_value %}
+                {% set result = false %}
+            {% endif %}
+        {% endfor %}
     {% elseif element[1].required is defined %}
         {% set result = element[1].required != 'false' %}
     {% else %}
-        {% set result = true %}
+        {% set result = false %}
     {% endif %}
     {{ result ? 'true' : 'false' }}
 {% endmacro %}
