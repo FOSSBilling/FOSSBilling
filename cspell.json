@@ -450,7 +450,8 @@
         "Sparkline",
         "dicebear",
         "miterlimit",
-        "docroot"
+        "docroot",
+        "RPDO"
     ],
     "ignorePaths": [
         "tests-legacy/**",
