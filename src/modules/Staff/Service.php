@@ -328,9 +328,9 @@ class Service implements InjectionAwareInterface
      * @param string|null $key        the permission key for the associated module
      * @param mixed       $constraint if the permission key allows for multiple options, specify the one you want to use as a constraint here
      */
-    public function checkPermissionsAndThrowException(string $module, ?string $key = null, mixed $constraint = null): void
+    public function checkPermissionsAndThrowException(string $module, ?string $key = null, mixed $constraint = null, ?\Model_Admin $member = null): void
     {
-        if (!$this->hasPermission(null, $module, $key, $constraint)) {
+        if (!$this->hasPermission($member, $module, $key, $constraint)) {
             $requiredPermission = is_null($key) ? $module : "{$module}.{$key}";
 
             throw new \FOSSBilling\InformationException("You need the \"{$requiredPermission}\" permission to perform this action", [], 403);

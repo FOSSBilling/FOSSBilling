@@ -102,14 +102,10 @@ class Service
      */
     protected function _exec($api, $method, $params = null): void
     {
-        try {
-            $api->{$method}($params);
-        } catch (\Exception $e) {
-            throw new \Exception($e->getMessage());
-        } finally {
-            if (Environment::isCLI()) {
-                echo "\e[32mSuccessfully ran {$method}({$params}).\e[0m\n";
-            }
+        $api->{$method}($params);
+
+        if (Environment::isCLI()) {
+            echo "\e[32mSuccessfully ran {$method}({$params}).\e[0m\n";
         }
     }
 

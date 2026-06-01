@@ -75,7 +75,7 @@ class Admin extends \Api_Abstract
      */
     public function batch_connect($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('hook', 'manage_hooks');
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('hook', 'manage_hooks', null, $this->identity);
 
         $mod = $data['mod'] ?? null;
         $service = $this->getService();
