@@ -312,6 +312,18 @@ final class ServicePayGatewayTest extends \BBTestCase
         $this->assertEquals($expected, $result);
     }
 
+    public function testCanPerformSinglePayment(): void
+    {
+        $payGatewayModel = new \Model_PayGateway();
+        $payGatewayModel->loadBean(new \DummyBean());
+
+        $payGatewayModel->allow_single = true;
+        $this->assertTrue($this->service->canPerformSinglePayment($payGatewayModel));
+
+        $payGatewayModel->allow_single = false;
+        $this->assertFalse($this->service->canPerformSinglePayment($payGatewayModel));
+    }
+
     public function testGetPaymentAdapter(): void
     {
         $payGatewayModel = new \Model_PayGateway();

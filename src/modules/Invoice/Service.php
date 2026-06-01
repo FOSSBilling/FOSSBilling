@@ -1427,6 +1427,10 @@ class Service implements InjectionAwareInterface
             $subscribe = true;
         }
 
+        if (!$subscribe && !$payGatewayService->canPerformSinglePayment($gtw)) {
+            throw new \FOSSBilling\Exception('One-time payments are not enabled for the selected payment gateway', null, 815);
+        }
+
         $adapter = $payGatewayService->getPaymentAdapter($gtw, $invoice, $data);
         if (method_exists($adapter, 'setDi')) {
             $adapter->setDi($this->di);
