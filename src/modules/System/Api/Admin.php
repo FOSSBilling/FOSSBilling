@@ -203,6 +203,7 @@ class Admin extends \Api_Abstract
         $info['minimum_php_version'] = $requiredPhpVersion;
         $info['current_php_version'] = PHP_VERSION;
         $info['php_version_supported'] = $requiredPhpVersion === 'unknown' || version_compare(PHP_VERSION, $requiredPhpVersion, '>=');
+        $info['readiness'] = $this->di['update_readiness']->check();
 
         return $info;
     }

@@ -11,8 +11,11 @@
     {% set phpVersionSupported = update_info['php_version_supported'] is defined ? update_info['php_version_supported'] : true %}
     {% set minimumPhpVersion = update_info['minimum_php_version']|default('unknown') %}
     {% set currentPhpVersion = update_info['current_php_version']|default(constant('PHP_VERSION')) %}
+    {% set readiness = update_info['readiness']|default({}) %}
+    {% set updateReady = readiness['can_update'] is defined ? readiness['can_update'] : true %}
+    {% set readinessIssues = readiness['issues'] is defined ? readiness['issues'] : [] %}
     {% set previewCompareUrl = 'https://github.com/FOSSBilling/FOSSBilling/compare/' ~ FOSSBillingVersion ~ '...main' %}
-    {% set canInstallUpdate = updateCandidateAvailable and phpVersionSupported %}
+    {% set canInstallUpdate = updateCandidateAvailable and phpVersionSupported and updateReady %}
     {% set behindOnPatches = admin.system_is_behind_on_patches %}
     {% set updateType = update_info['update_type']|default(0) + 0 %}
     {% if isPreviewBranch %}
@@ -49,6 +52,16 @@
                         {% if not phpVersionSupported %}
                             <div class="alert alert-danger" role="alert">
                                 <strong class="me-1">{{ 'PHP version not supported:'|trans }}</strong>{{ 'This update requires PHP %required%, but this server is running PHP %current%.'|trans({'%required%': minimumPhpVersion, '%current%': currentPhpVersion}) }}
+                            </div>
+                        {% endif %}
+                        {% if not updateReady %}
+                            <div class="alert alert-danger" role="alert">
+                                <strong class="me-1">{{ 'Update cannot start:'|trans }}</strong>{{ 'FOSSBilling does not have sufficient filesystem permissions to perform the update on this server. Please review the issues below and resolve them before attempting the update again.'|trans }}
+                                <ul class="mt-2 mb-0">
+                                    {% for issue in readinessIssues %}
+                                        <li><code>{{ issue.path }}</code> &mdash; {{ issue.message }}</li>
+                                    {% endfor %}
+                                </ul>
                             </div>
                         {% endif %}
                         {% if isPreviewBranch %}

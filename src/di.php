@@ -561,6 +561,12 @@ $di['update_finalization'] = function () use ($di) {
     return $finalization;
 };
 
+$di['update_readiness'] = new FOSSBilling\UpdateReadinessCheck(
+    \PATH_ROOT,
+    \PATH_DATA,
+    \PATH_CONFIG,
+);
+
 /*
  * Creates a new server manager object and returns it.
  *
