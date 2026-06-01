@@ -60,12 +60,12 @@ final class UpdateReadinessCheck
             Path::join($this->pathData, 'cache') => 'data/cache/ (download destination for the update archive)',
             Path::join($this->pathData, 'log') => 'data/log/',
             Path::join($this->pathData, 'uploads') => 'data/uploads/',
-            Path::join($this->pathRoot, 'src', 'vendor') => 'src/vendor/ (extraction overwrites Composer dependencies)',
-            Path::join($this->pathRoot, 'src', 'library') => 'src/library/',
-            Path::join($this->pathRoot, 'src', 'modules') => 'src/modules/',
-            Path::join($this->pathRoot, 'src', 'themes') => 'src/themes/',
-            Path::join($this->pathRoot, 'src', 'public') => 'src/public/',
-            Path::join($this->pathRoot, 'src', 'locale') => 'src/locale/',
+            Path::join($this->pathRoot, 'vendor') => 'vendor/ (extraction overwrites Composer dependencies)',
+            Path::join($this->pathRoot, 'library') => 'library/',
+            Path::join($this->pathRoot, 'modules') => 'modules/',
+            Path::join($this->pathRoot, 'themes') => 'themes/',
+            Path::join($this->pathRoot, 'public') => 'public/',
+            Path::join($this->pathRoot, 'locale') => 'locale/',
         ];
 
         foreach ($writableFolders as $path => $description) {
