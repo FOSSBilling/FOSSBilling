@@ -48,7 +48,8 @@
         "sandboxed",
         "Segoe",
         "minmax",
-        "grecaptcha"
+        "grecaptcha",
+        "resends"
     ],
 
     "ignoreWords": [
