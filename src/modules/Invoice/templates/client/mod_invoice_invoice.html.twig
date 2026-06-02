@@ -30,7 +30,7 @@
                         <input type="hidden" name="hash" value="{{ invoice.hash }}"/>
                         <div class="d-flex gap-3">
                             {% for gtw in guest.invoice_gateways %}
-                                {% if invoice.currency in gtw.accepted_currencies and (gtw.allow_single or gtw.allow_recurrent) %}
+                                {% if invoice.currency in gtw.accepted_currencies and (gtw.allow_single or (invoice.subscribable and gtw.allow_recurrent)) %}
                                 {% set banklink = 'invoice/banklink'|url %}
                                 <div class="invoice-gateway rounded-2 p-2">
                                     <input type="radio" class="btn-check border-0" name="gateway_id" gateway_id="{{ gtw.id }}" id="{{ gtw.id }}" autocomplete="off">
