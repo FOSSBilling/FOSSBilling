@@ -286,7 +286,7 @@ test('get default', function (): void {
     ->andReturn($repositoryMock);
 
     $adminApi->setService($service);
-    $result = $adminApi->get_default([]);
+    $result = $adminApi->get_default();
 
     expect($result)->toBeArray();
     expect($returnArr)->toEqual($result);

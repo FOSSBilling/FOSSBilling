@@ -10,7 +10,7 @@
 
 declare(strict_types=1);
 
-dataset('sanitizeContentProvider', fn() => [
+dataset('sanitizeContentProvider', fn (): array => [
     // [input, expected_output, allowSafeHtml]
     ['', '', false],
     ["Hello\0World", 'HelloWorld', false],

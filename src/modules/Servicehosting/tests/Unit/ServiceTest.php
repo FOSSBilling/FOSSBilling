@@ -14,7 +14,7 @@ use Box\Mod\Servicehosting\Service;
 
 use function Tests\Helpers\container;
 
-dataset('validateOrderDataProvider', fn() => [
+dataset('validateOrderDataProvider', fn (): array => [
     ['server_id', 'Hosting product is not configured completely. Configure server for hosting product.', 701],
     ['hosting_plan_id', 'Hosting product is not configured completely. Configure hosting plan for hosting product.', 702],
     ['sld', 'Domain name is invalid.', 703],

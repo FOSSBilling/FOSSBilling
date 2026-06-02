@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-dataset('searchFilters', fn() => [
+dataset('searchFilters', fn (): array => [
     [[], 'FROM activity_system ', true],
     [['user_filter' => 'only_clients'], 'm.client_id IS NOT NULL', true],
     [['user_filter' => 'only_staff'], 'm.admin_id IS NOT NULL', true],

@@ -754,7 +754,7 @@ test('getList returns paginated result', function (): void {
 });
 
 // Data provider for searchFilters
-dataset('searchFilters', fn() => [
+dataset('searchFilters', fn (): array => [
     'empty filters' => [
         [],
         'SELECT * FROM admin',
@@ -1260,7 +1260,7 @@ test('updateGroup updates group details', function (): void {
 });
 
 // Data provider for ActivityAdminHistorySearchFilters
-dataset('ActivityAdminHistorySearchFilters', fn() => [
+dataset('ActivityAdminHistorySearchFilters', fn (): array => [
     'empty filters' => [
         [],
         'SELECT m.*, a.email, a.name',

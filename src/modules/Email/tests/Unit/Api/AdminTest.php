@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use Box\Mod\Email\Entity\EmailTemplate;
+
 use function Tests\Helpers\container;
 use function Tests\Helpers\moduleService;
 

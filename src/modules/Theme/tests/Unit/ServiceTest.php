@@ -10,17 +10,17 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Extension\Entity\ExtensionMeta;
 use Box\Mod\Theme\Model;
 use Box\Mod\Theme\Service;
-use Box\Mod\Extension\Entity\ExtensionMeta;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\injectMockFilesystem;
 
-function themeContainerWithRepository(\Mockery\MockInterface $repository, ?\Mockery\MockInterface $em = null): \Pimple\Container
+function themeContainerWithRepository(Mockery\MockInterface $repository, ?Mockery\MockInterface $em = null): Pimple\Container
 {
     $di = container();
-    $em ??= Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em ??= Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
     $em->shouldReceive('getRepository')
         ->byDefault()
         ->andReturn($repository);

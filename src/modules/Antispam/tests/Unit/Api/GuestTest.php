@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
-dataset('recaptcha config', fn() => [
+dataset('recaptcha config', fn (): array => [
     [
         [
             'captcha_recaptcha_publickey' => 1234,

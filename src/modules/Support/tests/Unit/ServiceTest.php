@@ -821,7 +821,7 @@ test('converts ticket to api array', function (): void {
         ->andReturn($supportTicketMessageModel);
     $dbMock->shouldReceive('load')
         ->atLeast()->once()
-        ->andReturnUsing(fn($type) => $type === 'SupportHelpdesk' ? $helpdesk : supportClientFixture());
+        ->andReturnUsing(fn ($type): Model_SupportHelpdesk|\Model_Client => $type === 'SupportHelpdesk' ? $helpdesk : supportClientFixture());
 
     $dbMock->shouldReceive('find')
         ->atLeast()->once()
@@ -1715,7 +1715,7 @@ test('kb update article not found exception', function (): void {
     $service->kbUpdateArticle($randId, 1, 'Title', 'article-slug', 'active', 'content', 1);
 });
 
-dataset('kbCategoryGetSearchQueryProvider', fn() => [
+dataset('kbCategoryGetSearchQueryProvider', fn (): array => [
     'empty data' => [
         [],
         'SELECT kac.* FROM support_kb_article_category kac LEFT JOIN support_kb_article ka ON kac.id  = ka.kb_article_category_id GROUP BY kac.id ORDER BY kac.title',
@@ -1963,7 +1963,7 @@ test('public find one by hash not found exception', function (): void {
     $service->publicFindOneByHash(sha1(uniqid()));
 });
 
-dataset('publicGetSearchQueryProvider', fn() => [
+dataset('publicGetSearchQueryProvider', fn (): array => [
     'with search string' => [
         [
             'search' => 'Query',
@@ -2070,7 +2070,7 @@ test('public get expired', function (): void {
     expect($result[0])->toBeInstanceOf(Model_SupportPTicket::class);
 });
 
-dataset('publicCloseTicketProvider', fn() => [
+dataset('publicCloseTicketProvider', fn (): array => [
     'with admin' => [new Model_Admin()],
     'with guest' => [new Model_Guest()],
 ]);
@@ -2140,7 +2140,7 @@ test('public rm', function (): void {
     expect($result)->toBeTrue();
 });
 
-dataset('publicToApiArrayProvider', fn() => [
+dataset('publicToApiArrayProvider', fn (): array => [
     'with message' => [
         new Model_SupportPTicketMessage(),
         'atLeastOnce',

@@ -183,7 +183,7 @@ test('configure supports Traefik header mode', function (): void {
 test('configure rejects unknown trusted proxy header mode', function (): void {
     $request = Request::create('http://billing.example.com/admin');
 
-    expect(fn () => RequestFactory::configure($request, [
+    expect(fn (): Request => RequestFactory::configure($request, [
         'enabled' => true,
         'proxies' => ['198.51.100.10'],
         'headers' => 'custom',

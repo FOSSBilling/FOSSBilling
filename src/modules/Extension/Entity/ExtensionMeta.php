@@ -22,14 +22,12 @@ use FOSSBilling\Interfaces\TimestampInterface;
 #[ORM\HasLifecycleCallbacks]
 class ExtensionMeta implements ApiArrayInterface, TimestampInterface
 {
-    #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column(type: Types::INTEGER)]
-    private ?int $id = null;
-
-    public function __construct(?int $id = null)
-    {
-        $this->id = $id;
+    public function __construct(
+        #[ORM\Id]
+        #[ORM\GeneratedValue]
+        #[ORM\Column(type: Types::INTEGER)]
+        private ?int $id = null,
+    ) {
     }
 
     #[ORM\Column(name: 'client_id', type: Types::INTEGER, nullable: true)]

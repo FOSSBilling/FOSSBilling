@@ -24,15 +24,15 @@ use Symfony\Component\Filesystem\Path;
  * a state file, flips config.php, downloads an archive, and extracts it
  * over the live tree.
  */
-final class UpdateReadinessCheck
+final readonly class UpdateReadinessCheck
 {
-    private readonly Filesystem $filesystem;
-    private readonly string $configDir;
-    private readonly string $installDir;
+    private Filesystem $filesystem;
+    private string $configDir;
+    private string $installDir;
 
     public function __construct(
-        private readonly string $pathRoot,
-        private readonly string $pathData,
+        private string $pathRoot,
+        private string $pathData,
         string $pathConfig,
     ) {
         $this->filesystem = new Filesystem();

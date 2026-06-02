@@ -68,7 +68,7 @@ test('get session cart exists', function (): void {
     expect($result->session_id)->toEqual($sessionId);
 });
 
-dataset('getSessionCartDoesNotExistProvider', fn(): array => [
+dataset('getSessionCartDoesNotExistProvider', fn (): array => [
     [
         100,
         'atLeastOnce',

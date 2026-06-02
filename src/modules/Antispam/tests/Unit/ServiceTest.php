@@ -109,7 +109,7 @@ test('is blocked ip block ips not enabled', function (): void {
     $service->isBlockedIp($boxEventMock);
 });
 
-dataset('spam responses', fn() => [
+dataset('spam responses', fn (): array => [
     [
         '{"success" : "true", "username" : {"appears" : "true" }}', 'Your username is blacklisted in the Stop Forum Spam database',
     ],

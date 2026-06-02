@@ -68,7 +68,7 @@ test('register allowed route roles', function (): void {
 test('is role allowed rejects system role', function (): void {
     $controller = new Client();
 
-    expect(fn () => invokeControllerPrivate($controller, 'isRoleAllowed', ['system']))
+    expect(fn (): mixed => invokeControllerPrivate($controller, 'isRoleAllowed', ['system']))
         ->toThrow(FOSSBilling\Exception::class);
 });
 
@@ -86,7 +86,7 @@ test('should use token login rejects route role mismatch', function (): void {
     $_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode('client:token');
     $controller->setDi(createControllerDiWithRequest());
 
-    expect(fn () => invokeControllerPrivate($controller, 'shouldUseTokenLogin', ['admin']))
+    expect(fn (): mixed => invokeControllerPrivate($controller, 'shouldUseTokenLogin', ['admin']))
         ->toThrow(InformationException::class);
 });
 
@@ -118,7 +118,7 @@ test('require session auth normalizes generic auth exceptions', function (): voi
     };
     $controller->setDi($di);
 
-    expect(fn () => invokeControllerPrivate($controller, 'requireSessionAuth', ['admin']))
+    expect(fn (): mixed => invokeControllerPrivate($controller, 'requireSessionAuth', ['admin']))
         ->toThrow(InformationException::class);
 });
 
@@ -127,7 +127,7 @@ test('get auth rejects invalid basic payload', function (): void {
     $_SERVER['HTTP_AUTHORIZATION'] = 'Basic invalid###';
     $controller->setDi(createControllerDiWithRequest());
 
-    expect(fn () => invokeControllerPrivate($controller, 'getAuth'))
+    expect(fn (): mixed => invokeControllerPrivate($controller, 'getAuth'))
         ->toThrow(InformationException::class);
 });
 
@@ -150,7 +150,7 @@ test('try token login rejects cron admin token', function (): void {
     $di['request'] = Request::create('/', 'GET', [], [], [], $_SERVER);
     $controller->setDi($di);
 
-    expect(fn () => invokeControllerPrivate($controller, '_tryTokenLogin', ['admin']))
+    expect(fn (): mixed => invokeControllerPrivate($controller, '_tryTokenLogin', ['admin']))
         ->toThrow(InformationException::class);
 });
 
@@ -167,7 +167,7 @@ test('try token login requires active client token', function (): void {
     $di['request'] = Request::create('/', 'GET', [], [], [], $_SERVER);
     $controller->setDi($di);
 
-    expect(fn () => invokeControllerPrivate($controller, '_tryTokenLogin', ['client']))
+    expect(fn (): mixed => invokeControllerPrivate($controller, '_tryTokenLogin', ['client']))
         ->toThrow(InformationException::class);
 });
 
@@ -184,6 +184,6 @@ test('try token login requires active non-cron admin token', function (): void {
     $di['request'] = Request::create('/', 'GET', [], [], [], $_SERVER);
     $controller->setDi($di);
 
-    expect(fn () => invokeControllerPrivate($controller, '_tryTokenLogin', ['admin']))
+    expect(fn (): mixed => invokeControllerPrivate($controller, '_tryTokenLogin', ['admin']))
         ->toThrow(InformationException::class);
 });
