@@ -142,8 +142,7 @@ function exceptionHandler(Exception|Error $e)
     if (Environment::isTesting()) {
         $msg = $e::class . ': ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine() . PHP_EOL;
         @file_put_contents(Path::join(PATH_LOG, 'exception_handler.log'), date('c') . ' ' . $msg, FILE_APPEND);
-        $realLog = Path::join(Config::getProperty('path_data'), 'log', 'exception_handler.log');
-        @file_put_contents($realLog, date('c') . ' ' . $msg, FILE_APPEND);
+        @file_put_contents(Path::join(PATH_ROOT, 'data', 'log', 'exception_handler.log'), date('c') . ' ' . $msg, FILE_APPEND);
         echo $msg;
 
         return;
