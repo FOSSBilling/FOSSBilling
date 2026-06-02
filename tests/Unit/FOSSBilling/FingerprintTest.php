@@ -55,8 +55,7 @@ test('mismatched high-weight property rejects the fingerprint', function (): voi
     expect(createFingerprint($properties)->checkFingerprint($stored))->toBeFalse();
 });
 
-test('XOR — property present only in stored fingerprint counts as differing', function (): void {
-    // Current request has no `platform` source; stored has it.
+test('XOR property present only in stored fingerprint counts as differing', function (): void {
     $properties = [
         'browser' => ['source' => 'Chrome', 'weight' => 100],
         'platform' => ['source' => '',        'weight' => 1],
