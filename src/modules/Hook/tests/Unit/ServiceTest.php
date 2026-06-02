@@ -32,7 +32,7 @@ test('gets search query', function (): void {
 
 test('converts to api array', function (): void {
     $service = new Box\Mod\Hook\Service();
-    $arrMock = ['testing' => 'okey'];
+    $arrMock = ['testing' => 'okay'];
     $result = $service->toApiArray($arrMock);
     expect($result)->toBe($arrMock);
 });
