@@ -10,8 +10,49 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Email\Entity\EmailTemplate;
+
 use function Tests\Helpers\container;
 use function Tests\Helpers\moduleService;
+
+function emailTemplate(string $actionCode = '', ?int $id = null, array $data = []): EmailTemplate
+{
+    $template = new EmailTemplate($actionCode, $id);
+
+    if (array_key_exists('category', $data)) {
+        $template->setCategory($data['category']);
+    }
+
+    if (array_key_exists('enabled', $data)) {
+        $template->setEnabled((bool) $data['enabled']);
+    }
+
+    if (array_key_exists('subject', $data)) {
+        $template->setSubject($data['subject']);
+    }
+
+    if (array_key_exists('content', $data)) {
+        $template->setContent($data['content']);
+    }
+
+    if (array_key_exists('description', $data)) {
+        $template->setDescription($data['description']);
+    }
+
+    if (array_key_exists('vars', $data)) {
+        $template->setVars($data['vars']);
+    }
+
+    if (array_key_exists('is_custom', $data)) {
+        $template->setIsCustom((bool) $data['is_custom']);
+    }
+
+    if (array_key_exists('is_overridden', $data)) {
+        $template->setIsOverridden((bool) $data['is_overridden']);
+    }
+
+    return $template;
+}
 
 test('di returns dependency injection container', function (): void {
     $service = new Box\Mod\Email\Service();
@@ -219,7 +260,7 @@ test('setVars encrypts and sets variables', function (): void {
     $di['crypt'] = $cryptMock;
     $service->setDi($di);
 
-    $t = new Model_EmailTemplate();
+    $t = emailTemplate();
     $vars = [
         'param1' => 'value1',
     ];
@@ -242,8 +283,7 @@ test('getVars decrypts and returns variables', function (): void {
     $di['crypt'] = $cryptMock;
     $service->setDi($di);
 
-    $t = new Model_EmailTemplate();
-    $t->vars = 'haNUZYeNjo1oXhH6OkoKuHGPxakyKY10qR3O/DSy9Og=';
+    $t = emailTemplate(data: ['vars' => 'haNUZYeNjo1oXhH6OkoKuHGPxakyKY10qR3O/DSy9Og=']);
 
     $result = $service->getVars($t);
     expect($result)->toBeArray();
@@ -261,8 +301,7 @@ test('sendTemplate returns false when template does not exist', function (): voi
         'default_description' => 'DESCRIPTION',
     ];
 
-    $emailTemplate = new Model_EmailTemplate();
-    $emailTemplate->loadBean(new Tests\Helpers\DummyBean());
+    $emailTemplate = emailTemplate();
 
     $db = Mockery::mock('Box_Database');
     $db->shouldReceive('findOne')
@@ -310,9 +349,7 @@ test('sendTemplate sends email when template exists', function (): void {
 
     $di = container();
 
-    $emailTemplate = new Model_EmailTemplate();
-    $emailTemplate->loadBean(new Tests\Helpers\DummyBean());
-    $emailTemplate->enabled = true;
+    $emailTemplate = emailTemplate(data: ['enabled' => true]);
 
     $queueModel = new Model_ModEmailQueue();
     $queueModel->loadBean(new Tests\Helpers\DummyBean());
@@ -406,9 +443,7 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
 
     $di = container();
 
-    $emailTemplate = new Model_EmailTemplate();
-    $emailTemplate->loadBean(new Tests\Helpers\DummyBean());
-    $emailTemplate->enabled = true;
+    $emailTemplate = emailTemplate(data: ['enabled' => true]);
 
     $queueModel = new Model_ModEmailQueue();
     $queueModel->loadBean(new Tests\Helpers\DummyBean());
@@ -567,15 +602,13 @@ test('templateToApiArray returns API array for template', function (): void {
     $description = 'Description';
     $content = 'content';
 
-    $model = new Model_EmailTemplate();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->id = $id;
-    $model->action_code = $action_code;
-    $model->category = $category;
-    $model->enabled = $enabled;
-    $model->subject = $subject;
-    $model->description = $description;
-    $model->content = $content;
+    $model = emailTemplate($action_code, $id, [
+        'category' => $category,
+        'enabled' => $enabled,
+        'subject' => $subject,
+        'description' => $description,
+        'content' => $content,
+    ]);
 
     $expected = [
         'id' => $id,
@@ -605,15 +638,13 @@ test('templateToApiArray returns deep array with vars', function (): void {
     $description = 'Description';
     $content = 'content';
 
-    $model = new Model_EmailTemplate();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->id = $id;
-    $model->action_code = $action_code;
-    $model->category = $category;
-    $model->enabled = $enabled;
-    $model->subject = $subject;
-    $model->description = $description;
-    $model->content = $content;
+    $model = emailTemplate($action_code, $id, [
+        'category' => $category,
+        'enabled' => $enabled,
+        'subject' => $subject,
+        'description' => $description,
+        'content' => $content,
+    ]);
 
     $expected = [
         'id' => $id,
@@ -672,9 +703,7 @@ dataset('template_updateProvider', fn(): array => [
 
 test('updateTemplate updates template', function (array $data, string $templateRenderExpects): void {
     $id = 1;
-    $model = new Model_EmailTemplate();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->id = $id;
+    $model = emailTemplate(id: $id);
 
     $emailService = new Box\Mod\Email\Service();
 
@@ -710,8 +739,7 @@ test('updateTemplate updates template', function (array $data, string $templateR
 
     $emailService->setDi($di);
 
-    $templateModel = new Model_EmailTemplate();
-    $templateModel->loadBean(new Tests\Helpers\DummyBean());
+    $templateModel = emailTemplate();
 
     $result = $emailService->updateTemplate($templateModel, $data['enabled'], $data['category'], $data['subject'], @$data['content']);
     expect($result)->toBeTrue();

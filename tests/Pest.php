@@ -47,7 +47,6 @@ require_once __DIR__ . '/../src/load.php';
 require_once __DIR__ . '/../src/vendor/autoload.php';
 
 // Load test helpers
-require_once __DIR__ . '/APIHelper.php';
 require_once __DIR__ . '/Helpers/Container.php';
 require_once __DIR__ . '/Helpers/Factories.php';
 require_once __DIR__ . '/Helpers/Api.php';
@@ -79,65 +78,6 @@ if (!class_exists(Tests\Helpers\TestLogger::class)) {
             public function __call($method, $params): void
             {
                 $this->calls[] = ["method" => $method, "params" => $params];
-            }
-        }
-    ');
-}
-
-// Test-only compatibility shim for legacy tests that still construct the old RedBean model name
-// while the Email module now uses a Doctrine entity.
-if (!class_exists('Model_EmailTemplate')) {
-    eval('
-        class Model_EmailTemplate extends \Box\Mod\Email\Entity\EmailTemplate
-        {
-            public function __construct()
-            {
-                parent::__construct("");
-            }
-
-            public function __set(string $name, mixed $value): void
-            {
-                match ($name) {
-                    "id" => $this->setLegacyId($value === null ? null : (int) $value),
-                    "action_code" => $this->setActionCode((string) $value),
-                    "category" => $this->setCategory($value === null ? null : (string) $value),
-                    "enabled" => $this->setEnabled((bool) $value),
-                    "subject" => $this->setSubject($value === null ? null : (string) $value),
-                    "content" => $this->setContent($value === null ? null : (string) $value),
-                    "description" => $this->setDescription($value === null ? null : (string) $value),
-                    "vars" => $this->setVars($value === null ? null : (string) $value),
-                    "is_custom" => $this->setIsCustom((bool) $value),
-                    "is_overridden" => $this->setIsOverridden((bool) $value),
-                    default => null,
-                };
-            }
-
-            public function __get(string $name): mixed
-            {
-                return match ($name) {
-                    "id" => $this->getId(),
-                    "action_code" => $this->getActionCode(),
-                    "category" => $this->getCategory(),
-                    "enabled" => $this->isEnabled(),
-                    "subject" => $this->getSubject(),
-                    "content" => $this->getContent(),
-                    "description" => $this->getDescription(),
-                    "vars" => $this->getVars(),
-                    "is_custom" => $this->isCustom(),
-                    "is_overridden" => $this->isOverridden(),
-                    default => null,
-                };
-            }
-
-            public function loadBean(mixed $bean): void
-            {
-            }
-
-            private function setLegacyId(?int $id): void
-            {
-                $property = new \ReflectionProperty(\Box\Mod\Email\Entity\EmailTemplate::class, "id");
-                $property->setAccessible(true);
-                $property->setValue($this, $id);
             }
         }
     ');
@@ -175,9 +115,7 @@ uses()
             $this->markTestSkipped('API tests require APP_URL and TEST_API_KEY.');
         }
 
-        if (class_exists(APIHelper\Request::class)) {
-            APIHelper\Request::resetCookies();
-        }
+        Tests\Helpers\ApiClient::resetCookies();
     })
     ->in('Modules');
 

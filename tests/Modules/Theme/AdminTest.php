@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use APIHelper\Request;
+use Tests\Helpers\ApiClient;
 
 const THEME_SEMANTIC_VERSION_PATTERN = '/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/';
 
@@ -43,7 +43,7 @@ function expectValidThemePayload(array $data): void
 }
 
 test('gets current client theme', function (): void {
-    $result = Request::makeRequest('admin/theme/get_current');
+    $result = ApiClient::request('admin/theme/get_current');
     expect($result->wasSuccessful())->toBeTrue();
 
     $data = $result->getResult();
@@ -52,7 +52,7 @@ test('gets current client theme', function (): void {
 });
 
 test('gets current admin theme', function (): void {
-    $result = Request::makeRequest('admin/theme/get_current', ['client' => false]);
+    $result = ApiClient::request('admin/theme/get_current', ['client' => false]);
     expect($result->wasSuccessful())->toBeTrue();
 
     $data = $result->getResult();
@@ -61,7 +61,7 @@ test('gets current admin theme', function (): void {
 });
 
 test('returns error when current theme client parameter is invalid', function (): void {
-    $result = Request::makeRequest('admin/theme/get_current', ['client' => 'invalid']);
+    $result = ApiClient::request('admin/theme/get_current', ['client' => 'invalid']);
 
     expect($result->wasSuccessful())->toBeFalse();
 
@@ -71,7 +71,7 @@ test('returns error when current theme client parameter is invalid', function ()
 });
 
 test('returns not found for invalid admin theme action with client false', function (): void {
-    $result = Request::makeRequest('admin/theme/non_existing_action', ['client' => false]);
+    $result = ApiClient::request('admin/theme/non_existing_action', ['client' => false]);
 
     expect($result->getStatusCode())->toBe(404)
         ->and($result->wasSuccessful())->toBeFalse()
@@ -83,7 +83,7 @@ test('returns not found for invalid admin theme action with client false', funct
 });
 
 test('returns not found for invalid theme action', function (): void {
-    $result = Request::makeRequest('admin/theme/non_existing_action');
+    $result = ApiClient::request('admin/theme/non_existing_action');
 
     expect($result->getStatusCode())->toBe(404)
         ->and($result->wasSuccessful())->toBeFalse()

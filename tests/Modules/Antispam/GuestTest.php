@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use APIHelper\Request;
+use Tests\Helpers\ApiClient;
 
 $originalAntispamConfig = null;
 
@@ -15,7 +15,7 @@ afterEach(function () use (&$originalAntispamConfig): void {
         return;
     }
 
-    $result = Request::makeRequest('admin/extension/config_save', array_merge(
+    $result = ApiClient::request('admin/extension/config_save', array_merge(
         ['ext' => 'mod_antispam'],
         $originalAntispamConfig
     ));
@@ -29,7 +29,7 @@ function captureOriginalAntispamConfig(?array &$originalConfig): void
         return;
     }
 
-    $result = Request::makeRequest('admin/antispam/get_config');
+    $result = ApiClient::request('admin/antispam/get_config');
     expect($result->wasSuccessful())->toBeTrue();
 
     $config = $result->getResult();
@@ -41,7 +41,7 @@ function captureOriginalAntispamConfig(?array &$originalConfig): void
 test('saves antispam config', function () use (&$originalAntispamConfig): void {
     captureOriginalAntispamConfig($originalAntispamConfig);
 
-    $result = Request::makeRequest('admin/extension/config_save', [
+    $result = ApiClient::request('admin/extension/config_save', [
         'ext' => 'mod_antispam',
         'captcha_enabled' => true,
         'captcha_provider' => 'hcaptcha',
@@ -53,7 +53,7 @@ test('saves antispam config', function () use (&$originalAntispamConfig): void {
     ]);
     expect($result->wasSuccessful())->toBeTrue();
 
-    $result = Request::makeRequest('admin/antispam/get_config');
+    $result = ApiClient::request('admin/antispam/get_config');
     expect($result->wasSuccessful())->toBeTrue();
 
     $config = $result->getResult();
@@ -70,7 +70,7 @@ test('saves antispam config', function () use (&$originalAntispamConfig): void {
 test('gets recaptcha config', function () use (&$originalAntispamConfig): void {
     captureOriginalAntispamConfig($originalAntispamConfig);
 
-    $result = Request::makeRequest('admin/extension/config_save', [
+    $result = ApiClient::request('admin/extension/config_save', [
         'ext' => 'mod_antispam',
         'captcha_enabled' => true,
         'captcha_provider' => 'recaptcha_v3',
@@ -79,7 +79,7 @@ test('gets recaptcha config', function () use (&$originalAntispamConfig): void {
     ]);
     expect($result->wasSuccessful())->toBeTrue();
 
-    $result = Request::makeRequest('guest/antispam/recaptcha');
+    $result = ApiClient::request('guest/antispam/recaptcha');
     expect($result->wasSuccessful())->toBeTrue();
 
     $config = $result->getResult();

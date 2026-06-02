@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use APIHelper\Request;
+use Tests\Helpers\ApiClient;
 
 const SYSTEM_MAX_RETRY_ATTEMPTS = 10;
 const SYSTEM_RETRY_DELAY_MICROSECONDS = 200000;
@@ -70,7 +70,7 @@ function systemIsIpLookupAvailable(): bool
 
 function systemResetInterfaceConfiguration(): void
 {
-    $resetResult = Request::makeRequest(
+    $resetResult = ApiClient::request(
         'admin/system/set_interface_ip',
         ['custom_interface' => '', 'interface' => SYSTEM_DEFAULT_INTERFACE]
     );
@@ -78,49 +78,49 @@ function systemResetInterfaceConfiguration(): void
 }
 
 test('clears cache', function (): void {
-    $beforeFirst = Request::makeRequest('admin/system/error_reporting_enabled');
+    $beforeFirst = ApiClient::request('admin/system/error_reporting_enabled');
     expect($beforeFirst->wasSuccessful())->toBeTrue()
         ->and($beforeFirst->getResult())->toBeBool();
 
-    $beforeSecond = Request::makeRequest('admin/system/error_reporting_enabled');
+    $beforeSecond = ApiClient::request('admin/system/error_reporting_enabled');
     expect($beforeSecond->wasSuccessful())->toBeTrue()
         ->and($beforeSecond->getResult())->toBeBool()
         ->and($beforeSecond->getResult())->toBe($beforeFirst->getResult());
 
-    $result = Request::makeRequest('admin/system/clear_cache');
+    $result = ApiClient::request('admin/system/clear_cache');
     expect($result->wasSuccessful())->toBeTrue()
         ->and($result->getResult())->toBeBool();
 
-    $after = Request::makeRequest('admin/system/error_reporting_enabled');
+    $after = ApiClient::request('admin/system/error_reporting_enabled');
     expect($after->wasSuccessful())->toBeTrue()
         ->and($after->getResult())->toBeBool()
         ->and($after->getResult())->toBe($beforeSecond->getResult());
 });
 
 test('toggles error reporting', function (): void {
-    $beforeResult = Request::makeRequest('admin/system/error_reporting_enabled');
+    $beforeResult = ApiClient::request('admin/system/error_reporting_enabled');
     expect($beforeResult->wasSuccessful())->toBeTrue();
     $before = $beforeResult->getResult();
     expect($before)->toBeBool();
 
     try {
-        $result = Request::makeRequest('admin/system/toggle_error_reporting');
+        $result = ApiClient::request('admin/system/toggle_error_reporting');
         expect($result->wasSuccessful())->toBeTrue()
             ->and($result->getResult())->toBeTrue();
 
-        $afterResponse = Request::makeRequest('admin/system/error_reporting_enabled');
+        $afterResponse = ApiClient::request('admin/system/error_reporting_enabled');
         expect($afterResponse->wasSuccessful())->toBeTrue();
         $after = $afterResponse->getResult();
         expect($after)->toBeBool()
             ->not->toBe($before);
     } finally {
-        $currentResponse = Request::makeRequest('admin/system/error_reporting_enabled');
+        $currentResponse = ApiClient::request('admin/system/error_reporting_enabled');
         expect($currentResponse->wasSuccessful())->toBeTrue();
         $current = $currentResponse->getResult();
         expect($current)->toBeBool();
 
         if ($current !== $before) {
-            $restoreResult = Request::makeRequest('admin/system/toggle_error_reporting');
+            $restoreResult = ApiClient::request('admin/system/toggle_error_reporting');
             expect($restoreResult->wasSuccessful())->toBeTrue()
                 ->and($restoreResult->getResult())->toBeTrue();
         }
@@ -128,7 +128,7 @@ test('toggles error reporting', function (): void {
 });
 
 test('gets and sets network interfaces', function (): void {
-    $result = Request::makeRequest('admin/system/get_interface_ips');
+    $result = ApiClient::request('admin/system/get_interface_ips');
     expect($result->wasSuccessful())->toBeTrue()
         ->and($result->getResult())->toBeArray();
 
@@ -141,12 +141,12 @@ test('gets and sets network interfaces', function (): void {
     }
 
     foreach ($result->getResult() as $ip) {
-        $testResult = Request::makeRequest('admin/system/set_interface_ip', ['interface' => $ip]);
+        $testResult = ApiClient::request('admin/system/set_interface_ip', ['interface' => $ip]);
         expect($testResult->wasSuccessful())->toBeTrue();
 
         $isReady = systemRetryUntil(
             static function (): bool {
-                $envResult = Request::makeRequest('admin/system/env', ['ip' => true]);
+                $envResult = ApiClient::request('admin/system/env', ['ip' => true]);
 
                 return $envResult->wasSuccessful() && (bool) filter_var($envResult->getResult(), FILTER_VALIDATE_IP);
             }
@@ -155,22 +155,22 @@ test('gets and sets network interfaces', function (): void {
         expect($isReady)->toBeTrue();
     }
 
-    $cleanupResult = Request::makeRequest('admin/system/set_interface_ip', ['interface' => SYSTEM_DEFAULT_INTERFACE]);
+    $cleanupResult = ApiClient::request('admin/system/set_interface_ip', ['interface' => SYSTEM_DEFAULT_INTERFACE]);
     expect($cleanupResult->wasSuccessful())->toBeTrue();
 });
 
 test('rejects invalid interface', function (): void {
-    $result = Request::makeRequest('admin/system/set_interface_ip', ['interface' => '12345']);
+    $result = ApiClient::request('admin/system/set_interface_ip', ['interface' => '12345']);
     expect($result->wasSuccessful())->toBeFalse();
 });
 
 test('rejects invalid custom interface', function (): void {
-    $result = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => '!@#$%']);
+    $result = ApiClient::request('admin/system/set_interface_ip', ['custom_interface' => '!@#$%']);
     expect($result->wasSuccessful())->toBeFalse();
 });
 
 test('rejects malicious interface values', function (string $payload): void {
-    $result = Request::makeRequest('admin/system/set_interface_ip', ['interface' => $payload]);
+    $result = ApiClient::request('admin/system/set_interface_ip', ['interface' => $payload]);
     expect($result->wasSuccessful())->toBeFalse();
 })->with([
     'quote-escape' => ["x\"; echo 'pwned'; //"],
@@ -188,13 +188,13 @@ test('rejects malicious interface values', function (string $payload): void {
 ]);
 
 test('rejects malicious custom interface', function (): void {
-    $result = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => "x\"; passthru('id'); //"]);
+    $result = ApiClient::request('admin/system/set_interface_ip', ['custom_interface' => "x\"; passthru('id'); //"]);
     expect($result->wasSuccessful())->toBeFalse();
 });
 
 test('accepts valid custom interface hostname', function (): void {
     try {
-        $result = Request::makeRequest('admin/system/set_interface_ip', ['custom_interface' => 'eth0']);
+        $result = ApiClient::request('admin/system/set_interface_ip', ['custom_interface' => 'eth0']);
         expect($result->wasSuccessful())->toBeTrue();
     } finally {
         systemResetInterfaceConfiguration();

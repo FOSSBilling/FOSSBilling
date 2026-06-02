@@ -46,13 +46,14 @@ class ApiClient
     public static function request(
         string $endpoint,
         array $payload = [],
-        string $role = 'admin',
+        ?string $role = null,
         ?string $apiKey = null,
         string $method = 'POST',
     ): ApiResponse {
         $baseUrl = self::$baseUrl ?? (getenv('APP_URL') ?: 'http://localhost');
         $baseUrl = rtrim($baseUrl, '/');
         $apiKey ??= self::$apiKey ?? getenv('TEST_API_KEY');
+        $role ??= str_starts_with($endpoint, 'admin') ? 'admin' : 'client';
 
         $url = rtrim($baseUrl, '/') . '/api/' . ltrim($endpoint, '/');
 
@@ -73,6 +74,14 @@ class ApiClient
         }
 
         $output = curl_exec($ch);
+        if ($output === false) {
+            $error = curl_error($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            throw new \RuntimeException('cURL request failed: ' . $error . ' (HTTP ' . $httpCode . ')');
+        }
+
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
@@ -108,13 +117,20 @@ class ApiResponse
         private readonly string $rawResponse,
     ) {
         $decoded = json_decode($this->rawResponse, true);
-        if ($decoded === null && json_last_error() !== JSON_ERROR_NONE) {
-            throw new \RuntimeException('Invalid JSON response: ' . json_last_error_msg());
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+            $preview = strlen($this->rawResponse) > 500 ? substr($this->rawResponse, 0, 500) . '...' : $this->rawResponse;
+
+            throw new \RuntimeException('Invalid JSON response: ' . json_last_error_msg() . ' (HTTP ' . $this->code . '). Response: ' . $preview);
         }
-        $this->decodedResponse = $decoded ?? [];
+        $this->decodedResponse = $decoded;
     }
 
     public function getHttpCode(): int
+    {
+        return $this->code;
+    }
+
+    public function getStatusCode(): int
     {
         return $this->code;
     }
@@ -131,7 +147,9 @@ class ApiResponse
 
     public function wasSuccessful(): bool
     {
-        return $this->decodedResponse && !$this->decodedResponse['error'];
+        return !empty($this->decodedResponse)
+            && array_key_exists('error', $this->decodedResponse)
+            && empty($this->decodedResponse['error']);
     }
 
     public function getErrorMessage(): string
@@ -183,7 +201,7 @@ class ApiResponse
 /**
  * Helper function for API requests.
  */
-function api(string $endpoint, array $payload = [], string $role = 'admin'): ApiResponse
+function api(string $endpoint, array $payload = [], ?string $role = null): ApiResponse
 {
     return ApiClient::request($endpoint, $payload, $role);
 }

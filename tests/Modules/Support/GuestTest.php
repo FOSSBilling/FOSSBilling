@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use APIHelper\Request;
+use Tests\Helpers\ApiClient;
 
 const SUPPORT_MIN_TICKET_ID_LENGTH = 30;
 const SUPPORT_MAX_TICKET_ID_LENGTH = 60;
@@ -10,7 +10,7 @@ const SUPPORT_MAX_TICKET_ID_LENGTH = 60;
 $initialSupportConfig = null;
 
 beforeEach(function () use (&$initialSupportConfig): void {
-    $configGetResult = Request::makeRequest('admin/extension/config_get', ['ext' => 'mod_support']);
+    $configGetResult = ApiClient::request('admin/extension/config_get', ['ext' => 'mod_support']);
     expect($configGetResult->wasSuccessful())->toBeTrue();
 
     $configData = $configGetResult->getResult();
@@ -23,7 +23,7 @@ afterEach(function () use (&$initialSupportConfig): void {
         return;
     }
 
-    $configResetResult = Request::makeRequest(
+    $configResetResult = ApiClient::request(
         'admin/extension/config_save',
         array_merge(['ext' => 'mod_support'], $initialSupportConfig)
     );
@@ -37,7 +37,7 @@ test('creates ticket for guest', function (): void {
     $expectedSubject = 'Subject';
     $expectedMessage = 'message';
 
-    $result = Request::makeRequest('guest/support/ticket_create', [
+    $result = ApiClient::request('guest/support/ticket_create', [
         'name' => $expectedName,
         'email' => $expectedEmail,
         'subject' => $expectedSubject,
@@ -51,7 +51,7 @@ test('creates ticket for guest', function (): void {
         ->and(strlen($ticketId))->toBeLessThanOrEqual(SUPPORT_MAX_TICKET_ID_LENGTH)
         ->and($ticketId)->toMatch('/^[A-Za-z0-9_-]+$/');
 
-    $ticketGetResult = Request::makeRequest('guest/support/ticket_get', ['hash' => $ticketId]);
+    $ticketGetResult = ApiClient::request('guest/support/ticket_get', ['hash' => $ticketId]);
     expect($ticketGetResult->wasSuccessful())->toBeTrue();
 
     $ticketData = $ticketGetResult->getResult();
@@ -66,10 +66,10 @@ test('creates ticket for guest', function (): void {
 });
 
 test('rejects guest ticket creation when public tickets are disabled', function (): void {
-    $configResult = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_support', 'disable_public_tickets' => true]);
+    $configResult = ApiClient::request('admin/extension/config_save', ['ext' => 'mod_support', 'disable_public_tickets' => true]);
     expect($configResult->wasSuccessful())->toBeTrue();
 
-    $configGetResult = Request::makeRequest('admin/extension/config_get', ['ext' => 'mod_support']);
+    $configGetResult = ApiClient::request('admin/extension/config_get', ['ext' => 'mod_support']);
     expect($configGetResult->wasSuccessful())->toBeTrue();
 
     $configData = $configGetResult->getResult();
@@ -77,7 +77,7 @@ test('rejects guest ticket creation when public tickets are disabled', function 
         ->toHaveKey('disable_public_tickets')
         ->and((bool) $configData['disable_public_tickets'])->toBeTrue();
 
-    $result = Request::makeRequest('guest/support/ticket_create', [
+    $result = ApiClient::request('guest/support/ticket_create', [
         'name' => 'Name',
         'email' => 'email2@example.com',
         'subject' => 'Subject',
@@ -92,20 +92,20 @@ test('rejects guest ticket creation when public tickets are disabled', function 
 });
 
 test('public tickets enabled reflects configuration', function (): void {
-    $enabledResult = Request::makeRequest('guest/support/public_tickets_enabled');
+    $enabledResult = ApiClient::request('guest/support/public_tickets_enabled');
     expect($enabledResult->wasSuccessful())->toBeTrue()
         ->and($enabledResult->getResult())->toBeTrue();
 
-    $configResult = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_support', 'disable_public_tickets' => true]);
+    $configResult = ApiClient::request('admin/extension/config_save', ['ext' => 'mod_support', 'disable_public_tickets' => true]);
     expect($configResult->wasSuccessful())->toBeTrue();
 
-    $disabledResult = Request::makeRequest('guest/support/public_tickets_enabled');
+    $disabledResult = ApiClient::request('guest/support/public_tickets_enabled');
     expect($disabledResult->wasSuccessful())->toBeTrue()
         ->and($disabledResult->getResult())->toBeFalse();
 });
 
 test('rejects guest ticket creation without name', function (): void {
-    $result = Request::makeRequest('guest/support/ticket_create', [
+    $result = ApiClient::request('guest/support/ticket_create', [
         'email' => 'email@example.com',
         'subject' => 'Subject',
         'message' => 'message',
@@ -116,7 +116,7 @@ test('rejects guest ticket creation without name', function (): void {
 });
 
 test('rejects guest ticket creation without email', function (): void {
-    $result = Request::makeRequest('guest/support/ticket_create', [
+    $result = ApiClient::request('guest/support/ticket_create', [
         'name' => 'Name',
         'subject' => 'Subject',
         'message' => 'message',
@@ -127,7 +127,7 @@ test('rejects guest ticket creation without email', function (): void {
 });
 
 test('rejects guest ticket creation with invalid email', function (): void {
-    $result = Request::makeRequest('guest/support/ticket_create', [
+    $result = ApiClient::request('guest/support/ticket_create', [
         'name' => 'Name',
         'email' => 'not-an-email',
         'subject' => 'Subject',
@@ -139,7 +139,7 @@ test('rejects guest ticket creation with invalid email', function (): void {
 });
 
 test('rejects guest ticket creation with empty subject', function (): void {
-    $result = Request::makeRequest('guest/support/ticket_create', [
+    $result = ApiClient::request('guest/support/ticket_create', [
         'name' => 'Name',
         'email' => 'email@example.com',
         'subject' => '',
@@ -151,7 +151,7 @@ test('rejects guest ticket creation with empty subject', function (): void {
 });
 
 test('rejects guest ticket creation with empty message', function (): void {
-    $result = Request::makeRequest('guest/support/ticket_create', [
+    $result = ApiClient::request('guest/support/ticket_create', [
         'name' => 'Name',
         'email' => 'email@example.com',
         'subject' => 'Subject',
