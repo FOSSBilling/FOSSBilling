@@ -23,7 +23,7 @@ test('can create and delete client', function (): void {
     expect($result->getResult())->toBeTrue();
 });
 
-test('phone ccmust be greater than zero', function (): void {
+test('phone cc must be greater than zero', function (): void {
     $password = 'A1a' . bin2hex(random_bytes(6));
     $result = Tests\Helpers\ApiClient::request('guest/client/create', [
         'email' => 'test_' . uniqid() . '@example.com',
@@ -36,7 +36,7 @@ test('phone ccmust be greater than zero', function (): void {
     expect($result->wasSuccessful())->toBeFalse();
 });
 
-test('phone ccmaximum limit', function (): void {
+test('phone cc maximum limit', function (): void {
     $password = 'A1a' . bin2hex(random_bytes(6));
     $result = Tests\Helpers\ApiClient::request('guest/client/create', [
         'email' => 'test_' . uniqid() . '@example.com',
