@@ -117,7 +117,7 @@ $di['pdo'] = function () {
  * @return \Box_Database The new Box_Database object that was just created.
  */
 $di['db'] = function () use ($di) {
-    RedBeanPHP\R::setup($di['pdo']());
+    RedBeanPHP\R::setup($di['pdo']);
     RedBeanPHP\Util\DispenseHelper::setEnforceNamingPolicy(false);
 
     // SECURITY: bind string literals as PARAM_STR, not PARAM_INT. Without
