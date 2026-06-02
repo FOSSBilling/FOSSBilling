@@ -324,13 +324,14 @@ class Service implements InjectionAwareInterface
     /**
      * Acts as an alias to `hasPermission`, but it'll also throw an exception stating the staff member doesn't have permission if they don't.
      *
-     * @param string      $module     what module to check permission for
-     * @param string|null $key        the permission key for the associated module
-     * @param mixed       $constraint if the permission key allows for multiple options, specify the one you want to use as a constraint here
+     * @param string            $module     what module to check permission for
+     * @param string|null       $key        the permission key for the associated module
+     * @param mixed             $constraint if the permission key allows for multiple options, specify the one you want to use as a constraint here
+     * @param \Model_Admin|null $member     the staff member to check permissions for, or null to use the currently logged-in staff member
      */
-    public function checkPermissionsAndThrowException(string $module, ?string $key = null, mixed $constraint = null): void
+    public function checkPermissionsAndThrowException(string $module, ?string $key = null, mixed $constraint = null, ?\Model_Admin $member = null): void
     {
-        if (!$this->hasPermission(null, $module, $key, $constraint)) {
+        if (!$this->hasPermission($member, $module, $key, $constraint)) {
             $requiredPermission = is_null($key) ? $module : "{$module}.{$key}";
 
             throw new \FOSSBilling\InformationException("You need the \"{$requiredPermission}\" permission to perform this action", [], 403);

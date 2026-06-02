@@ -756,12 +756,12 @@ class Server_Manager_Directadmin extends Server_Manager
         }
 
         // Check if the response data contains HTML, as some endpoints return HTML if the request fails (such as auth requests)
-        if (strlen(strstr($data, '<!doctype html>')) > 0 || strlen(strstr($data, 'DirectAdmin Login')) > 0) {
+        if (str_contains($data, '<!doctype html>') || str_contains($data, 'DirectAdmin Login')) {
             throw new Server_Exception('Failed to connect to the :type: server. Please verify your credentials and configuration', [':type:' => 'DirectAdmin']);
         }
 
         // Check if the response data contains an error message indicating that the request cannot be executed
-        if (strlen(strstr($data, "The request you've made cannot be executed because it does not exist in your authority level")) > 0) {
+        if (str_contains($data, "The request you've made cannot be executed because it does not exist in your authority level")) {
             throw new Server_Exception('Server Manager DirectAdmin Error: "The request you have made cannot be executed because it does not exist in your authority level"');
         }
 

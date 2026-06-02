@@ -243,7 +243,7 @@ class Admin extends \Api_Abstract
      */
     public function batch_pay_with_credits($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices');
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices', null, $this->identity);
 
         return $this->getService()->doBatchPayWithCredits($data);
     }
@@ -269,7 +269,7 @@ class Admin extends \Api_Abstract
      */
     public function batch_generate()
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices');
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices', null, $this->identity);
 
         return $this->getService()->generateInvoicesForExpiringOrders();
     }
@@ -281,7 +281,7 @@ class Admin extends \Api_Abstract
      */
     public function batch_activate_paid()
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices');
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices', null, $this->identity);
 
         return $this->getService()->doBatchPaidInvoiceActivation();
     }
@@ -293,7 +293,7 @@ class Admin extends \Api_Abstract
      */
     public function batch_send_reminders($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices');
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices', null, $this->identity);
 
         return $this->getService()->doBatchRemindersSend();
     }
@@ -311,7 +311,7 @@ class Admin extends \Api_Abstract
      */
     public function batch_invoke_due_event($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices');
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices', null, $this->identity);
 
         return $this->getService()->doBatchInvokeDueEvent($data);
     }

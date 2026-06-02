@@ -120,6 +120,13 @@ $di['db'] = function () use ($di) {
     RedBeanPHP\R::setup($di['pdo']);
     RedBeanPHP\Util\DispenseHelper::setEnforceNamingPolicy(false);
 
+    // SECURITY: bind string literals as PARAM_STR, not PARAM_INT. Without
+    // this, ?hash=107 in /api/guest/invoice/get resolves to the invoice
+    // whose hash starts with '107' because MySQL coerces VARCHAR against
+    // int to a leading-digits match. Do not remove; see RedBeanBindingTest.
+    /* @phpstan-ignore-next-line Adapter::getDatabase() returns the abstract Driver; the concrete RPDO implements setUseStringOnlyBinding. */
+    Facade::getDatabaseAdapter()->getDatabase()->setUseStringOnlyBinding(true);
+
     $helper = new Box_BeanHelper();
     $helper->setDi($di);
 

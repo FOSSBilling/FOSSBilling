@@ -61,6 +61,8 @@ class RateLimiter implements InjectionAwareInterface
                 'invoice_payment_hash' => ['policy' => 'fixed_window', 'limit' => 10, 'interval' => '1 hour'],
                 'invoice_pdf_ip' => ['policy' => 'fixed_window', 'limit' => 10, 'interval' => '1 hour'],
                 'invoice_pdf_hash' => ['policy' => 'fixed_window', 'limit' => 10, 'interval' => '1 hour'],
+                'invoice_get_ip' => ['policy' => 'fixed_window', 'limit' => 10, 'interval' => '1 hour'],
+                'invoice_get_hash' => ['policy' => 'fixed_window', 'limit' => 30, 'interval' => '1 hour'],
                 'cart_promo_apply_ip' => ['policy' => 'fixed_window', 'limit' => 10, 'interval' => '1 hour'],
                 'client_email_verification_resend_ip' => ['policy' => 'fixed_window', 'limit' => 30, 'interval' => '1 hour'],
                 'client_email_verification_resend_account' => ['policy' => 'fixed_window', 'limit' => 3, 'interval' => '1 hour'],

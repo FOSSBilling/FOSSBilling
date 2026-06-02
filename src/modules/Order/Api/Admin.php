@@ -274,7 +274,7 @@ class Admin extends \Api_Abstract
      */
     public function batch_suspend_expired($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage', null, $this->identity);
 
         return $this->getService()->batchSuspendExpired();
     }
@@ -287,7 +287,7 @@ class Admin extends \Api_Abstract
      */
     public function batch_cancel_suspended($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage', null, $this->identity);
 
         return $this->getService()->batchCancelSuspended();
     }

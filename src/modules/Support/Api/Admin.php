@@ -170,7 +170,7 @@ class Admin extends \Api_Abstract
      */
     public function batch_ticket_auto_close($data): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets', null, $this->identity);
 
         // Auto close support tickets
         $expiredArr = $this->getService()->getExpired();
@@ -193,7 +193,7 @@ class Admin extends \Api_Abstract
      */
     public function batch_public_ticket_auto_close($data): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets', null, $this->identity);
 
         // Auto close public tickets
         $expired = $this->getService()->publicGetExpired();

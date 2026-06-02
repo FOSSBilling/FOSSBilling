@@ -16,6 +16,7 @@ use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Proxy\ProxyFactory;
 use FOSSBilling\Environment;
+use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 
@@ -30,16 +31,19 @@ class EntityManagerFactory
             iterator_to_array($finder)
         );
 
+        $cache = new FilesystemAdapter('doctrine', 0, PATH_CACHE);
+
         $config = ORMSetup::createAttributeMetadataConfig(
             paths: $moduleEntityPaths,
             isDevMode: Environment::isDevelopment(),
-            cacheNamespaceSeed: self::getCacheNamespaceSeed($moduleEntityPaths)
+            cacheNamespaceSeed: self::getCacheNamespaceSeed($moduleEntityPaths),
+            cache: $cache,
         );
 
         $config->setNamingStrategy(new UnderscoreNamingStrategy(CASE_LOWER)); // Consistency with already existing RedBean tables
 
         // Enable native lazy loading if PHP version supports it (8.4+).
-        if (PHP_VERSION_ID > 80400) {
+        if (PHP_VERSION_ID >= 80400) {
             $config->enableNativeLazyObjects(true);
         } else {
             $config->setProxyDir(Path::join(PATH_CACHE, 'doctrine', 'proxies'));
