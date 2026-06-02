@@ -106,15 +106,15 @@ test('period_title returns period title string', function (): void {
     $api = new Box\Mod\System\Api\Guest();
     $data = ['code' => 'periodCode'];
 
-    $servuceMock = Mockery::mock(Box\Mod\System\Service::class);
-    $servuceMock
+    $serviceMock = Mockery::mock(Box\Mod\System\Service::class);
+    $serviceMock
     ->shouldReceive('getPeriod')
     ->atLeast()->once()
     ->andReturn('periodTtitleValue');
     $di = container();
 
     $api->setDi($di);
-    $api->setService($servuceMock);
+    $api->setService($serviceMock);
 
     $result = $api->period_title($data);
     expect($result)->toBeString();

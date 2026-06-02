@@ -31,8 +31,8 @@ test('create returns int', function (): void {
     $data = [
         'email' => 'test@email.com',
         'first_name' => 'John',
-        'password' => 'testpaswword',
-        'password_confirm' => 'testpaswword',
+        'password' => 'testpassword',
+        'password_confirm' => 'testpassword',
     ];
 
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
@@ -81,8 +81,8 @@ test('create throws exception when client exists', function (): void {
     $data = [
         'email' => 'test@email.com',
         'first_name' => 'John',
-        'password' => 'testpaswword',
-        'password_confirm' => 'testpaswword',
+        'password' => 'testpassword',
+        'password_confirm' => 'testpassword',
     ];
 
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
@@ -122,8 +122,8 @@ test('create throws exception when signup is disabled', function (): void {
     $data = [
         'email' => 'test@email.com',
         'first_name' => 'John',
-        'password' => 'testpaswword',
-        'password_confirm' => 'testpaswword',
+        'password' => 'testpassword',
+        'password_confirm' => 'testpassword',
     ];
 
     $di = container();
@@ -141,8 +141,8 @@ test('create throws exception when passwords do not match', function (): void {
     $data = [
         'email' => 'test@email.com',
         'first_name' => 'John',
-        'password' => 'testpaswword',
-        'password_confirm' => 'wrongpaswword',
+        'password' => 'testpassword',
+        'password_confirm' => 'wrongpassword',
     ];
 
     $di = container();
