@@ -2220,6 +2220,146 @@ final class ServiceTest extends \BBTestCase
         $this->assertArrayHasKey('result', $result);
     }
 
+    public function testProcessInvoiceSinglePaymentsDisabled(): void
+    {
+        $data = [
+            'hash' => 'hashString',
+            'gateway_id' => 2,
+        ];
+
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+
+        $payGatewayModel = new \Model_PayGateway();
+        $payGatewayModel->loadBean(new \DummyBean());
+        $payGatewayModel->enabled = true;
+        $payGatewayModel->allow_recurrent = 0;
+        $payGatewayModel->allow_single = 0;
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->willReturn($invoiceModel);
+        $dbMock->expects($this->atLeastOnce())
+            ->method('load')
+            ->willReturn($payGatewayModel);
+
+        $subscribeService = $this->createMock(ServiceSubscription::class);
+        $subscribeService->expects($this->atLeastOnce())
+            ->method('isSubscribable')
+            ->willReturn(false);
+
+        $payGatewayService = $this->createMock(ServicePayGateway::class);
+        $payGatewayService->expects($this->atLeastOnce())
+            ->method('canPerformSinglePayment')
+            ->willReturn(false);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($payGatewayService, $subscribeService) {
+            if ($sub == 'PayGateway') {
+                return $payGatewayService;
+            }
+            if ($sub == 'Subscription') {
+                return $subscribeService;
+            }
+            if ($serviceName === 'system') {
+                return $this->getMockSystemServiceForAuth();
+            }
+        });
+        $di['api_admin'] = new \Api_Handler(new \Model_Admin());
+        $di['auth'] = $this->getMockUnauthenticatedAuth();
+
+        $this->service->setDi($di);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionCode(815);
+        $this->expectExceptionMessage('One-time payments are not enabled for the selected payment gateway');
+        $this->service->processInvoice($data);
+    }
+
+    public function testProcessInvoiceSubscribableStillAllowsSingleBlockedGateway(): void
+    {
+        $serviceMock = $this->getMockBuilder(Service::class)
+            ->onlyMethods(['getPaymentInvoice'])
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getPaymentInvoice')
+            ->willReturn(new \Payment_Invoice());
+
+        $data = [
+            'hash' => 'hashString',
+            'gateway_id' => 2,
+        ];
+
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+
+        $payGatewayModel = new \Model_PayGateway();
+        $payGatewayModel->loadBean(new \DummyBean());
+        $payGatewayModel->enabled = true;
+        $payGatewayModel->allow_recurrent = 1;
+        $payGatewayModel->allow_single = 0;
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->willReturn($invoiceModel);
+        $dbMock->expects($this->atLeastOnce())
+            ->method('load')
+            ->willReturn($payGatewayModel);
+
+        $subscribeService = $this->createMock(ServiceSubscription::class);
+        $subscribeService->expects($this->atLeastOnce())
+            ->method('isSubscribable')
+            ->willReturn(true);
+
+        $payGatewayService = $this->createMock(ServicePayGateway::class);
+        $payGatewayService->expects($this->atLeastOnce())
+            ->method('canPerformRecurrentPayment')
+            ->willReturn(true);
+        // canPerformSinglePayment must NOT be called when the subscription path is taken
+        $payGatewayService->expects($this->never())
+            ->method('canPerformSinglePayment');
+
+        $adapterMock = $this->getMockBuilder('\Payment_Adapter_Dummy')
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $adapterMock->expects($this->atLeastOnce())
+            ->method('setDi');
+        $adapterMock->expects($this->atLeastOnce())
+            ->method('getConfig')
+            ->willReturn([]);
+
+        $payGatewayService->expects($this->atLeastOnce())
+            ->method('getPaymentAdapter')
+            ->willReturn($adapterMock);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($payGatewayService, $subscribeService) {
+            if ($sub == 'PayGateway') {
+                return $payGatewayService;
+            }
+            if ($sub == 'Subscription') {
+                return $subscribeService;
+            }
+            if ($serviceName === 'system') {
+                return $this->getMockSystemServiceForAuth();
+            }
+        });
+        $di['api_admin'] = new \Api_Handler(new \Model_Admin());
+        $di['logger'] = new \Box_Log();
+        $di['auth'] = $this->getMockUnauthenticatedAuth();
+
+        $serviceMock->setDi($di);
+
+        $result = $serviceMock->processInvoice($data);
+        $this->assertIsArray($result);
+        $this->assertTrue($result['subscription']);
+    }
+
     public function testAddNote(): void
     {
         $note = 'test Note';

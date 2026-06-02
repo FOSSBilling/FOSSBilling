@@ -30,4 +30,52 @@ final class Payment_Adapter_StripeTest extends BBTestCase
 
         $this->assertSame($expected, $method->invoke($adapter, $amount, $currency));
     }
+
+    public function testGetConfigDeclaresConditionalRequiredWhenRules(): void
+    {
+        $config = Payment_Adapter_Stripe::getConfig();
+
+        $this->assertArrayHasKey('form', $config);
+        $this->assertArrayHasKey('pub_key', $config['form']);
+        $this->assertArrayHasKey('api_key', $config['form']);
+        $this->assertArrayHasKey('test_pub_key', $config['form']);
+        $this->assertArrayHasKey('test_api_key', $config['form']);
+
+        $this->assertSame(
+            ['enabled' => true, 'test_mode' => false],
+            $config['form']['pub_key'][1]['required_when'],
+        );
+        $this->assertSame(
+            ['enabled' => true, 'test_mode' => false],
+            $config['form']['api_key'][1]['required_when'],
+        );
+        $this->assertSame(
+            ['enabled' => true, 'test_mode' => true],
+            $config['form']['test_pub_key'][1]['required_when'],
+        );
+        $this->assertSame(
+            ['enabled' => true, 'test_mode' => true],
+            $config['form']['test_api_key'][1]['required_when'],
+        );
+    }
+
+    public function testConstructorRejectsMissingLiveKeysWhenLiveMode(): void
+    {
+        $this->expectException(Payment_Exception::class);
+        $this->expectExceptionMessage('not fully configured');
+
+        new Payment_Adapter_Stripe([
+            'test_mode' => false,
+        ]);
+    }
+
+    public function testConstructorRejectsMissingTestKeysWhenTestMode(): void
+    {
+        $this->expectException(Payment_Exception::class);
+        $this->expectExceptionMessage('not fully configured');
+
+        new Payment_Adapter_Stripe([
+            'test_mode' => true,
+        ]);
+    }
 }

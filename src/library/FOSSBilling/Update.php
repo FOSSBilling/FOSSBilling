@@ -233,6 +233,11 @@ class Update implements InjectionAwareInterface
             throw new InformationException('An update finalization is already pending. Complete finalization before starting another update.');
         }
 
+        $readiness = $this->di['update_readiness']->check();
+        if (!$readiness['can_update']) {
+            throw new Exception('FOSSBilling does not have sufficient filesystem permissions to perform the update. Resolve the reported issues before trying again.', null, 820);
+        }
+
         $updateBranch = $this->getUpdateBranch();
         if ($updateBranch !== 'preview' && !$this->isUpdateAvailable()) {
             throw new InformationException('You have the latest version of FOSSBilling. You do not need to update.');

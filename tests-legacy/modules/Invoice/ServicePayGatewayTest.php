@@ -260,6 +260,98 @@ final class ServicePayGatewayTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
+    public function testUpdateSkipsConfigValidationWhenDisablingGateway(): void
+    {
+        $payGatewayModel = new \Model_PayGateway();
+        $payGatewayModel->loadBean(new \DummyBean());
+        $payGatewayModel->gateway = 'Stripe';
+        $payGatewayModel->config = json_encode(['api_key' => 'sk_live', 'pub_key' => 'pk_live']);
+        $payGatewayModel->enabled = 1;
+        $payGatewayModel->test_mode = 0;
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store');
+
+        $serviceMock = $this->getMockBuilder(ServicePayGateway::class)
+            ->onlyMethods(['getAdapterClassName'])
+            ->getMock();
+        // Should never be called because the gateway is being disabled.
+        $serviceMock->expects($this->never())
+            ->method('getAdapterClassName');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['logger'] = new \Box_Log();
+        $serviceMock->setDi($di);
+
+        $result = $serviceMock->update($payGatewayModel, ['enabled' => 0]);
+        $this->assertTrue($result);
+    }
+
+    public function testUpdateRejectsEnablingGatewayWithMissingConfigForTestMode(): void
+    {
+        $payGatewayModel = new \Model_PayGateway();
+        $payGatewayModel->loadBean(new \DummyBean());
+        $payGatewayModel->gateway = 'Stripe';
+        $payGatewayModel->config = json_encode([]);
+        $payGatewayModel->enabled = 0;
+        $payGatewayModel->test_mode = 1;
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->never())
+            ->method('store');
+
+        $serviceMock = $this->getMockBuilder(ServicePayGateway::class)
+            ->onlyMethods(['getAdapterClassName'])
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getAdapterClassName')
+            ->willReturn('Payment_Adapter_Stripe');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['logger'] = new \Box_Log();
+        $serviceMock->setDi($di);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionCode(819);
+        $this->expectExceptionMessage('not fully configured');
+        $serviceMock->update($payGatewayModel, ['enabled' => 1, 'test_mode' => 1]);
+    }
+
+    public function testUpdateAcceptsEnablingGatewayWithCompleteConfigForTestMode(): void
+    {
+        $payGatewayModel = new \Model_PayGateway();
+        $payGatewayModel->loadBean(new \DummyBean());
+        $payGatewayModel->gateway = 'Stripe';
+        $payGatewayModel->config = json_encode([
+            'test_api_key' => 'sk_test_valid',
+            'test_pub_key' => 'pk_test_valid',
+        ]);
+        $payGatewayModel->enabled = 0;
+        $payGatewayModel->test_mode = 1;
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store');
+
+        $serviceMock = $this->getMockBuilder(ServicePayGateway::class)
+            ->onlyMethods(['getAdapterClassName'])
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getAdapterClassName')
+            ->willReturn('Payment_Adapter_Stripe');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['logger'] = new \Box_Log();
+        $serviceMock->setDi($di);
+
+        $result = $serviceMock->update($payGatewayModel, ['enabled' => 1, 'test_mode' => 1]);
+        $this->assertTrue($result);
+    }
+
     public function testDelete(): void
     {
         $payGatewayModel = new \Model_PayGateway();
@@ -310,6 +402,18 @@ final class ServicePayGatewayTest extends \BBTestCase
         $result = $this->service->canPerformRecurrentPayment($payGatewayModel);
         $this->assertIsBool($result);
         $this->assertEquals($expected, $result);
+    }
+
+    public function testCanPerformSinglePayment(): void
+    {
+        $payGatewayModel = new \Model_PayGateway();
+        $payGatewayModel->loadBean(new \DummyBean());
+
+        $payGatewayModel->allow_single = true;
+        $this->assertTrue($this->service->canPerformSinglePayment($payGatewayModel));
+
+        $payGatewayModel->allow_single = false;
+        $this->assertFalse($this->service->canPerformSinglePayment($payGatewayModel));
     }
 
     public function testGetPaymentAdapter(): void

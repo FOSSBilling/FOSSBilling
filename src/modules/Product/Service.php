@@ -128,10 +128,13 @@ class Service implements InjectionAwareInterface
 
             // stock control
             'allow_quantity_select' => $model->allow_quantity_select,
+
+            // The order form is exposed to guests because the form itself
+            // is fetched publicly on the checkout step.
+            'form_id' => $model->form_id,
         ];
 
         if ($isAdmin) {
-            $result['form_id'] = $model->form_id;
             $result['created_at'] = $model->created_at;
             $result['updated_at'] = $model->updated_at;
             $result['addons'] = $addons;

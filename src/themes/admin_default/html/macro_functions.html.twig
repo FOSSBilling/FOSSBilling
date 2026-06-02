@@ -1,7 +1,26 @@
-{% macro build_form(elements, values) %}
+{% macro compute_field_required(element, context) %}
+    {% set result = false %}
+    {% if element[1].required_when is defined and element[1].required_when is iterable %}
+        {% set result = true %}
+        {% for cond_key, cond_value in element[1].required_when %}
+            {% if attribute(context, cond_key) is null or attribute(context, cond_key) != cond_value %}
+                {% set result = false %}
+            {% endif %}
+        {% endfor %}
+    {% elseif element[1].required is defined %}
+        {% set result = element[1].required != 'false' %}
+    {% else %}
+        {% set result = false %}
+    {% endif %}
+    {{ result ? 'true' : 'false' }}
+{% endmacro %}
+
+{% macro build_form(elements, values, context) %}
+    {% set ctx = context|default({}) %}
     <div class="row g-3">
     {% for name, element in elements %}
     {% set field_class = element[0] == 'textarea' ? 'col-12' : 'col-lg-6' %}
+    {% set field_required = _self.compute_field_required(element, ctx) == 'true' %}
     <div class="{{ field_class }}">
         {% if element[0] == 'select' %}
             <label class="form-label">{{ element[1].label }}</label>
@@ -33,11 +52,15 @@
         {% elseif element[0] == 'textarea' %}
             <label class="form-label" for="el-{{ name }}">{{ element[1].label }}</label>
             {% if element[1].description %}<div class="form-text mt-0 mb-2">{{ (element[1].description ?? '')|markdown_to_html }}</div>{% endif %}
-            <textarea class="form-control" id="el-{{ name }}" name="config[{{ name }}]" rows="20"{% if element[1].required is defined and element[1].required != 'false' %} required{% endif %}>{{ values[name] }}</textarea>
+            <textarea class="form-control" id="el-{{ name }}" name="config[{{ name }}]" rows="20"
+                {% if field_required %} required{% endif %}
+                {% if element[1].required_when is defined and element[1].required_when.test_mode is defined %} data-required-when-test-mode="{{ element[1].required_when.test_mode ? 'true' : 'false' }}"{% endif %}>{{ values[name] }}</textarea>
         {% else %}
             <label class="form-label" for="el-{{ name }}">{{ element[1].label }}</label>
             {% if element[1].description %}<div class="form-text mt-0 mb-2">{{ (element[1].description ?? '')|markdown_to_html }}</div>{% endif %}
-            <input class="form-control" id="el-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ values[name] }}"{% if element[1].required is defined and element[1].required != 'false' %}required{% endif %}>
+            <input class="form-control" id="el-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ values[name] }}"
+                {% if field_required %} required{% endif %}
+                {% if element[1].required_when is defined and element[1].required_when.test_mode is defined %} data-required-when-test-mode="{{ element[1].required_when.test_mode ? 'true' : 'false' }}"{% endif %}>
         {% endif %}
     </div>
     {% endfor %}

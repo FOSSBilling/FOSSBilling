@@ -114,7 +114,7 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
 
                     $message = vsprintf($message, array_values($params));
                     if (!$message) {
-                        throw new LogicException('Number of placeholders does not match number of variables');
+                        throw new FOSSBilling\Exception('Number of placeholders does not match number of variables');
                     }
 
                     break;
@@ -177,7 +177,7 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
             try {
                 $writer->write($event, $this->_channel);
             } catch (Throwable $e) {
-                error_log($e->getMessage());
+                error_log(sprintf('[Box_Log] writer failure: %s at %s:%d', $e->getMessage(), $e->getFile(), $e->getLine()));
             }
         }
     }
