@@ -90,6 +90,5 @@ compose run --rm --no-deps \
   app \
   sh -euxc "
     cd /workspace
-    # Pest resolves --test-directory from the Composer root, which is src because vendor-dir is src/vendor.
     ./src/vendor/bin/pest --test-directory ../tests --configuration phpunit-live.xml
   "
