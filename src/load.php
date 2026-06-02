@@ -140,7 +140,8 @@ function exceptionHandler(Exception|Error $e)
     global $filesystem;
 
     if (Environment::isTesting()) {
-        echo $e->getMessage() . PHP_EOL;
+        header('Content-Type: text/plain; charset=utf-8');
+        echo $e::class . ': ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine() . PHP_EOL;
 
         return;
     }
