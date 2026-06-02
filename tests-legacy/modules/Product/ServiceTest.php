@@ -293,7 +293,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($newProductId, $result);
     }
 
-    public function testUpdateProductMissngPricingType(): void
+    public function testUpdateProductMissingPricingType(): void
     {
         $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['getPaymentTypes'])
@@ -1012,11 +1012,11 @@ final class ServiceTest extends \BBTestCase
         $queryArr = [
             [
                 'id' => '1',
-                'titile' => 'test',
+                'title' => 'test',
             ],
             [
                 'id' => '2',
-                'titile' => 'Another',
+                'title' => 'Another',
             ],
         ];
 
@@ -1104,7 +1104,7 @@ final class ServiceTest extends \BBTestCase
             ->getMock();
         $serviceMock->expects($this->atLeastOnce())
             ->method('getUpgradablePairs')
-            ->willReturn(['2' => 'Hossting']);
+            ->willReturn(['2' => 'Hosting']);
 
         $productModel = new \Model_Product();
         $productModel->loadBean(new \DummyBean());
@@ -1118,7 +1118,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertTrue($result);
     }
 
-    public function testCanUpgradeToUpgradeIsImposible(): void
+    public function testCanUpgradeToUpgradeIsImpossible(): void
     {
         $serviceMock = $this->getMockBuilder(Service::class)
             ->onlyMethods(['getUpgradablePairs'])
