@@ -514,7 +514,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($newProductId, $result);
     }
 
-    public function testDeleteProductActivaOrderException(): void
+    public function testDeleteProductActiveOrderException(): void
     {
         $model = new \Model_Product();
 
