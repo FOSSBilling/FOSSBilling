@@ -126,6 +126,8 @@ class Fingerprint
                 ++$itemCount;
                 $scoreSubtract += $properties['weight'];
                 $differing[] = $name;
+            } elseif (!$exitsInFingerprint && !$exitsInCurrentFingerprint) {
+                // Do nothing in this case, as the property isn't in either fingerprint.
             } else {
                 ++$itemCount;
                 $hashedData = hash('md5', (string) $properties['source']);
