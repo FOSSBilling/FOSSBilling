@@ -96,7 +96,7 @@ class Service implements InjectionAwareInterface
                 }
             } catch (\Throwable $e) {
                 // Log the error but continue with other modules
-                $this->di['logger']->err("Error loading widgets from module '{$modName}': " . $e->getMessage());
+                $this->di['logger']->error("Error loading widgets from module '{$modName}': " . $e->getMessage());
             }
         }
 

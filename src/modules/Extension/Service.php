@@ -513,7 +513,7 @@ class Service implements InjectionAwareInterface
                 $this->filesystem->remove($path);
                 $this->di['logger']->info('Removed extension files for "%s" from %s', $id, $path);
             } catch (IOException $e) {
-                $this->di['logger']->warn('Failed to remove extension files for "%s": %s', $id, $e->getMessage());
+                $this->di['logger']->warning('Failed to remove extension files for "%s": %s', $id, $e->getMessage());
 
                 throw new \FOSSBilling\Exception('Failed to remove extension files. Please check file permissions and try again or manually remove the files from :path', [':path' => $path]);
             }

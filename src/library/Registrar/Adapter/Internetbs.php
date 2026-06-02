@@ -336,7 +336,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
             ]);
         } catch (HttpExceptionInterface $error) {
             $e = new Registrar_Exception("HttpClientException: {$error->getMessage()}.");
-            $this->getLog()->err($e->getMessage());
+            $this->getLog()->error($e->getMessage());
 
             throw $e;
         }

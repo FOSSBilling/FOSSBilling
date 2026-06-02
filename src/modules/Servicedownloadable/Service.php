@@ -124,7 +124,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!$this->isAllowedMimeType($mimeType, $allowedTypes['mime_types']) && $this->di->offsetExists('logger')) {
-            $this->di['logger']->warn(
+            $this->di['logger']->warning(
                 'Accepting downloadable upload %s with unexpected MIME type %s because the extension %s is allowed',
                 $file->getClientOriginalName(),
                 $mimeType,

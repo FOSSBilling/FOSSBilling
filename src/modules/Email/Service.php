@@ -998,11 +998,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             try {
                 $this->di['db']->trash($queue);
             } catch (\Exception $e) {
-                $this->di['logger']->setChannel('email')->err($e->getMessage());
+                $this->di['logger']->setChannel('email')->error($e->getMessage());
             }
         } catch (\Exception $e) {
             $message = $e->getMessage();
-            $this->di['logger']->setChannel('email')->err($e->getMessage());
+            $this->di['logger']->setChannel('email')->error($e->getMessage());
 
             if ($queue->priority) {
                 --$queue->priority;
