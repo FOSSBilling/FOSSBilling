@@ -112,7 +112,7 @@ test('converts product to api array', function (): void {
 test('gets product types', function (): void {
     $service = new Service();
     $modArray = [
-        'servicecustomtest',
+        'servicecustomsample',
     ];
 
     $expectedArray = [
@@ -123,7 +123,7 @@ test('gets product types', function (): void {
         'domain' => 'Domain',
     ];
 
-    $expectedArray['customtest'] = 'Customtest';
+    $expectedArray['customsample'] = 'Customsample';
 
     $extensionServiceMock = Mockery::mock(Box\Mod\Extension\Service::class);
     /** @var Mockery\Expectation $expectation */
@@ -1033,7 +1033,7 @@ test('checks if product can upgrade to another product', function (): void {
     /** @var Mockery\Expectation $expectation */
     $expectation = $serviceMock->shouldReceive('getUpgradablePairs');
     $expectation->atLeast()->once();
-    $expectation->andReturn(['2' => 'Hossting']);
+    $expectation->andReturn(['2' => 'Hosting']);
 
     $productModel = new Model_Product();
     $productModel->loadBean(new Tests\Helpers\DummyBean());
