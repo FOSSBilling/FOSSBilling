@@ -10,14 +10,12 @@
 
 declare(strict_types=1);
 
+use FOSSBilling\Twig\Enum\AppArea;
+use FOSSBilling\Twig\TwigLoader;
 use Twig\Error\LoaderError;
 
 test('templates', function (): void {
-    $loader = new Box_TwigLoader([
-        'mods' => PATH_MODS,
-        'theme' => PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga',
-        'type' => 'client',
-    ]);
+    $loader = new TwigLoader(AppArea::CLIENT, PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga');
     $test = $loader->getSourceContext('mod_page_login.html.twig');
     $test2 = $loader->getSourceContext('error.html.twig');
 
@@ -26,11 +24,7 @@ test('templates', function (): void {
 });
 
 test('exception', function (): void {
-    $loader = new Box_TwigLoader([
-        'type' => 'client',
-        'mods' => PATH_MODS,
-        'theme' => PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga',
-    ]);
+    $loader = new TwigLoader(AppArea::CLIENT, PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga');
 
     expect(fn (): \Twig\Source => $loader->getSourceContext('mod_non_existing_settings.html.twig'))
         ->toThrow(LoaderError::class);

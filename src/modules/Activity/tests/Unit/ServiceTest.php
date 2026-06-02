@@ -58,21 +58,20 @@ test('log email', function (): void {
         'content_text' => 'text',
     ];
 
-    $model = new Model_ActivityClientEmail();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-
     $di = container();
-    $dbMock = Mockery::mock('Box_Database');
-    /** @var Mockery\Expectation $expectation1 */
-    $expectation1 = $dbMock->shouldReceive('dispense');
-    $expectation1->atLeast()->once();
-    $expectation1->andReturn($model);
-    /** @var Mockery\Expectation $expectation2 */
-    $expectation2 = $dbMock->shouldReceive('store');
-    $expectation2->atLeast()->once();
-    $expectation2->andReturn([]);
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('insert')
+        ->once()
+        ->with('activity_client_email', Mockery::on(static fn (array $values): bool => $values['client_id'] === $data['client_id']
+            && $values['sender'] === $data['sender']
+            && $values['recipients'] === $data['recipients']
+            && $values['subject'] === $data['subject']
+            && $values['content_html'] === $data['content_html']
+            && $values['content_text'] === $data['content_text']
+            && isset($values['created_at'])))
+        ->andReturn(1);
 
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbalMock;
     $service->setDi($di);
 
     $result = $service->logEmail($data['subject'], $data['client_id'], $data['sender'], $data['recipients'], $data['content_html'], $data['content_text']);
@@ -85,18 +84,24 @@ test('to api array', function (): void {
     $clientHistoryModel->loadBean(new Tests\Helpers\DummyBean());
     $clientHistoryModel->client_id = 1;
 
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+    $resultMock = Mockery::mock(Doctrine\DBAL\Result::class);
+    $resultMock->shouldReceive('fetchAssociative')
+        ->once()
+        ->andReturn([
+            'id' => 1,
+            'first_name' => 'Test',
+            'last_name' => 'Client',
+            'email' => 'client@example.test',
+        ]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    /** @var Mockery\Expectation $expectation */
-    $expectation = $dbMock->shouldReceive('getExistingModelById');
-    $expectation->atLeast()->once();
-    $expectation->with('Client', $clientHistoryModel->client_id, 'Client not found');
-    $expectation->andReturn($clientModel);
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('executeQuery')
+        ->once()
+        ->with('SELECT id, first_name, last_name, email FROM client WHERE id = ?', [$clientHistoryModel->client_id])
+        ->andReturn($resultMock);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbalMock;
 
     $service->setDi($di);
 
@@ -119,22 +124,14 @@ test('remove by client', function (): void {
     $clientModel->loadBean(new Tests\Helpers\DummyBean());
     $clientModel->id = 1;
 
-    $activitySystemModel = new Model_ActivitySystem();
-    $activitySystemModel->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock('\Box_Database');
-    /** @var Mockery\Expectation $expectation1 */
-    $expectation1 = $dbMock->shouldReceive('find');
-    $expectation1->atLeast()->once();
-    $expectation1->with('ActivitySystem', 'client_id = ?', [$clientModel->id]);
-    $expectation1->andReturn([$activitySystemModel]);
-    /** @var Mockery\Expectation $expectation2 */
-    $expectation2 = $dbMock->shouldReceive('trash');
-    $expectation2->atLeast()->once();
-    $expectation2->with($activitySystemModel);
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('executeStatement')
+        ->once()
+        ->with('DELETE FROM activity_system WHERE client_id = ?', [$clientModel->id])
+        ->andReturn(1);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbalMock;
 
     $service->setDi($di);
 

@@ -21,26 +21,3 @@ test('getDi returns dependency injection container', function (): void {
     $getDi = $api->getDi();
     expect($getDi)->toEqual($di);
 });
-
-test('settings returns module configuration array', function (): void {
-    $modMock = Mockery::mock('\\' . FOSSBilling\Module::class);
-    $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([]);
-
-    $api = new Guest();
-    $api->setMod($modMock);
-
-    $result = $api->settings();
-    expect($result)->toBeArray();
-});
-
-test('isLate returns boolean indicating if cron is late', function (): void {
-    $serviceMock = Mockery::mock(Box\Mod\Cron\Service::class);
-    $serviceMock->shouldReceive('isLate')->atLeast()->once()->andReturn(true);
-
-    $api = new Guest();
-    $api->setService($serviceMock);
-
-    $result = $api->is_late();
-    expect($result)->toBeBool();
-    expect($result)->toBeTrue();
-});

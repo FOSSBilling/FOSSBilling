@@ -86,8 +86,6 @@ class Admin extends \Api_Abstract
         $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('activity', 'manage');
 
         if (!isset($data['subject'])) {
-            error_log('Email was not logged. Subject not passed');
-
             return false;
         }
 

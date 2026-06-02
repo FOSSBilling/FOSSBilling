@@ -15,7 +15,7 @@ use Symfony\Component\HttpFoundation\Request;
 use function Tests\Helpers\container;
 
 test('dependency injection', function (): void {
-    $service = new Box\Mod\Spamchecker\Service();
+    $service = new Box\Mod\Antispam\Service();
     $di = container();
     $service->setDi($di);
     $getDi = $service->getDi();
@@ -23,13 +23,15 @@ test('dependency injection', function (): void {
 });
 
 test('on before client sign up', function (): void {
-    $service = new Box\Mod\Spamchecker\Service();
-    $spamCheckerService = Mockery::mock(Box\Mod\Spamchecker\Service::class);
+    $service = new Box\Mod\Antispam\Service();
+    $spamCheckerService = Mockery::mock(Box\Mod\Antispam\Service::class);
     $spamCheckerService->shouldReceive('isBlockedIp')
         ->atLeast()->once();
     $spamCheckerService->shouldReceive('isSpam')
         ->atLeast()->once();
     $spamCheckerService->shouldReceive('isTemp')
+        ->atLeast()->once();
+    $spamCheckerService->shouldReceive('checkHoneypot')
         ->atLeast()->once();
 
     $di = container();
@@ -43,8 +45,8 @@ test('on before client sign up', function (): void {
 });
 
 test('on before guest public ticket open', function (): void {
-    $service = new Box\Mod\Spamchecker\Service();
-    $spamCheckerService = Mockery::mock(Box\Mod\Spamchecker\Service::class);
+    $service = new Box\Mod\Antispam\Service();
+    $spamCheckerService = Mockery::mock(Box\Mod\Antispam\Service::class);
     $spamCheckerService->shouldReceive('isBlockedIp')
         ->atLeast()->once();
     $spamCheckerService->shouldReceive('isSpam')
@@ -63,7 +65,7 @@ test('on before guest public ticket open', function (): void {
 });
 
 test('is blocked ip ip not blocked', function (): void {
-    $service = new Box\Mod\Spamchecker\Service();
+    $service = new Box\Mod\Antispam\Service();
     $clientIp = '214.1.4.99';
     $modConfig = [
         'block_ips' => true,
@@ -73,7 +75,7 @@ test('is blocked ip ip not blocked', function (): void {
     $di = container();
     $di['request'] = Request::createFromGlobals();
     $di['mod_config'] = $di->protect(function ($modName) use ($modConfig) {
-        if ($modName == 'Spamchecker') {
+        if ($modName == 'Antispam') {
             return $modConfig;
         }
     });
@@ -87,14 +89,14 @@ test('is blocked ip ip not blocked', function (): void {
 });
 
 test('is blocked ip block ips not enabled', function (): void {
-    $service = new Box\Mod\Spamchecker\Service();
+    $service = new Box\Mod\Antispam\Service();
     $modConfig = [
         'block_ips' => false,
     ];
 
     $di = container();
     $di['mod_config'] = $di->protect(function ($modName) use ($modConfig) {
-        if ($modName == 'Spamchecker') {
+        if ($modName == 'Antispam') {
             return $modConfig;
         }
     });

@@ -340,7 +340,7 @@ test('getPairs returns currency pairs', function (): void {
     expect($result)->toBe($pairs);
 });
 
-test('rm throws exception when deleting default currency', function (): void {
+test('removeCurrency throws exception when deleting default currency', function (): void {
     $model = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
     $model->shouldReceive('getCode')
         ->byDefault()
@@ -350,6 +350,10 @@ test('rm throws exception when deleting default currency', function (): void {
         ->andReturn(true);
 
     $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock->shouldReceive('findOneByCode')
+        ->once()
+        ->with('EUR')
+        ->andReturn($model);
 
     $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
@@ -362,11 +366,11 @@ test('rm throws exception when deleting default currency', function (): void {
     $service = new Box\Mod\Currency\Service();
     $service->setDi($di);
 
-    expect(fn () => $service->rm($model))
-        ->toThrow(FOSSBilling\Exception::class);
+    expect(fn (): bool => $service->removeCurrency('EUR'))
+        ->toThrow(FOSSBilling\InformationException::class);
 });
 
-test('rm removes currency', function (): void {
+test('removeCurrency removes currency', function (): void {
     $model = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
     $model->shouldReceive('getCode')
         ->byDefault()
@@ -376,6 +380,10 @@ test('rm removes currency', function (): void {
         ->andReturn(false);
 
     $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock->shouldReceive('findOneByCode')
+        ->once()
+        ->with('EUR')
+        ->andReturn($model);
 
     $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
@@ -387,26 +395,28 @@ test('rm removes currency', function (): void {
     $emMock->shouldReceive('flush')
         ->atLeast()->once();
 
+    $eventsManager = Mockery::mock(Box_EventManager::class);
+    $eventsManager->shouldReceive('fire')
+        ->twice();
+
     $di = new Pimple\Container();
     $di['em'] = $emMock;
+    $di['events_manager'] = $eventsManager;
+    $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service = new Box\Mod\Currency\Service();
     $service->setDi($di);
-    $result = $service->rm($model);
+    $result = $service->removeCurrency('EUR');
 
-    expect($result)->toBeNull();
+    expect($result)->toBeTrue();
 });
 
-test('rm throws exception when currency code is empty', function (): void {
-    $model = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
-    $model->shouldReceive('isDefault')
-        ->byDefault()
-        ->andReturn(false);
-    $model->shouldReceive('getCode')
-        ->byDefault()
-        ->andReturn('');
-
+test('removeCurrency throws exception when currency is not found', function (): void {
     $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock->shouldReceive('findOneByCode')
+        ->once()
+        ->with('')
+        ->andReturn(null);
 
     $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
@@ -419,7 +429,7 @@ test('rm throws exception when currency code is empty', function (): void {
     $service = new Box\Mod\Currency\Service();
     $service->setDi($di);
 
-    expect(fn () => $service->rm($model))
+    expect(fn (): bool => $service->removeCurrency(''))
         ->toThrow(FOSSBilling\Exception::class);
 });
 
@@ -445,13 +455,6 @@ test('toApiArray returns API array for currency', function (): void {
 
 test('createCurrency creates new currency', function (): void {
     $code = 'EUR';
-    $format = '€{{price}}';
-
-    $systemService = Mockery::mock(Box\Mod\System\Service::class)->makePartial();
-    $systemService->shouldReceive('checkLimits')
-        ->atLeast()->once()
-        ->andReturn(null);
-
     $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
 
     $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
@@ -466,12 +469,11 @@ test('createCurrency creates new currency', function (): void {
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['em'] = $emMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
 
     $service = new Box\Mod\Currency\Service();
     $service->setDi($di);
 
-    $result = $service->createCurrency($code, $format, 'Euros', 0.6);
+    $result = $service->createCurrency($code, 0.6);
 
     expect($result)->toBeString();
     expect(strlen($result))->toBe(3);
@@ -480,24 +482,12 @@ test('createCurrency creates new currency', function (): void {
 
 test('updateCurrency updates currency', function (): void {
     $code = 'EUR';
-    $format = '€{{price}}';
-    $title = 'Euros';
-    $price_format = '€{{Price}}';
     $conversion_rate = 0.6;
 
     $model = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
     $model->shouldReceive('getCode')
         ->atLeast()->once()
         ->andReturn('EUR');
-    $model->shouldReceive('setTitle')
-        ->atLeast()->once()
-        ->with('Euros');
-    $model->shouldReceive('setFormat')
-        ->atLeast()->once()
-        ->with('€{{price}}');
-    $model->shouldReceive('setPriceFormat')
-        ->atLeast()->once()
-        ->with('€{{Price}}');
     $model->shouldReceive('setConversionRate')
         ->atLeast()->once()
         ->with(0.6);
@@ -523,7 +513,7 @@ test('updateCurrency updates currency', function (): void {
     $service = new Box\Mod\Currency\Service();
     $service->setDi($di);
 
-    $result = $service->updateCurrency($code, $format, $title, $price_format, $conversion_rate);
+    $result = $service->updateCurrency($code, $conversion_rate);
 
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
@@ -531,9 +521,6 @@ test('updateCurrency updates currency', function (): void {
 
 test('updateCurrency throws exception when currency not found', function (): void {
     $code = 'EUR';
-    $format = '€{{price}}';
-    $title = 'Euros';
-    $price_format = '€{{Price}}';
     $conversion_rate = 0.6;
 
     $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
@@ -552,24 +539,15 @@ test('updateCurrency throws exception when currency not found', function (): voi
     $service = new Box\Mod\Currency\Service();
     $service->setDi($di);
 
-    expect(fn (): bool => $service->updateCurrency($code, $format, $title, $price_format, $conversion_rate))
+    expect(fn (): bool => $service->updateCurrency($code, $conversion_rate))
         ->toThrow(FOSSBilling\Exception::class);
 });
 
 test('updateCurrency throws exception when conversion rate is zero', function (): void {
     $code = 'EUR';
-    $format = '€{{price}}';
-    $title = 'Euros';
-    $price_format = '€{{Price}}';
     $conversion_rate = 0;
 
     $model = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
-    $model->shouldReceive('setTitle')
-        ->byDefault();
-    $model->shouldReceive('setFormat')
-        ->byDefault();
-    $model->shouldReceive('setPriceFormat')
-        ->byDefault();
     $model->shouldReceive('setConversionRate')
         ->byDefault();
 
@@ -589,7 +567,7 @@ test('updateCurrency throws exception when conversion rate is zero', function ()
     $service = new Box\Mod\Currency\Service();
     $service->setDi($di);
 
-    expect(fn (): bool => $service->updateCurrency($code, $format, $title, $price_format, $conversion_rate))
+    expect(fn (): bool => $service->updateCurrency($code, $conversion_rate))
         ->toThrow(FOSSBilling\Exception::class);
 });
 
@@ -632,7 +610,7 @@ test('updateCurrencyRates updates rates for all currencies', function (): void {
     $serviceMock = Mockery::mock(Box\Mod\Currency\Service::class)
         ->makePartial()
         ->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('_getRate')
+    $serviceMock->shouldReceive('getRate')
         ->atLeast()->once()
         ->andReturn(floatval(random_int(1, 50) / 10));
 
@@ -676,7 +654,7 @@ test('updateCurrencyRates handles non-numeric rates', function (): void {
     $serviceMock = Mockery::mock(Box\Mod\Currency\Service::class)
         ->makePartial()
         ->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('_getRate')
+    $serviceMock->shouldReceive('getRate')
         ->atLeast()->once()
         ->andReturn(0.0);
 
@@ -691,7 +669,7 @@ test('updateCurrencyRates handles non-numeric rates', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('deleteCurrencyByCode deletes currency by code', function (): void {
+test('removeCurrency deletes currency by code', function (): void {
     $model = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
     $model->shouldReceive('getCode')
         ->byDefault()
@@ -729,13 +707,13 @@ test('deleteCurrencyByCode deletes currency by code', function (): void {
     $service = new Box\Mod\Currency\Service();
     $service->setDi($di);
 
-    $result = $service->deleteCurrencyByCode($code);
+    $result = $service->removeCurrency($code);
 
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
 
-test('deleteCurrencyByCode throws exception when currency not found', function (): void {
+test('removeCurrency throws exception when currency not found by code', function (): void {
     $code = 'EUR';
 
     $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
@@ -754,13 +732,6 @@ test('deleteCurrencyByCode throws exception when currency not found', function (
     $service = new Box\Mod\Currency\Service();
     $service->setDi($di);
 
-    expect(fn (): bool => $service->deleteCurrencyByCode($code))
+    expect(fn (): bool => $service->removeCurrency($code))
         ->toThrow(FOSSBilling\Exception::class);
-});
-
-test('validateCurrencyFormat throws exception when price tag is missing', function (): void {
-    $service = new Box\Mod\Currency\Service();
-
-    expect(fn () => $service->validateCurrencyFormat('$$$'))
-        ->toThrow(Exception::class);
 });

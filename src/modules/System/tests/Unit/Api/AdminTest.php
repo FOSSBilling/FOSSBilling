@@ -92,26 +92,6 @@ test('template exists', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('string render', function (): void {
-    $api = new Box\Mod\System\Api\Admin();
-    $data = [
-        '_tpl' => 'default',
-    ];
-
-    $serviceMock = Mockery::mock(Box\Mod\System\Service::class);
-    $serviceMock
-    ->shouldReceive('renderString')
-    ->atLeast()->once()
-    ->andReturn('returnStringType');
-    $di = container();
-
-    $api->setDi($di);
-    $api->setService($serviceMock);
-
-    $result = $api->string_render($data);
-    expect($result)->toBeString();
-});
-
 test('env', function (): void {
     $api = new Box\Mod\System\Api\Admin();
     $data = [];

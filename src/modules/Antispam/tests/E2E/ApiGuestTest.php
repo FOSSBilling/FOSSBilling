@@ -16,10 +16,10 @@ if (!getenv('APP_URL') || !getenv('TEST_API_KEY')) {
 }
 
 test('disposable email check', function (): void {
-    $result = Tests\Helpers\ApiClient::request('admin/extension/activate', ['type' => 'mod', 'id' => 'spamchecker']);
+    $result = Tests\Helpers\ApiClient::request('admin/extension/activate', ['type' => 'mod', 'id' => 'antispam']);
     expect($result->wasSuccessful())->toBeTrue($result);
 
-    $result = Tests\Helpers\ApiClient::request('admin/extension/config_save', ['ext' => 'mod_spamchecker', 'check_temp_emails' => true]);
+    $result = Tests\Helpers\ApiClient::request('admin/extension/config_save', ['ext' => 'mod_antispam', 'check_temp_emails' => true]);
     expect($result->wasSuccessful())->toBeTrue($result);
 
     $password = 'A1a' . bin2hex(random_bytes(6));
@@ -40,10 +40,10 @@ test('disposable email check', function (): void {
 });
 
 test('stop forum spam', function (): void {
-    $result = Tests\Helpers\ApiClient::request('admin/extension/activate', ['type' => 'mod', 'id' => 'spamchecker']);
+    $result = Tests\Helpers\ApiClient::request('admin/extension/activate', ['type' => 'mod', 'id' => 'antispam']);
     expect($result->wasSuccessful())->toBeTrue($result);
 
-    $result = Tests\Helpers\ApiClient::request('admin/extension/config_save', ['ext' => 'mod_spamchecker', 'sfs' => true]);
+    $result = Tests\Helpers\ApiClient::request('admin/extension/config_save', ['ext' => 'mod_antispam', 'sfs' => true]);
     expect($result->wasSuccessful())->toBeTrue($result);
 
     $password = 'A1a' . bin2hex(random_bytes(6));

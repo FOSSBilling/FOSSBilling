@@ -35,7 +35,7 @@ test('translate', function (): void {
     $text = 'Translate ME';
     $translateObj = new Box_Translate();
     $translateObj->setup();
-    $result = $translateObj->__($text);
+    $result = __trans($text);
 
     expect($result)->toEqual($text);
 });

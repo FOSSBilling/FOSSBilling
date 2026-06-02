@@ -142,6 +142,7 @@ function createTestController(array $sessionData = [], ?object $api = null): arr
 {
     $request = Mockery::mock(Request::class);
     $request->shouldReceive('getClientIp')->andReturn('127.0.0.1');
+    $request->shouldReceive('isXmlHttpRequest')->byDefault()->andReturn(false);
 
     $rateLimitCalls = new ArrayObject();
     $rateLimiter = new ClientTestRateLimiterDouble($rateLimitCalls);

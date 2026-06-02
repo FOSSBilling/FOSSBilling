@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\moduleService;
 
 test('getDi returns dependency injection container', function (): void {
     $guestClient = new Box\Mod\Client\Api\Guest();
@@ -52,6 +53,7 @@ test('create returns int', function (): void {
 
     $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
     $validatorMock->shouldReceive('isPasswordStrong')->atLeast()->once();
+    $validatorMock->shouldReceive('passwordsMatch')->atLeast()->once();
 
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
     $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
@@ -95,6 +97,7 @@ test('create throws exception when client exists', function (): void {
 
     $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
     $validatorMock->shouldReceive('isPasswordStrong')->atLeast()->once();
+    $validatorMock->shouldReceive('passwordsMatch')->atLeast()->once();
 
     $di = container();
     $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
@@ -188,7 +191,7 @@ test('login returns array', function (): void {
     $di['session'] = $sessionMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['tools'] = $toolsStub;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $cartServiceMock);
+    $di['mod_service'] = $di->protect(moduleService(['cart' => $cartServiceMock]));
 
     $guestClient->setDi($di);
     $guestClient->setService($serviceMock);
@@ -229,7 +232,7 @@ test('resetPassword returns true with new flow', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['events_manager'] = $eventMock;
-    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $emailServiceMock);
+    $di['mod_service'] = $di->protect(moduleService(['email' => $emailServiceMock]));
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['tools'] = $toolsMock;
 
@@ -303,7 +306,7 @@ test('updatePassword returns true', function (): void {
     $di['events_manager'] = $eventMock;
     $di['password'] = $passwordMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $emailServiceMock);
+    $di['mod_service'] = $di->protect(moduleService(['email' => $emailServiceMock]));
 
     $guestClient->setDi($di);
 

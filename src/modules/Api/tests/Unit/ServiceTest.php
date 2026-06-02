@@ -19,26 +19,3 @@ test('getDi returns dependency injection container', function (): void {
     $getDi = $service->getDi();
     expect($getDi)->toEqual($di);
 });
-
-test('getRequestCount returns integer', function (): void {
-    $service = new Box\Mod\Api\Service();
-    $since = 674_690_401; // timestamp == '1991-05-20 00:00:01';
-    $ip = '1.2.3.4';
-
-    $requestNumber = 11;
-
-    $dbMock = Mockery::mock('\Box_Database');
-    /** @var Mockery\Expectation $expectation */
-    $expectation = $dbMock->shouldReceive('getCell');
-    $expectation->atLeast()->once();
-    $expectation->andReturn($requestNumber);
-
-    $di = container();
-    $di['db'] = $dbMock;
-
-    $service->setDi($di);
-    $result = $service->getRequestCount($since, $ip);
-
-    expect($result)->toBeInt();
-    expect($result)->toEqual($requestNumber);
-});

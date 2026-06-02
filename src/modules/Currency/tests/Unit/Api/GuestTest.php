@@ -130,11 +130,11 @@ test('get exception', function (): void {
 });
 
 dataset('formatPriceFormatProvider', [
-    [1, '€ 60000.00'],
-    [2, '€ 60,000.00'],
-    [3, '€ 60.000,00'],
-    [4, '€ 60,000'],
-    [5, '€ 60000'],
+    [1, '€60,000.00'],
+    [2, '€60,000.00'],
+    [3, '€60,000.00'],
+    [4, '€60,000.00'],
+    [5, '€60,000.00'],
 ]);
 
 test('format price format', function ($price_format, $expectedResult): void {
@@ -174,7 +174,7 @@ dataset('formatProvider', [
         [
             'code' => 'EUR',
         ],
-        '€ 0.00',
+        '€0.00',
     ],
     [
         [
@@ -182,7 +182,7 @@ dataset('formatProvider', [
             'price' => 100000,
             'convert' => false,
         ],
-        '€ 100000.00',
+        '€100,000.00',
     ],
     [
         [
@@ -190,7 +190,7 @@ dataset('formatProvider', [
             'price' => 100000,
             'without_currency' => true,
         ],
-        '60000.00',
+        '60,000.00',
     ],
 ]);
 

@@ -23,6 +23,7 @@ dataset('recaptcha config', fn() => [
             'enabled' => true,
             'version' => null,
             'captcha_provider' => 'recaptcha_v2',
+            'recaptcha_v3_threshold' => 0.5,
             'turnstile_site_key' => null,
             'hcaptcha_site_key' => null,
         ],
@@ -36,6 +37,7 @@ dataset('recaptcha config', fn() => [
             'enabled' => true,
             'version' => null,
             'captcha_provider' => 'recaptcha_v2',
+            'recaptcha_v3_threshold' => 0.5,
             'turnstile_site_key' => null,
             'hcaptcha_site_key' => null,
         ],
@@ -51,6 +53,7 @@ dataset('recaptcha config', fn() => [
             'enabled' => false,
             'version' => 2,
             'captcha_provider' => 'recaptcha_v2',
+            'recaptcha_v3_threshold' => 0.5,
             'turnstile_site_key' => null,
             'hcaptcha_site_key' => null,
         ],
@@ -64,6 +67,7 @@ dataset('recaptcha config', fn() => [
             'enabled' => false,
             'version' => null,
             'captcha_provider' => 'recaptcha_v2',
+            'recaptcha_v3_threshold' => 0.5,
             'turnstile_site_key' => null,
             'hcaptcha_site_key' => null,
         ],
@@ -79,6 +83,7 @@ dataset('recaptcha config', fn() => [
             'enabled' => true,
             'version' => null,
             'captcha_provider' => 'turnstile',
+            'recaptcha_v3_threshold' => 0.5,
             'turnstile_site_key' => 'abc',
             'hcaptcha_site_key' => null,
         ],
@@ -94,6 +99,7 @@ dataset('recaptcha config', fn() => [
             'enabled' => true,
             'version' => null,
             'captcha_provider' => 'hcaptcha',
+            'recaptcha_v3_threshold' => 0.5,
             'turnstile_site_key' => null,
             'hcaptcha_site_key' => 'abc',
         ],
@@ -101,7 +107,7 @@ dataset('recaptcha config', fn() => [
 ]);
 
 test('dependency injection', function (): void {
-    $api = new Box\Mod\Spamchecker\Api\Guest();
+    $api = new Box\Mod\Antispam\Api\Guest();
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -109,7 +115,7 @@ test('dependency injection', function (): void {
 });
 
 test('recaptcha', function (array $config, array $expected): void {
-    $api = new Box\Mod\Spamchecker\Api\Guest();
+    $api = new Box\Mod\Antispam\Api\Guest();
     $di = container();
     $di['mod_config'] = $di->protect(fn (): array => $config);
 

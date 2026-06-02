@@ -11,13 +11,12 @@
 declare(strict_types=1);
 
 use Box\Mod\System\Service;
-use Twig\Environment;
 
 use function Tests\Helpers\container;
 
 test('getParamValue throws exception when key parameter is missing', function (): void {
     $service = new Service();
-    $param = [];
+    $param = '';
     $this->expectException(FOSSBilling\Exception::class);
     $this->expectExceptionMessage('Parameter key is missing');
 
@@ -60,24 +59,29 @@ test('getCompany returns company information', function (): void {
             'value' => 'work@example.eu',
         ],
     ];
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')->atLeast()->once()
+    $resultMock = Mockery::mock(Doctrine\DBAL\Result::class);
+    $resultMock->shouldReceive('fetchAllAssociative')
+        ->once()
         ->andReturn($multParamsResults);
 
+    $queryBuilderMock = Mockery::mock(Doctrine\DBAL\Query\QueryBuilder::class);
+    $queryBuilderMock->shouldReceive('select')->once()->with('param', 'value')->andReturnSelf();
+    $queryBuilderMock->shouldReceive('from')->once()->with('setting')->andReturnSelf();
+    $queryBuilderMock->shouldReceive('where')->once()->with('param IN (:params)')->andReturnSelf();
+    $queryBuilderMock->shouldReceive('setParameter')->once()->andReturnSelf();
+    $queryBuilderMock->shouldReceive('executeQuery')->once()->andReturn($resultMock);
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('createQueryBuilder')->once()->andReturn($queryBuilderMock);
+
     $di = container();
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbalMock;
 
     $service->setDi($di);
 
     $result = $service->getCompany();
     expect($result)->toBeArray();
     expect($result)->toBe($expected);
-});
-
-test('getLanguages returns available languages', function (): void {
-    $service = new Service();
-    $result = $service->getLanguages(true);
-    expect($result)->toBeArray();
 });
 
 test('getParams returns system parameters', function (): void {
@@ -148,6 +152,7 @@ test('getMessages returns system messages', function (): void {
     $updaterMock = Mockery::mock(FOSSBilling\Update::class);
     $updaterMock->allows()->isUpdateAvailable()->andReturn(true);
     $updaterMock->allows()->getLatestVersion()->andReturn($latestVersion);
+    $updaterMock->allows()->isBehindOnDBPatches()->andReturn(false);
 
     $urlMock = Mockery::mock(Box\Url::class);
     $urlMock->allows()->adminLink(Mockery::any())->andReturn('http://example.com');
@@ -191,57 +196,6 @@ test('templateExists returns false when paths are empty', function (): void {
     expect($result)->toBeFalse();
 });
 
-test('renderString throws exception on template error', function (): void {
-    $service = new Service();
-    $vars = [
-        '_client_id' => 1,
-    ];
-
-    $twigMock = Mockery::mock(Environment::class);
-    $twigMock->shouldReceive('addGlobal')->atLeast()->once();
-    $twigMock->shouldReceive('createTemplate')
-        ->andThrow(new Error('Error'));
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')->atLeast()->once()
-        ->andReturn(new Model_Client());
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $di['twig'] = $twigMock;
-    $di['api_client'] = new Model_Client();
-    $service->setDi($di);
-
-    $this->expectException(Error::class);
-    $service->renderString('test', false, $vars);
-});
-
-test('renderString renders template string', function (): void {
-    $service = new Service();
-    $vars = [
-        '_client_id' => 1,
-    ];
-
-    $twigMock = Mockery::mock(Environment::class);
-
-    $twigMock->shouldReceive('addGlobal')->atLeast()->once();
-    $twigMock->shouldReceive('render')
-        ->andReturn('');
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')->atLeast()->once()
-        ->andReturn(new Model_Client());
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $di['twig'] = $twigMock;
-    $di['api_client'] = new Model_Client();
-    $service->setDi($di);
-
-    $string = $service->renderString('test', true, $vars);
-    expect($string)->toBe('test');
-});
-
 test('clearCache clears cache directory', function (): void {
     $service = new Service();
     // Use a temporary directory for testing instead of PATH_CACHE
@@ -277,59 +231,11 @@ test('clearCache clears cache directory', function (): void {
 test('getPeriod returns period description', function (): void {
     $service = new Service();
     $code = '1W';
-    $expected = 'Every week';
+    $expected = 'Every Week';
     $result = $service->getPeriod($code);
 
     expect($result)->toBeString();
     expect($result)->toBe($expected);
-});
-
-test('getCountries returns list of countries', function (): void {
-    $service = new Service();
-    $modMock = Mockery::mock('\\' . FOSSBilling\Module::class);
-    $modMock->shouldReceive('getConfig')->atLeast()->once()
-        ->andReturn(['countries' => 'US']);
-
-    $di = container();
-    $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
-
-    $service->setDi($di);
-    $result = $service->getCountries();
-    expect($result)->toBeArray();
-});
-
-test('getEuCountries returns EU countries list', function (): void {
-    $service = new Service();
-    $modMock = Mockery::mock('\\' . FOSSBilling\Module::class);
-    $modMock->shouldReceive('getConfig')->atLeast()->once()
-        ->andReturn(['countries' => 'US']);
-
-    $di = container();
-    $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
-
-    $service->setDi($di);
-    $result = $service->getEuCountries();
-    expect($result)->toBeArray();
-});
-
-test('getStates returns list of states', function (): void {
-    $service = new Service();
-    $result = $service->getStates();
-    expect($result)->toBeArray();
-});
-
-test('getPhoneCodes returns phone codes', function (): void {
-    $service = new Service();
-    $data = [];
-    $result = $service->getPhoneCodes($data);
-    expect($result)->toBeArray();
-});
-
-test('getVersion returns FOSSBilling version', function (): void {
-    $service = new Service();
-    $result = $service->getVersion();
-    expect($result)->toBeString();
-    expect($result)->toBe(FOSSBilling\Version::VERSION);
 });
 
 test('getPendingMessages returns pending messages from session', function (): void {

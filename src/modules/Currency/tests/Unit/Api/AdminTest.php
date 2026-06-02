@@ -207,19 +207,13 @@ test('get list', function (): void {
     expect($result['list'])->toBeArray();
 });
 
-test('get pairs', function () use ($availableCurrencies): void {
+test('get pairs', function (): void {
     $adminApi = new Box\Mod\Currency\Api\Admin();
 
-    $service = Mockery::mock(Box\Mod\Currency\Service::class);
-    $service
-    ->shouldReceive('getAvailableCurrencies')
-    ->atLeast()->once()
-    ->andReturn($availableCurrencies);
-
-    $adminApi->setService($service);
     $result = $adminApi->get_pairs();
-    expect($availableCurrencies)->toEqual($result);
     expect($result)->toBeArray();
+    expect($result)->toHaveKey('EUR');
+    expect($result['EUR'])->toContain('EUR');
 });
 
 test('get', function (): void {
@@ -326,7 +320,7 @@ dataset('createException', [
     ],
 ]);
 
-test('create exception', function ($data, $findOneByCodeCalled, $findOneByCodeReturn, $getAvailableCurrenciesCalled) use ($availableCurrencies): void {
+test('create exception', function ($data, $findOneByCodeCalled, $findOneByCodeReturn, $getAvailableCurrenciesCalled): void {
     $adminApi = new Box\Mod\Currency\Api\Admin();
 
     $repositoryMock = Mockery::mock('\\' . Box\Mod\Currency\Repository\CurrencyRepository::class);
@@ -348,13 +342,6 @@ test('create exception', function ($data, $findOneByCodeCalled, $findOneByCodeRe
     ->atLeast()->once()
     ->andReturn($repositoryMock);
 
-    if ($getAvailableCurrenciesCalled === 'atLeastOnce') {
-        $service
-            ->shouldReceive('getAvailableCurrencies')
-            ->atLeast()->once()
-            ->andReturn($availableCurrencies);
-    }
-
     $di = container();
     $adminApi->setService($service);
     $adminApi->setDi($di);
@@ -362,7 +349,7 @@ test('create exception', function ($data, $findOneByCodeCalled, $findOneByCodeRe
     $adminApi->create($data);
 })->with('createException');
 
-test('create', function () use ($availableCurrencies): void {
+test('create', function (): void {
     $adminApi = new Box\Mod\Currency\Api\Admin();
 
     $data = [
@@ -381,10 +368,6 @@ test('create', function () use ($availableCurrencies): void {
     ->shouldReceive('getCurrencyRepository')
     ->atLeast()->once()
     ->andReturn($repositoryMock);
-    $service
-    ->shouldReceive('getAvailableCurrencies')
-    ->atLeast()->once()
-    ->andReturn($availableCurrencies);
     $service
     ->shouldReceive('createCurrency')
     ->atLeast()->once()
@@ -432,7 +415,7 @@ test('delete exception', function (): void {
     $adminApi = new Box\Mod\Currency\Api\Admin();
 
     $service = Mockery::mock(Box\Mod\Currency\Service::class);
-    $service->shouldReceive('deleteCurrencyByCode')->never();
+    $service->shouldReceive('removeCurrency')->never();
 
     $apiHandler = new Api_Handler(new Model_Admin());
     $reflection = new ReflectionClass($apiHandler);
@@ -457,7 +440,7 @@ test('delete', function (): void {
 
     $service = Mockery::mock(Box\Mod\Currency\Service::class)->makePartial();
     $service
-    ->shouldReceive('deleteCurrencyByCode')
+    ->shouldReceive('removeCurrency')
     ->atLeast()->once()
     ->andReturn(true);
 

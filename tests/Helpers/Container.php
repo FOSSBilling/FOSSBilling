@@ -57,10 +57,49 @@ function container(): Container
     };
     $di['dbal'] = static function (): object {
         $dbal = \Mockery::mock(\Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();
+        $result = \Mockery::mock(\Doctrine\DBAL\Result::class)->shouldIgnoreMissing();
+        $result->shouldReceive('fetchAssociative')->byDefault()->andReturn(false);
+        $result->shouldReceive('fetchAllAssociative')->byDefault()->andReturn([]);
+        $result->shouldReceive('fetchOne')->byDefault()->andReturn(false);
+
+        $queryBuilder = \Mockery::mock(\Doctrine\DBAL\Query\QueryBuilder::class)->shouldIgnoreMissing();
+        foreach ([
+            'select',
+            'addSelect',
+            'from',
+            'leftJoin',
+            'innerJoin',
+            'where',
+            'andWhere',
+            'orWhere',
+            'orderBy',
+            'addOrderBy',
+            'setFirstResult',
+            'setMaxResults',
+            'setParameter',
+            'setParameters',
+            'insert',
+            'update',
+            'delete',
+            'values',
+            'setValue',
+            'set',
+        ] as $method) {
+            $queryBuilder->shouldReceive($method)->byDefault()->andReturn($queryBuilder);
+        }
+        $queryBuilder->shouldReceive('executeQuery')->byDefault()->andReturn($result);
+        $queryBuilder->shouldReceive('executeStatement')->byDefault()->andReturn(1);
+        $queryBuilder->shouldReceive('fetchAssociative')->byDefault()->andReturn(false);
+        $queryBuilder->shouldReceive('fetchAllAssociative')->byDefault()->andReturn([]);
+        $queryBuilder->shouldReceive('fetchOne')->byDefault()->andReturn(false);
+
         $dbal->shouldReceive('fetchAssociative')->byDefault()->andReturn([]);
         $dbal->shouldReceive('fetchAllAssociative')->byDefault()->andReturn([]);
         $dbal->shouldReceive('fetchOne')->byDefault()->andReturn(null);
+        $dbal->shouldReceive('executeQuery')->byDefault()->andReturn($result);
         $dbal->shouldReceive('executeStatement')->byDefault()->andReturn(1);
+        $dbal->shouldReceive('insert')->byDefault()->andReturn(1);
+        $dbal->shouldReceive('createQueryBuilder')->byDefault()->andReturn($queryBuilder);
 
         return $dbal;
     };
@@ -130,6 +169,29 @@ function container(): Container
     });
 
     return $di;
+}
+
+/**
+ * Create a module service resolver with staff permissions enabled by default.
+ *
+ * @param array<string, object> $services
+ */
+function moduleService(array $services = []): \Closure
+{
+    $staffService = $services['staff'] ?? \Mockery::mock(\Box\Mod\Staff\Service::class)->shouldIgnoreMissing();
+    $staffService->shouldReceive('hasPermission')->byDefault()->andReturn(true);
+    $staffService->shouldReceive('checkPermissionsAndThrowException')->byDefault()->andReturn(true);
+
+    return static function (string $name = '', string $sub = '') use ($services, $staffService): object {
+        if (strtolower($name) === 'staff') {
+            return $staffService;
+        }
+
+        $module = strtolower($name);
+        $moduleWithSub = $sub === '' ? $module : $module . ':' . strtolower($sub);
+
+        return $services[$moduleWithSub] ?? $services[$module] ?? \Mockery::mock()->shouldIgnoreMissing();
+    };
 }
 
 /**

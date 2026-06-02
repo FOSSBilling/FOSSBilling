@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\moduleService;
 
 test('dependency injection', function (): void {
     $service = new Box\Mod\Cart\Service();
@@ -800,6 +801,9 @@ test('add item throws exception when out of stock', function (): void {
         ->atLeast()->once();
 
     $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceHostingServiceMock->shouldReceive('getDomainProductFromConfig')
+        ->atLeast()->once()
+        ->andReturn([]);
 
     $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('isRecurrentPricing')
@@ -811,7 +815,7 @@ test('add item throws exception when out of stock', function (): void {
 
     $di = container();
     $di['events_manager'] = $eventMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceHostingServiceMock);
+    $di['mod_service'] = $di->protect(moduleService(['servicehosting' => $serviceHostingServiceMock]));
 
     $serviceMock->setDi($di);
     $productModel->setDi($di);
@@ -908,6 +912,9 @@ test('add item for license type product', function (): void {
         ->atLeast()->once();
 
     $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('find')
+        ->byDefault()
+        ->andReturn([]);
     $dbMock->shouldReceive('load')
         ->atLeast()->once()
         ->andReturn($productModel);
@@ -956,6 +963,9 @@ test('add item for custom type product', function (): void {
     $cartProduct->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('find')
+        ->byDefault()
+        ->andReturn([]);
     $dbMock->shouldReceive('toArray')
         ->atLeast()->once()
         ->andReturn([]);

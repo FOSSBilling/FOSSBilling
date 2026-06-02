@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\moduleService;
 
 test('getDi returns dependency injection container', function (): void {
     $adminClient = new Box\Mod\Client\Api\Admin();
@@ -71,7 +72,7 @@ test('getPairs returns array', function (): void {
     $serviceMock->shouldReceive('getPairs')->atLeast()->once()->andReturn([]);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $serviceMock);
+    $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
 
     $adminClient->setDi($di);
 
@@ -120,7 +121,7 @@ test('login returns array', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $serviceMock);
+    $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
     $di['session'] = $sessionMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $validatorStub = $this->createStub(FOSSBilling\Validate::class);
@@ -235,7 +236,7 @@ test('update returns true', function (): void {
         'document_type' => 'doc',
         'document_nr' => '1',
         'notes' => 'none',
-        'country' => 'Moon',
+        'country' => 'US',
         'postcode' => 'IL-11123',
         'city' => 'Chicaco',
         'state' => 'IL',
@@ -281,7 +282,7 @@ test('update returns true', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $serviceMock);
+    $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['tools'] = $toolsMock;
@@ -349,7 +350,7 @@ test('update throws exception when email is already registered', function (): vo
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $serviceMock);
+    $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['validator'] = new FOSSBilling\Validate();
@@ -413,7 +414,7 @@ test('changePassword returns true', function (): void {
     $di['password'] = $passwordMock;
     $validatorStub = $this->createStub(FOSSBilling\Validate::class);
     $di['validator'] = $validatorStub;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $profileService);
+    $di['mod_service'] = $di->protect(moduleService(['profile' => $profileService]));
 
     $adminClient->setDi($di);
 
@@ -429,10 +430,11 @@ test('changePassword throws exception when passwords do not match', function ():
         'password_confirm' => 'NotIdentical',
     ];
 
-    $validatorStub = $this->createStub(FOSSBilling\Validate::class);
+    $validatorStub = new FOSSBilling\Validate();
 
     $di = container();
     $di['validator'] = $validatorStub;
+    $di['mod_service'] = $di->protect(moduleService());
     $adminClient->setDi($di);
 
     $adminClient->change_password($data);
@@ -471,7 +473,7 @@ test('balanceGetList returns array', function (): void {
     $model->loadBean(new Tests\Helpers\DummyBean());
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $serviceMock);
+    $di['mod_service'] = $di->protect(moduleService(['client:balance' => $serviceMock, 'client' => $serviceMock]));
     $di['pager'] = $pagerMock;
 
     $adminClient->setDi($di);
@@ -527,7 +529,7 @@ test('balanceAddFunds returns true', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $serviceMock);
+    $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
 
     $validatorStub = $this->createStub(FOSSBilling\Validate::class);
     $di['validator'] = $validatorStub;
@@ -552,7 +554,7 @@ test('batchExpirePasswordReminders returns true', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $serviceMock);
+    $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $adminClient->setDi($di);
@@ -597,7 +599,7 @@ test('getStatuses returns array', function (): void {
     $serviceMock->shouldReceive('counter')->atLeast()->once()->andReturn([]);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $serviceMock);
+    $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
 
     $adminClient->setDi($di);
 
@@ -611,7 +613,7 @@ test('groupGetPairs returns array', function (): void {
     $serviceMock->shouldReceive('getGroupPairs')->atLeast()->once()->andReturn([]);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $serviceMock);
+    $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
 
     $adminClient->setDi($di);
 

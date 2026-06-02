@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\moduleService;
 
 test('getDi returns dependency injection container', function (): void {
     $api = new Box\Mod\Client\Api\Client();
@@ -58,7 +59,7 @@ test('balanceGetList returns array', function (): void {
     ->andReturn($model);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $serviceMock);
+    $di['mod_service'] = $di->protect(moduleService(['client:balance' => $serviceMock]));
     $di['pager'] = $pagerMock;
     $di['db'] = $dbMock;
 
@@ -84,7 +85,7 @@ test('balanceGetTotal returns float', function (): void {
     ->andReturn($balanceAmount);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn ($name, $sub): Mockery\MockInterface => $serviceMock);
+    $di['mod_service'] = $di->protect(moduleService(['client:balance' => $serviceMock]));
 
     $api->setDi($di);
     $api->setIdentity($model);

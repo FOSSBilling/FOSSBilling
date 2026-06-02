@@ -11,13 +11,14 @@
 declare(strict_types=1);
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\moduleService;
 
 test('log get list with staff user', function (): void {
     $serviceStub = Mockery::mock(Box\Mod\Activity\Service::class);
     $paginatorStub = Mockery::mock(FOSSBilling\Pagination::class);
     $di = container();
     $di['pager'] = $paginatorStub;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceStub);
+    $di['mod_service'] = $di->protect(moduleService(['activity' => $serviceStub]));
 
     $api = new Api_Handler(new Model_Admin());
     $api->setDi($di);
@@ -45,10 +46,6 @@ test('log get list with staff user', function (): void {
     $expectation1->andReturn(['String', []]);
 
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
-    /** @var Mockery\Expectation $expectation2 */
-    $expectation2 = $paginatorMock->shouldReceive('getDefaultPerPage');
-    $expectation2->atLeast()->once();
-    $expectation2->andReturn(25);
     /** @var Mockery\Expectation $expectation3 */
     $expectation3 = $paginatorMock->shouldReceive('getPaginatedResultSet');
     $expectation3->atLeast()->once();
@@ -67,7 +64,7 @@ test('log get list with client user', function (): void {
     $paginatorStub = Mockery::mock(FOSSBilling\Pagination::class);
     $di = container();
     $di['pager'] = $paginatorStub;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceStub);
+    $di['mod_service'] = $di->protect(moduleService(['activity' => $serviceStub]));
 
     $api = new Api_Handler(new Model_Admin());
     $api->setDi($di);
@@ -95,10 +92,6 @@ test('log get list with client user', function (): void {
     $expectation1->andReturn(['String', []]);
 
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
-    /** @var Mockery\Expectation $expectation2 */
-    $expectation2 = $paginatorMock->shouldReceive('getDefaultPerPage');
-    $expectation2->atLeast()->once();
-    $expectation2->andReturn(25);
     /** @var Mockery\Expectation $expectation3 */
     $expectation3 = $paginatorMock->shouldReceive('getPaginatedResultSet');
     $expectation3->atLeast()->once();
