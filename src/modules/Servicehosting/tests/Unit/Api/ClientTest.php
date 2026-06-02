@@ -111,6 +111,8 @@ test('testGetService', function (): void {
     ];
 
     $clientOrderModel = new Model_ClientOrder();
+    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
     ->shouldReceive('findOne')

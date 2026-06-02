@@ -1487,6 +1487,16 @@ test('creates order', function (): void {
         }
     });
     $di['events_manager'] = $eventMock;
+    $createdOrder = new Model_ClientOrder();
+    $createdOrder->loadBean(new Tests\Helpers\DummyBean());
+    $createdOrder->id = $newId;
+    $dbMock->shouldReceive('getExistingModelById')
+        ->with('ClientOrder', $newId, 'Order not found')
+        ->once()
+        ->andReturn($createdOrder);
+    $dbMock->shouldReceive('transaction')
+        ->once()
+        ->andReturnUsing(fn (callable $callback) => $callback());
     $di['db'] = $dbMock;
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -1603,7 +1613,9 @@ test('handles stock sale', function (): void {
     $orderService = new Service();
     $productModel = new Model_Product();
     $productModel->loadBean(new Tests\Helpers\DummyBean());
+    $productModel->id = 1;
     $productModel->stock_control = 1;
+    $productModel->quantity_in_stock = 3;
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')
@@ -1698,11 +1710,22 @@ test('renews from order', function (): void {
 
     $invoiceServiceMock = Mockery::mock(Box\Mod\Invoice\Service::class);
     $invoiceServiceMock->shouldReceive('findPaidInvoicesForOrder');
+    $periodMock->shouldReceive('getExpirationTime')
+        ->atLeast()->once()
+        ->andReturn(time() + 3600);
 
     $di = container();
     $di['mod_config'] = $di->protect(fn ($name): array => []);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $invoiceServiceMock);
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
+    $statusModel = new Model_ClientOrderStatus();
+    $statusModel->loadBean(new Tests\Helpers\DummyBean());
+    $dbMock->shouldReceive('dispense')
+        ->with('ClientOrderStatus')
+        ->byDefault()
+        ->andReturn($statusModel);
+    $dbMock->shouldReceive('store')
+        ->byDefault();
     $di['db'] = $dbMock;
 
     $serviceMock->setDi($di);

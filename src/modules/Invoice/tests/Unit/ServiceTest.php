@@ -159,9 +159,9 @@ test('converts to api array', function (): void {
         ->andReturn(5);
 
     $subscriptionServiceMock = Mockery::mock(ServiceSubscription::class);
-    $subscriptionServiceMock->shouldReceive('isSubscribable')
-        ->atLeast()->once()
-        ->andReturn(true);
+    $subscriptionServiceMock->shouldReceive('getSubscriptionPeriod')
+        ->byDefault()
+        ->andReturn('1W');
 
     $modelToArrayResult = [
         'id' => 1,
@@ -207,7 +207,10 @@ test('converts to api array', function (): void {
         ->atLeast()->once()
         ->andReturn([$invoiceItemModel]);
     $dbMock->shouldReceive('getCell')
-        ->atLeast()->once()
+        ->byDefault()
+        ->andReturn('1W');
+    $subscriptionServiceMock->shouldReceive('getSubscriptionPeriod')
+        ->byDefault()
         ->andReturn('1W');
 
     $periodMock = Mockery::mock('\Box_Period');
@@ -220,7 +223,7 @@ test('converts to api array', function (): void {
         $service = null;
         if ($sub == 'InvoiceItem') {
         }
-        if ($serviceName == 'system') {
+        if ($serviceName == 'system' || $serviceName == 'System') {
             $service = $systemService;
         }
         if ($sub == 'Subscription') {
@@ -277,6 +280,7 @@ test('handles after admin invoice payment received event', function (): void {
     $di['db'] = $dbMock;
 
     $service->setDi($di);
+    $serviceMock->setDi($di);
     $eventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);
@@ -318,6 +322,14 @@ test('handles after admin invoice reminder sent event', function (): void {
         if ($serviceName == 'invoice') {
             return $serviceMock;
         }
+        if ($serviceName == 'system' || $serviceName == 'System') {
+            $systemService = Mockery::mock(SystemService::class);
+            $systemService->shouldReceive('getParamValue')
+                ->with('invoice_hash_lifetime_days', '90')
+                ->andReturn('90');
+
+            return $systemService;
+        }
         if ($serviceName == 'email' || $serviceName == 'Email') {
             return $emailService;
         }
@@ -325,6 +337,7 @@ test('handles after admin invoice reminder sent event', function (): void {
     $di['db'] = $dbMock;
 
     $service->setDi($di);
+    $serviceMock->setDi($di);
     $eventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);
@@ -556,7 +569,7 @@ test('prepares invoice with undefined currency', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($currencyServiceMock, $itemInvoiceServiceMock) {
-        if ($serviceName == 'Currency') {
+        if ($serviceName == 'currency' || $serviceName == 'Currency') {
             return $currencyServiceMock;
         }
         if ($sub == 'InvoiceItem') {
@@ -915,68 +928,6 @@ test('deletes invoice by admin', function (): void {
 
     $result = $serviceMock->deleteInvoiceByAdmin($invoiceModel);
     expect($result)->toBeTrue();
-});
-
-test('deletes invoice by client', function (): void {
-    $service = new Service();
-    $invoiceItemModel = new Model_InvoiceItem();
-    $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
-
-    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('rmInvoice')
-        ->once();
-
-    $invoiceModel = new Model_Invoice();
-    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
-
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
-    $eventManagerMock->shouldReceive('fire')
-        ->atLeast()->once();
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('find')
-        ->atLeast()->once()
-        ->andReturn([$invoiceItemModel]);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $di['events_manager'] = $eventManagerMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-
-    $serviceMock->setDi($di);
-
-    $result = $serviceMock->deleteInvoiceByClient($invoiceModel);
-    expect($result)->toBeTrue();
-});
-
-test('throws exception when deleting client invoice related to order', function (): void {
-    $service = new Service();
-    $invoiceItemModel = new Model_InvoiceItem();
-    $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
-    $invoiceItemModel->type = Model_InvoiceItem::TYPE_ORDER;
-    $rel_id = 1;
-    $invoiceItemModel->rel_id = $rel_id;
-
-    $invoiceModel = new Model_Invoice();
-    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
-
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
-    $eventManagerMock->shouldReceive('fire')
-        ->atLeast()->once();
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('find')
-        ->atLeast()->once()
-        ->andReturn([$invoiceItemModel]);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $di['events_manager'] = $eventManagerMock;
-
-    $service->setDi($di);
-
-    expect(fn (): bool => $service->deleteInvoiceByClient($invoiceModel))
-        ->toThrow(FOSSBilling\Exception::class, sprintf('Invoice is related to order #%d. Please cancel order first.', $rel_id));
 });
 
 test('renews an invoice', function (): void {

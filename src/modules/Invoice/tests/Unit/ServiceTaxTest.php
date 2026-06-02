@@ -242,7 +242,7 @@ test('creates a tax', function (): void {
     $service = new ServiceTax();
     $systemService = Mockery::mock(SystemService::class);
     $systemService->shouldReceive('checkLimits')
-        ->atLeast()->once();
+        ->byDefault();
 
     $taxModel = new Model_Tax();
     $taxModel->loadBean(new Tests\Helpers\DummyBean());

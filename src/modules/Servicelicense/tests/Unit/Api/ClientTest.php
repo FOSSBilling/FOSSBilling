@@ -57,10 +57,14 @@ test('getService returns service license model', function (): void {
         ->andReturn(new Model_ServiceLicense());
 
     $dbMock = Mockery::mock('\Box_Database');
+    $clientOrder = new Model_ClientOrder();
+    $clientOrder->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrder->status = Model_ClientOrder::STATUS_ACTIVE;
+
     $dbMock->shouldReceive('findOne')
         ->atLeast()
         ->once()
-        ->andReturn(new Model_ClientOrder());
+        ->andReturn($clientOrder);
 
     $di = container();
     $di['db'] = $dbMock;
@@ -82,15 +86,17 @@ test('getService throws exception when order not activated', function (): void {
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
     $orderServiceMock->shouldReceive('getOrderService')
-        ->atLeast()
-        ->once()
+        ->never()
         ->andReturn(null);
+
+    $inactiveOrder = new Model_ClientOrder();
+    $inactiveOrder->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('findOne')
         ->atLeast()
         ->once()
-        ->andReturn(new Model_ClientOrder());
+        ->andReturn($inactiveOrder);
 
     $di = container();
     $di['db'] = $dbMock;

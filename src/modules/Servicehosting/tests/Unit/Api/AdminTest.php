@@ -13,6 +13,7 @@ declare(strict_types=1);
 use Box\Mod\Servicehosting\Api\Admin;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\moduleService;
 
 test('testGetDi', function (): void {
     $api = new Admin();
@@ -252,9 +253,8 @@ test('testAccountGetList', function (): void {
     ->andReturn(['list' => []]);
 
     $di = container();
-    $systemServiceStub = $this->createStub(Box\Mod\System\Service::class);
     $dbStub = Mockery::mock('Box_Database');
-    $di['mod_service'] = $di->protect(fn ($name) => $systemServiceStub);
+    $di['mod_service'] = $di->protect(moduleService());
     $di['pager'] = $pagerMock;
     $di['db'] = $dbStub;
 
