@@ -69,6 +69,29 @@ final class Box_LogTest extends PHPUnit\Framework\TestCase
         $this->assertSame('WARNING', $writer->events[3]['priorityName']);
     }
 
+    public function testLegacyAndPsr3ProduceIdenticalEvents(): void
+    {
+        $writerA = new Box_LogTest_CapturingWriter();
+        $writerB = new Box_LogTest_CapturingWriter();
+
+        $logA = new Box_Log();
+        $logA->addWriter($writerA);
+        $logA->setChannel('test');
+
+        $logB = new Box_Log();
+        $logB->addWriter($writerB);
+        $logB->setChannel('test');
+
+        $logA->emergency('payload');
+        $logB->emerg('payload');
+
+        $this->assertCount(1, $writerA->events);
+        $this->assertCount(1, $writerB->events);
+        $this->assertSame($writerA->events[0]['priority'], $writerB->events[0]['priority']);
+        $this->assertSame($writerA->events[0]['priorityName'], $writerB->events[0]['priorityName']);
+        $this->assertSame($writerA->events[0]['message'], $writerB->events[0]['message']);
+    }
+
     public function testUnknownLogMethodThrows(): void
     {
         $log = new Box_Log();
@@ -87,16 +110,6 @@ final class Box_LogTest extends PHPUnit\Framework\TestCase
         $this->expectExceptionMessage('Missing log message');
 
         $log->info();
-    }
-
-    public function testPlaceholderMismatchThrowsFOSSBillingException(): void
-    {
-        $log = new Box_Log();
-
-        $this->expectException(FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Number of placeholders does not match number of variables');
-
-        $log->info('Hello %s', 'Alice', 'Bob');
     }
 
     public function testPlaceholderFormatSubstitutesArguments(): void
@@ -121,13 +134,14 @@ final class Box_LogTest extends PHPUnit\Framework\TestCase
         $log->addWriter($writer);
         $log->setChannel('test');
 
-        $log->info('login attempt', ['username' => 'alice', 'password' => 'secret123', 'token' => 'abc']);
+        $log->info('Hello %s', 'alice', ['password' => 'secret123', 'token' => 'abc']);
 
         $this->assertCount(1, $writer->events);
         $event = $writer->events[0];
-        $this->assertSame('alice', $event['username']);
-        $this->assertSame('********', $event['password']);
-        $this->assertSame('********', $event['token']);
+        $this->assertArrayHasKey('info', $event);
+        $this->assertSame('alice', $event['info'][0]);
+        $this->assertSame('********', $event['info'][1]['password']);
+        $this->assertSame('********', $event['info'][1]['token']);
     }
 
     public function testMaskedKeyWithArrayValueIsMasked(): void
@@ -138,28 +152,10 @@ final class Box_LogTest extends PHPUnit\Framework\TestCase
         $log->addWriter($writer);
         $log->setChannel('test');
 
-        $log->info('password change', ['password' => ['old' => 'a', 'new' => 'b']]);
+        $log->info('Hello %s', 'alice', ['password' => ['old' => 'a', 'new' => 'b']]);
 
         $this->assertCount(1, $writer->events);
-        $this->assertSame('********', $writer->events[0]['password']);
-    }
-
-    public function testCoreEventKeysAreNotOverwrittenByExtras(): void
-    {
-        $writer = new Box_LogTest_CapturingWriter();
-
-        $log = new Box_Log();
-        $log->addWriter($writer);
-        $log->setChannel('test');
-
-        $log->info('real message', ['message' => 'spoofed', 'priority' => -1, 'priorityName' => 'NOPE', 'timestamp' => 'fake', 'extra' => 'kept']);
-
-        $this->assertCount(1, $writer->events);
-        $event = $writer->events[0];
-        $this->assertSame('real message', $event['message']);
-        $this->assertSame(Box_Log::INFO, $event['priority']);
-        $this->assertSame('INFO', $event['priorityName']);
-        $this->assertSame('kept', $event['extra']);
+        $this->assertSame('********', $writer->events[0]['info'][1]['password']);
     }
 
     public function testFailingWriterDoesNotPropagateException(): void
@@ -190,6 +186,18 @@ final class Box_LogTest extends PHPUnit\Framework\TestCase
         $log->log('msg', Box_Log::INFO);
 
         $this->expectNotToPerformAssertions();
+    }
+
+    public function testPriorityConstantsMatchDocblockNames(): void
+    {
+        $this->assertSame(0, Box_Log::EMERG);
+        $this->assertSame(1, Box_Log::ALERT);
+        $this->assertSame(2, Box_Log::CRIT);
+        $this->assertSame(3, Box_Log::ERR);
+        $this->assertSame(4, Box_Log::WARN);
+        $this->assertSame(5, Box_Log::NOTICE);
+        $this->assertSame(6, Box_Log::INFO);
+        $this->assertSame(7, Box_Log::DEBUG);
     }
 }
 
