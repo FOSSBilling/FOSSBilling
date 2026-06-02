@@ -143,7 +143,7 @@ composer test
 
 The default suite covers unit tests in `tests/Unit` and module unit tests in `src/modules/*/tests/Unit`.
 Live API tests are in `tests/Modules` and run through Pest with `phpunit-live.xml` when `APP_URL` and `TEST_API_KEY` are available.
-Cypress end-to-end tests live under `tests/E2E/cypress`.
+Cypress end-to-end tests live under `tests/E2E/Cypress`.
 
 ### Code Quality Tools
 

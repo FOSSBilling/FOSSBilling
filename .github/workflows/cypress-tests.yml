@@ -61,6 +61,6 @@ jobs:
           name: cypress-artifacts
           if-no-files-found: ignore
           path: |
-            tests/e2e/cypress/screenshots
-            tests/e2e/cypress/videos
-            tests/e2e/cypress/downloads
+            tests/E2E/Cypress/artifacts/screenshots
+            tests/E2E/Cypress/artifacts/videos
+            tests/E2E/Cypress/artifacts/downloads
