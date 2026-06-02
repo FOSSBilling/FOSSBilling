@@ -145,13 +145,7 @@ test('kb article get list', function (): void {
     ->andReturn($willReturn);
     $guestApi->setService($supportService);
 
-    $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
-    $pagerMock
-    ->shouldReceive('getDefaultPerPage')
-    ->atLeast()->once()
-    ->andReturn(100);
     $di = container();
-    $di['pager'] = $pagerMock;
 
     $guestApi->setDi($di);
     $result = $guestApi->kb_article_get_list([]);

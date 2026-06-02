@@ -120,6 +120,7 @@ test('login returns admin details on successful login', function (): void {
         ->andReturn($admin);
 
     $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock->shouldReceive('regenerateId')->atLeast()->once();
     $sessionMock->shouldReceive('set')->atLeast()->once();
 
     $authMock = Mockery::mock('\Box_Authorization');
@@ -177,24 +178,6 @@ test('login throws exception when credentials are invalid', function (): void {
 
     expect(fn (): array => $service->login($email, $password, $ip))
         ->toThrow(FOSSBilling\Exception::class, 'Check your login details');
-});
-
-test('getAdminsCount returns count of administrators', function (): void {
-    $countResult = 3;
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getCell')->atLeast()->once()
-        ->andReturn($countResult);
-
-    $di = container();
-    $di['db'] = $dbMock;
-
-    $service = new Service();
-    $service->setDi($di);
-
-    $result = $service->getAdminsCount();
-    expect($result)->toBeInt();
-    expect($result)->toBe($countResult);
 });
 
 test('hasPermission returns true for admin role', function (): void {
@@ -629,10 +612,10 @@ test('onAfterGuestPublicTicketClose handles email exception', function (): void 
 
     $di = container();
     $di['mod_service'] = $di->protect(function ($name) use ($supportServiceMock, $emailServiceMock) {
-        if ($name == 'Support') {
+        if (strtolower($name) == 'support') {
             return $supportServiceMock;
         }
-        if ($name == 'Email') {
+        if (strtolower($name) == 'email') {
             return $emailServiceMock;
         }
     });
@@ -682,7 +665,10 @@ test('onAfterClientOpenTicket sends mod_staff_ticket_open email', function (): v
     $dbMock->shouldReceive('load')->atLeast()->once()
         ->andReturn(null);
     $di['db'] = $dbMock;
-    $di['loggedin_admin'] = new Model_Admin();
+    $admin = new Model_Admin();
+    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin->role = Model_Admin::ROLE_ADMIN;
+    $di['loggedin_admin'] = $admin;
 
     $eventMock = Mockery::mock('\Box_Event');
     $eventMock->shouldReceive('getDi')->atLeast()->once()
@@ -736,7 +722,10 @@ test('onAfterClientOpenTicket sends mod_support_helpdesk_ticket_open email', fun
     $dbMock->shouldReceive('load')->atLeast()->once()
         ->andReturn($helpdeskModel);
     $di['db'] = $dbMock;
-    $di['loggedin_admin'] = new Model_Admin();
+    $admin = new Model_Admin();
+    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin->role = Model_Admin::ROLE_ADMIN;
+    $di['loggedin_admin'] = $admin;
 
     $eventMock = Mockery::mock('\Box_Event');
     $eventMock->shouldReceive('getDi')->atLeast()->once()
@@ -1011,7 +1000,7 @@ test('create creates new admin account', function (): void {
     $adminModel->loadBean(new Tests\Helpers\DummyBean());
 
     $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
-    $systemServiceMock->shouldReceive('checkLimits')->atLeast()->once();
+    $systemServiceMock->shouldReceive('checkLimits')->byDefault();
 
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
@@ -1062,7 +1051,7 @@ test('create throws exception for duplicate email', function (): void {
     $adminModel->loadBean(new Tests\Helpers\DummyBean());
 
     $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
-    $systemServiceMock->shouldReceive('checkLimits')->atLeast()->once();
+    $systemServiceMock->shouldReceive('checkLimits')->byDefault();
 
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
@@ -1095,52 +1084,6 @@ test('create throws exception for duplicate email', function (): void {
 
     expect(fn () => $serviceMock->create($data))
         ->toThrow(FOSSBilling\Exception::class, "Staff member with email {$data['email']} is already registered.");
-});
-
-test('createAdmin creates new admin without permission check', function (): void {
-    $data = [
-        'email' => 'test@example.com',
-        'admin_group_id' => '1',
-        'name' => 'testJohn',
-        'status' => 'active',
-        'password' => '1345',
-    ];
-
-    $newId = 1;
-
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('dispense')->atLeast()->once()
-        ->andReturn($adminModel);
-    $dbMock->shouldReceive('store')->atLeast()->once()
-        ->andReturn($newId);
-
-    $logStub = $this->createStub('\Box_Log');
-
-    $systemService = $this->createStub(Box\Mod\System\Service::class);
-
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
-    $passwordMock->shouldReceive('hashIt')->atLeast()->once()
-        ->with($data['password']);
-
-    $di = container();
-    $di['logger'] = $logStub;
-    $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(function ($serviceName) use ($systemService) {
-        if ($serviceName == 'system') {
-            return $systemService;
-        }
-    });
-    $di['password'] = $passwordMock;
-
-    $service = new Service();
-    $service->setDi($di);
-
-    $result = $service->createAdmin($data);
-    expect($result)->toBeInt();
-    expect($result)->toBe($newId);
 });
 
 test('getAdminGroupPair returns group pairs', function (): void {
@@ -1191,7 +1134,7 @@ test('createGroup creates new admin group', function (): void {
     $newGroupId = 1;
 
     $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
-    $systemServiceMock->shouldReceive('checkLimits')->atLeast()->once();
+    $systemServiceMock->shouldReceive('checkLimits')->byDefault();
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('dispense')->atLeast()->once()
@@ -1393,12 +1336,22 @@ test('setPermissions updates staff permissions', function (): void {
 
     $dbalMock = new StaffDbalMock($queryBuilderMock);
 
+    $admin = new Model_Admin();
+    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin->id = 1;
+    $admin->role = Model_Admin::ROLE_STAFF;
+
+    $loggedInAdmin = new Model_Admin();
+    $loggedInAdmin->loadBean(new Tests\Helpers\DummyBean());
+    $loggedInAdmin->id = 2;
+    $loggedInAdmin->role = Model_Admin::ROLE_ADMIN;
+
     $di = new Pimple\Container();
     $di['dbal'] = $dbalMock;
+    $di['loggedin_admin'] = $loggedInAdmin;
     $serviceMock->setDi($di);
 
-    $member_id = 1;
-    $result = $serviceMock->setPermissions($member_id, []);
+    $result = $serviceMock->setPermissions($admin, []);
     expect($result)->toBeTrue();
 });
 

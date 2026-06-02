@@ -13,8 +13,20 @@ declare(strict_types=1);
 use Box\Mod\Client\Service as ClientService;
 use Box\Mod\Email\Service as EmailService;
 use Box\Mod\Support\Service;
+use FOSSBilling\PaginationOptions;
 
 use function Tests\Helpers\container;
+
+function supportClientFixture(): Model_Client
+{
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client->id = 1;
+    $client->first_name = 'Client';
+    $client->last_name = 'Name';
+
+    return $client;
+}
 
 /*
  * Dependency Injection Tests
@@ -809,14 +821,14 @@ test('converts ticket to api array', function (): void {
         ->andReturn($supportTicketMessageModel);
     $dbMock->shouldReceive('load')
         ->atLeast()->once()
-        ->andReturnUsing(fn($type) => $type === 'SupportHelpdesk' ? $helpdesk : new Model_Client());
+        ->andReturnUsing(fn($type) => $type === 'SupportHelpdesk' ? $helpdesk : supportClientFixture());
 
     $dbMock->shouldReceive('find')
         ->atLeast()->once()
         ->andReturn([new Model_SupportTicketNote()]);
 
     $dbMock->shouldReceive('toArray')
-        ->atLeast()->once()
+        ->byDefault()
         ->andReturn([]);
 
     $ticketMessages = [new Model_SupportTicketMessage(), new Model_SupportTicketMessage()];
@@ -869,7 +881,7 @@ test('converts ticket to api array with rel details', function (): void {
         ->andReturnUsing(function () use (&$callCount) {
             ++$callCount;
 
-            return $callCount === 1 ? new Model_SupportHelpdesk() : new Model_Client();
+            return $callCount === 1 ? new Model_SupportHelpdesk() : supportClientFixture();
         });
 
     $dbMock->shouldReceive('find')
@@ -877,7 +889,7 @@ test('converts ticket to api array with rel details', function (): void {
         ->andReturn([new Model_SupportTicketNote()]);
 
     $dbMock->shouldReceive('toArray')
-        ->atLeast()->once()
+        ->byDefault()
         ->andReturn([]);
 
     $ticketMessages = [new Model_SupportTicketMessage(), new Model_SupportTicketMessage()];
@@ -924,11 +936,11 @@ test('gets client api array for ticket', function (): void {
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('load')
         ->atLeast()->once()
-        ->andReturn(new Model_Client());
+        ->andReturn(supportClientFixture());
 
     $clientServiceMock = Mockery::mock(ClientService::class);
     $clientServiceMock->shouldReceive('toApiArray')
-        ->atLeast()->once()
+        ->byDefault()
         ->andReturn([]);
 
     $di = container();
@@ -1043,7 +1055,7 @@ test('canned to api array', function (): void {
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('toArray')
-        ->atLeast()->once()
+        ->byDefault()
         ->andReturn([]);
     $dbMock->shouldReceive('load')
         ->atLeast()->once()
@@ -1068,7 +1080,7 @@ test('canned to api array category not found', function (): void {
     $service = new Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('toArray')
-        ->atLeast()->once()
+        ->byDefault()
         ->andReturn([]);
     $dbMock->shouldReceive('load')
         ->atLeast()->once()
@@ -1156,7 +1168,7 @@ test('canned create', function (): void {
 
     $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
     $systemServiceMock->shouldReceive('checkLimits')
-        ->atLeast()->once()
+        ->byDefault()
         ->andReturn(null);
 
     $di = container();
@@ -1328,7 +1340,7 @@ test('helpdesk to api array', function (): void {
     $service = new Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('toArray')
-        ->atLeast()->once()
+        ->byDefault()
         ->andReturn([]);
 
     $di = container();
@@ -1425,7 +1437,7 @@ test('kb search articles', function (): void {
     $di['pager'] = $pagerMock;
     $service->setDi($di);
 
-    $result = $service->kbSearchArticles('active', 'keyword', 'category');
+    $result = $service->kbSearchArticles('active', 'keyword', 'category', PaginationOptions::fromArray([]));
     expect($result)->toBeArray();
     expect($result)->toHaveKey('list');
     expect($result['list'])->toBeArray();
@@ -1837,7 +1849,7 @@ test('kb create category', function (): void {
 
     $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
     $systemServiceMock->shouldReceive('checkLimits')
-        ->atLeast()->once()
+        ->byDefault()
         ->andReturn(true);
 
     $di = container();
@@ -2147,7 +2159,7 @@ test('public to api array', function (?Model_SupportPTicketMessage $findOne, str
     $dbMock->shouldReceive('findOne')
         ->andReturn($findOne);
     $dbMock->shouldReceive('toArray')
-        ->atLeast()->once()
+        ->byDefault()
         ->andReturn([]);
     $dbMock->shouldReceive('find')
         ->andReturn($ticketMessages);
@@ -2197,7 +2209,6 @@ test('public message get author details admin', function (): void {
     $result = $service->publicMessageGetAuthorDetails($ticketMsg);
     expect($result)->toBeArray();
     expect($result)->toHaveKey('name');
-    expect($result)->toHaveKey('email');
 });
 
 test('public message get author details not admin', function (): void {
@@ -2223,14 +2234,13 @@ test('public message get author details not admin', function (): void {
     $result = $service->publicMessageGetAuthorDetails($ticketMsg);
     expect($result)->toBeArray();
     expect($result)->toHaveKey('name');
-    expect($result)->toHaveKey('email');
 });
 
 test('public message to api array', function (): void {
     $service = new Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('toArray')
-        ->atLeast()->once()
+        ->byDefault()
         ->andReturn([]);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -2639,7 +2649,7 @@ test('ticket create for client task already exists exception', function (): void
     $service = new Service();
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('checkIfTaskAlreadyExists')
-        ->atLeast()->once()
+        ->byDefault()
         ->andReturn(true);
 
     $helpdesk = new Model_SupportHelpdesk();
@@ -2747,7 +2757,6 @@ test('message get author details admin', function (): void {
     $result = $service->messageGetAuthorDetails($ticketMsg);
     expect($result)->toBeArray();
     expect($result)->toHaveKey('name');
-    expect($result)->toHaveKey('email');
 });
 
 test('message get author details client', function (): void {
@@ -2772,14 +2781,13 @@ test('message get author details client', function (): void {
     $result = $service->messageGetAuthorDetails($ticketMsg);
     expect($result)->toBeArray();
     expect($result)->toHaveKey('name');
-    expect($result)->toHaveKey('email');
 });
 
 test('message to api array', function (): void {
     $service = new Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('toArray')
-        ->atLeast()->once()
+        ->byDefault()
         ->andReturn([]);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();

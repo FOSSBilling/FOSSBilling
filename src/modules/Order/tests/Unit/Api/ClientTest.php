@@ -39,9 +39,6 @@ test('gets order list', function (): void {
         ],
     ];
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
-    $paginatorMock->shouldReceive('getDefaultPerPage')
-        ->atLeast()->once()
-        ->andReturn(25);
     $paginatorMock->shouldReceive('getPaginatedResultSet')
         ->atLeast()->once()
         ->andReturn($resultSet);
@@ -79,9 +76,6 @@ test('gets expiring order list', function (): void {
         ->andReturn(['query', []]);
 
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
-    $paginatorMock->shouldReceive('getDefaultPerPage')
-        ->atLeast()->once()
-        ->andReturn(25);
     $paginatorMock->shouldReceive('getPaginatedResultSet')
         ->atLeast()->once()
         ->andReturn(['list' => []]);
@@ -107,6 +101,7 @@ test('gets an order', function (): void {
     $api = new Client();
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->status = Model_ClientOrder::STATUS_ACTIVE;
 
     $apiMock = Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')
@@ -155,6 +150,7 @@ test('gets order service data', function (): void {
     $api = new Client();
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->status = Model_ClientOrder::STATUS_ACTIVE;
 
     $apiMock = Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')

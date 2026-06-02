@@ -197,7 +197,7 @@ dataset('searchQueryData', [
     [[], 'SELECT c.*', []],
     [
         ['id' => 1],
-        'c.id = :client_id or c.aid = :alt_client_id',
+        '(c.id = :client_id OR c.aid = :alt_client_id)',
         [':client_id' => '', ':alt_client_id' => ''],
     ],
     [
@@ -237,7 +237,7 @@ dataset('searchQueryData', [
     ],
     [
         ['date_to' => '2012-12-11'],
-        'UNIX_TIMESTAMP(c.created_at) <= :date_from',
+        'UNIX_TIMESTAMP(c.created_at) <= :date_to',
         [':date_to' => '2012-12-11'],
     ],
     [
@@ -247,9 +247,9 @@ dataset('searchQueryData', [
     ],
     [
         ['search' => 'Keyword'],
-        "c.company LIKE :s_company OR c.first_name LIKE :s_first_time OR c.last_name LIKE :s_last_name OR c.email LIKE :s_email OR CONCAT(c.first_name,  ' ', c.last_name ) LIKE  :full_name",
+        "(c.company LIKE :s_company OR c.first_name LIKE :s_first_name OR c.last_name LIKE :s_last_name OR c.email LIKE :s_email OR CONCAT(c.first_name,  ' ', c.last_name ) LIKE  :full_name)",
         [':s_company' => 'Keyword',
-            ':s_first_time' => 'Keyword',
+            ':s_first_name' => 'Keyword',
             ':s_last_name' => 'Keyword',
             ':s_email' => 'Keyword',
             ':full_name' => 'Keyword',
@@ -539,10 +539,11 @@ dataset('searchHistoryQueryData', [
     [[], 'SELECT ach.*, c.first_name, c.last_name, c.email', []],
     [
         ['search' => 'sameValue'],
-        'c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR c.id LIKE :id',
+        '(c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR c.email LIKE :email OR c.id LIKE :id)',
         [
             ':first_name' => '%sameValue%',
             ':last_name' => '%sameValue%',
+            ':email' => '%sameValue%',
             ':id' => 'sameValue'],
     ],
     [

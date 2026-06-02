@@ -18,6 +18,7 @@ use Box\Mod\Invoice\ServiceTax;
 use Box\Mod\Invoice\ServiceTransaction;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\moduleService;
 
 test('gets dependency injection container', function (): void {
     $api = new Admin();
@@ -36,7 +37,7 @@ test('gets invoice list', function (): void {
 
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
     $paginatorMock->shouldReceive('getDefaultPerPage')
-        ->atLeast()->once()
+        ->byDefault()
         ->andReturn(25);
     $paginatorMock->shouldReceive('getPaginatedResultSet')
         ->atLeast()->once()
@@ -85,13 +86,13 @@ test('marks invoice as paid', function (): void {
     ];
 
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('markAsPaid')
+    $serviceMock->shouldReceive('markAsPaidByAdmin')
         ->atLeast()->once()
         ->andReturn(true);
 
     $gatewayServiceMock = Mockery::mock(ServicePayGateway::class);
     $gatewayServiceMock->shouldReceive('toApiArray')
-        ->atLeast()->once()
+        ->byDefault()
         ->andReturn(['code' => 'PayPal', 'enabled' => 1]);
 
     $invoiceModel = new Model_Invoice();
@@ -114,13 +115,10 @@ test('marks invoice as paid', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(function ($name, $sub = '') use ($serviceMock, $gatewayServiceMock) {
-        if ($name === 'Invoice' && $sub === 'PayGateway') {
-            return $gatewayServiceMock;
-        }
-
-        return $serviceMock;
-    });
+    $di['mod_service'] = $di->protect(moduleService([
+        'invoice' => $serviceMock,
+        'invoice:paygateway' => $gatewayServiceMock,
+    ]));
     $api->setDi($di);
     $api->setService($serviceMock);
 
@@ -265,7 +263,7 @@ test('deletes an invoice item', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $invoiceItemService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:invoiceitem' => $invoiceItemService]));
 
     $api->setDi($di);
 
@@ -496,7 +494,7 @@ test('processes all transactions', function (): void {
         ->andReturn(true);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $transactionService]));
 
     $api->setDi($di);
     $result = $api->transaction_process_all([]);
@@ -529,7 +527,7 @@ test('processes a transaction', function (): void {
     $di['db'] = $dbMock;
     $di['events_manager'] = $eventsMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $transactionService]));
 
     $api->setDi($di);
 
@@ -557,7 +555,7 @@ test('updates a transaction', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $transactionService]));
 
     $api->setDi($di);
 
@@ -574,7 +572,7 @@ test('creates a transaction', function (): void {
         ->andReturn($newTransactionId);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $transactionService]));
     $api->setDi($di);
 
     $result = $api->transaction_create([]);
@@ -601,7 +599,7 @@ test('deletes a transaction', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $transactionService]));
 
     $api->setDi($di);
 
@@ -629,7 +627,7 @@ test('gets a transaction', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $transactionService]));
 
     $api->setDi($di);
 
@@ -646,7 +644,7 @@ test('gets transaction list', function (): void {
 
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
     $paginatorMock->shouldReceive('getDefaultPerPage')
-        ->atLeast()->once()
+        ->byDefault()
         ->andReturn(25);
     $paginatorMock->shouldReceive('getPaginatedResultSet')
         ->atLeast()->once()
@@ -654,7 +652,7 @@ test('gets transaction list', function (): void {
 
     $di = container();
     $di['pager'] = $paginatorMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $transactionService]));
 
     $api->setDi($di);
     $result = $api->transaction_get_list([]);
@@ -669,7 +667,7 @@ test('gets transaction statuses', function (): void {
         ->andReturn([]);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $transactionService]));
 
     $api->setDi($di);
 
@@ -685,7 +683,7 @@ test('gets transaction status pairs', function (): void {
         ->andReturn([]);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $transactionService]));
 
     $api->setDi($di);
 
@@ -701,7 +699,7 @@ test('gets transaction statuses list', function (): void {
         ->andReturn([]);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $transactionService]));
 
     $api->setDi($di);
 
@@ -717,7 +715,7 @@ test('gets transaction gateway statuses', function (): void {
         ->andReturn([]);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $transactionService]));
 
     $api->setDi($di);
 
@@ -733,7 +731,7 @@ test('gets transaction types', function (): void {
         ->andReturn([]);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $transactionService]));
 
     $api->setDi($di);
 
@@ -750,7 +748,7 @@ test('gets gateway list', function (): void {
 
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
     $paginatorMock->shouldReceive('getDefaultPerPage')
-        ->atLeast()->once()
+        ->byDefault()
         ->andReturn(25);
     $paginatorMock->shouldReceive('getPaginatedResultSet')
         ->atLeast()->once()
@@ -758,7 +756,7 @@ test('gets gateway list', function (): void {
 
     $di = container();
     $di['pager'] = $paginatorMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $gatewayService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:paygateway' => $gatewayService]));
 
     $api->setDi($di);
     $result = $api->gateway_get_list([]);
@@ -773,7 +771,7 @@ test('gets gateway pairs', function (): void {
         ->andReturn([]);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $gatewayService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:paygateway' => $gatewayService]));
     $api->setDi($di);
 
     $result = $api->gateway_get_pairs([]);
@@ -788,7 +786,7 @@ test('gets available gateways', function (): void {
         ->andReturn([]);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $gatewayService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:paygateway' => $gatewayService]));
     $api->setDi($di);
 
     $result = $api->gateway_get_available([]);
@@ -807,7 +805,7 @@ test('installs a gateway', function (): void {
         ->andReturn(true);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $gatewayService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:paygateway' => $gatewayService]));
     $api->setDi($di);
 
     $result = $api->gateway_install($data);
@@ -834,7 +832,7 @@ test('gets a gateway', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $gatewayService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:paygateway' => $gatewayService]));
 
     $api->setDi($di);
 
@@ -862,7 +860,7 @@ test('copies a gateway', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $gatewayService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:paygateway' => $gatewayService]));
 
     $api->setDi($di);
 
@@ -890,7 +888,7 @@ test('updates a gateway', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $gatewayService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:paygateway' => $gatewayService]));
 
     $api->setDi($di);
 
@@ -918,7 +916,7 @@ test('deletes a gateway', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $gatewayService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:paygateway' => $gatewayService]));
 
     $api->setDi($di);
 
@@ -935,7 +933,7 @@ test('gets subscription list', function (): void {
 
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
     $paginatorMock->shouldReceive('getDefaultPerPage')
-        ->atLeast()->once()
+        ->byDefault()
         ->andReturn(25);
     $paginatorMock->shouldReceive('getPaginatedResultSet')
         ->atLeast()->once()
@@ -943,7 +941,7 @@ test('gets subscription list', function (): void {
 
     $di = container();
     $di['pager'] = $paginatorMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $subscriptionService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:subscription' => $subscriptionService]));
 
     $api->setDi($di);
     $result = $api->subscription_get_list([]);
@@ -976,7 +974,7 @@ test('creates a subscription', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $subscriptionService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:subscription' => $subscriptionService]));
 
     $api->setDi($di);
 
@@ -1031,7 +1029,7 @@ test('updates a subscription', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $subscriptionService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:subscription' => $subscriptionService]));
 
     $api->setDi($di);
 
@@ -1059,7 +1057,7 @@ test('gets a subscription', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $subscriptionService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:subscription' => $subscriptionService]));
 
     $api->setDi($di);
 
@@ -1087,7 +1085,7 @@ test('deletes a subscription', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $subscriptionService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:subscription' => $subscriptionService]));
 
     $api->setDi($di);
 
@@ -1115,7 +1113,7 @@ test('deletes a tax', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $taxService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:tax' => $taxService]));
 
     $api->setDi($di);
 
@@ -1135,7 +1133,7 @@ test('creates a tax', function (): void {
         ->andReturn($newTaxId);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $taxService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:tax' => $taxService]));
 
     $api->setDi($di);
 
@@ -1152,7 +1150,7 @@ test('gets tax list', function (): void {
 
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
     $paginatorMock->shouldReceive('getDefaultPerPage')
-        ->atLeast()->once()
+        ->byDefault()
         ->andReturn(25);
     $paginatorMock->shouldReceive('getPaginatedResultSet')
         ->atLeast()->once()
@@ -1160,7 +1158,7 @@ test('gets tax list', function (): void {
 
     $di = container();
     $di['pager'] = $paginatorMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $taxService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:tax' => $taxService]));
 
     $api->setDi($di);
 
@@ -1232,7 +1230,7 @@ test('gets a tax', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $taxService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:tax' => $taxService]));
 
     $api->setDi($di);
     $api->setService($taxService);
@@ -1259,7 +1257,7 @@ test('updates a tax', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $taxService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:tax' => $taxService]));
 
     $api->setDi($di);
     $api->setService($taxService);

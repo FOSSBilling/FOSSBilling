@@ -5,6 +5,8 @@ declare(strict_types=1);
 use Box\Mod\Extension\Entity\ExtensionMeta;
 use FOSSBilling\PaginationOptions;
 
+use function Tests\Helpers\moduleService;
+
 test('get list uses doctrine pagination', function (): void {
     $queryBuilder = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
 
@@ -23,6 +25,7 @@ test('get list uses doctrine pagination', function (): void {
 
     $di = new Pimple\Container();
     $di['pager'] = $pager;
+    $di['mod_service'] = $di->protect(moduleService());
 
     $api = new Box\Mod\Notification\Api\Admin();
     $api->setDi($di);

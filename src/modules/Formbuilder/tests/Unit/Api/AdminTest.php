@@ -68,7 +68,7 @@ test('adds a field to a form', function (): void {
 
     $serviceMock = Mockery::mock(Service::class);
     /** @var Mockery\Expectation $expectation1 */
-    $expectation1 = $serviceMock->shouldReceive('typeValidation');
+    $expectation1 = $serviceMock->shouldReceive('isValidFieldType');
     $expectation1->atLeast()->once();
     $expectation1->andReturn(true);
     /** @var Mockery\Expectation $expectation2 */
@@ -81,6 +81,7 @@ test('adds a field to a form', function (): void {
     $expectation3->andReturn($newFieldId);
 
     $api->setService($serviceMock);
+    $api->setDi(container());
 
     $result = $api->add_field($data);
     expect($result)->toBeInt()->toBe($newFieldId);
@@ -96,13 +97,18 @@ test('throws exception when adding field with missing type', function (): void {
 
 test('throws exception when field options are not unique', function (): void {
     $api = new Admin();
-    $service = new Service();
+    $service = Mockery::mock(Service::class);
     $data = [
         'type' => 'text',
         'options' => ['sameValue', 'sameValue'],
+        'form_id' => 1,
     ];
 
+    $service->shouldReceive('isValidFieldType')->once()->andReturn(true);
+    $service->shouldReceive('isArrayUnique')->once()->andReturn(false);
+
     $api->setService($service);
+    $api->setDi(container());
 
     expect(fn () => $api->add_field($data))
         ->toThrow(FOSSBilling\InformationException::class, 'This input type must have unique values');
@@ -110,13 +116,16 @@ test('throws exception when field options are not unique', function (): void {
 
 test('throws exception when adding field without form id', function (): void {
     $api = new Admin();
-    $service = new Service();
+    $service = Mockery::mock(Service::class);
     $data = [
         'type' => 'text',
         'options' => ['sameValue'],
     ];
 
+    $service->shouldReceive('isValidFieldType')->once()->andReturn(true);
+
     $api->setService($service);
+    $api->setDi(container());
 
     expect(fn () => $api->add_field($data))
         ->toThrow(FOSSBilling\InformationException::class, 'Form id was not passed');
@@ -204,6 +213,7 @@ test('gets all forms', function (): void {
     $expectation->andReturn([]);
 
     $api->setService($serviceMock);
+    $api->setDi(container());
 
     $result = $api->get_forms();
     expect($result)->toBeArray();
@@ -302,6 +312,7 @@ test('gets form pairs', function (): void {
     $expectation->andReturn([]);
 
     $api->setService($serviceMock);
+    $api->setDi(container());
 
     $result = $api->get_pairs($data);
     expect($result)->toBeArray();
@@ -322,6 +333,7 @@ test('copies a form', function (): void {
     $expectation->andReturn($newFormId);
 
     $api->setService($serviceMock);
+    $api->setDi(container());
     $result = $api->copy_form($data);
     expect($result)->toBeInt()->toBe($newFormId);
 });
@@ -330,6 +342,7 @@ test('throws exception when copying form without id', function (): void {
     $api = new Admin();
     $data = [];
 
+    $api->setDi(container());
     expect(fn () => $api->copy_form($data))
         ->toThrow(FOSSBilling\InformationException::class, 'Form id was not passed');
 });
@@ -338,6 +351,7 @@ test('throws exception when copying form without name', function (): void {
     $api = new Admin();
     $data = ['form_id' => 1];
 
+    $api->setDi(container());
     expect(fn () => $api->copy_form($data))
         ->toThrow(FOSSBilling\InformationException::class, 'Form name was not passed');
 });
@@ -357,6 +371,7 @@ test('updates form settings', function (): void {
     $expectation->andReturn(true);
 
     $api->setService($serviceMock);
+    $api->setDi(container());
     $result = $api->update_form_settings($data);
     expect($result)->toBeTrue();
 });
@@ -370,6 +385,7 @@ test('throws exception when updating form settings with missing fields', functio
     ];
     unset($data[$missingField]);
 
+    $api->setDi(container());
     expect(fn () => $api->update_form_settings($data))
         ->toThrow(FOSSBilling\Exception::class, $exceptionMessage);
 })->with([

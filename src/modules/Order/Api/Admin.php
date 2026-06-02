@@ -304,7 +304,7 @@ class Admin extends \Api_Abstract
 
         $order = $this->_getOrder($data);
 
-        if (!is_array($data['config'])) {
+        if (!isset($data['config']) || !is_array($data['config'])) {
             throw new \FOSSBilling\Exception('Order config not passed');
         }
 

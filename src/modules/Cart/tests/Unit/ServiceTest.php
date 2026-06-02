@@ -301,7 +301,8 @@ test('change cart currency', function (): void {
 
     $currency = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
     $currency->shouldReceive('getId')->atLeast()->once()->andReturn(1);
-    $currency->shouldReceive('getTitle')->atLeast()->once()->andReturn('USD');
+    $currency->shouldReceive('getCode')->atLeast()->once()->andReturn('USD');
+    $currency->shouldReceive('getTitle')->byDefault()->andReturn('USD');
 
     $di = container();
     $di['db'] = $dbMock;
@@ -753,7 +754,7 @@ test('use promo', function (): void {
     $promo->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')
+    $dbMock->shouldReceive('exec')
         ->atLeast()->once()
         ->andReturn(1);
 

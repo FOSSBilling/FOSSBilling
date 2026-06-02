@@ -77,6 +77,9 @@ class Admin extends \Api_Abstract
         if (!isset($data['type']) || !$service->isValidFieldType($data['type'])) {
             throw new \FOSSBilling\Exception('Form field type is invalid', null, 2684);
         }
+        if (!isset($data['form_id'])) {
+            throw new \FOSSBilling\InformationException('Form id was not passed', null, 1822);
+        }
         if (isset($data['options']) && is_array($data['options']) && !$service->isArrayUnique($data['options'])) {
             throw new \FOSSBilling\InformationException('This input type must have unique values', null, 3658);
         }
@@ -270,6 +273,12 @@ class Admin extends \Api_Abstract
     {
         $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'manage');
 
+        $required = [
+            'form_id' => 'Form id was not passed',
+            'name' => 'Form name was not passed',
+        ];
+        $this->getDi()['validator']->checkRequiredParamsForArray($required, $data, null, 1822);
+
         $service = $this->getService();
 
         return $service->duplicateForm($data);
@@ -284,6 +293,13 @@ class Admin extends \Api_Abstract
     public function update_form_settings($data)
     {
         $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'manage');
+
+        $required = [
+            'form_id' => 'Form id was not passed',
+            'form_name' => 'Form name was not passed',
+            'type' => 'Form type was not passed',
+        ];
+        $this->getDi()['validator']->checkRequiredParamsForArray($required, $data, null, 1822);
 
         $type = $data['type'] ?? null;
         if ($type !== 'horizontal' && $type !== 'default') {

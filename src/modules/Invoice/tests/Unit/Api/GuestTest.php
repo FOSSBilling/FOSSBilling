@@ -15,6 +15,7 @@ use Box\Mod\Invoice\Service;
 use Box\Mod\Invoice\ServicePayGateway;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\moduleService;
 
 test('gets dependency injection container', function (): void {
     $api = new Guest();
@@ -72,73 +73,6 @@ test('throws exception when invoice is not found', function (): void {
         ->toThrow(FOSSBilling\Exception::class, 'Invoice was not found');
 });
 
-test('updates an invoice', function (): void {
-    $api = new Guest();
-    $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('updateInvoice')
-        ->atLeast()->once()
-        ->andReturn(true);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Invoice();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($model);
-
-    $di = container();
-    $di['db'] = $dbMock;
-
-    $api->setDi($di);
-    $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
-
-    $data['hash'] = md5('1');
-    $result = $api->update($data);
-    expect($result)->toBeBool()->toBeTrue();
-});
-
-test('throws exception when updating invoice not found', function (): void {
-    $api = new Guest();
-    $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Invoice();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn(null);
-
-    $di = container();
-    $di['db'] = $dbMock;
-
-    $api->setDi($di);
-    $api->setIdentity(new Model_Admin());
-
-    $data['hash'] = md5('1');
-    expect(fn () => $api->update($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Invoice was not found');
-});
-
-test('throws exception when updating paid invoice', function (): void {
-    $api = new Guest();
-    $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Invoice();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->status = 'paid';
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($model);
-
-    $di = container();
-    $di['db'] = $dbMock;
-
-    $api->setDi($di);
-    $api->setIdentity(new Model_Admin());
-
-    $data['hash'] = md5('1');
-    expect(fn () => $api->update($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Paid Invoice cannot be modified');
-});
-
 test('gets active gateways', function (): void {
     $api = new Guest();
     $gatewayServiceMock = Mockery::mock(ServicePayGateway::class);
@@ -147,7 +81,7 @@ test('gets active gateways', function (): void {
         ->andReturn([]);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $gatewayServiceMock);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:paygateway' => $gatewayServiceMock]));
 
     $api->setDi($di);
 
@@ -158,8 +92,8 @@ test('gets active gateways', function (): void {
 test('processes payment', function (): void {
     $api = new Guest();
     $data = [
-        'hash' => '',
-        'gateway_id' => '',
+        'hash' => str_repeat('a', 32),
+        'gateway_id' => 1,
     ];
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('processInvoice')
@@ -185,7 +119,7 @@ test('throws exception when payment hash is missing', function (): void {
 test('throws exception when payment gateway id is missing', function (): void {
     $api = new Guest();
     $data = [
-        'hash' => '',
+        'hash' => str_repeat('a', 32),
     ];
 
     expect(fn () => $api->payment($data))
@@ -195,7 +129,7 @@ test('throws exception when payment gateway id is missing', function (): void {
 test('generates PDF', function (): void {
     $api = new Guest();
     $data = [
-        'hash' => '',
+        'hash' => str_repeat('a', 32),
     ];
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('generatePDF')

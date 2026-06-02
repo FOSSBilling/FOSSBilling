@@ -16,6 +16,7 @@ use Box\Mod\Invoice\ServiceTax;
 use Box\Mod\Invoice\ServiceTransaction;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\moduleService;
 
 test('gets dependency injection container', function (): void {
     $api = new Client();
@@ -44,7 +45,9 @@ test('gets an invoice', function (): void {
 
     $api->setDi($di);
     $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
+    $identity = new Model_Client();
+    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $api->setIdentity($identity);
 
     $data['hash'] = md5('1');
     $result = $api->get($data);
@@ -64,78 +67,13 @@ test('throws exception when invoice is not found', function (): void {
     $di['db'] = $dbMock;
 
     $api->setDi($di);
-    $api->setIdentity(new Model_Admin());
+    $identity = new Model_Client();
+    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $api->setIdentity($identity);
 
     $data['hash'] = md5('1');
     expect(fn () => $api->get($data))
         ->toThrow(FOSSBilling\Exception::class, 'Invoice was not found');
-});
-
-test('updates an invoice', function (): void {
-    $api = new Client();
-    $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('updateInvoice')
-        ->atLeast()->once()
-        ->andReturn(true);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Invoice();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($model);
-
-    $di = container();
-    $di['db'] = $dbMock;
-
-    $api->setDi($di);
-    $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
-
-    $data['hash'] = md5('1');
-    $result = $api->update($data);
-    expect($result)->toBeBool()->toBeTrue();
-});
-
-test('throws exception when updating invoice not found', function (): void {
-    $api = new Client();
-    $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Invoice();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn(null);
-
-    $di = container();
-    $di['db'] = $dbMock;
-
-    $api->setDi($di);
-    $api->setIdentity(new Model_Admin());
-
-    $data['hash'] = md5('1');
-    expect(fn () => $api->update($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Invoice was not found');
-});
-
-test('throws exception when updating paid invoice', function (): void {
-    $api = new Client();
-    $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Invoice();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->status = 'paid';
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($model);
-
-    $di = container();
-    $di['db'] = $dbMock;
-
-    $api->setDi($di);
-    $api->setIdentity(new Model_Admin());
-
-    $data['hash'] = md5('1');
-    expect(fn () => $api->update($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Paid Invoice cannot be modified');
 });
 
 test('creates renewal invoice', function (): void {
@@ -253,35 +191,6 @@ test('creates funds invoice', function (): void {
     expect($result)->toBeString()->toBe($generatedHash);
 });
 
-test('deletes an invoice', function (): void {
-    $api = new Client();
-    $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('deleteInvoiceByClient')
-        ->atLeast()->once()
-        ->andReturn(true);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Invoice();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($model);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-
-    $api->setDi($di);
-    $api->setService($serviceMock);
-    $identity = new Model_Client();
-    $identity->loadBean(new Tests\Helpers\DummyBean());
-    $api->setIdentity($identity);
-
-    $data['hash'] = md5('1');
-    $result = $api->delete($data);
-    expect($result)->toBeBool()->toBeTrue();
-});
-
 test('gets transaction list', function (): void {
     $api = new Client();
     $transactionService = Mockery::mock(ServiceTransaction::class);
@@ -290,16 +199,13 @@ test('gets transaction list', function (): void {
         ->andReturn(['SqlString', []]);
 
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
-    $paginatorMock->shouldReceive('getDefaultPerPage')
-        ->atLeast()->once()
-        ->andReturn(25);
     $paginatorMock->shouldReceive('getPaginatedResultSet')
         ->atLeast()->once()
         ->andReturn(['list' => []]);
 
     $di = container();
     $di['pager'] = $paginatorMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $transactionService);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $transactionService]));
 
     $api->setDi($di);
 
@@ -323,11 +229,7 @@ test('gets tax rate for client', function (): void {
         ->andReturn($taxRate);
 
     $di = container();
-    $di['mod_service'] = $di->protect(function ($service, $sub) use ($invoiceTaxService) {
-        if ($service == 'Invoice' && $sub == 'Tax') {
-            return $invoiceTaxService;
-        }
-    });
+    $di['mod_service'] = $di->protect(moduleService(['invoice:tax' => $invoiceTaxService]));
     $api->setDi($di);
     $api->setIdentity($client);
 

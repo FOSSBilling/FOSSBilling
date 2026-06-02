@@ -70,9 +70,7 @@ test('is role allowed rejects system role', function (): void {
 
     expect(fn () => invokeControllerPrivate($controller, 'isRoleAllowed', ['system']))
         ->toThrow(FOSSBilling\Exception::class);
-    expect(fn () => invokeControllerPrivate($controller, 'isRoleAllowed', ['system']))
-        ->toThrow(FOSSBilling\Exception::class);
-})->throws(FOSSBilling\Exception::class);
+});
 
 test('should use token login ignores non-API basic auth usernames', function (): void {
     $controller = new Client();

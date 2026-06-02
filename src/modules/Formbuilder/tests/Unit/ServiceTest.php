@@ -11,6 +11,8 @@
 declare(strict_types=1);
 
 use Box\Mod\Formbuilder\Service;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Result;
 
 use function Tests\Helpers\container;
 
@@ -25,11 +27,12 @@ test('gets dependency injection container', function (): void {
 test('gets form field types', function (): void {
     $service = new Service();
     $expected = [
-        'text' => 'Text input',
+        'text' => 'Text Input',
+        'url' => 'URL Input',
         'select' => 'Dropdown',
-        'radio' => 'Radio select',
+        'radio' => 'Radio Select',
         'checkbox' => 'Checkbox',
-        'textarea' => 'Text area',
+        'textarea' => 'Text Area',
     ];
 
     $result = $service->getFormFieldsTypes();
@@ -38,7 +41,7 @@ test('gets form field types', function (): void {
 
 test('validates field types', function (string $type, bool $expected): void {
     $service = new Service();
-    $result = $service->typeValidation($type);
+    $result = $service->isValidFieldType($type);
     expect($result)->toBe($expected);
 })->with([
     ['select', true],
@@ -63,21 +66,12 @@ test('adds a new form', function (): void {
         'style' => [],
     ];
 
-    $model = new Model_Form();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock('\Box_Database');
-    /** @var Mockery\Expectation $expectation1 */
-    $expectation1 = $dbMock->shouldReceive('dispense');
-    $expectation1->atLeast()->once();
-    $expectation1->andReturn($model);
-    /** @var Mockery\Expectation $expectation2 */
-    $expectation2 = $dbMock->shouldReceive('store');
-    $expectation2->atLeast()->once();
-    $expectation2->andReturn($newFormId);
+    $dbal = Mockery::mock(Connection::class);
+    $dbal->shouldReceive('insert')->once()->with('form', Mockery::on(fn (array $row): bool => $row['name'] === 'testName'));
+    $dbal->shouldReceive('lastInsertId')->once()->andReturn($newFormId);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbal;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
@@ -94,26 +88,16 @@ test('adds a new field', function (): void {
         'type' => 'select',
     ];
 
-    $model = new Model_FormField();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->id = 2;
+    $countResult = Mockery::mock(Result::class);
+    $countResult->shouldReceive('fetchOne')->once()->andReturn(0);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    /** @var Mockery\Expectation $expectation1 */
-    $expectation1 = $dbMock->shouldReceive('dispense');
-    $expectation1->atLeast()->once();
-    $expectation1->andReturn($model);
-    /** @var Mockery\Expectation $expectation2 */
-    $expectation2 = $dbMock->shouldReceive('store');
-    $expectation2->atLeast()->once();
-    $expectation2->andReturn($newFieldId);
-    /** @var Mockery\Expectation $expectation3 */
-    $expectation3 = $dbMock->shouldReceive('getCell');
-    $expectation3->atLeast()->once();
-    $expectation3->andReturn(0);
+    $dbal = Mockery::mock(Connection::class);
+    $dbal->shouldReceive('executeQuery')->once()->andReturn($countResult);
+    $dbal->shouldReceive('insert')->once()->with('form_field', Mockery::on(fn (array $row): bool => $row['form_id'] === 1 && $row['type'] === 'select'));
+    $dbal->shouldReceive('lastInsertId')->once()->andReturn($newFieldId);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbal;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
@@ -137,39 +121,23 @@ test('updates a field', function (string $fieldType): void {
         'textarea_option' => [''],
     ];
 
-    $model = new Model_FormField();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-
     $modelArray = [
         'id' => $updateFieldId,
         'form_id' => 1,
         'options' => '{"hidden":"hidden"}',
     ];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    /** @var Mockery\Expectation $expectation1 */
-    $expectation1 = $dbMock->shouldReceive('dispense');
-    $expectation1->atLeast()->once();
-    $expectation1->andReturn($model);
-    /** @var Mockery\Expectation $expectation2 */
-    $expectation2 = $dbMock->shouldReceive('store');
-    $expectation2->atLeast()->once();
-    $expectation2->andReturn($updateFieldId);
-    /** @var Mockery\Expectation $expectation3 */
-    $expectation3 = $dbMock->shouldReceive('getExistingModelById');
-    $expectation3->atLeast()->once();
-    $expectation3->andReturn($model);
-    /** @var Mockery\Expectation $expectation4 */
-    $expectation4 = $dbMock->shouldReceive('toArray');
-    $expectation4->atLeast()->once();
-    $expectation4->andReturn($modelArray);
-    /** @var Mockery\Expectation $expectation5 */
-    $expectation5 = $dbMock->shouldReceive('findOne');
-    $expectation5->atLeast()->once();
-    $expectation5->andReturn(null);
+    $fieldResult = Mockery::mock(Result::class);
+    $fieldResult->shouldReceive('fetchAssociative')->once()->andReturn($modelArray);
+    $existsResult = Mockery::mock(Result::class);
+    $existsResult->shouldReceive('fetchOne')->once()->andReturn(0);
+
+    $dbal = Mockery::mock(Connection::class);
+    $dbal->shouldReceive('executeQuery')->twice()->andReturn($fieldResult, $existsResult);
+    $dbal->shouldReceive('update')->once()->with('form_field', Mockery::type('array'), ['id' => $updateFieldId]);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbal;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
@@ -285,25 +253,16 @@ test('gets a form', function (): void {
         ],
     ];
 
-    $model = new Model_Form();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $formResult = Mockery::mock(Result::class);
+    $formResult->shouldReceive('fetchAssociative')->once()->andReturn($modelArray);
+    $fieldsResult = Mockery::mock(Result::class);
+    $fieldsResult->shouldReceive('fetchAllAssociative')->once()->andReturn($getAllResult);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    /** @var Mockery\Expectation $expectation1 */
-    $expectation1 = $dbMock->shouldReceive('getExistingModelById');
-    $expectation1->atLeast()->once();
-    $expectation1->andReturn($model);
-    /** @var Mockery\Expectation $expectation2 */
-    $expectation2 = $dbMock->shouldReceive('toArray');
-    $expectation2->atLeast()->once();
-    $expectation2->andReturn($modelArray);
-    /** @var Mockery\Expectation $expectation3 */
-    $expectation3 = $dbMock->shouldReceive('getAll');
-    $expectation3->atLeast()->once();
-    $expectation3->andReturn($getAllResult);
+    $dbal = Mockery::mock(Connection::class);
+    $dbal->shouldReceive('executeQuery')->twice()->andReturn($formResult, $fieldsResult);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbal;
 
     $formId = 1;
 
@@ -315,14 +274,14 @@ test('gets a form', function (): void {
 test('gets form fields', function (): void {
     $service = new Service();
     $formId = 1;
-    $dbMock = Mockery::mock('\Box_Database');
-    /** @var Mockery\Expectation $expectation */
-    $expectation = $dbMock->shouldReceive('getAll');
-    $expectation->atLeast()->once();
-    $expectation->andReturn([]);
+    $result = Mockery::mock(Result::class);
+    $result->shouldReceive('fetchAllAssociative')->once()->andReturn([]);
+
+    $dbal = Mockery::mock(Connection::class);
+    $dbal->shouldReceive('executeQuery')->once()->andReturn($result);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbal;
 
     $service->setDi($di);
     $result = $service->getFormFields($formId);
@@ -332,35 +291,36 @@ test('gets form fields', function (): void {
 test('gets form fields count', function (): void {
     $service = new Service();
     $formId = 1;
-    $dbMock = Mockery::mock('\Box_Database');
-    /** @var Mockery\Expectation $expectation */
-    $expectation = $dbMock->shouldReceive('getCell');
-    $expectation->atLeast()->once();
-    $expectation->andReturn([]);
+    $dbalResult = Mockery::mock(Result::class);
+    $dbalResult->shouldReceive('fetchOne')->once()->andReturn(0);
+
+    $dbal = Mockery::mock(Connection::class);
+    $dbal->shouldReceive('executeQuery')->once()->andReturn($dbalResult);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbal;
 
     $service->setDi($di);
     $result = $service->getFormFieldsCount($formId);
-    expect($result)->toBeArray();
+    expect($result)->toBeInt()->toBe(0);
 });
 
 test('gets form pairs', function (): void {
     $service = new Service();
-    $formId = 1;
-    $dbMock = Mockery::mock('\Box_Database');
-    /** @var Mockery\Expectation $expectation */
-    $expectation = $dbMock->shouldReceive('getAssoc');
-    $expectation->atLeast()->once();
-    $expectation->andReturn([]);
+    $dbalResult = Mockery::mock(Result::class);
+    $dbalResult->shouldReceive('fetchAllAssociative')->once()->andReturn([
+        ['id' => 1, 'name' => 'Default'],
+    ]);
+
+    $dbal = Mockery::mock(Connection::class);
+    $dbal->shouldReceive('executeQuery')->once()->andReturn($dbalResult);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbal;
 
     $service->setDi($di);
     $result = $service->getFormPairs();
-    expect($result)->toBeArray();
+    expect($result)->toBe([1 => 'Default']);
 });
 
 test('gets a field', function (): void {
@@ -374,24 +334,17 @@ test('gets a field', function (): void {
     $expectedArray = $modelArray;
     $expectedArray['options'] = json_decode($expectedArray['options']);
 
-    $model = new Model_FormField();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $dbalResult = Mockery::mock(Result::class);
+    $dbalResult->shouldReceive('fetchAssociative')->once()->andReturn($modelArray);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    /** @var Mockery\Expectation $expectation1 */
-    $expectation1 = $dbMock->shouldReceive('getExistingModelById');
-    $expectation1->atLeast()->once();
-    $expectation1->andReturn($model);
-    /** @var Mockery\Expectation $expectation2 */
-    $expectation2 = $dbMock->shouldReceive('toArray');
-    $expectation2->atLeast()->once();
-    $expectation2->andReturn($modelArray);
+    $dbal = Mockery::mock(Connection::class);
+    $dbal->shouldReceive('executeQuery')->once()->andReturn($dbalResult);
 
     $di = container();
     $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray');
     $di['validator'] = $validatorMock;
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbal;
 
     $service->setDi($di);
     $result = $service->getField($fieldId);
@@ -401,13 +354,11 @@ test('gets a field', function (): void {
 
 test('removes a form', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    /** @var Mockery\Expectation $expectation */
-    $expectation = $dbMock->shouldReceive('exec');
-    $expectation->times(4);
+    $dbal = Mockery::mock(Connection::class);
+    $dbal->shouldReceive('executeStatement')->times(4)->andReturn(1);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbal;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
@@ -420,20 +371,11 @@ test('removes a field', function (): void {
     $service = new Service();
     $data = ['id' => 1];
 
-    $model = new Model_FormField();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock('\Box_Database');
-    /** @var Mockery\Expectation $expectation1 */
-    $expectation1 = $dbMock->shouldReceive('getExistingModelById');
-    $expectation1->atLeast()->once();
-    $expectation1->andReturn($model);
-    /** @var Mockery\Expectation $expectation2 */
-    $expectation2 = $dbMock->shouldReceive('trash');
-    $expectation2->atLeast()->once();
+    $dbal = Mockery::mock(Connection::class);
+    $dbal->shouldReceive('executeStatement')->once()->andReturn(1);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbal;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
@@ -449,14 +391,14 @@ test('checks if form field name exists', function (): void {
         'field_id' => 10,
     ];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    /** @var Mockery\Expectation $expectation */
-    $expectation = $dbMock->shouldReceive('findOne');
-    $expectation->atLeast()->once();
-    $expectation->andReturn(new Model_FormField());
+    $dbalResult = Mockery::mock(Result::class);
+    $dbalResult->shouldReceive('fetchOne')->once()->andReturn(1);
+
+    $dbal = Mockery::mock(Connection::class);
+    $dbal->shouldReceive('executeQuery')->once()->andReturn($dbalResult);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbal;
 
     $service->setDi($di);
     $result = $service->formFieldNameExists($data);
@@ -465,14 +407,14 @@ test('checks if form field name exists', function (): void {
 
 test('gets all forms', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    /** @var Mockery\Expectation $expectation */
-    $expectation = $dbMock->shouldReceive('getAll');
-    $expectation->atLeast()->once();
-    $expectation->andReturn([]);
+    $dbalResult = Mockery::mock(Result::class);
+    $dbalResult->shouldReceive('fetchAllAssociative')->once()->andReturn([]);
+
+    $dbal = Mockery::mock(Connection::class);
+    $dbal->shouldReceive('executeQuery')->once()->andReturn($dbalResult);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbal;
 
     $service->setDi($di);
     $result = $service->getForms();
@@ -521,13 +463,11 @@ test('updates form settings', function (): void {
         'form_id' => 1,
     ];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    /** @var Mockery\Expectation $expectation */
-    $expectation = $dbMock->shouldReceive('exec');
-    $expectation->times(2);
+    $dbal = Mockery::mock(Connection::class);
+    $dbal->shouldReceive('update')->once()->andReturn(1);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbal;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);

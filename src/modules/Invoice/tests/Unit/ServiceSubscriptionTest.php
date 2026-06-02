@@ -191,7 +191,7 @@ test('gets search query with various parameters', function (array $data, string 
         ['status' => 'active'], 'AND status = :status', [':status' => 'active'],
     ],
     [
-        ['invoice_id' => '1'], 'AND invoice_id = :invoice_id', ['invoice_id' => '1'],
+        ['invoice_id' => '1'], 'AND invoice_id = :invoice_id', [':invoice_id' => '1'],
     ],
     [
         ['gateway_id' => '2'], 'AND gateway_id = :gateway_id', [':gateway_id' => '2'],
@@ -219,9 +219,9 @@ test('gets search query with various parameters', function (array $data, string 
 test('returns false when invoice is not subscribable', function (): void {
     $service = new ServiceSubscription();
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getCell')
+    $dbMock->shouldReceive('getAll')
         ->atLeast()->once()
-        ->andReturn(['']);
+        ->andReturn([]);
 
     $di = container();
     $di['db'] = $dbMock;
@@ -235,12 +235,9 @@ test('returns false when invoice is not subscribable', function (): void {
 test('checks if invoice is subscribable', function (): void {
     $service = new ServiceSubscription();
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getCell')
-        ->atLeast()->once()
-        ->andReturn(null);
 
     $getAllResults = [
-        0 => ['period' => '1W'],
+        ['period' => '1W', 'price' => 10, 'quantity' => 1],
     ];
     $dbMock->shouldReceive('getAll')
         ->atLeast()->once()
@@ -256,17 +253,13 @@ test('checks if invoice is subscribable', function (): void {
 });
 
 test('gets subscription period', function (): void {
-    $service = new ServiceSubscription();
     $serviceMock = Mockery::mock(ServiceSubscription::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('isSubscribable')
-        ->atLeast()->once()
-        ->andReturn(true);
 
     $period = '1W';
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getCell')
+    $dbMock->shouldReceive('getAll')
         ->atLeast()->once()
-        ->andReturn($period);
+        ->andReturn([['period' => $period, 'price' => 10, 'quantity' => 1]]);
 
     $di = container();
     $di['db'] = $dbMock;

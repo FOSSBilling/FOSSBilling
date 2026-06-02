@@ -53,9 +53,6 @@ test('gets order list', function (): void {
         ->andReturn(['query', []]);
 
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
-    $paginatorMock->shouldReceive('getDefaultPerPage')
-        ->atLeast()->once()
-        ->andReturn(25);
     $paginatorMock->shouldReceive('getPaginatedResultSet')
         ->atLeast()->once()
         ->andReturn(['list' => []]);
@@ -481,9 +478,6 @@ test('gets status history list', function (): void {
         ->andReturn(['query', []]);
 
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
-    $paginatorMock->shouldReceive('getDefaultPerPage')
-        ->atLeast()->once()
-        ->andReturn(25);
     $paginatorMock->shouldReceive('getPaginatedResultSet')
         ->atLeast()->once()
         ->andReturn([]);

@@ -21,68 +21,6 @@ test('get di', function (): void {
     expect($getDi)->toEqual($di);
 });
 
-test('create', function (): void {
-    $api = new Box\Mod\Staff\Api\Guest();
-    $adminId = 1;
-
-    $apiMock = Mockery::mock(Box\Mod\Staff\Api\Guest::class)->makePartial();
-    $apiMock->shouldReceive('login')->atLeast()->once();
-
-    $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
-    $serviceMock
-    ->shouldReceive('createAdmin')
-    ->atLeast()->once()
-    ->andReturn($adminId);
-
-    $validatorStub = $this->createStub(FOSSBilling\Validate::class);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('findOne')
-    ->atLeast()->once()
-    ->andReturn([]);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $di['validator'] = $validatorStub;
-
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
-    $di['tools'] = $toolsMock;
-
-    $apiMock->setDi($di);
-    $apiMock->setService($serviceMock);
-
-    $data = [
-        'email' => 'example@fossbilling.org',
-        'password' => 'EasyToGuess',
-    ];
-    $result = $apiMock->create($data);
-    expect($result)->toBeTrue();
-});
-
-test('create exception', function (): void {
-    $api = new Box\Mod\Staff\Api\Guest();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('findOne')
-    ->atLeast()->once()
-    ->andReturn([[]]);
-
-    $di = container();
-    $di['db'] = $dbMock;
-
-    $api->setDi($di);
-
-    $data = [
-        'email' => 'example@fossbilling.org',
-        'password' => 'EasyToGuess',
-    ];
-
-    expect(fn (): bool => $api->create($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Administrator account already exists');
-});
-
 test('login without email', function (): void {
     $api = new Box\Mod\Staff\Api\Guest();
     $guestApi = new Box\Mod\Staff\Api\Guest();
@@ -169,5 +107,5 @@ test('login check ip exception', function (): void {
         'password' => 'pass',
     ];
     expect(fn () => $guestApi->login($data))
-        ->toThrow(FOSSBilling\Exception::class, "You are not allowed to login to admin area from {$ip} address.");
+        ->toThrow(FOSSBilling\Exception::class, 'You are not allowed to login to admin area from this IP address.');
 });

@@ -10,7 +10,10 @@
 
 declare(strict_types=1);
 
+use Symfony\Component\HttpFoundation\Response;
+
 use function Tests\Helpers\container;
+use function Tests\Helpers\moduleService;
 
 test('gets dependency injection container', function (): void {
     $api = new Box\Mod\Servicedownloadable\Api\Client();
@@ -70,7 +73,7 @@ test('throws exception when sending file with order not activated', function ():
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+    $di['mod_service'] = $di->protect(moduleService(['order' => $orderServiceMock]));
 
     $api->setDi($di);
     $api->setIdentity($modelClient);
@@ -89,10 +92,11 @@ test('sends file', function (): void {
     $modelClient->loadBean(new Tests\Helpers\DummyBean());
 
     $serviceMock = Mockery::mock(Box\Mod\Servicedownloadable\Service::class);
+    $response = new Response('download');
     $serviceMock->shouldReceive('sendFile')
         ->atLeast()
         ->once()
-        ->andReturn(true);
+        ->andReturn($response);
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
     $orderServiceMock->shouldReceive('getOrderService')
@@ -112,13 +116,12 @@ test('sends file', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+    $di['mod_service'] = $di->protect(moduleService(['order' => $orderServiceMock]));
 
     $api->setDi($di);
     $api->setIdentity($modelClient);
     $api->setService($serviceMock);
 
     $result = $api->send_file($data);
-    expect($result)->toBeBool()
-        ->and($result)->toBeTrue();
+    expect($result)->toBe($response);
 });

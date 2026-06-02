@@ -10,7 +10,10 @@
 
 declare(strict_types=1);
 
+use Symfony\Component\HttpFoundation\Response;
+
 use function Tests\Helpers\container;
+use function Tests\Helpers\moduleService;
 
 test('getDi returns the dependency injection container', function (): void {
     $api = new Box\Mod\Servicedownloadable\Api\Admin();
@@ -38,7 +41,7 @@ test('update throws exception when order is not activated', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+    $di['mod_service'] = $di->protect(moduleService(['order' => $orderServiceMock]));
     $di['validator'] = $validatorMock;
     $api->setDi($di);
 
@@ -73,7 +76,7 @@ test('update updates downloadable product', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+    $di['mod_service'] = $di->protect(moduleService(['order' => $orderServiceMock]));
     $api->setDi($di);
     $api->setService($serviceMock);
     $result = $api->update($data);
@@ -106,7 +109,7 @@ test('configSave saves product configuration', function (): void {
         ->once()
         ->andReturn($productModel);
 
-    $di = new Pimple\Container();
+    $di = container();
     $di['db'] = $dbMock;
 
     $api->setDi($di);
@@ -131,7 +134,7 @@ test('configSave throws exception when product not found', function (): void {
         ->once()
         ->andThrow(new FOSSBilling\Exception('Product not found'));
 
-    $di = new Pimple\Container();
+    $di = container();
     $di['db'] = $dbMock;
 
     $api->setDi($di);
@@ -151,7 +154,7 @@ test('sendFile throws exception when product not found', function (): void {
         ->once()
         ->andThrow(new FOSSBilling\Exception('Product not found'));
 
-    $di = new Pimple\Container();
+    $di = container();
     $di['db'] = $dbMock;
 
     $api->setDi($di);
@@ -182,7 +185,7 @@ test('sendFile throws exception when no file configured', function (): void {
         ->once()
         ->andReturn($productModel);
 
-    $di = new Pimple\Container();
+    $di = container();
     $di['db'] = $dbMock;
 
     $api->setDi($di);
@@ -214,7 +217,7 @@ test('sendFile throws exception when file cannot be downloaded', function (): vo
         ->once()
         ->andReturn($productModel);
 
-    $di = new Pimple\Container();
+    $di = container();
     $di['db'] = $dbMock;
 
     $api->setDi($di);
@@ -233,11 +236,13 @@ test('sendFile sends product file', function (): void {
     $productModel->config = '{"filename": "test.txt"}';
 
     $serviceMock = Mockery::mock(Box\Mod\Servicedownloadable\Service::class);
+    $response = new Response('download');
+
     $serviceMock->shouldReceive('sendProductFile')
         ->with($productModel)
         ->atLeast()
         ->once()
-        ->andReturn(true);
+        ->andReturn($response);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
@@ -246,13 +251,12 @@ test('sendFile sends product file', function (): void {
         ->once()
         ->andReturn($productModel);
 
-    $di = new Pimple\Container();
+    $di = container();
     $di['db'] = $dbMock;
 
     $api->setDi($di);
     $api->setService($serviceMock);
 
     $result = $api->send_file($data);
-    expect($result)->toBeBool();
-    expect($result)->toBeTrue();
+    expect($result)->toBe($response);
 });

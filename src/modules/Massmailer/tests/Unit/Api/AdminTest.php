@@ -6,6 +6,8 @@ use Box\Mod\Massmailer\Entity\MassmailerMessage;
 use Box\Mod\Massmailer\Repository\MassmailerMessageRepository;
 use FOSSBilling\InformationException;
 
+use function Tests\Helpers\moduleService;
+
 function createMassmailerAdminDi(MassmailerMessage $message, bool $expectFlush = true): Pimple\Container
 {
     $di = new Pimple\Container();
@@ -23,6 +25,7 @@ function createMassmailerAdminDi(MassmailerMessage $message, bool $expectFlush =
     }
 
     $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService());
 
     return $di;
 }

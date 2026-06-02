@@ -12,6 +12,15 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 
+function staffAdminIdentity(): Model_Admin
+{
+    $admin = new Model_Admin();
+    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin->role = Model_Admin::ROLE_ADMIN;
+
+    return $admin;
+}
+
 test('get di', function (): void {
     $api = new Box\Mod\Staff\Api\Admin();
     $api = new Box\Mod\Staff\Api\Admin();
@@ -77,7 +86,7 @@ test('get', function (): void {
     $dbMock
     ->shouldReceive('getExistingModelById')
     ->atLeast()->once()
-    ->andReturn(new Model_Admin());
+    ->andReturn(staffAdminIdentity());
 
     $di = container();
     $di['db'] = $dbMock;
@@ -103,7 +112,7 @@ test('update', function (): void {
     $dbMock
     ->shouldReceive('getExistingModelById')
     ->atLeast()->once()
-    ->andReturn(new Model_Admin());
+    ->andReturn(staffAdminIdentity());
 
     $di = container();
     $di['db'] = $dbMock;
@@ -130,7 +139,7 @@ test('delete', function (): void {
     $dbMock
     ->shouldReceive('getExistingModelById')
     ->atLeast()->once()
-    ->andReturn(new Model_Admin());
+    ->andReturn(staffAdminIdentity());
 
     $di = container();
     $di['db'] = $dbMock;
@@ -153,6 +162,9 @@ test('change password', function (): void {
 
     $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
     $validatorMock
+    ->shouldReceive('passwordsMatch')
+    ->atLeast()->once();
+    $validatorMock
     ->shouldReceive('isPasswordStrong')
     ->atLeast()->once()
     ->andReturn(true);
@@ -167,7 +179,7 @@ test('change password', function (): void {
     $dbMock
     ->shouldReceive('getExistingModelById')
     ->atLeast()->once()
-    ->andReturn(new Model_Admin());
+    ->andReturn(staffAdminIdentity());
 
     $di = container();
     $di['validator'] = $validatorMock;
@@ -265,7 +277,7 @@ test('permissions update', function (): void {
     $api = new Box\Mod\Staff\Api\Admin();
     $data = [
         'id' => '1',
-        'permissions' => 'default',
+        'permissions' => ['default' => ['all' => true]],
     ];
 
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
@@ -373,7 +385,7 @@ test('group get', function (): void {
     $di = container();
     $di['db'] = $dbMock;
 
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(staffAdminIdentity());
     $api->setDi($di);
     $api->setService($serviceMock);
 
@@ -400,7 +412,7 @@ test('group delete', function (): void {
     $di = container();
     $di['db'] = $dbMock;
 
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(staffAdminIdentity());
     $api->setDi($di);
     $api->setService($serviceMock);
 
@@ -428,7 +440,7 @@ test('group update', function (): void {
     $di = container();
     $di['db'] = $dbMock;
 
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(staffAdminIdentity());
     $api->setDi($di);
     $api->setService($serviceMock);
 
@@ -498,7 +510,7 @@ test('login history get', function (): void {
     $di = container();
     $di['db'] = $dbMock;
 
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(staffAdminIdentity());
     $api->setDi($di);
     $api->setService($serviceMock);
 

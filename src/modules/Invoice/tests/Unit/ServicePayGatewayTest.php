@@ -45,7 +45,7 @@ test('gets search query with additional params', function (): void {
     $result = $service->getSearchQuery($data);
     expect($result)->toBeArray();
     expect($result[0])->toBeString();
-    expect(strpos((string) $result[0], 'AND name LIKE :search') > 0)->toBeTrue();
+    expect(strpos((string) $result[0], 'AND (name LIKE :search OR gateway LIKE :search)') > 0)->toBeTrue();
     expect($result[1])->toBeArray();
     expect($result[1])->toBe($expectedParams);
 });

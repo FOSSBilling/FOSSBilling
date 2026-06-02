@@ -193,6 +193,9 @@ test('batch connects', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
+    $dbMock->shouldReceive('findOne')
+        ->byDefault()
+        ->andReturn(new Model_Extension());
     $di['mod'] = $di->protect(fn () => $boxModMock);
     $di['mod_service'] = $di->protect(function ($name) use ($extensionServiceMock) {
         if ($name == 'extension') {

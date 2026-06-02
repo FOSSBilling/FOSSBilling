@@ -44,6 +44,15 @@ function container(): Container
         }
     };
     $di['request'] = fn (): Request => Request::create('http://localhost/');
+    $di['session'] = static function (): object {
+        $session = \Mockery::mock(\FOSSBilling\Session::class)->shouldIgnoreMissing();
+        $session->shouldReceive('regenerateId')->byDefault()->andReturnNull();
+        $session->shouldReceive('set')->byDefault()->andReturnNull();
+        $session->shouldReceive('get')->byDefault()->andReturnNull();
+        $session->shouldReceive('delete')->byDefault()->andReturnNull();
+
+        return $session;
+    };
     $di['db'] = static function (): object {
         $db = \Mockery::mock(\Box_Database::class)->shouldIgnoreMissing();
         $db->shouldReceive('find')->byDefault()->andReturn([]);
@@ -99,6 +108,8 @@ function container(): Container
         $dbal->shouldReceive('executeQuery')->byDefault()->andReturn($result);
         $dbal->shouldReceive('executeStatement')->byDefault()->andReturn(1);
         $dbal->shouldReceive('insert')->byDefault()->andReturn(1);
+        $dbal->shouldReceive('update')->byDefault()->andReturn(1);
+        $dbal->shouldReceive('lastInsertId')->byDefault()->andReturn(1);
         $dbal->shouldReceive('createQueryBuilder')->byDefault()->andReturn($queryBuilder);
 
         return $dbal;

@@ -42,11 +42,17 @@ test('configGet gets extension config', function (): void {
     $serviceMock->shouldReceive('getConfig')
         ->atLeast()
         ->once()
+        ->with('mod_example')
         ->andReturn(['key' => 'value']);
+    $serviceMock->shouldReceive('hasManagePermission')
+        ->with('mod_example')
+        ->atLeast()
+        ->once()
+        ->andReturn(true);
 
     $api->setService($serviceMock);
 
-    $result = $api->config_get([]);
+    $result = $api->config_get(['ext' => 'mod_example']);
     expect($result)->toBeArray();
     expect($result)->toBe(['key' => 'value']);
 });

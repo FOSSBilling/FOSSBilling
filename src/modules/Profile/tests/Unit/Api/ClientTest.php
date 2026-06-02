@@ -83,6 +83,9 @@ test('changes client password', function (): void {
     $validatorMock->shouldReceive('isPasswordStrong')
         ->atLeast()->once()
         ->andReturn(true);
+    $validatorMock->shouldReceive('passwordsMatch')
+        ->atLeast()->once()
+        ->andReturn(true);
 
     $di = container();
     $di['validator'] = $validatorMock;

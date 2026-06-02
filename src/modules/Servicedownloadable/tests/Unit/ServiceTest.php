@@ -14,6 +14,7 @@ use Box\Mod\Order\Service as OrderService;
 use Box\Mod\Servicedownloadable\Service;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\moduleService;
 
 test('gets dependency injection container', function (): void {
     $service = new Service();
@@ -27,7 +28,11 @@ test('attaches order config', function (): void {
     $service = new Service();
     $productModel = new Model_Product();
     $productModel->loadBean(new Tests\Helpers\DummyBean());
-    $productModel->config = '{"filename" : "temp/asdcxTest.txt"}';
+    $storedFilename = str_repeat('a', 64);
+    $productModel->config = json_encode([
+        'filename' => 'temp/asdcxTest.txt',
+        'stored_filename' => $storedFilename,
+    ]);
 
     $data = [];
 
@@ -49,7 +54,10 @@ test('creates action', function (): void {
     $service = new Service();
     $clientOrderModel = new Model_ClientOrder();
     $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientOrderModel->config = '{"filename" : "temp/asdcxTest.txt"}';
+    $clientOrderModel->config = json_encode([
+        'filename' => 'temp/asdcxTest.txt',
+        'stored_filename' => str_repeat('b', 64),
+    ]);
 
     $model = new Model_ServiceDownloadable();
     $model->loadBean(new Tests\Helpers\DummyBean());
@@ -91,7 +99,7 @@ test('deletes action', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+    $di['mod_service'] = $di->protect(moduleService(['order' => $orderServiceMock]));
 
     $service->setDi($di);
     $service->action_delete($clientOrderModel);
