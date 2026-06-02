@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -14,6 +15,55 @@ class Model_ProductDomainTable extends Model_ProductTable
     public function getUnit(Model_Product $model): string
     {
         return 'year';
+    }
+
+    private function getRegistrationYears(array $config): int
+    {
+        if (isset($config['period']) && is_string($config['period']) && $config['period'] !== '') {
+            $period = $this->di['period']($config['period']);
+
+            return max(1, $period->getQty());
+        }
+
+        return max(1, (int) ($config['register_years'] ?? $config['quantity'] ?? 1));
+    }
+
+    private function getTldModel(array $config): Model_Tld
+    {
+        $rtable = $this->di['mod_service']('servicedomain', 'Tld');
+        $tld = '';
+
+        if (!isset($config['action'])) {
+            throw new FOSSBilling\Exception('Could not determine domain price. Domain action is missing', null, 498);
+        }
+
+        if ($config['action'] == 'register') {
+            $tld = $config['register_tld'];
+        }
+
+        if ($config['action'] == 'transfer') {
+            $tld = $config['transfer_tld'];
+        }
+
+        $tld = $rtable->findOneByTld($tld);
+        if (!$tld instanceof Model_Tld) {
+            throw new FOSSBilling\Exception('Unknown TLD. Could not determine registration price');
+        }
+
+        return $tld;
+    }
+
+    private function getRegistrationTotal(Model_Tld $tld, int $years): float
+    {
+        if ($years <= 0) {
+            return 0.0;
+        }
+
+        if ($years <= 1) {
+            return (float) $tld->price_registration;
+        }
+
+        return (float) $tld->price_registration + (($years - 1) * (float) $tld->price_renew);
     }
 
     protected function getStartingFromPrice(Model_Product $model)
@@ -55,8 +105,9 @@ class Model_ProductDomainTable extends Model_ProductTable
             ) {
                 if ($this->_hasFreePeriod($addon)) {
                     $factor = $this->discountFactor($addon, $config['period']);
+                    $tld = $this->getTldModel($config);
 
-                    return $factor * $this->getProductPrice($product, $config);
+                    return $this->getRegistrationTotal($tld, $factor);
                 }
 
                 return 0;
@@ -76,9 +127,9 @@ class Model_ProductDomainTable extends Model_ProductTable
 
     private function _hasFreePeriod($addon): bool
     {
-        $free_domain_periods = $addon['config']['free_domain_periods'];
+        $free_domain_periods = $addon['config']['free_domain_periods'] ?? [];
         $addon_period = $addon['config']['period'];
-        if (in_array($addon_period, $free_domain_periods) || sizeof($free_domain_periods) > 0) {
+        if (in_array($addon_period, $free_domain_periods)) {
             return true;
         }
 
@@ -97,8 +148,8 @@ class Model_ProductDomainTable extends Model_ProductTable
         $addon_sys_period = $this->di['period']($addon_period);
         $addon_qty = $addon_sys_period->getQty();
 
-        $free_domain_periods = $addon['config']['free_domain_periods'];
-        if ((is_countable($free_domain_periods) ? count($free_domain_periods) : 0) > 0) {
+        $free_domain_periods = $addon['config']['free_domain_periods'] ?? [];
+        if (FOSSBilling\Tools::safeCount($free_domain_periods) > 0) {
             // if hosting and domain periods are equal, return domain quantity (year)
             if ($addon_period == $period) {
                 if (in_array($addon_period, $free_domain_periods)) {
@@ -120,15 +171,13 @@ class Model_ProductDomainTable extends Model_ProductTable
                     }
                 }
 
-                if (count($free_domain_qtys) > 1) {
+                if (count($free_domain_qtys) > 0) {
                     return min($ref_item_qty, min($free_domain_qtys));
                 }
-
-                return min($ref_item_qty, $free_domain_qtys[0]);
             }
-        } else {
-            return 0;
         }
+
+        return 0;
     }
 
     /**
@@ -142,14 +191,21 @@ class Model_ProductDomainTable extends Model_ProductTable
     private function _isFreeDomainSet($item): bool
     {
         $free_domain = $item['config']['free_domain'] ?? false;
+
+        if (!$free_domain) {
+            return false;
+        }
+
         $tld = $item['config']['tld'] ?? null;
         $free_tlds = $item['config']['free_tlds'] ?? [];
 
-        if ($tld != null && !$free_domain && is_array($free_tlds) && in_array($tld, $free_tlds)) {
+        // When free_tlds is empty, all TLDs are eligible for a free domain.
+        if (empty($free_tlds)) {
             return true;
         }
 
-        return false;
+        // When free_tlds is non-empty, only whitelisted TLDs are eligible.
+        return $tld !== null && in_array($tld, $free_tlds);
     }
 
     private function registerDomainMatch($item, $config)
@@ -213,32 +269,64 @@ class Model_ProductDomainTable extends Model_ProductTable
         return $pricing;
     }
 
+    /**
+     * @return array{price: float, quantity: int, setup_price: float}
+     */
     #[Override]
-    public function getProductPrice(Model_Product $product, ?array $config = null)
+    public function getOrderLineConfig(Model_Product $product, ?array $config = null): array
     {
-        $rtable = $this->di['mod_service']('servicedomain', 'Tld');
-        $tld = '';
-
         if (!isset($config['action'])) {
             throw new FOSSBilling\Exception('Could not determine domain price. Domain action is missing', null, 498);
         }
 
         if ($config['action'] == 'owndomain') {
+            return [
+                'price' => 0.0,
+                'quantity' => 1,
+                'setup_price' => 0.0,
+            ];
+        }
+
+        $tld = $this->getTldModel($config);
+
+        if ($config['action'] == 'register') {
+            return [
+                'price' => $this->getRegistrationTotal($tld, $this->getRegistrationYears($config)),
+                'quantity' => 1,
+                'setup_price' => 0.0,
+            ];
+        }
+
+        return [
+            'price' => (float) $tld->price_transfer,
+            'quantity' => 1,
+            'setup_price' => 0.0,
+        ];
+    }
+
+    /**
+     * Resolved pricing for renewal lines in default currency.
+     *
+     * @return array{price: float, quantity: int}
+     */
+    public function getRenewalLineConfig(Model_Product $product, ?array $config = null): array
+    {
+        $tld = $this->getTldModel($config ?? []);
+
+        return [
+            'price' => (float) $tld->price_renew,
+            'quantity' => $this->getRegistrationYears($config ?? []),
+        ];
+    }
+
+    #[Override]
+    public function getProductPrice(Model_Product $product, ?array $config = null)
+    {
+        if (($config['action'] ?? null) == 'owndomain') {
             return 0;
         }
 
-        if ($config['action'] == 'register') {
-            $tld = $config['register_tld'];
-        }
-
-        if ($config['action'] == 'transfer') {
-            $tld = $config['transfer_tld'];
-        }
-
-        $tld = $rtable->findOneByTld($tld);
-        if (!$tld instanceof Model_Tld) {
-            throw new FOSSBilling\Exception('Unknown TLD. Could not determine registration price');
-        }
+        $tld = $this->getTldModel($config ?? []);
 
         if ($config['action'] == 'register') {
             return $tld->price_registration;

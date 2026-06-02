@@ -15,6 +15,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use FOSSBilling\Config;
 use FOSSBilling\Exception;
+use FOSSBilling\Tools;
 
 class DriverManagerFactory
 {
@@ -39,6 +40,26 @@ class DriverManagerFactory
     ];
 
     /**
+     * Returns the database configuration in the shape expected by Doctrine.
+     *
+     * Older FOSSBilling versions used db.type=mysql and some installs may not
+     * have been rewritten by the config patcher before a database connection is
+     * requested during an upgrade.
+     */
+    public static function getDatabaseConfig(): array
+    {
+        $dbConfig = Config::getProperty('db', []);
+        if (!is_array($dbConfig)) {
+            throw new Exception('Database configuration is invalid.');
+        }
+
+        $dbConfig['driver'] ??= self::normalizeDriver($dbConfig['type'] ?? 'pdo_mysql');
+        $dbConfig['port'] = Tools::normalizePort($dbConfig['port'] ?? null, 3306);
+
+        return $dbConfig;
+    }
+
+    /**
      * Creates and returns a Doctrine DBAL Connection instance.
      *
      * @param array $driverOptions optional driver-specific options
@@ -47,7 +68,7 @@ class DriverManagerFactory
      */
     public static function getConnection(array $driverOptions = []): Connection
     {
-        $dbConfig = Config::getProperty('db');
+        $dbConfig = self::getDatabaseConfig();
 
         $requiredKeys = ['driver', 'host', 'port', 'name', 'user', 'password'];
         foreach ($requiredKeys as $key) {
@@ -77,5 +98,13 @@ class DriverManagerFactory
         ];
 
         return DriverManager::getConnection($connectionParams);
+    }
+
+    private static function normalizeDriver(string $driver): string
+    {
+        return match ($driver) {
+            'mysql' => 'pdo_mysql',
+            default => $driver,
+        };
     }
 }

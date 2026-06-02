@@ -1,0 +1,31 @@
+{% set _form_header_actions_fallback %}{% block form_header_actions %}{% endblock %}{% endset %}
+{% set form_header_actions = block('form_header_actions')|trim %}
+{% set _form_content_fallback %}{% block form_content %}{% endblock %}{% endset %}
+{% set form_content = block('form_content')|trim %}
+{% set _form_actions_fallback %}{% block form_actions %}{% endblock %}{% endset %}
+{% set form_actions = block('form_actions')|trim %}
+
+<div class="card{% if card_class|default('') %} {{ card_class }}{% endif %}">
+    <div class="card-body{% if body_class|default('') %} {{ body_class }}{% endif %}">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+            <div class="d-flex flex-column gap-1">
+                <h5 class="card-title mb-0">{{ title }}</h5>
+                {% if subtitle is defined and subtitle %}
+                    <p class="text-secondary mb-0">{{ subtitle }}</p>
+                {% endif %}
+            </div>
+            {% if form_header_actions %}
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    {{ form_header_actions|raw }}
+                </div>
+            {% endif %}
+        </div>
+        {{ form_content|raw }}
+    </div>
+
+    {% if form_actions %}
+        <div class="card-footer d-flex justify-content-{{ footer_align|default('end') }}">
+            {{ form_actions|raw }}
+        </div>
+    {% endif %}
+</div>

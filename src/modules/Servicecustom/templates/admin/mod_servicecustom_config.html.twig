@@ -1,0 +1,70 @@
+<div class="card-body">
+    <div class="mb-5">
+        <div class="mb-3">
+            <h3 class="card-title mb-1">{{ 'Plugin Settings'|trans }}</h3>
+            <p class="text-secondary mb-0">{{ 'Choose the custom service plugin that should handle this product and maintain any additional configuration values it requires.'|trans }}</p>
+        </div>
+
+        <form method="post" action="{{ 'product/update'|api_url }}" {{ fb_api_form({message: 'Settings Updated'|trans}) }}>
+            <div class="row g-3">
+                <div class="col-lg-6">
+                    <label class="form-label">{{ 'Plugin Name'|trans }}</label>
+                    <input class="form-control" type="text" name="plugin" value="{{ product.plugin }}">
+                </div>
+            </div>
+            <input type="hidden" name="id" value="{{ product.id }}">
+            <div class="d-flex justify-content-end mt-3">
+                <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
+            </div>
+        </form>
+    </div>
+
+    <hr class="my-4" />
+
+    <form method="post" action="{{ 'product/update_config'|api_url }}" {{ fb_api_form({reload: true}) }}>
+        <div class="mb-5">
+            <div class="mb-3">
+                <h3 class="card-title mb-1">{{ 'Custom Parameters'|trans }}</h3>
+                <p class="text-secondary mb-0">{{ 'Existing product-level parameters are passed to the custom service plugin when the service is provisioned or managed.'|trans }}</p>
+            </div>
+
+            <div class="row g-3">
+                {% for key, value in product.config %}
+                    <div class="col-12">
+                        <label class="form-label">{{ key }}</label>
+                        <input class="form-control" type="text" name="config[{{ key }}]" value="{{ value }}">
+                    </div>
+                {% else %}
+                    <div class="col-12">
+                        <div class="alert alert-secondary mb-0">{{ 'No custom parameters have been defined yet.'|trans }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <hr class="my-4" />
+
+        <div class="mb-4">
+            <div class="mb-3">
+                <h3 class="card-title mb-1">{{ 'Add Custom Parameter'|trans }}</h3>
+                <p class="text-secondary mb-0">{{ 'Create a new parameter that will be stored with this product configuration and made available to the custom service.'|trans }}</p>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-lg-6">
+                    <label class="form-label">{{ 'Parameter Name'|trans }}</label>
+                    <input class="form-control" type="text" name="new_config_name">
+                </div>
+                <div class="col-12">
+                    <label class="form-label">{{ 'Parameter Value'|trans }}</label>
+                    <textarea class="form-control" name="new_config_value" rows="7"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <input type="hidden" name="id" value="{{ product.id }}">
+        <div class="d-flex justify-content-end">
+            <button class="btn btn-primary" type="submit">{{ 'Update Configuration Fields'|trans }}</button>
+        </div>
+    </form>
+</div>

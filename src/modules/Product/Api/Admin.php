@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -15,6 +16,7 @@
 
 namespace Box\Mod\Product\Api;
 
+use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \Api_Abstract
@@ -26,11 +28,13 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'view');
+
         $service = $this->getService();
 
         [$sql, $params] = $service->getProductSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+
         foreach ($pager['list'] as $key => $item) {
             $model = $this->di['db']->getExistingModelById('Product', $item['id'], 'Post not found');
             $pager['list'][$key] = $this->getService()->toApiArray($model, false, $this->getIdentity());
@@ -46,6 +50,8 @@ class Admin extends \Api_Abstract
      */
     public function get_pairs($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'view');
+
         $service = $this->getService();
 
         return $service->getPairs($data);
@@ -58,6 +64,8 @@ class Admin extends \Api_Abstract
      */
     public function get($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'view');
+
         $model = $this->_getProduct($data);
         $service = $this->getService();
 
@@ -71,6 +79,8 @@ class Admin extends \Api_Abstract
      */
     public function get_types()
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'view');
+
         return $this->getService()->getTypes();
     }
 
@@ -86,6 +96,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['title' => 'You must specify a title', 'type' => 'Type was not passed'])]
     public function prepare($data): int
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_products');
+
         $service = $this->getService();
         // allow having only one domain product
         if ($data['type'] == 'domain') {
@@ -130,6 +142,8 @@ class Admin extends \Api_Abstract
      */
     public function update($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_products');
+
         $model = $this->_getProduct($data);
         $service = $this->getService();
 
@@ -143,9 +157,12 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['priority' => 'priority params is missing'])]
     public function update_priority($data)
     {
-        if (!isset($data['priority']) || !is_array($data['priority'])) {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_products');
+
+        if (!is_array($data['priority'] ?? null)) {
             throw new \FOSSBilling\Exception('priority params is missing');
         }
 
@@ -163,6 +180,8 @@ class Admin extends \Api_Abstract
      */
     public function update_config($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_products');
+
         $model = $this->_getProduct($data);
 
         $service = $this->getService();
@@ -177,6 +196,8 @@ class Admin extends \Api_Abstract
      */
     public function addon_get_pairs($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'view');
+
         return $this->getService()->getAddons();
     }
 
@@ -190,6 +211,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['title' => 'You must specify a title'])]
     public function addon_create($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_products');
+
         $title = $data['title'];
         $status = $data['status'] ?? null;
         $setup = $data['setup'] ?? null;
@@ -211,6 +234,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Addon ID was not passed'])]
     public function addon_get($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'view');
+
         $model = $this->di['db']->load('Product', $data['id']);
         if (!$model instanceof \Model_Product || !$model->is_addon) {
             throw new \FOSSBilling\Exception('Addon not found');
@@ -246,6 +271,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Addon ID was not passed'])]
     public function addon_update($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_products');
+
         $model = $this->di['db']->load('Product', $data['id']);
         if (!$model instanceof \Model_Product || !$model->is_addon) {
             throw new \FOSSBilling\Exception('Addon not found');
@@ -262,6 +289,8 @@ class Admin extends \Api_Abstract
      */
     public function addon_delete($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_products');
+
         return $this->delete($data);
     }
 
@@ -272,6 +301,8 @@ class Admin extends \Api_Abstract
      */
     public function delete($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_products');
+
         $model = $this->_getProduct($data);
         $service = $this->getService();
 
@@ -285,6 +316,8 @@ class Admin extends \Api_Abstract
      */
     public function category_get_pairs($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'view');
+
         return $this->getService()->getProductCategoryPairs($data);
     }
 
@@ -302,6 +335,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function category_update($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_categories');
+
         $model = $this->di['db']->getExistingModelById('ProductCategory', $data['id'], 'Category not found');
 
         $title = $data['title'] ?? null;
@@ -323,9 +358,11 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function category_get($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'view');
+
         $model = $this->di['db']->getExistingModelById('ProductCategory', $data['id'], 'Category not found');
 
-        return $this->getService()->toProductCategoryApiArray($model);
+        return $this->getService()->toProductCategoryApiArray($model, true, $this->getIdentity());
     }
 
     /**
@@ -341,6 +378,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['title' => 'Category title is required'])]
     public function category_create($data): int
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_categories');
+
         $service = $this->getService();
 
         $title = $data['title'] ?? null;
@@ -360,6 +399,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function category_delete($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_categories');
+
         $model = $this->di['db']->getExistingModelById('ProductCategory', $data['id'], 'Category not found');
         $service = $this->getService();
 
@@ -373,10 +414,13 @@ class Admin extends \Api_Abstract
      */
     public function promo_get_list($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'view');
+
         $service = $this->getService();
+
         [$sql, $params] = $service->getPromoSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+
         foreach ($pager['list'] as $key => $item) {
             $model = $this->di['db']->getExistingModelById('Promo', $item['id'], 'Promo not found');
             $pager['list'][$key] = $this->getService()->toPromoApiArray($model);
@@ -409,6 +453,8 @@ class Admin extends \Api_Abstract
     ])]
     public function promo_create($data): int
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_promos');
+
         $products = [];
         if (isset($data['products']) && is_array($data['products'])) {
             $products = $data['products'];
@@ -437,6 +483,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Promo ID was not passed'])]
     public function promo_get($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'view');
+
         $id = $data['id'] ?? null;
         $model = $this->di['db']->getExistingModelById('Promo', $id, 'Promo not found');
 
@@ -467,6 +515,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Promo ID was not passed'])]
     public function promo_update($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_promos');
+
         $model = $this->di['db']->getExistingModelById('Promo', $data['id'], 'Promo not found');
 
         $service = $this->getService();
@@ -484,6 +534,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Promo ID was not passed'])]
     public function promo_delete($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_promos');
+
         $model = $this->di['db']->getExistingModelById('Promo', $data['id'], 'Promo not found');
 
         return $this->getService()->deletePromo($model);

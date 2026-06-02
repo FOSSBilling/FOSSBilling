@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -122,7 +123,7 @@ class Client extends \Api_Abstract
         }
 
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof \Model_ServiceDomain) {
+        if (!$s instanceof \Model_ServiceDomain || $order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 

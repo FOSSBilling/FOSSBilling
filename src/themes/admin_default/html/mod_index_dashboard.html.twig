@@ -1,42 +1,40 @@
-{% extends 'layout_default.html.twig' %}
-
-{% import 'macro_functions.html.twig' as mf %}
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+{% set active_menu = 'dashboard' %}
 
 {% block meta_title %}{{ 'Dashboard'|trans }}{% endblock %}
 
 {% block content %}
-    {% for alert in admin.system_cas_messages() %}
-    <div class="alert alert-{{ alert.type }} {{ alert.dismissible ? "alert-dismissible" : "" }}" role="alert">
-        <h3 class="mb-1">{{ alert.title }}</h3>
-        <p>{{ alert.message }}</p>
-        {% if alert.buttons|length > 0 %}
-            <div class="btn-list">
-            {% for button in alert.buttons %}
-                <a href="{{ button.link }}" class="btn {{ button.type ? "btn-" ~ button.type : "" }}">{{ button.text }}</a>
-            {% endfor %}
-            </div>
+    {% set dashboardPageSizes = ['5', '10', '20'] %}
+    {% set dashboardSection = request.dashboard_section|default('') %}
+
+    {% if request.ajax and dashboardSection in ['invoices', 'orders', 'product-sales'] %}
+        {% if dashboardSection == 'invoices' %}
+            {{ include('partial_dashboard_invoices_card.html.twig') }}
+        {% elseif dashboardSection == 'orders' %}
+            {{ include('partial_dashboard_orders_card.html.twig') }}
+        {% elseif dashboardSection == 'product-sales' and admin.system_is_allowed({ 'mod': 'stats' }) %}
+            {{ include('partial_dashboard_product_sales_card.html.twig') }}
         {% endif %}
+    {% else %}
+    {% set alerts = admin.system_cas_messages()|merge(admin.system_messages()) %}
+    {% for alert in alerts %}
+    {% set alertIcon = {danger: 'alert-triangle', warning: 'alert-triangle', success: 'circle-check', info: 'info'}[alert.type]|default('info') %}
+    <div class="alert alert-{{ alert.type }} {{ alert.dismissible ? "alert-dismissible" : "" }} fade show mb-3" role="alert">
+        <div class="alert-icon">
+            <svg class="icon alert-icon icon-2" aria-hidden="true">
+                <use xlink:href="{{ 'build/symbol/icons-sprite.svg'|asset_url }}#{{ alertIcon }}" />
+            </svg>
+        </div>
+        {% if alert.title %}
+            <strong>{{ alert.title }}</strong>{% if alert.message %} {% endif %}
+        {% endif %}
+        {{ alert.message }}
+        {% for button in alert.buttons %}
+            <a href="{{ button.link }}" class="alert-action">{{ button.text }}</a>
+        {% endfor %}
         {% if alert.dismissible %}
-            <a class="btn-close" data-bs-dismiss="alert" aria-label="{{ 'Close'|trans }}"></a>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ 'Close'|trans }}"></button>
         {% endif %}
-    </div>
-    {% endfor %}
-    {% for msg in admin.system_messages({ 'type': 'danger' }) %}
-    <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
-        <strong>{{ 'Danger!'|trans }}</strong> {% if msg.url is not empty %}<a href="{{ msg.url }}">{{ msg.text }}</a>{% else %} {{ msg.text }} {% endif %}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ 'Close'|trans }}"></button>
-    </div>
-    {% endfor %}
-    {% for msg in admin.system_messages({ 'type': 'warning' }) %}
-    <div class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
-        <strong>{{ 'Warning'|trans }}:</strong> {% if msg.url is not empty %}<a href="{{ msg.url }}">{{ msg.text }}</a>{% else %} {{ msg.text }} {% endif %}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ 'Close'|trans }}"></button>
-    </div>
-    {% endfor %}
-    {% for msg in admin.system_messages({ 'type': 'info' }) %}
-    <div class="alert alert-primary alert-dismissible fade show mb-3" role="alert">
-        <strong>{{ 'Information'|trans }}:</strong> {% if msg.url is not empty %}<a href="{{ msg.url }}">{{ msg.text }}</a>{% else %} {{ msg.text }} {% endif %}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ 'Close'|trans }}"></button>
     </div>
     {% endfor %}
 
@@ -48,14 +46,15 @@
         {% set order_statuses = admin.order_get_statuses %}
         {% set invoice_statuses = admin.invoice_get_statuses %}
         {% set support_statuses = admin.support_ticket_get_statuses %}
+        {% set currency = guest.currency_get %}
 
         <div class="col-sm-6 col-lg-3">
-            <a href="{{ 'client'|alink }}" class="card card-sm">
-                <div class="card-body">
+            <a href="{{ 'client'|url }}" class="card card-sm h-100">
+                <div class="card-body d-flex align-items-center h-100">
                     {% if client_statuses.suspended > 0 %}
-                    <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger text-light">{{ client_statuses.suspended }}</span>
+                    <span class="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger text-light">{{ client_statuses.suspended }}</span>
                     {% endif %}
-                    <div class="row align-items-center">
+                    <div class="row align-items-center w-100">
                         <div class="col-auto">
                             <span class="bg-blue text-white avatar">
                                 <svg class="icon">
@@ -64,20 +63,20 @@
                             </span>
                         </div>
                         <div class="col">
-                            <div class="font-weight-medium">{{ stats.clients_total }} {{ 'clients'|trans }}</div>
-                            <div class="text-muted">{{ client_statuses.suspended }} {{ 'suspended'|trans }}</div>
+                            <div class="font-weight-medium">{{ stats.clients_total }} {{ 'Clients'|trans }}</div>
+                            <div class="text-muted">{{ client_statuses.suspended }} {{ 'Suspended'|trans }}</div>
                         </div>
                     </div>
                 </div>
             </a>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <a href="{{ 'order'|alink }}" class="card card-sm">
-                <div class="card-body">
+            <a href="{{ 'order'|url }}" class="card card-sm h-100">
+                <div class="card-body d-flex align-items-center h-100">
                     {% if order_statuses.suspended > 0 %}
-                    <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger text-light">{{ order_statuses.suspended }}</span>
+                    <span class="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger text-light">{{ order_statuses.suspended }}</span>
                     {% endif %}
-                    <div class="row align-items-center">
+                    <div class="row align-items-center w-100">
                         <div class="col-auto">
                         <span class="bg-green text-white avatar">
                             <svg class="icon">
@@ -86,20 +85,20 @@
                         </span>
                         </div>
                         <div class="col">
-                            <div class="font-weight-medium">{{ stats.orders_total }} {{ 'orders'|trans }}</div>
-                            <div class="text-muted">{{ order_statuses.suspended }} {{ 'suspended'|trans }}</div>
+                            <div class="font-weight-medium">{{ stats.orders_total }} {{ 'Orders'|trans }}</div>
+                            <div class="text-muted">{{ order_statuses.suspended }} {{ 'Suspended'|trans }}</div>
                         </div>
                     </div>
                 </div>
             </a>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <a href="{{ 'invoice'|alink }}" class="card card-sm">
-                <div class="card-body">
+            <a href="{{ 'invoice'|url }}" class="card card-sm h-100">
+                <div class="card-body d-flex align-items-center h-100">
                     {% if invoice_statuses.unpaid > 0 %}
-                    <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger text-light">{{ invoice_statuses.unpaid }}</span>
+                        <div class="ribbon ribbon-top bg-red">{{ invoice_statuses.unpaid }}</div>
                     {% endif %}
-                    <div class="row align-items-center">
+                    <div class="row align-items-center w-100">
                         <div class="col-auto">
                             <span class="bg-danger text-white avatar">
                                 <svg class="icon">
@@ -108,20 +107,20 @@
                             </span>
                         </div>
                         <div class="col">
-                            <div class="font-weight-medium">{{ stats.invoices_total }} {{ 'invoices'|trans }}</div>
-                            <div class="text-muted">{{ invoice_statuses.unpaid }} {{ 'unpaid'|trans }}</div>
+                            <div class="font-weight-medium">{{ stats.invoices_total }} {{ 'Invoices'|trans }}</div>
+                            <div class="text-muted">{{ invoice_statuses.unpaid }} {{ 'Unpaid'|trans }}</div>
                         </div>
                     </div>
                 </div>
             </a>
         </div>
         <div class="col-sm-6 col-lg-3">
-            <a href="{{ 'support'|alink }}" class="card card-sm">
-                <div class="card-body">
+            <a href="{{ 'support'|url }}" class="card card-sm h-100">
+                <div class="card-body d-flex align-items-center h-100">
                     {% if support_statuses.open > 0 %}
-                    <span class="position-absolute top-0 translate-middle badge rounded-pill bg-danger text-light">{{ support_statuses.open }}</span>
+                        <div class="ribbon ribbon-top bg-red">{{ support_statuses.open }}</div>
                     {% endif %}
-                    <div class="row align-items-center">
+                    <div class="row align-items-center w-100">
                         <div class="col-auto">
                         <span class="bg-warning text-white avatar">
                             <svg class="icon">
@@ -130,8 +129,8 @@
                         </span>
                         </div>
                         <div class="col">
-                            <div class="font-weight-medium">{{ stats.tickets_total }} {{ 'tickets'|trans }}</div>
-                            <div class="text-muted">{{ support_statuses.open }} {{ 'waiting for staff reply'|trans }}</div>
+                            <div class="font-weight-medium">{{ stats.tickets_total }} {{ 'Tickets'|trans }}</div>
+                            <div class="text-muted">{{ support_statuses.open }} {{ 'Waiting for Staff Reply'|trans }}</div>
                         </div>
                     </div>
                 </div>
@@ -150,8 +149,8 @@
                             <th></th>
                             <th class="text-center">{{ 'Today'|trans }}</th>
                             <th class="text-center">{{ 'Yesterday'|trans }}</th>
-                            <th class="text-center">{{ 'This month so far'|trans }}</th>
-                            <th class="text-center">{{ 'Last month'|trans }}</th>
+                            <th class="text-center">{{ 'This Month So Far'|trans }}</th>
+                            <th class="text-center">{{ 'Last Month'|trans }}</th>
                             <th class="text-center">{{ 'Total'|trans }}</th>
                         </tr>
                     </thead>
@@ -159,91 +158,91 @@
                         <tr>
                             <td>{{ 'Income'|trans }}</td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|alink({ 'paid_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ mf.currency_format(income.today) }}</a>
+                                <a href="{{ 'invoice'|url(query: { 'paid_at': 'now'|date('Y-m-d')}) }}" class="dashboard-stat-link">{{ income.today|format_currency(currency.code) }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|alink({ 'paid_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ mf.currency_format(income.yesterday) }}</a>
+                                <a href="{{ 'invoice'|url(query: { 'paid_at': 'yesterday'|date('Y-m-d')}) }}" class="dashboard-stat-link">{{ income.yesterday|format_currency(currency.code) }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|alink }}" class="text-danger">{{ mf.currency_format(income.this_month) }}</a>
+                                <a href="{{ 'invoice'|url }}" class="dashboard-stat-link">{{ income.this_month|format_currency(currency.code) }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|alink }}" class="text-danger">{{ mf.currency_format(income.last_month) }}</a>
+                                <a href="{{ 'invoice'|url }}" class="dashboard-stat-link">{{ income.last_month|format_currency(currency.code) }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|alink }}" class="text-danger">{{ mf.currency_format(income.total) }}</a>
+                                <a href="{{ 'invoice'|url }}" class="dashboard-stat-link">{{ income.total|format_currency(currency.code) }}</a>
                             </td>
                         </tr>
                         <tr>
                             <td>{{ 'Clients'|trans }}</td>
                             <td class="text-center">
-                                <a href="{{ 'client'|alink({ 'created_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ stats.clients_today }}</a>
+                                <a href="{{ 'client'|url(query: { 'created_at': 'now'|date('Y-m-d')}) }}" class="dashboard-stat-link">{{ stats.clients_today }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'client'|alink({ 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ stats.clients_yesterday }}</a>
+                                <a href="{{ 'client'|url(query: { 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="dashboard-stat-link">{{ stats.clients_yesterday }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'client'|alink }}" class="text-danger">{{ stats.clients_this_month }}</a>
+                                <a href="{{ 'client'|url }}" class="dashboard-stat-link">{{ stats.clients_this_month }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'client'|alink }}" class="text-danger">{{ stats.clients_last_month }}</a>
+                                <a href="{{ 'client'|url }}" class="dashboard-stat-link">{{ stats.clients_last_month }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'client'|alink }}" class="text-danger">{{ stats.clients_total }}</a>
+                                <a href="{{ 'client'|url }}" class="dashboard-stat-link">{{ stats.clients_total }}</a>
                             </td>
                         </tr>
                         <tr>
                             <td>{{ 'Orders'|trans }}</td>
                             <td class="text-center">
-                                <a href="{{ 'order'|alink({ 'created_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ stats.orders_today }}</a>
+                                <a href="{{ 'order'|url(query: { 'created_at': 'now'|date('Y-m-d')}) }}" class="dashboard-stat-link">{{ stats.orders_today }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'order'|alink({ 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ stats.orders_yesterday }}</a>
+                                <a href="{{ 'order'|url(query: { 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="dashboard-stat-link">{{ stats.orders_yesterday }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'order'|alink }}" class="text-danger">{{ stats.orders_this_month }}</a>
+                                <a href="{{ 'order'|url }}" class="dashboard-stat-link">{{ stats.orders_this_month }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'order'|alink }}" class="text-danger">{{ stats.orders_last_month }}</a>
+                                <a href="{{ 'order'|url }}" class="dashboard-stat-link">{{ stats.orders_last_month }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'order'|alink }}" class="text-danger">{{ stats.orders_total }}</a>
+                                <a href="{{ 'order'|url }}" class="dashboard-stat-link">{{ stats.orders_total }}</a>
                             </td>
                         </tr>
                         <tr>
                             <td>{{ 'Invoices'|trans }}</td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|alink({ 'created_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ stats.invoices_today }}</a>
+                                <a href="{{ 'invoice'|url(query: { 'created_at': 'now'|date('Y-m-d')}) }}" class="dashboard-stat-link">{{ stats.invoices_today }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|alink({ 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ stats.invoices_yesterday }}</a>
+                                <a href="{{ 'invoice'|url(query: { 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="dashboard-stat-link">{{ stats.invoices_yesterday }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|alink }}" class="text-danger">{{ stats.invoices_this_month }}</a>
+                                <a href="{{ 'invoice'|url }}" class="dashboard-stat-link">{{ stats.invoices_this_month }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|alink }}" class="text-danger">{{ stats.invoices_last_month }}</a>
+                                <a href="{{ 'invoice'|url }}" class="dashboard-stat-link">{{ stats.invoices_last_month }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'invoice'|alink }}" class="text-danger">{{ stats.invoices_total }}</a>
+                                <a href="{{ 'invoice'|url }}" class="dashboard-stat-link">{{ stats.invoices_total }}</a>
                             </td>
                         </tr>
                         <tr>
                             <td>{{ 'Tickets'|trans }}</td>
                             <td class="text-center">
-                                <a href="{{ 'support'|alink({ 'created_at': 'now'|date('Y-m-d')}) }}" class="text-danger">{{ stats.tickets_today }}</a>
+                                <a href="{{ 'support'|url(query: { 'created_at': 'now'|date('Y-m-d')}) }}" class="dashboard-stat-link">{{ stats.tickets_today }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'support'|alink({ 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="text-danger">{{ stats.tickets_yesterday }}</a>
+                                <a href="{{ 'support'|url(query: { 'created_at': 'yesterday'|date('Y-m-d')}) }}" class="dashboard-stat-link">{{ stats.tickets_yesterday }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'support'|alink }}" class="text-danger">{{ stats.tickets_this_month }}</a>
+                                <a href="{{ 'support'|url }}" class="dashboard-stat-link">{{ stats.tickets_this_month }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'support'|alink }}" class="text-danger">{{ stats.tickets_last_month }}</a>
+                                <a href="{{ 'support'|url }}" class="dashboard-stat-link">{{ stats.tickets_last_month }}</a>
                             </td>
                             <td class="text-center">
-                                <a href="{{ 'support'|alink }}" class="text-danger">{{ stats.tickets_total }}</a>
+                                <a href="{{ 'support'|url }}" class="dashboard-stat-link">{{ stats.tickets_total }}</a>
                             </td>
                         </tr>
                     </tbody>
@@ -253,135 +252,11 @@
         </div>
     {% endif %}
 
-    {% set invoicesUnpaid = admin.invoice_get_list({ 'status': 'unpaid' }) %}
-    {% if invoicesUnpaid.list|length > 0 %}
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">{{ 'Invoices'|trans }}</h3>
-                <div class="card-actions">
-                    <a href="{{ '/invoice'|alink }}" class="btn-action">
-                        <svg class="icon">
-                            <use xlink:href="#dots-vertical" />
-                        </svg>
-                    </a>
-                </div>
-            </div>
+    {{ include('partial_dashboard_invoices_card.html.twig') }}
+    {{ include('partial_dashboard_orders_card.html.twig') }}
 
-            <div class="table-responsive">
-                <table class="table card-table table-vcenter table-striped text-nowrap">
-                    <tbody>
-                        {% for invoice in invoicesUnpaid.list %}
-                        <tr>
-                            <td class="w-1">
-                                <a href="{{ '/invoice/manage'|alink }}/{{ invoice.id }}">{{ invoice.serie_nr }}</a>
-                            </td>
-                            <td class="w-1">
-                                <a href="{{ 'client'|alink }}/manage/{{ invoice.client.id }}">
-                                    <span class="db-avatar avatar avatar-xs" data-avatar-seed="{{ invoice.buyer.email|hash('xxh128') }}" data-avatar-size="24"></span>
-                                </a>
-                            </td>
-                            <td>
-                                <a href="{{ 'client'|alink }}/manage/{{ invoice.client.id }}">{{ invoice.buyer.first_name }} {{ invoice.buyer.last_name }}</a>
-                            </td>
-                            <td class="text-center">{{ mf.currency_format(invoice.total, invoice.currency) }}</td>
-                            <td class="text-center">{{ invoice.created_at|format_date }}</td>
-                            <td>
-                                {% if invoice.status == 'paid' %}
-                                    <span class="badge bg-success me-1"></span>
-                                {% endif %}
-                                {% if invoice.status == 'unpaid' %}
-                                    <span class="badge bg-danger me-1"></span>
-                                {% endif %}
-                                {% if invoice.status == 'refunded' %}
-                                    <span class="badge bg-warning me-1"></span>
-                                {% endif %}
-                                {% if invoice.status == 'canceled' %}
-                                    <span class="badge bg-secondary me-1"></span>
-                                {% endif %}
-                                {{ mf.status_name(invoice.status) }}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    {% set orders = admin.order_get_list({ 'per_page': '5', 'status': 'active' }) %}
-    {% if orders.list|length > 0 %}
-        <div class="col-lg-6">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">{{ 'Latest orders'|trans }}</h3>
-                    <span class="ms-2 badge bg-success">
-                        <a href="{{ 'order'|alink }}" class="text-white">+{{ orders.total }}</a>
-                    </span>
-                    <div class="card-actions">
-                        <a href="{{ '/order'|alink }}" class="btn-action">
-                            <svg class="icon">
-                                <use xlink:href="#dots-vertical" />
-                            </svg>
-                        </a>
-                    </div>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table card-table table-vcenter table-striped text-nowrap">
-                        <tbody>
-                        {% for order in orders.list %}
-                            <tr title="{{ order.created_at|timeago }} {{ 'ago'|trans }}">
-                                <td>
-                                    <a href="{{ 'client/manage'|alink }}/{{ order.client_id }}">{{ order.client.first_name }} {{ order.client.last_name }}</a>
-                                </td>
-                                <td>
-                                    <a href="{{ 'order/manage'|alink }}/{{ order.id }}">{{ order.title|truncate(35) }}</a>
-                                </td>
-                            </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="2" align="center">{{ 'The list is empty'|trans }}</td>
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        {# <div class="col-lg-6">
-            <div class="widget card">
-                <div class="head">
-                    <h5 class="iGraph">{{ 'Product sales'|trans }}</h5>
-                </div>
-                <div>
-                    <table class="tableStatic wide">
-                        <thead>
-                            <tr>
-                                <td>{{ 'Product/Service'|trans }}</td>
-                                <td>{{ 'Orders'|trans }}</td>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {% for p in admin.stats_get_product_summary %}
-                            <tr>
-                                <td><a href="{{ 'product/manage'|alink }}/{{ p.id }}" title="{{ p.title }}">{{ p.title|truncate(35) }}</a></td>
-                                <td align="center">
-                                    <a href="{{ 'order'|alink({ 'product_id': p.id }) }}" class="webStatsLink">{{ p.orders }}</a>
-                                </td>
-                            </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="2" align="center">{{ 'No active orders available'|trans }}</td>
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div> #}
+    {% if admin.system_is_allowed({ 'mod': 'stats' }) %}
+        {{ include('partial_dashboard_product_sales_card.html.twig') }}
     {% endif %}
 
     {% if admin.system_is_allowed({ 'mod': 'stats' }) %}
@@ -391,9 +266,7 @@
                 <h3 class="card-title">{{ 'Income'|trans }}</h3>
                 <div class="card-actions">
                     <form method="get" action="">
-                        <input type="hidden" name="_url" value="{{ request._url }}">
-                        <div class="d-flex align-items-center gap-2">
-                            <h5 class="mb-0 text-nowrap">{{ 'Define date interval for graphs'|trans }}</h5>
+                        <div class="d-flex align-items-center gap-1">
                             <div class="input-group">
                                 <div class="input-icon">
                                     <input class="form-control datepicker" style="width: 16rem" id="graph_interval"
@@ -405,8 +278,19 @@
                                         </svg>
                                     </span>
                                 </div>
-                                <input type="submit" value="{{ 'Update graphs'|trans }}" class="btn btn-primary">
+                                <input type="submit" value="{{ 'Update Graphs'|trans }}" class="btn btn-primary">
                             </div>
+                            <span
+                                class="ms-1 text-muted opacity-75 d-inline-flex align-items-center"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                data-bs-title="{{ 'Set a date range to update the dashboard graphs.'|trans }}"
+                                aria-label="{{ 'Graph date range help'|trans }}"
+                            >
+                                <svg class="icon icon-sm">
+                                    <use xlink:href="#info" />
+                                </svg>
+                            </span>
                         </div>
                     </form>
                 </div>
@@ -453,151 +337,183 @@
     {% endif %}
 
     {% if admin.system_is_allowed({ 'mod': 'activity' }) %}
-    <div class="col-12 d-block">
-        <ul class="nav nav-tabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <a class="nav-link active" href="#tab-index" role="tab" data-bs-toggle="tab">{{ 'Recent client activity'|trans }}</a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#tab-staff" role="tab" data-bs-toggle="tab">{{ 'Recent staff activity'|trans }}</a>
-            </li>
-        </ul>
-
+    <div class="col-12">
         <div class="card">
-            <div class="tab-content" id="tabs">
-                <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-                    <table class="table table-vcenter card-table table-striped">
-                        <tbody>
-                            {% set events = admin.activity_log_get_list({ 'per_page': 10, 'user_filter': 'only_clients' }) %}
-                            {% for i, event in events.list %}
-                            <tr>
-                                <td class="w-1">
-                                    <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">
-                                        <span class="db-avatar avatar avatar-xs" data-avatar-seed="{{ event.client.email|hash('xxh128') }}" data-avatar-size="24"></span>
-                                    </a>
-                                </td>
-                                <td>
-                                    <a href="{{ 'client/manage'|alink }}/{{ event.client.id }}">{{ event.client.name|truncate(40) }}</a>
-                                </td>
-                                <td>{{ event.message|truncate(50) }}</td>
-                                <td>{{ event.created_at|format_datetime }}</td>
-                                <td>{{ event.created_at|timeago }} {{ 'ago'|trans }}</td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+            <div class="card-header">
+                <h3 class="card-title mb-0">{{ 'Activity Overview'|trans }}</h3>
+            </div>
+            <div class="card-body pt-3 pb-0 px-0">
+                <div class="card border-0 shadow-none rounded-0">
+                    <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
+                        <ul class="nav nav-pills card-header-pills">
+                            <li class="nav-item">
+                                <a class="nav-link active" href="#tab-index" role="tab" data-bs-toggle="tab">{{ 'Recent Client Activity'|trans }}</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#tab-staff" role="tab" data-bs-toggle="tab">{{ 'Recent Staff Activity'|trans }}</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="tab-content border-top" id="tabs">
+                        <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-vcenter card-table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>{{ 'Client'|trans }}</th>
+                                            <th>{{ 'Message'|trans }}</th>
+                                            <th class="text-center">{{ 'Date/Time'|trans }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% set events = admin.activity_log_get_list({ 'per_page': 10, 'user_filter': 'only_clients' }) %}
+                                        {% for i, event in events.list %}
+                                        <tr>
+                                            <td>
+                                                <a href='{{ "client/manage/#{event.client.id}"|url }}'>
+                                                    {{ avatar(event.client.email, 24, 'avatar avatar-xs') }}
+                                                </a>&nbsp;
+                                                <a href='{{ "client/manage/#{event.client.id}"|url }}'>{{ event.client.name|truncate(40) }}</a>
+                                            </td>
+                                            <td>{{ event.message|truncate(50) }}</td>
+                                            <td class="text-center">{{ event.created_at|format_datetime }} ({{ event.created_at|timeago }} {{ 'ago'|trans }})</td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
 
-                <div class="tab-pane fade" id="tab-staff" role="tabpanel">
-                    <table class="table table-vcenter card-table table-striped">
-                        <tbody>
-                            {% set events = admin.activity_log_get_list({ 'per_page': 10, 'user_filter': 'only_staff' }) %}
-                            {% for i, event in events.list %}
-                            <tr>
-                                <td class="w-1">
-                                    <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">
-                                        <span class="db-avatar avatar avatar-xs" data-avatar-seed="{{ event.staff.email|hash('xxh128') }}" data-avatar-size="24"></span>
-                                    </a>
-                                </td>
-                                <td>
-                                    <a href="{{ 'staff/manage'|alink }}/{{ event.staff.id }}">{{ event.staff.name }}</a>
-                                </td>
-                                <td>{{ event.message|truncate(50) }}</td>
-                                <td>{{ event.created_at|format_datetime }}</td>
-                                <td>{{ event.created_at|timeago }} {{ 'ago'|trans }}</td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                        <div class="tab-pane fade" id="tab-staff" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-vcenter card-table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>{{ 'Staff Member'|trans }}</th>
+                                            <th>{{ 'Message'|trans }}</th>
+                                            <th class="text-center">{{ 'Date/Time'|trans }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% set events = admin.activity_log_get_list({ 'per_page': 10, 'user_filter': 'only_staff' }) %}
+                                        {% for i, event in events.list %}
+                                        <tr>
+                                            <td>
+                                                <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>
+                                                    {{ avatar(event.staff.email, 24, 'avatar avatar-xs') }}
+                                                </a>&nbsp;
+                                                <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>{{ event.staff.name }}</a>
+                                            </td>
+                                            <td>{{ event.message|truncate(50) }}</td>
+                                            <td class="text-center">{{ event.created_at|format_datetime }} ({{ event.created_at|timeago }} {{ 'ago'|trans }})</td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     {% endif %}
 </div>
+    {% endif %}
 {% endblock %}
 
 {% block js %}
+    <script>
+        document.addEventListener('click', async function(event) {
+            const link = event.target.closest('[data-dashboard-section]');
+            if (!link) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const section = link.dataset.dashboardSection;
+            const currentCard = document.querySelector(`[data-dashboard-card="${section}"]`);
+            if (!currentCard) {
+                window.location.href = link.href;
+                return;
+            }
+
+            const requestUrl = new URL(link.href, window.location.origin);
+            requestUrl.searchParams.set('dashboard_section', section);
+
+            currentCard.style.opacity = '0.6';
+
+            try {
+                const response = await fetch(requestUrl.toString(), {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Request failed with status ${response.status}`);
+                }
+
+                const html = await response.text();
+                const template = document.createElement('template');
+                template.innerHTML = html.trim();
+                const replacement = template.content.firstElementChild;
+
+                if (!replacement) {
+                    throw new Error('Dashboard fragment response was empty.');
+                }
+
+                currentCard.replaceWith(replacement);
+            } catch (error) {
+                window.location.href = link.href;
+            }
+        });
+    </script>
     {% if admin.system_is_allowed({ 'mod': 'stats' }) %}
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                setPlotDataData('chart-income', {{ admin.stats_get_income({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Income'|trans }}" );
-                setPlotDataData('chart-orders', {{ admin.stats_get_orders({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Orders'|trans }}" );
-                setPlotDataData('chart-invoices', {{ admin.stats_get_invoices({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }},"{{ 'Invoices'|trans }}" );
-                setPlotDataData('chart-clients', {{ admin.stats_get_clients({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Clients'|trans }}" );
-                setPlotDataData('chart-tickets', {{ admin.stats_get_tickets({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, "{{ 'Tickets'|trans }}");
-            });
-
-            function setPlotDataData(elementId, data, displayName="Name Placeholder") {
-                new ApexCharts(document.getElementById(elementId), {
-                    chart: {
-                        type: 'area',
-                        fontFamily: 'inherit',
-                        height: 140,
-                        parentHeightOffset: 0,
-                        toolbar: {
-                            show: false,
-                        },
-                        animations: {
-                            enabled: false
-                        },
-                    },
-                    dataLabels: {
-                        enabled: false,
-                    },
-                    fill: {
-                        opacity: .16,
-                        type: 'solid'
-                    },
-                    stroke: {
-                        width: 2,
-                        lineCap: "round",
-                        curve: "smooth",
-                    },
-                    series: [{
-                        name: displayName,
-                        data: data
+                const charts = [
+                    ['chart-income', {{ admin.stats_get_income({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, {
+                        label: "{{ 'Income'|trans }}",
+                        height: 112,
+                        valueFormat: 'currency',
+                        currency: "{{ currency.code ?: default_currency }}",
                     }],
-                    grid: {
-                        padding: {
-                            top: -20,
-                            right: 0,
-                            left: -4,
-                            bottom: -4
-                        },
-                        strokeDashArray: 4,
-                    },
-                    xaxis: {
-                        labels: {
-                            show: false
-                        },
-                        type: 'datetime',
-                    },
-                    yaxis: {
-                        labels: {
-                            show: false
-                        },
-                    },
-                    labels: {
-                        show: false,
-                    },
-                    colors:  (localStorage.getItem('theme') === 'dark') ? ["#91bbed"] : ["#206bc4"],
-                    theme : {
-                        mode: (localStorage.getItem('theme') === 'dark') ? 'dark' : 'light',
-                        monochrome: {
-                            enabled: false,
-                        }
-                    }
-                }).render();
-            }
+                    ['chart-orders', {{ admin.stats_get_orders({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, {
+                        label: "{{ 'Orders'|trans }}",
+                        height: 88,
+                    }],
+                    ['chart-invoices', {{ admin.stats_get_invoices({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, {
+                        label: "{{ 'Invoices'|trans }}",
+                        height: 88,
+                    }],
+                    ['chart-clients', {{ admin.stats_get_clients({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, {
+                        label: "{{ 'Clients'|trans }}",
+                        height: 88,
+                    }],
+                    ['chart-tickets', {{ admin.stats_get_tickets({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, {
+                        label: "{{ 'Tickets'|trans }}",
+                        height: 88,
+                    }],
+                ];
+
+                charts.forEach(function([elementId, data, chartOptions]) {
+                    FOSSBilling.charts.renderTimeSeriesSparkline(elementId, data, {
+                        height: 140,
+                        showTooltip: true,
+                        ...chartOptions,
+                    });
+                });
+            });
         </script>
     {% endif %}
 {% endblock %}

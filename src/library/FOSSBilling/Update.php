@@ -196,11 +196,27 @@ class Update implements InjectionAwareInterface
      */
     public function performManualUpdate(): void
     {
+        try {
+            $this->filesystem->remove(PATH_CACHE);
+            $this->filesystem->mkdir(PATH_CACHE, 0o755);
+        } catch (IOException) {
+            // Best effort: continue with patching even if the pre-clear fails.
+        }
+
         // Apply system patches and migrate configuration file.
         $patcher = new UpdatePatcher();
         $patcher->setDi($this->di);
-        $patcher->applyCorePatches();
-        $patcher->applyConfigPatches();
+        $patcher->applyConfigPatches(force: true);
+        $patcher->applyCorePatches(force: true);
+
+        try {
+            $this->filesystem->remove(PATH_CACHE);
+            $this->filesystem->mkdir(PATH_CACHE, 0o755);
+        } catch (IOException $e) {
+            error_log($e->getMessage());
+
+            throw new Exception('Unable to clear the cache after applying manual update patches. Further details are available in the error log.');
+        }
     }
 
     /**
@@ -212,6 +228,16 @@ class Update implements InjectionAwareInterface
      */
     public function performUpdate(): void
     {
+        $finalization = $this->di['update_finalization'];
+        if ($finalization->isRequired()) {
+            throw new InformationException('An update finalization is already pending. Complete finalization before starting another update.');
+        }
+
+        $readiness = $this->di['update_readiness']->check();
+        if (!$readiness['can_update']) {
+            throw new Exception('FOSSBilling does not have sufficient filesystem permissions to perform the update. Resolve the reported issues before trying again.', null, 820);
+        }
+
         $updateBranch = $this->getUpdateBranch();
         if ($updateBranch !== 'preview' && !$this->isUpdateAvailable()) {
             throw new InformationException('You have the latest version of FOSSBilling. You do not need to update.');
@@ -263,6 +289,12 @@ class Update implements InjectionAwareInterface
 
         // @TODO - Validate downloaded file hash.
 
+        $finalization->createPendingState(Version::VERSION, $latestVersionNum, [
+            'branch' => $updateBranch,
+            'update_type' => $releaseInfo['update_type'] ?? Version::getUpdateType($latestVersionNum),
+            'source' => 'auto-update',
+        ]);
+
         // Extract latest version archive on top of the current version.
         try {
             $zip = new ZipFile();
@@ -275,10 +307,6 @@ class Update implements InjectionAwareInterface
             throw new Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
         }
 
-        // Create the update patcher
-        $patcher = new UpdatePatcher();
-        $patcher->setDi($this->di);
-
         // Clear the cache folder to reduce chances of errors
         try {
             $this->filesystem->remove(PATH_CACHE);
@@ -286,10 +314,6 @@ class Update implements InjectionAwareInterface
         } catch (\Exception) {
             // This step is rarely important, we can safely ignore an error here
         }
-
-        // Now run the patches
-        $patcher->applyCorePatches();
-        $patcher->applyConfigPatches();
 
         // Clear cache and remove the install folder.
         try {
@@ -302,7 +326,6 @@ class Update implements InjectionAwareInterface
         }
 
         // Log off the current user and destroy the session.
-        unset($_COOKIE['BOXADMR']);
         $this->di['session']->destroy('admin');
     }
 }

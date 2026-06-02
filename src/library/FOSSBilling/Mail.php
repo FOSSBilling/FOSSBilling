@@ -181,6 +181,10 @@ class Mail
         }
 
         $host = urlencode(trim((string) $options['smtp_host']));
+        $port = Tools::normalizePort($options['smtp_port'] ?? null);
+        if ($port === null) {
+            throw new InformationException('SMTP port is invalid');
+        }
 
         if (!empty($options['smtp_username'])) {
             $username = urlencode(trim((string) $options['smtp_username']));
@@ -188,9 +192,9 @@ class Mail
 
             $authString = !empty($pass) ? $username . ':' . $pass : $username;
 
-            return "smtp://$authString@" . $host . ':' . $options['smtp_port'];
+            return "smtp://$authString@" . $host . ':' . $port;
         }
 
-        return 'smtp://' . $host . ':' . $options['smtp_port'];
+        return 'smtp://' . $host . ':' . $port;
     }
 }

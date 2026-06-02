@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 use GeoIp2\Model\Domain;
 use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 
@@ -122,8 +123,6 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
         $client = $this->getHttpClient()->withOptions([
             'timeout' => 60,
-            'verify_peer' => 0,
-            'verify_host' => 0,
         ]);
 
         $callUrl = $this->_getApiUrl();
@@ -140,7 +139,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
             }
         } catch (HttpExceptionInterface $error) {
             $e = new Registrar_Exception("HttpClientException: {$error->getMessage()}.");
-            $this->getLog()->err($e->getMessage());
+            $this->getLog()->error($e->getMessage());
 
             throw $e;
         }

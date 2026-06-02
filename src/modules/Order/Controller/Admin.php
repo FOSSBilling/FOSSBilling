@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -41,13 +42,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                     'index' => 100,
                     'label' => __trans('Overview'),
                     'uri' => $this->di['url']->adminLink('order'),
-                    'class' => '',
-                ],
-                [
-                    'location' => 'order',
-                    'index' => 200,
-                    'label' => __trans('Advanced search'),
-                    'uri' => $this->di['url']->adminLink('order', ['show_filter' => 1]),
                     'class' => '',
                 ],
             ],

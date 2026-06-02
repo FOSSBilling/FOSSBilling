@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -38,7 +39,7 @@ class Api_Abstract implements InjectionAwareInterface
         $this->di = $di;
     }
 
-    public function getDi(): ?Pimple\Container
+    protected function getDi(): ?Pimple\Container
     {
         return $this->di;
     }

@@ -1,0 +1,379 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% set active_menu = 'system' %}
+{% set params = admin.extension_config_get({ 'ext': 'mod_currency' }) %}
+{% set can_create_currency = has_permission('currency', 'create') %}
+{% set can_edit_currency = has_permission('currency', 'edit') %}
+{% set can_delete_currency = has_permission('currency', 'delete') %}
+{% set can_set_default_currency = has_permission('currency', 'set_default') %}
+{% set can_update_currency_rates = has_permission('currency', 'update_rates') %}
+
+{% block meta_title %}{{ 'Currency Settings'|trans }}{% endblock %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|url }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Currency Settings'|trans }}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'Currency Settings'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Manage currencies, configure exchange-rate automation, and test conversions from the default currency.'|trans }}</p>
+            </div>
+        </div>
+        <div class="card-body pt-3 pb-0">
+            <ul class="nav nav-pills mb-3" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link active" href="#tab-currencies" data-bs-toggle="tab" role="tab">{{ 'Currencies'|trans }}</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" href="#tab-api-settings" data-bs-toggle="tab" role="tab">{{ 'Integrations / Automation'|trans }}</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" href="#tab-converter" data-bs-toggle="tab" role="tab">{{ 'Converter'|trans }}</a>
+                </li>
+            </ul>
+            <div class="tab-content border-top">
+                <div class="tab-pane fade show active" id="tab-currencies" role="tabpanel">
+                    <div class="card-body">
+                        <div class="d-flex flex-column flex-lg-row align-items-lg-start justify-content-between gap-3 mb-3">
+                            <div>
+                                <h4 class="card-title mb-2">{{ 'Manage Currencies'|trans }}</h4>
+                                <p class="text-secondary mb-0">{{ 'The default currency is the one used for product pricing and income reporting. Changing it after invoices and orders already exist can distort reporting and will not recalculate historical pricing.'|trans }}</p>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% if can_update_currency_rates %}
+                                    <a class="btn btn-primary" href="{{ 'currency/update_rates'|api_url }}" {{ fb_api_link({redirect: 'extension/settings/currency'|url}) }}>
+                                        <svg class="icon icon-tabler">
+                                            <use xlink:href="#refresh" />
+                                        </svg>
+                                        <span>{{ 'Update Rates'|trans }}</span>
+                                    </a>
+                                {% endif %}
+                                {% if can_create_currency %}
+                                    <button class="btn btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#newCurrencyModal">
+                                        <svg class="icon">
+                                            <use xlink:href="#plus" />
+                                        </svg>
+                                        <span>{{ 'Add New Currency'|trans }}</span>
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if params.sync_rate != 'never' %}
+                            <div class="alert alert-success" role="alert">
+                                <strong class="me-1">{{ 'Success:'|trans }}</strong>{{ 'FOSSBilling is configured to automatically sync currency exchange rates.'|trans }}
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning" role="alert">
+                                <strong class="me-1">{{ 'Warning:'|trans }}</strong>{{ 'FOSSBilling is not configured to automatically sync currency exchange rates.'|trans }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th>{{ 'Currency Code'|trans }}</th>
+                                    <th>{{ 'Currency'|trans }}</th>
+                                    <th>{{ 'Conversion Rate'|trans }}</th>
+                                    <th>{{ 'Example Price'|trans }}</th>
+                                    <th class="w-1">{{ 'Actions'|trans }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {% set default_currency = guest.currency_get %}
+                            {% for currency in admin.currency_get_list.list %}
+                                <tr>
+                                    <td>{% if currency.default %}<strong>{{ currency.code }} ({{ currency.code|currency_symbol }})</strong>{% else %}{{ currency.code }} ({{ currency.code|currency_symbol }}){% endif %}</td>
+                                    <td>
+                                        <a href='{{ "currency/manage/#{currency.code}"|url }}'>{{ currency.code|currency_name }}</a>
+                                    </td>
+                                    <td>{{ currency.conversion_rate }}</td>
+                                    <td>{{ 1|format_currency(default_currency.code) }} = {{ (1 * currency.conversion_rate)|format_currency(currency.code) }}</td>
+                                    <td>
+                                        {% if can_edit_currency %}
+                                            <a class="btn btn-icon" href='{{ "currency/manage/#{currency.code}"|url }}'
+                                               data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
+                                                <svg class="icon">
+                                                    <use xlink:href="#edit" />
+                                                </svg>
+                                            </a>
+                                        {% endif %}
+                                        {% if can_delete_currency %}
+                                            <a class="btn btn-icon" href="{{ 'currency/delete'|api_url(query: { 'code': currency.code }) }}"
+                                                data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
+                                                {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Delete'|trans}, redirect: 'extension/settings/currency'|url}) }}>
+                                                <svg class="icon">
+                                                    <use xlink:href="#delete" />
+                                                </svg>
+                                            </a>
+                                        {% endif %}
+                                        {% if not currency.default and can_set_default_currency %}
+                                            <a class="btn btn-icon" href="{{'currency/set_default'|api_url(query: { 'code': currency.code }) }}"
+                                                data-bs-toggle="tooltip" data-bs-title="{{ 'Set as Default'|trans }}"
+                                                {{ fb_api_link({redirect: 'extension/settings/currency'|url}) }}>
+                                                <svg class="icon">
+                                                    <use xlink:href="#check" />
+                                                </svg>
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-3">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-footer text-center">
+                        {% if can_update_currency_rates and params.provider|default('exchangerate-api') == "exchangerate-api" and not params.exchangerate_api_key %}
+                            <a href="https://www.exchangerate-api.com" target="_blank"><p class="mt-1 mb-0">{{ 'Currency exchange rates by ExchangeRate-API'|trans }}</p></a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="tab-api-settings" role="tabpanel">
+                    <form method="post" action="{{ 'extension/config_save'|api_url }}" {{ fb_api_form({message: 'Successfully Updated Settings'|trans}) }}>
+                        <input type="hidden" name="ext" value="mod_currency">
+                        <div class="card-body">
+                            <div class="alert alert-info" role="alert">
+                                <strong class="me-1">{{ 'Information:'|trans }}</strong>{{ 'Choose which exchange-rate provider to use and how often automated synchronization should run.'|trans }}
+                            </div>
+                            <h4 class="card-title mb-2">{{ 'Available Exchange Rate Data Providers'|trans }}</h4>
+                            <p class="text-secondary mb-3">{{ 'FOSSBilling supports several exchange-rate providers. By default it uses the ExchangeRate-API Open Access endpoint, which works without extra configuration.'|trans }}</p>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>{{ 'Provider'|trans }}</th>
+                                        <th>{{ 'Authentication Required'|trans }}</th>
+                                        <th>{{ 'Update Frequency'|trans }}</th>
+                                        <th>{{ 'Supported Currencies'|trans }}</th>
+                                        <th>{{ 'Pricing'|trans }}</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    <tr>
+                                      <th><a href="https://www.exchangerate-api.com/docs/free" target="_blank">{{ 'ExchangeRate-API (Open Access)'|trans }}</a></th>
+                                      <th>✖️</th>
+                                      <th>{{ '1D'|trans }}</th>
+                                      <th><a href="https://www.exchangerate-api.com/docs/supported-currencies" target="_blank">{{ 'Supported Currencies'|trans }}</a></th>
+                                      <th>{{ 'Free'|trans }}</th>
+                                    </tr>
+                                    <tr>
+                                      <th><a href="https://www.exchangerate-api.com/#pricing" target="_blank">ExchangeRate-API</a></th>
+                                      <th>☑️</th>
+                                      <th>{{ '1D / 1H / 5M'|trans }}</th>
+                                      <th><a href="https://www.exchangerate-api.com/docs/supported-currencies" target="_blank">{{ 'Supported Currencies'|trans }}</a></th>
+                                      <th>{{ 'Free / Paid'|trans }}</th>
+                                    </tr>
+                                    <tr>
+                                        <th><a href="https://apilayer.com/marketplace/currency_data-api" target="_blank">Currency Data API</a></th>
+                                        <th>☑️</th>
+                                        <th>{{ '1D / 1H / 10M / 1M'|trans }}</th>
+                                        <th><a href="https://currencylayer.com/currencies" target="_blank">{{ 'Supported Currencies'|trans }}</a></th>
+                                        <th>{{ 'Free / Paid'|trans }}</th>
+                                    </tr>
+                                    <tr>
+                                        <th><a href="https://currencylayer.com/" target="_blank">currencylayer</a></th>
+                                        <th>☑️</th>
+                                        <th>{{ '1D / 1H / 10M / 1M'|trans }}</th>
+                                        <th><a href="https://currencylayer.com/currencies" target="_blank">{{ 'Supported Currencies'|trans }}</a></th>
+                                        <th>{{ 'Free / Paid'|trans }}</th>
+                                    </tr>
+                                  </tbody>
+                            </table>
+                            <p class="text-muted mb-1">{{ 'When using ExchangeRate-API, their API informs FOSSBilling when the next update will occur, which makes automated syncing more efficient.'|trans }}</p>
+                            <p class="text-muted mb-4">{{ 'To the best of our knowledge, Currency Data API and currencylayer are both owned by APILayer and expose the same data through different APIs.'|trans }}</p>
+                            <div class="row g-3">
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="provider_select">{{ 'Currency Exchange Rate Data Provider'|trans }}</label>
+                                    <select class="form-select" aria-label="{{ 'Currency data provider selection'|trans }}" name="provider" id="provider_select">
+                                        <option value="exchangerate-api" selected>ExchangeRate-API</option>
+                                        <option value="currency_data_api">Currency Data API</option>
+                                        <option value="currencylayer">currencylayer</option>
+                                    </select>
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label">{{ 'API Key'|trans }}</label>
+                                    <input class="form-control" type="text" name="exchangerate_api_key" id="exchangerate_api" value="{{ params.exchangerate_api_key }}" hidden="true">
+                                    <input class="form-control" type="text" name="currencydata_key" id="currencydata" value="{{ params.currencydata_key }}" hidden="true">
+                                    <input class="form-control" type="text" name="currencylayer_key" id="currencylayer" value="{{ params.currencylayer_key }}"  hidden="true">
+                                    <small class="form-hint" id="exchangerate_api_help_text" hidden="true">{{ 'Leave blank to use ExchangeRate-API (Open Access).'|trans }}</small>
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="sync_rate">{{ 'Automatic Sync Rate'|trans }}</label>
+                                    <select class="form-select" aria-label="{{ 'Currency data provider selection'|trans }}" name="sync_rate" id="sync_rate">
+                                        <option value="auto" id="auto-sync" selected>{{ 'Auto'|trans }}</option>
+                                        <option value="never">{{ 'Never'|trans }}</option>
+                                        <option value="1d">{{ 'Daily'|trans }}</option>
+                                        <option value="1h">{{ 'Hourly'|trans }}</option>
+                                        <option value="10m">{{ 'Every 10 Minutes'|trans }}</option>
+                                        <option value="5m">{{ 'Every 5 Minutes'|trans }}</option>
+                                        <option value="1m" id="1m-sync">{{ 'Every Minute'|trans }}</option>
+                                    </select>
+                                    <small class="form-hint d-block mt-2">{{ '"Auto" is only available for ExchangeRate-API and will only request new data when the provider indicates fresh rates are available.'|trans }}</small>
+                                    <small class="form-hint d-block">{{ 'Exchange rate syncing runs via cron and is therefore still limited by your cron schedule frequency.'|trans }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer text-end">
+                            <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="tab-pane fade" id="tab-converter" role="tabpanel">
+                    <form method="post" action="">
+                        <div class="card-body">
+                            <h4 class="card-title mb-2">{{ 'Currency Converter'|trans }}</h4>
+                            <p class="text-secondary mb-3">{{ 'Test conversions from the current default currency to any enabled currency using the configured rates.'|trans }}</p>
+                            <div class="row g-3 align-items-end">
+                                <div class="col-lg-4">
+                                    <label class="form-label" for="currency-converter-amount">{{ 'Amount'|trans }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">{{ guest.currency_get.code|currency_symbol }}</span>
+                                        <input class="form-control" id="currency-converter-amount" type="text" name="amount" value="" required placeholder="{{ 'Amount'|trans }}" oninput="doConvert();">
+                                    </div>
+                                </div>
+                                <div class="col-lg-4">
+                                    <label class="form-label" for="to">{{ 'Convert To'|trans }}</label>
+                                    {{ mf.selectbox('to', guest.currency_get_pairs) }}
+                                </div>
+                                <div class="col-lg-4">
+                                    <label class="form-label" for="converted_result">{{ 'Result'|trans }}</label>
+                                    <input class="form-control" type="text" id="converted_result" value="" placeholder="{{ 'Result'|trans }}" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if can_create_currency %}
+        <div class="modal fade" id="newCurrencyModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <form method="post" action="{{ 'currency/create'|api_url }}" class="modal-content" {{ fb_api_form({redirect: 'extension/settings/currency'|url}) }}>
+                    <div class="modal-header">
+                        <h5 class="modal-title">{{ 'Add New Currency'|trans }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label" for="code">{{ 'Currency Code'|trans }}</label>
+                            {{ mf.selectbox('code', admin.currency_get_pairs, 'USD', 1) }}
+                        </div>
+                        <div>
+                            <label class="form-label" for="new-currency-rate">{{ 'Conversion Rate'|trans }}</label>
+                            <input class="form-control" id="new-currency-rate" type="text" name="conversion_rate" value="" placeholder="{{ 'Leave blank to automatically set'|trans }}">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" type="submit">{{ 'Add'|trans }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block js %}
+<script>
+    function doConvert() {
+        var price = document.querySelector('input[name="amount"]').value;
+        var code = document.querySelector('select[name="to"]').value;
+
+        FOSSBilling.api.guest.post('currency/format', { price: price, code: code },
+            (result) => {
+                document.getElementById('converted_result').value = result;
+            });
+    };
+
+    function switchKeyBox(value){
+        if(value === 'currencylayer'){
+            document.getElementById("currencydata").hidden = true;
+            document.getElementById("currencylayer").hidden = false;
+            document.getElementById("exchangerate_api").hidden = true;
+            document.getElementById("exchangerate_api_help_text").hidden = true;
+            document.getElementById("auto-sync").disabled = true;
+            document.getElementById("1m-sync").disabled = false;
+        } else if(value === 'currency_data_api'){
+            document.getElementById("currencydata").hidden = false;
+            document.getElementById("currencylayer").hidden = true;
+            document.getElementById("exchangerate_api").hidden = true;
+            document.getElementById("exchangerate_api_help_text").hidden = true;
+            document.getElementById("auto-sync").disabled = true;
+            document.getElementById("1m-sync").disabled = false;
+        } else {
+            document.getElementById("currencydata").hidden = true;
+            document.getElementById("currencylayer").hidden = true;
+            document.getElementById("exchangerate_api").hidden = false;
+            document.getElementById("exchangerate_api_help_text").hidden = false;
+            document.getElementById("auto-sync").disabled = false;
+            document.getElementById("1m-sync").disabled = true;
+        }
+
+        if(value === 'exchangerate-api'){
+            if(document.getElementById("sync_rate").value === '1m'){
+                document.getElementById("sync_rate").value = 'auto';
+            }
+        } else {
+            if(document.getElementById("sync_rate").value === 'auto'){
+                document.getElementById("sync_rate").value = '1d';
+            }
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", (event) => {
+        document.getElementById("provider_select").onchange = function() {
+            switchKeyBox(this.value);
+        };
+        document.getElementById("sync_rate").value = "{{ params.sync_rate }}";
+        document.getElementById("provider_select").value = "{{ params.provider|default('exchangerate-api') }}";
+        switchKeyBox("{{ params.provider|default('exchangerate-api') }}");
+
+        {% if can_create_currency %}
+        if (window.location.hash === '#tab-new-currency') {
+            const modalElement = document.getElementById('newCurrencyModal');
+            if (modalElement) {
+                bootstrap.Modal.getOrCreateInstance(modalElement).show();
+            }
+        }
+
+        const newCurrencyModal = document.getElementById('newCurrencyModal');
+        if (newCurrencyModal) {
+            newCurrencyModal.addEventListener('shown.bs.modal', function () {
+                history.replaceState(null, '', window.location.pathname + window.location.search + '#tab-new-currency');
+            });
+
+            newCurrencyModal.addEventListener('hidden.bs.modal', function () {
+                if (window.location.hash === '#tab-new-currency') {
+                    history.replaceState(null, '', window.location.pathname + window.location.search + '#tab-currencies');
+                }
+            });
+        }
+        {% endif %}
+    });
+
+</script>
+{% endblock %}

@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -23,14 +24,14 @@ class Server_Manager_Hestia extends Server_Manager
                         [
                             'name' => 'username',
                             'type' => 'text',
-                            'label' => 'Access key ID',
+                            'label' => 'Access Key ID',
                             'placeholder' => 'ID for the access key you\'ve generated in Hestia.',
                             'required' => true,
                         ],
                         [
                             'name' => 'accesshash',
                             'type' => 'text',
-                            'label' => 'Secret key',
+                            'label' => 'Secret Key',
                             'placeholder' => 'Secret key for the access key you\'ve generated in Hestia',
                             'required' => true,
                         ],
@@ -64,15 +65,9 @@ class Server_Manager_Hestia extends Server_Manager
         return 'https://' . $this->_config['host'] . ':' . $this->getPort() . '/';
     }
 
-    public function getPort(): int|string
+    public function getPort(): int
     {
-        $port = $this->_config['port'];
-
-        if (filter_var($port, FILTER_VALIDATE_INT) !== false && $port >= 0 && $port <= 65535) {
-            return $this->_config['port'];
-        }
-
-        return 8083;
+        return FOSSBilling\Tools::normalizePort($this->_config['port'] ?? null, 8083);
     }
 
     #[Override]
@@ -347,6 +342,7 @@ class Server_Manager_Hestia extends Server_Manager
      */
     private function request($params): mixed
     {
+        $verifyTls = FOSSBilling\Tools::normalizeBoolean($this->_config['config']['tls_verify'] ?? true, true);
         $host = 'https://' . $this->_config['host'] . ':' . $this->getPort() . '/api/';
 
         // Set return code to yes
@@ -364,8 +360,8 @@ class Server_Manager_Hestia extends Server_Manager
 
         // Send POST query
         $client = $this->getHttpClient()->withOptions([
-            'verify_peer' => false,
-            'verify_host' => false,
+            'verify_peer' => $verifyTls,
+            'verify_host' => $verifyTls,
             'timeout' => 30,
         ]);
 

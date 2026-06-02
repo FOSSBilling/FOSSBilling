@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 
 class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
@@ -32,13 +33,13 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
             'label' => 'Manages domains on Internetbs via API',
             'form' => [
                 'apikey' => ['text', [
-                    'label' => 'Internetbs API key',
-                    'description' => 'Internetbs API key',
+                    'label' => 'Internetbs API Key',
+                    'description' => 'Internetbs API Key',
                 ],
                 ],
                 'password' => ['password', [
-                    'label' => 'Internetbs API password',
-                    'description' => 'Internetbs API password',
+                    'label' => 'Internetbs API Password',
+                    'description' => 'Internetbs API Password',
                     'renderPassword' => true,
                 ],
                 ],
@@ -327,10 +328,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
         $params['apikey'] = $this->config['apikey'];
         $params['password'] = $this->config['password'];
 
-        $client = $this->getHttpClient()->withOptions([
-            'verify_peer' => false,
-            'verify_host' => false,
-        ]);
+        $client = $this->getHttpClient();
 
         try {
             $response = $client->request('POST', $this->_getApiUrl() . $command, [
@@ -338,7 +336,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
             ]);
         } catch (HttpExceptionInterface $error) {
             $e = new Registrar_Exception("HttpClientException: {$error->getMessage()}.");
-            $this->getLog()->err($e->getMessage());
+            $this->getLog()->error($e->getMessage());
 
             throw $e;
         }

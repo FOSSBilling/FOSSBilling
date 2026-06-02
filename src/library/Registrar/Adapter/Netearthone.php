@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 class Registrar_Adapter_Netearthone extends Registrar_Adapter_Resellerclub
 {
     public function __construct($options)

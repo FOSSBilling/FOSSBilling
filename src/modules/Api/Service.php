@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -30,58 +31,5 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [
             'hide_permissions' => true,
         ];
-    }
-
-    /**
-     * @return int - 1
-     */
-    public function logRequest()
-    {
-        $request = $this->di['request'];
-        $sql = '
-            INSERT INTO api_request (ip, request, created_at)
-            VALUES(:ip, :request, NOW())
-        ';
-        $values = [
-            'ip' => $request->getClientIp(),
-            'request' => $_SERVER['REQUEST_URI'] ?? null,
-        ];
-
-        return $this->di['db']->exec($sql, $values);
-    }
-
-    /**
-     * @param int|string  $since - timestamp or string date
-     * @param string|null $ip
-     */
-    public function getRequestCount($since, $ip = null, $isLoginMethod = false): int
-    {
-        if (!is_numeric($since)) {
-            $since = strtotime($since);
-        }
-        $sinceIso = date('Y-m-d H:i:s', $since);
-        $values = [
-            'since' => $sinceIso,
-        ];
-        if ($isLoginMethod) {
-            $sql = '
-        SELECT COUNT(id) as cclogin
-        FROM api_request
-        WHERE created_at > :since
-        ';
-        } else {
-            $sql = '
-        SELECT COUNT(id) as cc
-        FROM api_request
-        WHERE created_at > :since
-        ';
-        }
-
-        if ($ip != null) {
-            $sql .= ' AND ip = :ip';
-            $values['ip'] = $ip;
-        }
-
-        return (int) $this->di['db']->getCell($sql, $values);
     }
 }

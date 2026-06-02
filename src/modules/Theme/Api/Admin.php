@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -11,6 +12,7 @@
 
 namespace Box\Mod\Theme\Api;
 
+use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \Api_Abstract
@@ -20,6 +22,8 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'view');
+
         $themes = $this->getService()->getThemes();
 
         return ['list' => $themes];
@@ -30,9 +34,43 @@ class Admin extends \Api_Abstract
      */
     public function get_admin_list($data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'view');
+
         $themes = $this->getService()->getThemes(false);
 
         return ['list' => $themes];
+    }
+
+    /**
+     * Get the current client or admin area theme.
+     */
+    public function get_current(array $data): array
+    {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'view');
+
+        if ($this->isInvalidClientParameter($data['client'] ?? null)) {
+            throw new \FOSSBilling\InformationException('Invalid "client" parameter.');
+        }
+
+        $client = Tools::normalizeBoolean($data['client'] ?? true, true);
+
+        return $this->getService()->getThemeConfig($client, null);
+    }
+
+    /**
+     * Determine whether the client selector contains a boolean-compatible value.
+     */
+    private function isInvalidClientParameter(mixed $client): bool
+    {
+        if ($client === null || is_bool($client) || is_int($client) || is_float($client)) {
+            return false;
+        }
+
+        if (!is_string($client)) {
+            return true;
+        }
+
+        return filter_var($client, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === null;
     }
 
     /**
@@ -43,6 +81,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Theme code was not passed'])]
     public function get($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'view');
+
         return $this->getService()->loadTheme($data['code']);
     }
 
@@ -52,6 +92,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Theme code was not passed'])]
     public function select($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'manage');
+
         $theme = $this->getService()->getTheme($data['code']);
 
         $systemService = $this->di['mod_service']('system');
@@ -75,6 +117,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Theme code was not passed', 'preset' => 'Preset name is missing'])]
     public function preset_delete($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'manage');
+
         $service = $this->getService();
 
         $theme = $service->getTheme($data['code']);
@@ -89,6 +133,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Theme code was not passed', 'preset' => 'Preset name is missing'])]
     public function preset_select($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'manage');
+
         $service = $this->getService();
         $theme = $service->getTheme($data['code']);
         $service->setCurrentThemePreset($theme, $data['preset']);

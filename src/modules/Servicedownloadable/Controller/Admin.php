@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -10,6 +11,8 @@
  */
 
 namespace Box\Mod\Servicedownloadable\Controller;
+
+use Symfony\Component\HttpFoundation\Response;
 
 class Admin implements \FOSSBilling\InjectionAwareInterface
 {
@@ -30,7 +33,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $app->get('/servicedownloadable/get-file/:id', 'get_download', ['id' => '[0-9]+'], static::class);
     }
 
-    public function get_download(\Box_App $app, $id): void
+    public function get_download(\Box_App $app, $id): Response
     {
         $this->di['is_admin_logged'];
 
@@ -38,6 +41,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $data = [
             'id' => $id,
         ];
-        $api->servicedownloadable_send_file($data);
+
+        return $api->servicedownloadable_send_file($data);
     }
 }

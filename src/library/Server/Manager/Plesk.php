@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 use PleskX\Api\Client;
 
 /**
@@ -32,7 +33,7 @@ class Server_Manager_Plesk extends Server_Manager
      */
     public function init(): void
     {
-        $this->_config['port'] = empty($this->_config['port']) ? 8443 : $this->_config['port'];
+        $this->_config['port'] = FOSSBilling\Tools::normalizePort($this->_config['port'] ?? null, 8443);
         $this->_client = new Client($this->_config['host'], $this->_config['port']);
         $this->_client->setCredentials($this->_config['username'], $this->_config['password']);
     }
@@ -130,7 +131,7 @@ class Server_Manager_Plesk extends Server_Manager
                 // throw new Server_Exception('Out of free IP addresses');
             }
             */
-            if ((is_countable($ips['exclusive']) ? count($ips['exclusive']) : 0) > 0) {
+            if (FOSSBilling\Tools::safeCount($ips['exclusive']) > 0) {
                 $ips['exclusive'] = array_values($ips['exclusive']);
                 $rand = array_rand($ips['exclusive']);
                 $account->setIp($ips['exclusive'][$rand]['ip']);
@@ -139,11 +140,13 @@ class Server_Manager_Plesk extends Server_Manager
 
         $result = $this->createClient($account);
 
-        if (!$result) {
-            $placeholders = [':action:' => __trans('create account'), ':type"' => 'Plesk'];
+        if (!$id) {
+            $placeholders = [':action:' => __trans('create account'), ':type:' => 'Plesk'];
 
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
+
+        $client->setId((int) $id);
 
         $this->setSubscription($account);
 
@@ -237,6 +240,7 @@ class Server_Manager_Plesk extends Server_Manager
         if (!$result) {
             throw new Server_Exception('Can\'t modify client');
         }
+        $client->setId((int) $id);
 
         $account->setPackage($package);
         $this->updateSubscription($account);
@@ -696,6 +700,8 @@ class Server_Manager_Plesk extends Server_Manager
      */
     private function removeDns(array $ns): bool
     {
+        $params = [];
+
         // Iterate over each DNS record ID
         foreach ($ns as $key => $id) {
             // Prepare the parameters for the API request

@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -50,6 +51,6 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         if (isset($page['id'])) {
             return $app->render('mod_custompages_content', ['page' => $page]);
         }
-        exit(header('Location: ' . $this->di['url']->get('')));
+        $app->redirectUrl($this->di['url']->get(''));
     }
 }

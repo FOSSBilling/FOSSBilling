@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -42,6 +43,32 @@ class Service implements InjectionAwareInterface
     /**
      * @return mixed[]
      */
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View products'),
+                'description' => __trans('Allows the staff member to view products, categories, and promotions.'),
+            ],
+            'manage_products' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage products'),
+                'description' => __trans('Allows the staff member to create, update, and delete products.'),
+            ],
+            'manage_categories' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage product categories'),
+                'description' => __trans('Allows the staff member to create, update, and delete product categories.'),
+            ],
+            'manage_promos' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage promotions'),
+                'description' => __trans('Allows the staff member to create, update, and delete promotional codes.'),
+            ],
+        ];
+    }
+
     public function getPairs($data): array
     {
         $sql = 'SELECT id, title
@@ -82,33 +109,37 @@ class Service implements InjectionAwareInterface
         $config = json_decode($model->config ?? '', true) ?? [];
         $pricing = $repo->getPricingArray($model);
         $starting_from = $this->getStartingFromPrice($model);
+        $isAdmin = $identity instanceof \Model_Admin;
 
         $result = [
             'id' => $model->id,
             'product_category_id' => $model->product_category_id,
             'type' => $model->type,
             'title' => $model->title,
-            'form_id' => $model->form_id,
             'slug' => $model->slug,
             'description' => $model->description,
             'unit' => $model->unit,
             'priority' => $model->priority,
-            'created_at' => $model->created_at,
-            'updated_at' => $model->updated_at,
-            'pricing' => $pricing,
-            'config' => $config,
-            'addons' => $addons,
+            'pricing' => $isAdmin ? $pricing : $this->getPublicPricing($pricing),
+            'config' => $isAdmin ? $config : $this->getPublicConfig($config),
 
             'price_starting_from' => $starting_from,
             'icon_url' => $model->icon_url,
 
             // stock control
             'allow_quantity_select' => $model->allow_quantity_select,
-            'quantity_in_stock' => $model->quantity_in_stock,
-            'stock_control' => $model->stock_control,
+
+            // The order form is exposed to guests because the form itself
+            // is fetched publicly on the checkout step.
+            'form_id' => $model->form_id,
         ];
 
-        if ($identity instanceof \Model_Admin) {
+        if ($isAdmin) {
+            $result['created_at'] = $model->created_at;
+            $result['updated_at'] = $model->updated_at;
+            $result['addons'] = $addons;
+            $result['quantity_in_stock'] = $model->quantity_in_stock;
+            $result['stock_control'] = $model->stock_control;
             $result['upgrades'] = $this->getUpgradablePairs($model);
             $result['status'] = $model->status;
             $result['hidden'] = $model->hidden;
@@ -123,6 +154,36 @@ class Service implements InjectionAwareInterface
         }
 
         return $result;
+    }
+
+    private function getPublicConfig(array $config): array
+    {
+        $publicConfigKeys = [
+            'allow_domain_register',
+            'allow_domain_transfer',
+            'allow_domain_own',
+            'allow_subdomain',
+            'subdomain_base_domain',
+        ];
+
+        return array_intersect_key($config, array_flip($publicConfigKeys));
+    }
+
+    private function getPublicPricing(array $pricing): array
+    {
+        foreach ($pricing as $key => $value) {
+            if ($key === 'registrar') {
+                unset($pricing[$key]);
+
+                continue;
+            }
+
+            if (is_array($value)) {
+                $pricing[$key] = $this->getPublicPricing($value);
+            }
+        }
+
+        return $pricing;
     }
 
     public function getTypes(): array
@@ -157,15 +218,13 @@ class Service implements InjectionAwareInterface
     {
         return [
             \Model_ProductPayment::FREE => 'Free',
-            \Model_ProductPayment::ONCE => 'One time',
+            \Model_ProductPayment::ONCE => 'One Time',
             \Model_ProductPayment::RECURRENT => 'Recurrent',
         ];
     }
 
     public function createProduct($title, $type, $categoryId = null): int
     {
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_Product', 5);
         $sql = 'SELECT MAX(priority) FROM product LIMIT 1';
         $priority = $this->di['db']->getCell($sql);
 
@@ -222,43 +281,43 @@ class Service implements InjectionAwareInterface
                 if (isset($pricing['recurrent']['1W'])) {
                     $productPayment->w_setup_price = $pricing['recurrent']['1W']['setup'];
                     $productPayment->w_price = $pricing['recurrent']['1W']['price'];
-                    $productPayment->w_enabled = $pricing['recurrent']['1W']['enabled'];
+                    $productPayment->w_enabled = $pricing['recurrent']['1W']['enabled'] ?? 0;
                 }
 
                 if (isset($pricing['recurrent']['1M'])) {
                     $productPayment->m_setup_price = $pricing['recurrent']['1M']['setup'];
                     $productPayment->m_price = $pricing['recurrent']['1M']['price'];
-                    $productPayment->m_enabled = $pricing['recurrent']['1M']['enabled'];
+                    $productPayment->m_enabled = $pricing['recurrent']['1M']['enabled'] ?? 0;
                 }
 
                 if (isset($pricing['recurrent']['3M'])) {
                     $productPayment->q_setup_price = $pricing['recurrent']['3M']['setup'];
                     $productPayment->q_price = $pricing['recurrent']['3M']['price'];
-                    $productPayment->q_enabled = $pricing['recurrent']['3M']['enabled'];
+                    $productPayment->q_enabled = $pricing['recurrent']['3M']['enabled'] ?? 0;
                 }
 
                 if (isset($pricing['recurrent']['6M'])) {
                     $productPayment->b_setup_price = $pricing['recurrent']['6M']['setup'];
                     $productPayment->b_price = $pricing['recurrent']['6M']['price'];
-                    $productPayment->b_enabled = $pricing['recurrent']['6M']['enabled'];
+                    $productPayment->b_enabled = $pricing['recurrent']['6M']['enabled'] ?? 0;
                 }
 
                 if (isset($pricing['recurrent']['1Y'])) {
                     $productPayment->a_setup_price = $pricing['recurrent']['1Y']['setup'];
                     $productPayment->a_price = $pricing['recurrent']['1Y']['price'];
-                    $productPayment->a_enabled = $pricing['recurrent']['1Y']['enabled'];
+                    $productPayment->a_enabled = $pricing['recurrent']['1Y']['enabled'] ?? 0;
                 }
 
                 if (isset($pricing['recurrent']['2Y'])) {
                     $productPayment->bia_setup_price = $pricing['recurrent']['2Y']['setup'];
                     $productPayment->bia_price = $pricing['recurrent']['2Y']['price'];
-                    $productPayment->bia_enabled = $pricing['recurrent']['2Y']['enabled'];
+                    $productPayment->bia_enabled = $pricing['recurrent']['2Y']['enabled'] ?? 0;
                 }
 
                 if (isset($pricing['recurrent']['3Y'])) {
                     $productPayment->tria_setup_price = $pricing['recurrent']['3Y']['setup'];
                     $productPayment->tria_price = $pricing['recurrent']['3Y']['price'];
-                    $productPayment->tria_enabled = $pricing['recurrent']['3Y']['enabled'];
+                    $productPayment->tria_enabled = $pricing['recurrent']['3Y']['enabled'] ?? 0;
                 }
             }
 
@@ -462,9 +521,6 @@ class Service implements InjectionAwareInterface
 
     public function createCategory($title, $description = null, $icon_url = null)
     {
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_ProductCategory', 2);
-
         $model = $this->di['db']->dispense('ProductCategory');
         $model->title = $title;
         $model->description = $description;
@@ -529,7 +585,7 @@ class Service implements InjectionAwareInterface
         return [$sql, $params];
     }
 
-    public function toProductCategoryApiArray(\Model_ProductCategory $model, $deep = true)
+    public function toProductCategoryApiArray(\Model_ProductCategory $model, $deep = true, $identity = null)
     {
         $min_price = 0;
         $products = [];
@@ -537,7 +593,7 @@ class Service implements InjectionAwareInterface
 
         $type = null; // identified by first product in category
         foreach ($pr as $p) {
-            $pa = $this->toApiArray($p, false);
+            $pa = $this->toApiArray($p, false, $identity);
             if (reset($pr) == $p) {
                 $type = $p->type;
             }
@@ -657,8 +713,8 @@ class Service implements InjectionAwareInterface
             return [];
         }
 
-        // @phpstan-ignore function.alreadyNarrowedType (ids is an array at this point, but keeping for safety)
-        $slots = (is_countable($ids) ? count($ids) : 0) ? implode(',', array_fill(0, is_countable($ids) ? count($ids) : 0, '?')) : ''; // same as RedBean genSlots() method
+        $count = \FOSSBilling\Tools::safeCount($ids);
+        $slots = $count ? implode(',', array_fill(0, $count, '?')) : ''; // same as RedBean genSlots() method
 
         $rows = $this->di['db']->getAll('SELECT id, title FROM product WHERE id in (' . $slots . ')', $ids);
 
@@ -791,8 +847,8 @@ class Service implements InjectionAwareInterface
             return [];
         }
 
-        // @phpstan-ignore function.alreadyNarrowedType (ids is an array at this point, but keeping for safety)
-        $slots = (is_countable($ids) ? count($ids) : 0) ? implode(',', array_fill(0, is_countable($ids) ? count($ids) : 0, '?')) : ''; // same as RedBean genSlots() method
+        $count = \FOSSBilling\Tools::safeCount($ids);
+        $slots = $count ? implode(',', array_fill(0, $count, '?')) : ''; // same as RedBean genSlots() method
         array_unshift($ids, (int) $model->id); // adding product ID as first param in array
 
         return $this->di['db']->find('Product', 'type = "custom" and is_addon= 1 and id != ? and id IN (' . $slots . ')', $ids);
@@ -875,9 +931,6 @@ class Service implements InjectionAwareInterface
         if ($this->di['db']->findOne('Promo', 'code = :code', [':code' => $code])) {
             throw new \FOSSBilling\InformationException('This promotion code already exists.');
         }
-
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_Promo', 2);
 
         $model = $this->di['db']->dispense('Promo');
         $model->code = $code;
@@ -1011,15 +1064,16 @@ class Service implements InjectionAwareInterface
             }
         }
 
+        $product->setDi($this->di);
         $repo = $product->getTable();
-        $price = $repo->getProductPrice($product, $config);
+        $line = $repo->getOrderLineConfig($product, $config);
+        $price = $line['price'] * $line['quantity'];
 
         if ($price == 0) {
             return 0;
         }
 
         $discount = 0;
-        $quantity = 1;
 
         switch ($promo->type) {
             case \Model_Promo::ABSOLUTE:
@@ -1028,11 +1082,7 @@ class Service implements InjectionAwareInterface
                 break;
 
             case \Model_Promo::PERCENTAGE:
-                if (isset($config['quantity']) && is_numeric($config['quantity'])) {
-                    $quantity = $config['quantity'];
-                }
-
-                $discount += round($price * $quantity * $promo->value / 100, 2);
+                $discount += round($price * $promo->value / 100, 2);
 
                 break;
 
@@ -1041,6 +1091,39 @@ class Service implements InjectionAwareInterface
         }
 
         return $discount;
+    }
+
+    public function getRenewalProductDiscount(\Model_Product $product, \Model_Promo $promo, ?array $config = null): float
+    {
+        if (!$this->isPromoLinkedToProduct($promo, $product)) {
+            return 0;
+        }
+
+        if (isset($config['period'])) {
+            $periods = $this->getPeriods($promo);
+            if (!empty($periods) && !in_array($config['period'], $periods)) {
+                return 0;
+            }
+        }
+
+        $product->setDi($this->di);
+        $repo = $product->getTable();
+        if (!method_exists($repo, 'getRenewalLineConfig')) {
+            return $this->getProductDiscount($product, $promo, $config);
+        }
+
+        $line = $repo->getRenewalLineConfig($product, $config);
+        $price = $line['price'] * $line['quantity'];
+
+        if ($price == 0) {
+            return 0;
+        }
+
+        return match ($promo->type) {
+            \Model_Promo::ABSOLUTE => (float) $promo->value,
+            \Model_Promo::PERCENTAGE => round($price * $promo->value / 100, 2),
+            default => 0,
+        };
     }
 
     public function isPromoLinkedToTld(\Model_Promo $promo, \Model_Tld $tld): bool

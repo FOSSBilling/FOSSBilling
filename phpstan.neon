@@ -23,28 +23,6 @@ parameters:
 		- RedBeanPHP\SimpleModel
 		- RedBeanPHP\OODBBean
 	ignoreErrors:
-		- message: '#^Result of function header \(void\) is used\.$#'
-		  path: src/modules/Custompages/Controller/Client.php
-
-		# Pimple container access for authentication side effects
-		# These functions throw exceptions or redirect, so return values are intentionally unused
-		- identifier: expr.resultUnused
-		  path: '*/modules/*/Controller/*.php'
-
-		# Method called for side effects (throws on failure)
-		- identifier: method.resultUnused
-		  path: src/modules/Api/Controller/Client.php
-
-		# loggedin_client throws Exception, but PHPStan doesn't understand Pimple container behavior
-		- identifier: catch.neverThrown
-		  path: src/modules/Cart/Service.php
-
-		# SentryHelper properties are read in skipReporting() method - PHPStan doesn't track static property access
-		- identifier: property.onlyWritten
-		  path: src/library/FOSSBilling/SentryHelper.php
-
-		# INSTANCE_ID check may cause unreachable code warning in some environments
-		- identifier: deadCode.unreachable
-		  path: src/library/FOSSBilling/SentryHelper.php
-
-	
+		- '#^Function __trans not found\.$#'
+		- '#^Function __pluralTrans not found\.$#'
+		- '#^Inner named functions are not supported by PHPStan\. Consider refactoring to an anonymous function, class method, or a top\-level\-defined function\. See issue \#165 \(https\://github\.com/phpstan/phpstan/issues/165\) for more details\.$#'

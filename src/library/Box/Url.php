@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -55,5 +56,25 @@ class Box_Url implements FOSSBilling\InjectionAwareInterface
         $uri = ADMIN_PREFIX . '/' . $uri;
 
         return $this->link($uri, $params);
+    }
+
+    public static function normalizeLinkPath(?string $uri = null): string
+    {
+        $uri = trim((string) $uri);
+        if ($uri === '' || $uri === '/') {
+            return '';
+        }
+
+        $uri = ltrim($uri, '/');
+        $adminPrefix = defined('ADMIN_PREFIX') ? trim((string) ADMIN_PREFIX, '/') : '';
+        if ($adminPrefix !== '' && str_starts_with($uri, $adminPrefix . '/')) {
+            return substr($uri, strlen($adminPrefix) + 1);
+        }
+
+        if ($uri === $adminPrefix) {
+            return '';
+        }
+
+        return $uri;
     }
 }

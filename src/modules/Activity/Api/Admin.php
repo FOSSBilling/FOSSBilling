@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -15,6 +16,8 @@
 
 namespace Box\Mod\Activity\Api;
 
+use FOSSBilling\PaginationOptions;
+
 class Admin extends \Api_Abstract
 {
     /**
@@ -26,10 +29,11 @@ class Admin extends \Api_Abstract
      */
     public function log_get_list($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('activity', 'view');
+
         $data['min_priority'] ??= 6;
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             if (isset($item['staff_id'])) {
@@ -54,20 +58,18 @@ class Admin extends \Api_Abstract
      */
     public function log($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('activity', 'manage');
+
         if (!isset($data['m'])) {
             return false;
         }
 
-        $priority = $data['priority'] ?? 6;
-
-        $entry = $this->di['db']->dispense('ActivitySystem');
-        $entry->client_id = $data['client_id'] ?? null;
-        $entry->admin_id = $data['admin_id'] ?? null;
-        $entry->priority = $priority;
-        $entry->message = $data['m'];
-        $entry->created_at = date('Y-m-d H:i:s');
-        $entry->ip = $this->di['request']->getClientIp();
-        $this->di['db']->store($entry);
+        $this->getService()->logEvent([
+            'client_id' => $data['client_id'] ?? null,
+            'admin_id' => $data['admin_id'] ?? null,
+            'priority' => $data['priority'] ?? 6,
+            'message' => $data['m'],
+        ]);
 
         return true;
     }
@@ -81,6 +83,8 @@ class Admin extends \Api_Abstract
      */
     public function log_email($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('activity', 'manage');
+
         if (!isset($data['subject'])) {
             error_log('Email was not logged. Subject not passed');
 

@@ -1,0 +1,94 @@
+<div class="card-body">
+    <div class="mb-5">
+        <form method="post" action="{{ 'servicedownloadable/config_save'|api_url }}" {{ fb_api_form({ message: 'Settings Updated'|trans}) }}>
+            <div class="mb-3">
+                <h3 class="card-title mb-1">{{ 'Download Settings'|trans }}</h3>
+                <p class="text-secondary mb-0">{{ 'Choose whether existing orders should automatically reference the latest uploaded file for this product.'|trans }}</p>
+            </div>
+            <div class="row g-3">
+                <div class="col-lg-6">
+                    <label class="form-label">{{ 'Keep Orders Updated'|trans }}</label>
+                    <div class="d-flex flex-wrap gap-3 pt-1">
+                        <label class="form-check">
+                            <input class="form-check-input" type="radio" name="update_orders" value="1"{% if product.config.update_orders == '1' or product.config.update_orders == '' %} checked{% endif %} required>
+                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                        </label>
+                        <label class="form-check">
+                            <input class="form-check-input" type="radio" name="update_orders" value="0"{% if product.config.update_orders == '0' %} checked{% endif %} required>
+                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" name="id" value="{{ product.id }}">
+            <div class="d-flex justify-content-end mt-3">
+                <button class="btn btn-primary" type="submit" id="config-save-button">{{ 'Save Config'|trans }}</button>
+            </div>
+        </form>
+    </div>
+
+    <hr class="my-4" />
+
+    <div>
+        <div class="mb-3">
+            <h3 class="card-title mb-1">{{ 'Product File'|trans }}</h3>
+            <p class="text-secondary mb-0">{{ 'Upload the file customers will receive when ordering this downloadable product.'|trans }}</p>
+        </div>
+
+        <form method="post" action="{{ 'servicedownloadable/upload'|api_url }}" enctype="multipart/form-data" id="upload-form">
+            <div class="row g-3">
+                {% if product.config.filename %}
+                    <div class="col-12">
+                        <label class="form-label">{{ 'Currently Uploaded File'|trans }}</label>
+                        <div class="form-control-plaintext">
+                            <a href="{{ 'servicedownloadable/get-file'|url }}/{{ product.id }}" target="_blank">{{ product.config.filename }}</a>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <div class="col-lg-6">
+                    <label class="form-label">{{ 'Upload New File'|trans }}</label>
+                    <input class="form-control" type="file" name="file_data" id="file_data">
+                </div>
+            </div>
+            <input type="hidden" name="id" value="{{ product.id }}">
+            <div class="d-flex justify-content-end mt-3">
+                <button class="btn btn-primary" type="submit" id="file-upload-button">{{ 'Upload'|trans }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('upload-form');
+    if (!form) {
+        return;
+    }
+
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const submitButton = form.querySelector('input[type="submit"], button[type="submit"]');
+        if (submitButton) {
+            submitButton.disabled = true;
+        }
+
+        const formData = new FormData(form);
+        FOSSBilling.api.admin.post('servicedownloadable/upload', formData,
+            function () {
+                if (submitButton) {
+                    submitButton.disabled = false;
+                }
+                FOSSBilling.message("{{ 'File was uploaded'|trans }}");
+            },
+            function (error) {
+                if (submitButton) {
+                    submitButton.disabled = false;
+                }
+                FOSSBilling.message(`${error.message} (${error.code})`, 'error');
+            }
+        );
+    });
+});
+</script>

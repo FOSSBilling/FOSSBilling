@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -38,13 +39,13 @@ class Box_Period
     private readonly string $unit;
     private readonly int $qty;
 
-    public function __construct($code)
+    public function __construct(string $code)
     {
-        if (strlen((string) $code) != 2) {
+        if (strlen($code) != 2) {
             throw new FOSSBilling\Exception('Invalid period code. Period definition must be 2 chars length');
         }
 
-        [$qty, $unit] = str_split((string) $code);
+        [$qty, $unit] = str_split($code);
 
         $units = $this->getUnits();
         $qty = (int) $qty;
@@ -81,13 +82,13 @@ class Box_Period
     public static function getPredefined($simple = true): array
     {
         $periods = [
-            self::PERIOD_WEEK => ['rec_qty' => 1, 'title' => __trans('Every week'), 'code' => self::PERIOD_WEEK, 'rec_unit' => self::UNIT_WEEK],
-            self::PERIOD_MONTH => ['rec_qty' => 1, 'title' => __trans('Every month'), 'code' => self::PERIOD_MONTH, 'rec_unit' => self::UNIT_MONTH],
-            self::PERIOD_QUARTER => ['rec_qty' => 3, 'title' => __trans('Every 3 months'), 'code' => self::PERIOD_QUARTER, 'rec_unit' => self::UNIT_MONTH],
-            self::PERIOD_BIANNUAL => ['rec_qty' => 6, 'title' => __trans('Every 6 months'), 'code' => self::PERIOD_BIANNUAL, 'rec_unit' => self::UNIT_MONTH],
-            self::PERIOD_ANNUAL => ['rec_qty' => 1, 'title' => __trans('Every year'), 'code' => self::PERIOD_ANNUAL, 'rec_unit' => self::UNIT_YEAR],
-            self::PERIOD_BIENNIAL => ['rec_qty' => 2, 'title' => __trans('Every 2 years'), 'code' => self::PERIOD_BIENNIAL, 'rec_unit' => self::UNIT_YEAR],
-            self::PERIOD_TRIENNIAL => ['rec_qty' => 3, 'title' => __trans('Every 3 years'), 'code' => self::PERIOD_TRIENNIAL, 'rec_unit' => self::UNIT_YEAR],
+            self::PERIOD_WEEK => ['rec_qty' => 1, 'title' => __trans('Every Week'), 'code' => self::PERIOD_WEEK, 'rec_unit' => self::UNIT_WEEK],
+            self::PERIOD_MONTH => ['rec_qty' => 1, 'title' => __trans('Every Month'), 'code' => self::PERIOD_MONTH, 'rec_unit' => self::UNIT_MONTH],
+            self::PERIOD_QUARTER => ['rec_qty' => 3, 'title' => __trans('Every 3 Months'), 'code' => self::PERIOD_QUARTER, 'rec_unit' => self::UNIT_MONTH],
+            self::PERIOD_BIANNUAL => ['rec_qty' => 6, 'title' => __trans('Every 6 Months'), 'code' => self::PERIOD_BIANNUAL, 'rec_unit' => self::UNIT_MONTH],
+            self::PERIOD_ANNUAL => ['rec_qty' => 1, 'title' => __trans('Every Year'), 'code' => self::PERIOD_ANNUAL, 'rec_unit' => self::UNIT_YEAR],
+            self::PERIOD_BIENNIAL => ['rec_qty' => 2, 'title' => __trans('Every 2 Years'), 'code' => self::PERIOD_BIENNIAL, 'rec_unit' => self::UNIT_YEAR],
+            self::PERIOD_TRIENNIAL => ['rec_qty' => 3, 'title' => __trans('Every 3 Years'), 'code' => self::PERIOD_TRIENNIAL, 'rec_unit' => self::UNIT_YEAR],
         ];
 
         if ($simple) {

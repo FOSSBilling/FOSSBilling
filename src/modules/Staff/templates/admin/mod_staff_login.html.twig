@@ -1,0 +1,48 @@
+{% extends 'layout_login.html.twig' %}
+
+{% block meta_title %}{{ 'Login'|trans }}{% endblock %}
+
+{% set company = guest.system_company %}
+
+{% block content %}
+{% set params = guest.extension_settings({ 'ext': 'mod_staff' }) %}
+{% embed 'partial_admin_auth_card.html.twig' with {
+    title: 'Log Into Your Account'|trans
+} %}
+    {% block auth_form %}
+                <form method="post" action="{{ 'staff/login'|api_url(role: 'guest') }}" {{ fb_api_form({redirect: redirect_uri|default('/')|url}) }}>
+                    <div class="mb-3">
+                        <label class="form-label" for="inputEmail">{{ 'Email'|trans }}</label>
+                        <input class="form-control"
+                            id="inputEmail"
+                            type="email"
+                            name="email"
+                            value="{{ request.email }}"
+                            placeholder="{{ 'Enter your email address'|trans }}"
+                            required
+                            autofocus>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="inputPassword">
+                            {{ 'Password'|trans }}
+                            {% if params.reset_pw == 1 %}
+                            <span class="form-label-description">
+                                <a href="{{ 'staff/passwordreset'|url }}">{{ 'Forgot your password?'|trans }}</a>
+                            </span>
+                            {% endif %}
+                        </label>
+                        <input class="form-control"
+                            id="inputPassword"
+                            type="password"
+                            name="password"
+                            value="{{ request.password }}"
+                            placeholder="{{ 'Enter your password'|trans }}"
+                            required>
+                    </div>
+                    <div class="form-footer d-flex justify-content-center">
+                        <button class="btn btn-primary px-5" type="submit">{{ 'Login'|trans }}</button>
+                    </div>
+                </form>
+    {% endblock %}
+{% endembed %}
+{% endblock %}

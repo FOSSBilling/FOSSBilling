@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -50,8 +51,25 @@ class Client implements \FOSSBilling\InjectionAwareInterface
     {
         $service = $this->di['mod_service']('redirect');
         $target = $service->getRedirectByPath($app->uri);
-        header('HTTP/1.1 301 Moved Permanently');
-        header('Location: ' . $target);
-        exit;
+
+        if ($target === null || !$this->isTargetAllowed($target)) {
+            $app->abortWithResponse(new \Symfony\Component\HttpFoundation\Response('', 404));
+        }
+
+        $app->redirectUrl($target, 301);
+    }
+
+    private function isTargetAllowed(string $target): bool
+    {
+        if (trim($target) === '' || strpbrk($target, "\r\n") !== false) {
+            return false;
+        }
+
+        $scheme = parse_url($target, PHP_URL_SCHEME);
+        if (is_string($scheme) && !in_array(strtolower($scheme), ['http', 'https'], true)) {
+            return false;
+        }
+
+        return true;
     }
 }

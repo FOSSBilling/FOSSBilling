@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -15,6 +16,8 @@
 
 namespace Box\Mod\Order\Api;
 
+use FOSSBilling\PaginationOptions;
+
 class Client extends \Api_Abstract
 {
     /**
@@ -26,13 +29,14 @@ class Client extends \Api_Abstract
     {
         $identity = $this->getIdentity();
         $data['client_id'] = $identity->id;
+
         if (isset($data['expiring'])) {
             [$query, $bindings] = $this->getService()->getSoonExpiringActiveOrdersQuery($data);
         } else {
             [$query, $bindings] = $this->getService()->getSearchQuery($data);
         }
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($query, $bindings, $per_page);
+
+        $pager = $this->di['pager']->getPaginatedResultSet($query, $bindings, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $order = $this->di['db']->getExistingModelById('ClientOrder', $item['id'], 'Client order not found');
@@ -78,7 +82,11 @@ class Client extends \Api_Abstract
     {
         $order = $this->_getOrder($data);
 
-        return $this->getService()->getOrderServiceData($order, $data['id'], $this->getIdentity());
+        if ($order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+            throw new \FOSSBilling\InformationException('Order is not active');
+        }
+
+        return $this->getService()->getOrderServiceData($order, $this->getIdentity());
     }
 
     /**

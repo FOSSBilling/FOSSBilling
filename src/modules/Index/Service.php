@@ -56,7 +56,7 @@ class Service implements InjectionAwareInterface
     {
         $clientService = $this->di['mod_service']('client');
 
-        return $clientService->toApiArray($client, false);
+        return $clientService->toApiArray($client, true);
     }
 
     private function getTicketsData(array $data): array

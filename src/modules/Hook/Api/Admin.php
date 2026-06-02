@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -15,6 +16,8 @@
 
 namespace Box\Mod\Hook\Api;
 
+use FOSSBilling\PaginationOptions;
+
 class Admin extends \Api_Abstract
 {
     /**
@@ -24,11 +27,12 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('hook', 'view');
+
         $service = $this->getService();
         [$sql, $params] = $service->getSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
 
-        return $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+        return $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
     }
 
     /**
@@ -40,6 +44,8 @@ class Admin extends \Api_Abstract
      */
     public function call($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('hook', 'trigger_hooks');
+
         if (!isset($data['event']) || empty($data['event'])) {
             error_log('Invoked event call without providing event name');
 
@@ -70,6 +76,8 @@ class Admin extends \Api_Abstract
      */
     public function batch_connect($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('hook', 'manage_hooks', null, $this->identity);
+
         $mod = $data['mod'] ?? null;
         $service = $this->getService();
 

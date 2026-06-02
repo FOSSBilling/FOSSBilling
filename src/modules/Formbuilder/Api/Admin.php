@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -31,6 +32,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['name' => 'Form name was not provided'])]
     public function create_form($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'manage');
+
         if (isset($data['type']) && !in_array(strtolower($data['type']), ['horizontal', 'default'])) {
             throw new \FOSSBilling\Exception('Form style was not found in predefined list', null, 3657);
         }
@@ -65,17 +68,17 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['type' => 'Form field type is invalid', 'form_id' => 'Form id was not passed'])]
     public function add_field($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'manage');
+
         $service = $this->getService();
-        if (!isset($data['type']) || !$service->typeValidation($data['type'])) {
+        if (!isset($data['type']) || !$service->isValidFieldType($data['type'])) {
             throw new \FOSSBilling\Exception('Form field type is invalid', null, 2684);
         }
         if (isset($data['options']) && is_array($data['options']) && !$service->isArrayUnique($data['options'])) {
             throw new \FOSSBilling\InformationException('This input type must have unique values', null, 3658);
-        }
-        if (!isset($data['form_id'])) {
-            throw new \FOSSBilling\InformationException('Form id was not passed', null, 9846);
         }
 
         return $service->addNewField($data);
@@ -90,6 +93,8 @@ class Admin extends \Api_Abstract
      */
     public function get_form($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'view');
+
         $required = [
             'id' => 'Form id was not passed',
         ];
@@ -97,7 +102,7 @@ class Admin extends \Api_Abstract
 
         $service = $this->getService();
 
-        return $service->getForm($data['id']);
+        return $service->getForm((int) $data['id']);
     }
 
     /**
@@ -109,6 +114,8 @@ class Admin extends \Api_Abstract
      */
     public function get_form_fields($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'view');
+
         $required = [
             'form_id' => 'Form id was not passed',
         ];
@@ -128,6 +135,8 @@ class Admin extends \Api_Abstract
      */
     public function get_field($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'view');
+
         $required = [
             'id' => 'Field id was not passed',
         ];
@@ -147,6 +156,8 @@ class Admin extends \Api_Abstract
      */
     public function get_forms()
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'view');
+
         $service = $this->getService();
 
         return $service->getForms();
@@ -159,6 +170,8 @@ class Admin extends \Api_Abstract
      */
     public function delete_form($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'manage');
+
         $required = [
             'id' => 'Form id was not passed',
         ];
@@ -177,6 +190,8 @@ class Admin extends \Api_Abstract
      */
     public function delete_field($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'manage');
+
         $required = [
             'id' => 'Field id was not passed',
         ];
@@ -216,6 +231,8 @@ class Admin extends \Api_Abstract
      */
     public function update_field($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'manage');
+
         $required = [
             'id' => 'Field id was not passed',
         ];
@@ -234,6 +251,8 @@ class Admin extends \Api_Abstract
      */
     public function get_pairs($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'view');
+
         $service = $this->getService();
 
         return $service->getFormPairs();
@@ -246,14 +265,10 @@ class Admin extends \Api_Abstract
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['form_id' => 'Form id was not passed', 'name' => 'Form name was not passed'])]
     public function copy_form($data)
     {
-        if (!isset($data['form_id'])) {
-            throw new \FOSSBilling\InformationException('Form id was not passed', null, 9958);
-        }
-        if (!isset($data['name'])) {
-            throw new \FOSSBilling\InformationException('Form name was not passed', null, 9842);
-        }
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'manage');
 
         $service = $this->getService();
 
@@ -265,20 +280,13 @@ class Admin extends \Api_Abstract
      *
      * @return bool
      */
+    #[RequiredParams(['form_id' => 'Form id was not passed', 'form_name' => 'Form name was not passed', 'type' => 'Form type was not passed'])]
     public function update_form_settings($data)
     {
-        if (!isset($data['form_id']) || (trim($data['form_id']) == '')) {
-            throw new \FOSSBilling\InformationException('Form id was not passed', null, 1654);
-        }
-        if (!isset($data['form_name'])) {
-            throw new \FOSSBilling\InformationException('Form name was not passed', null, 9241);
-        }
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'manage');
 
-        if (!isset($data['type'])) {
-            throw new \FOSSBilling\InformationException('Form type was not passed', null, 3794);
-        }
-
-        if ($data['type'] != 'horizontal' && $data['type'] != 'default') {
+        $type = $data['type'] ?? null;
+        if ($type !== 'horizontal' && $type !== 'default') {
             throw new \FOSSBilling\Exception('Field type not supported', null, 3207);
         }
 

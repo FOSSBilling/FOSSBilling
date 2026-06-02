@@ -1,0 +1,406 @@
+{% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+
+{% import "macro_functions.html.twig" as mf %}
+
+{% block meta_title %}{{ 'Order Button Settings'|trans }}{% endblock %}
+
+{% set active_menu = 'system' %}
+
+
+{% block breadcrumbs %}
+    <ul class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|url }}">
+                <svg class="icon">
+                    <use xlink:href="#home"/>
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Order Button Settings'|trans }}</li>
+    </ul>
+{% endblock %}
+
+{% block content %}
+    {% set params = admin.extension_config_get({"ext":"mod_orderbutton"}) %}
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'Order Button Settings'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Configure the popup order window and generate embeddable button code for external pages.'|trans }}</p>
+            </div>
+        </div>
+        <div class="card-body px-0 pb-0">
+            <div class="px-3 pb-3">
+                <div class="alert alert-info mb-0" role="alert">
+                    <strong class="me-1">{{ 'Information:'|trans }}</strong>{{ 'Use these settings to control the popup experience shown on external sites when the order button script is embedded.'|trans }}
+                </div>
+            </div>
+            <div class="px-3">
+                <ul class="nav nav-pills" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Order Window Settings'|trans }}</a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#tab-popup" data-bs-toggle="tab" role="tab">{{ 'Advanced Settings'|trans }}</a>
+                    </li>
+                </ul>
+            </div>
+
+            <form method="post" action="{{ 'extension/config_save'|api_url }}" {{ fb_api_form({reload: true}) }}>
+            <input type="hidden" name="ext" value="mod_orderbutton">
+                <div class="tab-content border-top">
+                    <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+                        <div class="card-body">
+                            <section>
+                                <h4 class="card-title mb-2">{{ 'Order Popup Settings'|trans }}</h4>
+                                <p class="text-secondary mb-4">{{ 'Choose the base color theme used by the embedded order popup.'|trans }}</p>
+                                <div class="row g-3">
+                                    <div class="col-lg-6">
+                                        <label class="form-label" for="theme_color">{{ 'Theme Color'|trans }}</label>
+                                    <select class="form-select" name="theme_color" id="theme_color">
+                                        <option value="green" {% if params.theme_color == 'green' %}selected{% endif %}>{{ 'Green'|trans }}</option>
+                                        <option value="red" {% if params.theme_color == 'red' %}selected{% endif %}>{{ 'Red'|trans }}</option>
+                                        <option value="blue" {% if params.theme_color == 'blue' %}selected{% endif %}>{{ 'Blue'|trans }}</option>
+                                        <option value="dark" {% if params.theme_color == 'dark' %}selected{% endif %}>{{ 'Dark'|trans }}</option>
+                                    </select>
+                                </div>
+                                </div>
+                            </section>
+                        </div>
+                        <div class="card-footer text-end">
+                            <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary"
+                                   onclick="window.onbeforeunload = null;">
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="tab-popup" role="tabpanel">
+                        <div class="card-body">
+                            <section class="mb-4 pb-4 border-bottom">
+                                <h4 class="card-title mb-2">{{ 'Popup Dimensions'|trans }}</h4>
+                                <p class="text-secondary mb-4">{{ 'Control the size and edge treatment of the popup window itself.'|trans }}</p>
+                                <div class="row g-3">
+                                    <div class="col-lg-4">
+                                        <label class="form-label" for="popup_width">{{ 'Width'|trans }}</label>
+                                        <div class="input-group">
+                                            <input class="form-control" type="text" name="popup_width" id="popup_width" value="{{ params.popup_width|default(600) }}" placeholder="600">
+                                            <span class="input-group-text">px</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <label class="form-label" for="border-radius">{{ 'Border Radius'|trans }}</label>
+                                        <div class="input-group">
+                                            <input class="form-control" type="text" name="border_radius" value="{{ params.border_radius|default(0) }}" id="border-radius">
+                                            <span class="input-group-text">px</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="mb-4 pb-4 border-bottom">
+                                <h4 class="card-title mb-2">{{ 'Overlay Background'|trans }}</h4>
+                                <p class="text-secondary mb-4">{{ 'Adjust the color and opacity of the page overlay behind the popup.'|trans }}</p>
+                                <div class="row g-3">
+                                    <div class="col-lg-4">
+                                        <label class="form-label" for="coloris-picker">{{ 'Color'|trans }}</label>
+                                                <input type="text" class="form-control" name="background_color"
+                                                       id="coloris-picker" value="{{ params.background_color|default('#000000') }}">
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <label class="form-label" for="background_opacity">{{ 'Opacity'|trans }}</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" name="background_opacity"
+                                                   id="background_opacity" value="{{ params.background_opacity|default(50) }}">
+                                            <span class="input-group-text">%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="mb-4 pb-4 border-bottom">
+                                <h4 class="card-title mb-2">{{ 'Loading Indicator'|trans }}</h4>
+                                <p class="text-secondary mb-4">{{ 'Choose the loader shown while popup content is being fetched.'|trans }}</p>
+                                <div class="row g-3">
+                                        {% for i in range(1, 9) %}
+                                            {% set loader_link = 'img/assets/loaders/loader'~i~'.gif' %}
+                                            <div class="col-lg-6">
+                                            <label class="form-selectgroup-item h-100">
+                                                <input type="radio" name="loader" id="loader{{ i }}" value="{{ i }}" {% if params.loader == i %}checked{% endif %} class="form-selectgroup-input">
+                                                <div class="form-selectgroup-label d-flex align-items-center justify-content-between p-3 h-100">
+                                                    <div class="me-3">
+                                                        <span class="form-selectgroup-check"></span>
+                                                    </div>
+                                                    <div class="d-flex align-items-center justify-content-between flex-fill gap-3">
+                                                        <span>{{ 'Loader'|trans }} {{ i }}</span>
+                                                        <img src="{{ loader_link|mod_asset_url('orderbutton') }}" alt="{{ 'Loader'|trans }} {{ i }}"/>
+                                                    </div>
+                                                </div>
+                                            </label>
+                                            </div>
+                                        {% endfor %}
+                                </div>
+                            </section>
+
+                            <section>
+                                <h4 class="card-title mb-2">{{ 'Interaction Behavior'|trans }}</h4>
+                                <p class="text-secondary mb-4">{{ 'Control how visitors can dismiss the popup and what extra information is shown before checkout.'|trans }}</p>
+                                <div class="d-flex flex-column gap-4">
+                                    <div>
+                                        <label class="form-label d-block" for="background-close">{{ 'Close Behavior'|trans }}</label>
+                                    <label class="form-check form-switch">
+                                        <input class="form-check-input" id="background-close" type="checkbox" name="background_close" {% if params.background_close %}checked{% endif %}>
+                                        <span class="form-check-label">{{ 'Click on Background Closes Popup'|trans }}</span>
+                                    </label>
+                                    </div>
+
+                                    {% if guest.extension_is_on({"mod":"formbuilder"}) %}
+                                        <div>
+                                            <label class="form-label d-block" for="show-custom-form-values">{{ 'Custom Form Preview'|trans }}</label>
+                                        <label class="form-check form-switch">
+                                            <input class="form-check-input" id="show-custom-form-values" type="checkbox" name="show_custom_form_values" {% if params.show_custom_form_values %}checked{% endif %}>
+                                            <span class="form-check-label">{{ 'User input will be shown before checkout for custom form'|trans }}</span>
+                                        </label>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </section>
+                        </div>
+                        <div class="card-footer text-end">
+                            <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary" onclick="window.onbeforeunload = null;">
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'Order Button Code'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Generate the script tag and example markup you can place on external websites.'|trans }}</p>
+            </div>
+        </div>
+        <form>
+            <div class="card-body">
+                <section class="mb-4 pb-4 border-bottom">
+                    <h4 class="card-title mb-2">{{ 'Binding Target'|trans }}</h4>
+                    <p class="text-secondary mb-4">{{ 'Choose which selector should open the popup and optionally bind the script to a specific product.'|trans }}</p>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-lg-4">
+                            <label class="form-label" for="bind_selector">{{ 'Class Name or ID Selector'|trans }}</label>
+                            <input class="form-control" type="text" name="bind_selector" id="bind_selector" value="{{ params.bind_selector|default('.order-button') }}" placeholder=".order-button">
+                        </div>
+                        <div class="col-lg-4">
+                            <label class="form-label" for="product_id">{{ 'Product Binding'|trans }}</label>
+                            {{ mf.selectbox('product_id', admin.product_get_pairs, request.product_id, 0, 'All products'|trans) }}
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="text-secondary small mb-1">{{ 'Behavior'|trans }}</div>
+                            <div class="fw-semibold">{{ 'The matching HTML element opens the popup window.'|trans }}</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="mb-4 pb-4 border-bottom">
+                    <h4 class="card-title mb-2">{{ 'Usage Notes'|trans }}</h4>
+                    <div class="alert alert-info mb-0" role="alert">
+                        <strong class="d-block mb-2">{{ 'Important:'|trans }}</strong>
+                        <div class="text-muted" id="button-info">
+                            <span class="d-block mb-2">{{ 'You need to add ID (if you want to use it for one html element) or class (if you want to use it for multiple elements) in order for it to work'|trans }}</span>
+                            <div id="button-code-info">
+                                <span class="d-block mb-2">{{ 'Add order-button class to your elements which must call popup. For example:'|trans }}</span>
+                                <div class="input-group input-group-flat">
+                                    <textarea id="html-code" rows="1" class="form-control">&lt;button type=&quot;button&quot;&nbsp;class=&quot;order-button&quot;&gt;Order Now&lt;/button&gt;</textarea>
+                                    <span class="input-group-text align-items-start pt-3">
+                                        <span class="input-group-link cursor-pointer clipboard-copy" data-clipboard-target="#html-code"
+                                            data-bs-toggle="tooltip" aria-label="{{ 'Copy'|trans }}" data-bs-original-title="{{ 'Copy'|trans }}">
+                                            <svg class="icon">
+                                                <use xlink:href="#copy">
+                                            </svg>
+                                        </span>
+                                    </span>
+                                </div>
+                            </div>
+                            <span class="d-block mt-3 mb-2">{{ 'Add data-product attribute to your element to open specific product. For example:'|trans }}</span>
+                            <div class="input-group input-group-flat">
+                                <textarea id="html-code2" rows="1" class="form-control">&lt;button type=&quot;button&quot; class=&quot;order-button" data-product="2"&gt;Order Product#2 Now&lt;/button&gt;</textarea>
+                                <span class="input-group-text align-items-start pt-3">
+                                    <span class="input-group-link cursor-pointer clipboard-copy" data-clipboard-target="#html-code2"
+                                        data-bs-toggle="tooltip" aria-label="{{ 'Copy'|trans }}" data-bs-original-title="{{ 'Copy'|trans }}">
+                                        <svg class="icon">
+                                            <use xlink:href="#copy">
+                                        </svg>
+                                    </span>
+                                </span>
+                            </div>
+                            <span class="d-block mt-3">{{ "data-product attribute value will be overridden if popup's product is selected from select-box above"|trans }}</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h4 class="card-title mb-2">{{ 'Embed Script'|trans }}</h4>
+                    <p class="text-secondary mb-4">{{ 'Copy this script tag into the external page where your order button should work.'|trans }}</p>
+                        <div class="input-group input-group-flat">
+                            <textarea id="script-code" rows="3" class="form-control"></textarea>
+                            <span class="input-group-text align-items-start pt-3">
+                                <span class="input-group-link cursor-pointer clipboard-copy" data-clipboard-target="#script-code"
+                                      data-bs-toggle="tooltip" aria-label="{{ 'Copy'|trans }}" data-bs-original-title="{{ 'Copy'|trans }}">
+                                    <svg class="icon">
+                                        <use xlink:href="#copy">
+                                    </svg>
+                                </span>
+                            </span>
+                        </div>
+                </section>
+            </div>
+            <div class="card-footer text-end">
+                <button type="button" class="btn btn-success" id="load">
+                    <span>{{ 'Try Your Popup'|trans }}</span>
+                </button>
+            </div>
+        </form>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            let changed = false;
+            window.onbeforeunload = confirmExit;
+
+            function confirmExit() {
+                if (changed === true) {
+                    return "There are unsaved changes! If you will exit this page they will be lost. You can save them by clicking on UPDATE SETTINGS button.";
+                }
+            }
+
+            const generate_link = function (selector) {
+                selector = (typeof selector === "undefined") ? document.getElementById('bind_selector').value : selector;
+
+                const initial_link = "{{ 'orderbutton/js'|url(query: { 'options' : 1 }, area: 'client') }}";
+
+                const options = {
+                    'width': document.getElementById('popup_width').value,
+                    'theme_color': document.getElementById('theme_color').value,
+                    'background_color': document.getElementById('coloris-picker').value,
+                    'background_opacity': document.getElementById('background_opacity').value,
+                    'background_close': document.getElementById('background-close').checked ? 'on' : undefined,
+                    'show_custom_form_values': document.getElementById('show-custom-form-values')?.checked ? 'on' : undefined,
+                    'bind_selector': selector,
+                    'border_radius': document.getElementById('border-radius').value,
+                    'product_id': document.getElementById('product_id').value,
+                    'loader': document.querySelector('[name=loader]:checked')?.value
+                };
+
+                let options_url = "";
+                for (const [k, v] of Object.entries(options)) {
+                    if (v !== "" && typeof v !== "undefined") {
+                        options_url += "&" + k + "=" + encodeURIComponent(v);
+                    }
+                }
+                return initial_link + options_url;
+            };
+
+            const show_link = function () {
+                document.getElementById('script-code').textContent = '\<script src="' + generate_link() + '"\>\<\/script\>';
+            };
+            show_link();
+
+            document.getElementById('html-code').addEventListener('click', function() {
+                this.select();
+            });
+
+            document.getElementById('html-code2').addEventListener('click', function() {
+                this.select();
+            });
+
+
+            document.getElementById('script-code').addEventListener('click', function() {
+                this.select();
+            });
+
+            document.getElementById('background-close').addEventListener('click', function() {
+                changed = true;
+                show_link();
+            });
+
+            document.getElementById('show-custom-form-values')?.addEventListener('click', function() {
+                changed = true;
+                show_link();
+            });
+
+            document.querySelectorAll('input').forEach(function(input) {
+                input.addEventListener('input', function() {
+                    changed = true;
+                    show_link();
+                });
+            });
+
+            document.querySelectorAll('select, #background-color, input[type="radio"]').forEach(function(element) {
+                element.addEventListener('change', function() {
+                    changed = true;
+                    show_link();
+                });
+            });
+
+            document.getElementById('bind_selector').addEventListener('input', function() {
+                const selector = this.value;
+                const buttonInfoParent = document.getElementById('button-info').parentNode;
+
+                if (selector[0] !== "." && selector[0] !== "#") {
+                    buttonInfoParent.classList.remove('alert-info');
+                    buttonInfoParent.classList.add('alert-danger');
+                    document.getElementById('button-code-info').innerHTML = "<span class=\"d-block mb-2 text-danger\"><b>{{ 'Class name should start with dot (.) or hashtag (#) for ID'|trans }}</b></span>";
+                }
+
+                if (selector[0] === ".") {
+                    buttonInfoParent.classList.remove('alert-danger');
+                    buttonInfoParent.classList.add('alert-info');
+                    document.getElementById('button-code-info').innerHTML = "<span class=\"d-block mb-2\">{{ 'Add " + selector + " class to your elements which must call popup. For example: '|trans }}" + '</span><pre>&lt;button type=&quot;button&quot;' + '<span class="text-orange">' + ' class=&quot;' + selector.substring(1) + '</span>' + '&quot; &gt;Order Now&lt;/button&gt;</pre>';
+                }
+
+                if (selector[0] === "#") {
+                    buttonInfoParent.classList.remove('alert-danger');
+                    buttonInfoParent.classList.add('alert-info');
+                    document.getElementById('button-code-info').innerHTML = "<span class=\"d-block mb-2\">{{ 'Add " + selector + " ID to your element which must call popup. For example: '|trans }}" + '</span><pre>&lt;button type=&quot;button&quot;' + '<span class="text-orange">' + ' id=&quot;' + selector.substring(1) + '</span>' + '&quot; &gt;Order Now&lt;/button&gt;</pre>';
+                }
+            });
+
+            document.getElementById('load').addEventListener('click', function() {
+                const s = document.getElementById('bind_selector').value + new Date().getTime();
+
+                // Remove any buttons that are direct children of body
+                document.querySelectorAll('body > button').forEach(button => button.remove());
+
+                // Create and load the script
+                const script = document.createElement('script');
+                script.src = generate_link(s);
+                script.onload = function() {
+                    // Create a test button and add it to the body
+                    const test_button = document.createElement('button');
+                    test_button.style.display = 'none';
+
+                    if (s.charAt(0) === '.') {
+                        test_button.className = s.substring(1);
+                    } else {
+                        test_button.id = s.substring(1);
+                    }
+
+                    document.body.appendChild(test_button);
+                };
+                document.head.appendChild(script);
+
+                // Add event listener for OrderButtonEventsReady
+                document.addEventListener('OrderButtonEventsReady', function() {
+                    const element = document.querySelector(s);
+                    if (element) {
+                        element.click();
+                    }
+                }, { once: true });
+            });
+        });
+    </script>
+{% endblock %}

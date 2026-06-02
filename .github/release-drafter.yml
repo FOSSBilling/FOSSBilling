@@ -1,20 +1,22 @@
 name-template: '$RESOLVED_VERSION'
 tag-template: '$RESOLVED_VERSION'
 categories:
-  - title: '⚠️ Breaking changes'
+  - title: '⚠️ Potentially Breaking Changes'
     labels:
       - 'breaking change'
-  - title: '🚀 Features'
+  - title: '🔐 Security'
+    labels:
+      - 'security'
+  - title: '📈 Enhancements'
+    labels:
+      - 'enhancement'
+  - title: '➕ New Features'
     labels:
       - 'feature'
-      - 'enhancement'
   - title: '🐛 Bug Fixes'
     labels:
       - 'bug'
-  - title: '🛡️ Security'
-    labels:
-      - 'security'
-  - title: '🧰 Maintenance'
+  - title: '📝 Changes'
     labels:
       - 'task'
       - 'tests/CI'
@@ -39,6 +41,4 @@ version-resolver:
       - 'patch'
   default: patch
 template: |
-  ## Changes
-
   $CHANGES

@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -46,7 +47,7 @@ class Service implements InjectionAwareInterface
         $themeCode = $themeService->getCurrentClientAreaThemeCode();
         $paths = [
             Path::join(PATH_THEMES, (string) $themeCode, 'html'),
-            Path::join(PATH_MODS, 'Page', 'html_client'),
+            Path::join(PATH_MODS, 'Page', 'templates/client'),
         ];
 
         $finder = new Finder();

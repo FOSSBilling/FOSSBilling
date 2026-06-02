@@ -1,0 +1,470 @@
+{% import 'macro_functions.html.twig' as mf %}
+
+{% extends 'layout_default.html.twig' %}
+
+{% block meta_title %}{{ 'Hosting Plans and Servers'|trans }}{% endblock %}
+
+{% set active_menu = 'system' %}
+{% set new_server_action %}
+    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newHostingServerModal">
+        <svg class="icon">
+            <use xlink:href="#plus" />
+        </svg>
+        {{ 'New Server'|trans }}
+    </button>
+{% endset %}
+{% set new_plan_action %}
+    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newHostingPlanModal">
+        <svg class="icon">
+            <use xlink:href="#plus" />
+        </svg>
+        {{ 'New Plan'|trans }}
+    </button>
+{% endset %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'Hosting Plans and Servers'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Manage hosting servers, hosting plans, and the provisioning details used by your products.'|trans }}</p>
+            </div>
+        </div>
+        <div class="card-body pt-3 pb-0 px-0">
+            <div class="card border-0 shadow-none rounded-0">
+                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
+                    <ul class="nav nav-pills card-header-pills">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#tab-servers" data-bs-toggle="tab">{{ 'Hosting Servers'|trans }}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#tab-plans" data-bs-toggle="tab">{{ 'Hosting Plans'|trans }}</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="tab-content border-top">
+                    <div class="tab-pane fade show active" id="tab-servers" role="tabpanel">
+                        <div class="card-body border-bottom py-3">
+                            <div class="d-flex justify-content-end">
+                                {{ new_server_action|raw }}
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                                <thead>
+                                    <tr>
+                                        <th>{{ '#'|trans }}</th>
+                                        <th>{{ 'Title'|trans }}</th>
+                                        <th>{{ 'IP'|trans }}</th>
+                                        <th>{{ 'Server Manager'|trans }}</th>
+                                        <th>{{ 'Active'|trans }}</th>
+                                        <th class="w-1 no-sort"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% set servers = admin.servicehosting_server_get_list({ 'per_page': 100 }) %}
+                                    {% for server in servers.list %}
+                                    <tr>
+                                        <td>{{ server.id }}</td>
+                                        <td>
+                                            <a href='{{ "servicehosting/server/#{server.id}"|url }}'>{{ server.name }}</a>
+                                        </td>
+                                        <td>{{ server.ip }}</td>
+                                        <td>{{ mf.status_name(server.manager) }}</td>
+                                        <td>{{ mf.boolean_badge(server.active, 'Yes'|trans, 'No'|trans, 'text-bg-success', 'text-bg-secondary') }}</td>
+                                        <td>
+                                            <a class="btn btn-icon" href="{{ server.cpanel_url }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Log Into the Control Panel'|trans }}" target="_blank">
+                                                <svg class="icon">
+                                                    <use xlink:href="#settings" />
+                                                </svg>
+                                            </a>
+                                            <a class="btn btn-icon" href="{{ 'servicehosting/server_test_connection'|api_url(query: { 'id': server.id }) }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Test Connection'|trans }}" {{ fb_api_link({message: 'Server Connected'|trans}) }}>
+                                                <svg class="icon">
+                                                    <use xlink:href="#wifi" />
+                                                </svg>
+                                            </a>
+                                            <a class="btn btn-icon" href='{{ "servicehosting/server/#{server.id}"|url }}' data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Edit Server Details'|trans }}">
+                                                <svg class="icon">
+                                                    <use xlink:href="#edit" />
+                                                </svg>
+                                            </a>
+                                            <a class="btn btn-icon" href="{{ 'servicehosting/server_delete'|api_url(query: { 'id': server.id }) }}"
+                                                data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Delete the Server'|trans }}"
+                                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'servicehosting'|url}) }}>
+                                                <svg class="icon">
+                                                    <use xlink:href="#delete" />
+                                                </svg>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="tab-plans" role="tabpanel">
+                        <div class="card-body border-bottom py-3">
+                            <div class="d-flex justify-content-end">
+                                {{ new_plan_action|raw }}
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                                <thead>
+                                    <tr>
+                                        <th>{{ '#'|trans }}</th>
+                                        <th>{{ 'Title'|trans }}</th>
+                                        <th>{{ 'Addon Domains'|trans }}</th>
+                                        <th>{{ 'Disk Quota'|trans }}</th>
+                                        <th>{{ 'Bandwidth'|trans }}</th>
+                                        <th class="w-1 no-sort"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% set hps = admin.servicehosting_hp_get_list({ 'per_page': 100 }) %}
+                                    {% for hp in hps.list %}
+                                    <tr>
+                                        <td>{{ hp.id }}</td>
+                                        <td>
+                                            <a href='{{ "servicehosting/plan/#{hp.id}"|url }}'>{{ hp.name }}</a>
+                                        </td>
+                                        <td>{{ hp.max_addon }}</td>
+                                        <td>{{ hp.quota }} <span class="text-body-secondary">MB</span></td>
+                                        <td>{{ hp.bandwidth }} <span class="text-body-secondary">MB</span></td>
+                                        <td>
+                                            <a class="btn btn-icon" href='{{ "servicehosting/plan/#{hp.id}"|url }}' data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Edit Plan Details'|trans }}">
+                                                <svg class="icon">
+                                                    <use xlink:href="#edit" />
+                                                </svg>
+                                            </a>
+                                            <a class="btn btn-icon" href="{{ 'servicehosting/hp_delete'|api_url(query: { 'id': hp.id }) }}"
+                                                data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Delete the Plan'|trans }}"
+                                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'servicehosting#tab-plans'|url}) }}>
+                                                <svg class="icon">
+                                                    <use xlink:href="#delete" />
+                                                </svg>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal modal-blur fade" id="newHostingServerModal" tabindex="-1" aria-labelledby="newHostingServerModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-md-down modal-xl">
+                <form class="modal-content fb-modal-form" method="post" action="{{ 'servicehosting/server_create'|api_url }}" {{ fb_api_form({redirect: 'servicehosting'|url}) }}>
+                    <div class="modal-header">
+                        <h3 class="modal-title" id="newHostingServerModalLabel">{{ 'Create New Server'|trans }}</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <section class="fb-modal-section">
+                            <div class="fb-modal-section-header">
+                                <div class="fb-modal-section-heading-row">
+                                    <h4 class="fb-modal-section-title">{{ 'Server Details'|trans }}</h4>
+                                </div>
+                                <p class="fb-modal-section-description">{{ 'Set the server identity and the basic details FOSSBilling uses to reach it.'|trans }}</p>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="new-server-name">{{ 'Name'|trans }}</label>
+                                    <input class="form-control" id="new-server-name" type="text" name="name" value="" required placeholder="{{ 'Unique name to identify this server'|trans }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="new-server-hostname">{{ 'Hostname'|trans }}</label>
+                                    <input class="form-control" id="new-server-hostname" type="text" name="hostname" value="" placeholder="{{ 'server1.yourserverdomain.com'|trans }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="new-server-ip">{{ 'IP'|trans }}</label>
+                                    <input class="form-control" id="new-server-ip" type="text" name="ip" value="" required placeholder="{{ 'Primary IP address of the server used to connect to it like: 123.123.123.123'|trans }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ 'Enable/Disable'|trans }}</label>
+                                    <div class="d-flex flex-wrap gap-3 pt-2">
+                                        <label class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="active" value="1" checked>
+                                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                                        </label>
+                                        <label class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="active" value="0">
+                                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="new-server-assigned-ips">{{ 'Assigned IP Addresses'|trans }}</label>
+                                    <textarea class="form-control" id="new-server-assigned-ips" name="assigned_ips" rows="4" placeholder="{{ 'List the IP Addresses assigned to the server (One per line)'|trans }}"></textarea>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="fb-modal-section">
+                            <div class="fb-modal-section-header">
+                                <div class="fb-modal-section-heading-row">
+                                    <h4 class="fb-modal-section-title">{{ 'Nameservers'|trans }}</h4>
+                                </div>
+                                <p class="fb-modal-section-description">{{ 'Add the nameservers you want clients and services to inherit from this server.'|trans }}</p>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="new-server-ns1">{{ 'Nameserver 1'|trans }}</label>
+                                    <input class="form-control" id="new-server-ns1" type="text" name="ns1" value="" placeholder="ns1.yourdomain.com">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="new-server-ns2">{{ 'Nameserver 2'|trans }}</label>
+                                    <input class="form-control" id="new-server-ns2" type="text" name="ns2" value="" placeholder="ns2.yourdomain.com">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="new-server-ns3">{{ 'Nameserver 3'|trans }}</label>
+                                    <input class="form-control" id="new-server-ns3" type="text" name="ns3" value="" placeholder="ns3.yourdomain.com">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="new-server-ns4">{{ 'Nameserver 4'|trans }}</label>
+                                    <input class="form-control" id="new-server-ns4" type="text" name="ns4" value="" placeholder="ns4.yourdomain.com">
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="fb-modal-section">
+                            <div class="fb-modal-section-header">
+                                <div class="fb-modal-section-heading-row">
+                                    <h4 class="fb-modal-section-title">{{ 'Connection Settings'|trans }}</h4>
+                                </div>
+                                <p class="fb-modal-section-description">{{ 'Choose the server manager and the credentials FOSSBilling should use for API access.'|trans }}</p>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="new-server-manager">{{ 'Server Manager'|trans }}</label>
+                                    <select class="form-select" id="new-server-manager" name="manager" onchange="handleManagerChange(this)">
+                                        {% for code, manager in admin.servicehosting_manager_get_pairs %}
+                                        <option value="{{ code }}">{{ manager.label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="new-server-port">{{ 'Connection Port'|trans }}</label>
+                                    <input class="form-control" id="new-server-port" type="number" name="port" min="1" max="65535" value="" placeholder="{{ 'Custom port. Use blank to use default. Used to connect to the API'|trans }}">
+                                </div>
+                                <div id="credentials-anchor" class="d-none" aria-hidden="true"></div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="new-server-password-length">{{ 'Password Length'|trans }}</label>
+                                    <input class="form-control" id="new-server-password-length" type="number" name="passwordLength" min="1" max="100" value="" placeholder="{{ 'Length of generated passwords when creating user accounts. Defaults to 10'|trans }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ 'Use Secure Connection'|trans }}</label>
+                                    <div class="d-flex flex-wrap gap-3 pt-2">
+                                        <label class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="secure" value="1" checked>
+                                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                                        </label>
+                                        <label class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="secure" value="0">
+                                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                                        </label>
+                                    </div>
+                                    <div class="form-text">{{ 'Controls whether HTTPS or HTTP is used for API requests.'|trans }}</div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">{{ 'Verify TLS Certificate'|trans }}</label>
+                                    <div class="d-flex flex-wrap gap-3 pt-2">
+                                        <label class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="tls_verify" value="1" checked>
+                                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                                        </label>
+                                        <label class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="tls_verify" value="0">
+                                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                                        </label>
+                                    </div>
+                                    <div class="form-text">{{ 'Recommended: keep enabled unless your server uses a self-signed or otherwise invalid certificate.'|trans }}</div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                        <button class="btn btn-primary" type="submit">{{ 'Add Server'|trans }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="modal modal-blur fade" id="newHostingPlanModal" tabindex="-1" aria-labelledby="newHostingPlanModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-fullscreen-md-down modal-lg">
+                <form class="modal-content fb-modal-form" method="post" action="{{ 'servicehosting/hp_create'|api_url }}" {{ fb_api_form({callback: 'onAfterHostingPlanCreate'}) }}>
+                    <div class="modal-header">
+                        <h3 class="modal-title" id="newHostingPlanModalLabel">{{ 'Create New Hosting Plan'|trans }}</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <section class="fb-modal-section">
+                            <div class="fb-modal-section-header">
+                                <div class="fb-modal-section-heading-row">
+                                    <h4 class="fb-modal-section-title">{{ 'Plan Details'|trans }}</h4>
+                                </div>
+                                <p class="fb-modal-section-description">{{ 'Start with the core plan limits here. Manager-specific settings can be adjusted on the next screen.'|trans }}</p>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label" for="new-plan-name">{{ 'Name'|trans }}</label>
+                                    <input class="form-control" id="new-plan-name" type="text" name="name" value="" required placeholder="{{ 'Unique name to identify this hosting plan'|trans }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="new-plan-quota">{{ 'Disk Quota'|trans }}</label>
+                                    <div class="input-group">
+                                        <input class="form-control" id="new-plan-quota" type="text" name="quota" value="1024" aria-describedby="new-plan-quota-unit">
+                                        <span class="input-group-text" id="new-plan-quota-unit">MB</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="new-plan-bandwidth">{{ 'Bandwidth'|trans }}</label>
+                                    <div class="input-group">
+                                        <input class="form-control" id="new-plan-bandwidth" type="text" name="bandwidth" value="1024" aria-describedby="new-plan-bandwidth-unit">
+                                        <span class="input-group-text" id="new-plan-bandwidth-unit">MB</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                        <button class="btn btn-primary" type="submit">{{ 'Create Hosting Plan'|trans }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+<script>
+    function onAfterHostingPlanCreate(id) {
+        window.location = "{{ 'servicehosting/plan'|url }}/" + id;
+    }
+
+    function handleManagerChange(select) {
+        var pairs = {{ admin.servicehosting_manager_get_pairs|json_encode|raw }};
+        var defaults = {
+            form: {
+                credentials: {
+                    fields: [
+                        {
+                            name: 'username',
+                            label: 'Username',
+                            type: 'text',
+                            placeholder: 'Username to connect to the server',
+                            required: true
+                        },
+                        {
+                            name: 'password',
+                            label: 'Password',
+                            type: 'password',
+                            placeholder: 'Password to connect to the server',
+                            required: true
+                        }
+                    ]
+                }
+            }
+        };
+        var credentialsAnchor = document.getElementById('credentials-anchor');
+        var manager = select.value;
+        var data = defaults.form.credentials.fields;
+
+        var generatedFields = document.querySelectorAll('[data-generated-credential="true"]');
+        for (var j = 0; j < generatedFields.length; j++) {
+            generatedFields[j].remove();
+        }
+
+        if (pairs[manager] && pairs[manager].form && pairs[manager].form.credentials && pairs[manager].form.credentials.fields) {
+            data = pairs[manager].form.credentials.fields;
+        }
+
+        for (var i = 0; i < data.length; i++) {
+            var field = data[i];
+            var fieldId = 'new-server-credential-' + field.name;
+            var col = document.createElement('div');
+            var isSingleField = data.length === 1;
+            var isOddLastField = data.length % 2 === 1 && i === data.length - 1;
+
+            col.className = isSingleField || isOddLastField ? 'col-12' : 'col-md-6';
+            col.dataset.generatedCredential = 'true';
+
+            var label = document.createElement('label');
+            label.className = 'form-label';
+            label.setAttribute('for', fieldId);
+            label.textContent = field.label;
+            col.appendChild(label);
+
+            var input = document.createElement('input');
+            input.className = 'form-control';
+            input.id = fieldId;
+            input.type = field.type;
+            input.name = field.name;
+            input.placeholder = field.placeholder;
+            input.required = field.required;
+
+            if (field.type === 'password') {
+                input.autocomplete = 'new-password';
+            }
+
+            col.appendChild(input);
+            credentialsAnchor.parentNode.insertBefore(col, credentialsAnchor);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var managerSelect = document.getElementById('new-server-manager');
+        var modalMap = {
+            '#tab-new-server': document.getElementById('newHostingServerModal'),
+            '#tab-new-plan': document.getElementById('newHostingPlanModal')
+        };
+
+        if (managerSelect) {
+            handleManagerChange(managerSelect);
+        }
+
+        Object.entries(modalMap).forEach(function (entry) {
+            var hash = entry[0];
+            var element = entry[1];
+
+            if (!element) {
+                return;
+            }
+
+            element.addEventListener('hidden.bs.modal', function () {
+                if (window.location.hash !== hash) {
+                    return;
+                }
+
+                var url = new URL(window.location.href);
+                url.hash = '';
+                window.history.replaceState({}, '', url);
+            });
+        });
+
+        if (modalMap[window.location.hash]) {
+            bootstrap.Modal.getOrCreateInstance(modalMap[window.location.hash]).show();
+            return;
+        }
+
+        var tabTrigger = document.querySelector('[data-bs-toggle="tab"][href="' + window.location.hash + '"]');
+        if (tabTrigger) {
+            bootstrap.Tab.getOrCreateInstance(tabTrigger).show();
+        }
+    });
+</script>
+{% endblock %}

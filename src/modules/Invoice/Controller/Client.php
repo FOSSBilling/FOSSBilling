@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -10,6 +11,8 @@
  */
 
 namespace Box\Mod\Invoice\Controller;
+
+use Symfony\Component\HttpFoundation\Response;
 
 class Client implements \FOSSBilling\InjectionAwareInterface
 {
@@ -83,7 +86,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
     {
         $api = $this->di['api_guest'];
         $data = [
-            'allow_subscription' => $_GET['allow_subscription'] ?? true,
+            'allow_subscription' => $app->getRequest()->query->getBoolean('allow_subscription', true),
             'hash' => $hash,
             'gateway_id' => $id,
             'auto_redirect' => true,
@@ -95,14 +98,18 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_invoice_banklink', ['payment' => $result, 'invoice' => $invoice]);
     }
 
-    public function get_pdf(\Box_App $app, $hash): string
+    public function get_pdf(\Box_App $app, $hash): Response
     {
         $api = $this->di['api_guest'];
         $data = [
             'hash' => $hash,
         ];
-        $invoice = $api->invoice_pdf($data);
+        $response = $api->invoice_pdf($data);
 
-        return $app->render('mod_invoice_pdf', ['invoice' => $invoice]);
+        if (!$response instanceof Response) {
+            throw new \FOSSBilling\Exception('Invoice PDF response could not be generated');
+        }
+
+        return $response;
     }
 }

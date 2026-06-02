@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -37,7 +38,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             'subpages' => [
                 [
                     'location' => 'activity',
-                    'label' => __trans('System activity'),
+                    'label' => __trans('System Activity'),
                     'index' => 100,
                     'uri' => $this->di['url']->adminLink('activity'),
                     'class' => '',

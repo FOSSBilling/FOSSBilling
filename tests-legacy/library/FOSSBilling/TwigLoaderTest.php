@@ -1,0 +1,29 @@
+<?php
+
+declare(strict_types=1);
+
+use FOSSBilling\Twig\Enum\AppArea;
+use FOSSBilling\Twig\TwigLoader;
+use Symfony\Component\Filesystem\Path;
+
+#[PHPUnit\Framework\Attributes\Group('Core')]
+final class TwigLoaderTest extends PHPUnit\Framework\TestCase
+{
+    public function testTemplates(): void
+    {
+        $loader = new TwigLoader(AppArea::CLIENT, Path::join(PATH_THEMES, 'huraga'));
+        $test = $loader->getSourceContext('mod_page_login.html.twig');
+        $test2 = $loader->getSourceContext('error.html.twig');
+
+        $this->assertIsObject($test);
+        $this->assertIsObject($test2);
+    }
+
+    public function testException(): void
+    {
+        $loader = new TwigLoader(AppArea::CLIENT, Path::join(PATH_THEMES, 'huraga'));
+        $this->expectException(Twig\Error\LoaderError::class);
+        $test = $loader->getSourceContext('mod_non_existing_settings.html.twig');
+        $test = $loader->getSourceContext('some_random_name.html.twig');
+    }
+}

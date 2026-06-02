@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -15,6 +16,7 @@
 
 namespace Box\Mod\Invoice\Api;
 
+use Box\Mod\Invoice\InvoiceOperation;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Guest extends \Api_Abstract
@@ -29,40 +31,21 @@ class Guest extends \Api_Abstract
     #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
     public function get($data)
     {
+        if (!preg_match('/^[a-f0-9]{30,60}$/', (string) $data['hash'])) {
+            throw new \FOSSBilling\Exception('Invalid invoice hash', null, 4001);
+        }
+
+        $this->di['rate_limiter']->consumeOrThrow('invoice_get_ip', (string) $this->getIp());
+        $this->di['rate_limiter']->consumeOrThrow('invoice_get_hash', (string) $data['hash']);
+
         $model = $this->di['db']->findOne('Invoice', 'hash = :hash', ['hash' => $data['hash']]);
         if (!$model) {
             throw new \FOSSBilling\Exception('Invoice was not found');
         }
         $service = $this->getService();
-        $service->checkInvoiceAuth($model->client_id);
+        $service->checkInvoiceAuth($model, InvoiceOperation::READ);
 
         return $service->toApiArray($model, true, $this->getIdentity());
-    }
-
-    /**
-     * Update Invoice details. Only unpaid invoice details can be updated.
-     *
-     * @optional int $gateway_id - selected payment gateway id
-     *
-     * @return bool
-     *
-     * @throws \FOSSBilling\Exception
-     */
-    #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
-    public function update($data)
-    {
-        $invoice = $this->di['db']->findOne('Invoice', 'hash = :hash', ['hash' => $data['hash']]);
-        if (!$invoice) {
-            throw new \FOSSBilling\Exception('Invoice was not found');
-        }
-        if ($invoice->status == 'paid') {
-            throw new \FOSSBilling\InformationException('Paid Invoice cannot be modified');
-        }
-
-        $updateParams = [];
-        $updateParams['gateway_id'] = $data['gateway_id'] ?? null;
-
-        return $this->getService()->updateInvoice($invoice, $updateParams);
     }
 
     /**
@@ -95,13 +78,20 @@ class Guest extends \Api_Abstract
      */
     public function payment($data)
     {
-        if (!isset($data['hash'])) {
+        if (empty($data['hash'])) {
             throw new \FOSSBilling\Exception('Invoice hash not passed. Missing param hash', null, 810);
         }
 
-        if (!isset($data['gateway_id'])) {
+        if (!preg_match('/^[a-f0-9]{30,60}$/', (string) $data['hash'])) {
+            throw new \FOSSBilling\Exception('Invalid invoice hash', null, 4001);
+        }
+
+        if (empty($data['gateway_id'])) {
             throw new \FOSSBilling\Exception('Payment method not found. Missing param gateway_id', null, 811);
         }
+
+        $this->di['rate_limiter']->consumeOrThrow('invoice_payment_ip', (string) $this->getIp());
+        $this->di['rate_limiter']->consumeOrThrow('invoice_payment_hash', (string) $data['hash']);
 
         return $this->getService()->processInvoice($data);
     }
@@ -114,6 +104,13 @@ class Guest extends \Api_Abstract
     #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
     public function pdf($data)
     {
+        if (!preg_match('/^[a-f0-9]{30,60}$/', (string) $data['hash'])) {
+            throw new \FOSSBilling\Exception('Invalid invoice hash', null, 4001);
+        }
+
+        $this->di['rate_limiter']->consumeOrThrow('invoice_pdf_ip', (string) $this->getIp());
+        $this->di['rate_limiter']->consumeOrThrow('invoice_pdf_hash', (string) $data['hash']);
+
         return $this->getService()->generatePDF($data['hash'], $this->getIdentity());
     }
 }

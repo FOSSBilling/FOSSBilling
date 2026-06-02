@@ -1,0 +1,216 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% set active_menu = 'order' %}
+
+{% import "macro_functions.html.twig" as mf %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|url }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'order'|url }}">{{ 'Orders'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Create New Order'|trans }}</li>
+    </ol>
+{% endblock %}
+
+{% block meta_title %}{{ 'Create New Order'|trans }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <div class="d-flex flex-column gap-1 mb-4">
+            <h3 class="mb-0">{{ 'Create New Order'|trans }}</h3>
+            <p class="text-secondary mb-0">{{ product.title }} {{ 'for'|trans }} {{ client.first_name }} {{ client.last_name }}</p>
+        </div>
+
+        <form method="post" action="{{ 'order/create'|api_url }}" {{ fb_api_form({callback: 'onAfterOrderPlaced'}) }}>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex flex-column gap-1 mb-4">
+                        <h5 class="card-title mb-0">{{ 'Order Options'|trans }}</h5>
+                        <p class="text-secondary mb-0">{{ 'Choose how the order should be invoiced and whether it should be activated immediately.'|trans }}</p>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-xl-6">
+                            <label class="form-label">{{ 'Invoice Option'|trans }}</label>
+                            {{ mf.selectbox('invoice_option', admin.order_get_invoice_options, order.invoice_option) }}
+                        </div>
+                        <div class="col-xl-6">
+                            <label class="form-label d-block">{{ 'Activate Order'|trans }}</label>
+                            <div class="d-flex flex-wrap gap-3">
+                                <label class="form-check">
+                                    <input class="form-check-input" id="radioEnabledYes" type="radio" name="activate" value="1" checked>
+                                    <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                                </label>
+                                <label class="form-check">
+                                    <input class="form-check-input" id="radioEnabledNo" type="radio" name="activate" value="0">
+                                    <span class="form-check-label">{{ 'No'|trans }}</span>
+                                </label>
+                            </div>
+                        </div>
+                        {% if product.pricing.type == 'recurrent' %}
+                        <div class="col-xl-6">
+                            <label class="form-label" for="period">{{ 'Period'|trans }}</label>
+                            <select class="form-select" name="period" id="period" required>
+                                {% for val,label in guest.system_periods %}
+                                <option value="{{ val }}" label="{{ label|e }}" data-price="{{ product.pricing.recurrent[val].price }}" data-status="{{ product.pricing.recurrent[val].enabled }}" {% if request.period == val %}selected="selected"{% endif %}>{{ label|e }}</option>
+                                {% endfor %}
+                            </select>
+                            <div id="period-info" class="form-hint mt-2"></div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {% set product_order = 'mod_service' ~ product.type ~ '_order.html.twig' %}
+            {% if admin.system_template_exists({ 'file': product_order }) %}
+                {{ include(product_order) }}
+            {% endif %}
+
+            {% if has_permission('invoice') %}
+            <div id="mark-invoice-paid-options" class="card mb-4 d-none">
+                <div class="card-body">
+                    <div class="d-flex flex-column gap-1 mb-4">
+                        <h5 class="card-title mb-0">{{ 'Initial Invoice Handling'|trans }}</h5>
+                        <p class="text-secondary mb-0">{{ 'Use this only when the client has already completed payment outside the standard order flow.'|trans }}</p>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="mark_invoice_paid" name="mark_invoice_paid" value="1">
+                        <label class="form-check-label" for="mark_invoice_paid">{{ 'Confirm that the first invoice has already been paid by the client'|trans }}.</label>
+                    </div>
+                    <div id="mark-invoice-paid-fields" class="d-none">
+                        <div class="row g-3">
+                            <div class="col-xl-6">
+                                <label class="form-label">{{ 'Payment Gateway'|trans }}</label>
+                                {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, request.gateway_id, 0, 'Select Payment Gateway'|trans) }}
+                                <small class="form-hint">{{ 'Required when marking the invoice as paid during order creation.'|trans }}</small>
+                            </div>
+                            <div class="col-xl-6">
+                                <label class="form-label" for="transaction-id">{{ 'Transaction ID'|trans }}</label>
+                                <input class="form-control" type="text" name="transactionId" id="transaction-id" value="{{ request.transactionId }}">
+                                <small class="form-hint">{{ 'Required when using the Custom payment gateway.'|trans }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <input type="hidden" name="client_id" value="{{ client.id }}">
+            <input type="hidden" name="product_id" value="{{ product.id }}">
+            <div class="d-flex justify-content-end">
+                <input type="submit" value="{{ 'Place New Order'|trans }}" class="btn btn-primary">
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script>
+    function onAfterOrderPlaced(id) {
+        window.location = "{{ 'order/manage/'|url }}/" + id;
+    }
+
+    const periodEl = document.getElementById('period');
+    const invoiceOptionEl = document.querySelector('[name="invoice_option"]');
+    const markInvoicePaidOptionsEl = document.getElementById('mark-invoice-paid-options');
+    const markInvoicePaidEl = document.getElementById('mark_invoice_paid');
+    const markInvoicePaidFieldsEl = document.getElementById('mark-invoice-paid-fields');
+    const gatewayEl = document.querySelector('[name="gateway_id"]');
+    const transactionIdEl = document.getElementById('transaction-id');
+
+    function syncMarkInvoicePaidControls() {
+        if (!markInvoicePaidOptionsEl || !invoiceOptionEl) {
+            return;
+        }
+
+        const invoiceIsIssued = invoiceOptionEl.value === 'issue-invoice';
+        markInvoicePaidOptionsEl.classList.toggle('d-none', !invoiceIsIssued);
+
+        if (!invoiceIsIssued && markInvoicePaidEl) {
+            markInvoicePaidEl.checked = false;
+        }
+
+        const markInvoicePaid = invoiceIsIssued && !!(markInvoicePaidEl && markInvoicePaidEl.checked);
+        if (markInvoicePaidFieldsEl) {
+            markInvoicePaidFieldsEl.classList.toggle('d-none', !markInvoicePaid);
+        }
+        if (gatewayEl) {
+            gatewayEl.required = markInvoicePaid;
+            gatewayEl.disabled = !markInvoicePaid;
+        }
+        if (transactionIdEl) {
+            transactionIdEl.disabled = !markInvoicePaid;
+        }
+    }
+
+    if (periodEl) {
+        periodEl.addEventListener('change', function() {
+            const optionSelected = this.options[this.selectedIndex];
+            const periodNotification = document.getElementById('period-info');
+
+            periodNotification.textContent = '';
+
+            const addNotification = (text) => {
+                const spanElem = document.createElement('span');
+                spanElem.style.paddingLeft = '20px';
+                spanElem.style.lineHeight = '28px';
+                spanElem.style.float = 'left';
+                spanElem.textContent = text;
+                periodNotification.appendChild(spanElem);
+            };
+
+            if (optionSelected.dataset.price == 0) {
+                addNotification("{{ 'Selected price is 0.00'|trans }}");
+            }
+
+            if (optionSelected.dataset.status == 0) {
+                addNotification("{{ 'Product is disabled in configuration'|trans }}");
+            }
+        });
+    }
+
+    if (invoiceOptionEl) {
+        invoiceOptionEl.addEventListener('change', syncMarkInvoicePaidControls);
+    }
+
+    if (markInvoicePaidEl) {
+        markInvoicePaidEl.addEventListener('change', syncMarkInvoicePaidControls);
+    }
+
+    // Initialize state immediately for AJAX-rendered contexts (DOMContentLoaded may not fire)
+    syncMarkInvoicePaidControls();
+
+    // Parse URL parameters for pre-filling form values
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+
+        // Handle period parameter
+        const periodParam = urlParams.get('period');
+        if (periodParam) {
+            const periodSelect = document.getElementById('period');
+            if (periodSelect) {
+                for (let i = 0; i < periodSelect.options.length; i++) {
+                    if (periodSelect.options[i].value === periodParam) {
+                        periodSelect.selectedIndex = i;
+                        periodSelect.dispatchEvent(new Event('change'));
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Re-sync state after URL parameters are processed
+        syncMarkInvoicePaidControls();
+    });
+</script>
+{% endblock %}

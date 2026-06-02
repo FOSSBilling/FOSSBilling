@@ -1,0 +1,68 @@
+{% import 'macro_functions.html.twig' as mf %}
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <label class="form-label">{{ 'Domain Action'|trans }}</label>
+        <div class="domain-action-select d-flex flex-wrap gap-3 pt-1">
+            <label class="form-check">
+                <input class="form-check-input" id="radioActionRegister" type="radio" name="config[action]" value="register" checked>
+                <span class="form-check-label">{{ 'Register'|trans }}</span>
+            </label>
+            <label class="form-check">
+                <input class="form-check-input" id="radioActionTransfer" type="radio" name="config[action]" value="transfer">
+                <span class="form-check-label">{{ 'Transfer'|trans }}</span>
+            </label>
+        </div>
+    </div>
+
+    <div class="col-12 domain-action domain-register">
+        <label class="form-label">{{ 'Register Domain'|trans }}</label>
+        <div class="row g-3">
+            <div class="col-lg-8">
+                <div class="input-group">
+                    <input class="form-control" type="text" name="config[register_sld]" value="{{ request.register_sld }}" placeholder="{{ 'Domain Name to Register'|trans }}">
+                    {{ mf.selectboxtld('config[register_tld]', guest.serviceDomain_tlds({ 'allow_register': 1 })) }}
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="input-group">
+                    <input class="form-control" type="text" name="config[register_years]" value="1" placeholder="{{ 'Years'|trans }}">
+                    <span class="input-group-text">{{ 'Years'|trans }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 domain-action domain-transfer d-none">
+        <label class="form-label">{{ 'Transfer Domain'|trans }}</label>
+        <div class="row g-3">
+            <div class="col-lg-8">
+                <div class="input-group">
+                    <input class="form-control" type="text" name="config[transfer_sld]" value="{{ request.transfer_sld }}" placeholder="{{ 'Domain Name to Transfer'|trans }}">
+                    {{ mf.selectboxtld('config[transfer_tld]', guest.serviceDomain_tlds({ 'allow_transfer': 1 })) }}
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <input class="form-control" type="text" name="config[transfer_code]" value="{{ request.transfer_code }}" placeholder="{{ 'Domain transfer code'|trans }}">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.domain-action-select input').forEach(function(radio) {
+            radio.addEventListener('click', function() {
+                document.querySelectorAll('.domain-action').forEach(function(action) {
+                    action.classList.add('d-none');
+                });
+
+                if (this.value === 'register') {
+                    document.querySelector('.domain-action.domain-register').classList.remove('d-none');
+                } else {
+                    document.querySelector('.domain-action.domain-transfer').classList.remove('d-none');
+                }
+            });
+        });
+    });
+</script>

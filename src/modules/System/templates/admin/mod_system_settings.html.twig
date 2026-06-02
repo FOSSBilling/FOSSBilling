@@ -1,0 +1,506 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% block meta_title %}{{ 'System Settings'|trans }}{% endblock %}
+
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|url }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'System Settings'|trans }}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+    {% set new_params = admin.extension_config_get({ 'ext': 'mod_system' }) %}
+    {% set params = admin.system_get_params %}
+    {% set localization = admin.system_localization_settings %}
+    {% set can_update_params = has_permission('system', 'update_params') %}
+    {% set can_invalidate_cache = has_permission('system', 'invalidate_cache') %}
+    {% set can_toggle_error_reporting = has_permission('system', 'toggle_error_reporting') %}
+    {% set can_manage_network_interface = has_permission('system', 'manage_network_interface') %}
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'System Settings'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Manage company information, localization, system maintenance, and environment-level controls.'|trans }}</p>
+            </div>
+        </div>
+        <div class="card-body pt-3 pb-0 px-0">
+            <ul class="nav nav-pills mb-3 px-3" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link active" href="#tab-index" data-bs-toggle="tab" role="tab">{{ 'Company Details'|trans }}</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" href="#company-legal" data-bs-toggle="tab" role="tab">{{ 'Company Legal'|trans }}</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" href="#tab-localization" data-bs-toggle="tab" role="tab">{{ 'Localization'|trans }}</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" href="#tab-countries" data-bs-toggle="tab" role="tab">{{ 'Countries'|trans }}</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" href="#tab-cache" data-bs-toggle="tab" role="tab">{{ 'Cache'|trans }}</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" href="#tab-about" data-bs-toggle="tab" role="tab">{{ 'About'|trans }}</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" href="#tab-reporting" data-bs-toggle="tab" role="tab">{{ 'Error Reporting'|trans }}</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" href="#network-interface" data-bs-toggle="tab" role="tab">{{ 'Network Interface'|trans }}</a>
+                </li>
+            </ul>
+
+            <div class="tab-content border-top">
+                <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+                    <form method="post" action="{{ 'system/update_params'|api_url }}" {{ fb_api_form({ message: 'Company Updated'|trans}) }}>
+                        <div class="card-body">
+                            <div class="alert alert-info" role="alert">
+                                <strong class="me-1">{{ 'Information:'|trans }}</strong>{{ 'These settings define the company details shown throughout invoices, public pages, and client-facing documents.'|trans }}
+                            </div>
+
+                            <h4 class="card-title mb-2">{{ 'Contact and Branding'|trans }}</h4>
+                            <p class="text-secondary mb-3">{{ 'Set the primary contact details and branding assets used across the system.'|trans }}</p>
+                            <div class="row g-3">
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="company_name">{{ 'Name'|trans }}</label>
+                                    <input class="form-control" id="company_name" type="text" name="company_name" value="{{ params.company_name }}">
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="company_email">{{ 'Email'|trans }}</label>
+                                    <input class="form-control" id="company_email" type="text" name="company_email" value="{{ params.company_email }}">
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="company_tel">{{ 'Phone'|trans }}</label>
+                                    <input class="form-control" id="company_tel" type="text" name="company_tel" value="{{ params.company_tel }}">
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="company_favicon">{{ 'Favicon'|trans }}</label>
+                                    <input class="form-control" id="company_favicon" type="text" name="company_favicon" value="{{ params.company_favicon }}">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="company_address_1">{{ 'Address'|trans }}</label>
+                                    <input class="form-control mb-2" id="company_address_1" type="text" name="company_address_1" value="{{ params.company_address_1 }}" placeholder="{{ 'Address line 1'|trans }}">
+                                    <input class="form-control mb-2" type="text" name="company_address_2" value="{{ params.company_address_2 }}" placeholder="{{ 'Address line 2'|trans }}">
+                                    <input class="form-control" type="text" name="company_address_3" value="{{ params.company_address_3 }}" placeholder="{{ 'Address line 3'|trans }}">
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="company_logo">{{ 'Logo URL'|trans }}</label>
+                                    <input class="form-control" id="company_logo" type="text" name="company_logo" value="{{ params.company_logo }}">
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="company_logo_dark">{{ 'Logo URL (dark mode)'|trans }}</label>
+                                    <input class="form-control" id="company_logo_dark" type="text" name="company_logo_dark" value="{{ params.company_logo_dark }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body border-top">
+                            <h4 class="card-title mb-2">{{ 'Registration and Banking'|trans }}</h4>
+                            <p class="text-secondary mb-3">{{ 'Store company identifiers and optional bank details for use on invoices and documents.'|trans }}</p>
+                            <div class="row g-3">
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="company_number">{{ 'Company Number'|trans }}</label>
+                                    <input class="form-control" id="company_number" type="text" name="company_number" value="{{ params.company_number }}">
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="company_vat_number">{{ 'VAT Number'|trans }}</label>
+                                    <input class="form-control" id="company_vat_number" type="text" name="company_vat_number" value="{{ params.company_vat_number }}">
+                                </div>
+                                <div class="col-lg-4">
+                                    <label class="form-label" for="company_bank_name">{{ 'Bank Name'|trans }}</label>
+                                    <input class="form-control" id="company_bank_name" type="text" name="company_bank_name" value="{{ params.company_bank_name }}">
+                                </div>
+                                <div class="col-lg-4">
+                                    <label class="form-label" for="company_bic">{{ 'BIC / SWIFT Code'|trans }}</label>
+                                    <input class="form-control" id="company_bic" type="text" name="company_bic" value="{{ params.company_bic }}">
+                                </div>
+                                <div class="col-lg-4">
+                                    <label class="form-label" for="company_account_number">{{ 'Bank Account Number'|trans }}</label>
+                                    <input class="form-control" id="company_account_number" type="text" name="company_account_number" value="{{ params.company_account_number }}">
+                                </div>
+                            </div>
+                            <div class="mt-4 d-flex flex-column gap-3">
+                                <label class="form-check form-switch form-switch-2">
+                                    <input type="hidden" name="company_display_bank_info" value="0">
+                                    <input class="form-check-input" type="checkbox" name="company_display_bank_info" value="1" {% if params.company_display_bank_info == '1' %}checked{% endif %}>
+                                    <span class="form-check-label">{{ 'Display Bank Account Information on Documents'|trans }}</span>
+                                </label>
+                                <label class="form-check form-switch form-switch-2">
+                                    <input type="hidden" name="company_bank_info_pagebottom" value="0">
+                                    <input class="form-check-input" type="checkbox" name="company_bank_info_pagebottom" value="1" {% if params.company_bank_info_pagebottom == '1' %}checked{% endif %}>
+                                    <span class="form-check-label">{{ 'Display Bank Account Information at the Bottom of Every Page'|trans }}</span>
+                                </label>
+                                <label class="form-check form-switch form-switch-2">
+                                    <input type="hidden" name="hide_company_public" value="0">
+                                    <input class="form-check-input" id="hide_company_public" type="checkbox" name="hide_company_public" value="1" {% if params.hide_company_public == '1' %}checked{% endif %}>
+                                    <span class="form-check-label">{{ 'Hide Some Company Information in the Guest API'|trans }}</span>
+                                </label>
+                                <small class="form-hint">{{ 'Enabling this hides some information from the company guest API endpoint, including address, phone number, email, VAT number, and more.'|trans }}</small>
+                            </div>
+                        </div>
+                        <div class="card-body border-top">
+                            <h4 class="card-title mb-2">{{ 'Signature'|trans }}</h4>
+                            <p class="text-secondary mb-3">{{ 'Set a default company signature for use in documents and communications.'|trans }}</p>
+                            <textarea class="form-control" name="company_signature" rows="3">{{ params.company_signature }}</textarea>
+                        </div>
+                        <div class="card-footer text-end">
+                            <button class="btn btn-primary" type="submit"{% if not can_update_params %} disabled aria-disabled="true"{% endif %}>{{ 'Update Settings'|trans }}</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="tab-pane fade" id="company-legal" role="tabpanel">
+                    <form method="post" action="{{ 'system/update_params'|api_url }}" {{ fb_api_form({ message: 'Company Updated'|trans}) }}>
+                        <div class="card-body">
+                            <div class="alert alert-info" role="alert">
+                                <strong class="me-1">{{ 'Information:'|trans }}</strong>{{ 'These text blocks appear on legal and informational pages and may also be referenced from other client-facing areas.'|trans }}
+                            </div>
+                            <div class="mb-3">
+                                <h4 class="card-title mb-2">{{ 'Company Terms of Service, Legal Regulation'|trans }}</h4>
+                                <textarea class="form-control editor-textarea" name="company_tos" rows="5">{{ params.company_tos }}</textarea>
+                            </div>
+                            <div class="mb-3">
+                                <h4 class="card-title mb-2">{{ 'Company Privacy Policy'|trans }}</h4>
+                                <textarea class="form-control editor-textarea" name="company_privacy_policy" rows="5">{{ params.company_privacy_policy }}</textarea>
+                            </div>
+                            <div class="mb-3">
+                                <h4 class="card-title mb-2">{{ 'Notes'|trans }}</h4>
+                                <textarea class="form-control editor-textarea" name="company_note" rows="5">{{ params.company_note }}</textarea>
+                            </div>
+                        </div>
+                        <div class="card-footer text-end">
+                            <button class="btn btn-primary" type="submit"{% if not can_update_params %} disabled aria-disabled="true"{% endif %}>{{ 'Update Settings'|trans }}</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="tab-pane fade" id="tab-localization" role="tabpanel">
+                    <form method="post" action="{{ 'system/update_localization_settings'|api_url }}" {{ fb_api_form({ message: 'Localization settings updated'|trans }) }}>
+                        <div class="card-body">
+                            <div class="alert alert-info" role="alert">
+                                <strong class="me-1">{{ 'Information:'|trans }}</strong>{{ 'Localization controls the default language shown to guests and whether browser language detection should override it before a user chooses a preference.'|trans }}
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="default_locale">{{ 'Default Locale'|trans }}</label>
+                                    <select class="form-select" id="default_locale" name="locale">
+                                        {% set enabled_locales = guest.extension_languages(true) %}
+                                        {% for lang in enabled_locales %}
+                                            <option value="{{ lang.locale }}" {% if localization.locale == lang.locale %}selected{% endif %}>{{ lang.name }} ({{ lang.locale }})</option>
+                                        {% endfor %}
+                                    </select>
+                                    <input type="hidden" name="current_locale" value="{{ localization.locale }}">
+                                    <div class="form-hint">{{ 'Used when browser language detection is disabled or no suitable browser language match is found.'|trans }}</div>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <label class="form-check form-switch form-switch-2">
+                                    <input type="hidden" name="auto_detect_locale" value="0">
+                                    <input class="form-check-input" type="checkbox" name="auto_detect_locale" id="auto_detect_locale_yes" value="1" {% if localization.auto_detect_locale %}checked{% endif %}>
+                                    <span class="form-check-label">{{ 'Automatic Browser Language Detection'|trans }}</span>
+                                </label>
+                                <small class="form-hint">{{ 'When enabled, guests without a saved language preference start in the best match from their browser. When disabled, FOSSBilling uses the configured default locale until the user explicitly selects a language.'|trans }}</small>
+                            </div>
+                        </div>
+                        <div class="card-footer text-end">
+                            <button class="btn btn-primary" type="submit"{% if not can_update_params %} disabled aria-disabled="true"{% endif %}>{{ 'Update Settings'|trans }}</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="tab-pane fade" id="tab-countries" role="tabpanel">
+                    <form method="post" action="{{ 'extension/config_save'|api_url }}" {{ fb_api_form({ message: 'Countries Updated'|trans}) }}>
+                        <input type="hidden" name="ext" value="mod_system">
+                        <div class="card-body">
+{% set default_countries = country_names()|map((name, code) => code ~ '=' ~ name)|join('\n') %}
+                            <div class="alert alert-info" role="alert">
+                                <strong class="me-1">{{ 'Information:'|trans }}</strong>{{ 'This list controls which countries appear in signup and profile forms, and which one is preselected for new users.'|trans }}
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="default_country">{{ 'Default Country for New Users'|trans }}</label>
+                                <div class="col-12 col-xl-6 ps-0">
+                                    <select class="form-select" id="default_country" name="default_country">
+                                        <option value="" {% if new_params.default_country is not defined or new_params.default_country == '' %}selected{% endif %}>
+                                            {{ 'No Default Country'|trans }}
+                                        </option>
+                                        {% for line in (new_params.countries|default(default_countries))|split('\n') %}
+                                            {% set parts = line|split('=') %}
+                                            {% if parts|length == 2 %}
+                                                <option value="{{ parts[0] }}" {% if new_params.default_country is defined and new_params.default_country == parts[0] %}selected{% endif %}>
+                                                    {{ parts[1] }}
+                                                </option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <label class="form-label" for="countries">{{ 'List of Countries'|trans }}</label>
+                            <textarea class="form-control col-12 col-xl-8" id="countries" name="countries" rows="25" placeholder="US=United States">{{ new_params.countries|default(default_countries) }}</textarea>
+                        </div>
+                        <div class="card-footer text-end">
+                            <button class="btn btn-primary" type="submit">{{ 'Update Settings'|trans }}</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="tab-pane fade" id="tab-cache" role="tabpanel">
+                    <div class="card-body d-flex align-items-center justify-content-between gap-3">
+                        <div>
+                            <h4 class="card-title mb-2">{{ 'Cache Control'|trans }}</h4>
+                            <p class="text-secondary mb-0">{{ 'Clear compiled templates and cached system state when you need configuration or theme changes to take effect immediately.'|trans }}</p>
+                        </div>
+                        <div>
+                            <form method="post" action="{{ 'system/clear_cache'|api_url }}" {{ fb_api_form({ message: 'Cache Directory Cleared'|trans}) }}>
+                                <button class="btn btn-danger" type="submit"{% if not can_invalidate_cache %} disabled aria-disabled="true"{% endif %}>{{ 'Invalidate cache'|trans }}</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="tab-about" role="tabpanel">
+                    <div class="card-body">
+                        <h4 class="card-title mb-3">{{ 'About FOSSBilling'|trans }}</h4>
+                        <div class="datagrid">
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">{{ 'FOSSBilling version'|trans }}</div>
+                                <div class="datagrid-content">{{ FOSSBillingVersion }}</div>
+                            </div>
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">{{ 'PHP version'|trans }}</div>
+                                <div class="datagrid-content">{{ constant('PHP_VERSION') }}</div>
+                            </div>
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">{{ 'Instance ID'|trans }} (<a href="https://docs.fossbilling.org/maintenance/error-reporting/#instance-id" target="_blank">?</a>)</div>
+                                <div class="datagrid-content">{{ admin.system_instance_id }}</div>
+                            </div>
+                            <div class="datagrid-item">
+                                <div class="datagrid-title">{{ 'License'|trans }}</div>
+                                <div class="datagrid-content"><a href="https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE" target="_blank">Apache 2.0</a></div>
+                            </div>
+                        </div>
+
+                        <div class="accordion mt-4" id="accordion-default">
+                            <div class="accordion-item">
+                                <div class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-1-default" aria-expanded="false">
+                                    {{ 'Enabled modules'|trans }}
+                                    <div class="accordion-button-toggle">
+                                        <svg class="icon">
+                                            <use xlink:href="#chevron-down" />
+                                        </svg>
+                                    </div>
+                                </button>
+                                </div>
+                                <div id="collapse-1-default" class="accordion-collapse collapse" data-bs-parent="#accordion-default">
+                                    <div class="accordion-body">
+                                        <div class="container">
+                                            <div style="column-count: 3; column-gap: 2rem;">
+                                                {% set modules = admin.extension_get_list({ 'active': true }) %}
+                                                {% for module in modules %}
+                                                <div class="border rounded px-3 py-2 mb-2 d-flex justify-content-between align-items-center">
+                                                    <span>
+                                                    {% if module.status == 'core' %}
+                                                        <svg class="icon" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'This is a core module included with FOSSBilling and cannot be disabled.'|trans }}">
+                                                            <use xlink:href="#cog" />
+                                                        </svg>
+                                                    {% endif %}
+                                                    <span title="Module ID: {{ module.id }}">{{ module.name }}</span>
+                                                    </span>
+                                                    <span class="badge bg-default text-default-fg">{{ module.version }}</span>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="tab-reporting" role="tabpanel">
+                    <div class="card-body">
+                        <h4 class="card-title mb-3">{{ 'Error Reporting'|trans }}</h4>
+                        {% set last_change = admin.system_last_error_reporting_change %}
+                        {% if admin.system_error_reporting_enabled %}
+                        <div class="alert alert-success d-flex align-items-center justify-content-between" role="alert">
+                            <div class="d-flex align-items-center">
+                                <span class="me-2">
+                                    <svg class="icon">
+                                        <use xlink:href="#check" />
+                                    </svg>
+                                </span>
+                                <div>
+                                    <div class="fw-bold">{{ 'Error reporting is enabled.'|trans }}</div>
+                                    <div class="text-muted small">{{ 'This FOSSBilling instance is automatically sending error reports which helps us improve the software and keep it stable. Thanks!'|trans }}</div>
+                                </div>
+                            </div>
+                            {% if can_toggle_error_reporting %}
+                                <a class="btn btn-danger ms-3" href="{{ 'system/toggle_error_reporting'|api_url }}" {{ fb_api_link({ message: 'Error Reporting Disabled'|trans}) }}>
+                                    {{ 'Disable Error Reporting'|trans }}
+                                </a>
+                            {% else %}
+                                <button class="btn btn-danger ms-3" type="button" disabled aria-disabled="true">{{ 'Disable Error Reporting'|trans }}</button>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning d-flex align-items-center justify-content-between" role="alert">
+                            <div class="d-flex align-items-center">
+                                <span class="me-2">
+                                    <svg class="icon">
+                                        <use xlink:href="#alert-triangle" />
+                                    </svg>
+                                </span>
+                                <div>
+                                    <div class="fw-bold">{{ 'Error reporting is disabled.'|trans }}</div>
+                                    <div class="text-muted small">{{ 'Please consider enabling error reporting. This allows us to provide better technical support and helps us proactively improve FOSSBilling.'|trans }}</div>
+                                </div>
+                            </div>
+                            {% if can_toggle_error_reporting %}
+                                <a class="btn btn-success ms-3" href="{{ 'system/toggle_error_reporting'|api_url }}" {{ fb_api_link({ message: 'Error Reporting Enabled'|trans}) }}>
+                                    {{ 'Enable Error Reporting'|trans }}
+                                </a>
+                            {% else %}
+                                <button class="btn btn-success ms-3" type="button" disabled aria-disabled="true">{{ 'Enable Error Reporting'|trans }}</button>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        <p>{{ "FOSSBilling optionally includes automated error reporting to help aid the project's development and stability. To find the most up-to-date information about it, you should review the links and information below."|trans }}</p>
+                        <ul>
+                            <li><a href="https://docs.fossbilling.org/maintenance/error-reporting/" target="_blank">{{ 'Learn more about error reporting'|trans }}</a></li>
+                            <li>
+                                <a href="https://docs.fossbilling.org/maintenance/error-reporting/#error-reporting-history" target="_blank">{{ 'Error reporting changelog'|trans }}</a>
+                                <span class="text-muted">({{ 'Last applicable behavior change: '|trans }} {{ last_change }})</span>
+                            </li>
+                        </ul>
+                        <span class="text-muted">{{ "The last applicable behavior change represents the most recent FOSSBilling version that changed error reporting which also applies to this current version. There may have been more recent changes than what's listed."|trans }}</span>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="network-interface" role="tabpanel">
+                    <div class="card-body">
+                        <h4 class="card-title mb-3">{{ 'Network Interface'|trans }}</h4>
+                        <div class="alert alert-info" role="alert" id="external-ip">
+                            <strong class="me-1">{{ 'Information:'|trans }}</strong>{{ "Checking external IP..."|trans }}
+                        </div>
+                        {% if can_manage_network_interface %}
+                            <form method="post" action="{{ 'system/set_interface_ip'|api_url }}" {{ fb_api_form({ callback: 'onAfterInterfaceSet'}) }}>
+                                <p>{{ 'If your server has multiple network interfaces, you may select the default one for FOSSBilling to use when making requests here.'|trans }}</p>
+
+                                <div class="col-12 col-lg-3">
+                                    <label for="interface">{{ 'Select the Default Network Interface:'|trans }}</label>
+                                    <select class="form-select" name="interface" id="interface">
+                                        <option value="0">{{ 'None (Default PHP Behavior)'|trans }}</option>
+                                    </select>
+                                </div>
+
+                                <br>
+
+                                <div class="col-12 col-lg-3">
+                                    <label for="custom_interface">{{'Enter a Custom Interface to Use:'|trans }}</label>
+                                    <input class="form-control mt-1" type="text" name="custom_interface" id="custom_interface">
+                                </div>
+                                <span class="text-muted">
+                                    {{ "If the dropdown menu doesn't have the appropriate network interface, please enter the IP address or name (e.g., eth0) of the correct one above."|trans }}
+                                </span>
+                                <br>
+
+                                <input type="submit" class="btn btn-primary mt-1" value="{{ 'Update'|trans }}">
+                            </form>
+                        {% else %}
+                            <div class="alert alert-warning" role="alert">
+                                <strong class="me-1">{{ 'Warning:'|trans }}</strong>{{ 'You do not have permission to manage the network interface.'|trans }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+<script>
+    const bindTo = "{{ constant('BIND_TO') }}";
+    const canManageNetworkInterface = {{ can_manage_network_interface ? 'true' : 'false' }};
+
+    function updateExternalIP() {
+        const el = document.getElementById('external-ip');
+        // Always show a loading state first
+        el.innerHTML = `<strong class="me-1">{{ 'Information:'|trans }}</strong>{{ "Checking external IP..."|trans }}`;
+        el.className = 'alert alert-info';
+
+        FOSSBilling.api.admin.get('system/env', { ip: true }, function (ip) {
+            if (ip) {
+                el.innerHTML = `<strong class="me-1">{{ 'Success:'|trans }}</strong>{{ 'With the current settings, your FOSSBilling instance will have an external IP address of: '|trans }}`;
+                el.appendChild(document.createTextNode(ip));
+                el.className = 'alert alert-success';
+            } else {
+                el.innerHTML = `<strong class="me-1">{{ 'Warning:'|trans }}</strong>{{ 'The currently selected network interface does not appear to be able to reach the internet!'|trans }}`;
+                el.className = 'alert alert-danger';
+            }
+        });
+    }
+
+    function loadInterfaceIPs() {
+        const select = document.getElementById('interface');
+        if (!select) {
+            return;
+        }
+
+        // Show loading state first
+        select.innerHTML = `<option disabled selected>{{ "Loading interfaces..."|trans }}</option>`;
+
+        FOSSBilling.api.admin.get('system/get_interface_ips', {}, function (interfaces) {
+            select.innerHTML = `<option value="0">{{ 'None (Default PHP Behavior)'|trans }}</option>`;
+
+            interfaces.forEach(interface => {
+                const opt = document.createElement('option');
+                opt.value = interface;
+                opt.textContent = interface;
+                if (interface === bindTo) {
+                    opt.selected = true;
+                }
+                select.appendChild(opt);
+            });
+
+            // Handle custom interface
+            const custom = document.getElementById('custom_interface');
+            if (bindTo !== "0" && !interfaces.includes(bindTo)) {
+                custom.value = bindTo;
+            }
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const networkTab = document.querySelector('a[href="#network-interface"]');
+        networkTab.addEventListener("shown.bs.tab", function () {
+            updateExternalIP();
+            if (canManageNetworkInterface) {
+                loadInterfaceIPs();
+            }
+        });
+    });
+
+    function onAfterInterfaceSet(result) {
+        FOSSBilling.message(`{{ 'Network interface updated.'|trans }}`);
+        updateExternalIP();
+    }
+</script>
+{% endblock %}
+
+{% block head %}{{ wysiwyg('.editor-textarea') }}{% endblock %}

@@ -1,0 +1,78 @@
+<div class="card-body">
+    <div class="mb-3">
+        <h3 class="card-title mb-1">{{ 'File Information'|trans }}</h3>
+        <p class="text-secondary mb-0">{{ 'Review the file currently assigned to this order and upload a replacement when needed.'|trans }}</p>
+    </div>
+
+    <table class="table card-table table-vcenter table-striped text-nowrap">
+        <tbody>
+            <tr class="noborder">
+                <td>{{ 'Filename'|trans }}:</td>
+                <td>{{ service.filename }}</td>
+            </tr>
+            <tr>
+                <td>{{ 'Location'|trans }}:</td>
+                <td>{{ service.path }}</td>
+            </tr>
+            <tr>
+                <td>{{ 'Downloads'|trans }}:</td>
+                <td>{{ service.downloads }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr class="my-4" />
+
+    <div class="mb-3">
+        <h3 class="card-title mb-1">{{ 'Upload New File for This Order'|trans }}</h3>
+        <p class="text-secondary mb-0">{{ 'Use this function to replace the existing order file. The client will be able to download the new file from the client area.'|trans }}</p>
+    </div>
+
+    <form method="post" action="{{ 'servicedownloadable/upload'|api_url }}" enctype="multipart/form-data" id="upload-form">
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <label class="form-label">{{ 'Upload New File'|trans }}</label>
+                <input class="form-control" type="file" name="file_data" id="file_data">
+            </div>
+        </div>
+
+        <input type="hidden" name="order_id" value="{{ order.id }}">
+        <div class="d-flex justify-content-end mt-3">
+            <button class="btn btn-primary submitForm" type="submit" id="upload-button">{{ 'Upload'|trans }}</button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('upload-form');
+    if (!form) {
+        return;
+    }
+
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const submitButton = form.querySelector('input[type="submit"], button[type="submit"]');
+        if (submitButton) {
+            submitButton.disabled = true;
+        }
+
+        const formData = new FormData(form);
+        FOSSBilling.api.admin.post('servicedownloadable/upload', formData,
+            function () {
+                if (submitButton) {
+                    submitButton.disabled = false;
+                }
+                FOSSBilling.message("{{ 'File was uploaded'|trans }}");
+            },
+            function (error) {
+                if (submitButton) {
+                    submitButton.disabled = false;
+                }
+                FOSSBilling.message(`${error.message} (${error.code})`, 'error');
+            }
+        );
+    });
+});
+</script>

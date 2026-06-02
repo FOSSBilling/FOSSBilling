@@ -1,0 +1,53 @@
+{% extends 'layout_default.html.twig' %}
+
+{% block meta_title %}{{ 'Staff Group Management'|trans }}{% endblock %}
+
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|url }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'extension/settings/staff'|url }}">{{ 'Staff'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'extension/settings/staff'|url }}#tab-groups">{{ 'Groups'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ group.name }}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <form method="post" action="{{ 'staff/group_update'|api_url }}" {{ fb_api_form({message: 'Staff Group Updated'|trans}) }}>
+        {% embed 'partial_admin_form_card.html.twig' with {
+            title: group.name,
+            subtitle: 'Update the group name used when organizing staff members and assigning permissions.'|trans,
+            body_class: 'pt-4'
+        } %}
+            {% block form_content %}
+                <div class="row g-3">
+                    <div class="col-lg-6">
+                        <label class="form-label" for="inputName">{{ 'Name'|trans }}</label>
+                        <input class="form-control" id="inputName" type="text" name="name" value="{{ group.name }}" required>
+                    </div>
+                </div>
+                <input type="hidden" name="id" value="{{ group.id }}">
+            {% endblock %}
+
+            {% block form_actions %}
+                <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
+            {% endblock %}
+        {% endembed %}
+    </form>
+</div>
+{% endblock %}

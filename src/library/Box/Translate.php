@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -119,10 +120,5 @@ class Box_Translate
         $this->domain = $domain;
 
         return $this;
-    }
-
-    public function __($msgid, ?array $values = null): string
-    {
-        return __trans($msgid, $values);
     }
 }

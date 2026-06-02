@@ -18,20 +18,19 @@ namespace Box\Mod\Api\Controller;
 
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
+use FOSSBilling\Http\HttpResponseException;
 use FOSSBilling\InjectionAwareInterface;
-use Symfony\Component\Filesystem\Filesystem;
+use FOSSBilling\Security\AuthenticationRequiredException;
+use FOSSBilling\Security\EmailValidationRequiredException;
+use FOSSBilling\Security\RateLimitException;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class Client implements InjectionAwareInterface
 {
-    private int|float|null $_requests_left = null;
-    private $_api_config;
-    private readonly Filesystem $filesystem;
+    private ?array $apiConfig = null;
     protected ?\Pimple\Container $di = null;
-
-    public function __construct()
-    {
-        $this->filesystem = new Filesystem();
-    }
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -45,107 +44,124 @@ class Client implements InjectionAwareInterface
 
     public function register(\Box_App &$app): void
     {
-        $app->post('/api/:role/:class/:method', 'post_method', ['role', 'class', 'method'], static::class);
-        $app->get('/api/:role/:class/:method', 'get_method', ['role', 'class', 'method'], static::class);
+        $allowedRouteRoles = $this->registerAllowedRouteRoles();
+        $app->post('/api/:role/:class/:method', 'post_method', $allowedRouteRoles, static::class);
+        $app->get('/api/:role/:class/:method', 'get_method', $allowedRouteRoles, static::class);
 
         // all other requests are error requests
         $app->get('/api/:page', 'show_error', ['page' => '(.?)+'], static::class);
         $app->post('/api/:page', 'show_error', ['page' => '(.?)+'], static::class);
     }
 
-    public function show_error(\Box_App $app, $page): null
+    public function show_error(\Box_App $app, $page): Response
     {
         $exc = new \FOSSBilling\Exception('Unknown API call :call', [':call' => $page], 879);
 
-        $this->renderJson(null, $exc);
-
-        return null;
+        return $this->renderJson(null, $exc);
     }
 
-    public function get_method(\Box_App $app, $role, $class, $method): null
+    public function get_method(\Box_App $app, $role, $class, $method): Response
     {
         $call = $class . '_' . $method;
 
-        $this->tryCall($role, $class, $call, $_GET);
-
-        return null;
+        return $this->tryCall($role, $class, $call, $app->getRequest()->query->all());
     }
 
-    public function post_method(\Box_App $app, $role, $class, $method): null
+    public function post_method(\Box_App $app, $role, $class, $method): Response
     {
-        $p = $_POST;
+        $request = $app->getRequest();
+        $p = $request->request->all();
 
         // adding support for raw post input with json string
-        $input = $this->filesystem->readFile('php://input');
+        $input = $request->getContent();
         if (empty($p) && !empty($input)) {
-            $p = @json_decode($input, true);
+            $p = json_decode($input, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $exc = new \FOSSBilling\Exception('Malformed JSON input: :error', [':error' => json_last_error_msg()], 400);
+
+                return $this->renderJson(null, $exc);
+            }
         }
 
         $call = $class . '_' . $method;
 
-        $this->tryCall($role, $class, $call, $p);
-
-        return null;
+        return $this->tryCall($role, $class, $call, $p);
     }
 
     /**
      * @param string $call
      */
-    private function tryCall($role, $class, $call, $p): void
+    private function tryCall($role, $class, $call, $p): Response
     {
         try {
-            $this->_apiCall($role, $class, $call, $p);
+            return $this->_apiCall($role, $class, $call, $p);
+        } catch (HttpResponseException $exc) {
+            return $exc->getResponse();
+        } catch (AuthenticationRequiredException) {
+            return $this->renderJson(null, new \FOSSBilling\InformationException('Authentication Failed', null, 201));
+        } catch (EmailValidationRequiredException $exc) {
+            return $this->renderJson(null, new \FOSSBilling\InformationException($exc->getMessage(), null, 403));
         } catch (\Exception $exc) {
             // Sentry by default only captures unhandled exceptions, so we need to manually capture these.
             \Sentry\captureException($exc);
-            $this->renderJson(null, $exc);
+
+            return $this->renderJson(null, $exc);
         }
     }
 
     private function _loadConfig(): void
     {
-        if (is_null($this->_api_config)) {
-            $this->_api_config = Config::getProperty('api', []);
+        if (is_null($this->apiConfig)) {
+            $this->apiConfig = Config::getProperty('api', []);
         }
     }
 
-    private function checkRateLimit($method = null): bool
+    private function checkUpdateFinalization(string $role, string $class, string $method): void
     {
-        if (in_array($this->_getIp(), $this->_api_config['rate_limit_whitelist'])) {
-            return true;
+        if ($role === 'admin' && $this->di['update_finalization']->isRequired() && !$this->di['update_finalization']->isAdminApiCallAllowed($class, $method)) {
+            throw new \FOSSBilling\InformationException('FOSSBilling update finalization is pending. Complete finalization before using the admin API.', [], 503);
         }
+    }
 
-        $isLoginMethod = false;
+    private function checkRateLimit(string $role, ?string $method = null, bool $useAuthenticatedSubject = true): bool
+    {
+        $subject = (string) $this->_getIp();
 
-        if ($method == 'staff_login' || $method == 'client_login') {
-            $isLoginMethod = true;
-            $rate_span = $this->_api_config['rate_span_login'];
-            $rate_limit = $this->_api_config['rate_limit_login'];
-
-            // 25 to 250ms delay to help prevent email enumeration.
-            usleep(random_int(25000, 250000));
+        if ($method === 'staff_login' || $method === 'client_login') {
+            $policy = 'api_login';
+        } elseif ($role === 'guest') {
+            $policy = 'api_guest';
         } else {
-            $rate_span = $this->_api_config['rate_span'];
-            $rate_limit = $this->_api_config['rate_limit'];
+            $policy = 'api_authenticated_ip';
+
+            if ($useAuthenticatedSubject && $role === 'client' && $this->di['session']->get('client_id')) {
+                $subject = 'client:' . $this->di['session']->get('client_id');
+                $policy = 'api_authenticated_account';
+            } elseif ($useAuthenticatedSubject && $role === 'admin' && $this->di['session']->get('admin')) {
+                $admin = $this->di['session']->get('admin');
+                $subject = 'admin:' . ($admin['id'] ?? '');
+                $policy = 'api_authenticated_account';
+            }
         }
 
-        $service = $this->di['mod_service']('api');
-        $requests = $service->getRequestCount(time() - $rate_span, $this->_getIp(), $isLoginMethod);
-        $this->_requests_left = $rate_limit - $requests;
-        if ($this->_requests_left <= 0) {
-            sleep($this->_api_config['throttle_delay']);
-        }
+        $this->di['rate_limiter']->consumeOrThrow($policy, $subject);
 
         return true;
+    }
+
+    private function checkPreAuthRateLimit(string $role, ?string $method = null): bool
+    {
+        return $this->checkRateLimit($role, $method, false);
     }
 
     private function checkHttpReferer(): bool
     {
         // snake oil: check request is from the same domain as FOSSBilling is installed if present
-        $check_referer_header = isset($this->_api_config['require_referrer_header']) && (bool) $this->_api_config['require_referrer_header'];
+        $check_referer_header = isset($this->apiConfig['require_referrer_header']) && (bool) $this->apiConfig['require_referrer_header'];
         if ($check_referer_header) {
             $url = strtolower(SYSTEM_URL);
-            $referer = isset($_SERVER['HTTP_REFERER']) ? strtolower((string) $_SERVER['HTTP_REFERER']) : null;
+            $referer = $this->di['request']->headers->get('Referer');
+            $referer = is_string($referer) ? strtolower($referer) : null;
             if (!$referer || !str_starts_with($referer, $url)) {
                 throw new \FOSSBilling\InformationException('Invalid request. Make sure request origin is :from', [':from' => SYSTEM_URL], 1004);
             }
@@ -156,7 +172,7 @@ class Client implements InjectionAwareInterface
 
     private function checkAllowedIps(): bool
     {
-        $ips = $this->_api_config['allowed_ips'];
+        $ips = $this->apiConfig['allowed_ips'];
         if (!empty($ips) && !in_array($this->_getIp(), $ips)) {
             throw new \FOSSBilling\InformationException('Unauthorized IP', null, 1002);
         }
@@ -164,43 +180,50 @@ class Client implements InjectionAwareInterface
         return true;
     }
 
-    private function isRoleLoggedIn($role): bool
+    protected function isRoleLoggedIn($role): bool
     {
         if ($role == 'client') {
-            $this->di['is_client_logged'];
+            return (bool) ($this->di['is_client_logged'] ?? false);
         }
         if ($role == 'admin') {
-            $this->di['is_admin_logged'];
+            return (bool) ($this->di['is_admin_logged'] ?? false);
         }
 
         return true;
     }
 
-    private function _apiCall($role, $class, $method, $params): null
+    private function _apiCall($role, $class, $method, $params): Response
     {
         $this->_loadConfig();
         $this->checkAllowedIps();
 
-        $service = $this->di['mod_service']('api');
-        $service->logRequest();
-        $this->checkRateLimit($method);
         $this->checkHttpReferer();
         $this->isRoleAllowed($role);
 
-        try {
-            $this->isRoleLoggedIn($role);
-            if ($role == 'client' || $role == 'admin') {
-                $this->_checkCSRFToken();
+        if ($role !== 'guest') {
+            $this->checkPreAuthRateLimit($role, $method);
+
+            if ($this->shouldPreferSessionAuth($method) && $this->hasAuthenticatedSession($role)) {
+                $this->requireSessionAuth($role);
+            } elseif ($this->shouldUseTokenLogin($role)) {
+                $this->_tryTokenLogin($role);
+            } else {
+                $this->requireSessionAuth($role);
             }
-        } catch (\Exception) {
-            $this->_tryTokenLogin();
         }
+
+        $this->checkUpdateFinalization($role, $class, $method);
+        $this->checkRateLimit($role, $method);
 
         $api = $this->di['api']($role);
         unset($params['CSRFToken']);
         $result = $api->$method($params);
 
-        $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower((string) $_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+        if ($result instanceof Response) {
+            return $this->sendResponse($result);
+        }
+
+        $isAjax = $this->di['request']->isXmlHttpRequest();
         $isLoginMethod = ($method === 'login');
         $isStaffLogin = ($class === 'staff');
         $isClientLogin = ($class === 'client');
@@ -212,46 +235,51 @@ class Client implements InjectionAwareInterface
                 $redirectUrl = $this->di['url']->link('');
             }
 
-            header('Location: ' . $redirectUrl);
-            exit;
+            return new RedirectResponse($redirectUrl);
         }
 
-        $this->renderJson($result);
-
-        return null;
+        return $this->renderJson($result);
     }
 
     private function getAuth(): array
     {
-        if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
-            $auth_params = explode(':', base64_decode(substr((string) $_SERVER['HTTP_AUTHORIZATION'], 6)));
-            $_SERVER['PHP_AUTH_USER'] = $auth_params[0];
-            unset($auth_params[0]);
-            $_SERVER['PHP_AUTH_PW'] = implode('', $auth_params);
+        $server = $this->di['request']->server;
+
+        if (!$server->has('PHP_AUTH_USER') && $this->di['request']->headers->has('Authorization')) {
+            $parsedAuth = $this->tryParseBasicAuthHeader();
+            if ($parsedAuth === null) {
+                throw new \FOSSBilling\InformationException('Authentication Failed', null, 201);
+            }
+
+            $server->set('PHP_AUTH_USER', $parsedAuth['username']);
+            $server->set('PHP_AUTH_PW', $parsedAuth['password']);
         }
 
-        if (!isset($_SERVER['PHP_AUTH_USER'])) {
+        if (!$server->has('PHP_AUTH_USER')) {
             throw new \FOSSBilling\InformationException('Authentication Failed', null, 201);
         }
 
-        if (!isset($_SERVER['PHP_AUTH_PW'])) {
+        if (!$server->has('PHP_AUTH_PW')) {
             throw new \FOSSBilling\InformationException('Authentication Failed', null, 202);
         }
 
-        if (empty($_SERVER['PHP_AUTH_PW'])) {
+        if ($server->get('PHP_AUTH_PW') === '') {
             throw new \FOSSBilling\InformationException('Authentication Failed', null, 206);
         }
 
-        return [$_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']];
+        return [(string) $server->get('PHP_AUTH_USER'), (string) $server->get('PHP_AUTH_PW')];
     }
 
-    private function _tryTokenLogin(): void
+    protected function _tryTokenLogin(string $routeRole): void
     {
         [$username, $password] = $this->getAuth();
+        if ($username !== $routeRole) {
+            throw new \FOSSBilling\InformationException('Authentication Failed', null, 203);
+        }
 
-        switch ($username) {
+        switch ($routeRole) {
             case 'client':
-                $model = $this->di['db']->findOne('Client', 'api_token = ?', [$password]);
+                $model = $this->di['db']->findOne('Client', 'api_token = ? AND status = ?', [$password, \Model_Client::ACTIVE]);
                 if (!$model instanceof \Model_Client) {
                     throw new \FOSSBilling\InformationException('Authentication Failed', null, 204);
                 }
@@ -260,10 +288,16 @@ class Client implements InjectionAwareInterface
                 break;
 
             case 'admin':
-                $model = $this->di['db']->findOne('Admin', 'api_token = ?', [$password]);
+                $model = $this->di['db']->findOne('Admin', 'api_token = ? AND status = ? AND role != ?', [$password, \Model_Admin::STATUS_ACTIVE, \Model_Admin::ROLE_CRON]);
                 if (!$model instanceof \Model_Admin) {
                     throw new \FOSSBilling\InformationException('Authentication Failed', null, 205);
                 }
+
+                $cronAdmin = $this->di['mod_service']('staff')->getCronAdmin();
+                if ($cronAdmin instanceof \Model_Admin && (int) $model->id === (int) $cronAdmin->id) {
+                    throw new \FOSSBilling\InformationException('Authentication Failed', null, 205);
+                }
+
                 $sessionAdminArray = [
                     'id' => $model->id,
                     'email' => $model->email,
@@ -274,9 +308,117 @@ class Client implements InjectionAwareInterface
 
                 break;
 
-            case 'guest': // do not allow at the moment
             default:
                 throw new \FOSSBilling\InformationException('Authentication Failed', null, 203);
+        }
+    }
+
+    private function registerAllowedRouteRoles(): array
+    {
+        return [
+            'role' => 'guest|client|admin',
+            'class' => '[a-zA-Z0-9_]+',
+            'method' => '[a-zA-Z0-9_]+',
+        ];
+    }
+
+    protected function shouldUseTokenLogin(string $routeRole): bool
+    {
+        if (!in_array($routeRole, ['client', 'admin'], true)) {
+            return false;
+        }
+
+        $username = $this->getProvidedBasicAuthUsername();
+        if ($username === null) {
+            return false;
+        }
+
+        if ($username !== $routeRole) {
+            throw new \FOSSBilling\InformationException('Authentication Failed', null, 203);
+        }
+
+        return true;
+    }
+
+    private function shouldPreferSessionAuth(string $method): bool
+    {
+        return in_array($method, [
+            'profile_api_key_get',
+            'profile_api_key_reset',
+            'profile_generate_api_key',
+        ], true);
+    }
+
+    private function hasAuthenticatedSession(string $role): bool
+    {
+        try {
+            return $this->isRoleLoggedIn($role);
+        } catch (\Exception) {
+            return false;
+        }
+    }
+
+    private function getProvidedBasicAuthUsername(): ?string
+    {
+        $server = $this->di['request']->server;
+        $username = $server->get('PHP_AUTH_USER');
+        $password = $server->get('PHP_AUTH_PW');
+        if (is_string($username) && $password !== null && in_array($username, ['client', 'admin'], true)) {
+            return $username;
+        }
+
+        $parsedAuth = $this->tryParseBasicAuthHeader();
+        if ($parsedAuth === null) {
+            return null;
+        }
+
+        $username = $parsedAuth['username'];
+        if (!in_array($username, ['client', 'admin'], true)) {
+            return null;
+        }
+
+        return $username;
+    }
+
+    /**
+     * @return array{username: string, password: string}|null
+     */
+    private function tryParseBasicAuthHeader(): ?array
+    {
+        $authorization = $this->di['request']->headers->get('Authorization');
+        if ($authorization === null) {
+            return null;
+        }
+
+        $authorization = trim($authorization);
+        if (stripos($authorization, 'Basic ') !== 0) {
+            return null;
+        }
+
+        $decoded = base64_decode(substr($authorization, 6), true);
+        if ($decoded === false || !str_contains($decoded, ':')) {
+            return null;
+        }
+
+        [$username, $password] = explode(':', $decoded, 2);
+
+        return [
+            'username' => $username,
+            'password' => $password,
+        ];
+    }
+
+    private function requireSessionAuth(string $role): void
+    {
+        try {
+            $this->isRoleLoggedIn($role);
+            if ($role === 'client' || $role === 'admin') {
+                $this->_checkCSRFToken();
+            }
+        } catch (\FOSSBilling\InformationException $exception) {
+            throw $exception;
+        } catch (AuthenticationRequiredException|\Exception) {
+            throw new \FOSSBilling\InformationException('Authentication Failed', null, 201);
         }
     }
 
@@ -288,45 +430,55 @@ class Client implements InjectionAwareInterface
     private function isRoleAllowed($role): bool
     {
         $allowed = ['guest', 'client', 'admin'];
-        if (!in_array($role, $allowed)) {
-            new \FOSSBilling\Exception('Unknown API call :call', [':call' => ''], 701);
+        if (!in_array($role, $allowed, true)) {
+            throw new \FOSSBilling\Exception('Unknown API call :call', [':call' => (string) $role], 701);
         }
 
         return true;
     }
 
-    public function renderJson($data = null, ?\Exception $e = null): void
+    public function renderJson($data = null, ?\Exception $e = null): Response
     {
-        // do not emit response if headers already sent
-        if (headers_sent()) {
-            return;
-        }
-
         $this->_loadConfig();
 
-        header('Cache-Control: no-cache, must-revalidate');
-        header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
-        header('Content-type: application/json; charset=utf-8');
-        header('X-FOSSBilling-Version: ' . \FOSSBilling\Version::VERSION);
-        header('X-RateLimit-Span: ' . $this->_api_config['rate_span']);
-        header('X-RateLimit-Limit: ' . $this->_api_config['rate_limit']);
-        header('X-RateLimit-Remaining: ' . $this->_requests_left);
+        $headers = [
+            'Cache-Control' => 'no-cache, must-revalidate',
+            'Expires' => 'Mon, 26 Jul 1997 05:00:00 GMT',
+        ];
+        $statusCode = 200;
+
         if ($e instanceof \Exception) {
             error_log("{$e->getMessage()} {$e->getCode()}.");
             $code = $e->getCode() ?: 9999;
             $result = ['result' => null, 'error' => ['message' => $e->getMessage(), 'code' => $code]];
-            $authFailed = [201, 202, 206, 204, 205, 203, 403, 1004, 1002];
+            $authFailed = [201, 202, 206, 204, 205, 203, 1004, 1002];
 
             if (in_array($code, $authFailed)) {
-                header('HTTP/1.1 401 Unauthorized');
+                $statusCode = 401;
+            } elseif ($code == 403) {
+                $statusCode = 403;
+            } elseif ($code == 740) {
+                $statusCode = 404;
+            } elseif ($code == 429) {
+                $statusCode = 429;
+                if ($e instanceof RateLimitException && $e->hasRetryAfter()) {
+                    $headers['Retry-After'] = (string) $e->getRetryAfterSeconds();
+                }
+            } elseif ($code == 503) {
+                $statusCode = 503;
             } elseif ($code == 701 || $code == 879) {
-                header('HTTP/1.1 400 Bad Request');
+                $statusCode = 400;
             }
         } else {
             $result = ['result' => $data, 'error' => null];
         }
-        echo json_encode($result);
-        exit;
+
+        return new JsonResponse($result, $statusCode, $headers);
+    }
+
+    protected function sendResponse(Response $response): Response
+    {
+        return $response;
     }
 
     private function _getIp()
@@ -342,27 +494,33 @@ class Client implements InjectionAwareInterface
     public function _checkCSRFToken()
     {
         $this->_loadConfig();
-        $csrfPrevention = $this->_api_config['CSRFPrevention'] ?? true;
+        $csrfPrevention = $this->apiConfig['CSRFPrevention'] ?? true;
         if (!$csrfPrevention || Environment::isCLI()) {
             return true;
         }
 
-        $input = $this->filesystem->readFile('php://input');
-        $data = json_decode($input);
+        $input = $this->di['request']->getContent();
+        $data = json_decode((string) $input);
         if (!is_object($data)) {
             $data = new \stdClass();
         }
 
-        $cookieToken = $_COOKIE['csrf_token'] ?? null;
-        $headerToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
+        $cookieToken = $this->di['request']->cookies->get('csrf_token');
+        $headerToken = $this->di['request']->headers->get('X-CSRF-TOKEN');
 
-        $token = $data->CSRFToken ?? $_POST['CSRFToken'] ?? $_GET['CSRFToken'] ?? $headerToken ?? null;
+        $token = $data->CSRFToken
+            ?? $this->di['request']->request->get('CSRFToken')
+            ?? $this->di['request']->query->get('CSRFToken')
+            ?? $headerToken
+            ?? null;
 
         $sessionToken = $this->di['session']->get('csrf_token');
 
-        $validTokens = array_filter([$cookieToken, $headerToken, $sessionToken]);
+        if (!is_string($token) || !is_string($sessionToken) || $sessionToken === '' || !hash_equals($sessionToken, $token)) {
+            throw new \FOSSBilling\InformationException('CSRF token invalid', null, 403);
+        }
 
-        if (empty($validTokens) || !in_array($token, $validTokens, true)) {
+        if (is_string($cookieToken) && $cookieToken !== '' && !hash_equals($sessionToken, $cookieToken)) {
             throw new \FOSSBilling\InformationException('CSRF token invalid', null, 403);
         }
     }

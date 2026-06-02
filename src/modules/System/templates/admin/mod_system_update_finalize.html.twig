@@ -1,0 +1,89 @@
+{% extends 'layout_login.html.twig' %}
+
+{% block meta_title %}{{ 'Finalize Update'|trans }}{% endblock %}
+
+{% block content %}
+    {% set finalization = admin.system_update_finalization_status %}
+    {% set state = finalization.state|default({}) %}
+    {% set status = finalization.status|default('not_required') %}
+    {% set finalized = status == 'finalized' %}
+    {% set updateType = state.update_type is defined and state.update_type is not same as(null) ? state.update_type + 0 : null %}
+
+    <div class="page page-center">
+        <div class="container-tight py-4">
+            <div class="text-center mb-4">
+                <div class="h1 mb-1">{{ 'Welcome to FOSSBilling %version%'|trans({'%version%': FOSSBillingVersion}) }}</div>
+                <p class="text-secondary mb-0">{{ 'Your update is installed. One final step is required before you use FOSSBilling.'|trans }}</p>
+            </div>
+
+            <div class="card card-md">
+                <div class="card-body">
+                    {% if not finalization.required %}
+                        <div class="empty">
+                            <div class="empty-icon text-success">
+                                <svg class="icon icon-lg">
+                                    <use xlink:href="#check" />
+                                </svg>
+                            </div>
+                            <p class="empty-title">{{ 'Update Finalization Complete'|trans }}</p>
+                            <p class="empty-subtitle text-secondary">{{ 'This FOSSBilling installation has already been finalized for the current version.'|trans }}</p>
+                            <div class="empty-action">
+                                <a class="btn btn-primary" href="{{ ''|url }}">{{ 'Go to Dashboard'|trans }}</a>
+                            </div>
+                        </div>
+                    {% else %}
+                        {% if finalized %}
+                            <p>{{ 'FOSSBilling has successfully applied the patches for version %version%.'|trans({'%version%': FOSSBillingVersion}) }}</p>
+                        {% elseif finalization.pending_patches is same as(null) or finalization.pending_patches is same as(0) %}
+                            <p>{{ 'You are updating your system to FOSSBilling %target_version%. The system needs to check and apply any pending update patches before you can proceed.'|trans({'%target_version%': FOSSBillingVersion}) }}</p>
+                        {% else %}
+                            <p>{{ 'You are updating your system to FOSSBilling %target_version%. The system needs to run %count% update patches before you can proceed.'|trans({'%target_version%': FOSSBillingVersion, '%count%': finalization.pending_patches}) }}</p>
+                        {% endif %}
+
+                        {% if not finalized %}
+                            <div class="d-grid">
+                                <a class="btn btn-primary" href="{{ 'system/finalize_update'|api_url }}"
+                                    {{ fb_api_link({
+                                        reload: true,
+                                        timeoutMs: 180000,
+                                        timeoutMessage: 'Finalization took longer than expected. The server may still be applying patches. Wait a minute before refreshing or trying again.'|trans,
+                                        preventNavigation: true,
+                                        loading: {
+                                            target: '#finalization-progress',
+                                            button: 'Finalizing update...'|trans,
+                                            message: 'FOSSBilling is applying update patches. Keep this tab open until the request completes.'|trans
+                                        }
+                                    }) }}>
+                                    <svg class="icon">
+                                        <use xlink:href="#cog-play" />
+                                    </svg>
+                                    {{ 'Continue'|trans }}
+                                </a>
+                            </div>
+                            <div id="finalization-progress"></div>
+                        {% else %}
+                            <p>{{ 'Proceeding will restore the maintenance mode setting to its previous state and return you to the dashboard.'|trans }}</p>
+
+                            <div class="d-grid">
+                                <a class="btn btn-success" href="{{ 'system/complete_update_finalization'|api_url }}"
+                                    {{ fb_api_link({
+                                        redirect: ''|url,
+                                        timeoutMs: 60000,
+                                        loading: {
+                                            button: 'Finishing...'|trans,
+                                            message: 'Restoring maintenance mode settings and reopening the installation.'|trans
+                                        }
+                                    }) }}>
+                                    <svg class="icon">
+                                        <use xlink:href="#check" />
+                                    </svg>
+                                    {{ 'Continue'|trans }}
+                                </a>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

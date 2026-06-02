@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -35,23 +36,48 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage custom services'),
+                'description' => __trans('Allows the staff member to update custom service configurations and call custom service methods.'),
+            ],
+        ];
+    }
+
     public function validateCustomForm(array &$data, array $product): void
     {
         if ($product['form_id']) {
             $formbuilderService = $this->di['mod_service']('formbuilder');
-            $form = $formbuilderService->getForm($product['form_id']);
+            $form = $formbuilderService->getForm((int) $product['form_id']);
             foreach ($form['fields'] as $field) {
-                if ($field['required'] == 1) {
+                if (($field['required'] ?? 0) == 1) {
                     $field_name = $field['name'];
                     if (!isset($data[$field_name]) || empty($data[$field_name])) {
                         throw new \FOSSBilling\InformationException('You must fill in all required fields. ' . $field['label'] . ' is missing', null, 9684);
                     }
                 }
 
-                if ($field['readonly'] == 1) {
+                if (($field['readonly'] ?? 0) == 1) {
                     $field_name = $field['name'];
                     if ($data[$field_name] != $field['default_value']) {
                         throw new \FOSSBilling\InformationException('Field ' . $field['label'] . ' is read only. You cannot change its value', null, 5468);
+                    }
+                }
+
+                if (($field['type'] ?? null) === 'url') {
+                    $field_name = $field['name'];
+                    if (!empty($data[$field_name])) {
+                        if (!is_string($data[$field_name])) {
+                            throw new \FOSSBilling\InformationException('Field ' . $field['label'] . ' must be a valid URL with a TLD (e.g., https://example.com)', null, 1248);
+                        }
+
+                        $formbuilderService = $this->di['mod_service']('formbuilder');
+                        if (!$formbuilderService->validateUrlField($data[$field_name])) {
+                            throw new \FOSSBilling\InformationException('Field ' . $field['label'] . ' must be a valid URL with a TLD (e.g., https://example.com)', null, 1248);
+                        }
                     }
                 }
             }
@@ -226,9 +252,20 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['logger']->info('Custom service updated #%s', $model->id);
     }
 
-    public function getServiceCustomByOrderId($orderId)
+    public function getServiceCustomByOrderId($orderId, $clientId = null)
     {
-        $order = $this->di['db']->getExistingModelById('ClientOrder', $orderId, 'Order not found');
+        if ($clientId !== null) {
+            $order = $this->di['db']->findOne('ClientOrder', 'id = ? AND client_id = ?', [$orderId, $clientId]);
+            if (!$order instanceof \Model_ClientOrder) {
+                throw new \FOSSBilling\Exception('Order not found');
+            }
+
+            if ($order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+                throw new \FOSSBilling\InformationException('Order is not activated');
+            }
+        } else {
+            $order = $this->di['db']->getExistingModelById('ClientOrder', $orderId, 'Order not found');
+        }
 
         $orderService = $this->di['mod_service']('order');
         $s = $orderService->getOrderService($order);

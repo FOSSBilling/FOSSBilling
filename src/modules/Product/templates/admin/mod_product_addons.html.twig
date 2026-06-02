@@ -1,0 +1,169 @@
+{% extends 'layout_default.html.twig' %}
+
+{% set active_menu = 'products' %}
+
+{% block meta_title %}{{ 'Addons'|trans }}{% endblock %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|url }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'product'|url }}">{{ 'Products'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active">{{ 'Addons'|trans }}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'Addons'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Manage product addons and create optional extras for existing products.'|trans }}</p>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="p-3 border-bottom d-flex justify-content-end">
+                <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newAddonModal">
+                    <svg class="icon">
+                        <use xlink:href="#plus" />
+                    </svg>
+                    {{ 'New Addon'|trans }}
+                </button>
+            </div>
+            <div class="table-responsive">
+            <table class="table card-table table-vcenter table-striped text-nowrap">
+                <thead>
+                    <tr>
+                        <th class="w-1">#</th>
+                        <th>{{ 'Title'|trans }}</th>
+                        <th>{{ 'Description'|trans }}</th>
+                        <th>{{ 'Status'|trans }}</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for addon_id, addon_title in admin.product_addon_get_pairs %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>
+                            <a href='{{ "product/addon/#{addon_id}"|url }}'>{{ addon_title }}</a>
+                        </td>
+                        <td><!-- TODO: show addon description --></td>
+                        <td><!-- TODO: show addon status --></td>
+                        <td class="w-1">
+                            <a class="btn btn-icon" href='{{ "product/addon/#{addon_id}"|url }}'>
+                                <svg class="icon">
+                                    <use xlink:href="#edit" />
+                                </svg>
+                            </a>
+                            <a class="btn btn-icon" href="{{ 'product/addon_delete'|api_url(query: { 'id': addon_id }) }}"
+                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product/addons'|url}) }}>
+                                <svg class="icon">
+                                    <use xlink:href="#delete" />
+                                </svg>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        </div>
+
+        <div class="modal modal-blur fade" id="newAddonModal" tabindex="-1" aria-labelledby="newAddonModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <form class="modal-content" method="post" action="{{ 'product/addon_create'|api_url }}" {{ fb_api_form({callback: 'onAfterAddonCreate'}) }}>
+                    <div class="modal-header">
+                        <h3 class="modal-title" id="newAddonModalLabel">{{ 'Create New Addon'|trans }}</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">{{ 'Status'|trans }}</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" id="statusEnabled" name="status" value="enabled">
+                                <label class="form-check-label" for="statusEnabled">{{ 'Enabled'|trans }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" id="statusDisabled" name="status" value="disabled" checked>
+                                <label class="form-check-label" for="statusDisabled">{{ 'Disabled'|trans }}</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ 'Activation'|trans }}</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" id="setupAfterOrder" name="setup" value="after_order">
+                                <label class="form-check-label" for="setupAfterOrder">{{ 'After Order is Placed'|trans }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" id="setupAfterPayment" name="setup" value="after_payment" checked>
+                                <label class="form-check-label" for="setupAfterPayment">{{ 'After Payment is Received'|trans }}</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" id="setupManual" name="setup" value="manual">
+                                <label class="form-check-label" for="setupManual">{{ 'Manual Activation'|trans }}</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="new-addon-icon-url">{{ 'Icon'|trans }}</label>
+                            <input class="form-control" type="text" id="new-addon-icon-url" name="icon_url" value="">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="new-addon-title">{{ 'Title'|trans }}</label>
+                            <input class="form-control" type="text" id="new-addon-title" name="title" value="" required>
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label" for="new-addon-description">{{ 'Description'|trans }}</label>
+                            <textarea class="form-control" id="new-addon-description" name="description" rows="5"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                        <button class="btn btn-primary" type="submit">{{ 'Create'|trans }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const modalElement = document.getElementById('newAddonModal');
+        if (!modalElement) {
+            return;
+        }
+
+        const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+        if (window.location.hash === '#tab-new') {
+            modal.show();
+        }
+
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            if (window.location.hash !== '#tab-new') {
+                return;
+            }
+
+            const url = new URL(window.location.href);
+            url.hash = '';
+            window.history.replaceState({}, '', url);
+        });
+    });
+
+    function onAfterAddonCreate(result) {
+        window.location = "{{ 'product/addon/'|url }}/" + result;
+    }
+</script>
+{% endblock %}

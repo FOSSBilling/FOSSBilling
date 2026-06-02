@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -22,7 +23,7 @@ class Guest extends \Api_Abstract
     /**
      * Runs cron if the guest API cron endpoint is enabled via the module's settings.
      */
-    public function run(): bool
+    public function run(array $data = []): bool
     {
         $config = $this->getMod()->getConfig();
         $allowGuest = $config['guest_cron'] ?? false;
@@ -30,30 +31,25 @@ class Guest extends \Api_Abstract
             throw new InformationException('You do not have permission to perform this action', [], 403);
         }
 
-        $t1 = new \DateTime($this->getService()->getLastExecutionTime());
-        $t2 = new \DateTime('-1min');
+        $cronHash = $config['cron_hash'] ?? '';
+        if ($cronHash === '') {
+            throw new InformationException('Guest cron is enabled but no security hash has been configured', [], 403);
+        }
 
-        // Ensure this can't be used to run cron more than 1 time every minute.
-        if ($t1 >= $t2) {
-            return false;
+        $providedHash = $data['hash'] ?? '';
+        if (!is_string($providedHash) || !hash_equals($cronHash, $providedHash)) {
+            throw new InformationException('You do not have permission to perform this action', [], 403);
+        }
+
+        if (!is_null($this->getService()->getLastExecutionTime())) {
+            $t1 = new \DateTime($this->getService()->getLastExecutionTime());
+            $t2 = new \DateTime('-1min');
+
+            if ($t1 >= $t2) {
+                return false;
+            }
         }
 
         return $this->getService()->runCrons();
-    }
-
-    /**
-     * Get cron settings.
-     */
-    public function settings(): array
-    {
-        return $this->getMod()->getConfig();
-    }
-
-    /**
-     * Tells if cron is late.
-     */
-    public function is_late(): bool
-    {
-        return $this->getService()->isLate();
     }
 }

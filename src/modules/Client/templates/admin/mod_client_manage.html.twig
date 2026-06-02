@@ -1,0 +1,898 @@
+{% extends 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% set active_menu = 'client' %}
+{% set can_impersonate_client = has_permission('client', 'impersonate_login') %}
+{% set can_delete_client = has_permission('client', 'delete') %}
+{% set can_edit_profile = has_permission('client', 'edit_profile') %}
+{% set can_change_password = has_permission('client', 'change_password') %}
+{% set can_manage_balance = has_permission('client', 'manage_balance') %}
+{% set can_manage_api_keys = has_permission('client', 'manage_api_keys') %}
+{% set can_view_client_login_history = has_permission('client', 'view_login_history') %}
+{% set can_view_email_history = has_permission('email', 'view_email_history') %}
+{% set has_profile_edit_actions = can_edit_profile or can_change_password %}
+
+{% block meta_title %}{{ client.first_name }} {{ client.last_name }}{% endblock %}
+
+{% block breadcrumbs %}
+<ul class="breadcrumb">
+    <li class="breadcrumb-item">
+        <svg class="icon">
+            <use xlink:href="#home" />
+        </svg>
+    </li>
+    <li class="breadcrumb-item">
+        <a href="{{ 'client'|url }}">{{ 'Clients'|trans }}</a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">{{ client.first_name }} {{ client.last_name }}</li>
+</ul>
+{% endblock %}
+
+{% block content %}
+{% embed 'partial_admin_detail_tabs.html.twig' with {
+    title: client.first_name ~ ' ' ~ client.last_name,
+    subtitle: 'Manage the client profile, billing records, support history, and account activity.'|trans
+} %}
+    {% block detail_tabs %}
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link active" href="#tab-info" data-bs-toggle="tab" role="tab">{{ 'Profile'|trans }}</a>
+                    </li>
+                    {% if has_profile_edit_actions %}
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#tab-profile" data-bs-toggle="tab" role="tab">{{ 'Edit'|trans }}</a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#tab-orders" data-bs-toggle="tab" role="tab">{{ 'Orders'|trans }}</a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#tab-invoice" data-bs-toggle="tab" role="tab">{{ 'Invoices'|trans }}</a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#tab-support" data-bs-toggle="tab" role="tab">{{ 'Tickets'|trans }}</a>
+                    </li>
+                    {% if can_manage_balance %}
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#tab-balance" data-bs-toggle="tab" role="tab">{{ 'Payments'|trans }}</a>
+                    </li>
+                    {% endif %}
+                    {% if can_view_client_login_history %}
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#tab-history" data-bs-toggle="tab" role="tab">{{ 'Logins'|trans }}</a>
+                    </li>
+                    {% endif %}
+                    {% if can_view_email_history %}
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" href="#tab-emails" data-bs-toggle="tab" role="tab">{{ 'Emails'|trans }}</a>
+                        </li>
+                    {% endif %}
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#tab-transactions" data-bs-toggle="tab" role="tab">{{ 'Transactions'|trans }}</a>
+                    </li>
+    {% endblock %}
+
+    {% block detail_tab_content %}
+        {% import 'macro_functions.html.twig' as mf %}
+        <div class="tab-pane fade show active" id="tab-info" role="tabpanel" aria-labelledby="index-tab">
+            <div class="card-body position-relative">
+                {% embed 'partial_admin_summary_card.html.twig' with {
+                    title: 'Client Summary'|trans,
+                    subtitle: 'Review the account identity, status, billing profile, and core contact details for this client.'|trans,
+                    centered_actions: true,
+                    body_class: 'position-relative'
+                } %}
+                    {% import 'macro_functions.html.twig' as mf %}
+                    {% block summary_header_aside %}
+                        {{ avatar(client.email, 112, 'avatar avatar-xl avatar-rounded shadow') }}
+                    {% endblock %}
+
+                    {% block summary_content %}
+                        <div class="table-responsive">
+                            <table class="table card-table table-vcenter table-striped text-nowrap">
+                                <tbody>
+                                    <tr>
+                                        <td class="w-50 text-end">{{ 'Client ID'|trans }}:</td>
+                                        <td>{{ client.id }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Name'|trans }}:</td>
+                                        <td>{{ client.first_name }} {{ client.last_name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Company'|trans }}:</td>
+                                        <td>{{ client.company|default('-') }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Email'|trans }}:</td>
+                                        <td>{{ client.email }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Status'|trans }}:</td>
+                                        <td>{{ mf.status_badge(client.status, 'client') }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Group'|trans }}:</td>
+                                        <td>{{ client.group|default('-') }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Currency'|trans }}:</td>
+                                        <td>{{ client.currency ? (client.currency|currency_name) : '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Balance'|trans }}:</td>
+                                        {% if client.currency is not null %}
+                                            <td>{{ client.balance|format_currency(client.currency ?? default_currency) }}</td>
+                                        {% else %}
+                                            <td>-</td>
+                                        {% endif %}
+                                    </tr>
+                                    {% if client.notes %}
+                                    <tr>
+                                        <td class="text-end">{{ 'Notes'|trans }}:</td>
+                                        <td>
+                                            <svg class="icon">
+                                                <use xlink:href="#support" />
+                                            </svg>
+                                            {% if has_profile_edit_actions %}
+                                                <a href="#tab-profile" data-bs-toggle="tab" role="button">{{ client.notes }}</a>
+                                            {% else %}
+                                                {{ client.notes }}
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <td class="text-end">IP:</td>
+                                        <td>{% if client.ip %}{{ mf.ip_lookup_link(client.ip) }}{% else %}{{ 'Unknown'|trans }}{% endif %}</td>
+                                    </tr>
+                                    {% if can_manage_api_keys %}
+                                    <tr>
+                                        <td class="text-end">{{ 'API Key'|trans }}:</td>
+                                        <td>{{ client.api_token|default('-') }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <td class="text-end">{{ 'Address'|trans }}:</td>
+                                        <td>
+                                            {% if client.country is not empty %}
+                                                <span class="flag flag-country-{{ client.country|lower }}" title="{{ client.country|country_name }}"></span>
+                                                {{ client.country|country_name }} {{ client.state }} {{ client.address_1 }} {{ client.address_2 }} {{ client.city }} {{ client.postcode }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Registered on'|trans }}:</td>
+                                        <td>{{ client.created_at|format_date }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endblock %}
+
+                    {% block summary_actions %}
+                        <a href='{{ "client/login/#{client.id}"|url }}' class="btn btn-primary" target="_blank">
+                            <svg class="icon" width="24" height="24">
+                                <use xlink:href="#login" />
+                            </svg>
+                            <span>{{ 'Login to Client Area'|trans }}</span>
+                        </a>
+                        {% if can_delete_client %}
+                        <a class="btn btn-danger"
+                            {{ fb_api_link({href: 'client/delete'|api_url(query: {'id': client.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'client'|url}) }}>
+                            <svg class="icon" width="24" height="24">
+                                <use xlink:href="#delete" />
+                            </svg>
+                            <span>{{ 'Delete'|trans }}</span>
+                        </a>
+                        {% endif %}
+                    {% endblock %}
+                {% endembed %}
+            </div>
+        </div>
+
+        {% if has_profile_edit_actions %}
+        <div class="tab-pane fade" id="tab-profile" role="tabpanel">
+            <div class="card-body d-flex flex-column gap-3">
+                {% if can_edit_profile %}
+                <form method="post" action="{{ 'client/update'|api_url }}" {{ fb_api_form({ message: 'Client Profile Updated'|trans}) }}>
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Client Profile Details'|trans,
+                        subtitle: 'Update the client account, contact information, and internal settings.'|trans
+                    } %}
+                        {% import 'macro_functions.html.twig' as mf %}
+                        {% block form_content %}
+                        <section class="mb-4 pb-4 border-bottom">
+                            <h6 class="card-title text-secondary mb-3">{{ 'Account Details'|trans }}</h6>
+                            <div class="row g-3">
+                                <div class="col-xl-6">
+                                    <label class="form-label d-block">{{ 'Status'|trans }}</label>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioStatusActive" type="radio" name="status" value="active"{% if client.status == 'active' %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Active'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioStatusSuspended" type="radio" name="status" value="suspended"{% if client.status == 'suspended' %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Suspended'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioStatusCanceled" type="radio" name="status" value="canceled"{% if client.status == 'canceled' %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Canceled'|trans }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-xl-6">
+                                    <label class="form-label d-block">{{ 'Type'|trans }}</label>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioTypePersonal" type="radio" name="type" value="individual"{% if client.type == 'individual' %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Individual'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioTypeCompany" type="radio" name="type" value="company"{% if client.type == 'company' %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Company'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioTypeOther" type="radio" name="type" value=""{% if not client.type %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Other/Unknown'|trans }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-xl-6">
+                                    <label class="form-label d-block">{{ 'Email Address Approved'|trans }}</label>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioEmailApprovedYes" type="radio" name="email_approved" value="1"{% if client.email_approved == 1 %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioEmailApprovedNo" type="radio" name="email_approved" value="0"{% if client.email_approved != 1 %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-xl-6">
+                                    <label class="form-label">{{ 'Group'|trans }}</label>
+                                    {{ mf.selectbox('group_id', admin.client_group_get_pairs, client.group_id, 0, 'Select Group'|trans) }}
+                                </div>
+                                <div class="col-xl-6">
+                                    <label class="form-label">{{ 'Email'|trans }}</label>
+                                    <input class="form-control" type="email" name="email" value="{{ client.email }}" required>
+                                </div>
+                                <div class="col-xl-3">
+                                    <label class="form-label">{{ 'First Name'|trans }}</label>
+                                    <input class="form-control" type="text" name="first_name" value="{{ client.first_name }}" required>
+                                </div>
+                                <div class="col-xl-3">
+                                    <label class="form-label">{{ 'Last Name'|trans }}</label>
+                                    <input class="form-control" type="text" name="last_name" value="{{ client.last_name }}">
+                                </div>
+                                <div class="col-xl-6">
+                                    <label class="form-label" for="birthday">{{ 'Date of Birth'|trans }}</label>
+                                    <div class="input-group">
+                                        <div class="input-icon w-100">
+                                            <input class="form-control datepicker"
+                                                   id="birthday"
+                                                   value="{{ client.birthday }}"
+                                                   name="birthday"
+                                                   data-pick-year="1"
+                                            >
+                                            <span class="input-icon-addon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                    <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                                                    <path d="M16 3l0 4"></path>
+                                                    <path d="M8 3l0 4"></path>
+                                                    <path d="M4 11l16 0"></path>
+                                                    <path d="M11 15l1 0"></path>
+                                                    <path d="M12 15l0 3"></path>
+                                                </svg>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="mb-4 pb-4 border-bottom" id="company-details">
+                            <h6 class="card-title text-secondary mb-3">{{ 'Company and Contact Details'|trans }}</h6>
+                            <div class="row g-3">
+                                <div class="col-xl-4">
+                                    <label class="form-label">{{ 'Company Name'|trans }}</label>
+                                    <input class="form-control" type="text" name="company" value="{{ client.company }}">
+                                </div>
+                                <div class="col-xl-4">
+                                    <label class="form-label">{{ 'Company Number'|trans }}</label>
+                                    <input class="form-control" type="text" name="company_number" value="{{ client.company_number }}">
+                                </div>
+                                <div class="col-xl-4">
+                                    <label class="form-label">{{ 'Company VAT Number'|trans }}</label>
+                                    <input class="form-control" type="text" name="company_vat" value="{{ client.company_vat }}">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">{{ 'Address Line 1'|trans }}</label>
+                                    <input class="form-control" type="text" name="address_1" value="{{ client.address_1 }}">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">{{ 'Address Line 2'|trans }}</label>
+                                    <input class="form-control" type="text" name="address_2" value="{{ client.address_2 }}">
+                                </div>
+                                <div class="col-xl-4">
+                                    <label class="form-label">{{ 'Country'|trans }}</label>
+                                    {{ mf.selectbox('country', country_names(), client.country, 0, 'Select Country'|trans) }}
+                                </div>
+                                <div class="col-xl-4">
+                                    <label class="form-label">{{ 'State'|trans }}</label>
+                                    <input class="form-control" type="text" name="state" value="{{ client.state }}">
+                                </div>
+                                <div class="col-xl-4">
+                                    <label class="form-label">{{ 'City'|trans }}</label>
+                                    <input class="form-control" type="text" name="city" value="{{ client.city }}">
+                                </div>
+                                <div class="col-xl-4">
+                                    <label class="form-label">{{ 'Postcode'|trans }}</label>
+                                    <input class="form-control" type="text" name="postcode" value="{{ client.postcode }}">
+                                </div>
+                                <div class="col-xl-8">
+                                    <label class="form-label">{{ 'Phone'|trans }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">+</span>
+                                        <input class="form-control fb-phone-country-code" type="text" name="phone_cc" value="{{ client.phone_cc }}" inputmode="numeric" maxlength="3" pattern="[0-9]{1,3}" autocomplete="tel-country-code">
+                                        <input class="form-control" type="phone" name="phone" value="{{ client.phone }}">
+                                    </div>
+                                </div>
+                                <div class="col-xl-6">
+                                    <label class="form-label">{{ 'Passport Number'|trans }}</label>
+                                    <input class="form-control" type="text" name="document_nr" value="{{ client.document_nr }}">
+                                </div>
+                            </div>
+                        </section>
+
+                        <section>
+                            <h6 class="card-title text-secondary mb-3">{{ 'Additional Settings'|trans }}</h6>
+                            <div class="row g-3">
+                                <div class="col-xl-6">
+                                    <label class="form-label">{{ 'Alternative ID'|trans }}</label>
+                                    <input class="form-control" type="text" name="aid" value="{{ client.aid }}" placeholder="{{ 'Used to identify client on foreign system. Usually used by importers'|trans }}">
+                                </div>
+                                <div class="col-xl-3">
+                                    <label class="form-label">{{ 'Currency'|trans }}</label>
+                                    {{ mf.selectbox('currency', guest.currency_get_pairs, client.currency, 0, 'Select Currency'|trans) }}
+                                </div>
+                                <div class="col-xl-3">
+                                    <label class="form-label d-block">{{ 'Exempt from Tax'|trans }}</label>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioTaxExemptYes" type="radio" name="tax_exempt" value="1"{% if client.tax_exempt %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioTaxExemptNo" type="radio" name="tax_exempt" value="0"{% if not client.tax_exempt %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-xl-6">
+                                    <label class="form-label" for="created_at">{{ 'Account Created At'|trans }}</label>
+                                    <div class="input-group">
+                                        <div class="input-icon w-100">
+                                            <input class="form-control datepicker"
+                                                   id="created_at"
+                                                   value="{{ client.created_at|date('Y-m-d') }}"
+                                                   name="created_at"
+                                            >
+                                            <span class="input-icon-addon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                    <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                                                    <path d="M16 3l0 4"></path>
+                                                    <path d="M8 3l0 4"></path>
+                                                    <path d="M4 11l16 0"></path>
+                                                    <path d="M11 15l1 0"></path>
+                                                    <path d="M12 15l0 3"></path>
+                                                </svg>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">{{ 'Notes'|trans }}</label>
+                                    <textarea class="form-control" name="notes" rows="5">{{ client.notes }}</textarea>
+                                </div>
+                            </div>
+                        </section>
+
+                        <input type="hidden" name="id" value="{{ client.id }}">
+                        {% endblock %}
+
+                        {% block form_actions %}
+                            <button class="btn btn-primary" type="submit">{{ 'Update Profile'|trans }}</button>
+                        {% endblock %}
+                    {% endembed %}
+                </form>
+                {% endif %}
+
+                {% if can_change_password %}
+                <form method="post" action="{{ 'client/change_password'|api_url }}" {{ fb_api_form({ message: 'Password Changed'|trans}) }}>
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Change Password'|trans,
+                        subtitle: 'Set a new client-area password for this account.'|trans
+                    } %}
+                        {% import 'macro_functions.html.twig' as mf %}
+                        {% block form_content %}
+                        <div class="row g-3">
+                            <div class="col-xl-6">
+                                <label class="form-label">{{ 'Password'|trans }}</label>
+                                <input class="form-control" type="password" name="password" value="" required>
+                            </div>
+                            <div class="col-xl-6">
+                                <label class="form-label">{{ 'Confirm Password'|trans }}</label>
+                                <input class="form-control" type="password" name="password_confirm" value="" required>
+                            </div>
+                        </div>
+                        <input type="hidden" name="id" value="{{ client.id }}">
+                        {% endblock %}
+
+                        {% block form_actions %}
+                            <button class="btn btn-primary" type="submit">{{ 'Change Password'|trans }}</button>
+                        {% endblock %}
+                    {% endembed %}
+                </form>
+                {% endif %}
+                {% if can_edit_profile %}
+                <form method="post" action="{{ 'client/update'|api_url }}" {{ fb_api_form({ message: 'Client Profile Custom Fields Updated'|trans}) }}>
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Custom Fields'|trans,
+                        subtitle: 'Use these fields to store extra client details that do not fit the standard profile.'|trans
+                    } %}
+                        {% import 'macro_functions.html.twig' as mf %}
+                        {% block form_content %}
+                        <div class="row g-3">
+                            {% for i in 1..10 %}
+                            {% set fn = 'custom_' ~ i %}
+                            <div class="col-xl-6">
+                                <label class="form-label">{{ 'Custom field'|trans }} {{ i }}</label>
+                                <textarea class="form-control" name="custom_{{ i }}" rows="3">{{ client[fn] }}</textarea>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" name="id" value="{{ client.id }}">
+                        {% endblock %}
+
+                        {% block form_actions %}
+                            <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
+                        {% endblock %}
+                    {% endembed %}
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="tab-pane fade" id="tab-orders" role="tabpanel">
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Client Orders'|trans,
+                subtitle: 'Review the client’s active and historical orders, or create a new order directly for this client.'|trans,
+                card_class: 'm-3'
+            } %}
+                {% block section_action %}
+                    <a href="{{ 'order'|url(query: { 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
+                        <svg class="icon">
+                            <use xlink:href="#plus" />
+                        </svg>
+                        {{ 'New Order'|trans }}
+                    </a>
+                {% endblock %}
+
+                {% block section_content %}
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th class="w-1">#</th>
+                                    <th>{{ 'Title'|trans }}</th>
+                                    <th>{{ 'Amount'|trans }}</th>
+                                    <th>{{ 'Period'|trans }}</th>
+                                    <th>{{ 'Status'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set orders = admin.order_get_list({ 'per_page': 20, 'client_id': client.id }) %}
+                                {% for order in orders.list %}
+                                <tr>
+                                    <td>{{ order.id }}</td>
+                                    <td>
+                                        <a href='{{ "order/manage/#{order.id}"|url }}'>{{ order.title }}</a>
+                                    </td>
+                                    <td>{{ order.total|format_currency(order.currency ?? default_currency) }}</td>
+                                    <td>{{ order.period|period_title }}</td>
+                                    <td>{{ mf.status_badge(order.status, 'order') }}</td>
+                                    <td>
+                                        <a class="btn btn-icon" href='{{ "order/manage/#{order.id}"|url }}'>
+                                            <svg class="icon">
+                                                <use xlink:href="#settings" />
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endblock %}
+            {% endembed %}
+        </div>
+
+        <div class="tab-pane fade" id="tab-invoice" role="tabpanel">
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Client Invoices'|trans,
+                subtitle: 'Review invoices issued to this client or prepare a new invoice directly from the account view.'|trans,
+                card_class: 'm-3'
+            } %}
+                {% block section_action %}
+                    <a href="{{ 'invoice'|url(query: { 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
+                        <svg class="icon">
+                            <use xlink:href="#plus" />
+                        </svg>
+                        {{ 'New Invoice'|trans }}
+                    </a>
+                {% endblock %}
+
+                {% block section_content %}
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th class="w-1">#</th>
+                                    <th>{{ 'Amount'|trans }}</th>
+                                    <th>{{ 'Issued On'|trans }}</th>
+                                    <th>{{ 'Paid On'|trans }}</th>
+                                    <th>{{ 'Status'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set invoices = admin.invoice_get_list({ 'per_page': 100, 'client_id': client.id }) %}
+                                {% for invoice in invoices.list %}
+                                <tr>
+                                    <td>
+                                        <a href='{{ "invoice/manage/#{invoice.id}"|url }}'>{{ invoice.serie_nr }}</a>
+                                    </td>
+                                    <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
+                                    <td>{{ invoice.created_at|format_date }}</td>
+                                    <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
+                                    <td>{{ mf.status_badge(invoice.status, 'invoice') }}</td>
+                                    <td>
+                                        <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
+                                            <svg class="icon">
+                                                <use xlink:href="#edit" />
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endblock %}
+            {% endembed %}
+        </div>
+
+        <div class="tab-pane fade" id="tab-support" role="tabpanel" aria-labelledby="support-tab">
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Help Desk'|trans,
+                subtitle: 'Track the client’s support tickets and open a new ticket without leaving the client profile.'|trans,
+                card_class: 'm-3'
+            } %}
+                {% block section_action %}
+                    <a href="{{ 'support'|url(query: { 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
+                        <svg class="icon">
+                            <use xlink:href="#plus" />
+                        </svg>
+                        {{ 'New Support Ticket'|trans }}
+                    </a>
+                {% endblock %}
+
+                {% block section_content %}
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th class="w-1">#</th>
+                                    <th>{{ 'Help desk'|trans }}</th>
+                                    <th>{{ 'Subject'|trans }}</th>
+                                    <th>{{ 'Status'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set tickets = admin.support_ticket_get_list({ 'per_page': 20, 'client_id': client.id, 'deep': 0, 'include_first': 0 }) %}
+                                {% for ticket in tickets.list %}
+                                <tr>
+                                    <td>{{ ticket.id }}</td>
+                                    <td>{{ ticket.helpdesk.name }}</td>
+                                    <td>
+                                        <a href='{{ "support/ticket/#{ticket.id}"|url }}'>{{ ticket.subject|truncate(30) }}</a>
+                                    </td>
+                                    <td>{{ mf.status_badge(ticket.status, 'ticket') }}</td>
+                                    <td>
+                                        <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}'>
+                                            <svg class="icon">
+                                                <use xlink:href="#edit" />
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endblock %}
+            {% endembed %}
+        </div>
+
+        {% if can_manage_balance %}
+        <div class="tab-pane fade" id="tab-balance" role="tabpanel" aria-labelledby="balance-tab">
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Client Payments History'|trans,
+                subtitle: 'Review balance adjustments and record a manual credit for this client when needed.'|trans,
+                card_class: 'm-3 mb-0'
+            } %}
+                {% block section_content %}
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th>{{ 'Amount'|trans }}</th>
+                                    <th>{{ 'Description'|trans }}</th>
+                                    <th>{{ 'Date'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set payments = admin.client_balance_get_list({ 'per_page': 20, 'client_id': client.id }) %}
+                                {% for i, tx in payments.list %}
+                                <tr>
+                                    <td>{{ tx.amount|format_currency(tx.currency ?? default_currency) }}</td>
+                                    <td>{{ tx.description }}</td>
+                                    <td>{{ tx.created_at|format_datetime }}</td>
+                                    <td>
+                                        <a class="btn btn-icon"
+                                            {{ fb_api_link({ href: 'client/balance_delete'|api_url(query: {id: tx.id }), modal: {type: 'confirm', title: 'Are you sure?'|trans} }) }}>
+                                            <svg class="icon">
+                                                <use xlink:href="#delete" />
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endblock %}
+            {% endembed %}
+
+            <div class="p-3">
+                <form method="post" action="{{ 'client/balance_add_funds'|api_url }}" {{ fb_api_form({ message: 'Funds Added'|trans}) }}>
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Add Funds for Client'|trans,
+                        subtitle: 'Record a manual balance credit on this client account.'|trans
+                    } %}
+                        {% block form_content %}
+                            <div class="row g-3">
+                                <div class="col-xl-4">
+                                    <label class="form-label" for="inputAmount">{{ 'Amount'|trans }}</label>
+                                    <div class="input-group">
+                                        <input class="form-control" type="text" id="inputAmount" name="amount" required>
+                                        <span class="input-group-text">{{ client.currency|currency_symbol }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-xl-8">
+                                    <label class="form-label" for="inputDescription">{{ 'Description'|trans }}</label>
+                                    <input class="form-control" id="inputDescription" type="text" name="description" required>
+                                </div>
+                            </div>
+                            <input type="hidden" name="id" value="{{ client.id }}">
+                        {% endblock %}
+
+                        {% block form_actions %}
+                            <button class="btn btn-primary" type="submit">
+                                <svg class="icon">
+                                    <use xlink:href="#plus" />
+                                </svg>
+                                {{ 'Add Funds'|trans }}
+                            </button>
+                        {% endblock %}
+                    {% endembed %}
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if can_view_client_login_history %}
+        <div class="tab-pane fade" id="tab-history" role="tabpanel" aria-labelledby="history-tab">
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Login History'|trans,
+                subtitle: 'See recent client login activity, including originating IP address and detected country.'|trans,
+                card_class: 'm-3'
+            } %}
+                {% block section_content %}
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th>{{ 'IP'|trans }}</th>
+                                    <th>{{ 'Country'|trans }}</th>
+                                    <th>{{ 'Date'|trans }}</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {% set logins = admin.client_login_history_get_list({ 'per_page': 10, 'page': request.page, 'client_id': client.id }) %}
+                                {% for i, login in logins.list %}
+                                <tr>
+                                    <td>{{ mf.ip_lookup_link(login.ip) }}</td>
+                                    <td>{{ login.ip|ip_country_name|default('Unknown'|trans) }}</td>
+                                    <td>{{ login.created_at|format_datetime }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td class="text-muted" colspan="3">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endblock %}
+            {% endembed %}
+        </div>
+        {% endif %}
+
+        {% if can_view_email_history %}
+        <div class="tab-pane fade" id="tab-emails" role="tabpanel" aria-labelledby="emails-tab">
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Emails Sent to Client'|trans,
+                subtitle: 'Review outbound email history for this client and preview the rendered message content.'|trans,
+                card_class: 'm-3'
+            } %}
+                {% block section_content %}
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th>{{ 'Email Subject'|trans }}</th>
+                                    <th>{{ 'To'|trans }}</th>
+                                    <th>{{ 'Date'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {% set emailsPerPage = request.per_page matches '/^\\d+$/' ? request.per_page : 25 %}
+                                {% set emailsPage = request.page matches '/^\\d+$/' ? request.page : 1 %}
+                                {% set emails = admin.email_email_get_list({ 'per_page': emailsPerPage, 'page': emailsPage, 'client_id': client.id }) %}
+                                {% for i, email in emails.list %}
+                                <tr>
+                                    <td>{{ email.subject }}</td>
+                                    <td>{{ email.recipients }}</td>
+                                    <td>{{ email.created_at|format_datetime }}</td>
+                                    <td>
+                                        <button class="btn btn-icon email-preview-btn"
+                                            data-email-subject="{{ email.subject }}"
+                                            data-email-content="{{ email.content_html|e('html_attr') }}"
+                                            title="{{ 'Preview'|trans }}">
+                                            <svg class="icon">
+                                                <use xlink:href="#eye" />
+                                            </svg>
+                                        </button>
+                                        <a class="btn btn-icon" href='{{ "email/#{email.id}"|url }}'>
+                                            <svg class="icon">
+                                                <use xlink:href="#edit"></use>
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endblock %}
+
+                {% block section_footer %}
+                    <div class="d-flex align-items-center">
+                        {{ include('partial_pagination.html.twig', { 'list': emails, 'split_footer_controls': true }) }}
+                    </div>
+                {% endblock %}
+            {% endembed %}
+        </div>
+        {% endif %}
+
+        <div class="tab-pane fade" id="tab-transactions" role="tabpanel" aria-labelledby="transactions-tab">
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Transactions Received'|trans,
+                subtitle: 'Review payment transactions recorded against this client across all gateways.'|trans,
+                card_class: 'm-3'
+            } %}
+                {% block section_content %}
+                    {% set transactions = admin.invoice_transaction_get_list({ 'client_id': client.id, 'per_page': 100 }).list %}
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th>{{ 'ID'|trans }}</th>
+                                    <th>{{ 'Type'|trans }}</th>
+                                    <th>{{ 'Gateway'|trans }}</th>
+                                    <th>{{ 'Amount'|trans }}</th>
+                                    <th>{{ 'Status'|trans }}</th>
+                                    <th>{{ 'Date'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {% for i, tx in transactions %}
+                                <tr>
+                                    <td>{{ tx.txn_id }}</td>
+                                    <td>{{ tx.type }}</td>
+                                    <td>{{ tx.gateway }}</td>
+                                    <td>{% if tx.amount %}
+                                            {{ tx.amount|format_currency(tx.currency ?? default_currency) }}
+                                        {% else %}
+                                            -
+                                        {% endif %}</td>
+                                    <td>{{ mf.status_badge(tx.status, 'transaction') }}</td>
+                                    <td>{{ tx.created_at|format_datetime }}</td>
+                                    <td>
+                                        <a class="btn btn-icon" href='{{ "invoice/transaction/#{tx.id}"|url }}'>
+                                            <svg class="icon">
+                                                <use xlink:href="#edit" />
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td class="text-muted" colspan="7">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endblock %}
+            {% endembed %}
+        </div>
+    {% endblock %}
+{% endembed %}
+{% endblock %}
+
+{% block js%}
+{{ include('partial_email_preview.html.twig') }}
+<script>
+    function onAfterInvoicePrepared(id) {
+        window.location = "{{ 'invoice/manage/'|url }}/" + id;
+    }
+</script>
+{% endblock %}

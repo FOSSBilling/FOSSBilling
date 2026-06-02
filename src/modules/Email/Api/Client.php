@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -15,6 +16,8 @@
 
 namespace Box\Mod\Email\Api;
 
+use FOSSBilling\PaginationOptions;
+use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Client extends \Api_Abstract
@@ -28,9 +31,8 @@ class Client extends \Api_Abstract
     {
         $client = $this->getIdentity();
         $data['client_id'] = $client->id;
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [
@@ -39,7 +41,7 @@ class Client extends \Api_Abstract
                 'sender' => $item['sender'] ?? '',
                 'recipients' => $item['recipients'] ?? '',
                 'subject' => $item['subject'] ?? '',
-                'content_html' => $item['content_html'] ?? '',
+                'content_html' => Tools::sanitizeContent($item['content_html'] ?? ''),
                 'content_text' => $item['content_text'] ?? '',
                 'created_at' => $item['created_at'] ?? '',
                 'updated_at' => $item['updated_at'] ?? '',
@@ -78,7 +80,12 @@ class Client extends \Api_Abstract
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function resend($data)
     {
-        $model = $this->getService()->findOneForClientById($this->getIdentity(), $data['id']);
+        $client = $this->getIdentity();
+
+        $this->di['rate_limiter']->consumeOrThrow('client_email_resend_ip', (string) $this->getIp());
+        $this->di['rate_limiter']->consumeOrThrow('client_email_resend_account', 'client:' . $client->id);
+
+        $model = $this->getService()->findOneForClientById($client, $data['id']);
         if (!$model instanceof \Model_ActivityClientEmail) {
             throw new \FOSSBilling\Exception('Email not found');
         }

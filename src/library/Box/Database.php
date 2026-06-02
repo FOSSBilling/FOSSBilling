@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -51,6 +52,20 @@ class Box_Database implements InjectionAwareInterface
         }
 
         return $this->orm->store($bean);
+    }
+
+    public function transaction(callable $callback)
+    {
+        if (!is_object($this->orm) || !method_exists($this->orm, 'getDatabaseAdapter')) {
+            return $callback();
+        }
+
+        $adapter = $this->orm->getDatabaseAdapter();
+        if ($adapter === null) {
+            return $callback();
+        }
+
+        return RedBeanPHP\Util\Transaction::transaction($adapter, $callback);
     }
 
     public function getAll($sql, $values = [])

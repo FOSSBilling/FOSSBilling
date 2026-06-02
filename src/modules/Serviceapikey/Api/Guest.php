@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -22,16 +23,5 @@ class Guest extends \Api_Abstract
     public function check($data)
     {
         return $this->getService()->isValid($data);
-    }
-
-    /**
-     * Gets the information tied to an API key such as its validity and any custom parameters tied to it.
-     *
-     * @param array $data
-     *                    - 'key' What API key to check & get custom parameters for
-     */
-    public function get_info($data)
-    {
-        return $this->getService()->getInfo($data);
     }
 }

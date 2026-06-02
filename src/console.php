@@ -15,6 +15,7 @@ if (php_sapi_name() !== 'cli') {
 
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'load.php';
 
+use FOSSBilling\Version;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -29,7 +30,7 @@ $filesystem = new Filesystem();
 
 // Setting the application constraints
 $application->setName('FOSSBilling');
-$application->setVersion($di['mod_service']('system')->getVersion());
+$application->setVersion(Version::VERSION);
 
 $modules = $di['mod']('extension')->getCoreModules();
 

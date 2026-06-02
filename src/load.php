@@ -12,12 +12,12 @@ declare(strict_types=1);
 
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
+use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\SentryHelper;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
 
@@ -49,74 +49,16 @@ function checkInstaller(): void
 }
 
 /*
- * Check if any legacy BoxBilling/FOSSBilling files are present.
- */
-function checkLegacyFiles(): void
-{
-    global $filesystem;
-
-    // Detect old files and folders from legacy BoxBilling or FOSSBilling installations.
-    $toCheck = ['bb-data', 'bb-library', 'bb-locale', 'bb-modules', 'bb-themes', 'bb-uploads', 'bb-cron.php', 'bb-di.php', 'bb-load.php', 'bb-config.php'];
-    $legacyFound = null;
-    foreach ($toCheck as $path) {
-        if ($filesystem->exists(Path::normalize($path))) {
-            $legacyFound = true;
-
-            break;
-        }
-    }
-
-    // Show an error if any legacy files/folders found.
-    if ($legacyFound) {
-        throw new Exception('Migration from BoxBilling is required.', 4);
-    }
-}
-
-/*
  * Check if SSL required, and enforce if so.
  */
 function checkSSL(): void
 {
     global $request;
 
-    $force_https = Config::getProperty('security.force_https');
-    if ($force_https && !Environment::isCLI()) {
-        if (!Tools::isHTTPS()) {
-            header('Location: https://' . $request->getHost() . $request->getRequestUri());
+    if (!empty(Config::getProperty('security.force_https')) && Config::getProperty('security.force_https') && !Environment::isCLI()) {
+        if (!$request->isSecure()) {
+            (new RedirectResponse('https://' . $request->getHost() . $request->getRequestUri()))->send();
             exit;
-        }
-    }
-}
-
-/*
- * Check if the update patcher needs to be run.
- */
-function checkUpdatePatcher(): void
-{
-    global $di, $filesystem, $request;
-
-    $version = FOSSBilling\Version::VERSION;
-    if ($di['cache']->getItem('updatePatcher')->isHit() && $version === $di['cache']->getItem('updatePatcher')->get()) {
-        exit('The update patcher has already been run for this version.');
-    }
-
-    if ($request->getPathInfo() == '/run-patcher' || $request->query->get('_url') === '/run-patcher') {
-        $patcher = new FOSSBilling\UpdatePatcher();
-        $patcher->setDi($di);
-
-        try {
-            $patcher->applyConfigPatches();
-            $patcher->applyCorePatches();
-
-            // Clear the file cache after applying patches.
-            $filesystem->remove(PATH_CACHE);
-            $filesystem->mkdir(PATH_CACHE);
-
-            $di['cache']->getItem('updatePatcher')->set(FOSSBilling\Version::VERSION);
-
-            exit('Any missing config migrations or database patches have been applied and the cache has been cleared.');
-        } catch (Exception $e) {
-            exit("An error occurred while attempting to apply patches: <br>{$e->getMessage()}.");
         }
     }
 }
@@ -134,6 +76,47 @@ function checkWebServer(): void
         if (!$filesystem->exists('.htaccess')) {
             throw new Exception('Missing .htaccess file', 5);
         }
+    }
+}
+
+/*
+ * Check whether the configured database has existing tables.
+ */
+function hasDatabaseTables(): bool
+{
+    $dbConfig = Config::getProperty('db', []);
+    if (!is_array($dbConfig) || ($dbConfig['driver'] ?? '') !== 'pdo_mysql') {
+        return true;
+    }
+
+    $host = $dbConfig['host'] ?? '';
+    $database = $dbConfig['name'] ?? '';
+    $port = Tools::normalizePort($dbConfig['port'] ?? null, 3306);
+    if ($host === '' || $database === '') {
+        return true;
+    }
+
+    try {
+        $pdo = new PDO(
+            sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $host, $port, $database),
+            $dbConfig['user'] ?? '',
+            $dbConfig['password'] ?? '',
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION],
+        );
+        $statement = $pdo->query('SHOW TABLES');
+
+        return $statement !== false && $statement->fetchColumn() !== false;
+    } catch (Throwable $e) {
+        if ((bool) Config::getProperty('debug', false)) {
+            error_log(sprintf(
+                'hasDatabaseTables() failed to inspect configured database tables: %s in %s on line %d',
+                $e->getMessage(),
+                $e->getFile(),
+                $e->getLine(),
+            ));
+        }
+
+        return true;
     }
 }
 
@@ -158,7 +141,10 @@ function exceptionHandler(Exception|Error $e)
     global $filesystem;
 
     if (Environment::isTesting()) {
-        echo $e->getMessage() . PHP_EOL;
+        $msg = $e::class . ': ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine() . PHP_EOL;
+        @file_put_contents(Path::join(PATH_LOG, 'exception_handler.log'), date('c') . ' ' . $msg, FILE_APPEND);
+        @file_put_contents(Path::join(PATH_ROOT, 'data', 'log', 'exception_handler.log'), date('c') . ' ' . $msg, FILE_APPEND);
+        echo $msg;
 
         return;
     }
@@ -220,13 +206,21 @@ function preInit(): void
     define('PATH_THEMES', Path::join(PATH_ROOT, 'themes'));
     define('PATH_MODS', Path::join(PATH_ROOT, 'modules'));
     define('PATH_LANGS', Path::join(PATH_ROOT, 'locale'));
-    define('PATH_UPLOADS', Path::join(PATH_ROOT, 'data', 'uploads'));
+    $pathUploads = Path::join(PATH_ROOT, 'data', 'uploads');
+    if (getenv('APP_ENV') === 'test') {
+        $pathUploads = Path::join(sys_get_temp_dir(), 'fossbilling_test_data', 'uploads');
+        if (!is_dir($pathUploads) && !mkdir($pathUploads, 0o755, true) && !is_dir($pathUploads)) {
+            throw new Exception(sprintf('Unable to create uploads directory for tests: "%s".', $pathUploads));
+        }
+    }
+    define('PATH_UPLOADS', $pathUploads);
     define('PATH_CONFIG', Path::join(PATH_ROOT, 'config.php'));
 
     // Load required FOSSBilling libraries.
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'ErrorPage.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'SentryHelper.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Environment.php');
+    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RequestFactory.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Config.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Tools.php');
 }
@@ -243,30 +237,48 @@ function init(): void
     // Initialize required Symfony components.
     global $filesystem, $request;
     $filesystem = new Filesystem();
-    $request = Request::createFromGlobals();
+    $request = RequestFactory::createFromGlobals(RequestFactory::getPreConfigProxyConfig($_SERVER));
+    RequestFactory::normalizeRoutePath($request);
 
-    // Check config exists, redirecting to installer or throwing an exception if not.
-    if (!$filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::join('install', 'install.php'))) {
-        $response = new RedirectResponse($request->getSchemeAndHttpHost() . $request->getBasePath() . '/install/install.php', 307);
+    // Check config exists and is valid, redirecting to installer or throwing an exception if not.
+    $configExists = $filesystem->exists(PATH_CONFIG);
+    $configIsValid = $configExists && Config::isConfigValid();
+    $installerExists = $filesystem->exists(Path::join('install', 'install.php'));
+
+    if (!$configExists && $installerExists) {
+        $response = new RedirectResponse($request->getBasePath() . '/install/install.php', 307);
         $response->send();
         exit;
-    } elseif (!$filesystem->exists(PATH_CONFIG) && !$filesystem->exists(Path::join('install', 'install.php'))) {
+    } elseif (!$configIsValid) {
         throw new Exception('The FOSSBilling configuration file is empty or invalid.', 3);
     }
+
+    if (Environment::isDevelopment() && Config::getProperty('debug_and_monitoring.debug', false) && $installerExists && !hasDatabaseTables()) {
+        $response = new RedirectResponse($request->getBasePath() . '/install/install.php', 307);
+        $response->send();
+        exit;
+    }
+
+    RequestFactory::configureFromConfig($request);
 
     // Set globals and relevant settings based on the config.
     date_default_timezone_set(Config::getProperty('i18n.timezone', 'UTC'));
     define('ADMIN_PREFIX', Config::getProperty('admin_area_prefix'));
-    if (!defined('DEBUG')) {
-        define('DEBUG', (bool) Config::getProperty('debug_and_monitoring.debug', false));
+    define('DEBUG', (bool) Config::getProperty('debug_and_monitoring.debug', false));
+    $pathData = Path::normalize(Config::getProperty('path_data'));
+    if (Environment::isTesting()) {
+        $pathData = Path::join(sys_get_temp_dir(), 'fossbilling_test_data');
+        @mkdir(Path::join($pathData, 'cache'), 0o755, true);
+        @mkdir(Path::join($pathData, 'log'), 0o755, true);
+        @mkdir($pathData, 0o755, true);
     }
-    define('PATH_DATA', Path::normalize(Config::getProperty('path_data')));
+    define('PATH_DATA', $pathData);
     define('PATH_CACHE', Path::join(PATH_DATA, 'cache'));
     define('PATH_LOG', Path::join(PATH_DATA, 'log'));
     define('INSTANCE_ID', Config::getProperty('info.instance_id', 'Unknown'));
 
     // Set the system URL.
-    $scheme = Config::getProperty('security.force_https', true) || Tools::isHTTPS() ? 'https://' : 'http://';
+    $scheme = Config::getProperty('security.force_https', true) || $request->isSecure() ? 'https://' : 'http://';
 
     // Keep the app working correctly if the URL didn't get correctly updated
     $url = str_replace(['https://', 'http://'], '', Config::getProperty('url'));
@@ -283,6 +295,10 @@ function init(): void
     // Load the DI container.
     global $di;
     $di = require Path::join(PATH_ROOT, 'di.php');
+
+    if (!Environment::isCLI() && !Environment::isTesting()) {
+        $di['update_finalization']->ensureCurrentVersionFinalization();
+    }
 
     // Now that the config file is loaded, we can enable Sentry.
     SentryHelper::registerSentry();
@@ -315,9 +331,6 @@ preInit();
 // Initialize the application.
 init();
 
-// Check for legacy BoxBilling/FOSSBilling files.
-checkLegacyFiles();
-
 // Verify the installer was removed.
 checkInstaller();
 
@@ -326,9 +339,6 @@ checkSSL();
 
 // Check web server and web server settings.
 checkWebServer();
-
-// Check whether the patcher needs to be run.
-checkUpdatePatcher();
 
 // Perform post-initialization (setting error handlers, etc).
 postInit();

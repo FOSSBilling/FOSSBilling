@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -20,6 +21,7 @@
 
 namespace Box\Mod\Notification\Api;
 
+use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \Api_Abstract
@@ -31,10 +33,11 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
-        [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('notification', 'view');
 
-        return $resultSet = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+        $queryBuilder = $this->getService()->getSearchQueryBuilder($data);
+
+        return $this->di['pager']->paginateDoctrineQuery($queryBuilder, PaginationOptions::fromArray($data));
     }
 
     /**
@@ -47,12 +50,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Notification ID was not passed'])]
     public function get($data)
     {
-        $meta = $this->di['db']->load('extension_meta', $data['id']);
-        if ($meta->extension != 'mod_notification' || $meta->meta_key != 'message') {
-            throw new \FOSSBilling\Exception('Notification message was not found');
-        }
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('notification', 'view');
 
-        return $this->getService()->toApiArray($meta);
+        return $this->getService()->toApiArray($this->getService()->get((int) $data['id']));
     }
 
     /**
@@ -62,6 +62,8 @@ class Admin extends \Api_Abstract
      */
     public function add($data): int|false
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('notification', 'manage');
+
         if (!isset($data['message'])) {
             return false;
         }
@@ -79,13 +81,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Notification ID was not passed'])]
     public function delete($data): bool
     {
-        $meta = $this->di['db']->load('extension_meta', $data['id']);
-        if ($meta->extension != 'mod_notification' || $meta->meta_key != 'message') {
-            throw new \FOSSBilling\Exception('Notification message was not found');
-        }
-        $this->di['db']->trash($meta);
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('notification', 'manage');
 
-        return true;
+        return $this->getService()->delete((int) $data['id']);
     }
 
     /**
@@ -95,12 +93,8 @@ class Admin extends \Api_Abstract
      */
     public function delete_all(): bool
     {
-        $sql = "DELETE
-            FROM extension_meta
-            WHERE extension = 'mod_notification'
-            AND meta_key = 'message';";
-        $this->di['db']->exec($sql);
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('notification', 'manage');
 
-        return true;
+        return $this->getService()->deleteAll();
     }
 }

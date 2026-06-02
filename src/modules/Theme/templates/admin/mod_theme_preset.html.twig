@@ -1,0 +1,239 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% set active_menu = 'system' %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|url }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'extension/settings/theme'|url }}">{{ 'Themes'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Settings for'|trans }} {{ theme_code }}</li>
+    </ol>
+{% endblock %}
+
+{% block meta_title %}{{ 'Settings for'|trans }} {{ theme_code }}{% endblock %}
+
+{% block content %}
+    {% if error %}
+        <div class="alert alert-danger" role="alert">
+            <strong>{{ 'Important'|trans }}:</strong> {{ error }}
+        </div>
+    {% endif %}
+
+    {% if info %}
+        <div class="alert alert-info" role="alert">
+            <strong>{{ 'Information'|trans }}:</strong> {{ info }}
+        </div>
+    {% endif %}
+
+    {% if settings_html %}
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">{{ 'Settings for'|trans }} {{ theme_code }}</h3>
+                    <p class="card-subtitle">{{ "Switch to a predefined set of theme settings from the dropdown. Adjust each section and apply the changes once you're done."|trans }}</p>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info" role="alert">
+                    <strong class="me-1">{{ 'Information:'|trans }}</strong>{{ "Presets let you switch between saved theme configurations. Choose a preset, adjust the settings below, and apply the changes when you're done."|trans }}
+                </div>
+                <div class="row g-3 align-items-end">
+                    <div class="col-lg-4">
+                        <label class="form-label" for="theme-preset-select">{{ 'Current Preset'|trans }}</label>
+                        <div class="input-group">
+                            <select class="form-select" id="theme-preset-select" name="preset" onchange="onSelectedPresetChange()">
+                                {% for preset in presets %}
+                                    <option value="{{ preset }}"{% if preset == current_preset %} selected{% endif %}>{{ preset }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if presets|length > 1 and current_preset != 'Default' %}
+                                <a class="btn btn-icon" href="{{ 'theme/preset_delete'|api_url(query: { 'code': theme_code, 'preset': current_preset }) }}"
+                                    {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true }) }}>
+                                    <svg class="icon">
+                                        <use xlink:href="#delete"/>
+                                    </svg>
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-lg-8">
+                        <div class="text-secondary small">{{ 'Theme code'|trans }}</div>
+                        <div class="fw-semibold">{{ theme_code }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card mt-3">
+            <form method="post" action="" enctype="multipart/form-data">
+                <div class="card-body">
+                    <div class="d-flex flex-column flex-lg-row align-items-lg-end justify-content-between gap-3 mb-4">
+                        <div>
+                            <h4 class="card-title mb-2">{{ 'Configuration for'|trans }} {{ current_preset }} {{ 'Preset'|trans }}</h4>
+                            <p class="text-secondary mb-0">{{ 'Adjust the available theme options below. Changes are applied to the currently selected preset.'|trans }}</p>
+                        </div>
+                    </div>
+                    <div id="theme-settings-overview" class="card card-sm mb-4 d-none">
+                        <div class="card-body py-3">
+                            <div class="text-secondary text-uppercase small fw-semibold mb-2">{{ 'Jump to Section'|trans }}</div>
+                            <div id="theme-settings-section-nav" class="d-flex flex-wrap gap-2"></div>
+                        </div>
+                    </div>
+                    <div id="theme-settings" class="theme-settings-content">
+                        {{ settings_html }}
+                    </div>
+                </div>
+                <div class="card-body border-top">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-lg-6">
+                            <label class="form-check form-switch form-switch-2">
+                                <input class="form-check-input" type="checkbox" name="save-current-setting" value="1" id="save-current-setting">
+                                <span class="form-check-label">{{ 'Save current settings as a new preset'|trans }}</span>
+                            </label>
+                        </div>
+                        <div class="col-lg-6">
+                            <label class="form-label" for="save-current-setting-preset">{{ 'New Preset Name'|trans }}</label>
+                            <input class="form-control" id="save-current-setting-preset" type="text" name="save-current-setting-preset">
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-end">
+                    <button class="btn btn-primary" type="submit">{{ 'Apply changes'|trans }}</button>
+                </div>
+            </form>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block js %}
+    <script>
+        function onSelectedPresetChange() {
+            let selectedPreset = document.querySelector('select[name="preset"]').value;
+            FOSSBilling.api.admin.post('theme/preset_select', { code: '{{ theme_code }}', preset: selectedPreset },
+                () => {
+                    window.location.reload();
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            function createOptionElement(value, text) {
+                let optionEl = document.createElement('option');
+                optionEl.setAttribute('value', value);
+                optionEl.innerText = text;
+                return optionEl;
+            }
+
+            function slugify(value) {
+                return value
+                    .toLowerCase()
+                    .trim()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-+|-+$/g, '');
+            }
+
+            const themeSettings = document.querySelector('#theme-settings');
+            const sectionOverview = document.querySelector('#theme-settings-overview');
+            const sectionNav = document.querySelector('#theme-settings-section-nav');
+
+            if (themeSettings && sectionOverview && sectionNav) {
+                const sections = Array.from(themeSettings.querySelectorAll(':scope > section'));
+
+                sections.forEach((section, index) => {
+                    const heading = section.querySelector(':scope > h4, :scope > h5');
+                    if (!heading) {
+                        return;
+                    }
+
+                    const sectionId = section.id || 'theme-section-' + (slugify(heading.textContent || '') || (index + 1));
+                    section.id = sectionId;
+
+                    section.classList.add('pb-4');
+                    if (index < sections.length - 1) {
+                        section.classList.add('mb-4', 'border-bottom');
+                    }
+
+                    section.querySelectorAll('h5').forEach((subheading) => {
+                        subheading.classList.add('mt-4');
+                    });
+
+                    const navButton = document.createElement('button');
+                    navButton.type = 'button';
+                    navButton.className = 'btn btn-outline-secondary btn-sm';
+                    navButton.innerText = heading.textContent.trim();
+                    navButton.addEventListener('click', () => {
+                        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    });
+                    sectionNav.append(navButton);
+                });
+
+                if (sectionNav.children.length > 1) {
+                    sectionOverview.classList.remove('d-none');
+                }
+            }
+
+            //special class "page"
+            document.querySelectorAll('#theme-settings select.page').forEach((el) => {
+                el.append(createOptionElement('', "{{ 'None'|trans }}"));
+                Object.entries({{ admin.page_get_pairs|json_encode|raw }}).forEach(([key, value]) => {
+                    el.append(createOptionElement(key, value));
+                })
+            });
+
+            //special class "snippet"
+            document.querySelectorAll('#theme-settings select.snippet').forEach((el) => {
+                el.append(createOptionElement('', "{{ 'None'|trans }}"));
+                Object.entries({{ snippets|json_encode|raw }}).forEach(([key, value]) => {
+                    el.append(createOptionElement(key, value));
+                })
+            });
+
+            //special class "product"
+            document.querySelectorAll('#theme-settings select.product').forEach((el) => {
+                el.append(createOptionElement('', "{{ 'None'|trans }}"));
+                Object.entries({{ admin.product_get_pairs|json_encode|raw }}).forEach(([key, value]) => {
+                    el.append(createOptionElement(key, value));
+                })
+            });
+
+            // populate settings values
+            Object.entries({{ settings|json_encode|raw }}).forEach(([key, value]) => {
+                document.querySelectorAll('#theme-settings *[name="' + key + '"]').forEach((el) => {
+                    switch (el.getAttribute('type')) {
+                        case 'radio':
+                            {
+                                const selectedRadio = el.parentElement.parentElement.querySelector('[value="' + value + '"]');
+                                if (selectedRadio) {
+                                    selectedRadio.checked = true;
+                                }
+                            }
+                            break;
+                        case 'checkbox':
+                            el.checked = value === '1' || value === 1 || value === true || value === 'true';
+                            break;
+                        default:
+                            el.value = value;
+                    }
+                });
+            })
+
+            // show uploaded files
+            Object.entries({{ uploaded|json_encode|raw }}).forEach(([key, file]) => {
+                let el = document.querySelector('#theme-settings input[name="' + file.name + '"]');
+                if (el) {
+                    let filePathBtn = '<div class="asset"><a href="' + file.url + '" target="_blank" >' + file.name + '</a></div>';
+                    el.insertAdjacentHTML('afterend', filePathBtn);
+                }
+
+            })
+        });
+    </script>
+{% endblock %}

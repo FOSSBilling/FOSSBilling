@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -12,7 +13,7 @@ class Payment_Invoice
 {
     private $id; // FOSSBilling Invoice ID
     private $number; // Invoice number for accounting
-    private string $currency = 'USD';
+    private string $currency = '';
     private array $items = [];
     private ?Payment_Invoice_Subscription $subscription = null;
     private ?Payment_Invoice_Buyer $buyer = null;

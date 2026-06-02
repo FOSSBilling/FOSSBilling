@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -11,7 +12,11 @@
 
 namespace Box\Mod\Theme;
 
+use Box\Mod\Extension\Entity\ExtensionMeta;
+use Box\Mod\Extension\Repository\ExtensionMetaRepository;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
+use FOSSBilling\Twig\SandboxedStringRenderer;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -19,10 +24,8 @@ use Symfony\Component\Finder\Finder;
 class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
-
-    public function __construct(private readonly Filesystem $filesystem = new Filesystem())
-    {
-    }
+    private ?ExtensionMetaRepository $extensionMetaRepository = null;
+    private readonly Filesystem $filesystem;
 
     /**
      * In-request cache for the current admin theme name.
@@ -40,11 +43,35 @@ class Service implements InjectionAwareInterface
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        $this->extensionMetaRepository = isset($this->di['em'])
+            ? $this->di['em']->getRepository(ExtensionMeta::class)
+            : null;
     }
 
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View themes'),
+                'description' => __trans('Allows the staff member to view available themes and their configuration.'),
+            ],
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage themes'),
+                'description' => __trans('Allows the staff member to select themes and manage presets.'),
+            ],
+        ];
+    }
+
+    public function __construct()
+    {
+        $this->filesystem = new Filesystem();
     }
 
     /**
@@ -56,6 +83,19 @@ class Service implements InjectionAwareInterface
         self::$clientThemeCache = null;
     }
 
+    public function getExtensionMetaRepository(): ExtensionMetaRepository
+    {
+        if ($this->extensionMetaRepository === null) {
+            if ($this->di === null) {
+                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
+            }
+
+            $this->extensionMetaRepository = $this->di['em']->getRepository(ExtensionMeta::class);
+        }
+
+        return $this->extensionMetaRepository;
+    }
+
     public function getTheme($name): Model\Theme
     {
         return new Model\Theme($name);
@@ -63,16 +103,9 @@ class Service implements InjectionAwareInterface
 
     public function getCurrentThemePreset(Model\Theme $theme)
     {
-        $current = $this->di['db']->getCell(
-            "SELECT meta_value
-        FROM extension_meta
-        WHERE 1
-        AND extension = 'mod_theme'
-        AND rel_id = 'current'
-        AND rel_type = 'preset'
-        AND meta_key = :theme",
-            [':theme' => $theme->getName()]
-        );
+        $current = $this->getExtensionMetaRepository()
+            ->findOneByExtensionAndScope('mod_theme', $theme->getName(), 'preset', 'current')
+            ?->getMetaValue();
         if (empty($current)) {
             $current = $theme->getCurrentPreset();
             $this->setCurrentThemePreset($theme, $current);
@@ -83,75 +116,42 @@ class Service implements InjectionAwareInterface
 
     public function setCurrentThemePreset(Model\Theme $theme, $preset): bool
     {
-        $params = ['theme' => $theme->getName(), 'preset' => $preset];
-        $updated = $this->di['db']->exec("
-            UPDATE extension_meta
-            SET meta_value = :preset
-            WHERE 1
-            AND extension = 'mod_theme'
-            AND rel_type = 'preset'
-            AND rel_id = 'current'
-            AND meta_key = :theme
-            LIMIT 1
-            ", $params);
+        $meta = $this->getExtensionMetaRepository()->findOneByExtensionAndScope('mod_theme', $theme->getName(), 'preset', 'current');
 
-        if (!$updated) {
-            $updated = $this->di['db']->exec("
-            INSERT INTO extension_meta (
-                extension,
-                rel_type,
-                rel_id,
-                meta_value,
-                meta_key,
-                created_at,
-                updated_at
-            )
-            VALUES (
-                'mod_theme',
-                'preset',
-                'current',
-                :preset,
-                :theme,
-                NOW(),
-                NOW()
-            )
-            ", $params);
+        if (!$meta instanceof ExtensionMeta) {
+            $meta = (new ExtensionMeta())
+                ->setExtension('mod_theme')
+                ->setRelType('preset')
+                ->setRelId('current')
+                ->setMetaKey($theme->getName());
+
+            $this->di['em']->persist($meta);
         }
+
+        $meta->setMetaValue((string) $preset);
+        $this->di['em']->flush();
 
         return true;
     }
 
     public function deletePreset(Model\Theme $theme, $preset): bool
     {
-        // delete settings
-        $this->di['db']->exec(
-            "DELETE FROM extension_meta
-            WHERE extension = 'mod_theme'
-            AND rel_type = 'settings'
-            AND rel_id = :theme
-            AND meta_key = :preset",
-            ['theme' => $theme->getName(), 'preset' => $preset]
-        );
-
-        // delete default preset
-        $this->di['db']->exec(
-            "DELETE FROM extension_meta
-            WHERE extension = 'mod_theme'
-            AND rel_type = 'preset'
-            AND rel_id = 'current'
-            AND meta_key = :theme",
-            ['theme' => $theme->getName()]
-        );
+        $this->getExtensionMetaRepository()->deleteByExtensionAndScope('mod_theme', (string) $preset, 'settings', $theme->getName());
+        $this->getExtensionMetaRepository()->deleteByExtensionAndScope('mod_theme', $theme->getName(), 'preset', 'current');
 
         return true;
     }
 
-    public function getThemePresets(Model\Theme $theme)
+    /**
+     * @return mixed[]
+     */
+    public function getThemePresets(Model\Theme $theme): array
     {
-        $presets = $this->di['db']->getAssoc(
-            "SELECT meta_key FROM extension_meta WHERE extension = 'mod_theme' AND rel_type = 'settings' AND rel_id = :key",
-            ['key' => $theme->getName()]
-        );
+        $presets = [];
+        $metaRows = $this->getExtensionMetaRepository()->findByExtensionAndScope('mod_theme', null, 'settings', $theme->getName(), ['metaKey' => 'ASC']);
+        foreach ($metaRows as $meta) {
+            $presets[$meta->getMetaKey()] = $meta->getMetaKey();
+        }
 
         // insert default presets to database
         if (empty($presets)) {
@@ -177,13 +177,9 @@ class Service implements InjectionAwareInterface
             $preset = $this->getCurrentThemePreset($theme);
         }
 
-        $meta = $this->di['db']->findOne(
-            'ExtensionMeta',
-            "extension = 'mod_theme' AND rel_type = 'settings' AND rel_id = :theme AND meta_key = :preset",
-            ['theme' => $theme->getName(), 'preset' => $preset]
-        );
-        if ($meta) {
-            return json_decode($meta->meta_value ?? '', true);
+        $meta = $this->getExtensionMetaRepository()->findOneByExtensionAndScope('mod_theme', (string) $preset, 'settings', $theme->getName());
+        if ($meta instanceof ExtensionMeta) {
+            return json_decode($meta->getMetaValue() ?? '', true) ?? [];
         }
 
         return $theme->getPresetFromSettingsDataFile($preset);
@@ -191,24 +187,20 @@ class Service implements InjectionAwareInterface
 
     public function updateSettings(Model\Theme $theme, $preset, array $params): bool
     {
-        $meta = $this->di['db']->findOne(
-            'ExtensionMeta',
-            "extension = 'mod_theme' AND rel_type = 'settings' AND rel_id = :theme AND meta_key = :preset",
-            ['theme' => $theme->getName(), 'preset' => $preset]
-        );
+        $meta = $this->getExtensionMetaRepository()->findOneByExtensionAndScope('mod_theme', (string) $preset, 'settings', $theme->getName());
 
-        if (!$meta) {
-            $meta = $this->di['db']->dispense('ExtensionMeta');
-            $meta->extension = 'mod_theme';
-            $meta->rel_type = 'settings';
-            $meta->rel_id = $theme->getName();
-            $meta->meta_key = $preset;
-            $meta->created_at = date('Y-m-d H:i:s');
+        if (!$meta instanceof ExtensionMeta) {
+            $meta = (new ExtensionMeta())
+                ->setExtension('mod_theme')
+                ->setRelType('settings')
+                ->setRelId($theme->getName())
+                ->setMetaKey((string) $preset);
+
+            $this->di['em']->persist($meta);
         }
 
-        $meta->meta_value = json_encode($params);
-        $meta->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($meta);
+        $meta->setMetaValue(json_encode($params));
+        $this->di['em']->flush();
 
         return true;
     }
@@ -235,20 +227,45 @@ class Service implements InjectionAwareInterface
         $finder = new Finder();
         $finder->files()->in($assets)->name(['*.css.html.twig', '*.js.html.twig']);
 
+        if (!count($finder)) {
+            return true;
+        }
+
+        $twigFactory = $this->di['twig_factory'];
+
         foreach ($finder as $file) {
             $settings = $this->getThemeSettings($theme, $preset);
             $realFile = Path::join($file->getPath(), Path::getFilenameWithoutExtension($file->getRelativePathname(), '.html.twig'));
 
-            $vars = [];
-            $vars['settings'] = $settings;
-            $vars['_tpl'] = $file->getContents();
-            $systemService = $this->di['mod_service']('system');
-            $data = $systemService->renderString($vars['_tpl'], false, $vars);
+            $twig = $twigFactory->createBaseEnvironment();
+            $template = $twig->createTemplate($file->getContents());
+            $data = $template->render(['settings' => $settings]);
 
             $this->filesystem->dumpFile($realFile, $data);
         }
 
         return true;
+    }
+
+    public function renderThemeSettingsPageHtml(Model\Theme $theme, array $settings): string
+    {
+        $twigFactory = $this->di['twig_factory'];
+        $twig = $twigFactory->createThemeSettingsEnvironment();
+
+        $rendered = SandboxedStringRenderer::render(
+            $twig,
+            $theme->getSettingsPageHtml(),
+            ['settings' => $settings],
+            'Theme settings template',
+            function (\Twig\Sandbox\SecurityError $e) use ($theme): void {
+                $this->di['logger']->setChannel('security')->warning('Theme settings template sandbox violation', [
+                    'theme' => $theme->getName(),
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        );
+
+        return BrowserHtmlSanitizer::sanitizeThemeSettingsHtml($rendered);
     }
 
     public function getCurrentAdminAreaTheme(): array
@@ -405,7 +422,7 @@ class Service implements InjectionAwareInterface
         }
         $list = array_unique($list);
         foreach ($list as $mod) {
-            $p = Path::join(PATH_MODS, ucfirst((string) $mod), $client ? 'html_client' : 'html_admin');
+            $p = Path::join(PATH_MODS, ucfirst((string) $mod), $client ? 'templates/client' : 'templates/admin');
             if ($this->filesystem->exists($p)) {
                 $paths[] = $p;
             }

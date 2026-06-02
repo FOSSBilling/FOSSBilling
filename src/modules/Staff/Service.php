@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -12,9 +13,12 @@
 namespace Box\Mod\Staff;
 
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\PaginationOptions;
 
 class Service implements InjectionAwareInterface
 {
+    private array $permissionCache = [];
+
     protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
@@ -27,9 +31,25 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    private function getPermissionsFromCache(int|string $memberId): ?array
+    {
+        $cacheKey = (string) $memberId;
+
+        if (!array_key_exists($cacheKey, $this->permissionCache)) {
+            return null;
+        }
+
+        return is_array($this->permissionCache[$cacheKey]) ? $this->permissionCache[$cacheKey] : [];
+    }
+
     public function getModulePermissions(): array
     {
         return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View staff details'),
+                'description' => __trans('Allows the staff member to view staff account details and listings.'),
+            ],
             'create_and_edit_admin' => [
                 'type' => 'bool',
                 'display_name' => __trans('Create and edit administrators'),
@@ -65,7 +85,11 @@ class Service implements InjectionAwareInterface
                 'display_name' => __trans('Manage groups'),
                 'description' => __trans('Allows the staff member to manage staff member groups.'),
             ],
-            'manage_settings' => [],
+            'manage_settings' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage settings'),
+                'description' => __trans('Allows the staff member to manage system settings.'),
+            ],
         ];
     }
 
@@ -93,9 +117,7 @@ class Service implements InjectionAwareInterface
             'role' => $model->role,
         ];
 
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_regenerate_id(true);
-        }
+        $this->di['session']->regenerateId();
         $this->di['session']->set('admin', $result);
 
         $this->di['logger']->info(sprintf('Staff member %s logged in', $model->id));
@@ -103,16 +125,9 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function getAdminsCount()
-    {
-        $sql = 'SELECT COUNT(*) FROM admin WHERE 1';
-
-        return $this->di['db']->getCell($sql);
-    }
-
     public function getPairs(array $data = [])
     {
-        $limit = $data['per_page'] ?? 30;
+        $limit = (int) ($data['per_page'] ?? 30);
 
         $sql = 'SELECT id, name FROM admin WHERE 1';
         $params = [];
@@ -128,9 +143,28 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->getAssoc($sql, $params);
     }
 
-    public function setPermissions($member_id, $array): bool
+    public function setPermissions(\Model_Admin $model, array $array): bool
     {
-        $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
+        $caller = $this->di['loggedin_admin'];
+
+        if ($caller->id == $model->id) {
+            throw new \FOSSBilling\InformationException('You cannot modify your own permissions');
+        }
+
+        if ($model->role === \Model_Admin::ROLE_ADMIN) {
+            $this->checkPermissionsAndThrowException('staff', 'create_and_edit_admin');
+        } else {
+            $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
+        }
+
+        if ($caller->role !== \Model_Admin::ROLE_ADMIN) {
+            $callerPerms = $this->getPermissions($caller->id);
+            $callerHasWildcard = !empty($callerPerms['default']['all']);
+
+            if (!$callerHasWildcard) {
+                $this->enforcePermissionCeiling($array, $callerPerms);
+            }
+        }
 
         $array = array_filter($array);
 
@@ -140,14 +174,66 @@ class Service implements InjectionAwareInterface
             ->set('permissions', ':p')
             ->where('id = :id')
             ->setParameter('p', json_encode($array))
-            ->setParameter('id', $member_id)
+            ->setParameter('id', $model->id)
             ->executeStatement();
+
+        $this->permissionCache[(string) $model->id] = $array;
 
         return true;
     }
 
+    private function enforcePermissionCeiling(array $submitted, array $callerPerms): void
+    {
+        foreach ($submitted as $module => $modulePerms) {
+            if ($module === 'default') {
+                if (!empty($submitted['default']['all']) && empty($callerPerms['default']['all'])) {
+                    throw new \FOSSBilling\InformationException('You cannot grant wildcard access that you do not have');
+                }
+
+                continue;
+            }
+
+            if (!is_array($modulePerms)) {
+                continue;
+            }
+
+            $hasGrantedPermissions = false;
+            foreach ($modulePerms as $value) {
+                if (!empty($value)) {
+                    $hasGrantedPermissions = true;
+
+                    break;
+                }
+            }
+
+            if (!$hasGrantedPermissions) {
+                continue;
+            }
+
+            if (!isset($callerPerms[$module])) {
+                throw new \FOSSBilling\InformationException('You cannot grant permissions for a module you do not have access to');
+            }
+
+            foreach ($modulePerms as $key => $value) {
+                if (empty($value)) {
+                    continue;
+                }
+
+                if (!isset($callerPerms[$module][$key]) || !$callerPerms[$module][$key]) {
+                    throw new \FOSSBilling\InformationException('You cannot grant a permission that you do not have');
+                }
+            }
+        }
+    }
+
     public function getPermissions($member_id)
     {
+        $cachedPermissions = $this->getPermissionsFromCache($member_id);
+
+        if (!is_null($cachedPermissions)) {
+            return $cachedPermissions;
+        }
+
         $query = $this->di['dbal']->createQueryBuilder();
         $query
             ->select('permissions')
@@ -157,15 +243,17 @@ class Service implements InjectionAwareInterface
         $result = $query->executeQuery()->fetchOne() ?? '';
 
         $permissions = json_decode($result, true);
-        if (!$permissions) {
-            return [];
+        if (!is_array($permissions)) {
+            $permissions = [];
         }
+
+        $this->permissionCache[(string) $member_id] = $permissions;
 
         return $permissions;
     }
 
     /**
-     * Determines  if a staff member has the required permissions.
+     * Determines if a staff member has the required permissions.
      *
      * @param \Model_Admin|null $member     The model for the staff member to check. If you pass null, FOSSBilling will automatically get the currently authenticated staff member.
      * @param string            $module     what module to check permission for
@@ -187,31 +275,47 @@ class Service implements InjectionAwareInterface
         $extensionService = $this->di['mod_service']('Extension');
         $modulePermissions = $extensionService->getSpecificModulePermissions($module);
         $permissions = $this->getPermissions($member->id);
+        $defaultPermissions = $permissions['default'] ?? [];
+        $hasWildcardAccess = is_array($defaultPermissions) && (bool) ($defaultPermissions['all'] ?? false);
 
-        if ($modulePermissions['hide_permissions'] ?? false) {
-            $canAlwaysAccess = true;
-        } else {
-            $canAlwaysAccess = $modulePermissions['can_always_access'] ?? false;
-        }
+        $canAlwaysAccess = $modulePermissions['can_always_access'] ?? false;
 
         if (!$canAlwaysAccess) {
             // They have no permissions or don't have any access to that module
-            if (empty($permissions) || !array_key_exists($module, $permissions) || !is_array($permissions[$module]) || !($permissions[$module]['access'] ?? false)) {
+            if (
+                empty($permissions)
+                || (
+                    !array_key_exists($module, $permissions)
+                    && !$hasWildcardAccess
+                )
+                || (
+                    array_key_exists($module, $permissions)
+                    && (
+                        !is_array($permissions[$module])
+                        || !($permissions[$module]['access'] ?? false)
+                    )
+                )
+            ) {
                 return false;
             }
         }
 
         if (!is_null($key)) {
-            // If this passes, the permission key isn't assigned to them and they therefore don't have permission
-            if (!is_array($permissions[$module]) || !array_key_exists($key, $permissions[$module])) {
+            if (!array_key_exists($module, $permissions) && $hasWildcardAccess) {
+                return true;
+            }
+
+            $modulePermissions = $permissions[$module] ?? [];
+
+            if (!is_array($modulePermissions) || !array_key_exists($key, $modulePermissions)) {
                 return false;
             }
 
             if (!is_null($constraint)) {
-                return $permissions[$module][$key] === $constraint;
+                return $modulePermissions[$key] === $constraint;
             }
 
-            return (bool) $permissions[$module][$key];
+            return (bool) $modulePermissions[$key];
         }
 
         return true;
@@ -220,14 +324,17 @@ class Service implements InjectionAwareInterface
     /**
      * Acts as an alias to `hasPermission`, but it'll also throw an exception stating the staff member doesn't have permission if they don't.
      *
-     * @param string      $module     what module to check permission for
-     * @param string|null $key        the permission key for the associated module
-     * @param mixed       $constraint if the permission key allows for multiple options, specify the one you want to use as a constraint here
+     * @param string            $module     what module to check permission for
+     * @param string|null       $key        the permission key for the associated module
+     * @param mixed             $constraint if the permission key allows for multiple options, specify the one you want to use as a constraint here
+     * @param \Model_Admin|null $member     the staff member to check permissions for, or null to use the currently logged-in staff member
      */
-    public function checkPermissionsAndThrowException(string $module, ?string $key = null, mixed $constraint = null): void
+    public function checkPermissionsAndThrowException(string $module, ?string $key = null, mixed $constraint = null, ?\Model_Admin $member = null): void
     {
-        if (!$this->hasPermission(null, $module, $key, $constraint)) {
-            throw new \FOSSBilling\InformationException('You do not have permission to perform this action', [], 403);
+        if (!$this->hasPermission($member, $module, $key, $constraint)) {
+            $requiredPermission = is_null($key) ? $module : "{$module}.{$key}";
+
+            throw new \FOSSBilling\InformationException("You need the \"{$requiredPermission}\" permission to perform this action", [], 403);
         }
     }
 
@@ -252,14 +359,14 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterClientOpenTicket(\Box_Event $event)
+    public static function onAfterClientOpenTicket(\Box_Event $event): void
     {
         $di = $event->getDi();
         $params = $event->getParameters();
 
         try {
             $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getTicketById($params['id']);
+            $ticketModel = $supportTicketService->getTicketById((int) $params['id']);
             $ticket = $supportTicketService->toApiArray($ticketModel, true);
 
             $helpdeskModel = $di['db']->load('SupportHelpdesk', $ticketModel->support_helpdesk_id);
@@ -271,7 +378,7 @@ class Service implements InjectionAwareInterface
                 $email['ticket'] = $ticket;
                 $emailService->sendTemplate($email);
 
-                return true;
+                return;
             }
 
             $email = [];
@@ -291,7 +398,7 @@ class Service implements InjectionAwareInterface
 
         try {
             $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getTicketById($params['id']);
+            $ticketModel = $supportTicketService->getTicketById((int) $params['id']);
             $ticket = $supportTicketService->toApiArray($ticketModel, true);
 
             $email = [];
@@ -313,7 +420,7 @@ class Service implements InjectionAwareInterface
 
         try {
             $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getTicketById($params['id']);
+            $ticketModel = $supportTicketService->getTicketById((int) $params['id']);
             $ticket = $supportTicketService->toApiArray($ticketModel, true);
             $email = [];
             $email['to_staff'] = true;
@@ -334,7 +441,7 @@ class Service implements InjectionAwareInterface
 
         try {
             $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getPublicTicketById($params['id']);
+            $ticketModel = $supportTicketService->getPublicTicketById((int) $params['id']);
             $ticket = $supportTicketService->publicToApiArray($ticketModel, true);
             $email = [];
             $email['to_staff'] = true;
@@ -375,7 +482,7 @@ class Service implements InjectionAwareInterface
 
         try {
             $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getPublicTicketById($params['id']);
+            $ticketModel = $supportTicketService->getPublicTicketById((int) $params['id']);
             $ticket = $supportTicketService->publicToApiArray($ticketModel, true);
             $email = [];
             $email['to_staff'] = true;
@@ -394,14 +501,14 @@ class Service implements InjectionAwareInterface
         $di = $event->getDi();
 
         try {
-            $supportService = $di['mod_service']('Support');
+            $supportService = $di['mod_service']('support');
             $publicTicket = $di['db']->load('SupportPTicket', $params['id']);
             $ticket = $supportService->publicToApiArray($publicTicket);
             $email = [];
             $email['to_staff'] = true;
             $email['code'] = 'mod_staff_pticket_close';
             $email['ticket'] = $ticket;
-            $emailService = $di['mod_service']('Email');
+            $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             error_log($exc->getMessage());
@@ -414,23 +521,26 @@ class Service implements InjectionAwareInterface
 
         [$query, $params] = $this->getSearchQuery($data);
 
-        $di = $this->getDi();
-        $pager = $di['pager'];
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-
-        return $pager->getPaginatedResultSet($query, $params, $per_page);
+        return $this->di['pager']->getPaginatedResultSet($query, $params, PaginationOptions::fromArray($data));
     }
 
     public function getSearchQuery($data): array
     {
         $query = 'SELECT * FROM admin';
 
+        $id = $data['id'] ?? null;
         $search = $data['search'] ?? null;
         $status = $data['status'] ?? null;
+        $admin_group_id = $data['admin_group_id'] ?? null;
         $no_cron = (bool) ($data['no_cron'] ?? false);
 
         $where = [];
         $bindings = [];
+
+        if ($id !== null && $id !== '') {
+            $where[] = 'id = :id';
+            $bindings[':id'] = (int) $id;
+        }
 
         if ($search) {
             $search = "%$search%";
@@ -442,6 +552,11 @@ class Service implements InjectionAwareInterface
         if ($status) {
             $where[] = 'status = :status';
             $bindings[':status'] = $status;
+        }
+
+        if ($admin_group_id !== null && $admin_group_id !== '') {
+            $where[] = 'admin_group_id = :admin_group_id';
+            $bindings[':admin_group_id'] = (int) $admin_group_id;
         }
 
         if ($no_cron) {
@@ -470,13 +585,13 @@ class Service implements InjectionAwareInterface
         $cronEmail = $this->di['tools']->generatePassword() . '@' . $this->di['tools']->generatePassword() . '.com';
         $cronEmail = filter_var($cronEmail, FILTER_SANITIZE_EMAIL);
 
-        $CronPass = $this->di['tools']->generatePassword(256, 4);
+        $cronPass = $this->di['tools']->generatePassword(256, 4);
 
         $cron = $this->di['db']->dispense('Admin');
         $cron->role = \Model_Admin::ROLE_CRON;
         $cron->admin_group_id = 1;
         $cron->email = $cronEmail;
-        $cron->pass = $this->di['password']->hashIt($CronPass);
+        $cron->pass = $this->di['password']->hashIt($cronPass);
         $cron->name = 'System Cron Job';
         $cron->signature = '';
         $cron->protected = 1;
@@ -521,13 +636,23 @@ class Service implements InjectionAwareInterface
             $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
         }
 
+        $previousStatus = $model->status;
+
         $model->email = $data['email'] ?? $model->email;
         $model->admin_group_id = $data['admin_group_id'] ?? $model->admin_group_id;
         $model->name = $data['name'] ?? $model->name;
         $model->status = $data['status'] ?? $model->status;
+        if ($model->status === \Model_Admin::STATUS_INACTIVE) {
+            $model->api_token = null;
+        }
         $model->signature = $data['signature'] ?? $model->signature;
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
+
+        if ($model->status !== \Model_Admin::STATUS_ACTIVE && $previousStatus === \Model_Admin::STATUS_ACTIVE) {
+            $profileService = $this->di['mod_service']('profile');
+            $profileService->invalidateSessions('admin', (int) $model->id);
+        }
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffUpdate', 'params' => ['id' => $model->id]]);
 
@@ -575,7 +700,7 @@ class Service implements InjectionAwareInterface
         $this->di['db']->store($model);
 
         $profileService = $this->di['mod_service']('profile');
-        $profileService->invalidateSessions('admin', $model->id);
+        $profileService->invalidateSessions('admin', (int) $model->id);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffPasswordChange', 'params' => ['id' => $model->id]]);
 
@@ -588,9 +713,6 @@ class Service implements InjectionAwareInterface
     {
         // TODO: When it becomes possible to create other super admins, add a check for that here,
         $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
-
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_Admin', 3);
 
         $signature = $data['signature'] ?? null;
 
@@ -618,29 +740,6 @@ class Service implements InjectionAwareInterface
         $this->di['logger']->info('Created new staff member %s', $newId);
 
         return (int) $newId;
-    }
-
-    /**
-     * Used to create the initial admin account and then goes unused.
-     */
-    public function createAdmin(array $data)
-    {
-        $admin = $this->di['db']->dispense('Admin');
-        $admin->role = 'admin';
-        $admin->admin_group_id = 1;
-        $admin->name = 'Administrator';
-        $admin->email = $data['email'];
-        $admin->pass = $this->di['password']->hashIt($data['password']);
-        $admin->protected = 1;
-        $admin->status = 'active';
-        $admin->created_at = date('Y-m-d H:i:s');
-        $admin->updated_at = date('Y-m-d H:i:s');
-
-        $newId = $this->di['db']->store($admin);
-
-        $this->di['logger']->info('Main administrator %s account created', $admin->email);
-
-        return $newId;
     }
 
     /**
@@ -672,9 +771,6 @@ class Service implements InjectionAwareInterface
     public function createGroup($name): int
     {
         $this->checkPermissionsAndThrowException('staff', 'manage_groups');
-
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_AdminGroup', 2);
 
         $model = $this->di['db']->dispense('AdminGroup');
         $model->name = $name;
@@ -745,11 +841,21 @@ class Service implements InjectionAwareInterface
                 LEFT JOIN admin as a on m.admin_id = a.id
                 ';
 
+        $id = $data['id'] ?? null;
         $search = $data['search'] ?? null;
         $admin_id = $data['admin_id'] ?? null;
+        $ip = $data['ip'] ?? null;
+        $date_from = $data['date_from'] ?? null;
+        $date_to = $data['date_to'] ?? null;
 
         $where = [];
         $params = [];
+
+        if ($id !== null && $id !== '') {
+            $where[] = 'm.id = :event_id';
+            $params['event_id'] = (int) $id;
+        }
+
         if ($search) {
             $where[] = '(a.name LIKE :name OR a.id LIKE :id OR a.email LIKE :email)';
             $params['name'] = "%$search%";
@@ -760,6 +866,21 @@ class Service implements InjectionAwareInterface
         if ($admin_id) {
             $where[] = 'm.admin_id = :admin_id';
             $params['admin_id'] = $admin_id;
+        }
+
+        if ($ip !== null && $ip !== '') {
+            $where[] = 'm.ip LIKE :ip';
+            $params['ip'] = '%' . $ip . '%';
+        }
+
+        if ($date_from !== null && $date_from !== '') {
+            $where[] = 'm.created_at >= :date_from';
+            $params['date_from'] = date('Y-m-d 00:00:00', strtotime((string) $date_from));
+        }
+
+        if ($date_to !== null && $date_to !== '') {
+            $where[] = 'm.created_at <= :date_to';
+            $params['date_to'] = date('Y-m-d 23:59:59', strtotime((string) $date_to));
         }
 
         if (!empty($where)) {

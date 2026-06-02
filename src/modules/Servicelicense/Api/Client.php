@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -44,6 +45,10 @@ class Client extends \Api_Abstract
 
         if (!$order instanceof \Model_ClientOrder) {
             throw new \FOSSBilling\Exception('Order not found');
+        }
+
+        if ($order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+            throw new \FOSSBilling\InformationException('Order is not activated');
         }
 
         $orderService = $this->di['mod_service']('order');

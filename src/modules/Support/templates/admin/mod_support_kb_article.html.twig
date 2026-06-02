@@ -1,0 +1,94 @@
+{% extends 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}{{ post.title }}{% endblock %}
+
+{% set active_menu = 'support' %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|url }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'support'|url }}">{{ 'Support'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'support/kb'|url }}">{{ 'Knowledge Base'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'support/kb'|url }}#tab-index">{{ 'Articles'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ post.title }}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <form method="post" action="{{ 'support/kb_article_update'|api_url }}" {{ fb_api_form({ message: 'Article Updated'|trans }) }}>
+        {% embed 'partial_admin_form_card.html.twig' with {
+            title: post.title,
+            subtitle: 'Update the article content, category, and visibility for the knowledge base.'|trans,
+            body_class: 'pt-4',
+            footer_align: 'between'
+        } %}
+            {% import 'macro_functions.html.twig' as mf %}
+            {% block form_content %}
+                <div class="row g-3">
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Category'|trans }}</label>
+                        {{ mf.selectbox('kb_article_category_id', admin.support_kb_category_get_pairs, post.kb_article_category_id, 1) }}
+                    </div>
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Title'|trans }}</label>
+                        <input class="form-control" type="text" name="title" value="{{ post.title }}" required="required">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">{{ 'Content'|trans }}</label>
+                        <textarea name="content" rows="10" class="editor-textarea">{{ post.content }}</textarea>
+                    </div>
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Slug'|trans }}</label>
+                        <input class="form-control" type="text" name="slug" value="{{ post.slug }}" required="required">
+                    </div>
+                    <div class="col-lg-3">
+                        <label class="form-label">{{ 'Views'|trans }}</label>
+                        <input class="form-control" type="text" name="views" value="{{ post.views }}" required>
+                    </div>
+                    <div class="col-lg-3">
+                        <label class="form-label d-block">{{ 'Status'|trans }}</label>
+                        <div class="d-flex flex-wrap gap-3 pt-1">
+                            <label class="form-check">
+                                <input class="form-check-input" id="radioStatusDraft" type="radio" name="status" value="draft"{% if post.status == 'draft' %} checked{% endif %}>
+                                <span class="form-check-label">{{ 'Draft'|trans }}</span>
+                            </label>
+                            <label class="form-check">
+                                <input class="form-check-input" id="radioStatusActive" type="radio" name="status" value="active"{% if post.status == 'active' %} checked{% endif %}>
+                                <span class="form-check-label">{{ 'Active'|trans }}</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" name="id" value="{{ post.id }}">
+            {% endblock %}
+
+            {% block form_actions %}
+                <a href="{{ 'support/kb'|url }}" class="btn btn-secondary">
+                    <svg class="icon">
+                        <use xlink:href="#arrow-sm-left" />
+                    </svg>
+                    {{ 'Go Back'|trans }}
+                </a>
+                <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
+            {% endblock %}
+        {% endembed %}
+    </form>
+</div>
+{% endblock %}
+
+{% block head %}{{ wysiwyg('.editor-textarea') }}{% endblock %}

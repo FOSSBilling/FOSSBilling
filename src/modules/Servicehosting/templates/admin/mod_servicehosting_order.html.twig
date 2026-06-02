@@ -1,0 +1,35 @@
+<div class="row g-3">
+    <div class="col-lg-6">
+        <label class="form-label">{{ 'Import existing'|trans }}</label>
+        <div class="d-flex flex-wrap gap-3 pt-1">
+            <label class="form-check">
+                <input class="form-check-input" id="radioImportConfigYes" type="radio" name="config[import]" value="1">
+                <span class="form-check-label">{{ 'Yes'|trans }}</span>
+            </label>
+            <label class="form-check">
+                <input class="form-check-input" id="radioImportConfigNo" type="radio" name="config[import]" value="0" checked>
+                <span class="form-check-label">{{ 'No'|trans }}</span>
+            </label>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <label class="form-label">{{ 'Domain'|trans }}</label>
+        <div class="input-group">
+            <input class="form-control" type="text" name="config[domain][owndomain_sld]" placeholder="{{ 'Domain name'|trans }}">
+            <input class="form-control" type="text" name="config[domain][owndomain_tld]" value=".com" placeholder="{{ 'Domain TLD'|trans }}">
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <label class="form-label">{{ 'Username'|trans }}</label>
+        <input class="form-control" type="text" name="config[username]" placeholder="{{ 'Leave blank to generate'|trans }}">
+    </div>
+
+    <div class="col-lg-6">
+        <label class="form-label">{{ 'Password'|trans }}</label>
+        <input class="form-control" type="text" name="config[password]" placeholder="{{ 'Leave blank to generate'|trans }}">
+    </div>
+</div>
+
+<input type="hidden" name="config[domain][action]" value="owndomain">

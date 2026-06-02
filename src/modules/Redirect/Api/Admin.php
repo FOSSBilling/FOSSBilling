@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -25,6 +26,8 @@ class Admin extends \Api_Abstract
      */
     public function get_list()
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'view');
+
         return $this->getService()->getRedirects();
     }
 
@@ -34,13 +37,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Redirect ID was not passed'])]
     public function get($data): array
     {
-        $bean = $this->_getRedirect($data['id']);
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'view');
 
-        return [
-            'id' => $bean->id,
-            'path' => $bean->meta_key,
-            'target' => $bean->meta_value,
-        ];
+        return $this->getService()->toApiArray($this->getService()->get((int) $data['id']));
     }
 
     /**
@@ -51,19 +50,16 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['path' => 'Redirect path was not passed', 'target' => 'Redirect target was not passed'])]
     public function create($data): int
     {
-        $bean = $this->di['db']->dispense('extension_meta');
-        $bean->extension = 'mod_redirect';
-        $bean->meta_key = trim(htmlspecialchars((string) $data['path'], ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/');
-        $bean->meta_value = trim(htmlspecialchars((string) $data['target'], ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/');
-        $bean->created_at = date('Y-m-d H:i:s');
-        $bean->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($bean);
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'create_and_edit');
 
-        $id = $bean->id;
+        $id = $this->getService()->create(
+            (string) $data['path'],
+            (string) $data['target']
+        );
 
         $this->di['logger']->info('Created new redirect #%s', $id);
 
-        return (int) $id;
+        return $id;
     }
 
     /**
@@ -77,12 +73,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Redirect ID was not passed'])]
     public function update($data): bool
     {
-        $bean = $this->_getRedirect($data['id']);
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'create_and_edit');
 
-        $bean->meta_key = trim(htmlspecialchars($data['path'] ?? $bean->meta_key, ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/');
-        $bean->meta_value = trim(htmlspecialchars($data['target'] ?? $bean->meta_value, ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/');
-        $bean->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($bean);
+        $this->getService()->update($this->getService()->get((int) $data['id']), $data);
 
         $this->di['logger']->info('Updated redirect #%s', $data['id']);
 
@@ -97,24 +90,12 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Redirect ID was not passed'])]
     public function delete($data): bool
     {
-        $bean = $this->_getRedirect($data['id']);
-        $this->di['db']->trash($bean);
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'delete');
+
+        $this->getService()->delete($this->getService()->get((int) $data['id']));
 
         $this->di['logger']->info('Removed redirect #%s', $data['id']);
 
         return true;
-    }
-
-    private function _getRedirect($id)
-    {
-        $sql = " extension = 'mod_redirect' AND id = :id";
-        $values = ['id' => $id];
-        $bean = $this->di['db']->findOne('extension_meta', $sql, $values);
-
-        if (!$bean) {
-            throw new \FOSSBilling\Exception('Redirect not found');
-        }
-
-        return $bean;
     }
 }

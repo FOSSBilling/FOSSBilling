@@ -165,13 +165,17 @@ abstract class Payment_AdapterAbstract
      * Convert money amount to Gateway money format.
      *
      * @param float  $amount   The amount
-     * @param string $currency The currency (unused currently)
+     * @param string $currency The currency code (e.g. USD, JPY)
      *
      * @return string The formatted money string
      */
     public function moneyFormat($amount, $currency = null)
     {
-        return number_format($amount, 2, '.', '');
+        $fractionDigits = $currency !== null && Symfony\Component\Intl\Currencies::exists($currency)
+            ? Symfony\Component\Intl\Currencies::getFractionDigits($currency)
+            : 2;
+
+        return number_format((float) $amount, $fractionDigits, '.', '');
     }
 
     /**

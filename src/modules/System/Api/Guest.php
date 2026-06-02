@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -17,27 +18,11 @@ namespace Box\Mod\System\Api;
 
 use FOSSBilling\i18n;
 use FOSSBilling\Validation\Api\RequiredParams;
+use PrinsFrank\Standards\CountryCallingCode\CountryCallingCode;
+use Symfony\Component\Intl\Countries;
 
 class Guest extends \Api_Abstract
 {
-    /**
-     * Get FOSSBilling version.
-     *
-     * @return string
-     */
-    public function version()
-    {
-        $hideVersionGuest = $this->getService()->getParamValue('hide_version_public');
-
-        // Only provide the FOSSBilling version if configured to do so or if the request is being made by an administrator.
-        if ($this->di['auth']->isAdminLoggedIn() || !$hideVersionGuest) {
-            return $this->getService()->getVersion();
-        }
-
-        // return an empty string
-        return '';
-    }
-
     /**
      * Returns company information.
      *
@@ -67,48 +52,6 @@ class Guest extends \Api_Abstract
     }
 
     /**
-     * Returns world wide phone codes.
-     *
-     * @optional $country - if passed country code the result will be phone code only
-     *
-     * @return array
-     */
-    public function phone_codes($data)
-    {
-        return $this->getService()->getPhoneCodes($data);
-    }
-
-    /**
-     * Returns USA states list.
-     *
-     * @return array
-     */
-    public function states()
-    {
-        return $this->getService()->getStates();
-    }
-
-    /**
-     * Returns list of european union countries.
-     *
-     * @return array
-     */
-    public function countries_eunion()
-    {
-        return $this->getService()->getEuCountries();
-    }
-
-    /**
-     * Returns list of world countries.
-     *
-     * @return array
-     */
-    public function countries()
-    {
-        return $this->getService()->getCountries();
-    }
-
-    /**
      * Return the code of the default country, if set.
      */
     public function default_country(): ?string
@@ -117,6 +60,40 @@ class Guest extends \Api_Abstract
         $cfg = $mod->getConfig();
 
         return $cfg['default_country'] ?? null;
+    }
+
+    /**
+     * Return countries enabled in System settings.
+     *
+     * @return array<string, string>
+     */
+    public function countries(): array
+    {
+        $mod = $this->di['mod']('system');
+        $cfg = $mod->getConfig();
+        $configuredCountries = trim((string) ($cfg['countries'] ?? ''));
+
+        if ($configuredCountries === '') {
+            return Countries::getNames();
+        }
+
+        $countries = [];
+        foreach (preg_split('/\R/', $configuredCountries) as $line) {
+            $parts = explode('=', trim($line), 2);
+            if (count($parts) !== 2) {
+                continue;
+            }
+
+            $code = strtoupper(trim($parts[0]));
+            $name = trim($parts[1]);
+            if ($code === '' || $name === '' || !Countries::exists($code)) {
+                continue;
+            }
+
+            $countries[$code] = $name;
+        }
+
+        return $countries;
     }
 
     /**
@@ -141,6 +118,20 @@ class Guest extends \Api_Abstract
     }
 
     /**
+     * Return a unique list of available phone country calling codes.
+     *
+     * @return list<int>
+     */
+    public function phone_codes(): array
+    {
+        $codes = array_map(static fn (CountryCallingCode $code): int => $code->value, CountryCallingCode::cases());
+        $codes = array_values(array_unique($codes));
+        sort($codes, SORT_NUMERIC);
+
+        return $codes;
+    }
+
+    /**
      * Gets period title by identifier.
      *
      * @return string
@@ -148,7 +139,7 @@ class Guest extends \Api_Abstract
     public function period_title($data)
     {
         $code = $data['code'] ?? null;
-        if ($code == null) {
+        if ($code === null || $code === '' || $code === 0 || $code === '0') {
             return '-';
         }
 
@@ -164,11 +155,11 @@ class Guest extends \Api_Abstract
     {
         $midrange = 7;
         $page_param = $data['page_param'] ?? 'page';
-        $current_page = $data[$page_param];
-        $limit = $data['per_page'];
-        $itemsCount = $data['total'];
+        $current_page = (int) ($data[$page_param] ?? 1);
+        $limit = (int) ($data['per_page'] ?? 20);
+        $itemsCount = (int) ($data['total'] ?? 0);
 
-        $p = new \Box_Paginator($itemsCount, $current_page, $limit, $midrange);
+        $p = new \FOSSBilling\Paginator($itemsCount, $current_page, $limit, $midrange);
 
         return $p->toArray();
     }
@@ -180,7 +171,7 @@ class Guest extends \Api_Abstract
      */
     public function current_url()
     {
-        return $_SERVER['REQUEST_URI'] ?? null;
+        return $this->di['request']->getRequestUri();
     }
 
     /**

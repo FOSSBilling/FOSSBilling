@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -13,10 +14,14 @@ namespace Box\Mod\Invoice;
 
 use FOSSBilling\Environment;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Tools;
 
 class ServiceTransaction implements InjectionAwareInterface
 {
+    private const int PROCESSING_RECOVERY_TIMEOUT = 300;
+
     protected ?\Pimple\Container $di = null;
+    private ?bool $transactionIpnHashColumnExists = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -69,6 +74,12 @@ class ServiceTransaction implements InjectionAwareInterface
     public function createAndProcess($ipn)
     {
         $id = $this->create($ipn);
+
+        $tx = $this->di['db']->getExistingModelById('Transaction', $id);
+        if ($tx->status === \Model_Transaction::STATUS_PROCESSED && empty($tx->error)) {
+            return $id;
+        }
+
         $this->processTransaction($id);
 
         return $id;
@@ -78,7 +89,7 @@ class ServiceTransaction implements InjectionAwareInterface
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionCreate', 'params' => $data]);
 
-        $skip_validation = isset($data['skip_validation']) && (bool) $data['skip_validation'];
+        $skip_validation = Tools::normalizeBoolean($data['skip_validation'] ?? false);
         if (!empty($data['gateway_id'])) {
             try {
                 $this->di['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Gateway was not found');
@@ -102,9 +113,13 @@ class ServiceTransaction implements InjectionAwareInterface
             $this->di['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Gateway was not found');
         }
 
-        // Early duplicate check: if gateway + txn_id already exists and is processed,
-        // return the existing transaction id to ensure idempotency for duplicate IPNs.
-        $txnIdCandidate = $data['txn_id'] ?? ($data['post']['txn_id'] ?? ($data['get']['txn_id'] ?? null));
+        // Early duplicate check: if gateway + external transaction identifier already exists
+        // and is processed, return the existing transaction id to ensure idempotency.
+        $txnIdCandidate = $data['txn_id']
+            ?? ($data['post']['txn_id'] ?? null)
+            ?? ($data['get']['txn_id'] ?? null)
+            ?? ($data['post']['payment_intent'] ?? null)
+            ?? ($data['get']['payment_intent'] ?? null);
         if ($txnIdCandidate && !empty($data['gateway_id'])) {
             $existing = $this->di['db']->findOne('Transaction', 'txn_id = ? AND gateway_id = ?', [$txnIdCandidate, $data['gateway_id']]);
             if ($existing instanceof \Model_Transaction && $existing->status == \Model_Transaction::STATUS_PROCESSED) {
@@ -115,6 +130,7 @@ class ServiceTransaction implements InjectionAwareInterface
         }
 
         $ipn = [
+            'source' => is_string($data['source'] ?? null) ? $data['source'] : null,
             'get' => (isset($data['get']) && is_array($data['get'])) ? $data['get'] : null,
             'post' => (isset($data['post']) && is_array($data['post'])) ? $data['post'] : null,
             'http_raw_post_data' => $data['http_raw_post_data'] ?? null,
@@ -124,7 +140,8 @@ class ServiceTransaction implements InjectionAwareInterface
         // Fallback dedupe: compute a canonical hash of the IPN payload and
         // look up an existing transaction by (gateway_id, ipn_hash).
         $ipn_hash = $this->ipnHash($ipn);
-        if (!empty($data['gateway_id']) && !empty($ipn_hash)) {
+        $supportsIpnHash = $this->supportsTransactionIpnHash();
+        if ($supportsIpnHash && !empty($data['gateway_id']) && !empty($ipn_hash)) {
             $existingByHash = $this->di['db']->findOne('Transaction', 'gateway_id = ? AND ipn_hash = ?', [$data['gateway_id'], $ipn_hash]);
             if ($existingByHash instanceof \Model_Transaction) {
                 $this->di['logger']->info('Duplicate transaction detected by IPN hash, returning existing transaction #%s', $existingByHash->id);
@@ -137,7 +154,9 @@ class ServiceTransaction implements InjectionAwareInterface
         $transaction->gateway_id = $data['gateway_id'] ?? null;
         $transaction->invoice_id = $data['invoice_id'] ?? null;
         $transaction->txn_id = $data['txn_id'] ?? null;
-        $transaction->ipn_hash = $ipn_hash ?? null;
+        if ($supportsIpnHash) {
+            $transaction->ipn_hash = $ipn_hash ?? null;
+        }
         $transaction->status = 'received';
         $transaction->ip = $this->di['request']->getClientIp();
         $transaction->ipn = json_encode($ipn);
@@ -151,6 +170,31 @@ class ServiceTransaction implements InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionCreate', 'params' => ['id' => $newId]]);
 
         return $newId;
+    }
+
+    private function supportsTransactionIpnHash(): bool
+    {
+        if ($this->transactionIpnHashColumnExists !== null) {
+            return $this->transactionIpnHashColumnExists;
+        }
+
+        try {
+            $schemaManager = $this->di['dbal']->createSchemaManager();
+            $columns = array_map(static fn ($column) => $column->getName(), $schemaManager->listTableColumns('transaction'));
+            $indexes = array_map(static fn ($index) => $index->getName(), $schemaManager->listTableIndexes('transaction'));
+
+            $supported = in_array('ipn_hash', $columns, true) && in_array('transaction_ipn_hash_idx', $indexes, true);
+        } catch (\Throwable $e) {
+            if (isset($this->di['logger'])) {
+                $this->di['logger']->warning('Could not determine whether transaction.ipn_hash exists; disabling IPN hash dedupe: %s', $e->getMessage());
+            }
+
+            return false;
+        }
+
+        $this->transactionIpnHashColumnExists = $supported;
+
+        return $this->transactionIpnHashColumnExists;
     }
 
     public function delete(\Model_Transaction $model): bool
@@ -276,7 +320,7 @@ class ServiceTransaction implements InjectionAwareInterface
         }
 
         if ($search) {
-            $sql .= ' AND m.note LIKE :note OR m.invoice_id LIKE :search_invoice_id OR m.txn_id LIKE :search_txn_id OR m.ipn LIKE :ipn';
+            $sql .= ' AND (m.note LIKE :note OR m.invoice_id LIKE :search_invoice_id OR m.txn_id LIKE :search_txn_id OR m.ipn LIKE :ipn)';
             $params['note'] = "%$search%";
             $params['search_invoice_id'] = "%$search%";
             $params['search_txn_id'] = "%$search%";
@@ -303,6 +347,7 @@ class ServiceTransaction implements InjectionAwareInterface
             'total' => array_sum($data),
             \Model_Transaction::STATUS_RECEIVED => $data[\Model_Transaction::STATUS_RECEIVED] ?? 0,
             \Model_Transaction::STATUS_APPROVED => $data[\Model_Transaction::STATUS_APPROVED] ?? 0,
+            \Model_Transaction::STATUS_PROCESSING => $data[\Model_Transaction::STATUS_PROCESSING] ?? 0,
             \Model_Transaction::STATUS_PROCESSED => $data[\Model_Transaction::STATUS_PROCESSED] ?? 0,
             \Model_Transaction::STATUS_ERROR => $data[\Model_Transaction::STATUS_ERROR] ?? 0,
         ];
@@ -313,6 +358,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return [
             \Model_Transaction::STATUS_RECEIVED => 'Received',
             \Model_Transaction::STATUS_APPROVED => 'Approved',
+            \Model_Transaction::STATUS_PROCESSING => 'Processing',
             \Model_Transaction::STATUS_PROCESSED => 'Processed',
             \Model_Transaction::STATUS_ERROR => 'Error',
         ];
@@ -323,6 +369,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return [
             \Model_Transaction::STATUS_RECEIVED => 'Received',
             \Model_Transaction::STATUS_APPROVED => 'Approved/Verified',
+            \Model_Transaction::STATUS_PROCESSING => 'Processing',
             \Model_Transaction::STATUS_PROCESSED => 'Processed',
             \Model_Transaction::STATUS_ERROR => 'Error',
         ];
@@ -346,6 +393,55 @@ class ServiceTransaction implements InjectionAwareInterface
             \Payment_Transaction::TXTYPE_SUBSCR_CANCEL => 'Subscription cancel',
             \Payment_Transaction::TXTYPE_UNKNOWN => 'Unknown',
         ];
+    }
+
+    public function getReceived()
+    {
+        $sql = 'SELECT m.*
+                FROM transaction as m
+                WHERE m.status = :received_status
+                    OR (m.status = :processing_status AND (m.updated_at IS NULL OR m.updated_at <= :processing_retry_after))
+                ORDER BY m.id DESC';
+
+        return $this->di['db']->getAll($sql, [
+            'received_status' => \Model_Transaction::STATUS_RECEIVED,
+            'processing_status' => \Model_Transaction::STATUS_PROCESSING,
+            'processing_retry_after' => $this->getProcessingRecoveryThreshold(),
+        ]);
+    }
+
+    private function getProcessingRecoveryThreshold(): string
+    {
+        return date('Y-m-d H:i:s', time() - self::PROCESSING_RECOVERY_TIMEOUT);
+    }
+
+    /**
+     * Atomically claim a transaction for processing.
+     * Uses conditional UPDATE to prevent race conditions when multiple
+     * workers attempt to process the same transaction simultaneously.
+     *
+     * Accepts 'received' status immediately, and allows stale 'processing'
+     * transactions to be reclaimed after the recovery timeout.
+     *
+     * @param int $id Transaction ID
+     *
+     * @return bool True if the transaction was successfully claimed, false if already being processed
+     */
+    public function claimForProcessing(int $id): bool
+    {
+        $affectedRows = $this->di['db']->exec(
+            'UPDATE transaction SET status = ?, updated_at = ? WHERE id = ? AND (status = ? OR (status = ? AND (updated_at IS NULL OR updated_at <= ?)))',
+            [
+                \Model_Transaction::STATUS_PROCESSING,
+                date('Y-m-d H:i:s'),
+                $id,
+                \Model_Transaction::STATUS_RECEIVED,
+                \Model_Transaction::STATUS_PROCESSING,
+                $this->getProcessingRecoveryThreshold(),
+            ]
+        );
+
+        return $affectedRows > 0;
     }
 
     public function preProcessTransaction(\Model_Transaction $model)
@@ -402,17 +498,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
         $ipn = json_decode($tx->ipn ?? '', true);
 
-        return $adapter->processTransaction($this->di['api_system'], $id, $ipn, $tx->gateway_id);
-    }
-
-    public function getReceived()
-    {
-        $filter = [
-            'status' => 'received',
-        ];
-        [$sql, $params] = $this->getSearchQuery($filter);
-
-        return $this->di['db']->getAll($sql, $params);
+        return $adapter->processTransaction($this->di['api_system'], (int) $id, $ipn, (int) $tx->gateway_id);
     }
 
     public function process(\Model_Transaction $tx): \Model_Transaction

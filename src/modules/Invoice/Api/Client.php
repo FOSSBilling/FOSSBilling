@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -15,6 +16,7 @@
 
 namespace Box\Mod\Invoice\Api;
 
+use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Client extends \Api_Abstract
@@ -28,9 +30,10 @@ class Client extends \Api_Abstract
     {
         $data['client_id'] = $this->getIdentity()->id;
         $data['approved'] = true;
+
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+
         foreach ($pager['list'] as $key => $item) {
             $invoice = $this->di['db']->getExistingModelById('Invoice', $item['id'], 'Invoice not found');
             $pager['list'][$key] = $this->getService()->toApiArray($invoice);
@@ -49,38 +52,13 @@ class Client extends \Api_Abstract
     #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
     public function get($data)
     {
-        $model = $this->di['db']->findOne('Invoice', 'hash = :hash', ['hash' => $data['hash']]);
+        $identity = $this->getIdentity();
+        $model = $this->di['db']->findOne('Invoice', 'hash = :hash AND client_id = :client_id', ['hash' => $data['hash'], 'client_id' => $identity->id]);
         if (!$model) {
             throw new \FOSSBilling\Exception('Invoice was not found');
         }
 
-        return $this->getService()->toApiArray($model, true, $this->getIdentity());
-    }
-
-    /**
-     * Update Invoice details. Only unpaid invoice details can be updated.
-     *
-     * @optional int $gateway_id - selected payment gateway id
-     *
-     * @return bool
-     *
-     * @throws \FOSSBilling\Exception
-     */
-    #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
-    public function update($data)
-    {
-        $invoice = $this->di['db']->findOne('Invoice', 'hash = :hash', ['hash' => $data['hash']]);
-        if (!$invoice) {
-            throw new \FOSSBilling\Exception('Invoice was not found');
-        }
-        if ($invoice->status == 'paid') {
-            throw new \FOSSBilling\InformationException('Paid Invoice cannot be modified');
-        }
-
-        $updateParams = [];
-        $updateParams['gateway_id'] = $data['gateway_id'] ?? null;
-
-        return $this->getService()->updateInvoice($invoice, $updateParams);
+        return $this->getService()->toApiArray($model, true, $identity);
     }
 
     /**
@@ -132,24 +110,6 @@ class Client extends \Api_Abstract
     }
 
     /**
-     * Client removes unpaid invoice.
-     *
-     * @return bool
-     *
-     * @throws \FOSSBilling\Exception
-     */
-    #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
-    public function delete($data)
-    {
-        $model = $this->di['db']->findOne('Invoice', 'hash = :hash', ['hash' => $data['hash']]);
-        if (!$model) {
-            throw new \FOSSBilling\Exception('Invoice was not found');
-        }
-
-        return $this->getService()->deleteInvoiceByClient($model);
-    }
-
-    /**
      * Get paginated list of transactions.
      *
      * @optional string $invoice_hash - filter transactions by invoice hash
@@ -168,8 +128,8 @@ class Client extends \Api_Abstract
         $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
         [$sql, $params] = $transactionService->getSearchQuery($data);
 
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+
         foreach ($pager['list'] as $key => $item) {
             $transaction = $this->di['db']->getExistingModelById('Transaction', $item['id'], 'Transaction not found');
             $pager['list'][$key] = $transactionService->toApiArray($transaction);

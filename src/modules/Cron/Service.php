@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -29,6 +30,22 @@ class Service
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View cron information'),
+                'description' => __trans('Allows the staff member to view cron job information.'),
+            ],
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Run cron jobs'),
+                'description' => __trans('Allows the staff member to manually execute cron jobs.'),
+            ],
+        ];
+    }
+
     public function getCronInfo(): array
     {
         $service = $this->di['mod_service']('system');
@@ -41,6 +58,12 @@ class Service
 
     public function runCrons(): bool
     {
+        if ($this->di['update_finalization']->isRequired()) {
+            $this->di['logger']->setChannel('cron')->warning('Skipped cron execution because update finalization is pending.');
+
+            throw new \FOSSBilling\InformationException('Update finalization is pending. Cron jobs are paused until finalization is completed.', [], 503);
+        }
+
         $api = $this->di['api_system'];
         $this->di['logger']->setChannel('cron')->info('Started executing cron jobs.');
 
@@ -79,14 +102,10 @@ class Service
      */
     protected function _exec($api, $method, $params = null): void
     {
-        try {
-            $api->{$method}($params);
-        } catch (\Exception $e) {
-            throw new \Exception($e->getMessage());
-        } finally {
-            if (Environment::isCLI()) {
-                echo "\e[32mSuccessfully ran {$method}({$params}).\e[0m\n";
-            }
+        $api->{$method}($params);
+
+        if (Environment::isCLI()) {
+            echo "\e[32mSuccessfully ran {$method}({$params}).\e[0m\n";
         }
     }
 

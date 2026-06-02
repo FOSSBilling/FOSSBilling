@@ -1,7 +1,14 @@
 import backToTop from "./ui/backToTop";
+import { renderTimeSeriesSparkline } from "./ui/charts";
 
-globalThis.FOSSBilling = {
+globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
   message: (message, type = "info") => {
+    const titles = {
+      error: "Error",
+      warning: "Warning",
+      success: "Success",
+    };
+    const title = titles[type] || "Info";
     let color;
     switch (type) {
       case "error":
@@ -10,20 +17,22 @@ globalThis.FOSSBilling = {
       case "warning":
         color = "warning";
         break;
+      case "success":
+        color = "success";
+        break;
       default:
         color = "primary";
     }
 
-    const container = document.querySelector(".toast-container"); // Get the existing container or create if not present
+    const container = document.querySelector(".toast-container");
 
     const element = document.createElement("div");
     container.appendChild(element);
-    element.classList.add("toast", "show"); // Add 'show' class to display the toast immediately
+    element.classList.add("toast", "show");
     element.setAttribute("role", "alert");
     element.setAttribute("aria-live", "assertive");
     element.setAttribute("aria-atomic", "true");
 
-    // Create header div and its children elements
     const headerDiv = document.createElement("div");
     headerDiv.className = "toast-header";
 
@@ -33,7 +42,7 @@ globalThis.FOSSBilling = {
 
     const strongEl = document.createElement("strong");
     strongEl.className = "me-auto";
-    strongEl.textContent = "System message";
+    strongEl.textContent = title;
     headerDiv.appendChild(strongEl);
 
     const closeButton = document.createElement("button");
@@ -45,71 +54,34 @@ globalThis.FOSSBilling = {
 
     element.appendChild(headerDiv);
 
-    // Create body div and set its text content
     const bodyDiv = document.createElement("div");
     bodyDiv.className = "toast-body";
-    bodyDiv.textContent = message; // Safely set the message content
+    bodyDiv.textContent = message;
     element.appendChild(bodyDiv);
 
     element.addEventListener("hidden.bs.toast", () => {
-      container.removeChild(element); // Remove the toast element from the container when it's hidden
+      container.removeChild(element);
     });
 
-    // Create a new Bootstrap toast instance and show it
     const toast = new bootstrap.Toast(element);
     toast.show();
   },
 
-  cookieCreate: function (name, value, days) {
-    if (days) {
-      var date = new Date();
-      date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
-      var expires = "; expires=" + date.toGMTString();
-    } else var expires = "";
-    document.cookie = name + "=" + value + expires + "; path=/";
-  },
-
-  cookieRead: function (name) {
-    var nameEQ = name + "=";
-    var ca = document.cookie.split(";");
-    for (var i = 0; i < ca.length; i++) {
-      var c = ca[i];
-      while (c.charAt(0) == " ") c = c.substring(1, c.length);
-      if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
-    }
-    return null;
+  charts: {
+    renderTimeSeriesSparkline,
   }
-  };
+});
 
   document.addEventListener('DOMContentLoaded', function() {
-    // Global error handler for unhandled Promise rejections
+    // Global error handler for unhandled Promise rejections (API-related only)
     window.addEventListener('unhandledrejection', function(event) {
       const error = event.reason;
-      let message = 'An unexpected error occurred';
-      if (error && typeof error === 'object') {
-        message = error.message || error.code || message;
-      } else if (typeof error === 'string') {
-        message = error;
+      if (error && typeof error === 'object' && error.code) {
+        event.preventDefault();
+        const message = error.message || error.code || 'An unexpected error occurred';
+        FOSSBilling.message(message, 'error');
       }
-      FOSSBilling.message(message, 'error');
     });
-
-    // Global error handler for synchronous errors
-    window.addEventListener('error', function(event) {
-      let displayMessage = event && event.message ? event.message : 'An unexpected error occurred';
-      if (event && event.error && event.error.message) {
-        displayMessage = event.error.message;
-      }
-      FOSSBilling.message(displayMessage, 'error');
-    });
-
-    // Attach event listeners to all forms and links with data-fb-api attribute.
-    if (document.querySelector("form[data-fb-api]")) {
-      API._apiForm();
-    };
-    if (document.querySelector("a[data-fb-api]")) {
-      API._apiLink();
-    }
 
     // Initialize backToTop
     FOSSBilling.backToTop = backToTop;
@@ -138,19 +110,124 @@ globalThis.FOSSBilling = {
       }
     });
 
-    document.querySelectorAll('.hideit').forEach(element => {
-      element.addEventListener('click', function() {
-        // Simple fade out effect
-        let opacity = 1;
-        const fadeEffect = setInterval(() => {
-          if (opacity > 0) {
-            opacity -= 0.1;
-            this.style.opacity = opacity;
-          } else {
-            clearInterval(fadeEffect);
-            this.style.display = 'none';
-          }
-        }, 40); // 40ms * 10 steps ~= 400ms duration
-      });
-    });
-  });
+   //===== Information boxes =====//
+   document.querySelectorAll('.hideit').forEach(element => {
+     element.addEventListener('click', function() {
+       // Simple fade out effect
+       let opacity = 1;
+       const fadeEffect = setInterval(() => {
+         if (opacity > 0) {
+           opacity -= 0.1;
+           this.style.opacity = opacity;
+         } else {
+           clearInterval(fadeEffect);
+           this.style.display = 'none';
+         }
+       }, 40); // 40ms * 10 steps ~= 400ms duration
+     });
+   });
+
+   //===== Tab deep-linking and persistence =====//
+   const tabTriggers = document.querySelectorAll('[data-bs-toggle="tab"], [data-bs-toggle="pill"]');
+
+   const getTabTargetSelector = (tabTrigger) => {
+     const dataTarget = tabTrigger.getAttribute('data-bs-target');
+     if (dataTarget && dataTarget.startsWith('#')) {
+       return dataTarget;
+     }
+
+     const hrefTarget = tabTrigger.getAttribute('href');
+     if (hrefTarget && hrefTarget.startsWith('#')) {
+       return hrefTarget;
+     }
+
+     return null;
+   };
+
+   const findTabTrigger = (tabId) => {
+     if (!tabId) {
+       return null;
+     }
+
+     return document.querySelector(
+       `[data-bs-toggle="tab"][data-bs-target="#${tabId}"], ` +
+       `[data-bs-toggle="pill"][data-bs-target="#${tabId}"], ` +
+       `[data-bs-toggle="tab"][href="#${tabId}"], ` +
+       `[data-bs-toggle="pill"][href="#${tabId}"]`
+     );
+   };
+
+   const showTabById = (tabId) => {
+     const tabTrigger = findTabTrigger(tabId);
+     if (!tabTrigger) {
+       return false;
+     }
+
+     const tab = bootstrap.Tab.getOrCreateInstance(tabTrigger);
+     tab.show();
+
+     return true;
+   };
+
+   const syncTabUrl = (tabId) => {
+     if (!tabId) {
+       return;
+     }
+
+     const url = new URL(window.location.href);
+     url.hash = tabId;
+     url.searchParams.delete('tab');
+     window.history.replaceState({}, '', url);
+   };
+
+   const hashTabId = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
+   showTabById(hashTabId);
+
+   tabTriggers.forEach((tabTrigger) => {
+     tabTrigger.addEventListener('shown.bs.tab', function() {
+       const targetSelector = getTabTargetSelector(this);
+       if (targetSelector) {
+         syncTabUrl(targetSelector.slice(1));
+       }
+     });
+   });
+
+   window.addEventListener('hashchange', () => {
+     const nextTabId = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
+     showTabById(nextTabId);
+   });
+
+   //===== Search filter toggle state =====//
+   const syncSearchFilterToggleState = (toggle, panel) => {
+     const targetSelector = toggle.getAttribute('data-bs-target');
+     if (!targetSelector || !targetSelector.startsWith('#')) {
+       return;
+     }
+
+     const isOpen = panel?.classList.contains('show') || toggle.getAttribute('aria-expanded') === 'true';
+     toggle.classList.toggle('text-primary', isOpen);
+     toggle.classList.toggle('text-secondary', !isOpen);
+
+     const summary = document.querySelector('.filter-panel-summary');
+     if (summary) {
+       summary.classList.toggle('d-none', isOpen);
+     }
+   };
+
+   document.querySelectorAll('.search-filter-toggle[data-bs-target]').forEach((toggle) => {
+     const targetSelector = toggle.getAttribute('data-bs-target');
+     if (!targetSelector || !targetSelector.startsWith('#')) {
+       return;
+     }
+
+     const panel = document.querySelector(targetSelector);
+     if (!panel) {
+       return;
+     }
+
+     syncSearchFilterToggleState(toggle, panel);
+
+     panel.addEventListener('shown.bs.collapse', () => syncSearchFilterToggleState(toggle, panel));
+     panel.addEventListener('hidden.bs.collapse', () => syncSearchFilterToggleState(toggle, panel));
+   });
+ });

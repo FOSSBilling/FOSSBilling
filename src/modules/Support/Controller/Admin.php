@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -47,13 +48,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                     'label' => __trans('Public Tickets'),
                     'uri' => $this->di['url']->adminLink('support/public-tickets', ['status' => 'open']),
                     'index' => 200,
-                    'class' => '',
-                ],
-                [
-                    'location' => 'support',
-                    'label' => __trans('Advanced Ticket Search'),
-                    'uri' => $this->di['url']->adminLink('support', ['show_filter' => 1]),
-                    'index' => 300,
                     'class' => '',
                 ],
                 [
@@ -130,7 +124,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 }
             }
         } catch (\Exception $e) {
-            $this->di['logger']->err($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
 
         return $app->render('mod_support_ticket', ['ticket' => $ticket, 'canned_delay_message' => $cdm, 'request_message' => $messageid]);

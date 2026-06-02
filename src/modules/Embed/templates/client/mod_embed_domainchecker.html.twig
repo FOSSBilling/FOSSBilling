@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Check domain</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    {{ include('partial_embed_styles.html.twig') }}
+    <style type="text/css">
+        .embed-shell--compact {
+            padding: 8px;
+            border-radius: 10px;
+        }
+
+        .embed-inline-form .embed-input,
+        .embed-inline-form .embed-select,
+        .embed-inline-form .embed-button {
+            min-height: 34px;
+            padding-top: 6px;
+            padding-bottom: 6px;
+        }
+    </style>
+</head>
+
+<body>
+<form method="post" action="" class="embed-shell embed-shell--compact" id="domain-checker">
+    <div class="embed-inline-form">
+        <label class="embed-sr-only" for="embed-domain-sld">{{ 'Domain name'|trans }}</label>
+        <input class="embed-input" type="text" id="embed-domain-sld" value="" name="sld" placeholder="{{ 'yourdomain'|trans }}" />
+        {% set tlds = guest.servicedomain_tlds %}
+        <label class="embed-sr-only" for="embed-domain-tld">{{ 'Extension'|trans }}</label>
+        <select class="embed-select" id="embed-domain-tld" name="tld">
+            {% for tld in tlds %}
+            <option value="{{ tld.tld }}" label="{{ tld.tld }}">{{ tld.tld }}</option>
+            {% endfor %}
+        </select>
+        <button class="embed-button" type="submit"><span>{{ 'Search'|trans }}</span></button>
+    </div>
+</form>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById('domain-checker').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const formData = new FormData(this);
+            const searchParams = new URLSearchParams();
+
+            for (const [key, value] of formData) {
+                searchParams.append(key, value);
+            }
+
+            fetch("{{ 'servicedomain/check'|api_url(role='guest') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: searchParams.toString()
+            })
+            .then(response => response.json())
+            .then(json => {
+                if (json.error) {
+                    alert(json.error.message);
+                } else if (json.result) {
+                    alert('Domain is available');
+                } else {
+                    alert('Domain is already registered');
+                }
+            })
+            .catch(error => {
+                alert('Error checking domain: ' + error);
+            });
+        });
+    });
+</script>
+</body>
+</html>

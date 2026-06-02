@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -12,6 +13,7 @@ class Model_Transaction extends RedBeanPHP\SimpleModel
 {
     final public const string STATUS_RECEIVED = 'received';
     final public const string STATUS_APPROVED = 'approved';
+    final public const string STATUS_PROCESSING = 'processing';
     final public const string STATUS_PROCESSED = 'processed';
     final public const string STATUS_ERROR = 'error';
 }

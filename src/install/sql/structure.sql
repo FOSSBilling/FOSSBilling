@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 8.0, for Linux (x86_64)
 --
--- Host: localhost    Database: boxbilling
+-- Host: localhost    Database: fossbilling
 -- ------------------------------------------------------
 -- Server version	8.0.x
 
@@ -146,21 +146,6 @@ CREATE TABLE `admin_password_reset` (
     PRIMARY KEY (`id`),
     KEY `admin_id_idx` (`admin_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `api_request`
---
-
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `api_request` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `ip` varchar(45) DEFAULT NULL,
-  `request` text,
-  `created_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -405,15 +390,13 @@ CREATE TABLE `client_password_reset` (
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `currency` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `title` varchar(50) DEFAULT NULL,
   `code` varchar(3) DEFAULT NULL,
   `is_default` tinyint(1) DEFAULT '0',
   `conversion_rate` decimal(13,6) DEFAULT '1.000000',
-  `format` varchar(30) DEFAULT NULL,
-  `price_format` varchar(50) DEFAULT '1',
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `code` (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -428,6 +411,8 @@ CREATE TABLE `email_template` (
   `action_code` varchar(255) DEFAULT NULL,
   `category` varchar(30) DEFAULT NULL COMMENT 'general, domain, invoice, hosting, support, download, custom, license',
   `enabled` tinyint(1) DEFAULT '1',
+  `is_custom` tinyint(1) DEFAULT '0',
+  `is_overridden` tinyint(1) DEFAULT '0' COMMENT 'Whether subject/content have been customized from file defaults',
   `subject` varchar(255) DEFAULT NULL,
   `content` text,
   `description` text,
@@ -449,7 +434,8 @@ CREATE TABLE `extension` (
   `name` varchar(255) DEFAULT NULL,
   `status` varchar(100) DEFAULT NULL,
   `version` varchar(100) DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `type_name` (`type`,`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -574,6 +560,7 @@ CREATE TABLE `invoice` (
   `paid_at` datetime DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
+  `hash_expires_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `hash` (`hash`),
   KEY `client_id_idx` (`client_id`)
@@ -869,47 +856,6 @@ CREATE TABLE `promo` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `queue`
---
-
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `queue` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) DEFAULT NULL,
-  `module` varchar(255) DEFAULT NULL,
-  `timeout` bigint(20) DEFAULT NULL,
-  `iteration` int(10) DEFAULT NULL,
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `queue_message`
---
-
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `queue_message` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `queue_id` bigint(20) DEFAULT NULL,
-  `handle` char(32) DEFAULT NULL,
-  `handler` varchar(255) DEFAULT NULL,
-  `body` longblob,
-  `hash` char(32) DEFAULT NULL,
-  `timeout` double(18,2) DEFAULT NULL,
-  `log` text,
-  `execute_at` datetime DEFAULT NULL,
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `queue_id_idx` (`queue_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `service_custom`
 --
 
@@ -993,6 +939,7 @@ CREATE TABLE `service_downloadable` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `client_id` bigint(20) DEFAULT NULL,
   `filename` varchar(100) DEFAULT NULL,
+  `stored_filename` varchar(100) DEFAULT NULL,
   `downloads` int(11) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
@@ -1364,7 +1311,7 @@ CREATE TABLE `tax` (
 CREATE TABLE `tld` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `tld_registrar_id` bigint(20) DEFAULT NULL,
-  `tld` varchar(15) DEFAULT NULL,
+  `tld` varchar(64) DEFAULT NULL,
   `price_registration` decimal(18,2) DEFAULT '0.00',
   `price_renew` decimal(18,2) DEFAULT '0.00',
   `price_transfer` decimal(18,2) DEFAULT '0.00',
@@ -1440,4 +1387,3 @@ CREATE TABLE `transaction` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2014-09-19 15:00:47
-

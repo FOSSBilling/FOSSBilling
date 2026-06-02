@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -27,6 +28,22 @@ class Service implements InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View SEO information'),
+                'description' => __trans('Allows the staff member to view SEO status.'),
+            ],
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage SEO'),
+                'description' => __trans('Allows the staff member to ping search engines.'),
+            ],
+        ];
     }
 
     public function pingSitemap($config, $forced = false): bool

@@ -1,0 +1,262 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% set active_menu = 'system' %}
+{% set has_filter_panel = true %}
+{% set filter_panel_id = 'page-search-filters' %}
+{% set filter_panel_open = request_has_filters %}
+{% set new_gateway_action %}
+    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newPaymentGatewayModal">
+        <svg class="icon">
+            <use xlink:href="#plus" />
+        </svg>
+        {{ 'New Payment Gateway'|trans }}
+    </button>
+{% endset %}
+
+{% block meta_title %}{{ 'Payment Gateways'|trans }}{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'Payment Gateways'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Manage installed payment gateways, add new adapters, and install supported gateways from the extension directory.'|trans }}</p>
+            </div>
+        </div>
+        <div class="card-body pt-3 pb-0 px-0">
+            <div class="card border-0 shadow-none rounded-0">
+                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
+                    <ul class="nav nav-pills card-header-pills">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Payment Gateways'|trans }}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#tab-extension-directory" data-bs-toggle="tab">{{ 'Install from the Extension Directory'|trans }}</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="tab-content border-top">
+                    <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+                        {{ include('partial_search.html.twig', {
+                            search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
+                            search_toolbar_actions: new_gateway_action
+                        }) }}
+                        <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
+                            <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
+                                {% if request.search %}
+                                    <input type="hidden" name="search" value="{{ request.search }}">
+                                {% endif %}
+                                <div class="row g-3">
+                                    <div class="col-md-6 col-xl-3">
+                                        <div>
+                                            <label class="form-label text-muted small mb-1" for="gateway-enabled">{{ 'Enabled'|trans }}</label>
+                                            <select class="form-select" id="gateway-enabled" name="enabled">
+                                                <option value="">{{ 'All Gateways'|trans }}</option>
+                                                <option value="1"{% if request.enabled == '1' %} selected{% endif %}>{{ 'Enabled'|trans }}</option>
+                                                <option value="0"{% if request.enabled == '0' %} selected{% endif %}>{{ 'Disabled'|trans }}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 col-xl-3">
+                                        <div>
+                                            <label class="form-label text-muted small mb-1" for="gateway-allow-single">{{ 'Allow One-Time Payments'|trans }}</label>
+                                            <select class="form-select" id="gateway-allow-single" name="allow_single">
+                                                <option value="">{{ 'All Gateways'|trans }}</option>
+                                                <option value="1"{% if request.allow_single == '1' %} selected{% endif %}>{{ 'Yes'|trans }}</option>
+                                                <option value="0"{% if request.allow_single == '0' %} selected{% endif %}>{{ 'No'|trans }}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 col-xl-3">
+                                        <div>
+                                            <label class="form-label text-muted small mb-1" for="gateway-allow-recurrent">{{ 'Allow Subscriptions'|trans }}</label>
+                                            <select class="form-select" id="gateway-allow-recurrent" name="allow_recurrent">
+                                                <option value="">{{ 'All Gateways'|trans }}</option>
+                                                <option value="1"{% if request.allow_recurrent == '1' %} selected{% endif %}>{{ 'Yes'|trans }}</option>
+                                                <option value="0"{% if request.allow_recurrent == '0' %} selected{% endif %}>{{ 'No'|trans }}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 col-xl-3">
+                                        <div>
+                                            <label class="form-label text-muted small mb-1" for="gateway-test-mode">{{ 'Test Mode'|trans }}</label>
+                                            <select class="form-select" id="gateway-test-mode" name="test_mode">
+                                                <option value="">{{ 'All Gateways'|trans }}</option>
+                                                <option value="1"{% if request.test_mode == '1' %} selected{% endif %}>{{ 'Yes'|trans }}</option>
+                                                <option value="0"{% if request.test_mode == '0' %} selected{% endif %}>{{ 'No'|trans }}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-end gap-2 mt-3">
+                                    <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
+                                    <button class="btn btn-primary" type="submit">
+                                        <svg class="icon">
+                                            <use xlink:href="#filter" />
+                                        </svg>
+                                        {{ 'Apply Filters'|trans }}
+                                    </button>
+                                </div>
+                            </form>
+                        </section>
+                        <div class="table-responsive">
+                            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                                <thead>
+                                    <tr>
+                                        <th>{{ 'Title'|trans }}</th>
+                                        <th>{{ 'Code'|trans }}</th>
+                                        <th>{{ 'Enabled'|trans }}</th>
+                                        <th>{{ 'Allow One-Time Payments'|trans }}</th>
+                                        <th>{{ 'Allow Subscriptions'|trans }}</th>
+                                        <th class="w-1 no-sort"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for gateway in admin.invoice_gateway_get_list({ 'per_page': 100 }|merge(request)).list %}
+                                <tr>
+                                    <td>
+                                        <a href='{{ "invoice/gateway/#{gateway.id}"|url }}'>{{ gateway.title }}</a>
+                                    </td>
+                                    <td>{{ gateway.code }}</td>
+                                    <td>{{ mf.boolean_badge(gateway.enabled, 'Yes'|trans, 'No'|trans, 'text-bg-success', 'text-bg-secondary') }}</td>
+                                    <td>{{ mf.boolean_badge(gateway.allow_single, 'Yes'|trans, 'No'|trans, 'text-bg-success', 'text-bg-secondary') }}</td>
+                                    <td>{{ mf.boolean_badge(gateway.allow_recurrent, 'Yes'|trans, 'No'|trans, 'text-bg-success', 'text-bg-secondary') }}</td>
+                                    <td>
+                                        <a class="btn btn-icon" href="{{ 'invoice/gateway_copy'|api_url(query: { 'id': gateway.id }) }}" title="{{ 'Copy'|trans }}"
+                                            {{ fb_api_link({redirect: 'invoice/gateways'|url}) }}>
+                                            <svg class="icon">
+                                                <use xlink:href="#copy" />
+                                            </svg>
+                                        </a>
+                                        <a class="btn btn-icon" href='{{ "invoice/gateway/#{gateway.id}"|url }}'>
+                                            <svg class="icon">
+                                                <use xlink:href="#edit" />
+                                            </svg>
+                                        </a>
+                                        <a class="btn btn-icon" href="{{ 'invoice/gateway_delete'|api_url(query: { 'id': gateway.id }) }}"
+                                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice/gateways'|url}) }}>
+                                            <svg class="icon">
+                                                <use xlink:href="#delete" />
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                    <tr>
+                                        <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="tab-extension-directory" role="tabpanel">
+                        {{ include('partial_extensions.html.twig', { 'type': 'payment-gateway' }, with_context = false) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal modal-blur fade" id="newPaymentGatewayModal" tabindex="-1" aria-labelledby="newPaymentGatewayModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-md-down modal-lg">
+                <div class="modal-content fb-modal-form">
+                    <div class="modal-header">
+                        <h3 class="modal-title" id="newPaymentGatewayModalLabel">{{ 'Add New Payment Gateway'|trans }}</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <section class="fb-modal-section">
+                            <div class="fb-modal-section-header">
+                                <div class="fb-modal-section-heading-row">
+                                    <h4 class="fb-modal-section-title">{{ 'Install Locally'|trans }}</h4>
+                                </div>
+                                <p class="fb-modal-section-description">{{ 'Upload or place a gateway adapter on the server, then install it here and configure it from the gateway list.'|trans }}</p>
+                            </div>
+                            <ol class="mb-0 ps-3">
+                                <li>{{ 'Check for payment gateway at'|trans }} <a href="http://extensions.fossbilling.org/" target="_blank">{{ 'FOSSBilling extensions site'|trans }}</a> {{ 'for more payment gateways'|trans }}</li>
+                                <li>{{ 'Download payment gateway extension file and place it to'|trans }} <strong>{{ constant('PATH_LIBRARY') }}Payment/Adapter</strong></li>
+                                <li>{{ 'After file is uploaded in place, reload this page.'|trans }}</li>
+                                <li>{{ 'Select uploaded file name and click on install.'|trans }}</li>
+                                <li>{{ 'Payment gateway will be installed in FOSSBilling and can be configured in the payment gateway list.'|trans }}</li>
+                                <li>{{ 'For developers. Read'|trans }} <a href="https://fossbilling.org/docs" target="_blank">{{ 'FOSSBilling documentation'|trans }}</a> {{ 'to learn how to create your own payment gateway and share it with the community'|trans }}</li>
+                            </ol>
+                        </section>
+
+                        <section class="fb-modal-section">
+                            <div class="fb-modal-section-header">
+                                <div class="fb-modal-section-heading-row">
+                                    <h4 class="fb-modal-section-title">{{ 'Available Adapters'|trans }}</h4>
+                                </div>
+                                <p class="fb-modal-section-description">{{ 'Install any gateway adapters already present on the server.'|trans }}</p>
+                            </div>
+                            {% if admin.invoice_gateway_get_available|length > 0 %}
+                                <div class="table-responsive">
+                                    <table class="table card-table table-vcenter table-striped text-nowrap mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>{{ 'Code'|trans }}</th>
+                                                <th class="w-1">{{ 'Install'|trans }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        {% for gtw in admin.invoice_gateway_get_available %}
+                                            <tr>
+                                                <td>{{ gtw }}</td>
+                                                <td>
+                                                    <a class="btn btn-icon" href="{{ 'invoice/gateway_install'|api_url(query: { 'code': gtw }) }}" title="{{ 'Install'|trans }}"
+                                                        {{ fb_api_link({redirect: 'invoice/gateways'|url}) }}>
+                                                        <svg class="icon">
+                                                            <use xlink:href="#cog" />
+                                                        </svg>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <p class="text-body-secondary mb-0">{{ 'All payment gateways installed'|trans }}</p>
+                            {% endif %}
+                        </section>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Close'|trans }}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var modalElement = document.getElementById('newPaymentGatewayModal');
+        var modal = modalElement ? bootstrap.Modal.getOrCreateInstance(modalElement) : null;
+
+        if (window.location.hash === '#tab-new' && modal) {
+            modal.show();
+            return;
+        }
+
+        var tabTrigger = document.querySelector('[data-bs-toggle="tab"][href="' + window.location.hash + '"]');
+        if (tabTrigger) {
+            bootstrap.Tab.getOrCreateInstance(tabTrigger).show();
+        }
+
+        modalElement?.addEventListener('hidden.bs.modal', function () {
+            if (window.location.hash !== '#tab-new') {
+                return;
+            }
+
+            var url = new URL(window.location.href);
+            url.hash = '';
+            window.history.replaceState({}, '', url);
+        });
+    });
+</script>
+{% endblock %}

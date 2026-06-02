@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -127,9 +128,9 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Invoice item title is missing');
         }
 
-        $period = $data['period'] ?? 0;
-        if ($period) {
-            $periodCheck = $this->di['period']($period);
+        $period = $this->normalizePeriod($data['period'] ?? null);
+        if ($period !== null) {
+            $period = $this->di['period']($period)->getCode();
         }
 
         $type = $data['type'] ?? \Model_InvoiceItem::TYPE_CUSTOM;
@@ -155,6 +156,15 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $itemId = $this->di['db']->store($pi);
 
         return (int) $itemId;
+    }
+
+    private function normalizePeriod(mixed $period): ?string
+    {
+        if ($period === null || $period === '' || $period === 0 || $period === '0') {
+            return null;
+        }
+
+        return (string) $period;
     }
 
     public function getTotal(\Model_InvoiceItem $item): float
@@ -268,13 +278,19 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $this->di['db']->store($item);
     }
 
-    public function generateFromOrder(\Model_Invoice $proforma, \Model_ClientOrder $order, $task, $price): void
+    public function generateFromOrder(\Model_Invoice $proforma, \Model_ClientOrder $order, $task, $price, array $line = []): void
     {
         $corderService = $this->di['mod_service']('Order');
 
         $clientService = $this->di['mod_service']('client');
         $client = $this->di['db']->load('Client', $order->client_id);
         $taxed = $clientService->isClientTaxable($client);
+        $quantity = $line['quantity'] ?? $order->quantity;
+        $unit = $line['unit'] ?? $order->unit;
+        $period = $this->normalizePeriod($line['period'] ?? $order->period);
+        if ($period !== null) {
+            $period = $this->di['period']($period)->getCode();
+        }
 
         $pi = $this->di['db']->dispense('InvoiceItem');
         $pi->invoice_id = $proforma->id;
@@ -283,9 +299,9 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $pi->task = $task;
         $pi->status = \Model_InvoiceItem::STATUS_PENDING_PAYMENT;
         $pi->title = $order->title;
-        $pi->period = $order->period;
-        $pi->quantity = $order->quantity;
-        $pi->unit = $order->unit;
+        $pi->period = $period;
+        $pi->quantity = $quantity;
+        $pi->unit = $unit;
         $pi->price = $price;
         $pi->taxed = $taxed;
         $pi->created_at = date('Y-m-d H:i:s');
@@ -296,8 +312,26 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
         // apply discount for new invoice if promo code is recurrent
         if ($order->promo_recurring) {
-            $order_total = $order->price * $order->quantity;
+            $order_total = $price * $quantity;
             $promo_discount = $order->discount;
+
+            $product = $this->di['db']->getExistingModelById('Product', $order->product_id, 'Product not found');
+            if ($product->type === \Model_ProductTable::DOMAIN && $order->promo_id) {
+                $promo = $this->di['db']->getExistingModelById('Promo', $order->promo_id, 'Promo not found');
+                $productService = $this->di['mod_service']('Product');
+                $config = json_decode($order->config ?? '', true) ?? [];
+                $promo_discount = $productService->getRenewalProductDiscount($product, $promo, $config);
+
+                $currencyService = $this->di['mod_service']('Currency');
+                $currencyRepository = $currencyService->getCurrencyRepository();
+                $rate = $currencyRepository->getRateByCode($order->currency);
+                if ($rate === null) {
+                    throw new \FOSSBilling\Exception("Currency conversion rate cannot be determined for code {$order->currency}");
+                }
+
+                $promo_discount *= $rate;
+            }
+
             if ($promo_discount > $order_total) {
                 $promo_discount = $order_total;
             }

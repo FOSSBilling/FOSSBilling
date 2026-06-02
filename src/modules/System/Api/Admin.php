@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -16,6 +17,7 @@
 namespace Box\Mod\System\Api;
 
 use FOSSBilling\Config;
+use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \Api_Abstract
@@ -27,7 +29,22 @@ class Admin extends \Api_Abstract
      */
     public function get_params($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_settings');
+
         return $this->getService()->getParams($data);
+    }
+
+    /**
+     * Returns localization settings stored in the FOSSBilling config file.
+     */
+    public function localization_settings(): array
+    {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_settings');
+
+        return [
+            'locale' => (string) Config::getProperty('i18n.locale', 'en_US'),
+            'auto_detect_locale' => Tools::normalizeBoolean(Config::getProperty('i18n.auto_detect_locale', true), true),
+        ];
     }
 
     /**
@@ -39,7 +56,27 @@ class Admin extends \Api_Abstract
      */
     public function update_params($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'update_params');
+
         return $this->getService()->updateParams($data);
+    }
+
+    /**
+     * Updates localization settings stored in the FOSSBilling config file.
+     *
+     * @throws \FOSSBilling\Exception
+     */
+    public function update_localization_settings($data): bool
+    {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'update_params');
+
+        if (isset($data['locale']) && $data['locale'] !== '') {
+            Config::setProperty('i18n.locale', $data['locale']);
+        }
+
+        Config::setProperty('i18n.auto_detect_locale', Tools::normalizeBoolean($data['auto_detect_locale'] ?? true, true));
+
+        return true;
     }
 
     /**
@@ -49,7 +86,13 @@ class Admin extends \Api_Abstract
      */
     public function messages($data)
     {
-        $type = $data['type'] ?? 'info';
+        try {
+            $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_settings');
+        } catch (\Throwable) {
+            return [];
+        }
+
+        $type = $data['type'] ?? null;
 
         return $this->getService()->getMessages($type);
     }
@@ -61,6 +104,12 @@ class Admin extends \Api_Abstract
      */
     public function cas_messages()
     {
+        try {
+            $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_settings');
+        } catch (\Throwable) {
+            return [];
+        }
+
         return $this->getService()->getCasMessages();
     }
 
@@ -71,35 +120,13 @@ class Admin extends \Api_Abstract
      */
     public function template_exists($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_settings');
+
         if (!isset($data['file'])) {
             return false;
         }
 
         return $this->getService()->templateExists($data['file'], $this->getIdentity());
-    }
-
-    /**
-     * Parse string like FOSSBilling template.
-     *
-     * @optional bool $_try - if true, will not throw error if template is invalid, returns _tpl string
-     * @optional int $_client_id - if passed client id, then client API will also be available
-     *
-     * @return string
-     */
-    public function string_render($data)
-    {
-        if (!isset($data['_tpl'])) {
-            error_log('_tpl parameter not passed');
-
-            return '';
-        }
-        $tpl = $data['_tpl'];
-        $try_render = $data['_try'] ?? false;
-
-        $vars = $data;
-        unset($vars['_tpl'], $vars['_try']);
-
-        return $this->getService()->renderString($tpl, $try_render, $vars);
     }
 
     /**
@@ -109,9 +136,11 @@ class Admin extends \Api_Abstract
      */
     public function env($data)
     {
-        $ip = $data['ip'] ?? null;
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_settings');
 
-        return $this->getService()->getEnv($ip);
+        $fetchExternalIp = Tools::normalizeBoolean($data['ip'] ?? false);
+
+        return $this->getService()->getEnv($fetchExternalIp);
     }
 
     /**
@@ -149,6 +178,8 @@ class Admin extends \Api_Abstract
      */
     public function update_available(): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'view');
+
         $updater = $this->di['updater'];
 
         return $updater->isUpdateAvailable();
@@ -159,9 +190,22 @@ class Admin extends \Api_Abstract
      */
     public function update_info(): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'view');
+
         $updater = $this->di['updater'];
 
-        return $updater->getLatestVersionInfo();
+        $info = $updater->getLatestVersionInfo();
+        $requiredPhpVersion = $info['minimum_php_version'] ?? 'unknown';
+        if (!is_string($requiredPhpVersion) || $requiredPhpVersion === '') {
+            $requiredPhpVersion = 'unknown';
+        }
+
+        $info['minimum_php_version'] = $requiredPhpVersion;
+        $info['current_php_version'] = PHP_VERSION;
+        $info['php_version_supported'] = $requiredPhpVersion === 'unknown' || version_compare(PHP_VERSION, $requiredPhpVersion, '>=');
+        $info['readiness'] = $this->di['update_readiness']->check();
+
+        return $info;
     }
 
     /**
@@ -169,6 +213,8 @@ class Admin extends \Api_Abstract
      */
     public function recheck_update(): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'recheck_update');
+
         $updater = $this->di['updater'];
         $updater->getLatestVersionInfo(null, true);
 
@@ -189,12 +235,47 @@ class Admin extends \Api_Abstract
 
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'system_update');
 
+        if (function_exists('set_time_limit')) {
+            set_time_limit(300);
+        }
+
         $new_version = $updater->getLatestVersion();
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminUpdateCore']);
         $updater->performUpdate();
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminUpdateCore']);
 
-        $this->di['logger']->info('Updated FOSSBilling from %s to %s', \FOSSBilling\Version::VERSION, $new_version);
+        $this->di['logger']->info('Installed FOSSBilling update files from %s to %s. Update finalization is pending.', \FOSSBilling\Version::VERSION, $new_version);
+
+        return true;
+    }
+
+    public function update_finalization_status(): array
+    {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'system_update');
+
+        return $this->di['update_finalization']->getStatus();
+    }
+
+    public function finalize_update(): bool
+    {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'system_update');
+
+        if (function_exists('set_time_limit')) {
+            set_time_limit(180);
+        }
+
+        $this->di['update_finalization']->finalizeUpdate();
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminUpdateCore']);
+        $this->di['logger']->info('Finalized FOSSBilling update to %s.', \FOSSBilling\Version::VERSION);
+
+        return true;
+    }
+
+    public function complete_update_finalization(): bool
+    {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'system_update');
+
+        $this->di['update_finalization']->completeFinalization();
+        $this->di['logger']->info('Completed FOSSBilling update finalization for %s.', \FOSSBilling\Version::VERSION);
 
         return true;
     }
@@ -207,6 +288,10 @@ class Admin extends \Api_Abstract
     public function manual_update(): bool
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'system_update');
+
+        if (function_exists('set_time_limit')) {
+            set_time_limit(180);
+        }
 
         $updater = $this->di['updater'];
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminManualUpdate']);
@@ -222,6 +307,8 @@ class Admin extends \Api_Abstract
      */
     public function is_behind_on_patches(): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'view');
+
         $updater = $this->di['updater'];
 
         return $updater->isBehindOnDBPatches();
@@ -232,6 +319,8 @@ class Admin extends \Api_Abstract
      */
     public function instance_id(): string
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'view');
+
         return INSTANCE_ID;
     }
 
@@ -240,6 +329,8 @@ class Admin extends \Api_Abstract
      */
     public function error_reporting_enabled(): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'view');
+
         return (bool) Config::getProperty('debug_and_monitoring.report_errors', false);
     }
 
@@ -248,6 +339,8 @@ class Admin extends \Api_Abstract
      */
     public function toggle_error_reporting(): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'toggle_error_reporting');
+
         $current = Config::getProperty('debug_and_monitoring.report_errors', false);
         Config::setProperty('debug_and_monitoring.report_errors', !$current);
 
@@ -259,12 +352,16 @@ class Admin extends \Api_Abstract
      */
     public function last_error_reporting_change(): string
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'view');
+
         return \FOSSBilling\SentryHelper::last_change;
     }
 
     public function get_interface_ips(): array
     {
-        return \FOSSBilling\Tools::listHttpInterfaces();
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('system', 'manage_network_interface');
+
+        return Tools::listHttpInterfaces();
     }
 
     public function set_interface_ip($data): bool
@@ -273,11 +370,19 @@ class Admin extends \Api_Abstract
         $config = Config::getConfig();
 
         if (isset($data['interface'])) {
-            $config['interface_ip'] = $data['interface'];
+            $interface = $data['interface'];
+            if ($interface !== '0' && !filter_var($interface, FILTER_VALIDATE_IP)) {
+                throw new \FOSSBilling\Exception('Invalid interface IP address');
+            }
+            $config['interface_ip'] = $interface;
         }
 
         if (isset($data['custom_interface'])) {
-            $config['custom_interface_ip'] = $data['custom_interface'];
+            $custom = $data['custom_interface'];
+            if ($custom !== '' && !Tools::isValidHttpInterface($custom)) {
+                throw new \FOSSBilling\Exception('Invalid custom interface. Must be a valid IP address or hostname.');
+            }
+            $config['custom_interface_ip'] = $custom;
         }
 
         Config::setConfig($config);

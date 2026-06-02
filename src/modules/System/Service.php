@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -11,21 +12,24 @@
 
 namespace Box\Mod\System;
 
+use Doctrine\DBAL\ArrayParameterType;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\GeoIP\Reader;
+use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
 use FOSSBilling\SentryHelper;
+use FOSSBilling\Tools;
+use FOSSBilling\Twig\SandboxedStringRenderer;
 use FOSSBilling\Version;
 use Pimple\Container;
-use PrinsFrank\Standards\Country\CountryAlpha2;
-use PrinsFrank\Standards\CountryCallingCode\CountryCallingCode;
-use PrinsFrank\Standards\Language\LanguageAlpha2;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Contracts\Cache\ItemInterface;
 
 class Service
 {
+    private const int MYSQL_DUPLICATE_ENTRY_ERROR = 23000;
+
     protected ?Container $di = null;
 
     public function __construct(private readonly ?Filesystem $filesystem = new Filesystem())
@@ -40,21 +44,34 @@ class Service
     public function getModulePermissions(): array
     {
         return [
-            'can_always_access' => true,
-            'manage_settings' => [],
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View system information'),
+                'description' => __trans('Allows the staff member to view system status, update availability, and other read-only system information.'),
+            ],
+            'manage_settings' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage System Settings'),
+                'description' => __trans('Allows the staff member to view and manage general system settings.'),
+            ],
             'manage_company_details' => [
                 'type' => 'bool',
-                'display_name' => __trans('Manage company details'),
+                'display_name' => __trans('Manage Company Details'),
                 'description' => __trans('Allows the staff member to update company details as set under the system module.'),
             ],
             'manage_company_legal' => [
                 'type' => 'bool',
-                'display_name' => __trans('Manage company legal'),
+                'display_name' => __trans('Manage Company Legal'),
                 'description' => __trans('Allows the staff member to update company legal as set under the system module.'),
+            ],
+            'update_params' => [
+                'type' => 'bool',
+                'display_name' => __trans('Update System Parameters'),
+                'description' => __trans('Allows the staff member to update system parameters through the system API endpoint.'),
             ],
             'invalidate_cache' => [
                 'type' => 'bool',
-                'display_name' => __trans('Invalidate cache'),
+                'display_name' => __trans('Invalidate Cache'),
                 'description' => __trans('Allows the staff member to invalidate the FOSSBilling cache from within the system settings.'),
             ],
             'system_update' => [
@@ -62,22 +79,28 @@ class Service
                 'display_name' => __trans('Update FOSSBilling'),
                 'description' => __trans('Allows the staff member to update FOSSBilling.'),
             ],
+            'recheck_update' => [
+                'type' => 'bool',
+                'display_name' => __trans('Recheck for Updates'),
+                'description' => __trans('Allows the staff member to clear cached update information and fetch the latest update metadata.'),
+            ],
+            'toggle_error_reporting' => [
+                'type' => 'bool',
+                'display_name' => __trans('Toggle Error Reporting'),
+                'description' => __trans('Allows the staff member to enable or disable error reporting for this FOSSBilling instance.'),
+            ],
             'manage_network_interface' => [
                 'type' => 'bool',
-                'display_name' => __trans('Manage the network interface'),
+                'display_name' => __trans('Manage the Network Interface'),
                 'description' => __trans('Allows the staff member to fetch a list of all local interface IP addresses and set the default network interface for FOSSBilling to use.'),
             ],
         ];
     }
 
-    /**
-     * @param string $param
-     * @param bool   $default
-     */
-    public function getParamValue($param, $default = null)
+    public function getParamValue(string $param, $default = null)
     {
         if (empty($param)) {
-            throw new \FOSSBilling\Exception('Parameter key is missing');
+            throw new \FOSSBilling\Exception('Parameter key is missing.');
         }
 
         $query = $this->di['dbal']->createQueryBuilder();
@@ -128,7 +151,7 @@ class Service
                     ->setParameter('updated_at', date('Y-m-d H:i:s'))
                     ->executeStatement();
             } catch (\Exception $e) {
-                if ($e->getCode() != 23000) {
+                if ($e->getCode() != self::MYSQL_DUPLICATE_ENTRY_ERROR) {
                     throw $e;
                 }
             }
@@ -152,24 +175,27 @@ class Service
     }
 
     /**
+     * Fetch setting values for the provided setting keys.
+     *
+     * @param string[] $params
+     *
      * @return mixed[]
      */
-    private function _getMultipleParams($params): array
+    private function getSettingsByParams(array $params): array
     {
-        if (!is_array($params)) {
-            return [];
-        }
         foreach ($params as $param) {
             if (!preg_match('/^[a-z0-9_]+$/', (string) $param)) {
-                throw new \FOSSBilling\InformationException('Invalid parameter name, received: param_', ['param_' => $param]);
+                throw new \FOSSBilling\InformationException('Invalid parameter name, received: param_.', ['param_' => $param]);
             }
         }
-        $query = "SELECT param, value
-                FROM setting
-                WHERE param IN('" . implode("', '", $params) . "')
-                ";
-        $result = [];
-        $rows = $this->di['db']->getAll($query);
+        $query = $this->di['dbal']->createQueryBuilder();
+        $query
+            ->select('param', 'value')
+            ->from('setting')
+            ->where('param IN (:params)')
+            ->setParameter('params', $params, ArrayParameterType::STRING);
+
+        $rows = $query->executeQuery()->fetchAllAssociative();
         $result = [];
         foreach ($rows as $row) {
             $result[$row['param']] = $row['value'];
@@ -202,7 +228,7 @@ class Service
             'company_tos',
             'company_vat_number',
         ];
-        $results = $this->_getMultipleParams($c);
+        $results = $this->getSettingsByParams($c);
 
         $logoUrl = $results['company_logo'] ?? null;
         if ($logoUrl !== null && !str_contains((string) $logoUrl, 'http')) {
@@ -210,49 +236,39 @@ class Service
         }
 
         $logoUrlDark = $results['company_logo_dark'] ?? null;
-        if ($logoUrlDark !== null && !str_contains($logoUrlDark, 'http')) {
+        if ($logoUrlDark !== null && !str_contains((string) $logoUrlDark, 'http')) {
             $logoUrlDark = SYSTEM_URL . $logoUrlDark;
         }
         $logoUrlDark ??= $logoUrl;
 
         $faviconUrl = $results['company_favicon'] ?? null;
-        if ($faviconUrl !== null && !str_contains($faviconUrl, 'http')) {
+        if ($faviconUrl !== null && !str_contains((string) $faviconUrl, 'http')) {
             $faviconUrl = SYSTEM_URL . $faviconUrl;
         }
 
         return [
             'www' => SYSTEM_URL,
-            'name' => isset($results['company_name']) ? htmlspecialchars($results['company_name'], ENT_QUOTES, 'UTF-8') : null,
-            'email' => isset($results['company_email']) ? htmlspecialchars($results['company_email'], ENT_QUOTES, 'UTF-8') : null,
-            'tel' => isset($results['company_tel']) ? htmlspecialchars($results['company_tel'], ENT_QUOTES, 'UTF-8') : null,
+            'name' => isset($results['company_name']) ? htmlspecialchars((string) $results['company_name'], ENT_QUOTES, 'UTF-8') : null,
+            'email' => isset($results['company_email']) ? htmlspecialchars((string) $results['company_email'], ENT_QUOTES, 'UTF-8') : null,
+            'tel' => isset($results['company_tel']) ? htmlspecialchars((string) $results['company_tel'], ENT_QUOTES, 'UTF-8') : null,
             'signature' => $results['company_signature'] ?? null,
             'logo_url' => $logoUrl,
             'logo_url_dark' => $logoUrlDark,
             'favicon_url' => $faviconUrl,
-            'address_1' => isset($results['company_address_1']) ? htmlspecialchars($results['company_address_1'], ENT_QUOTES, 'UTF-8') : null,
-            'address_2' => isset($results['company_address_2']) ? htmlspecialchars($results['company_address_2'], ENT_QUOTES, 'UTF-8') : null,
-            'address_3' => isset($results['company_address_3']) ? htmlspecialchars($results['company_address_3'], ENT_QUOTES, 'UTF-8') : null,
+            'address_1' => isset($results['company_address_1']) ? htmlspecialchars((string) $results['company_address_1'], ENT_QUOTES, 'UTF-8') : null,
+            'address_2' => isset($results['company_address_2']) ? htmlspecialchars((string) $results['company_address_2'], ENT_QUOTES, 'UTF-8') : null,
+            'address_3' => isset($results['company_address_3']) ? htmlspecialchars((string) $results['company_address_3'], ENT_QUOTES, 'UTF-8') : null,
             'account_number' => $results['company_account_number'] ?? null,
-            'bank_name' => isset($results['company_bank_name']) ? htmlspecialchars($results['company_bank_name'], ENT_QUOTES, 'UTF-8') : null,
-            'bic' => isset($results['company_bic']) ? htmlspecialchars($results['company_bic'], ENT_QUOTES, 'UTF-8') : null,
+            'bank_name' => isset($results['company_bank_name']) ? htmlspecialchars((string) $results['company_bank_name'], ENT_QUOTES, 'UTF-8') : null,
+            'bic' => isset($results['company_bic']) ? htmlspecialchars((string) $results['company_bic'], ENT_QUOTES, 'UTF-8') : null,
             'display_bank_info' => $results['company_display_bank_info'] ?? null,
             'bank_info_pagebottom' => $results['company_bank_info_pagebottom'] ?? null,
-            'number' => isset($results['company_number']) ? htmlspecialchars($results['company_number'], ENT_QUOTES, 'UTF-8') : null,
+            'number' => isset($results['company_number']) ? htmlspecialchars((string) $results['company_number'], ENT_QUOTES, 'UTF-8') : null,
             'note' => $results['company_note'] ?? null,
             'privacy_policy' => $results['company_privacy_policy'] ?? null,
             'tos' => $results['company_tos'] ?? null,
-            'vat_number' => isset($results['company_vat_number']) ? htmlspecialchars($results['company_vat_number'], ENT_QUOTES, 'UTF-8') : null,
+            'vat_number' => isset($results['company_vat_number']) ? htmlspecialchars((string) $results['company_vat_number'], ENT_QUOTES, 'UTF-8') : null,
         ];
-    }
-
-    /**
-     * @deprecated please use the \FOSSBilling\i18n::getLocales function, which provides the same functionality
-     *
-     * @param bool $deep
-     */
-    public function getLanguages($deep = false): array
-    {
-        return \FOSSBilling\i18n::getLocales($deep);
     }
 
     /**
@@ -276,6 +292,12 @@ class Service
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminSettingsUpdate', 'params' => $data]);
 
         foreach ($data as $key => $val) {
+            if (!$this->canUpdateParam($key)) {
+                throw new \FOSSBilling\InformationException('You do not have permission to update the parameter :param', [':param' => $key]);
+            }
+        }
+
+        foreach ($data as $key => $val) {
             $this->setParamValue($key, $val, true);
         }
 
@@ -286,9 +308,35 @@ class Service
         return true;
     }
 
-    public function getMessages($type)
+    private function createAdminAlert(
+        string $type,
+        string $message,
+        ?string $title = null,
+        array $buttons = [],
+        bool $dismissible = true,
+    ): array {
+        $defaultTitles = [
+            'danger' => __trans('Danger!'),
+            'warning' => __trans('Warning'),
+            'info' => __trans('Information'),
+            'success' => __trans('Success'),
+        ];
+
+        return [
+            'type' => $type,
+            'title' => $title ?? ($defaultTitles[$type] ?? __trans('Notice')),
+            'message' => $message,
+            'buttons' => $buttons,
+            'dismissible' => $dismissible,
+        ];
+    }
+
+    /**
+     * @return mixed[][]
+     */
+    public function getMessages($type = null): array
     {
-        $msgs = [];
+        $messages = [];
 
         // Check if there's an update available
         try {
@@ -296,38 +344,64 @@ class Service
             if ($updater->isUpdateAvailable()) {
                 $version = $updater->getLatestVersion();
                 $updateUrl = $this->di['url']->adminLink('system/update');
-                $msgs['info'][] = [
-                    'text' => "FOSSBilling {$version} is available for download.",
-                    'url' => $updateUrl,
-                ];
+                $messages[] = $this->createAdminAlert(
+                    'info',
+                    __trans('FOSSBilling :version is available for download.', [':version' => $version]),
+                    __trans('Update Available'),
+                    [[
+                        'link' => $updateUrl,
+                        'text' => __trans('Review Update'),
+                        'type' => 'primary',
+                    ]]
+                );
             }
         } catch (\Exception $e) {
             error_log($e->getMessage());
         }
 
-        $last_exec = $this->getParamValue('last_cron_exec');
-        $disableAutoCron = Config::getProperty('disable_auto_cron', true);
+        // Check if FOSSBilling is behind on database patches
+        try {
+            $updater = $this->di['updater'];
+            if ($updater->isBehindOnDBPatches()) {
+                $messages[] = $this->createAdminAlert(
+                    'warning',
+                    __trans('Your FOSSBilling database is behind on database patches. Apply the pending patches to avoid issues.'),
+                    __trans('Database Patches Pending'),
+                    [[
+                        'link' => $this->di['url']->adminLink('system/update'),
+                        'text' => __trans('Apply Patches'),
+                        'type' => 'warning',
+                    ]]
+                );
+            }
+        } catch (\Exception $e) {
+            error_log($e->getMessage());
+        }
 
         if (Environment::isProduction()) {
-            $cronService = $this->di['mod_service']('cron');
+            $last_exec = $this->getParamValue('last_cron_exec');
             $cronUrl = $this->di['url']->adminLink('extension/settings/cron');
 
-            // Perform the fallback behavior if enabled
-            if (!$disableAutoCron && (!$last_exec || (time() - strtotime((string) $last_exec)) / 60 >= 15)) {
-                $cronService->runCrons();
-            }
-
-            // And now return the correctly message for the given situation
             if (!$last_exec) {
-                $msgs['danger'][] = [
-                    'text' => __trans('Cron was never executed, please ensure you have configured the cronjob or else scheduled tasks within FOSSBilling will not behave correctly.'),
-                    'url' => $cronUrl,
-                ];
+                $messages[] = $this->createAdminAlert(
+                    'danger',
+                    __trans('Cron was never executed, please ensure you have configured the cronjob or else scheduled tasks within FOSSBilling will not behave correctly.'),
+                    buttons: [[
+                        'link' => $cronUrl,
+                        'text' => __trans('Open Cron Settings'),
+                        'type' => 'danger',
+                    ]]
+                );
             } elseif ((time() - strtotime((string) $last_exec)) / 60 >= 15) {
-                $msgs['danger'][] = [
-                    'text' => __trans("FOSSBilling has detected that cron hasn't been run in an abnormal time period. Please ensure the cronjob is configured to be run every 5 minutes."),
-                    'url' => $cronUrl,
-                ];
+                $messages[] = $this->createAdminAlert(
+                    'danger',
+                    __trans("FOSSBilling has detected that cron hasn't been run in an abnormal time period. Please ensure the cronjob is configured to be run every 5 minutes."),
+                    buttons: [[
+                        'link' => $cronUrl,
+                        'text' => __trans('Open Cron Settings'),
+                        'type' => 'danger',
+                    ]]
+                );
             }
         }
 
@@ -366,24 +440,41 @@ class Service
             });
 
             if ($result) {
-                $msgs['info'][] = $result;
+                $messages[] = $this->createAdminAlert(
+                    'info',
+                    $result['text'],
+                    buttons: [[
+                        'link' => $result['url'],
+                        'text' => __trans('Review Settings'),
+                        'type' => 'primary',
+                    ]]
+                );
             }
         }
 
         $install = Path::join(PATH_ROOT, 'install');
-        if (!Environment::isDevelopment() && $this->filesystem->exists($install)) {
-            $msgs['danger'][] = [
-                'text' => sprintf('Install module "%s" still exists. Please remove it for security reasons.', $install),
-            ];
+        if ($this->filesystem->exists($install)) {
+            $messages[] = $this->createAdminAlert(
+                'danger',
+                __trans('Installer (":path") still exists. Please remove it for security reasons.', [':path' => $install])
+            );
         }
 
         if (!extension_loaded('openssl')) {
-            $msgs['warning'][] = [
-                'text' => sprintf('FOSSBilling requires %s extension to be enabled on this server for security reasons.', 'php openssl'),
-            ];
+            $messages[] = $this->createAdminAlert(
+                'warning',
+                __trans('FOSSBilling requires :extension extension to be enabled on this server for security reasons.', [':extension' => 'php openssl'])
+            );
         }
 
-        return $msgs[$type] ?? [];
+        if ($type === null || $type === '') {
+            return $messages;
+        }
+
+        return array_values(array_filter(
+            $messages,
+            static fn (array $message): bool => ($message['type'] ?? null) === $type
+        ));
     }
 
     /**
@@ -397,10 +488,7 @@ class Service
             return $this->di['central_alerts']->filterAlerts();
         } catch (\FOSSBilling\Exception $e) {
             return [
-                [
-                    'type' => 'warning',
-                    'message' => "Warning: {$e->getMessage()}",
-                ],
+                $this->createAdminAlert('warning', $e->getMessage()),
             ];
         }
     }
@@ -423,61 +511,53 @@ class Service
         return false;
     }
 
-    public function renderString($tpl, $try_render, $vars)
+    public function renderAdapterTplString(string $tpl, array $vars): string
     {
-        $twig = $this->di['twig'];
-        // add client api if _client_id is set
-        if (isset($vars['_client_id'])) {
-            $identity = $this->di['db']->load('Client', $vars['_client_id']);
-            if ($identity instanceof \Model_Client) {
-                try {
-                    $twig->addGlobal('client', $this->di['api_client']);
-                } catch (\Exception $e) {
-                    error_log("api_client could not be added to template: {$e->getMessage()}.");
-                }
-            }
-        } else {
-            // attempt adding admin api to twig
-            try {
-                if ($this->di['auth']->isAdminLoggedIn()) {
-                    $twig->addGlobal('admin', $this->di['api_admin']);
-                }
-            } catch (\Exception) {
-                // skip if admin is not logged in
-            }
-        }
-        if (is_null($tpl)) {
-            return $this->createTemplateFromString('No template was provided, please contact the site administrator', $try_render, $vars);
-        }
+        $twigFactory = $this->di['twig_factory'];
+        $twig = $twigFactory->createAdapterEnvironment();
 
-        try {
-            $template = $twig->load($tpl);
-            $parsed = $template->render($vars);
-        } catch (\Exception) {
-            // $twig->load throws error when $tpl is string
-            $parsed = $this->createTemplateFromString($tpl, $try_render, $vars);
-        }
+        $rendered = SandboxedStringRenderer::render(
+            $twig,
+            $tpl,
+            $vars,
+            'Payment adapter template',
+            function (\Twig\Sandbox\SecurityError $e): void {
+                $this->di['logger']->setChannel('security')->warning('Payment adapter template sandbox violation', [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        );
 
-        return $parsed;
+        return BrowserHtmlSanitizer::sanitizeAdapterHtml($rendered);
     }
 
-    public function createTemplateFromString($tpl, $try_render, $vars)
+    /**
+     * Render a template string using the sandboxed email Twig environment.
+     * Use this for database-stored templates (email templates, mass mailer).
+     *
+     * @param string $tpl  The template string to render
+     * @param array  $vars Variables to pass to the template
+     *
+     * @return string The rendered template
+     *
+     * @throws \FOSSBilling\InformationException If template violates sandbox policy or has syntax errors
+     */
+    public function renderEmailTplString(string $tpl, array $vars): string
     {
-        try {
-            $twig = $this->di['twig'];
-            $template = $twig->createTemplate($tpl);
+        $twigFactory = $this->di['twig_factory'];
+        $twig = $twigFactory->createEmailEnvironment();
 
-            return $template->render($vars);
-        } catch (\Exception $e) {
-            if (!$try_render) {
-                $errorMsg = 'Template rendering failed: ' . $e->getMessage();
-
-                throw new \FOSSBilling\InformationException($errorMsg, null, $e->getCode());
+        return SandboxedStringRenderer::render(
+            $twig,
+            $tpl,
+            $vars,
+            'Email template',
+            function (\Twig\Sandbox\SecurityError $e): void {
+                $this->di['logger']->setChannel('security')->warning('Email template sandbox violation', [
+                    'error' => $e->getMessage(),
+                ]);
             }
-
-            // Return the original template string instead
-            return $tpl;
-        }
+        );
     }
 
     public function clearCache(?string $cachePath = null): bool
@@ -489,11 +569,11 @@ class Service
         return true;
     }
 
-    public function getEnv($ip = null)
+    public function getEnv(bool $fetchExternalIp = false)
     {
-        if ($ip) {
+        if ($fetchExternalIp) {
             try {
-                return \FOSSBilling\Tools::getExternalIP();
+                return Tools::getExternalIP();
             } catch (\Exception) {
                 return '';
             }
@@ -508,27 +588,22 @@ class Service
 
     public function getCurrentUrl(): string
     {
-        $pageScheme = $_SERVER['HTTPS'] ? 'https' : 'http';
-        $pageURL = $pageScheme . '://';
+        $request = $this->di['request'];
 
-        $serverPort = $_SERVER['SERVER_PORT'] ?? null;
-        if (isset($serverPort) && $serverPort != '80' && $serverPort != '443') {
-            $pageURL .= $_SERVER['SERVER_NAME'] ?? null . ':' . $serverPort;
-        } else {
-            $pageURL .= $_SERVER['SERVER_NAME'] ?? null;
-        }
-
-        $this_page = $_SERVER['REQUEST_URI'] ?? '';
-        if (str_contains((string) $this_page, '?')) {
-            $a = explode('?', (string) $this_page);
-            $this_page = reset($a);
-        }
-
-        return $pageURL . $this_page;
+        return $request->getSchemeAndHttpHost() . strtok($request->getRequestUri(), '?');
     }
 
     public function getPeriod($code)
     {
+        if (!is_scalar($code)) {
+            return '-';
+        }
+
+        $code = (string) $code;
+        if ($code === null || $code === '' || $code === 0 || $code === '0') {
+            return '-';
+        }
+
         $p = \Box_Period::getPredefined();
         if (isset($p[$code])) {
             return $p[$code];
@@ -557,444 +632,11 @@ class Service
         return $result;
     }
 
-    public function getLocales(): array
-    {
-        return [
-            'aa' => 'Afar',
-            'ab' => 'Abkhazian',
-            'af' => 'Afrikaans',
-            'af_ZA' => 'Afrikaans (South Africa)',
-            'am' => 'Amharic',
-            'am_ET' => 'Amharic (Ethiopia)',
-            'ar' => 'Arabic',
-            'ar_AA' => 'Arabic (Unitag)',
-            'ar_SA' => 'Arabic (Saudi Arabia)',
-            'as' => 'Assamese',
-            'as_IN' => 'Assamese (India)',
-            'ay' => 'Aymara',
-            'az' => 'Azerbaijani',
-            'az_AZ' => 'Azerbaijani (Azerbaijan)',
-            'ba' => 'Bashkir',
-            'be' => 'Belarusian',
-            'be_BY' => 'Belarusian (Belarus)',
-            'bg' => 'Bulgarian',
-            'bg_BG' => 'Bulgarian (Bulgaria)',
-            'bh' => 'Bihari',
-            'bi' => 'Bislama',
-            'bn' => 'Bengali',
-            'bn_BD' => 'Bengali (Bangladesh)',
-            'bn_ID' => 'Bengali (India)',
-            'bo' => 'Tibetan',
-            'bo_CN' => 'Tibetan (China)',
-            'br' => 'Breton',
-            'bs' => 'Bosnian',
-            'bs_BA' => 'Bosnian (Bosnia and Herzegovina)',
-            'ca' => 'Catalan',
-            'ca_ES' => 'Catalan (Spain)',
-            'co' => 'Corsican',
-            'cr' => 'Cree',
-            'cs' => 'Czech',
-            'cs_CZ' => 'Czech (Czech Republic)',
-            'cy' => 'Welsh',
-            'cy_GB' => 'Welsh (United Kingdom)',
-            'da' => 'Danish',
-            'da_DK' => 'Danish (Denmark)',
-            'de' => 'German',
-            'de_AT' => 'German (Austria)',
-            'de_CH' => 'German (Switzerland)',
-            'de_DE' => 'German (Germany)',
-            'dz' => 'Dzongkha',
-            'dz_BT' => 'Dzongkha (Bhutan)',
-            'el' => 'Greek',
-            'el_GR' => 'Greek (Greece)',
-            'en' => 'English',
-            'en_AU' => 'English (Australia)',
-            'en_CA' => 'English (Canada)',
-            'en_GB' => 'English (United Kingdom)',
-            'en_IE' => 'English (Ireland)',
-            'en_US' => 'English (United States)',
-            'en_ZA' => 'English (South Africa)',
-            'eo' => 'Esperanto',
-            'es' => 'Spanish',
-            'es_AR' => 'Spanish (Argentina)',
-            'es_BO' => 'Spanish (Bolivia)',
-            'es_CL' => 'Spanish (Chile)',
-            'es_CO' => 'Spanish (Colombia)',
-            'es_CR' => 'Spanish (Costa Rica)',
-            'es_DO' => 'Spanish (Dominican Republic)',
-            'es_EC' => 'Spanish (Ecuador)',
-            'es_ES' => 'Spanish (Spain)',
-            'es_MX' => 'Spanish (Mexico)',
-            'es_NI' => 'Spanish (Nicaragua)',
-            'es_PA' => 'Spanish (Panama)',
-            'es_PE' => 'Spanish (Peru)',
-            'es_PR' => 'Spanish (Puerto Rico)',
-            'es_PY' => 'Spanish (Paraguay)',
-            'es_SV' => 'Spanish (El Salvador)',
-            'es_UY' => 'Spanish (Uruguay)',
-            'es_VE' => 'Spanish (Venezuela)',
-            'et' => 'Estonian',
-            'et_EE' => 'Estonian (Estonia)',
-            'eu' => 'Basque',
-            'eu_ES' => 'Basque (Spain)',
-            'fa' => 'Persian',
-            'fa_IR' => 'Persian (Iran)',
-            'fi' => 'Finnish',
-            'fi_FI' => 'Finnish (Finland)',
-            'fj' => 'Fiji',
-            'fo' => 'Faroese',
-            'fo_FO' => 'Faroese (Faroe Islands)',
-            'fr' => 'French',
-            'fr_CA' => 'French (Canada)',
-            'fr_CH' => 'French (Switzerland)',
-            'fr_FR' => 'French (France)',
-            'fy' => 'Frisian',
-            'fy_NL' => 'Frisian (Netherlands)',
-            'ga' => 'Irish',
-            'ga_IE' => 'Irish (Ireland)',
-            'gd' => 'Scots Gaelic',
-            'gl' => 'Galician',
-            'gl_ES' => 'Galician (Spain)',
-            'gn' => 'Guarani',
-            'gu' => 'Gujarati',
-            'gu_IN' => 'Gujarati (India)',
-            'ha' => 'Hausa',
-            'he' => 'Hebrew',
-            'he_IL' => 'Hebrew (Israel)',
-            'hi' => 'Hindi',
-            'hi_IN' => 'Hindi (India)',
-            'hr' => 'Croatian',
-            'hr_HR' => 'Croatian (Croatia)',
-            'hu' => 'Hungarian',
-            'hu_HU' => 'Hungarian (Hungary)',
-            'hy' => 'Armenian',
-            'hy_AM' => 'Armenian (Armenia)',
-            'ia' => 'Interlingua',
-            'id' => 'Indonesian',
-            'id_ID' => 'Indonesian (Indonesia)',
-            'ie' => 'Interlingue',
-            'ik' => 'Inupiak',
-            'is' => 'Icelandic',
-            'is_IS' => 'Icelandic (Iceland)',
-            'it' => 'Italian',
-            'it_CH' => 'Italian (Switzerland)',
-            'it_IT' => 'Italian (Italy)',
-            'iu' => 'Inuktitut (Eskimo)',
-            'ja' => 'Japanese',
-            'ja_JP' => 'Japanese (Japan)',
-            'jv' => 'Javanese',
-            'ka' => 'Georgian',
-            'ka_GE' => 'Georgian (Georgia)',
-            'kk' => 'Kazakh',
-            'kk_KZ' => 'Kazakh (Kazakhstan)',
-            'kl' => 'Greenlandic',
-            'km' => 'Cambodian',
-            'kn' => 'Kannada',
-            'kn_IN' => 'Kannada (India)',
-            'ko' => 'Korean',
-            'ko_KR' => 'Korean (Korea)',
-            'ks' => 'Kashmiri',
-            'ks_IN' => 'Kashmiri (India)',
-            'ku' => 'Kurdish',
-            'ku_IQ' => 'Kurdish (Iraq)',
-            'ky' => 'Kirghiz',
-            'la' => 'Latin',
-            'ln' => 'Lingala',
-            'lo' => 'Lao',
-            'lo_LA' => 'Lao (Laos)',
-            'lt' => 'Lithuanian',
-            'lt_LT' => 'Lithuanian (Lithuania)',
-            'lv' => 'Latvian',
-            'lv_LV' => 'Latvian (Latvia)',
-            'mg' => 'Malagasy',
-            'mi' => 'Maori',
-            'mk' => 'Macedonian',
-            'mk_MK' => 'Macedonian (Macedonia)',
-            'ml' => 'Malayalam',
-            'ml_IN' => 'Malayalam (India)',
-            'mn' => 'Mongolian',
-            'mn_MN' => 'Mongolian (Mongolia)',
-            'mo' => 'Moldavian',
-            'mr' => 'Marathi',
-            'mr_IN' => 'Marathi (India)',
-            'ms' => 'Malay',
-            'ms_MY' => 'Malay (Malaysia)',
-            'mt' => 'Maltese',
-            'mt_MT' => 'Maltese (Malta)',
-            'my' => 'Burmese',
-            'my_MM' => 'Burmese (Myanmar)',
-            'na' => 'Nauru',
-            'ne' => 'Nepali',
-            'ne_NP' => 'Nepali (Nepal)',
-            'nl' => 'Dutch',
-            'nl_BE' => 'Dutch (Belgium)',
-            'nl_NL' => 'Dutch (Netherlands)',
-            'no' => 'Norwegian',
-            'no_NO' => 'Norwegian (Norway)',
-            'oc' => 'Occitan',
-            'or' => 'Oriya',
-            'or_IN' => 'Oriya (India)',
-            'pa' => 'Punjabi',
-            'pa_IN' => 'Punjabi (India)',
-            'pl' => 'Polish',
-            'pl_PL' => 'Polish (Poland)',
-            'ps' => 'Pashto, Pushto',
-            'pt' => 'Portuguese',
-            'pt_BR' => 'Portuguese (Brazil)',
-            'pt_PT' => 'Portuguese (Portugal)',
-            'qu' => 'Quechua',
-            'rm' => 'Romansh',
-            'rn' => 'Kirundi',
-            'ro' => 'Romanian',
-            'ro_RO' => 'Romanian (Romania)',
-            'ru' => 'Russian',
-            'ru_RU' => 'Russian (Russia)',
-            'rw' => 'Kinyarwanda',
-            'sa' => 'Sanskrit',
-            'sd' => 'Sindhi',
-            'sg' => 'Sango',
-            'sh' => 'Serbo-Croatian',
-            'si' => 'Sinhala',
-            'si_LK' => 'Sinhala (Sri Lanka)',
-            'sk' => 'Slovak',
-            'sk_SK' => 'Slovak (Slovakia)',
-            'sl' => 'Slovenian',
-            'sl_SI' => 'Slovenian (Slovenia)',
-            'sm' => 'Samoan',
-            'sn' => 'Shona',
-            'so' => 'Somali',
-            'sq' => 'Albanian',
-            'sq_AL' => 'Albanian (Albania)',
-            'sr' => 'Serbian',
-            'sr_RS' => 'Serbian (Serbia)',
-            'ss' => 'Siswati',
-            'st' => 'Sotho',
-            'st_ZA' => 'Sotho (South Africa)',
-            'su' => 'Sudanese',
-            'sv' => 'Swedish',
-            'sv_FI' => 'Swedish (Finland)',
-            'sv_SE' => 'Swedish (Sweden)',
-            'sw' => 'Swahili',
-            'sw_KE' => 'Swahili (Kenya)',
-            'ta' => 'Tamil',
-            'ta_IN' => 'Tamil (India)',
-            'ta_LK' => 'Tamil (Sri Lanka)',
-            'te' => 'Telugu',
-            'te_IN' => 'Telugu (India)',
-            'tg' => 'Tajik',
-            'tg_TJ' => 'Tajik (Tajikistan)',
-            'th' => 'Thai',
-            'th_TH' => 'Thai (Thailand)',
-            'ti' => 'Tigrinya',
-            'tk' => 'Turkmen',
-            'tl' => 'Tagalog',
-            'tl_PH' => 'Tagalog (Philippines)',
-            'tn' => 'Setswana',
-            'to' => 'Tonga',
-            'tr' => 'Turkish',
-            'tr_TR' => 'Turkish (Turkey)',
-            'ts' => 'Tsonga',
-            'tt' => 'Tatar',
-            'tw' => 'Twi',
-            'ug' => 'Uigur',
-            'uk' => 'Ukrainian',
-            'uk_UA' => 'Ukrainian (Ukraine)',
-            'ur' => 'Urdu',
-            'ur_PK' => 'Urdu (Pakistan)',
-            'uz' => 'Uzbek',
-            'vi' => 'Vietnamese',
-            'vi_VN' => 'Vietnamese (Vietnam)',
-            'vo' => 'Volapuk',
-            'wo' => 'Wolof',
-            'wo_SN' => 'Wolof (Senegal)',
-            'xh' => 'Xhosa',
-            'yi' => 'Yiddish',
-            'yo' => 'Yoruba',
-            'za' => 'Zhuang',
-            'zh' => 'Chinese',
-            'zh_CN' => 'Chinese (China)',
-            'zh_HK' => 'Chinese (Hong Kong)',
-            'zh_TW' => 'Chinese (Taiwan)',
-            'zu' => 'Zulu',
-            'zu_ZA' => 'Zulu (South Africa)',
-        ];
-    }
-
-    /**
-     * Returns a full list of ISO3166-1 Alpha2 country codes & their titles.
-     *
-     * @param bool $translatedTitle set to true to have the title displayed in one of the countries native languages
-     *
-     * @return string[]
-     */
-    public function getCountries(bool $translatedTitle = false): array
-    {
-        $countries = [];
-        foreach (CountryAlpha2::cases() as $country) {
-            if ($translatedTitle) {
-                $language = $country->getOfficialAndDeFactoLanguages()[0];
-            } else {
-                $language = LanguageAlpha2::English;
-            }
-            $countries[$country->value] = $country->getNameInLanguage($language);
-        }
-
-        $mod = $this->di['mod']('system');
-        $config = $mod->getConfig();
-        if (isset($config['countries'])) {
-            preg_match_all('#([A-Z]{2})=(.+)#', $config['countries'], $matches);
-            if (!empty($matches[1]) && !empty($matches[2]) && count($matches[1]) == count($matches[2])) {
-                $countries = array_combine($matches[1], $matches[2]);
-            }
-        }
-
-        return $countries;
-    }
-
-    /**
-     * @return mixed[]
-     */
-    public function getEuCountries(): array
-    {
-        $list = [
-            'AT',
-            'BE',
-            'BG',
-            'HR',
-            'CY',
-            'CZ',
-            'DE',
-            'DK',
-            'EE',
-            'ES',
-            'FI',
-            'FR',
-            'GR',
-            'HU',
-            'IE',
-            'IT',
-            'LT',
-            'LU',
-            'LV',
-            'MT',
-            'NL',
-            'PL',
-            'PT',
-            'RO',
-            'SE',
-            'SI',
-            'SK',
-        ];
-        $c = $this->getCountries();
-        $res = [];
-        foreach ($list as $code) {
-            if (!isset($c[$code])) {
-                continue;
-            }
-            $res[$code] = $c[$code];
-        }
-
-        return $res;
-    }
-
-    public function getStates(): array
-    {
-        return [
-            'AK' => 'Alaska',
-            'AL' => 'Alabama',
-            'AR' => 'Arkansas',
-            'AZ' => 'Arizona',
-            'CA' => 'California',
-            'CO' => 'Colorado',
-            'CT' => 'Connecticut',
-            'DE' => 'Delaware',
-            'FL' => 'Florida',
-            'GA' => 'Georgia',
-            'HI' => 'Hawaii',
-            'IA' => 'Iowa',
-            'ID' => 'Idaho',
-            'IL' => 'Illinois',
-            'IN' => 'Indiana',
-            'KS' => 'Kansas',
-            'KY' => 'Kentucky',
-            'LA' => 'Louisiana',
-            'MA' => 'Massachusetts',
-            'MD' => 'Maryland',
-            'ME' => 'Maine',
-            'MI' => 'Michigan',
-            'MN' => 'Minnesota',
-            'MO' => 'Missouri',
-            'MS' => 'Mississippi',
-            'MT' => 'Montana',
-            'NC' => 'North Carolina',
-            'ND' => 'North Dakota',
-            'NE' => 'Nebraska',
-            'NH' => 'New Hampshire',
-            'NJ' => 'New Jersey',
-            'NM' => 'New Mexico',
-            'NV' => 'Nevada',
-            'NY' => 'New York',
-            'OH' => 'Ohio',
-            'OK' => 'Oklahoma',
-            'OR' => 'Oregon',
-            'PA' => 'Pennsylvania',
-            'RI' => 'Rhode Island',
-            'SC' => 'South Carolina',
-            'SD' => 'South Dakota',
-            'TN' => 'Tennessee',
-            'TX' => 'Texas',
-            'UT' => 'Utah',
-            'VA' => 'Virginia',
-            'VT' => 'Vermont',
-            'WA' => 'Washington',
-            'WI' => 'Wisconsin',
-            'WV' => 'West Virginia',
-            'WY' => 'Wyoming',
-        ];
-    }
-
-    public function getPhoneCodes(array $data)
-    {
-        // If we are looking for a specific country phone code, return it if found or else generate an error
-        try {
-            if (isset($data['country'])) {
-                $country = CountryAlpha2::from($data['country']);
-
-                return CountryCallingCode::forCountry($country)[0]->value;
-            }
-        } catch (\ValueError) {
-            throw new \FOSSBilling\InformationException('Country :code phone code is not registered', [':code' => $data['country']]);
-        }
-
-        $codes = [];
-        foreach (CountryCallingCode::cases() as $code) {
-            $country = $code->getCountriesAlpha2()[0] ?? null;
-            if ($country === null) {
-                continue;
-            }
-            $codes[$code->value] = $country->getNameInLanguage(LanguageAlpha2::English);
-        }
-
-        return $codes;
-    }
-
-    /**
-     * Call this method in API to check limits for entries.
-     */
-    public function checkLimits($model, $limit = 2)
-    {
-    }
-
     public function getNameservers()
     {
         $query = "SELECT param, value FROM setting WHERE param IN ('nameserver_1', 'nameserver_2', 'nameserver_3', 'nameserver_4')";
 
         return $this->di['db']->getAssoc($query);
-    }
-
-    public function getVersion(): string
-    {
-        return Version::VERSION;
     }
 
     public function getPendingMessages()
@@ -1059,18 +701,21 @@ class Service
             'company_number',
             'company_vat_number',
             'company_account_number',
-            'hide_version_public',
+            'company_bank_name',
+            'company_bic',
+            'company_display_bank_info',
+            'company_bank_info_pagebottom',
             'hide_company_public',
             'company_signature',
         ];
-        $comaony_legal = ['company_tos', 'company_privacy_policy', 'company_note'];
+        $company_legal = ['company_tos', 'company_privacy_policy', 'company_note'];
 
         $staff_service = $this->di['mod_service']('Staff');
         if (in_array($param, $company) && !$staff_service->hasPermission(null, 'system', 'manage_company_details')) {
             return false;
         }
 
-        if (in_array($param, $comaony_legal) && !$staff_service->hasPermission(null, 'system', 'manage_company_legal')) {
+        if (in_array($param, $company_legal) && !$staff_service->hasPermission(null, 'system', 'manage_company_legal')) {
             return false;
         }
 

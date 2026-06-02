@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -31,6 +32,6 @@ class Guest extends \Api_Abstract
     {
         $service = $this->getService();
 
-        return $service->getForm($data['id']);
+        return $service->getForm((int) $data['id']);
     }
 }

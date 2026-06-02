@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -72,7 +73,10 @@ class Theme
         }
 
         $dom = new \DOMDocument();
-        $dom->loadHTML($str);
+        $previousLibxmlErrorsSetting = libxml_use_internal_errors(true);
+        $dom->loadHTML('<?xml encoding="utf-8" ?><html><body>' . $str . '</body></html>');
+        libxml_clear_errors();
+        libxml_use_internal_errors($previousLibxmlErrorsSetting);
         $xpath = new \DOMXPath($dom);
         $nodes = $xpath->query("//input[@type='file']/@name");
         $files = [];

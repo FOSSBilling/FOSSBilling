@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -678,8 +679,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         $client = $this->getHttpClient()->withOptions([
             'timeout' => 60,
-            'verify_peer' => false,
-            'verify_host' => false,
         ]);
 
         $callUrl = $this->_getApiUrl() . $url . '.' . $type;
@@ -696,7 +695,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $this->getLog()->info('API RESULT: ' . $result->getContent(false));
         } catch (HttpExceptionInterface $error) {
             $e = new Registrar_Exception("HttpClientException: {$error->getMessage()}.");
-            $this->getLog()->err($e->getMessage());
+            $this->getLog()->error($e->getMessage());
 
             throw $e;
         }

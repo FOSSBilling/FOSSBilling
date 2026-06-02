@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
@@ -29,6 +30,22 @@ class Service implements InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View widgets'),
+                'description' => __trans('Allows the staff member to view widgets.'),
+            ],
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage widgets'),
+                'description' => __trans('Allows the staff member to rebuild the widget cache.'),
+            ],
+        ];
     }
 
     /**
@@ -79,7 +96,7 @@ class Service implements InjectionAwareInterface
                 }
             } catch (\Throwable $e) {
                 // Log the error but continue with other modules
-                $this->di['logger']->err("Error loading widgets from module '{$modName}': " . $e->getMessage());
+                $this->di['logger']->error("Error loading widgets from module '{$modName}': " . $e->getMessage());
             }
         }
 

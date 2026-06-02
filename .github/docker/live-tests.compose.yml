@@ -1,0 +1,24 @@
+services:
+  db:
+    image: mariadb:lts
+    environment:
+      MARIADB_DATABASE: ${FOSSBILLING_DB_NAME:-fossbilling}
+      MARIADB_ROOT_PASSWORD: ${FOSSBILLING_DB_PASS:-root}
+    healthcheck:
+      test: ["CMD-SHELL", "mariadb-admin ping --host=127.0.0.1 --user=root --password=\"$${MARIADB_ROOT_PASSWORD}\" --silent"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
+  app:
+    image: ${FOSSBILLING_TEST_IMAGE:?FOSSBILLING_TEST_IMAGE is required}
+    environment:
+      APP_ENV: test
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      default:
+        aliases:
+          - fossbilling-app

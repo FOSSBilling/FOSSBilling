@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -11,6 +12,8 @@
 
 namespace Box\Mod\Custompages;
 
+use FOSSBilling\PaginationOptions;
+
 class Service
 {
     protected ?\Pimple\Container $di = null;
@@ -18,6 +21,22 @@ class Service
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+    }
+
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View custom pages'),
+                'description' => __trans('Allows the staff member to view custom pages.'),
+            ],
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage custom pages'),
+                'description' => __trans('Allows the staff member to create, update, and delete custom pages.'),
+            ],
+        ];
     }
 
     public function install(): bool
@@ -38,17 +57,31 @@ class Service
         return true;
     }
 
-    public function searchPages($search = null, $per_page = 100, $page = null)
+    public function searchPages(array $data = [])
     {
         $filter = [];
+        $search = $data['search'] ?? null;
+        $id = $data['id'] ?? null;
+        $slug = $data['slug'] ?? null;
+
         $sql = 'SELECT * FROM custom_pages WHERE 1';
+        if ($id !== null && $id !== '') {
+            $sql .= ' AND id = :id';
+            $filter[':id'] = (int) $id;
+        }
+
+        if ($slug !== null && $slug !== '') {
+            $sql .= ' AND slug LIKE :slug';
+            $filter[':slug'] = '%' . $slug . '%';
+        }
+
         if ($search) {
-            $sql .= ' AND (title LIKE :q OR content LIKE :q)';
+            $sql .= ' AND (title LIKE :q OR slug LIKE :q OR description LIKE :q OR keywords LIKE :q OR content LIKE :q)';
             $filter[':q'] = "%$search%";
         }
         $sql .= ' ORDER BY id DESC';
 
-        return $this->di['pager']->getPaginatedResultSet($sql, $filter, $per_page, $page);
+        return $this->di['pager']->getPaginatedResultSet($sql, $filter, PaginationOptions::fromArray($data));
     }
 
     public function deletePage($id): void
@@ -110,7 +143,7 @@ class Service
             [$slug, $id]
         )->fetchOne();
         if ($exists) {
-            exit(json_encode(['result' => null, 'error' => ['message' => 'You need to set unique slug.', 'code' => 9999]]));
+            throw new \FOSSBilling\Exception('You need to set unique slug.', null, 9999);
         }
         $this->di['dbal']->executeStatement(
             'UPDATE custom_pages SET title = ?, description = ?, keywords = ?, content = ?, slug = ? WHERE id = ?',

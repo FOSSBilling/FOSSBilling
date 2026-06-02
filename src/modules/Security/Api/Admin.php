@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -11,21 +12,22 @@
 
 namespace Box\Mod\Security\Api;
 
-use FOSSBilling\InformationException;
+use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \Api_Abstract
 {
+    #[RequiredParams(['ip' => 'You must specify an IP address to lookup.'])]
     public function ip_lookup(array $data): array
     {
-        if (!isset($data['ip'])) {
-            throw new InformationException('You must specify an IP address to lookup.');
-        }
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'view');
 
         return $this->getService()->lookupIP($data['ip']);
     }
 
     public function list_checks(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'view');
+
         $result = [];
         $checkInterfaces = $this->getService()->getAllChecks();
         foreach ($checkInterfaces as $id => $interface) {
@@ -39,17 +41,18 @@ class Admin extends \Api_Abstract
         return $result;
     }
 
+    #[RequiredParams(['id' => 'You must specify a check ID to run.'])]
     public function run_check(array $data): array
     {
-        if (!isset($data['id'])) {
-            throw new InformationException('You must specify a check ID to run.');
-        }
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'run_checks');
 
         return $this->getService()->runCheck($data['id']);
     }
 
     public function run_checks(array $data): array
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'run_checks');
+
         return $this->getService()->runAllChecks();
     }
 }

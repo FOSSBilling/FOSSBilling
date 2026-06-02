@@ -2,7 +2,7 @@
   "id": "cron",
   "type": "mod",
   "name": "Scheduled Tasks",
-  "description": "FOSSBilling core module",
+  "description": "Configures scheduled task execution and automation used for recurring system maintenance.",
   "icon_url": "icon.svg",
   "version": "1.0.0"
 }

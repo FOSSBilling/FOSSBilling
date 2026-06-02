@@ -1,0 +1,103 @@
+<?php
+
+declare(strict_types=1);
+/**
+ * Copyright 2022-2025 FOSSBilling
+ * SPDX-License-Identifier: Apache-2.0.
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ */
+
+namespace Box\Mod\System\Commands;
+
+use FOSSBilling\Environment;
+use FOSSBilling\UpdatePatcher;
+use FOSSBilling\Version;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Filesystem\Exception\IOException;
+
+#[AsCommand(
+    name: 'system:run-patcher',
+    description: 'Runs update patches and config migrations',
+    hidden: false
+)]
+class RunPatcher extends Command implements \FOSSBilling\InjectionAwareInterface
+{
+    private const string CACHE_VERSION_KEY = 'version';
+    private const string CACHE_LATEST_PATCH_LEVEL_KEY = 'latest_patch_level';
+
+    protected $di;
+
+    public function setDi($di): void
+    {
+        $this->di = $di;
+    }
+
+    public function getDi(): ?\Pimple\Container
+    {
+        return $this->di;
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        if (!Environment::isCLI()) {
+            $output->writeln('<error>This command can only be run from the CLI.</error>');
+
+            return Command::FAILURE;
+        }
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($this->di);
+        $finalization = $this->di['update_finalization'];
+        $finalizationRequired = $finalization->isRequired();
+
+        $version = Version::VERSION;
+        $latestPatchLevel = $patcher->latestPatchLevel();
+        $cacheItem = $this->di['cache']->getItem('updatePatcher');
+        if (!$finalizationRequired && $cacheItem->isHit()) {
+            $cachedState = $cacheItem->get();
+            if (
+                is_array($cachedState)
+                && ($cachedState[self::CACHE_VERSION_KEY] ?? null) === $version
+                && ($cachedState[self::CACHE_LATEST_PATCH_LEVEL_KEY] ?? null) === $latestPatchLevel
+            ) {
+                $output->writeln('<info>The update patcher has already been run for this version.</info>');
+
+                return Command::SUCCESS;
+            }
+        }
+
+        try {
+            if ($finalizationRequired) {
+                $output->writeln('Finalizing pending update...');
+                $finalization->finalizeAndComplete();
+            } else {
+                $output->writeln('Applying patches and clearing runtime cache...');
+                $finalization->finalizeUpdate();
+                $finalization->writeCompleteState();
+            }
+
+            $cacheItem->set([
+                self::CACHE_VERSION_KEY => $version,
+                self::CACHE_LATEST_PATCH_LEVEL_KEY => $latestPatchLevel,
+            ]);
+            $this->di['cache']->save($cacheItem);
+
+            $output->writeln('<info>All patches have been applied and the cache has been cleared.</info>');
+
+            return Command::SUCCESS;
+        } catch (IOException $e) {
+            $output->writeln("<error>Unable to clear the runtime cache: {$e->getMessage()}</error>");
+
+            return Command::FAILURE;
+        } catch (\Exception $e) {
+            $output->writeln("<error>An error occurred while applying patches: {$e->getMessage()}</error>");
+
+            return Command::FAILURE;
+        }
+    }
+}

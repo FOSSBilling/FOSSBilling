@@ -1,0 +1,39 @@
+{% extends "layout_default.html.twig" %}
+
+{% set company = guest.system_company %}
+
+{% block meta_title %}{{ 'Privacy Policy'|trans }}{% endblock %}
+{% block meta_description %}{{ 'Learn how %company% collects, uses, and protects personal information.'|trans({'%company%': company.name}) }}{% endblock %}
+
+{% block body_class %}privacy-policy{% endblock %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item active" aria-current="page">{{ 'Privacy'|trans }}</li>
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            {% if company is defined and company %}
+                                <h1 class="mb-1">{{ company.name }} {{ 'Privacy Policy'|trans }}</h1>
+                                <span class="small text-muted">
+                                    {{ company.signature }}
+                                </span>
+                            {% else %}
+                                <h1 class="mb-1">{{ 'Privacy Policy'|trans }}</h1>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if company is defined and company %}
+                        {{ (company.privacy_policy ?? '')|markdown_to_html }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,11 +1,14 @@
 .vscode
 ._*
 .DS_Store
+.opencode
 /cache
 /src/config.php
 /src/data/log/*
 /src/data/cache/*
+/src/data/update-finalization.json
 !/src/data/cache/.gitkeep
+/src/public/assets
 /src/vendor/*
 build
 
@@ -22,3 +25,8 @@ node_modules
 src/install/php_error.log
 src/themes/huraga/config/settings_data.json
 output.log
+
+### Cypress ###
+tests/e2e/cypress/downloads
+tests/e2e/cypress/screenshots
+tests/e2e/cypress/videos

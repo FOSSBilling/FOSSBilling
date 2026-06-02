@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -31,7 +32,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             'subpages' => [
                 [
                     'location' => 'extensions',
-                    'label' => __trans('Embed and integrate'),
+                    'label' => __trans('Embed and Integrate'),
                     'index' => 1500,
                     'uri' => $this->di['url']->adminLink('embed'),
                     'class' => '',

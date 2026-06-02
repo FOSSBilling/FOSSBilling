@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -15,6 +16,7 @@
 
 namespace Box\Mod\Support\Api;
 
+use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Guest extends \Api_Abstract
@@ -32,7 +34,9 @@ class Guest extends \Api_Abstract
     ])]
     public function ticket_create(array $data): string
     {
-        if (strlen((string) $data['message']) < 4) {
+        $this->di['rate_limiter']->consumeOrThrow('guest_ticket_create', (string) $this->getIp());
+
+        if (!is_string($data['message']) || strlen($data['message']) < 4) {
             throw new \FOSSBilling\InformationException('Please enter your message');
         }
 
@@ -76,10 +80,22 @@ class Guest extends \Api_Abstract
     {
         $publicTicket = $this->getService()->publicFindOneByHash($data['hash']);
 
+        if (!is_string($data['message'])) {
+            throw new \FOSSBilling\InformationException('Message cannot be empty');
+        }
+
         // Sanitize message to prevent XSS attacks
         $data['message'] = \FOSSBilling\Tools::sanitizeContent($data['message'], true);
 
         return $this->getService()->publicTicketReplyForGuest($publicTicket, $data['message']);
+    }
+
+    /**
+     * Get whether public tickets are enabled for guests.
+     */
+    public function public_tickets_enabled(): bool
+    {
+        return $this->getService()->publicTicketsEnabled();
     }
 
     /*
@@ -101,10 +117,8 @@ class Guest extends \Api_Abstract
     {
         $search = $data['search'] ?? null;
         $cat = $data['kb_article_category_id'] ?? null;
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $page = $data['page'] ?? null;
 
-        $pager = $this->getService()->kbSearchArticles('active', $search, $cat, $per_page, $page);
+        $pager = $this->getService()->kbSearchArticles('active', $search, $cat, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $article = $this->di['db']->getExistingModelById('SupportKbArticle', $item['id'], 'KB Article not found');
@@ -128,7 +142,7 @@ class Guest extends \Api_Abstract
 
         $model = false;
         if ($id) {
-            $model = $this->getService()->kbFindActiveArticleById($id);
+            $model = $this->getService()->kbFindActiveArticleById((int) $id);
         } else {
             $model = $this->getService()->kbFindActiveArticleBySlug($slug);
         }
@@ -149,8 +163,7 @@ class Guest extends \Api_Abstract
         $data['article_status'] = \Model_SupportKbArticle::ACTIVE;
         [$query, $bindings] = $this->getService()->kbCategoryGetSearchQuery($data);
 
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($query, $bindings, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($query, $bindings, PaginationOptions::fromArray($data));
 
         $q = $data['q'] ?? null;
 
@@ -184,7 +197,7 @@ class Guest extends \Api_Abstract
 
         $model = false;
         if ($id) {
-            $model = $this->getService()->kbFindCategoryById($id);
+            $model = $this->getService()->kbFindCategoryById((int) $id);
         } else {
             $model = $this->getService()->kbFindCategoryBySlug($slug);
         }

@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -23,6 +24,8 @@ class Client extends \Api_Abstract
      */
     public function checkout($data)
     {
+        $this->di['rate_limiter']->consumeOrThrow('order_generation_ip', (string) $this->getIp());
+
         $gateway_id = $data['gateway_id'] ?? null;
         $cart = $this->getService()->getSessionCart();
         $client = $this->getIdentity();

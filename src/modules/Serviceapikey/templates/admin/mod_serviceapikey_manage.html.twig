@@ -1,0 +1,181 @@
+{% set service = admin.order_service({ 'id': order.id }) %}
+
+<div class="card-body overflow-auto">
+    <div class="mb-3">
+        <h3 class="card-title mb-1">{{ 'Details'|trans }}</h3>
+        <p class="text-secondary mb-0">{{ 'Review the current key and adjust how this service generates replacement API keys.'|trans }}</p>
+    </div>
+    <table class="table card-table table-vcenter table-striped text-nowrap">
+        <tbody>
+            <tr>
+                <td class="text-end">{{ 'API Key'|trans }}:</td>
+                <td>{{ service.api_key }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="card-footer d-flex flex-wrap gap-2 justify-content-end">
+    {{ order_actions }}
+    <a class="btn btn-primary" href="{{ 'serviceapikey/reset'|api_url(query: { 'order_id': order.id }) }}"
+        {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+        <svg class="icon">
+            <use xlink:href="#refresh" />
+        </svg>
+        <span>{{ 'Reset API Key'|trans }}</span>
+    </a>
+</div>
+
+<div class="card-body">
+    <form method="post" action="{{ 'serviceapikey/update'|api_url }}" {{ fb_api_form({message: 'API Key Updated'|trans}) }}>
+        <div class="mb-5">
+            <div class="mb-3">
+                <h3 class="card-title mb-1">{{ 'API Key Configuration'|trans }}</h3>
+                <p class="text-secondary mb-0">{{ 'Changing the generation options will not automatically regenerate the current API key. Use the reset action if you want the live key replaced.'|trans }}</p>
+            </div>
+            <div class="row g-3">
+                <div class="col-lg-4">
+                    <label class="form-label">{{ 'Length'|trans }}</label>
+                    <input type="number" class="form-control" name="config[length]" value="{{ request.config.length|default(service.config.length) }}">
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-4" />
+
+        <div class="mb-5">
+            <div class="mb-3">
+                <h3 class="card-title mb-1">{{ 'Formatting'|trans }}</h3>
+                <p class="text-secondary mb-0">{{ 'Control whether the generated key uses dash separators and how each segment is cased.'|trans }}</p>
+            </div>
+            <div class="row g-3">
+                <div class="col-lg-4">
+                    <label class="form-label">{{ 'Split API Key with Dashes'|trans }}</label>
+                    <div class="d-flex flex-wrap gap-3 pt-1">
+                        <label class="form-check">
+                            <input class="form-check-input" type="radio" name="config[split]" id="split_yes" value="1"{% if request.config.split|default(service.config.split) == 1 %} checked{% endif %}>
+                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                        </label>
+                        <label class="form-check">
+                            <input class="form-check-input" type="radio" name="config[split]" id="split_no" value="0"{% if request.config.split|default(service.config.split) == 0 %} checked{% endif %}>
+                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <label class="form-label">{{ 'Split Interval'|trans }}</label>
+                    <input type="number" class="form-control" name="config[split_interval]" value="{{ request.config.split_interval|default(service.config.split_interval) }}">
+                </div>
+                <div class="col-lg-4">
+                    <label class="form-label">{{ 'API Key Capitalization'|trans }}</label>
+                    <select class="form-select" aria-label="API key capitalization options" name="config[case]">
+                        <option{% if request.config.case|default(service.config.case) == 'upper' %} selected{% endif %} value="upper">{{ 'Uppercase'|trans }}</option>
+                        <option{% if request.config.case|default(service.config.case) == 'lower' %} selected{% endif %} value="lower">{{ 'Lowercase'|trans }}</option>
+                        <option{% if request.config.case|default(service.config.case) == 'mixed' %} selected{% endif %} value="mixed">{{ 'Mixed'|trans }}</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-4" />
+
+        <div class="mb-4">
+            <div class="mb-3">
+                <h3 class="card-title mb-1">{{ 'Custom Parameters'|trans }}</h3>
+                <p class="text-secondary mb-0">{{ 'Define additional values your application can retrieve from the API for this key, such as plan-specific limits or feature flags.'|trans }}</p>
+            </div>
+
+            <div class="d-flex justify-content-start mb-3">
+                <button class="btn btn-outline-primary" type="button" onclick="addNewField()">{{ 'Add New Field'|trans }}</button>
+            </div>
+
+            <div class="row g-3" id="customParameters">
+                {% for key, value in service.config %}
+                    {% if key starts with 'custom_' %}
+                        <div class="field-container col-12" id="{{ key }}">
+                            <label class="form-label">{{ key }}</label>
+                            <div class="d-flex gap-2 align-items-start">
+                                <input type="text" class="form-control" value="{{ value }}" name="config[{{ key }}]">
+                                <button class="btn btn-outline-danger flex-shrink-0" type="button" onclick='deleteField("{{ key }}")'>{{ 'Delete'|trans }}</button>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <input type="hidden" name="order_id" value="{{ order.id }}">
+        <div class="d-flex justify-content-end">
+            <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    function buildCustomField(name, value) {
+        const fieldContainer = document.createElement('div');
+        fieldContainer.classList.add('field-container', 'col-12');
+        fieldContainer.setAttribute('id', name);
+
+        const label = document.createElement('label');
+        label.classList.add('form-label');
+        label.textContent = name;
+
+        const wrapper = document.createElement('div');
+        wrapper.classList.add('d-flex', 'gap-2', 'align-items-start');
+
+        const input = document.createElement('input');
+        input.setAttribute('type', 'text');
+        input.classList.add('form-control');
+        input.setAttribute('name', 'config[' + name + ']');
+        input.value = value || '';
+
+        const button = document.createElement('button');
+        button.classList.add('btn', 'btn-outline-danger', 'flex-shrink-0');
+        button.setAttribute('type', 'button');
+        button.textContent = {{ 'Delete'|trans|json_encode|raw }};
+        button.addEventListener('click', function() {
+            deleteField(name);
+        });
+
+        wrapper.appendChild(input);
+        wrapper.appendChild(button);
+        fieldContainer.appendChild(label);
+        fieldContainer.appendChild(wrapper);
+
+        return fieldContainer;
+    }
+
+    function addNewField() {
+        Modals.create({
+            type: 'prompt',
+            title: {{ 'New field'|trans|json_encode|raw }},
+            label: {{ 'Give the new field a name'|trans|json_encode|raw }},
+            value: 'monthlyLimit',
+            promptConfirmButton: {{ 'Create'|trans|json_encode|raw }},
+            promptConfirmCallback: function(name) {
+                name = 'custom_' + toCamelCase(name);
+                const container = document.getElementById('customParameters');
+                container.appendChild(buildCustomField(name, ''));
+            }
+        });
+    }
+
+    function deleteField(id) {
+        const element = document.getElementById(id);
+        if (element) {
+            element.remove();
+        }
+    }
+
+    function toCamelCase(str) {
+        str = str.replace(/[^a-zA-Z0-9]/g, ' ');
+        const words = str.split(' ').filter(Boolean);
+
+        for (let i = 1; i < words.length; i++) {
+            words[i] = words[i].charAt(0).toUpperCase() + words[i].slice(1);
+        }
+
+        return words.join('');
+    }
+</script>

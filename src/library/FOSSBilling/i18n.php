@@ -14,6 +14,7 @@ namespace FOSSBilling;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
+use Symfony\Component\Intl\Locales;
 
 class i18n
 {
@@ -32,9 +33,15 @@ class i18n
          * If the locale cookie is set and it's one of the enabled locales, use that.
          * Otherwise, fallback to auto-detection when enable.
          */
-        if (!empty($_COOKIE['BBLANG']) && in_array($_COOKIE['BBLANG'], self::getLocales())) {
+        if (!empty($_COOKIE['fb_locale']) && in_array($_COOKIE['fb_locale'], self::getLocales())) {
+            $locale = $_COOKIE['fb_locale'];
+        } elseif (!empty($_COOKIE['BBLANG']) && in_array($_COOKIE['BBLANG'], self::getLocales())) {
             $locale = $_COOKIE['BBLANG'];
-        } elseif ($autoDetect) {
+            if (!headers_sent()) {
+                setcookie('fb_locale', (string) $locale, ['expires' => strtotime('+1 month'), 'path' => '/']);
+                setcookie('BBLANG', '', ['expires' => time() - 3600, 'path' => '/']);
+            }
+        } elseif ($autoDetect && self::isBrowserLocaleDetectionEnabled()) {
             $locale = self::getBrowserLocale();
         }
 
@@ -44,6 +51,11 @@ class i18n
         }
 
         return $locale;
+    }
+
+    private static function isBrowserLocaleDetectionEnabled(): bool
+    {
+        return Tools::normalizeBoolean(Config::getProperty('i18n.auto_detect_locale', true), true);
     }
 
     /**
@@ -84,7 +96,7 @@ class i18n
             foreach (self::getLocales() as $locale) {
                 if (str_starts_with((string) $locale, substr($detectedLocale, 0, 2))) {
                     if (!headers_sent()) {
-                        setcookie('BBLANG', (string) $locale, ['expires' => strtotime('+1 month'), 'path' => '/']);
+                        setcookie('fb_locale', (string) $locale, ['expires' => strtotime('+1 month'), 'path' => '/']);
                     }
 
                     return $locale;
@@ -93,7 +105,7 @@ class i18n
         }
 
         if (!headers_sent()) {
-            setcookie('BBLANG', (string) $matchingLocale, ['expires' => strtotime('+1 month'), 'path' => '/']);
+            setcookie('fb_locale', (string) $matchingLocale, ['expires' => strtotime('+1 month'), 'path' => '/']);
         }
 
         return $matchingLocale;
@@ -120,10 +132,10 @@ class i18n
 
         // Handle when FOSSBilling is running with a dummy locale folder.
         $localePhpPath = Path::join(PATH_LANGS, 'locales.php');
-        $array = ($filesystem->exists($localePhpPath)) ? include $localePhpPath : ['en_US' => 'English'];
+        $array = ($filesystem->exists($localePhpPath)) ? include $localePhpPath : Locales::getNames(self::getActiveLocale(false));
 
         foreach ($locales as $locale) {
-            $title = ($array[$locale] ?? $locale) . " ($locale)";
+            $title = $array[$locale] ?? $locale;
             $details[] = [
                 'locale' => $locale,
                 'title' => $title,
@@ -146,11 +158,12 @@ class i18n
     public static function toggleLocale(string $locale): bool
     {
         $filesystem = new Filesystem();
-        $basePath = Path::join(PATH_LANGS, $locale);
-        if (!$filesystem->exists($basePath)) {
+        $availableLocales = array_merge(self::getLocaleList(), self::getLocaleList(true));
+        if (!in_array($locale, $availableLocales, true)) {
             throw new InformationException('Unable to enable / disable the locale as it is not present in the locale folder.');
         }
 
+        $basePath = Path::join(PATH_LANGS, $locale);
         $disablePath = Path::join($basePath, '.disabled');
 
         // Reverse the status of the locale
@@ -206,7 +219,7 @@ class i18n
         $locales = iterator_to_array($finder);
         $locales = ($disabled) ? array_filter($locales, fn ($locale): bool => $filesystem->exists(Path::join($locale->getPathname(), '.disabled')))
                                : array_filter($locales, fn ($locale): bool => !$filesystem->exists(Path::join($locale->getPathname(), '.disabled')));
-        $locales = array_map(fn ($locale) => $locale->getFilename(), $locales);
+        $locales = array_map(fn ($locale) => $locale->getBasename(), $locales);
         sort($locales);
 
         return $locales;

@@ -3,6 +3,6 @@
   "type": "mod",
   "name": "Email",
   "icon_url": "icon.svg",
-  "description": "FOSSBilling core module",
+  "description": "Configures outgoing mail delivery, email queue processing, and message logging for system notifications.",
   "version": "1.0.0"
 }

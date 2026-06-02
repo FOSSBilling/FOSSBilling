@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -16,6 +17,7 @@ use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
+use Symfony\Component\Finder\Finder;
 use Symfony\Contracts\Cache\ItemInterface;
 
 class Service implements InjectionAwareInterface
@@ -39,7 +41,11 @@ class Service implements InjectionAwareInterface
     public function getModulePermissions(): array
     {
         return [
-            'can_always_access' => true,
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View extensions'),
+                'description' => __trans('Allows the staff member to view installed and available extensions, languages, and extension details.'),
+            ],
             'manage_extensions' => [
                 'type' => 'bool',
                 'display_name' => __trans('Manage extensions'),
@@ -235,9 +241,10 @@ class Service implements InjectionAwareInterface
         foreach ($result as $key => $value) {
             $icon_url = $value['icon_url'] ?? null;
             if ($icon_url && isset($value['id'])) {
-                $iconPath = Path::join(PATH_MODS, ucfirst((string) $value['id']), basename((string) $icon_url));
+                $iconFilename = pathinfo((string) $icon_url, PATHINFO_BASENAME);
+                $iconPath = Path::join(PATH_MODS, ucfirst((string) $value['id']), $iconFilename);
                 if ($this->filesystem->exists($iconPath)) {
-                    $result[$key]['icon_path'] = 'mod_' . ucfirst((string) $value['id']) . '_' . basename((string) $icon_url);
+                    $result[$key]['icon_path'] = 'mod_' . ucfirst((string) $value['id']) . '_' . $iconFilename;
                 }
             }
         }
@@ -251,25 +258,24 @@ class Service implements InjectionAwareInterface
     private function _getAvailable(): array
     {
         $mods = [];
-        $handle = opendir(PATH_MODS);
-        while ($name = readdir($handle)) {
-            if (preg_match('/^[a-zA-Z0-9]+$/', $name)) {
-                $m = $name;
-                $mod = $this->di['mod']($m);
-                if ($mod->isCore()) {
-                    continue;
-                }
+        $finder = new Finder();
+        $finder->directories()->in(PATH_MODS)->depth('== 0')->name('/\A[a-zA-Z0-9]+\z/');
 
-                if (!$mod->hasManifest()) {
-                    error_log("Module {$m} manifest file is missing or is not readable.");
-
-                    continue;
-                }
-
-                $mods[] = strtolower($m);
+        foreach ($finder as $dir) {
+            $m = $dir->getBasename();
+            $mod = $this->di['mod']($m);
+            if ($mod->isCore()) {
+                continue;
             }
+
+            if (!$mod->hasManifest()) {
+                error_log("Module {$m} manifest file is missing or is not readable.");
+
+                continue;
+            }
+
+            $mods[] = strtolower($m);
         }
-        closedir($handle);
 
         return $mods;
     }
@@ -277,8 +283,6 @@ class Service implements InjectionAwareInterface
     public function getAdminNavigation($admin, $url = null)
     {
         $staff_service = $this->di['mod_service']('staff');
-        $current_mod = null;
-        $current_url = null;
         $nav = [];
         $subpages = [];
 
@@ -299,6 +303,7 @@ class Service implements InjectionAwareInterface
                     $l = $n['group']['location'];
                     unset($n['group']['location']);
                     $n['group']['active'] = false;
+                    $n['group']['uri'] = $this->normalizeNavigationUri($n['group']['uri'] ?? null);
                     $nav[$l] = $n['group'];
                 }
 
@@ -329,15 +334,52 @@ class Service implements InjectionAwareInterface
 
             $l = $page['location'];
             unset($page['location']);
+            $page['uri'] = $this->normalizeNavigationUri($page['uri'] ?? null);
             $nav[$l]['subpages'][] = $page;
         }
 
         // submenu sorting
         foreach ($nav as &$group) {
             $group['subpages'] = $this->di['tools']->sortByOneKey($group['subpages'], 'index');
+            $group['uri'] = $this->resolveNavigationGroupUri($group);
         }
 
         return $nav;
+    }
+
+    private function resolveNavigationGroupUri(array $group): ?string
+    {
+        $groupUri = $this->normalizeNavigationUri($group['uri'] ?? null);
+        if (!empty($groupUri)) {
+            return $groupUri;
+        }
+
+        foreach ($group['subpages'] ?? [] as $subpage) {
+            $subpageUri = $this->normalizeNavigationUri($subpage['uri'] ?? null);
+            if (!empty($subpageUri)) {
+                return $subpageUri;
+            }
+        }
+
+        return null;
+    }
+
+    private function normalizeNavigationUri(?string $uri): ?string
+    {
+        if (is_null($uri)) {
+            return null;
+        }
+
+        $uri = trim($uri);
+        if ($uri === '') {
+            return null;
+        }
+
+        if (preg_match('/^(?:[a-z][a-z0-9+.-]*:|\/|#|\?)/i', $uri) === 1) {
+            return $uri;
+        }
+
+        return $this->di['url']->adminLink(ltrim($uri, '/'));
     }
 
     /**
@@ -471,7 +513,7 @@ class Service implements InjectionAwareInterface
                 $this->filesystem->remove($path);
                 $this->di['logger']->info('Removed extension files for "%s" from %s', $id, $path);
             } catch (IOException $e) {
-                $this->di['logger']->warn('Failed to remove extension files for "%s": %s', $id, $e->getMessage());
+                $this->di['logger']->warning('Failed to remove extension files for "%s": %s', $id, $e->getMessage());
 
                 throw new \FOSSBilling\Exception('Failed to remove extension files. Please check file permissions and try again or manually remove the files from :path', [':path' => $path]);
             }
@@ -503,7 +545,6 @@ class Service implements InjectionAwareInterface
         $this->filesystem->mkdir($extractedPath, 0o755);
 
         // Download the extension archive and save it to the cache folder
-        $fileHandler = fopen($zipPath, 'w');
         $client = \Symfony\Component\HttpClient\HttpClient::create(['bindto' => BIND_TO]);
         $response = $client->request('GET', $latest['download_url']);
 
@@ -512,9 +553,11 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Failed to download the extension with error :code', [':code' => $code]);
         }
 
+        $fileHandler = fopen($zipPath, 'w');
         foreach ($client->stream($response) as $chunk) {
             fwrite($fileHandler, $chunk->getContent());
         }
+        fclose($fileHandler);
 
         // Extract the archive
         $zip = new \PhpZip\ZipFile();
@@ -624,7 +667,7 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function getConfig($ext): array
+    public function getConfig(string $ext): array
     {
         return $this->di['cache']->get("config_{$ext}", function (ItemInterface $item) use ($ext) {
             $item->expiresAfter(60 * 60);
@@ -790,32 +833,36 @@ class Service implements InjectionAwareInterface
     public function hasManagePermission(string $module, ?\Box_App $app = null): void
     {
         $staff_service = $this->di['mod_service']('Staff');
+        $permission_module = str_starts_with($module, 'mod_') ? substr($module, 4) : $module;
 
-        if (!$this->isExtensionActive('mod', $module)) {
+        // The module isn't active or has no permissions if this is the case, so continue as normal
+        if (!$this->isExtensionActive('mod', $permission_module)) {
             return;
         }
 
         // First check if any access is allowed to the module for this person
-        if (!$staff_service->hasPermission(null, $module)) {
-            http_response_code(403);
-            $e = new \FOSSBilling\InformationException('You do not have permission to access the :mod: module', [':mod:' => $module], 403);
+        if (!$staff_service->hasPermission(null, $permission_module)) {
+            $e = new \FOSSBilling\InformationException('You do not have permission to access the :mod: module', [':mod:' => $permission_module], 403);
             if (!is_null($app)) {
-                echo $app->render('error', ['exception' => $e]);
-                exit;
+                $app->abortWithResponse(new \Symfony\Component\HttpFoundation\Response(
+                    $app->render('error', ['exception' => $e]),
+                    403
+                ));
             }
 
             throw $e;
         }
 
-        $module_permissions = $this->getSpecificModulePermissions($module);
+        $module_permissions = $this->getSpecificModulePermissions($permission_module);
 
         // If they have access, let's see if that module has a permission specifically for managing settings and check if they have that permission.
-        if (array_key_exists('manage_settings', $module_permissions) && !$staff_service->hasPermission(null, $module, 'manage_settings')) {
-            http_response_code(403);
+        if (array_key_exists('manage_settings', $module_permissions) && !$staff_service->hasPermission(null, $permission_module, 'manage_settings')) {
             $e = new \FOSSBilling\InformationException('You do not have permission to perform this action', [], 403);
             if (!is_null($app)) {
-                echo $app->render('error', ['exception' => $e]);
-                exit;
+                $app->abortWithResponse(new \Symfony\Component\HttpFoundation\Response(
+                    $app->render('error', ['exception' => $e]),
+                    403
+                ));
             }
 
             throw $e;

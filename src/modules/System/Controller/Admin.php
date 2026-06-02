@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -60,6 +61,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $app->get('/system/index', 'get_index', [], static::class);
         $app->get('/system/activity', 'get_activity', [], static::class);
         $app->get('/system/update', 'get_update', [], static::class);
+        $app->get('/system/update/finalize', 'get_update_finalize', [], static::class);
     }
 
     public function get_index(\Box_App $app): string
@@ -81,5 +83,12 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $this->di['is_admin_logged'];
 
         return $app->render('mod_system_update');
+    }
+
+    public function get_update_finalize(\Box_App $app): string
+    {
+        $this->di['is_admin_logged'];
+
+        return $app->render('mod_system_update_finalize');
     }
 }

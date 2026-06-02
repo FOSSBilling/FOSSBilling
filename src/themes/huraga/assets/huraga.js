@@ -1,12 +1,9 @@
-import { Tooltip, Toast, Modal, Collapse } from 'bootstrap/dist/js/bootstrap.esm.js';
+import { Tooltip, Toast, Modal, Collapse, Tab } from 'bootstrap/dist/js/bootstrap.esm.js';
 import './js/utils';
-import { initAvatars } from './js/avatar.js';
 
-globalThis.bootstrap = { Tooltip, Toast, Modal, Collapse };
+globalThis.bootstrap = { Tooltip, Toast, Modal, Collapse, Tab };
 
 document.addEventListener('DOMContentLoaded', () => {
-  initAvatars();
-
   /**
    * Global error handler for unhandled Promise rejections
    */
@@ -78,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const currencySelector = document.querySelectorAll('select.currency_selector');
   currencySelector.forEach(function (select) {
     select.addEventListener('change', function () {
-      API.guest.post('cart/set_currency', {currency: select.value}, function(response) {
+      FOSSBilling.api.guest.post('cart/set_currency', {currency: select.value}, function(response) {
         location.reload()
       }, function(error) {
         FOSSBilling.message(error)
@@ -90,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
    * Lazy load Tom Select only if language selector exists
    * Includes error handling and ensures CSS is loaded before JS initializes
    */
-  const languageSelector = document.querySelector('.js-language-selector');
+  const languageSelector = document.querySelector('.js-locale-selector');
   if (languageSelector) {
     // Dynamically import TomSelect module with error handling
     import('./js/tomselect.js')
@@ -106,11 +103,4 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
-  // Attach event listeners to all forms and links with data-fb-api attribute.
-  if (document.querySelector("form[data-fb-api]")) {
-    API._apiForm();
-  };
-  if (document.querySelector("a[data-fb-api]")) {
-    API._apiLink();
-  }
 });

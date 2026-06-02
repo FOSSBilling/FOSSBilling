@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -15,6 +16,7 @@
 
 namespace Box\Mod\Support\Api;
 
+use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Client extends \Api_Abstract
@@ -32,8 +34,8 @@ class Client extends \Api_Abstract
         $data['client_id'] = $identity->id;
 
         [$sql, $bindings] = $this->getService()->getSearchQuery($data);
-        $per_page = $data['per_page'] ?? $this->di['pager']->getDefaultPerPage();
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, $per_page);
+        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
+
         foreach ($pager['list'] as $key => $ticketArr) {
             $ticket = $this->di['db']->getExistingModelById('SupportTicket', $ticketArr['id'], 'Ticket not found');
             $pager['list'][$key] = $this->getService()->toApiArray($ticket, true, $this->getIdentity());
@@ -48,9 +50,10 @@ class Client extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket ID was not passed'])]
     public function ticket_get(array $data): array
     {
-        $ticket = $this->getService()->findOneByClient($this->getIdentity(), $data['id']);
+        $identity = $this->getIdentity();
+        $ticket = $this->getService()->findOneByClient($identity, (int) $data['id']);
 
-        return $this->getService()->toApiArray($ticket);
+        return $this->getService()->toApiArray($ticket, true, $identity);
     }
 
     /**
@@ -116,7 +119,7 @@ class Client extends \Api_Abstract
 
         $result = $this->getService()->ticketReply($ticket, $client, $data['content']);
 
-        return ($result > 0) ? true : false;
+        return $result > 0;
     }
 
     /**
@@ -127,7 +130,7 @@ class Client extends \Api_Abstract
     {
         $client = $this->getIdentity();
 
-        $ticket = $this->getService()->findOneByClient($client, $data['id']);
+        $ticket = $this->getService()->findOneByClient($client, (int) $data['id']);
 
         return $this->getService()->closeTicket($ticket, $this->getIdentity());
     }

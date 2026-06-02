@@ -2,7 +2,7 @@
     "name": "fossbilling/fossbilling",
     "description": "Free and Open Source Billing System",
     "support": {
-        "docs": "https://fossbilling.org/docs",
+        "docs": "https://docs.fossbilling.org/",
         "source": "https://github.com/FOSSBilling/FOSSBilling",
         "issues": "https://github.com/FOSSBilling/FOSSBilling/issues",
         "chat": "https://fossbilling.org/discord"
@@ -17,9 +17,12 @@
     ],
     "homepage": "https://fossbilling.org",
     "scripts": {
-        "test": "pest --test-directory ../tests",
-        "phpstan": "phpstan analyze --memory-limit=1G",
-        "phpstan:baseline": "phpstan analyze --memory-limit=1G --generate-baseline",
+        "post-install-cmd": [
+            "php src/vendor/symfony/intl/Resources/bin/compress || true"
+        ],
+        "test": "phpunit",
+        "phpstan": "phpstan analyze --memory-limit=512M",
+        "phpstan:baseline": "phpstan analyze --generate-baseline",
         "cs:check": "php-cs-fixer fix --dry-run --diff",
         "cs:fix": "php-cs-fixer fix",
         "rector:check": "rector --dry-run",
@@ -42,13 +45,14 @@
         "ext-pdo": "*",
         "ext-zlib": "*",
         "antcms/antloader": "^2.0.5",
+        "dicebear/core": "^10.0",
+        "dicebear/styles": "^10.0",
         "doctrine/orm": "^3.6",
         "dompdf/dompdf": "^3.1.4",
         "egulias/email-validator": "^4.0.4",
         "filp/whoops": "^2.18.4",
         "gabordemooij/redbean": "^5.7.5",
         "io-developer/php-whois": "^4.1.10",
-        "lcharette/webpack-encore-twig": "^1.2.0",
         "league/commonmark": "^2.8",
         "league/csv": "^9.28",
         "liborm85/composer-vendor-cleaner": "^1.7.1",
@@ -62,9 +66,8 @@
         "pimple/pimple": "^3.6",
         "plesk/api-php-lib": "^2.2.1",
         "prinsfrank/standards": "^3.15",
-        "psr/log": "^3.0.2",
         "sentry/sentry": "^4.19.1",
-        "stripe/stripe-php": "^19.1.0",
+        "stripe/stripe-php": "^20.0.0",
         "symfony/cache": "^7.4.1",
         "symfony/console": "^7.4.1",
         "symfony/filesystem": "^7.4",
@@ -72,16 +75,16 @@
         "symfony/html-sanitizer": "^7.4",
         "symfony/http-client": "^7.4.1",
         "symfony/http-foundation": "^7.4.1",
+        "symfony/intl": "^7.4",
         "symfony/mailer": "^7.4",
-        "symfony/polyfill-php84": "^1.33",
-        "symfony/polyfill-php85": "^1.33",
         "symfony/property-access": "^7.4",
         "symfony/property-info": "^7.4.1",
+        "symfony/rate-limiter": "^7.4",
         "symfony/sendgrid-mailer": "^7.4",
         "symfony/serializer": "^7.4.2",
         "symfony/uid": "^7.4",
-        "symfony/webpack-encore-bundle": "^2.4",
         "twig/intl-extra": "^3.22.1",
+        "twig/markdown-extra": "^3.24",
         "twig/twig": "^3.22.2"
     },
     "require-dev": {
@@ -92,13 +95,7 @@
         "phpstan/phpstan": "^2.1.33",
         "phpstan/phpstan-deprecation-rules": "^2.0.3",
         "rector/rector": "^2.3",
-        "symfony/deprecation-contracts": "^3.6.0"
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Tests\\": "tests/",
-            "Tests\\Modules\\": "src/modules/"
-        }
+        "symfony/phpunit-bridge": "^7.4"
     },
     "config": {
         "sort-packages": true,

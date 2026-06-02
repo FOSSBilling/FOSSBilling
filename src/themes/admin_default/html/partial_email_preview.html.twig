@@ -50,23 +50,24 @@ function escapeHtmlAttribute(str) {
  */
 function showEmailPreview(subject, content) {
     const modalContent = `
-        <div class="mb-3">
-            <div class="fw-bold text-uppercase text-muted" style="font-size: 0.75rem; letter-spacing: 0.5px; margin-bottom: 0.5rem;">
-                {{ "Subject"|trans }}
+        <div class="d-flex flex-column gap-4">
+            <div>
+                <h5 class="card-title mb-1">{{ "Subject"|trans }}</h5>
+                <div class="text-secondary mb-2">{{ "Preview the rendered email subject line."|trans }}</div>
+                <div class="border rounded p-3 bg-body-tertiary" style="min-height: 50px;">
+                    ${escapeHtml(subject)}
+                </div>
             </div>
-            <div class="p-3" style="background: #f8f9fa; border: 1px dashed #adb5bd; border-radius: 4px; min-height: 50px;">
-                ${escapeHtml(subject)}
-            </div>
-        </div>
-        <div>
-            <div class="fw-bold text-uppercase text-muted" style="font-size: 0.75rem; letter-spacing: 0.5px; margin-bottom: 0.5rem;">
-                {{ "Message Content"|trans }}
-            </div>
-            <div style="background: #f8f9fa; border: 1px dashed #adb5bd; border-radius: 4px; overflow: hidden;">
-                <iframe
-                    style="width: 100%; min-height: 400px; border: none; display: block; background: white;"
-                    srcdoc="${escapeHtmlAttribute(content)}"
-                ></iframe>
+            <div>
+                <h5 class="card-title mb-1">{{ "Message Content"|trans }}</h5>
+                <div class="text-secondary mb-2">{{ "Preview the rendered email body in an isolated frame."|trans }}</div>
+                <div class="border rounded overflow-hidden bg-body-tertiary">
+                    <iframe
+                        style="width: 100%; min-height: 400px; border: none; display: block; background: white;"
+                        sandbox="allow-popups"
+                        srcdoc="${escapeHtmlAttribute(content)}"
+                    ></iframe>
+                </div>
             </div>
         </div>
     `;

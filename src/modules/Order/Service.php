@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -14,6 +15,7 @@ namespace Box\Mod\Order;
 use Box\Mod\Currency\Entity\Currency;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\HttpFoundation\Response;
 
 class Service implements InjectionAwareInterface
 {
@@ -27,6 +29,27 @@ class Service implements InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View orders'),
+                'description' => __trans('Allows the staff member to view orders and order details.'),
+            ],
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage orders'),
+                'description' => __trans('Allows the staff member to create, update, delete, and change order statuses.'),
+            ],
+            'export' => [
+                'type' => 'bool',
+                'display_name' => __trans('Export orders'),
+                'description' => __trans('Allows the staff member to export order data as CSV.'),
+            ],
+        ];
     }
 
     public function counter(): array
@@ -337,6 +360,7 @@ class Service implements InjectionAwareInterface
         $data = $this->di['db']->toArray($model);
         $data['config'] = json_decode($model->config ?? '', true) ?? [];
         $data['total'] = $this->getTotal($model);
+        $data['discount'] ??= 0;
         $data['title'] = $model->title;
         $data['meta'] = $this->di['db']->getAssoc('SELECT name, value FROM client_order_meta WHERE client_order_id = :id', [':id' => $model->id]);
         $data['active_tickets'] = $supportService->getActiveTicketsCountForOrder($model);
@@ -445,7 +469,7 @@ class Service implements InjectionAwareInterface
             $data['meta'] = $meta[$order['id']] ?? [];
             $data['active_tickets'] = $activeTickets[$order['id']] ?? 0;
             if (!isset($clients[$clientId])) {
-                $this->di['logger']->err('Missing client for order ' . $order['id']);
+                $this->di['logger']->error('Missing client for order ' . $order['id']);
                 $data['client'] = [];
             } else {
                 $data['client'] = $clients[$clientId];
@@ -526,7 +550,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($show_action_required) {
-            $where[] = 'co.status = \'pending_setup\' OR co.status = \'failed_setup\' OR co.status =\'failed_renew\'';
+            $where[] = '(co.status = \'pending_setup\' OR co.status = \'failed_setup\' OR co.status =\'failed_renew\')';
         }
 
         if ($status) {
@@ -682,82 +706,125 @@ class Service implements InjectionAwareInterface
             $generatedOrderTitle = null;
         }
 
-        $order = $this->di['db']->dispense('ClientOrder');
-        $order->client_id = $client->id;
-        $order->product_id = $product->id;
-        $order->group_id = ($parent_order) ? $parent_order->group_id : uniqid();
-        $order->group_master = ($parent_order) ? 0 : 1;
-        $order->title = $generatedOrderTitle ?? $data['title'] ?? $product->title;
-        $order->currency = $currency->getCode();
-        $order->quantity = $qty;
-        $order->service_type = $product->type;
-        $order->unit = $product->unit;
-        $order->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
-        $order->config = json_encode($config);
-        $order->invoice_option = $invoiceOption;
+        $invoice = null;
+        $markInvoicePaid = \FOSSBilling\Tools::normalizeBoolean($data['mark_invoice_paid'] ?? false);
 
-        if ($period) {
-            $bp = $this->di['period']($data['period']);
-            $order->period = $bp->getCode();
-        }
+        $id = $this->di['db']->transaction(function () use (
+            $client,
+            $config,
+            $currency,
+            $currencyRepository,
+            $data,
+            $generatedOrderTitle,
+            $invoiceOption,
+            $parent_order,
+            $period,
+            $product,
+            $qty,
+            &$invoice
+        ) {
+            $order = $this->di['db']->dispense('ClientOrder');
+            $order->client_id = $client->id;
+            $order->product_id = $product->id;
+            $order->form_id = $product->form_id;
+            $order->group_id = ($parent_order) ? $parent_order->group_id : uniqid();
+            $order->group_master = ($parent_order) ? 0 : 1;
+            $order->title = $generatedOrderTitle ?? $data['title'] ?? $product->title;
+            $order->currency = $currency->getCode();
+            $order->service_type = $product->type;
+            $order->unit = $product->unit;
+            $order->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
+            $order->config = json_encode($config);
+            $order->invoice_option = $invoiceOption;
 
-        if (isset($data['price'])) {
-            $order->price = $data['price'];
-        } else {
-            $repo = $product->getTable();
-            $rate = $currencyRepository->getRateByCode($currency->getCode());
-            if ($rate === null) {
-                throw new \FOSSBilling\Exception("Currency rate for '{$currency->getCode()}' is not configured");
+            if ($period) {
+                $bp = $this->di['period']($data['period']);
+                $order->period = $bp->getCode();
             }
-            $order->price = $repo->getProductPrice($product, $config) * $rate;
-        }
 
-        $order->notes = $data['notes'] ?? $order->notes;
-        if (isset($data['created_at'])) {
-            $order->created_at = date('Y-m-d H:i:s', strtotime($data['created_at']));
-        } else {
-            $order->created_at = date('Y-m-d H:i:s');
-        }
+            $line = null;
+            if (!isset($data['price']) || $product->type === \Model_Product::DOMAIN) {
+                $product->setDi($this->di);
+                $repo = $product->getTable();
+                $line = $repo->getOrderLineConfig($product, array_merge($config, ['quantity' => $qty]));
+                $order->quantity = $line['quantity'];
+            } else {
+                $order->quantity = $qty;
+            }
 
-        if (isset($data['updated_at'])) {
-            $order->updated_at = date('Y-m-d H:i:s', strtotime($data['updated_at']));
-        } else {
-            $order->updated_at = date('Y-m-d H:i:s');
-        }
-
-        $id = $this->di['db']->store($order);
-
-        if (isset($data['meta']) && is_array($data['meta'])) {
-            foreach ($data['meta'] as $k => $v) {
-                $mm = $this->di['db']->findOne('client_order_meta', 'client_order_id = :id AND name = :n', [':id' => $order->id, ':n' => $k]);
-                if (!$mm) {
-                    $mm = $this->di['db']->dispense('ClientOrderMeta');
-                    $mm->client_order_id = $id;
-                    $mm->name = $k;
-                    $mm->created_at = date('Y-m-d H:i:s');
+            if (isset($data['price'])) {
+                $order->price = $data['price'];
+            } else {
+                $rate = $currencyRepository->getRateByCode($currency->getCode());
+                if ($rate === null) {
+                    throw new \FOSSBilling\Exception("Currency rate for '{$currency->getCode()}' is not configured");
                 }
-                $mm->value = $v;
-                $mm->updated_at = date('Y-m-d H:i:s');
-                $this->di['db']->store($mm);
+                $order->price = $line['price'] * $rate;
+            }
+
+            $order->notes = $data['notes'] ?? $order->notes;
+            if (isset($data['created_at'])) {
+                $order->created_at = date('Y-m-d H:i:s', strtotime((string) $data['created_at']));
+            } else {
+                $order->created_at = date('Y-m-d H:i:s');
+            }
+
+            if (isset($data['updated_at'])) {
+                $order->updated_at = date('Y-m-d H:i:s', strtotime((string) $data['updated_at']));
+            } else {
+                $order->updated_at = date('Y-m-d H:i:s');
+            }
+
+            $id = $this->di['db']->store($order);
+
+            if (isset($data['meta']) && is_array($data['meta'])) {
+                foreach ($data['meta'] as $k => $v) {
+                    $mm = $this->di['db']->findOne('client_order_meta', 'client_order_id = :id AND name = :n', [':id' => $order->id, ':n' => $k]);
+                    if (!$mm) {
+                        $mm = $this->di['db']->dispense('ClientOrderMeta');
+                        $mm->client_order_id = $id;
+                        $mm->name = $k;
+                        $mm->created_at = date('Y-m-d H:i:s');
+                    }
+                    $mm->value = $v;
+                    $mm->updated_at = date('Y-m-d H:i:s');
+                    $this->di['db']->store($mm);
+                }
+            }
+
+            if ($invoiceOption == 'issue-invoice' && $order->price > 0) {
+                $invoiceService = $this->di['mod_service']('invoice');
+                $invoice = $invoiceService->generateForOrder($order);
+            }
+
+            return $id;
+        });
+
+        if ($invoice instanceof \Model_Invoice) {
+            $invoiceService = $this->di['mod_service']('invoice');
+
+            try {
+                $invoiceService->approveInvoice($invoice, ['id' => $invoice->id, 'use_credits' => true]);
+
+                if ($markInvoicePaid) {
+                    $invoiceService->markAsPaidByAdmin($invoice, $data);
+                }
+            } catch (\Exception $e) {
+                error_log($e->getMessage());
+
+                try {
+                    $invoiceService->addNote($invoice, 'Order was created, but invoice follow-up failed: ' . $e->getMessage());
+                } catch (\Exception $noteException) {
+                    error_log($noteException->getMessage());
+                }
             }
         }
+
+        $order = $this->di['db']->getExistingModelById('ClientOrder', $id, 'Order not found');
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderCreate', 'params' => ['id' => $order->id], 'subject' => $product->type]);
 
         $this->di['logger']->info('Created order #%s', $id);
-
-        // invoice options
-        if ($invoiceOption == 'issue-invoice' && $order->price > 0) {
-            $invoiceService = $this->di['mod_service']('invoice');
-            $invoice = $invoiceService->generateForOrder($order);
-
-            $invoiceService->approveInvoice($invoice, ['id' => $invoice->id, 'use_credits' => true]);
-
-            // mark invoice as paid on creation
-            if (!empty($data['mark_invoice_paid']) && $invoice instanceof \Model_Invoice) {
-                $invoiceService->markAsPaid($invoice);
-            }
-        }
 
         // activate immediately on creation
         if ($activate) {
@@ -938,6 +1005,9 @@ class Service implements InjectionAwareInterface
     public function stockSale(\Model_Product $product, $qty): bool
     {
         if ($product->stock_control) {
+            if ($product->quantity_in_stock < $qty) {
+                throw new InformationException('Product :id is out of stock.', [':id' => $product->id], 831);
+            }
             $product->quantity_in_stock -= $qty;
             $product->updated_at = date('Y-m-d H:i:s');
             $this->di['db']->store($product);
@@ -1017,7 +1087,12 @@ class Service implements InjectionAwareInterface
         $order->invoice_option = $data['invoice_option'] ?? $order->invoice_option;
         $order->title = $data['title'] ?? $order->title;
         $order->price = $data['price'] ?? $order->price;
-        $order->status = $data['status'] ?? $order->status;
+        if (isset($data['status']) && $data['status'] !== $order->status) {
+            if (!in_array($data['status'], \Model_ClientOrder::getValidStatuses(), true)) {
+                throw new InformationException('Invalid order status: :status', [':status:' => $data['status']]);
+            }
+            $order->status = $data['status'];
+        }
         $order->notes = $data['notes'] ?? $order->notes;
         $order->reason = $data['reason'] ?? $order->reason;
 
@@ -1070,13 +1145,6 @@ class Service implements InjectionAwareInterface
             $this->saveStatusChange($order, $e->getMessage());
 
             throw $e;
-        }
-
-        // do not extend renewal date if this is first paid invoice
-        $invoiceService = $this->di['mod_service']('invoice');
-        $paidInvoices = $invoiceService->findPaidInvoicesForOrder($order);
-        if (count($paidInvoices) <= 1) {
-            return;
         }
 
         // set automatic order expiration
@@ -1365,6 +1433,12 @@ class Service implements InjectionAwareInterface
 
     public function updateOrderConfig(\Model_ClientOrder $order, array $config): bool
     {
+        if ($order->form_id) {
+            $formbuilderService = $this->di['mod_service']('formbuilder');
+            $form = $formbuilderService->getForm((int) $order->form_id);
+            $this->validateConfigAgainstForm($config, $form);
+        }
+
         $oldConfig = $order->config;
 
         $order->config = json_encode($config);
@@ -1374,6 +1448,43 @@ class Service implements InjectionAwareInterface
         $this->di['logger']->info(sprintf("Order #%s config changes:\n%s\n%s", $order->id, $oldConfig, $order->config));
 
         return true;
+    }
+
+    private function validateConfigAgainstForm(array $config, array $form): void
+    {
+        foreach ($form['fields'] as $field) {
+            $name = $field['name'];
+            $value = $config[$name] ?? null;
+
+            if (!empty($field['required']) && ($value === null || $value === '' || (is_array($value) && count($value) === 0))) {
+                throw new \FOSSBilling\Exception('Field ":field" is required', [':field' => $field['label']], 4892);
+            }
+
+            $options = $field['options'] ?? [];
+            if (!empty($options)) {
+                if ($field['type'] === 'select' || $field['type'] === 'radio') {
+                    if ($value === null || $value === '') {
+                        continue;
+                    }
+
+                    if (!is_scalar($value)) {
+                        throw new \FOSSBilling\Exception('Invalid value for field ":field"', [':field' => $field['label']], 4893);
+                    }
+
+                    if (!array_key_exists($value, $options) && !in_array($value, $options, true)) {
+                        throw new \FOSSBilling\Exception('Invalid value for field ":field"', [':field' => $field['label']], 4893);
+                    }
+                } elseif ($field['type'] === 'checkbox') {
+                    if (is_array($value)) {
+                        foreach ($value as $v) {
+                            if (!in_array($v, $options, true)) {
+                                throw new \FOSSBilling\Exception('Invalid value for field ":field"', [':field' => $field['label']], 4894);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public function getOrderStatusSearchQuery($data): array
@@ -1402,6 +1513,10 @@ class Service implements InjectionAwareInterface
 
     public function orderStatusAdd(\Model_ClientOrder $order, $status, $notes = null): bool
     {
+        if (!in_array($status, \Model_ClientOrder::getValidStatuses(), true)) {
+            throw new InformationException('Invalid order status: :status', [':status:' => $status]);
+        }
+
         $bean = $this->di['db']->dispense('ClientOrderStatus');
         $bean->client_order_id = $order->id;
         $bean->status = $status;
@@ -1457,7 +1572,7 @@ class Service implements InjectionAwareInterface
 
     public function getTotal(\Model_ClientOrder $model): float
     {
-        return $this->calculateTotal($model->price, $model->quantity);
+        return $this->calculateTotal($model->price ?? 0, $model->quantity ?? 1);
     }
 
     private function calculateTotal($price, $quantity): float
@@ -1505,12 +1620,12 @@ class Service implements InjectionAwareInterface
             ->executeStatement();
     }
 
-    public function exportCSV(array $headers)
+    public function exportCSV(array $headers): Response
     {
         if (!$headers) {
             $headers = ['id', 'client_id', 'product_id', 'title', 'currency', 'service_type', 'period', 'quantity', 'price', 'discount', 'status', 'reason', 'notes'];
         }
 
-        return $this->di['table_export_csv']('client_order', 'orders.csv', $headers);
+        return $this->di['csv_response_factory']->create('client_order', 'orders.csv', $headers);
     }
 }

@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -37,7 +38,7 @@ class Version extends Command implements \FOSSBilling\InjectionAwareInterface
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $output->writeln($this->di['mod_service']('system')->getVersion());
+        $output->writeln(\FOSSBilling\Version::VERSION);
 
         return Command::SUCCESS;
     }

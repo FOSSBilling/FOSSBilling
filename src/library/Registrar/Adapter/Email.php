@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -39,13 +40,13 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
             'label' => 'This registrar type sends notifications to the given email about domain management events. For example, when client registers a new domain an email with domain details will be sent to you. It is then your responsibility to register domain on real registrar.',
             'form' => [
                 'email' => ['text', [
-                    'label' => 'Email address',
-                    'description' => 'Email to send domain change notifications',
+                    'label' => 'Email Address',
+                    'description' => 'Email to Send Domain Change Notifications',
                 ],
                 ],
                 'use_whois' => ['radio', [
                     'multiOptions' => ['1' => 'Yes', '0' => 'No'],
-                    'label' => 'Use WHOIS to check for domain availability',
+                    'label' => 'Use WHOIS to Check for Domain Availability',
                 ],
                 ],
             ],

@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -13,10 +14,8 @@ class Box_UrlHelper
     public array $params = [];
     public bool $match = false;
 
-    public function __construct(string $method, string $url, private ?array $conditions, string $requestUri)
+    public function __construct(private readonly string $method, string $url, private ?array $conditions, string $requestUri, string $requestMethod)
     {
-        $requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-
         // Respond identically to a HEAD request as if it's a GET request
         if ($requestMethod === 'HEAD') {
             $requestMethod = 'GET';

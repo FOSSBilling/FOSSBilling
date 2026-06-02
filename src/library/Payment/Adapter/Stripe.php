@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -10,6 +11,7 @@
  */
 
 use Stripe\StripeClient;
+use Symfony\Component\Intl\Currencies;
 
 class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 {
@@ -63,24 +65,26 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             'form' => [
                 'pub_key' => [
                     'text', [
-                        'label' => 'Live publishable key:',
+                        'label' => 'Live Publishable Key:',
+                        'required_when' => ['enabled' => true, 'test_mode' => false],
                     ],
                 ],
                 'api_key' => [
                     'text', [
-                        'label' => 'Live Secret key:',
+                        'label' => 'Live Secret Key:',
+                        'required_when' => ['enabled' => true, 'test_mode' => false],
                     ],
                 ],
                 'test_pub_key' => [
                     'text', [
-                        'label' => 'Test Publishable key:',
-                        'required' => false,
+                        'label' => 'Test Publishable Key:',
+                        'required_when' => ['enabled' => true, 'test_mode' => true],
                     ],
                 ],
                 'test_api_key' => [
                     'text', [
-                        'label' => 'Test Secret key:',
-                        'required' => false,
+                        'label' => 'Test Secret Key:',
+                        'required_when' => ['enabled' => true, 'test_mode' => true],
                     ],
                 ],
             ],
@@ -94,11 +98,32 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         return $this->_generateForm($invoiceModel);
     }
 
-    public function getAmountInCents(Model_Invoice $invoice)
+    public function getAmountInCents(Model_Invoice $invoice): int
+    {
+        return $this->getAmountInMinorUnits($invoice);
+    }
+
+    public function getAmountInMinorUnits(Model_Invoice $invoice): int
     {
         $invoiceService = $this->di['mod_service']('Invoice');
+        $amount = $invoiceService->getTotalWithTax($invoice);
+        $multiplier = 10 ** $this->getCurrencyFractionDigits($invoice->currency);
 
-        return $invoiceService->getTotalWithTax($invoice) * 100;
+        return (int) round($amount * $multiplier);
+    }
+
+    private function getAmountFromMinorUnits(int $amount, string $currency): float
+    {
+        $divisor = 10 ** $this->getCurrencyFractionDigits($currency);
+
+        return $amount / $divisor;
+    }
+
+    private function getCurrencyFractionDigits(string $currency): int
+    {
+        $currency = strtoupper($currency);
+
+        return Currencies::exists($currency) ? Currencies::getFractionDigits($currency) : 2;
     }
 
     public function getInvoiceTitle(Model_Invoice $invoice): string
@@ -111,7 +136,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             ':title' => $invoiceItems[0]['title'],
         ];
         $title = __trans('Payment for invoice :serie:id [:title]', $params);
-        if ((is_countable($invoiceItems) ? count($invoiceItems) : 0) > 1) {
+        if (FOSSBilling\Tools::safeCount($invoiceItems) > 1) {
             $title = __trans('Payment for invoice :serie:id', $params);
         }
 
@@ -124,7 +149,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $err = $body['error'];
         $tx->txn_status = $err['type'];
         $tx->error = $err['message'];
-        $tx->status = 'processed';
+        $tx->status = Model_Transaction::STATUS_ERROR;
         $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
 
@@ -139,13 +164,15 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     public function processTransaction($api_admin, $id, $data, $gateway_id): void
     {
         $tx = $this->di['db']->getExistingModelById('Transaction', $id);
+        $invoiceService = $this->di['mod_service']('Invoice');
 
-        // Use the invoice ID associated with the transaction or else fallback to the ID passed via GET.
         if ($tx->invoice_id) {
             $invoice = $this->di['db']->getExistingModelById('Invoice', $tx->invoice_id);
-        } else {
+        } elseif (isset($data['get']['invoice_id']) && $data['get']['invoice_id']) {
             $invoice = $this->di['db']->getExistingModelById('Invoice', $data['get']['invoice_id']);
             $tx->invoice_id = $invoice->id;
+        } else {
+            $invoice = null;
         }
 
         try {
@@ -156,8 +183,25 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
             $tx->txn_status = $charge->status;
             $tx->txn_id = $charge->id;
-            $tx->amount = $charge->amount / 100;
+            $tx->amount = $this->getAmountFromMinorUnits($charge->amount, $charge->currency);
             $tx->currency = $charge->currency;
+
+            // Prevent duplicate processing for the same successful Stripe payment intent
+            if ($charge->status === 'succeeded') {
+                if ($tx->status === Model_Transaction::STATUS_PROCESSED && empty($tx->error)) {
+                    $tx->updated_at = date('Y-m-d H:i:s');
+                    $this->di['db']->store($tx);
+
+                    return;
+                }
+
+                $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+                if (!$transactionService->claimForProcessing((int) $tx->id)) {
+                    return;
+                }
+
+                $tx->status = Model_Transaction::STATUS_PROCESSING;
+            }
 
             $bd = [
                 'amount' => $tx->amount,
@@ -166,19 +210,33 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 'rel_id' => $tx->id,
             ];
 
-            // Only pay the invoice if the transaction has 'succeeded' on Stripe's end & the associated FOSSBilling transaction hasn't been processed.
-            if ($charge->status == 'succeeded' && $tx->status !== 'processed') {
-                // Instance the services we need
+            if ($charge->status == 'succeeded' && $tx->status === Model_Transaction::STATUS_PROCESSING) {
                 $clientService = $this->di['mod_service']('client');
-                $invoiceService = $this->di['mod_service']('Invoice');
+                $client = $invoice
+                    ? $this->di['db']->getExistingModelById('Client', $invoice->client_id)
+                    : $this->getClientFromTransaction($tx, $charge);
 
-                // Update the account funds
-                $client = $this->di['db']->getExistingModelById('Client', $invoice->client_id);
+                if ($invoice) {
+                    $expected = $invoiceService->getTotalWithTax($invoice);
+
+                    try {
+                        $invoiceService->validatePaymentAmount($tx->amount, $expected);
+                    } catch (FOSSBilling\Exception $e) {
+                        $tx->status = Model_Transaction::STATUS_ERROR;
+                        $tx->error = $e->getMessage();
+                        $tx->updated_at = date('Y-m-d H:i:s');
+                        $this->di['db']->store($tx);
+
+                        throw $e;
+                    }
+                }
+
                 $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
 
-                // Now pay the invoice / batch pay if there's no invoice associated with the transaction
-                // Skip payment for deposit invoices - funds were already added above
-                if ($tx->invoice_id && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
+                if ($tx->invoice_id && $invoice && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
+                    if (!$invoice->approved) {
+                        $invoiceService->approveInvoice($invoice, ['use_credits' => false]);
+                    }
                     $invoiceService->payInvoiceWithCredits($invoice);
                 } elseif (!$tx->invoice_id) {
                     $invoiceService->doBatchPayWithCredits(['client_id' => $client->id]);
@@ -191,16 +249,16 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         }
 
         $paymentStatus = match ($charge->status) {
-            'succeeded' => 'processed',
-            'requires_action' => 'received',
-            'requires_payment_method' => 'received',
-            'requires_confirmation' => 'received',
-            'requires_capture' => 'received',
-            'processing' => 'received',
-            'pending' => 'received',
-            'canceled' => 'error',
-            'failed' => 'error',
-            default => 'received',
+            'succeeded' => Model_Transaction::STATUS_PROCESSED,
+            'requires_action' => Model_Transaction::STATUS_RECEIVED,
+            'requires_confirmation' => Model_Transaction::STATUS_RECEIVED,
+            'requires_capture' => Model_Transaction::STATUS_RECEIVED,
+            'processing' => Model_Transaction::STATUS_RECEIVED,
+            'pending' => Model_Transaction::STATUS_RECEIVED,
+            'requires_payment_method' => Model_Transaction::STATUS_ERROR,
+            'canceled' => Model_Transaction::STATUS_ERROR,
+            'failed' => Model_Transaction::STATUS_ERROR,
+            default => Model_Transaction::STATUS_ERROR,
         };
 
         $tx->status = $paymentStatus;
@@ -208,19 +266,38 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $this->di['db']->store($tx);
     }
 
+    private function getClientFromTransaction(Model_Transaction $tx, Stripe\PaymentIntent $charge): Model_Client
+    {
+        $clientId = (int) ($charge->metadata->client_id ?? 0);
+
+        if ($clientId > 0) {
+            try {
+                return $this->di['db']->getExistingModelById('Client', $clientId);
+            } catch (FOSSBilling\Exception $e) {
+                throw new Payment_Exception('Unable to load client for transaction: :msg', [':msg' => $e->getMessage()]);
+            }
+        }
+
+        throw new Payment_Exception('Unable to determine client for transaction. No invoice or client metadata available.');
+    }
+
     protected function _generateForm(Model_Invoice $invoice): string
     {
         $intent = $this->stripe->paymentIntents->create([
-            'amount' => $this->getAmountInCents($invoice),
+            'amount' => $this->getAmountInMinorUnits($invoice),
             'currency' => $invoice->currency,
             'description' => $this->getInvoiceTitle($invoice),
             'automatic_payment_methods' => ['enabled' => true],
             'receipt_email' => $invoice->buyer_email,
+            'metadata' => [
+                'client_id' => (string) $invoice->client_id,
+                'invoice_id' => (string) $invoice->id,
+            ],
         ]);
 
         $pubKey = ($this->config['test_mode']) ? $this->config['test_pub_key'] : $this->config['pub_key'];
 
-        $dataAmount = $this->getAmountInCents($invoice);
+        $dataAmount = $this->getAmountInMinorUnits($invoice);
 
         $settingService = $this->di['mod_service']('System');
 

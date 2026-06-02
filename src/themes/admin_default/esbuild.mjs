@@ -1,119 +1,21 @@
 import * as esbuild from 'esbuild';
-import autoprefixer from 'autoprefixer';
-import postcss from 'postcss';
-import * as sass from 'sass';
-import { PurgeCSS } from 'purgecss';
 import { fileURLToPath } from 'url';
 import { dirname, resolve, join, basename } from 'path';
-import { readFile, readdir, writeFile, mkdir, rm } from 'fs/promises';
+import { readFile, readdir, writeFile } from 'fs/promises';
+import {
+  ensureDir,
+  postprocessCssFile,
+  purgeCssFile,
+  removeDirContents,
+  sassPlugin,
+  sharedLoaders,
+} from '../../../frontend/tools/esbuild-helpers.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
 const rootDir = resolve(__dirname, '../../..');
 const nodeModulesDir = resolve(rootDir, 'node_modules');
-
-const sharedLoaders = {
-  '.svg': 'dataurl',
-  '.woff': 'file',
-  '.woff2': 'file',
-  '.ttf': 'file',
-  '.eot': 'file'
-};
-
-function sassPlugin(nodeModulesDir, isProduction) {
-  return {
-    name: 'sass',
-    setup(build) {
-      build.onLoad({ filter: /\.scss$/ }, async (args) => {
-        const result = await sass.compileAsync(args.path, {
-          loadPaths: [nodeModulesDir],
-          style: 'expanded',
-          sourceMap: !isProduction,
-          sourceMapIncludeSources: !isProduction
-        });
-
-        return {
-          contents: result.css,
-          loader: 'css',
-          resolveDir: dirname(args.path)
-        };
-      });
-    }
-  };
-}
-
-async function ensureDir(dir) {
-  await mkdir(dir, { recursive: true });
-}
-
-async function removeDirContents(dir) {
-  try {
-    const entries = await readdir(dir, { withFileTypes: true });
-    for (const entry of entries) {
-      const entryPath = join(dir, entry.name);
-      await rm(entryPath, { recursive: true, force: true });
-    }
-  } catch {}
-}
-
-async function postprocessCssFile(cssPath, isProduction) {
-  const css = await readFile(cssPath, 'utf8');
-  const mapPath = `${cssPath}.map`;
-  let prevMap;
-
-  if (!isProduction) {
-    try {
-      prevMap = await readFile(mapPath, 'utf8');
-    } catch {}
-  }
-
-  const result = await postcss([autoprefixer]).process(css, {
-    from: cssPath,
-    to: cssPath,
-    map: isProduction ? false : { inline: false, annotation: true, prev: prevMap || undefined }
-  });
-
-  await writeFile(cssPath, result.css);
-  if (result.map) {
-    await writeFile(mapPath, result.map.toString());
-  }
-}
-
-async function purgeCssFile(cssFilePath, themePath, enabled = false) {
-  if (!enabled) return;
-
-  try {
-    const css = await readFile(cssFilePath, 'utf8');
-    const modulesPath = resolve(themePath, '../../modules');
-
-    const purgeCSSResult = await new PurgeCSS().purge({
-      content: [
-        `${themePath}/html/**/*.twig`,
-        `${themePath}/assets/**/*.js`,
-        `${modulesPath}/*/html_admin/**/*.twig`,
-      ],
-      css: [{ raw: css, extension: 'css' }],
-      safelist: {
-        standard: [
-          /^fi-/, /^flag-country-/, /^clr-/, /^toast/, /^modal/, /^dropdown/, /^collapse/, /^alert/, /^spinner/,
-          /^active$/, /^show$/, /^fade$/, /^nav-/, /^data-bs-/, /^btn-/, /^card-/,
-          /^badge-/, /^form-/, /^text-/, /^bg-/, /^d-/, /^m-/, /^p-/, /^w-/, /^h-/,
-          /^border-/, /^flex-/, /^justify-/, /^align-/, /^offcanvas-/, /^accordion-/, /^carousel-/,
-        ],
-        deep: [/tom-select/, /ts-/],
-        greedy: [/^theme-/]
-      },
-      defaultExtractor: content => content.match(/[A-Za-z0-9-_:/]+/g) || [],
-    });
-
-    if (purgeCSSResult?.[0]) {
-      await writeFile(cssFilePath, purgeCSSResult[0].css);
-      console.log(`✓ PurgeCSS applied to ${cssFilePath.split('/').pop()}`);
-    }
-  } catch (error) {
-    console.warn(`⚠ PurgeCSS failed for ${cssFilePath.split('/').pop()}:`, error.message);
-  }
-}
+const adminLoaders = { ...sharedLoaders, '.svg': 'dataurl' };
 
 async function generateManifest() {
   const manifest = {
@@ -200,26 +102,36 @@ async function build() {
       bundle: true,
       outfile: resolve(__dirname, 'assets/build/css/fossbilling.css'),
       plugins: [sassPlugin(nodeModulesDir, isProduction)],
-      loader: sharedLoaders,
+      loader: adminLoaders,
       minify: isProduction,
       sourcemap: !isProduction,
       logLevel: 'info'
     });
 
     await postprocessCssFile(resolve(__dirname, 'assets/build/css/fossbilling.css'), isProduction);
-    await purgeCssFile(resolve(__dirname, 'assets/build/css/fossbilling.css'), __dirname, isProduction);
+    await purgeCssFile(resolve(__dirname, 'assets/build/css/fossbilling.css'), {
+      themePath: __dirname,
+      enabled: isProduction,
+      area: 'admin',
+      additionalStandardSafelist: [/^flag-country-/, /^clr-/],
+    });
 
     await esbuild.build({
       entryPoints: [resolve(__dirname, 'assets/css/vendor.css')],
       bundle: true,
       outfile: resolve(__dirname, 'assets/build/css/vendor.css'),
-      loader: sharedLoaders,
+      loader: adminLoaders,
       minify: isProduction,
       sourcemap: !isProduction,
       logLevel: 'info'
     });
 
-    await purgeCssFile(resolve(__dirname, 'assets/build/css/vendor.css'), __dirname, isProduction);
+    await purgeCssFile(resolve(__dirname, 'assets/build/css/vendor.css'), {
+      themePath: __dirname,
+      enabled: isProduction,
+      area: 'admin',
+      additionalStandardSafelist: [/^flag-country-/, /^clr-/],
+    });
 
     await esbuild.build({
       entryPoints: [resolve(__dirname, 'assets/fossbilling.js')],
@@ -227,7 +139,7 @@ async function build() {
       outfile: resolve(__dirname, 'assets/build/js/fossbilling.js'),
       platform: 'browser',
       target: 'es2018',
-      loader: sharedLoaders,
+      loader: adminLoaders,
       define: {
         'process.env.NODE_ENV': isProduction ? '"production"' : '"development"'
       },

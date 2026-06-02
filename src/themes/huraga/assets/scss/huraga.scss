@@ -16,6 +16,11 @@ body {
     line-height: 1.42857143;
 }
 
+.modal-dialog {
+    margin-right: auto;
+    margin-left: auto;
+}
+
 .fs-7 {
     font-size: .875rem;
 }
@@ -115,7 +120,7 @@ body {
 }
 
 @media (max-width: 768px) {
-    .ts-wrapper.js-language-selector {
+    .ts-wrapper.js-locale-selector {
         width: 180px
     }
 }
@@ -126,6 +131,12 @@ body {
     &:hover {
         border: 1px solid var(--bs-primary);
     }
+}
+
+.fb-phone-country-code {
+    width: 5.5rem;
+    flex: 0 0 5.5rem;
+    max-width: 5.5rem;
 }
 
 .email-list {
@@ -252,6 +263,20 @@ body {
     color: var(--bs-primary) !important;
 }
 
+.nav-link.active,
+.offcanvas-item.active > .nav-link {
+    color: var(--bs-primary) !important;
+    font-weight: 600;
+}
+
+.nav-pills .nav-link.active {
+    color: var(--bs-nav-pills-link-active-color) !important;
+}
+
+.offcanvas-item.active {
+    background: rgba(var(--bs-primary-rgb), 0.08);
+}
+
 // Client profile dropdown - inline with nav items, transparent background
 .client-dropdown {
     .nav-link.dropdown-toggle {
@@ -341,7 +366,7 @@ body {
     display: flex;
     align-items: center;
 
-    .form-select.js-language-selector {
+    .form-select.js-locale-selector {
         color: var(--bs-body-color);
         padding: 0.5rem 2rem 0.5rem 0.75rem;
         font-size: 0.875rem;

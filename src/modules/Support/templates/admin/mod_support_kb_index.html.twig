@@ -1,0 +1,325 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% set active_menu = 'support' %}
+{% set has_filter_panel = true %}
+{% set filter_panel_id = 'page-search-filters' %}
+{% set filter_panel_open = request_has_filters %}
+{% set new_article_action %}
+    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newKbArticleModal">
+        <svg class="icon">
+            <use xlink:href="#plus" />
+        </svg>
+        {{ 'New Article'|trans }}
+    </button>
+{% endset %}
+{% set new_kb_category_action %}
+    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newKbCategoryModal">
+        <svg class="icon">
+            <use xlink:href="#plus" />
+        </svg>
+        {{ 'New Category'|trans }}
+    </button>
+{% endset %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|url }}">
+                <svg class="icon" width="24">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'support'|url }}">{{ 'Support'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Knowledge Base'|trans }}</li>
+    </ol>
+{% endblock %}
+
+{% block meta_title %}{{ 'Knowledge Base'|trans }}{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'Knowledge Base'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Manage knowledge base articles and organize content into categories.'|trans }}</p>
+            </div>
+        </div>
+        <div class="card-body pt-3 pb-0 px-0">
+            <div class="card border-0 shadow-none rounded-0">
+                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
+                    <ul class="nav nav-pills card-header-pills">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Articles'|trans }}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#tab-categories" data-bs-toggle="tab">{{ 'Manage Categories'|trans }}</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="tab-content border-top">
+                    <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+                        {{ include('partial_search.html.twig', {
+                            search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
+                            search_toolbar_actions: new_article_action
+                        }) }}
+                        <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
+                            <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
+                                {% if request.search %}
+                                    <input type="hidden" name="search" value="{{ request.search }}">
+                                {% endif %}
+                                <div class="row g-3">
+                                    <div class="col-md-6 col-xl-4">
+                                        <div>
+                                            <label class="form-label text-muted small mb-1" for="kb-status">{{ 'Status'|trans }}</label>
+                                            <select class="form-select" id="kb-status" name="status">
+                                                <option value="">{{ 'All Articles'|trans }}</option>
+                                                <option value="draft"{% if request.status == 'draft' %} selected{% endif %}>{{ 'Draft'|trans }}</option>
+                                                <option value="active"{% if request.status == 'active' %} selected{% endif %}>{{ 'Active'|trans }}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 col-xl-8">
+                                        <div>
+                                            <label class="form-label text-muted small mb-1" for="kb-category">{{ 'Category'|trans }}</label>
+                                            {{ mf.selectbox('kb_article_category_id', admin.support_kb_category_get_pairs, request.kb_article_category_id, 0, 'All Categories'|trans, {'id': 'kb-category'}) }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-end gap-2 mt-3">
+                                    <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
+                                    <button class="btn btn-primary" type="submit">
+                                        <svg class="icon">
+                                            <use xlink:href="#filter" />
+                                        </svg>
+                                        {{ 'Apply Filters'|trans }}
+                                    </button>
+                                </div>
+                            </form>
+                        </section>
+                        <div class="table-responsive">
+                            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                                <thead>
+                                    <tr>
+                                        <th>{{ 'Title'|trans }}</th>
+                                        <th>{{ 'Category'|trans }}</th>
+                                        <th>{{ 'Status'|trans }}</th>
+                                        <th class="text-center">{{ 'Views'|trans }}</th>
+                                        <th class="w-1 no-sort"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                   {% set active_tab = request.tab|default('articles') %}
+                                   {% if active_tab == 'articles' %}
+                                       {% set posts = admin.support_kb_article_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
+                                       {% for i, post in posts.list %}
+                                       <tr>
+                                           <td>
+                                               <a href='{{ "support/kb/article/#{post.id}"|url }}'>{{ post.title }}</a>
+                                           </td>
+                                           <td>
+                                               <a href='{{ "support/kb/category/#{post.category.id}"|url }}'>{{ post.category.title }}</a>
+                                           </td>
+                                           <td>{{ mf.status_badge(post.status, 'post') }}</td>
+                                           <td class="text-center">{{ post.views }}</td>
+                                           <td>
+                                               <a class="btn btn-icon" href='{{ "support/kb/article/#{post.id}"|url }}'>
+                                                   <svg class="icon">
+                                                       <use xlink:href="#edit" />
+                                                   </svg>
+                                               </a>
+                                               <a class="btn btn-icon" href="{{ 'support/kb_article_delete'|api_url(query: { 'id': post.id }) }}"
+                                                   {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/kb'|url }) }}>
+                                                   <svg class="icon">
+                                                       <use xlink:href="#delete" />
+                                                   </svg>
+                                               </a>
+                                           </td>
+                                       </tr>
+                                       {% else %}
+                                       <tr>
+                                           <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
+                                       </tr>
+                                       {% endfor %}
+                                   {% else %}
+                                       <tr>
+                                           <td class="text-muted" colspan="5">{{ 'Open the Articles tab to load data'|trans }}</td>
+                                       </tr>
+                                   {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="card-footer d-flex align-items-center">
+                            {{ include('partial_pagination.html.twig', { 'list': posts, 'url': 'support/kb', 'split_footer_controls': true }) }}
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="tab-categories" role="tabpanel">
+                        <div class="card-body border-bottom py-3">
+                            <div class="d-flex justify-content-end">
+                                {{ new_kb_category_action|raw }}
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table card-table table-vcenter table-striped text-nowrap">
+                                <tbody>
+                                    {% for cat_id, cat_title in admin.support_kb_category_get_pairs %}
+                                    <tr>
+                                        <td>
+                                            <a href='{{ "support/kb/category/#{cat_id}"|url }}'>{{ cat_title }}</a>
+                                        </td>
+                                        <td class="w-1">
+                                            <a class="btn btn-icon" href='{{ "support/kb/category/#{cat_id}"|url }}'>
+                                                <svg class="icon">
+                                                    <use xlink:href="#edit" />
+                                                </svg>
+                                            </a>
+                                            <a class="btn btn-icon" href="{{ 'support/kb_category_delete'|api_url(query: { 'id': cat_id }) }}"
+                                                {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/kb#tab-categories'|url }) }}>
+                                                <svg class="icon">
+                                                    <use xlink:href="#delete" />
+                                                </svg>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td class="text-muted" colspan="2">{{ 'The list is empty'|trans }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal modal-blur fade" id="newKbArticleModal" tabindex="-1" aria-labelledby="newKbArticleModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-md-down modal-lg">
+                <form class="modal-content fb-modal-form" method="post" action="{{ 'support/kb_article_create'|api_url }}" {{ fb_api_form({ reload: true }) }}>
+                    <div class="modal-header">
+                        <h3 class="modal-title" id="newKbArticleModalLabel">{{ 'Create New Article'|trans }}</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <section class="fb-modal-section">
+                            <div class="fb-modal-section-header">
+                                <div class="fb-modal-section-heading-row">
+                                    <h4 class="fb-modal-section-title">{{ 'Article Details'|trans }}</h4>
+                                </div>
+                                <p class="fb-modal-section-description">{{ 'Choose a category, set the article status, and draft the knowledge base content.'|trans }}</p>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ 'Category'|trans }}</label>
+                                    {{ mf.selectbox('kb_article_category_id', admin.support_kb_category_get_pairs, request.kb_article_category_id, 1) }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="new-kb-article-title">{{ 'Title'|trans }}</label>
+                                    <input class="form-control" type="text" id="new-kb-article-title" name="title" value="{{ request.title }}" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">{{ 'Status'|trans }}</label>
+                                    <div class="d-flex flex-wrap gap-3 pt-2">
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioStatusDraft" type="radio" name="status" value="draft" checked>
+                                            <span class="form-check-label">{{ 'Draft'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioStatusActive" type="radio" name="status" value="active">
+                                            <span class="form-check-label">{{ 'Active'|trans }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="new-kb-article-content">{{ 'Content'|trans }}</label>
+                                    <textarea class="form-control editor-textarea" id="new-kb-article-content" name="content" rows="10">{{ request.content }}</textarea>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                        <button class="btn btn-primary" type="submit">{{ 'Create'|trans }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="modal modal-blur fade" id="newKbCategoryModal" tabindex="-1" aria-labelledby="newKbCategoryModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-md-down">
+                <form class="modal-content fb-modal-form" method="post" action="{{ 'support/kb_category_create'|api_url }}" {{ fb_api_form({ redirect: 'support/kb#tab-categories'|url }) }}>
+                    <div class="modal-header">
+                        <h3 class="modal-title" id="newKbCategoryModalLabel">{{ 'Create New Category'|trans }}</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <section class="fb-modal-section">
+                            <div class="fb-modal-section-header">
+                                <div class="fb-modal-section-heading-row">
+                                    <h4 class="fb-modal-section-title">{{ 'Category Details'|trans }}</h4>
+                                </div>
+                                <p class="fb-modal-section-description">{{ 'Name the category and describe what content belongs in it.'|trans }}</p>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label" for="new-kb-category-title">{{ 'Title'|trans }}</label>
+                                    <input class="form-control" type="text" id="new-kb-category-title" name="title" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="new-kb-category-description">{{ 'Description'|trans }}</label>
+                                    <textarea class="form-control" id="new-kb-category-description" name="description" rows="10"></textarea>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                        <button class="btn btn-primary" type="submit">{{ 'Create'|trans }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalConfigs = [
+        { elementId: 'newKbArticleModal', hash: '#tab-new' },
+        { elementId: 'newKbCategoryModal', hash: '#tab-new-category' }
+    ];
+
+    for (const { elementId, hash } of modalConfigs) {
+        const modalElement = document.getElementById(elementId);
+        if (!modalElement) {
+            continue;
+        }
+
+        const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+        if (window.location.hash === hash) {
+            modal.show();
+        }
+
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            if (window.location.hash !== hash) {
+                return;
+            }
+
+            const url = new URL(window.location.href);
+            url.hash = '';
+            window.history.replaceState({}, '', url);
+        });
+    }
+});
+</script>
+{% endblock %}
+
+{% block head %}{{ wysiwyg('.editor-textarea') }}{% endblock %}

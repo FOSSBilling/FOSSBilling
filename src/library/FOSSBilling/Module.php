@@ -26,7 +26,7 @@ class Module implements InjectionAwareInterface
     public const CONTROLLER_CLIENT_SUFFIX = '\\Controller\\Client';
     public const CONTROLLER_ADMIN_SUFFIX = '\\Controller\\Admin';
 
-    public const CORE_MODULES = ['api', 'activity', 'cart', 'client',
+    public const CORE_MODULES = ['api', 'activity', 'antispam', 'cart', 'client',
         'cron', 'currency', 'email', 'extension',
         'hook', 'index', 'invoice', 'order',
         'page', 'product', 'profile', 'security',
@@ -68,7 +68,7 @@ class Module implements InjectionAwareInterface
             throw new Exception('Missing manifest file for the :mod module.', [':mod' => $this->module], 5897);
         }
 
-        $contents = file_get_contents(Path::join($this->getModulePath(), self::MANIFEST_FILENAME));
+        $contents = $this->filesystem->readFile(Path::join($this->getModulePath(), self::MANIFEST_FILENAME));
 
         try {
             $json = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
@@ -161,7 +161,7 @@ class Module implements InjectionAwareInterface
 
     public function hasSettingsPage(): bool
     {
-        $path = Path::join($this->getModulePath(), "html_admin/mod_{$this->module}_settings.html.twig");
+        $path = Path::join($this->getModulePath(), "templates/admin/mod_{$this->module}_settings.html.twig");
 
         return $this->filesystem->exists($path);
     }

@@ -1,0 +1,49 @@
+<div class="modal modal-blur fade" id="mod-support-new-helpdesk" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{{ 'support/helpdesk_create'|api_url }}"
+                {{ fb_api_form({ redirect: 'extension/settings/support'|url }) }}>
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ 'Create New Helpdesk'|trans }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="new-helpdesk-name">{{ 'Title'|trans }}</label>
+                        <input class="form-control" id="new-helpdesk-name" type="text" name="name" value="{{ helpdesk.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="new-helpdesk-email">{{ 'Email'|trans }}</label>
+                        <input class="form-control" id="new-helpdesk-email" type="email" name="email" value="{{ helpdesk.email }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="new-helpdesk-signature">{{ 'Signature'|trans }}</label>
+                        <textarea class="form-control" id="new-helpdesk-signature" name="signature" rows="2">{{ helpdesk.signature }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="new-helpdesk-close-after">{{ 'Close Tickets After (in hours)'|trans }}</label>
+                        <input class="form-control" id="new-helpdesk-close-after" type="text" size="3" name="close_after" value="{{ helpdesk.close_after|default(48) }}" required>
+                        <small class="form-hint">{{ 'Define a very large number of hours to disable auto close ticket option.'|trans }}</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label d-block">{{ 'Tickets Can Be Reopened?'|trans }}</label>
+                        <div class="d-flex gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" id="radioCanReopenYes" type="radio" name="can_reopen" value="1" checked>
+                                <label class="form-check-label" for="radioCanReopenYes">{{ 'Yes'|trans }}</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" id="radioCanReopenNo" type="radio" name="can_reopen" value="0">
+                                <label class="form-check-label" for="radioCanReopenNo">{{ 'No'|trans }}</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <input type="hidden" name="id" value="{{ helpdesk.id }}">
+                    <button class="btn btn-primary" type="submit">{{ 'Create'|trans }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

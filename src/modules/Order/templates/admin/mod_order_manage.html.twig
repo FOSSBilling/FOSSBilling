@@ -1,0 +1,641 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% block meta_title %}{{ order.title }}{% endblock %}
+
+{% block breadcrumbs %}
+    <ul class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|url }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'order'|url }}">{{ 'Orders'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ order.title }}</li>
+    </ul>
+{% endblock %}
+
+{% set active_menu = 'order' %}
+
+{% set service_partial = 'mod_service' ~ order.service_type ~ '_manage.html.twig' %}
+{% if order.group_master == 1 %}
+    {% set addons = admin.order_addons({ 'id': order.id }) %}
+{% endif %}
+
+{% block content %}
+{% embed 'partial_admin_detail_tabs.html.twig' with {
+    title: order.title,
+    subtitle: 'Review order details, manage billing configuration, and inspect related service activity.'|trans
+} %}
+    {% block detail_tabs %}
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link active" href="#tab-info" data-bs-toggle="tab" role="tab">{{ 'Details'|trans }}</a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#tab-manage" data-bs-toggle="tab" role="tab">{{ 'Edit Order'|trans }}</a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#tab-config" data-bs-toggle="tab" role="tab">{{ 'Edit Order Config'|trans }}</a>
+                    </li>
+                    {% if admin.system_template_exists({ "file": service_partial }) %}
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#tab-service" data-bs-toggle="tab" role="tab">{{ 'Service Management'|trans }}</a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#tab-invoices" data-bs-toggle="tab" role="tab">{{ 'Invoices'|trans }}</a>
+                    </li>
+                    {% if addons|length > 0 %}
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#tab-addons" data-bs-toggle="tab" role="tab">{{ 'Addons'|trans }}</a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#tab-status" data-bs-toggle="tab" role="tab">{{ 'History'|trans }}</a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" href="#tab-support" data-bs-toggle="tab" role="tab">{{ 'Support'|trans }}</a>
+                    </li>
+    {% endblock %}
+
+    {% block detail_tab_content %}
+        {% import 'macro_functions.html.twig' as mf %}
+        <div class="tab-pane fade show active" id="tab-info" role="tabpanel">
+            <div class="card-body">
+                {% embed 'partial_admin_summary_card.html.twig' with {
+                    title: 'Order Summary'|trans,
+                    subtitle: 'Review core order, billing, and lifecycle details before taking action on this order.'|trans,
+                    centered_actions: true,
+                    card_class: 'mb-0'
+                } %}
+                    {% import 'macro_functions.html.twig' as mf %}
+                    {% block summary_content %}
+                        <div class="table-responsive">
+                            <table class="table card-table table-vcenter table-striped text-nowrap">
+                                <tbody>
+                                    <tr>
+                                        <td class="w-50 text-end">{{ 'Order'|trans }}</td>
+                                        <td>#{{ order.id }} ({{ order.service_type }})</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Client'|trans }}</td>
+                                        <td><a href='{{ "client/manage/#{order.client.id}"|url }}'>{{ order.client.first_name }} {{ order.client.last_name }}</a></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Title'|trans }}</td>
+                                        <td><a href='{{ "product/manage/#{order.product_id}"|url }}'><strong>{{ order.title }}</strong></a></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Payment Amount'|trans }}</td>
+                                        <td>{{ order.total|format_currency(order.currency ?? default_currency) }} {% if order.period %}{{ order.period|period_title }}{% endif %}{% if order.quantity > 1 %}({{ order.quantity }} x {{ order.price|format_currency(order.currency ?? default_currency) }}){% endif %}</td>
+                                    </tr>
+                                    {% if order.discount and order.discount > 0%}
+                                    <tr>
+                                        <td class="text-end">{{ 'Order Discount'|trans }}</td>
+                                        <td>-{{ order.discount|format_currency(order.currency ?? default_currency) }} </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Payment Amount After Discount'|trans }}</td>
+                                        <td>{{ (order.total - order.discount)|format_currency(order.currency ?? default_currency)}} </td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <td class="text-end">{{ 'Order Status'|trans }}</td>
+                                        <td>{{ mf.status_badge(order.status, 'order') }}</td>
+                                    </tr>
+                                    {% if order.notes %}
+                                    <tr>
+                                        <td class="text-end">{{ 'Order Notes'|trans }}</td>
+                                        <td>
+                                            <svg class="icon">
+                                                <use xlink:href="#support" />
+                                            </svg>
+                                            <a>{{ order.notes }}</a>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <td class="text-end">{{ 'Order Date'|trans }}</td>
+                                        <td>{{ order.created_at|format_date }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Activation Date'|trans }}</td>
+                                        <td>{% if order.activated_at %}{{ order.activated_at|format_date }} ({{ order.activated_at|timeago }} {{ 'ago'|trans }}){% else %}-{% endif %}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Renewal Date'|trans }}</td>
+                                        <td>{% if order.expires_at %}{{ order.expires_at|format_date }} ({{ order.expires_at|daysleft }} {{ 'day(s)'|trans }}){% else %}-{% endif %}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Order Group ID'|trans }}</td>
+                                        <td>{{ order.group_id|default('-') }}</td>
+                                    </tr>
+                                    {% if order.promo_id %}
+                                    <tr>
+                                        <td class="text-end">{{ 'Order Promo Code'|trans }}</td>
+                                        <td>
+                                            {% set promo = admin.product_promo_get({ 'id': order.promo_id }) %}
+                                            {{ promo.code }}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if order.active_tickets > 0 %}
+                                    <tr>
+                                        <td class="text-end">{{ 'Active Support Tickets'|trans }}</td>
+                                        <td>
+                                            <div class="num">
+                                                <a href="{{ 'support'|url(query: { 'status': 'open', 'order_id': order.id }) }}" class="redNum">{{ order.active_tickets }}</a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endblock %}
+
+                    {% block summary_actions %}
+                        {% set order_actions %}
+                    {% if order.status == 'pending_setup' or order.status == 'failed_setup' %}
+                    <a class="btn btn-primary"
+                        {{ fb_api_link({href: 'order/activate'|api_url(query: {id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                        <svg class="icon" width="24" height="24">
+                            <use xlink:href="#play" />
+                        </svg>
+                        <span>{{ 'Activate'|trans }}</span>
+                    </a>
+                    {% endif %}
+
+                    {% if order.status == 'active' or order.status == 'failed_renew' %}
+                    {% set params = admin.extension_config_get({ 'ext': 'mod_order' }) %}
+                    <a class="btn btn-primary"
+                        {{ fb_api_link({href: 'order/renew'|api_url(query: {'id': order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                        <svg class="icon" width="24" height="24">
+                            <use xlink:href="#refresh" />
+                        </svg>
+                        <span>{{ 'Renew'|trans }}</span>
+                    </a>
+
+                    {% if params.suspend_reason_list|trim == null %}
+                    <a class="btn btn-primary"
+                        {{ fb_api_link({href: 'order/suspend'|api_url(query: {'id': order.id}), modal: {type: 'prompt', title: 'Suspension Reason'|trans, label: 'Reason for Suspension'|trans, key: 'reason'}, reload: true}) }}>
+                        <svg class="icon" width="24" height="24">
+                            <use xlink:href="#pause" />
+                        </svg>
+                        <span>{{ 'Suspend'|trans }}</span>
+                    </a>
+                    {% else %}
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#suspendModal">
+                        <svg class="icon" width="24" height="24">
+                            <use xlink:href="#close" />
+                        </svg>
+                        <span>{{ 'Suspend'|trans }}</span>
+                    </button>
+                    {% endif %}
+                    <a class="btn btn-primary"
+                        {{ fb_api_link({href: 'order/cancel'|api_url(query: {'id': order.id}), modal: {type: 'prompt', title: 'Cancellation Reason'|trans, label: 'Reason for Cancellation'|trans, key: 'reason'}, reload: true}) }}>
+                        <svg class="icon" width="24" height="24">
+                            <use xlink:href="#close" />
+                        </svg>
+                        <span>{{ 'Cancel'|trans }}</span>
+                    </a>
+                    {% endif %}
+
+                    {% if order.status == 'suspended' %}
+                    <a class="btn btn-primary"
+                        {{ fb_api_link({href: 'order/unsuspend'|api_url(query: {id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                        <svg class="icon" width="24" height="24">
+                            <use xlink:href="#play" />
+                        </svg>
+                        <span>{{ 'Unsuspend'|trans }}</span>
+                    </a>
+                    {% endif %}
+
+                    {% if order.status == 'canceled' %}
+                    <a class="btn btn-primary"
+                        {{ fb_api_link({href: 'order/uncancel'|api_url(query: {id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                        <svg class="icon" width="24" height="24">
+                            <use xlink:href="#play" />
+                        </svg>
+                        <span>{{ 'Activate'|trans }}</span>
+                    </a>
+                    {% endif %}
+
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                        <svg class="icon" width="24" height="24">
+                            <use xlink:href="#delete" />
+                        </svg>
+                        <span>{{ 'Delete'|trans }}</span>
+                    </button>
+
+                    {% if not order.unpaid_invoice_id %}
+                    <a class="btn btn-primary"
+                        {{ fb_api_link({href: 'invoice/renewal_invoice'|api_url(query: {id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                        <svg class="icon" width="24" height="24">
+                            <use xlink:href="#plus" />
+                        </svg>
+                        <span>{{ 'Issue Invoice'|trans }}</span>
+                    </a>
+                    {% endif %}
+                {% endset %}
+                        {{ order_actions }}
+                    {% endblock %}
+                {% endembed %}
+            </div>
+        </div>
+
+        <div class="modal modal-blur fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-sm">
+                <div class="modal-content">
+                    <form method="post" action="{{ 'order/delete'|api_url }}" {{ fb_api_form({ redirect: 'order'|url}) }}>
+                        <div class="modal-status bg-danger"></div>
+                        <div class="modal-body">
+                            <div class="modal-title">{{ 'Are you sure?'|trans }}</div>
+                            <input name="id" type="number" hidden value="{{ order.id }}">
+                            <p>{{ 'Are you sure you want to delete the selected item?'|trans }}</p>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" name="force_delete" class="form-check-input" id="forceDelete">
+                                <label class="form-check-label"for="forceDelete">{{ 'Force the deletion of the item'|trans }}</label>
+                            </div>
+                            <span class="text-muted">{{ 'Selecting this will force the item to be removed from the database even if errors occur.'|trans }}</span>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                            <button type="submit" class="btn btn-danger">{{ 'Delete'|trans }}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% if order.status == 'active' or order.status == 'failed_renew' %}
+            {% set params = admin.extension_config_get({ 'ext': 'mod_order' }) %}
+            {% if params.suspend_reason_list|trim is not empty %}
+                <div class="modal modal-blur fade" id="suspendModal" tabindex="-1" aria-labelledby="suspendModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-sm">
+                        <div class="modal-content">
+                            <form method="post" action="{{ 'order/suspend'|api_url }}" {{ fb_api_form({ reload: true }) }}>
+                                <div class="modal-status bg-warning"></div>
+                                <div class="modal-body">
+                                    <div class="modal-title" id="suspendModalLabel">{{ 'Suspension Reason'|trans }}</div>
+                                    <input type="hidden" name="id" value="{{ order.id }}">
+                                    <div class="mt-3 d-flex flex-column gap-2">
+                                        {% for reason in params.suspend_reason_list|trim|split("\r\n") %}
+                                            <label class="form-check">
+                                                <input class="form-check-input" type="radio" name="reason" value="{{ reason }}"{% if loop.first %} checked{% endif %}>
+                                                <span class="form-check-label">{{ reason }}</span>
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                                    <button type="submit" class="btn btn-primary">{{ 'Suspend'|trans }}</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        {% endif %}
+
+        <div class="tab-pane fade" id="tab-manage" role="tabpanel">
+            <div class="card-body">
+                <form method="post" action="{{ 'order/update'|api_url }}" {{ fb_api_form({ reload: true}) }}>
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Order Details'|trans,
+                        subtitle: 'Update the order title, pricing, and billing cycle configuration.'|trans,
+                        card_class: 'mb-4'
+                    } %}
+                        {% import 'macro_functions.html.twig' as mf %}
+                        {% block form_content %}
+                            <div class="row g-3">
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="order_title">{{ 'Title'|trans }}</label>
+                                    <input class="form-control" id="order_title" type="text" name="title" value="{{ order.title }}">
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="order_price">{{ 'Price'|trans }}</label>
+                                    <input class="form-control" id="order_price" type="text" name="price" value="{{ order.price }}" required>
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label">{{ 'Invoice Option'|trans }}</label>
+                                    {{ mf.selectbox('invoice_option', admin.order_get_invoice_options, order.invoice_option) }}
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label">{{ 'Period'|trans }}</label>
+                                    {{ mf.selectbox('period', guest.system_periods, order.period, 0, 'Not recurrent'|trans) }}
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="expires_at">{{ 'Date Expires'|trans }}</label>
+                                    <div class="input-icon">
+                                        <input class="form-control datepicker"
+                                               id="expires_at"
+                                               value="{% if order.expires_at %}{{ order.expires_at|date('Y-m-d') }}{% endif %}"
+                                               name="expires_at"
+                                        >
+                                        <span class="input-icon-addon">
+                                            <svg class="icon">
+                                                <use xlink:href="#calendar" />
+                                            </svg>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="order_reason">{{ 'Reason'|trans }}</label>
+                                    <input class="form-control" id="order_reason" type="text" name="reason" value="{{ order.reason }}">
+                                </div>
+                            </div>
+                        {% endblock %}
+                    {% endembed %}
+
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Status and Notes'|trans,
+                        subtitle: 'Change the recorded status directly and keep internal notes for this order.'|trans,
+                        card_class: 'mb-4'
+                    } %}
+                        {% import 'macro_functions.html.twig' as mf %}
+                        {% block form_content %}
+                            <div class="row g-3">
+                                <div class="col-xl-6">
+                                    <label class="form-label">{{ 'Changes Status Without Performing Action'|trans }}</label>
+                                    {{ mf.selectbox('status', admin.order_get_status_pairs, order.status, 0, 'Select status'|trans) }}
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="order_notes">{{ 'Notes'|trans }}</label>
+                                    <textarea class="form-control" id="order_notes" name="notes" rows="3">{{ order.notes }}</textarea>
+                                </div>
+                            </div>
+                        {% endblock %}
+
+                        {% block form_actions %}
+                            <button type="submit" class="btn btn-primary">{{ 'Update Order'|trans }}</button>
+                        {% endblock %}
+                    {% endembed %}
+
+                    <input type="hidden" name="id" value="{{ order.id }}">
+                </form>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-config" role="tabpanel">
+            <div class="card-body">
+                <form method="post" action="{{ 'order/update_config'|api_url }}" {{ fb_api_form({ reload: true}) }}>
+                    {% embed 'partial_admin_form_card.html.twig' with {
+                        title: 'Order Configuration'|trans,
+                        subtitle: 'Please be cautious when editing raw order configuration values. Incorrect changes can affect service behavior and billing logic.'|trans
+                    } %}
+                        {% import 'macro_functions.html.twig' as mf %}
+                        {% block form_content %}
+                            <input type="hidden" name="id" value="{{ order.id }}">
+                            <div class="d-flex flex-column gap-2">
+                                {% for key, config in order.config %}
+                                    <section class="row g-2 align-items-start">
+                                        <div class="col-xl-3">
+                                            <div class="font-monospace text-secondary small text-uppercase pt-1">{{ key }}</div>
+                                        </div>
+                                        <div class="col-xl-9">
+                                            {% if config is iterable %}
+                                                <div class="d-flex flex-column gap-1">
+                                                    {% for key2, config2 in config %}
+                                                        <div class="row g-2 align-items-center">
+                                                            <div class="col-lg-4">
+                                                                <label class="form-label font-monospace text-muted small mb-0" for="config_{{ key }}_{{ key2 }}">{{ key2 }}</label>
+                                                            </div>
+                                                            <div class="col-lg-8">
+                                                                <input class="form-control form-control-sm"
+                                                                       id="config_{{ key }}_{{ key2 }}"
+                                                                       type="text"
+                                                                       name="config[{{ key }}][{{ key2 }}]"
+                                                                       value="{{ config2 }}"{% if config2 is null %} placeholder="null"{% endif %}>
+                                                            </div>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            {% else %}
+                                                <input class="form-control form-control-sm"
+                                                       id="config_{{ key }}"
+                                                       type="text"
+                                                       name="config[{{ key }}]"
+                                                       value="{{ config }}"{% if config is null %} placeholder="null"{% endif %}>
+                                            {% endif %}
+                                        </div>
+                                    </section>
+                                {% endfor %}
+                            </div>
+                        {% endblock %}
+
+                        {% block form_actions %}
+                            <button class="btn btn-primary" type="submit">{{ 'Update Configuration'|trans }}</button>
+                        {% endblock %}
+                    {% endembed %}
+                </form>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-addons" role="tabpanel">
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Order Addons'|trans,
+                subtitle: 'Review additional products and services attached to this order and open them directly when needed.'|trans,
+                card_class: 'm-3'
+            } %}
+                {% block section_content %}
+                    {% import 'macro_functions.html.twig' as mf %}
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th>{{ 'Product/Service'|trans }}</th>
+                                    <th>{{ 'Billing Cycle'|trans }}</th>
+                                    <th>{{ 'Price'|trans }}</th>
+                                    <th>{{ 'Next Due Date'|trans }}</th>
+                                    <th>{{ 'Status'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for i, addon in addons %}
+                                <tr>
+                                    <td>{{ addon.title }}</td>
+                                    <td>{{ addon.period|period_title }}</td>
+                                    <td>{{ addon.total|format_currency(addon.currency ?? default_currency) }}</td>
+                                    <td>{% if addon.expires_at %}{{ addon.expires_at|format_date }}{% else %}-{% endif %}</td>
+                                    <td>{{ mf.status_badge(addon.status, 'order') }}</td>
+                                    <td>
+                                        <a class="btn btn-icon" href='{{ "order/manage/#{addon.id}"|url }}'>
+                                            <svg class="icon">
+                                                <use xlink:href="#edit" />
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endblock %}
+            {% endembed %}
+        </div>
+
+        <div class="tab-pane fade" id="tab-service" role="tabpanel">
+            {% if guest.system_template_exists({ 'file': service_partial }) %}
+                {% set service = admin.order_service({ 'id': order.id }) %}
+                {{ include(service_partial, { 'order': order, 'service': service }) }}
+            {% elseif order.form_id and guest.extension_is_on({ 'mod': 'formbuilder' }) %}
+                {{ include('mod_formbuilder_manage.html.twig', order) }}
+            {% else %}
+                {# trans 'Order form was not found' #}
+            {% endif %}
+        </div>
+
+        <div class="tab-pane fade" id="tab-invoices" role="tabpanel">
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Order Invoices'|trans,
+                subtitle: 'Review invoices generated for this order and open any invoice details directly from here.'|trans,
+                card_class: 'm-3'
+            } %}
+                {% block section_content %}
+                    {% import 'macro_functions.html.twig' as mf %}
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th>{{ 'ID'|trans }}</th>
+                                    <th>{{ 'Amount'|trans }}</th>
+                                    <th>{{ 'Issued At'|trans }}</th>
+                                    <th>{{ 'Paid At'|trans }}</th>
+                                    <th>{{ 'Status'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set invoices = admin.invoice_get_list({ 'per_page': 50, 'order_id': order.id }) %}
+                                {% for invoice in invoices.list %}
+                                <tr>
+                                    <td><a href='{{ "invoice/manage/#{invoice.id}"|url }}'>#{{ invoice.id }}</a></td>
+                                    <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
+                                    <td>{{ invoice.created_at|format_date }}</td>
+                                    <td>{% if invoice.paid_at %}{{ invoice.paid_at|format_date }}{% else %}-{% endif %}</td>
+                                    <td>{{ mf.status_badge(invoice.status, 'invoice') }}</td>
+                                    <td>
+                                        <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
+                                            <svg class="icon">
+                                                <use xlink:href="#edit" />
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endblock %}
+            {% endembed %}
+        </div>
+
+        <div class="tab-pane fade" id="tab-status" role="tabpanel">
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Order History'|trans,
+                subtitle: 'Track status changes and internal notes recorded against this order over time.'|trans,
+                card_class: 'm-3'
+            } %}
+                {% block section_content %}
+                    {% import 'macro_functions.html.twig' as mf %}
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th class="w-1">{{ 'Date'|trans }}</th>
+                                    <th>{{ 'Status'|trans }}</th>
+                                    <th>{{ 'Note'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set statuses = admin.order_status_history_get_list({ 'per_page': 50, 'id': order.id }) %}
+                                {% for i, sh in statuses.list %}
+                                <tr>
+                                    <td class="d-none d-lg-table-cell">{{ sh.created_at|format_datetime }}</td>
+                                    <td class="d-lg-none">{{ sh.created_at|format_datetime(pattern="MM/DD/YY MM:HH") }}</td>
+                                    <td>{{ mf.status_badge(sh.status, 'order') }}</td>
+                                    <td class="text-wrap">{{ sh.notes }}</td>
+                                    <td>
+                                        <a class="btn btn-icon"
+                                            {{ fb_api_link({href: 'order/status_history_delete'|api_url(query: {'id': sh.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'order'|url}) }}>
+                                            <svg class="icon">
+                                                <use xlink:href="#delete" />
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endblock %}
+            {% endembed %}
+        </div>
+
+        <div class="tab-pane fade" id="tab-support" role="tabpanel">
+            {% embed 'partial_admin_related_section.html.twig' with {
+                title: 'Order Support Tickets'|trans,
+                subtitle: 'Review support conversations linked to this order and open the relevant ticket details.'|trans,
+                card_class: 'm-3'
+            } %}
+                {% block section_content %}
+                    {% import 'macro_functions.html.twig' as mf %}
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th class="w-1">#</th>
+                                    <th>{{ 'Help desk'|trans }}</th>
+                                    <th>{{ 'Subject'|trans }}</th>
+                                    <th>{{ 'Status'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set tickets = admin.support_ticket_get_list({ 'per_page': 20, 'order_id': order.id, 'deep': 0, 'include_first': 0 }) %}
+                                {% for ticket in tickets.list %}
+                                <tr>
+                                    <td>{{ ticket.id }}</td>
+                                    <td>{{ ticket.helpdesk.name }}</td>
+                                    <td>
+                                        <a href='{{ "support/ticket/#{ticket.id}"|url }}'>{{ ticket.subject|truncate(30) }}</a>
+                                    </td>
+                                    <td>{{ mf.status_badge(ticket.status, 'ticket') }}</td>
+                                    <td>
+                                        <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}'>
+                                            <svg class="icon">
+                                                <use xlink:href="#edit" />
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endblock %}
+            {% endembed %}
+        </div>
+    {% endblock %}
+{% endembed %}
+{% endblock %}

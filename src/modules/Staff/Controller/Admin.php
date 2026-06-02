@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -12,6 +13,8 @@
 namespace Box\Mod\Staff\Controller;
 
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Security\RandomizedTimeFloor;
+use Symfony\Component\HttpFoundation\Response;
 
 class Admin implements InjectionAwareInterface
 {
@@ -34,7 +37,7 @@ class Admin implements InjectionAwareInterface
                 [
                     'location' => 'activity',
                     'index' => 400,
-                    'label' => __trans('Staff login history'),
+                    'label' => __trans('Staff Login History'),
                     'uri' => $this->di['url']->adminLink('staff/logins'),
                     'class' => '',
                 ],
@@ -56,16 +59,11 @@ class Admin implements InjectionAwareInterface
 
     public function get_login(\Box_App $app)
     {
-        // check if at least one admin exists.
-        // if not show admin create form
-        $service = $this->di['mod_service']('staff');
-        $count = $service->getAdminsCount();
-        $create = ($count == 0);
         if ($this->di['auth']->isAdminLoggedIn()) {
             return $app->redirect('');
         }
 
-        return $app->render('mod_staff_login', ['create_admin' => $create]);
+        return $app->render('mod_staff_login');
     }
 
     public function get_profile(\Box_App $app): string
@@ -109,28 +107,58 @@ class Admin implements InjectionAwareInterface
         return $app->render('mod_staff_password_reset');
     }
 
-    public function get_updatepassword(\Box_App $app, $hash): string
+    public function get_updatepassword(\Box_App $app, $hash): string|Response
     {
+        if ($error = $this->checkPageRateLimit($app, 'staff_password_reset_confirm_ip')) {
+            return $error;
+        }
+
         $data = [];
         $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
+
         $mod = $this->di['mod']('staff');
         $config = $mod->getConfig();
         if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {
-            throw new \FOSSBilling\InformationException('Password reset has been disabled');
+            return $app->render('mod_staff_password_reset');
         }
-        // send confirmation email
-        $service = $this->di['mod_service']('staff');
-        $reset = $this->di['db']->findOne('AdminPasswordReset', 'hash = ?', [$hash]);
-        if (!$reset instanceof \Model_AdminPasswordReset) {
-            throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
+        $isValidReset = false;
+        $startedAt = microtime(true);
+
+        try {
+            $reset = $this->di['db']->findOne('AdminPasswordReset', 'hash = ?', [$hash]);
+            if ($reset instanceof \Model_AdminPasswordReset) {
+                $expiresAt = strtotime($reset->created_at) + 900;
+
+                if ($expiresAt >= time()) {
+                    $admin = $this->di['db']->getExistingModelById('Admin', $reset->admin_id, 'User not found');
+                    $data['hash'] = $reset->hash;
+                    $data['email'] = $admin->email;
+                    $isValidReset = true;
+                }
+            }
+        } finally {
+            RandomizedTimeFloor::apply($startedAt);
         }
-        if (strtotime($reset->created_at) - time() + 900 < 0) {
-            throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
+
+        if (!$isValidReset) {
+            return $app->render('mod_staff_password_reset');
         }
-        $admin = $this->di['db']->getExistingModelById('Admin', $reset->admin_id, 'User not found');
-        $data['hash'] = $reset->hash;
-        $data['email'] = $admin->email;
 
         return $app->render('mod_staff_password_update', ['data' => $data]);
+    }
+
+    private function checkPageRateLimit(\Box_App $app, string $policy): ?Response
+    {
+        $result = $this->di['rate_limiter']->consume($policy, (string) $this->di['request']->getClientIp());
+        if (!$result->isLimited()) {
+            return null;
+        }
+
+        $headers = [];
+        if ($result->hasRetryAfter()) {
+            $headers['Retry-After'] = (string) $result->getRetryAfterSeconds();
+        }
+
+        return $app->errorResponse(new \FOSSBilling\Security\RateLimitException($result), 429, $headers);
     }
 }

@@ -1,0 +1,69 @@
+{% extends 'layout_default.html.twig' %}
+
+{% block meta_title %}{{ category.title }}{% endblock %}
+
+{% set active_menu = 'support' %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|url }}">
+                <svg class="icon">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'support'|url }}">{{ 'Support'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'support/kb'|url }}">{{ 'Knowledge Base'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'support/kb'|url }}#tab-categories">{{ 'Categories'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ category.title }}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <form method="post" action="{{ 'support/kb_category_update'|api_url }}" {{ fb_api_form({ message: 'Category Updated'|trans }) }}>
+        {% embed 'partial_admin_form_card.html.twig' with {
+            title: category.title,
+            subtitle: 'Update the category details used to organize knowledge base articles.'|trans,
+            body_class: 'pt-4',
+            footer_align: 'between'
+        } %}
+            {% block form_content %}
+                <div class="row g-3">
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Title'|trans }}</label>
+                        <input class="form-control" type="text" name="title" value="{{ category.title }}" required>
+                    </div>
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Slug'|trans }}</label>
+                        <input class="form-control" type="text" name="slug" value="{{ category.slug }}" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">{{ 'Description'|trans }}</label>
+                        <textarea class="form-control" name="description" rows="10">{{ category.description }}</textarea>
+                    </div>
+                </div>
+                <input type="hidden" name="id" value="{{ category.id }}">
+            {% endblock %}
+
+            {% block form_actions %}
+                <a href="{{ 'support/kb'|url }}" class="btn btn-secondary">
+                    <svg class="icon">
+                        <use xlink:href="#arrow-sm-left" />
+                    </svg>
+                    {{ 'Go Back'|trans }}
+                </a>
+                <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
+            {% endblock %}
+        {% endembed %}
+    </form>
+</div>
+
+{% endblock %}

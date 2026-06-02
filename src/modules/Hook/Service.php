@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -30,7 +31,21 @@ class Service implements InjectionAwareInterface
     public function getModulePermissions(): array
     {
         return [
-            'hide_permissions' => true,
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View hooks'),
+                'description' => __trans('Allows the staff member to view registered event hooks.'),
+            ],
+            'manage_hooks' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage hooks'),
+                'description' => __trans('Allows the staff member to reconnect registered event hooks.'),
+            ],
+            'trigger_hooks' => [
+                'type' => 'bool',
+                'display_name' => __trans('Trigger hooks'),
+                'description' => __trans('Allows the staff member to invoke hooks manually with custom event payloads.'),
+            ],
         ];
     }
 
@@ -87,16 +102,21 @@ class Service implements InjectionAwareInterface
     {
         // Clean up the existing list before we add to it
         $this->_disconnectUnavailable();
+        $extensionService = $this->di['mod_service']('extension');
 
         $mods = [];
         if ($mod_name !== null) {
             $mods[] = $mod_name;
         } else {
-            $extensionService = $this->di['mod_service']('extension');
             $mods = $extensionService->getCoreAndActiveModules();
         }
 
         foreach ($mods as $m) {
+            $ext = $this->di['db']->findOne('extension', "type = 'mod' AND name = :mod AND status = 'installed'", ['mod' => $m]);
+            if (!$ext && !$extensionService->isCoreModule($m)) {
+                continue;
+            }
+
             $mod = $this->di['mod']($m);
             if ($mod->hasService()) {
                 $class = $mod->getService();

@@ -13,8 +13,8 @@
  * @returns {string|null} CSRF token or null if not found
  */
 export function getCSRFToken() {
-  const match = document.cookie.match(/csrf_token=([^;]+)/);
-  return match ? match[1] : null;
+  const match = document.cookie.match(/csrf_token=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
 }
 
 /**
@@ -69,9 +69,10 @@ export function safeQuerySelectorAll(selector, scope = document) {
 export function debounce(func, wait) {
   let timeout;
   return function executedFunction(...args) {
+    const context = this;
     const later = () => {
       clearTimeout(timeout);
-      func(...args);
+      func.apply(context, args);
     };
     clearTimeout(timeout);
     timeout = setTimeout(later, wait);
@@ -88,19 +89,20 @@ export function throttle(func, limit) {
   let lastFunc;
   let lastRan;
   return function(...args) {
+    const context = this;
     if (!lastRan) {
-      func(...args);
+      func.apply(context, args);
       lastRan = Date.now();
     } else {
       clearTimeout(lastFunc);
       lastFunc = setTimeout(() => {
         if ((Date.now() - lastRan) >= limit) {
-          func(...args);
+          func.apply(context, args);
           lastRan = Date.now();
         }
       }, limit - (Date.now() - lastRan));
     }
-  }
+  };
 }
 
 /**
@@ -145,6 +147,7 @@ export function scrollToElement(target, options = {}) {
  * @returns {string} Formatted string
  */
 export function formatBytes(bytes, decimals = 2) {
+  if (!Number.isFinite(bytes) || bytes < 0) return '0 Bytes';
   if (bytes === 0) return '0 Bytes';
 
   const k = 1024;
@@ -152,8 +155,9 @@ export function formatBytes(bytes, decimals = 2) {
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 
   const i = Math.floor(Math.log(bytes) / Math.log(k));
+  const index = Math.min(Math.max(i, 0), sizes.length - 1);
 
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  return parseFloat((bytes / Math.pow(k, index)).toFixed(dm)) + ' ' + sizes[index];
 }
 
 /**
@@ -166,7 +170,7 @@ export function deepMerge(...objects) {
 
   for (const obj of objects) {
     for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
         if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
           result[key] = deepMerge(result[key] || {}, obj[key]);
         } else {
@@ -177,70 +181,4 @@ export function deepMerge(...objects) {
   }
 
   return result;
-}
-
-/**
- * Register a CKEditor instance for canned response functionality
- * @param {HTMLElement} element - The editor container element
- * @param {Object} editor - The CKEditor instance
- */
-export function registerEditor(element, editor) {
-  if (!element || !editor) {
-    console.warn('Invalid editor registration:', { element, editor });
-    return;
-  }
-
-  element.editor = editor;
-  element.setAttribute('data-editor', 'true');
-
-  const syncEditorData = () => {
-    if ('value' in element) {
-      element.value = editor.getData();
-    } else {
-      element.textContent = editor.getData();
-    }
-  };
-
-  syncEditorData();
-  editor.model.document.on('change:data', syncEditorData);
-
-  window.FOSSBilling = window.FOSSBilling || {};
-  window.FOSSBilling.editors = window.FOSSBilling.editors || {};
-
-  if (element.id) {
-    window.FOSSBilling.editors[element.id] = editor;
-  }
-
-  const editorName = element.getAttribute('name') || element.id;
-  if (editorName) {
-    window.editors = window.editors || {};
-    window.editors[editorName] = {
-      editor,
-      required: element.dataset.editorRequired === 'true',
-    };
-  }
-
-  console.debug('Editor registered:', element.id || 'unnamed', editor);
-}
-
-/**
- * Unregister a CKEditor instance
- * @param {HTMLElement} element - The editor container element
- */
-export function unregisterEditor(element) {
-  if (!element) return;
-
-  delete element.editor;
-  element.removeAttribute('data-editor');
-
-  if (element.id && window.FOSSBilling?.editors) {
-    delete window.FOSSBilling.editors[element.id];
-  }
-
-  const editorName = element.getAttribute('name') || element.id;
-  if (editorName && window.editors) {
-    delete window.editors[editorName];
-  }
-
-  console.debug('Editor unregistered:', element.id || 'unnamed');
 }

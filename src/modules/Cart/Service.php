@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -75,7 +76,7 @@ class Service implements InjectionAwareInterface
         $currency = null;
         $clientId = $this->di['session']->get('client_id');
         if ($clientId) {
-            $currency = $currencyService->getCurrencyByClientId($clientId);
+            $currency = $currencyService->getCurrencyByClientId((int) $clientId);
         }
 
         // Fallback to default currency
@@ -114,15 +115,50 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $qty = $data['quantity'] ?? 1;
-        // check stock
-        if (!$this->isStockAvailable($product, $qty)) {
-            throw new \FOSSBilling\InformationException('This item is currently out of stock');
-        }
-
         $addons = $data['addons'] ?? [];
         unset($data['id']);
         unset($data['addons']);
+
+        $productConfig = json_decode($product->config ?? '', true) ?? [];
+
+        // Collect all domains that will be added: top-level (direct domain product) and
+        // nested under $data['domain'] (domain bundled with a hosting product).
+        $domainsBeingAdded = [];
+        $topDomain = $this->extractDomainFromConfig($data, $productConfig);
+        if ($topDomain !== null) {
+            $domainsBeingAdded[] = $topDomain;
+        }
+        if (isset($data['domain']) && is_array($data['domain'])) {
+            $nestedDomain = $this->extractDomainFromConfig($data['domain'], $data + $productConfig);
+            if ($nestedDomain !== null) {
+                $domainsBeingAdded[] = $nestedDomain;
+            }
+        }
+
+        if (!empty($domainsBeingAdded)) {
+            $existingItems = $this->di['db']->find('CartProduct', 'cart_id = ?', [$cart->id]);
+            foreach ($existingItems as $item) {
+                $itemConfig = json_decode((string) $item->config, true);
+                if (!is_array($itemConfig)) {
+                    continue;
+                }
+                // Check both top-level and nested domain shapes in the existing item's config.
+                $candidates = [$this->extractDomainFromConfig($itemConfig)];
+                if (isset($itemConfig['domain']) && is_array($itemConfig['domain'])) {
+                    $candidates[] = $this->extractDomainFromConfig($itemConfig['domain'], $itemConfig);
+                }
+                foreach ($candidates as $existing) {
+                    if ($existing === null) {
+                        continue;
+                    }
+                    foreach ($domainsBeingAdded as $incoming) {
+                        if (strcasecmp($existing, $incoming) === 0) {
+                            throw new \FOSSBilling\InformationException('This domain is already in the cart.');
+                        }
+                    }
+                }
+            }
+        }
 
         $list = [];
         $list[] = [
@@ -162,6 +198,20 @@ class Service implements InjectionAwareInterface
                 } else {
                     error_log('Addon not found by id ' . $id);
                 }
+            }
+        }
+
+        $pendingQuantities = [];
+        foreach ($list as $cartItem) {
+            /** @var \Model_Product $cartProduct */
+            $cartProduct = $cartItem['product'];
+            $requestedQty = $this->getRequestedQuantity($cartItem['config']);
+            $cartProductId = (int) $cartProduct->id;
+            $pendingQuantities[$cartProductId] = ($pendingQuantities[$cartProductId] ?? 0) + $requestedQty;
+
+            $reservedQty = $this->getReservedQuantityInCart($cart, $cartProductId);
+            if (!$this->isStockAvailable($cartProduct, $reservedQty + $pendingQuantities[$cartProductId])) {
+                throw new \FOSSBilling\InformationException('This item is currently out of stock');
             }
         }
 
@@ -235,6 +285,49 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    protected function getReservedQuantityInCart(\Model_Cart $cart, int $productId): int
+    {
+        $reservedQty = 0;
+        foreach ($this->getCartProducts($cart) as $cartProduct) {
+            if ((int) $cartProduct->product_id !== $productId) {
+                continue;
+            }
+
+            $config = $this->getItemConfig($cartProduct);
+            $reservedQty += $this->getRequestedQuantity($config);
+        }
+
+        return $reservedQty;
+    }
+
+    protected function getRequestedQuantity(array $config): int
+    {
+        return max(1, (int) ($config['quantity'] ?? 1));
+    }
+
+    /**
+     * Extract a normalized "sld+tld" domain string from a config array.
+     * Handles register_*, transfer_*, and free subdomain key pairs.
+     * Returns null when the config does not describe a domain.
+     */
+    private function extractDomainFromConfig(array $config, array $parentConfig = []): ?string
+    {
+        $sld = $config['register_sld'] ?? $config['transfer_sld'] ?? null;
+        $tld = $config['register_tld'] ?? $config['transfer_tld'] ?? null;
+        if ($sld !== null && $tld !== null) {
+            return strtolower($sld . $tld);
+        }
+
+        if (($config['action'] ?? null) === 'subdomain' && isset($config['subdomain_sld'])) {
+            $baseDomain = $config['subdomain_base_domain'] ?? $parentConfig['subdomain_base_domain'] ?? null;
+            if ($baseDomain !== null) {
+                return strtolower($config['subdomain_sld'] . '.' . trim((string) $baseDomain, '.'));
+            }
+        }
+
+        return null;
+    }
+
     public function removeProduct(\Model_Cart $cart, $id, $removeAddons = true): bool
     {
         $bindings = [
@@ -276,7 +369,7 @@ class Service implements InjectionAwareInterface
         $cart->currency_id = $currency->getId();
         $this->di['db']->store($cart);
 
-        $this->di['logger']->info('Changed shopping cart #%s currency to %s', $cart->id, $currency->getTitle());
+        $this->di['logger']->info('Changed shopping cart #%s currency to %s', $cart->id, $currency->getCode());
 
         return true;
     }
@@ -327,7 +420,7 @@ class Service implements InjectionAwareInterface
     {
         $cartProducts = $this->di['db']->find('CartProduct', 'cart_id = :cart_id', [':cart_id' => $cart->id]);
 
-        return (is_countable($cartProducts) ? count($cartProducts) : 0) == 0;
+        return \FOSSBilling\Tools::safeCount($cartProducts) == 0;
     }
 
     public function rm(\Model_Cart $cart): bool
@@ -523,7 +616,7 @@ class Service implements InjectionAwareInterface
     {
         $cart = $this->getSessionCart();
         $ca = $this->toApiArray($cart);
-        if ((is_countable($ca['items']) ? count($ca['items']) : 0) == 0) {
+        if (\FOSSBilling\Tools::safeCount($ca['items']) == 0) {
             throw new \FOSSBilling\InformationException('Cannot checkout an empty cart');
         }
 
@@ -555,6 +648,7 @@ class Service implements InjectionAwareInterface
         $orders = [];
         $invoice_items = [];
         $master_order = null;
+        $requestedProductQuantities = [];
         $i = 0;
 
         foreach ($this->getCartProducts($cart) as $p) {
@@ -563,6 +657,12 @@ class Service implements InjectionAwareInterface
             $product = $this->di['db']->getExistingModelById('Product', $item['product_id']);
             if (is_null($product) || $product->status !== 'enabled') {
                 throw new \FOSSBilling\InformationException('Unable to complete order. One or more of the selected products are invalid.');
+            }
+
+            $requestedQty = $this->getRequestedQuantity($item);
+            $requestedProductQuantities[$product->id] = ($requestedProductQuantities[$product->id] ?? 0) + $requestedQty;
+            if (!$this->isStockAvailable($product, $requestedProductQuantities[$product->id])) {
+                throw new \FOSSBilling\InformationException('Unable to complete order. One or more selected products are out of stock.');
             }
 
             /*
@@ -611,7 +711,7 @@ class Service implements InjectionAwareInterface
 
             // mark promo as used
             if ($cart->promo_id) {
-                $promo = $this->di['db']->getExistingModelById('Promo', $cart->promo_id, 'Promo not found.');
+                $promo = $this->di['db']->getExistingModelById('Promo', $cart->promo_id, 'Promo Not Found');
                 $this->usePromo($promo);
 
                 // set promo info for later use
@@ -621,7 +721,7 @@ class Service implements InjectionAwareInterface
             }
 
             $orderService = $this->di['mod_service']('order');
-            $orderService->saveStatusChange($order, 'Order created');
+            $orderService->saveStatusChange($order, 'Order Created');
 
             $invoice_items[] = [
                 'title' => $order->title,
@@ -720,9 +820,13 @@ class Service implements InjectionAwareInterface
 
     public function usePromo(\Model_Promo $promo): void
     {
-        ++$promo->used;
-        $promo->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($promo);
+        $affectedRows = $this->di['db']->exec(
+            'UPDATE promo SET used = used + 1, updated_at = ? WHERE id = ? AND (maxuses = 0 OR maxuses IS NULL OR maxuses > used)',
+            [date('Y-m-d H:i:s'), $promo->id]
+        );
+        if ($affectedRows === 0) {
+            throw new \FOSSBilling\InformationException('This promo code has reached its maximum number of uses.');
+        }
     }
 
     public function findActivePromoByCode($code)
@@ -739,6 +843,7 @@ class Service implements InjectionAwareInterface
     protected function getRelatedItemsDiscount(\Model_Cart $cart, \Model_CartProduct $model)
     {
         $product = $this->di['db']->load('Product', $model->product_id);
+        $product->setDi($this->di);
         $repo = $product->getTable();
         $config = $this->getItemConfig($model);
 
@@ -760,6 +865,7 @@ class Service implements InjectionAwareInterface
     private function getItemTitle(\Model_CartProduct $model)
     {
         $product = $this->di['db']->load('Product', $model->product_id);
+        $product->setDi($this->di);
         $config = $this->getItemConfig($model);
         $service = $product->getService();
         if (method_exists($service, 'getCartProductTitle')) {
@@ -772,6 +878,7 @@ class Service implements InjectionAwareInterface
     protected function getItemPromoDiscount(\Model_CartProduct $model, \Model_Promo $promo)
     {
         $product = $this->di['db']->load('Product', $model->product_id);
+        $product->setDi($this->di);
         $repo = $this->di['mod_service']('product');
         $config = $this->getItemConfig($model);
 
@@ -786,11 +893,13 @@ class Service implements InjectionAwareInterface
     public function cartProductToApiArray(\Model_CartProduct $model): array
     {
         $product = $this->di['db']->load('Product', $model->product_id);
+        $product->setDi($this->di);
         $repo = $product->getTable();
         $config = $this->getItemConfig($model);
-        $setup = $repo->getProductSetupPrice($product, $config);
-        $price = $repo->getProductPrice($product, $config);
-        $qty = $config['quantity'] ?? 1;
+        $line = $repo->getOrderLineConfig($product, $config);
+        $setup = $line['setup_price'];
+        $price = $line['price'];
+        $qty = $line['quantity'];
 
         [$discount_price, $discount_setup] = $this->getProductDiscount($model, $setup);
 

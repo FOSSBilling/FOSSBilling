@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -10,38 +11,43 @@
  */
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'load.php';
 
-use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+
+/* @var Symfony\Component\HttpFoundation\Request $request */
+global $request;
 
 $di = include Path::join(PATH_ROOT, 'di.php');
 $di['translate']();
 
-$filesystem = new Filesystem();
-
-$invoiceID = $_POST['invoice_id'] ?? $_GET['invoice_id'] ?? $_POST['bb_invoice_id'] ?? $_GET['bb_invoice_id'] ?? null;
-
-$gatewayID = $_POST['gateway_id'] ?? $_GET['gateway_id'] ?? $_POST['bb_gateway_id'] ?? $_GET['bb_gateway_id'] ?? null;
-
-if ($gatewayID !== null) {
-    $gatewayID = filter_var($gatewayID, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-    if ($gatewayID === false) {
-        http_response_code(400);
-        echo json_encode(['error' => ['message' => 'Invalid gateway ID']]);
+$invoiceID = $request->get('invoice_id');
+if ($invoiceID !== null) {
+    $invoiceID = filter_var($invoiceID, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+    if ($invoiceID === false) {
+        (new JsonResponse(['error' => ['message' => 'Invalid invoice ID']], 400))->send();
         exit;
     }
 }
 
-$_GET['bb_invoice_id'] = $invoiceID;
-$_GET['bb_gateway_id'] = $gatewayID;
+$gatewayID = $request->get('gateway_id');
+
+if ($gatewayID !== null) {
+    $gatewayID = filter_var($gatewayID, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+    if ($gatewayID === false) {
+        (new JsonResponse(['error' => ['message' => 'Invalid gateway ID']], 400))->send();
+        exit;
+    }
+}
 
 $ipn = [
-    'skip_validation' => true,
     'invoice_id' => $invoiceID,
     'gateway_id' => $gatewayID,
-    'get' => $_GET,
-    'post' => $_POST,
-    'server' => $_SERVER,
-    'http_raw_post_data' => $filesystem->readFile('php://input'),
+    'source' => 'ipn',
+    'get' => $request->query->all(),
+    'post' => $request->request->all(),
+    'server' => $request->server->all(),
+    'http_raw_post_data' => $request->getContent(),
 ];
 
 try {
@@ -54,15 +60,16 @@ try {
 }
 
 // redirect to invoice if gateways requires
-if (isset($_GET['redirect'], $_GET['invoice_hash']) || isset($_GET['bb_redirect'], $_GET['bb_invoice_hash'])) {
-    $hash = $_GET['invoice_hash'] ?? $_GET['bb_invoice_hash'];
+if ($request->query->has('redirect') && $request->query->has('invoice_hash')) {
+    $invoiceHash = $request->query->get('invoice_hash');
+    $hash = preg_replace('/[^a-zA-Z0-9]/', '', is_string($invoiceHash) ? $invoiceHash : '');
     $url = $di['url']->link('invoice/' . $hash);
-    header("Location: $url");
+    (new RedirectResponse($url))->send();
     exit;
 }
 
-header('Cache-Control: no-cache, must-revalidate');
-header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
-header('Content-type: application/json; charset=utf-8');
-echo json_encode($res);
+(new JsonResponse($res, 200, [
+    'Cache-Control' => 'no-cache, must-revalidate',
+    'Expires' => 'Mon, 26 Jul 1997 05:00:00 GMT',
+]))->send();
 exit;

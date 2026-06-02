@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -32,7 +33,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 [
                     'location' => 'system',
                     'index' => 140,
-                    'label' => __trans('Hosting plans and servers'),
+                    'label' => __trans('Hosting Plans and Servers'),
                     'uri' => $this->di['url']->adminLink('servicehosting'),
                     'class' => '',
                 ],

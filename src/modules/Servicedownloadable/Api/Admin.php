@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -12,6 +13,7 @@
 namespace Box\Mod\Servicedownloadable\Api;
 
 use FOSSBilling\Validation\Api\RequiredParams;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Downloadable service management.
@@ -27,6 +29,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function upload($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicedownloadable', 'manage');
+
         $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
 
         $request = $this->di['request'];
@@ -51,6 +55,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['order_id' => 'Order ID (order_id) was not passed'])]
     public function update($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicedownloadable', 'manage');
+
         $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
 
         $orderService = $this->di['mod_service']('order');
@@ -71,6 +77,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function config_save($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicedownloadable', 'manage');
+
         $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
 
         $service = $this->getService();
@@ -83,17 +91,19 @@ class Admin extends \Api_Abstract
      *
      * @param array{id:int|string} $data data required to send the product file, must contain the product ID as `id`
      *
-     * @return bool true if the product file was successfully sent
+     * @return Response the product file download response
      *
      * @throws \FOSSBilling\Exception if the product cannot be found or the file cannot be sent
      */
     #[RequiredParams(['id' => 'Product ID was not passed'])]
-    public function send_file($data): bool
+    public function send_file($data): Response
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('servicedownloadable', 'manage');
+
         $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
 
         $service = $this->getService();
 
-        return (bool) $service->sendProductFile($model);
+        return $service->sendProductFile($model);
     }
 }

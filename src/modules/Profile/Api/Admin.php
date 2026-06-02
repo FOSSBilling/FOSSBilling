@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -52,7 +53,6 @@ class Admin extends \Api_Abstract
      */
     public function logout(): bool
     {
-        unset($_COOKIE['BOXADMR']);
         $this->di['session']->destroy('admin');
         $this->di['logger']->info('Admin logged out');
 
@@ -112,6 +112,9 @@ class Admin extends \Api_Abstract
 
         $staff = $this->getIdentity();
 
+        $this->di['rate_limiter']->consumeOrThrow('profile_password_change_ip', (string) $this->getIp());
+        $this->di['rate_limiter']->consumeOrThrow('profile_password_change_account', 'admin:' . $staff->id);
+
         if (!$this->di['password']->verify($data['current_password'], $staff->pass)) {
             throw new \FOSSBilling\InformationException('Current password incorrect');
         }
@@ -122,19 +125,11 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Used to destroy / invalidate all existing sessions for a given user.
-     *
-     * @param array $data An array with the options.
-     *                    The array can contain the following sub-keys:
-     *                    - string|null $data['type'] The user type (admin or staff) (optional).
-     *                    - id|null $data['id'] The session ID (optional).
+     * Destroy / invalidate all existing sessions for the currently logged in user.
      */
-    public function destroy_sessions(array $data): bool
+    public function destroy_sessions(): bool
     {
-        $data['type'] ??= null;
-        $data['id'] ??= null;
-
-        return $this->getService()->invalidateSessions($data['type'], $data['id']);
+        return $this->getService()->invalidateSessions();
     }
 
     /**
@@ -145,7 +140,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Client ID was not passed'])]
     public function api_key_reset($data): string
     {
-        $client = $this->di['db']->getExistingModelById('Client', $data['di']);
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_api_keys');
+
+        $client = $this->di['db']->getExistingModelById('Client', $data['id']);
 
         return $this->getService()->resetApiKey($client);
     }

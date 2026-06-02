@@ -5,22 +5,15 @@
     "dev": "node ./esbuild.mjs"
   },
   "dependencies": {
-    "@dicebear/core": "^9.0.0",
-    "@dicebear/identicon": "^9.0.0",
     "@melloware/coloris": "^0.25.0",
     "@tabler/core": "^1.2.0",
-    "apexcharts": "^5.0.0",
+    "chart.js": "^4.5.1",
     "flag-icons": "^7.2.3",
     "litepicker": "^2.0.12",
     "sortable-tablesort": "^4.1.7",
     "tom-select": "^2.3.1"
   },
   "devDependencies": {
-    "autoprefixer": "10.4.27",
-    "esbuild": "0.27.3",
-    "postcss": "8.5.8",
-    "purgecss": "8.0.0",
-    "sass": "1.97.3",
     "svg-sprite": "2.0.4"
   }
 }

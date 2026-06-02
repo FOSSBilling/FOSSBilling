@@ -1,0 +1,911 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Box\Mod\Invoice;
+
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
+
+#[Group('Core')]
+final class ServiceTransactionTest extends \BBTestCase
+{
+    protected ?ServiceTransaction $service;
+
+    public function setUp(): void
+    {
+        $this->service = new ServiceTransaction();
+    }
+
+    public function testProcessReceivedTransactions(): void
+    {
+        $transactionModel = new \Model_Transaction();
+        $transactionModel->loadBean(new \DummyBean());
+
+        $serviceMock = $this->getMockBuilder(ServiceTransaction::class)
+            ->onlyMethods(['getReceived', 'preProcessTransaction'])
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('getReceived')
+            ->willReturn([[]]);
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('preProcessTransaction');
+
+        $dbMock = $this->getMockBuilder('\Box_Database')
+            ->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getExistingModelById')
+            ->willReturnOnConsecutiveCalls($transactionModel);
+
+        $di = $this->getDi();
+        $di['logger'] = new \Box_Log();
+        $di['db'] = $dbMock;
+
+        $serviceMock->setDi($di);
+        $result = $serviceMock->processReceivedATransactions();
+        $this->assertTrue($result);
+    }
+
+    public function testGetReceivedIncludesRecoverableProcessingTransactions(): void
+    {
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('getAll')
+            ->with(
+                $this->callback(function (string $sql): bool {
+                    $this->assertStringContainsString('m.status = :received_status', $sql);
+                    $this->assertStringContainsString('m.status = :processing_status', $sql);
+                    $this->assertStringContainsString('m.updated_at IS NULL OR m.updated_at <= :processing_retry_after', $sql);
+
+                    return true;
+                }),
+                $this->callback(function (array $params): bool {
+                    $this->assertSame(\Model_Transaction::STATUS_RECEIVED, $params['received_status']);
+                    $this->assertSame(\Model_Transaction::STATUS_PROCESSING, $params['processing_status']);
+
+                    $retryAfter = strtotime((string) $params['processing_retry_after']);
+                    $this->assertNotFalse($retryAfter);
+
+                    $now = time();
+                    $this->assertLessThanOrEqual($now - 295, $retryAfter);
+                    $this->assertGreaterThanOrEqual($now - 305, $retryAfter);
+
+                    return true;
+                })
+            )
+            ->willReturn([[]]);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $result = $this->service->getReceived();
+        $this->assertIsArray($result);
+    }
+
+    public function testClaimForProcessingAllowsRecoveringStaleProcessingTransactions(): void
+    {
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('exec')
+            ->with(
+                $this->callback(function (string $sql): bool {
+                    $this->assertStringContainsString('status = ?', $sql);
+                    $this->assertStringContainsString('status = ? AND (updated_at IS NULL OR updated_at <= ?)', $sql);
+
+                    return true;
+                }),
+                $this->callback(function (array $params): bool {
+                    $this->assertSame(\Model_Transaction::STATUS_PROCESSING, $params[0]);
+                    $this->assertSame(123, $params[2]);
+                    $this->assertSame(\Model_Transaction::STATUS_RECEIVED, $params[3]);
+                    $this->assertSame(\Model_Transaction::STATUS_PROCESSING, $params[4]);
+
+                    $claimedAt = strtotime((string) $params[1]);
+                    $retryAfter = strtotime((string) $params[5]);
+                    $this->assertNotFalse($claimedAt);
+                    $this->assertNotFalse($retryAfter);
+                    $this->assertGreaterThanOrEqual(295, $claimedAt - $retryAfter);
+                    $this->assertLessThanOrEqual(305, $claimedAt - $retryAfter);
+
+                    return true;
+                })
+            )
+            ->willReturn(1);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $this->assertTrue($this->service->claimForProcessing(123));
+    }
+
+    public function testClaimForProcessingDoesNotAllowProcessedTransactions(): void
+    {
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('exec')
+            ->with(
+                $this->callback(function (string $sql): bool {
+                    $this->assertStringContainsString('status = ? OR (status = ? AND (updated_at IS NULL OR updated_at <= ?))', $sql);
+                    $this->assertStringNotContainsString('status IN (?, ?)', $sql);
+
+                    return true;
+                }),
+                $this->callback(function (array $params): bool {
+                    $this->assertCount(6, $params);
+                    $this->assertSame(\Model_Transaction::STATUS_PROCESSING, $params[0]);
+                    $this->assertSame(456, $params[2]);
+                    $this->assertSame(\Model_Transaction::STATUS_RECEIVED, $params[3]);
+                    $this->assertSame(\Model_Transaction::STATUS_PROCESSING, $params[4]);
+                    $this->assertNotContains(\Model_Transaction::STATUS_PROCESSED, $params);
+
+                    return true;
+                })
+            )
+            ->willReturn(0);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $this->assertFalse($this->service->claimForProcessing(456));
+    }
+
+    public function testUpdate(): void
+    {
+        $eventsMock = $this->createMock('\Box_EventManager');
+        $eventsMock->expects($this->atLeastOnce())
+            ->method('fire');
+
+        $transactionModel = new \Model_Transaction();
+        $transactionModel->loadBean(new \DummyBean());
+
+        $dbMock = $this->getMockBuilder('\Box_Database')
+            ->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['events_manager'] = $eventsMock;
+        $di['logger'] = new \Box_Log();
+
+        $this->service->setDi($di);
+
+        $data = [
+            'invoice_id' => 1,
+            'txn_id' => 2,
+            'txn_status' => '',
+            'gateway_id' => 1,
+            'amount' => '',
+            'currency' => '',
+            'type' => '',
+            'note' => '',
+            'status' => '',
+            'validate_ipn' => '',
+        ];
+        $result = $this->service->update($transactionModel, $data);
+        $this->assertTrue($result);
+    }
+
+    public function testCreateInvalidMissingInvoiceId(): void
+    {
+        $eventsMock = $this->createMock('\Box_EventManager');
+        $eventsMock->expects($this->atLeastOnce())
+            ->method('fire');
+
+        $di = $this->getDi();
+        $di['events_manager'] = $eventsMock;
+
+        $this->service->setDi($di);
+
+        $data = [
+            'skip_validation' => false,
+        ];
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('Transaction invoice ID is missing');
+        $this->service->create($data);
+    }
+
+    public function testCreateInvalidMissingGatewayId(): void
+    {
+        $eventsMock = $this->createMock('\Box_EventManager');
+        $eventsMock->expects($this->atLeastOnce())
+            ->method('fire');
+
+        $di = $this->getDi();
+        $di['events_manager'] = $eventsMock;
+
+        $this->service->setDi($di);
+
+        $data = [
+            'skip_validation' => false,
+            'invoice_id' => 2,
+        ];
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionMessage('Payment gateway ID is missing');
+        $this->service->create($data);
+    }
+
+    public function testDelete(): void
+    {
+        $dbMock = $this->getMockBuilder('\Box_Database')
+            ->getMock();
+        $dbMock->expects($this->atLeastOnce())
+            ->method('trash');
+
+        $di = $this->getDi();
+        $di['logger'] = new \Box_Log();
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $transactionModel = new \Model_Transaction();
+        $transactionModel->loadBean(new \DummyBean());
+
+        $result = $this->service->delete($transactionModel);
+        $this->assertTrue($result);
+    }
+
+    public function testToApiArray(): void
+    {
+        $dbMock = $this->getMockBuilder('\Box_Database')
+            ->getMock();
+        $payGatewayModel = new \Model_PayGateway();
+        $payGatewayModel->loadBean(new \DummyBean());
+        $dbMock->expects($this->atLeastOnce())
+            ->method('load')
+            ->willReturn($payGatewayModel);
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $expected = [
+            'id' => null,
+            'invoice_id' => null,
+            'txn_id' => null,
+            'txn_status' => null,
+            'gateway_id' => 1,
+            'gateway' => null,
+            'amount' => null,
+            'currency' => null,
+            'type' => null,
+            'status' => null,
+            'ip' => null,
+            'validate_ipn' => null,
+            'error' => null,
+            'error_code' => null,
+            'note' => null,
+            'created_at' => null,
+            'updated_at' => null,
+        ];
+        $transactionModel = new \Model_Transaction();
+        $transactionModel->loadBean(new \DummyBean());
+        $transactionModel->gateway_id = 1;
+
+        $result = $this->service->toApiArray($transactionModel, false);
+        $this->assertIsArray($result);
+        $this->assertEquals($expected, $result);
+    }
+
+    public static function searchQueryData(): array
+    {
+        return [
+            [
+                [], [], 'SELECT m.*',
+            ],
+            [
+                ['search' => 'keyword'], ['note' => '%keyword%', 'search_invoice_id' => '%keyword%', 'search_txn_id' => '%keyword%', 'ipn' => '%keyword%'], 'AND (m.note LIKE :note OR m.invoice_id LIKE :search_invoice_id OR m.txn_id LIKE :search_txn_id OR m.ipn LIKE :ipn)',
+            ],
+            [
+                ['invoice_hash' => 'hashString'], ['hash' => 'hashString'], 'AND i.hash = :hash',
+            ],
+            [
+                ['invoice_id' => '1'], ['invoice_id' => '1'], 'AND m.invoice_id = :invoice_id',
+            ],
+            [
+                ['gateway_id' => '2'], ['gateway_id' => '2'], 'AND m.gateway_id = :gateway_id',
+            ],
+            [
+                ['client_id' => '3'], ['client_id' => '3'], 'AND i.client_id = :client_id',
+            ],
+            [
+                ['status' => 'active'], ['status' => 'active'], 'AND m.status = :status',
+            ],
+            [
+                ['currency' => 'Eur'], ['currency' => 'Eur'], 'AND m.currency = :currency',
+            ],
+            [
+                ['type' => 'payment'], ['type' => 'payment'], 'AND m.type = :type',
+            ],
+            [
+                ['txn_id' => 'longTxn_id'], ['txn_id' => 'longTxn_id'], 'AND m.txn_id = :txn_id',
+            ],
+            [
+                ['date_from' => '2012-12-12'], ['date_from' => 1_355_270_400], 'AND UNIX_TIMESTAMP(m.created_at) >= :date_from',
+            ],
+            [
+                ['date_to' => '2012-12-12'], ['date_to' => 1_355_270_400], 'AND UNIX_TIMESTAMP(m.created_at) <= :date_to',
+            ],
+        ];
+    }
+
+    #[DataProvider('searchQueryData')]
+    public function testGetSearchQuery(array $data, array $expectedParams, string $expectedStringPart): void
+    {
+        $di = $this->getDi();
+
+        $this->service->setDi($di);
+        $result = $this->service->getSearchQuery($data);
+        $this->assertIsString($result[0]);
+        $this->assertIsArray($result[1]);
+
+        $this->assertTrue(str_contains($result[0], $expectedStringPart));
+        $this->assertEquals($expectedParams, $result[1]);
+    }
+
+    public function testGetSearchQueryKeepsClientScopeWhenSearchFilterIsUsed(): void
+    {
+        $di = $this->getDi();
+
+        $this->service->setDi($di);
+
+        [$sql, $params] = $this->service->getSearchQuery([
+            'client_id' => 42,
+            'search' => 'needle',
+        ]);
+
+        $this->assertStringContainsString('AND i.client_id = :client_id', $sql);
+        $this->assertStringContainsString(
+            'AND (m.note LIKE :note OR m.invoice_id LIKE :search_invoice_id OR m.txn_id LIKE :search_txn_id OR m.ipn LIKE :ipn)',
+            $sql
+        );
+        $this->assertSame(42, $params['client_id']);
+        $this->assertSame('%needle%', $params['note']);
+        $this->assertSame('%needle%', $params['search_invoice_id']);
+        $this->assertSame('%needle%', $params['search_txn_id']);
+        $this->assertSame('%needle%', $params['ipn']);
+    }
+
+    public function testCounter(): void
+    {
+        $queryResult = [['status' => \Model_Transaction::STATUS_RECEIVED, 'counter' => 1]];
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('getAll')
+            ->willReturn($queryResult);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $result = $this->service->counter();
+        $this->assertIsArray($result);
+        $expected = [
+            'total' => 1,
+            'received' => 1,
+            'approved' => 0,
+            'processing' => 0,
+            'processed' => 0,
+            'error' => 0,
+        ];
+        $this->assertEquals($expected, $result);
+    }
+
+    public function testGetStatusPairs(): void
+    {
+        $result = $this->service->getStatusPairs();
+        $this->assertIsArray($result);
+
+        $expected = [
+            'received' => 'Received',
+            'approved' => 'Approved',
+            'processing' => 'Processing',
+            'processed' => 'Processed',
+            'error' => 'Error',
+        ];
+        $this->assertEquals($expected, $result);
+    }
+
+    public function testGetStatus(): void
+    {
+        $result = $this->service->getStatuses();
+        $this->assertIsArray($result);
+
+        $expected = [
+            'received' => 'Received',
+            'approved' => 'Approved/Verified',
+            'processing' => 'Processing',
+            'processed' => 'Processed',
+            'error' => 'Error',
+        ];
+        $this->assertEquals($expected, $result);
+    }
+
+    public function testGetGatewayStatuses(): void
+    {
+        $result = $this->service->getGatewayStatuses();
+        $this->assertIsArray($result);
+
+        $expected = [
+            'pending' => 'Pending validation',
+            'complete' => 'Complete',
+            'unknown' => 'Unknown',
+        ];
+        $this->assertEquals($expected, $result);
+    }
+
+    public function testGetTypes(): void
+    {
+        $result = $this->service->getTypes();
+        $this->assertIsArray($result);
+
+        $expected = [
+            'payment' => 'Payment',
+            'refund' => 'Refund',
+            'subscription_create' => 'Subscription create',
+            'subscription_cancel' => 'Subscription cancel',
+            'unknown' => 'Unknown',
+        ];
+        $this->assertEquals($expected, $result);
+    }
+
+    public function testPreProcessTransaction(): void
+    {
+        $transactionModel = new \Model_Transaction();
+        $transactionModel->loadBean(new \DummyBean());
+
+        $serviceMock = $this->getMockBuilder(ServiceTransaction::class)
+            ->onlyMethods(['processTransaction'])
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('processTransaction')
+            ->willReturn('processedOutputString');
+
+        $eventMock = $this->createMock('\Box_EventManager');
+        $eventMock->expects($this->atLeastOnce())
+            ->method('fire');
+
+        $di = $this->getDi();
+        $di['events_manager'] = $eventMock;
+        $di['logger'] = new \Box_Log();
+        $serviceMock->setDi($di);
+
+        $result = $serviceMock->preProcessTransaction($transactionModel);
+        $this->assertIsString($result);
+    }
+
+    public function testPreProcessTransactionRegisterException(): void
+    {
+        $transactionModel = new \Model_Transaction();
+        $transactionModel->loadBean(new \DummyBean());
+
+        $exceptionMessage = 'Exception created with PHPUnit Test';
+
+        $serviceMock = $this->getMockBuilder(ServiceTransaction::class)
+            ->onlyMethods(['processTransaction'])
+            ->getMock();
+        $serviceMock->expects($this->atLeastOnce())
+            ->method('processTransaction')
+            ->will($this->throwException(new \FOSSBilling\Exception($exceptionMessage)));
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $serviceMock->setDi($di);
+
+        $this->expectException(\FOSSBilling\Exception::class);
+        $this->expectExceptionMessage($exceptionMessage);
+        $serviceMock->preProcessTransaction($transactionModel);
+    }
+
+    public static function paymentsAdapterProvider_withProcessTransaction(): array
+    {
+        return [
+            ['\Payment_Adapter_PayPalEmail'],
+        ];
+    }
+
+    #[DataProvider('paymentsAdapterProvider_withProcessTransaction')]
+    public function testProcessTransactionSupportProcessTransaction(string $adapter): void
+    {
+        $id = 1;
+        $transactionModel = new \Model_Transaction();
+        $transactionModel->loadBean(new \DummyBean());
+        $transactionModel->gateway_id = 2;
+        $transactionModel->ipn = '{}';
+
+        $payGatewayModel = new \Model_PayGateway();
+        $payGatewayModel->loadBean(new \DummyBean());
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('load')
+            ->willReturnOnConsecutiveCalls($transactionModel, $payGatewayModel);
+
+        $paymentAdapterMock = $this->getMockBuilder($adapter)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $paymentAdapterMock->expects($this->atLeastOnce())
+            ->method('processTransaction');
+
+        $payGatewayService = $this->createMock(ServicePayGateway::class);
+        $payGatewayService->expects($this->atLeastOnce())
+            ->method('getPaymentAdapter')
+            ->willReturn($paymentAdapterMock);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $payGatewayService);
+        $apiSystem = new \Api_Handler(new \Model_Admin());
+        $apiSystem->setDi($di);
+        $di['api_system'] = $apiSystem;
+        $this->service->setDi($di);
+
+        $this->service->processTransaction($id);
+    }
+
+    public function testDebitTransaction(): void
+    {
+        $currency = 'EUR';
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+        $invoiceModel->currency = $currency;
+
+        $clientModel = new \Model_Client();
+        $clientModel->loadBean(new \DummyBean());
+        $clientModel->currency = $currency;
+
+        $transactionModel = new \Model_Transaction();
+        $transactionModel->loadBean(new \DummyBean());
+        $transactionModel->amount = 11;
+
+        $clientBalanceModel = new \Model_ClientBalance();
+        $clientBalanceModel->loadBean(new \DummyBean());
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('load')
+            ->willReturnOnConsecutiveCalls($invoiceModel, $clientModel);
+        $dbMock->expects($this->atLeastOnce())
+            ->method('dispense')
+            ->willReturn($clientBalanceModel);
+        $dbMock->expects($this->atLeastOnce())
+            ->method('store');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $this->service->setDi($di);
+
+        $this->service->debitTransaction($transactionModel);
+    }
+
+    public function testCreateAndProcess(): void
+    {
+        $tx = new \Model_Transaction();
+        $tx->loadBean(new \DummyBean());
+        $tx->status = \Model_Transaction::STATUS_RECEIVED;
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('getExistingModelById')
+            ->willReturn($tx);
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+
+        $serviceMock = $this->getMockBuilder(ServiceTransaction::class)
+            ->onlyMethods(['create', 'processTransaction'])
+            ->getMock();
+        $serviceMock->expects($this->once())
+            ->method('create')
+            ->willReturn(1);
+        $serviceMock->expects($this->once())
+            ->method('processTransaction');
+        $serviceMock->setDi($di);
+
+        $ipn = [];
+        $serviceMock->createAndProcess($ipn);
+    }
+
+    public function testCreateReturnsExistingForDuplicateIpn(): void
+    {
+        $existing = new \Model_Transaction();
+        $existing->loadBean(new \DummyBean());
+        $existing->id = 123;
+        $existing->status = \Model_Transaction::STATUS_PROCESSED;
+
+        $schemaManager = new class {
+            public function listTableColumns(string $table): array
+            {
+                return [
+                    new class {
+                        public function getName(): string
+                        {
+                            return 'ipn_hash';
+                        }
+                    },
+                ];
+            }
+
+            public function listTableIndexes(string $table): array
+            {
+                return [
+                    new class {
+                        public function getName(): string
+                        {
+                            return 'transaction_ipn_hash_idx';
+                        }
+                    },
+                ];
+            }
+        };
+
+        $dbal = new readonly class($schemaManager) {
+            public function __construct(private object $schemaManager)
+            {
+            }
+
+            public function createSchemaManager(): object
+            {
+                return $this->schemaManager;
+            }
+
+            public function executeStatement(string $sql): never
+            {
+                throw new \RuntimeException('Unexpected schema repair query: ' . $sql);
+            }
+        };
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->atLeastOnce())
+            ->method('findOne')
+            ->willReturn($existing);
+        $dbMock->expects($this->never())
+            ->method('dispense');
+
+        $eventsMock = $this->createMock('\Box_EventManager');
+        $eventsMock->expects($this->atLeastOnce())
+            ->method('fire');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['dbal'] = $dbal;
+        $di['events_manager'] = $eventsMock;
+        $di['logger'] = new \Box_Log();
+
+        $this->service->setDi($di);
+
+        $data = [
+            'skip_validation' => true,
+            'gateway_id' => 2,
+            'post' => ['amount' => '10.00', 'mc_currency' => 'EUR'],
+            'get' => [],
+            'http_raw_post_data' => null,
+            'server' => null,
+        ];
+
+        $resultId = $this->service->create($data);
+        $this->assertEquals(123, $resultId);
+    }
+
+    public function testCreateSkipsIpnHashLookupWhenSchemaDoesNotHaveColumn(): void
+    {
+        $transactionModel = new \Model_Transaction();
+        $transactionModel->loadBean(new \DummyBean());
+        $payGatewayModel = new \Model_PayGateway();
+        $payGatewayModel->loadBean(new \DummyBean());
+        $invoiceModel = new \Model_Invoice();
+        $invoiceModel->loadBean(new \DummyBean());
+
+        $schemaManager = new class {
+            public function listTableColumns(string $table): array
+            {
+                return [];
+            }
+
+            public function listTableIndexes(string $table): array
+            {
+                return [];
+            }
+        };
+
+        $dbal = new readonly class($schemaManager) {
+            public function __construct(private object $schemaManager)
+            {
+            }
+
+            public function createSchemaManager(): object
+            {
+                return $this->schemaManager;
+            }
+
+            public function executeStatement(string $sql): never
+            {
+                throw new \RuntimeException('No SQL statements should be executed during transaction creation: ' . $sql);
+            }
+        };
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->once())
+            ->method('findOne')
+            ->willReturnCallback(function (string $model, string $sql, array $bindings) {
+                $this->assertSame('Transaction', $model);
+                $this->assertSame('txn_id = ? AND gateway_id = ?', $sql);
+                $this->assertSame(['manual-txn-1', 5], $bindings);
+
+                return null;
+            });
+        $dbMock->expects($this->once())
+            ->method('dispense')
+            ->with('Transaction')
+            ->willReturn($transactionModel);
+        $dbMock->expects($this->once())
+            ->method('store')
+            ->with($this->callback(function (\Model_Transaction $transaction): bool {
+                $this->assertSame(5, $transaction->gateway_id);
+                $this->assertSame(42, $transaction->invoice_id);
+                $this->assertSame('manual-txn-1', $transaction->txn_id);
+                $this->assertNull($transaction->ipn_hash);
+
+                return true;
+            }))
+            ->willReturn(99);
+        $dbMock->expects($this->exactly(3))
+            ->method('getExistingModelById')
+            ->willReturnCallback(function (string $modelName, int $id, string $message) use ($payGatewayModel, $invoiceModel) {
+                static $calls = 0;
+                ++$calls;
+
+                if ($calls === 1) {
+                    $this->assertSame('PayGateway', $modelName);
+                    $this->assertSame(5, $id);
+                    $this->assertSame('Gateway was not found', $message);
+
+                    return $payGatewayModel;
+                }
+
+                if ($calls === 2) {
+                    $this->assertSame('Invoice', $modelName);
+                    $this->assertSame(42, $id);
+                    $this->assertSame('Invoice was not found', $message);
+
+                    return $invoiceModel;
+                }
+
+                if ($calls === 3) {
+                    $this->assertSame('PayGateway', $modelName);
+                    $this->assertSame(5, $id);
+                    $this->assertSame('Gateway was not found', $message);
+
+                    return $payGatewayModel;
+                }
+
+                $this->fail('Unexpected getExistingModelById call');
+            });
+
+        $requestMock = new class {
+            public function getClientIp(): string
+            {
+                return '127.0.0.1';
+            }
+        };
+
+        $eventsMock = $this->createMock('\Box_EventManager');
+        $eventsMock->expects($this->exactly(2))
+            ->method('fire');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['dbal'] = $dbal;
+        $di['request'] = $requestMock;
+        $di['events_manager'] = $eventsMock;
+        $di['logger'] = new \Box_Log();
+
+        $this->service->setDi($di);
+
+        $resultId = $this->service->create([
+            'invoice_id' => 42,
+            'gateway_id' => 5,
+            'txn_id' => 'manual-txn-1',
+            'source' => 'admin',
+        ]);
+
+        $this->assertSame(99, $resultId);
+    }
+
+    public function testCreateUsesIpnHashLookupWhenSchemaSupportsColumn(): void
+    {
+        $existing = new \Model_Transaction();
+        $existing->loadBean(new \DummyBean());
+        $existing->id = 321;
+
+        $schemaManager = new class {
+            public function listTableColumns(string $table): array
+            {
+                return [
+                    new class {
+                        public function getName(): string
+                        {
+                            return 'ipn_hash';
+                        }
+                    },
+                ];
+            }
+
+            public function listTableIndexes(string $table): array
+            {
+                return [
+                    new class {
+                        public function getName(): string
+                        {
+                            return 'transaction_ipn_hash_idx';
+                        }
+                    },
+                ];
+            }
+        };
+
+        $dbal = new readonly class($schemaManager) {
+            public function __construct(private object $schemaManager)
+            {
+            }
+
+            public function createSchemaManager(): object
+            {
+                return $this->schemaManager;
+            }
+
+            public function executeStatement(string $sql): never
+            {
+                throw new \RuntimeException('Unexpected schema repair query: ' . $sql);
+            }
+        };
+
+        $dbMock = $this->createMock('\Box_Database');
+        $dbMock->expects($this->exactly(2))
+            ->method('findOne')
+            ->willReturnCallback(function (string $model, string $sql, array $bindings) use ($existing) {
+                if ($sql === 'txn_id = ? AND gateway_id = ?') {
+                    return null;
+                }
+
+                if ($sql === 'gateway_id = ? AND ipn_hash = ?') {
+                    $this->assertSame('Transaction', $model);
+                    $this->assertSame(5, $bindings[0]);
+                    $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $bindings[1]);
+
+                    return $existing;
+                }
+
+                $this->fail('Unexpected findOne lookup: ' . $sql);
+            });
+
+        $eventsMock = $this->createMock('\Box_EventManager');
+        $eventsMock->expects($this->once())
+            ->method('fire');
+
+        $di = $this->getDi();
+        $di['db'] = $dbMock;
+        $di['dbal'] = $dbal;
+        $di['events_manager'] = $eventsMock;
+        $di['logger'] = new \Box_Log();
+
+        $this->service->setDi($di);
+
+        $resultId = $this->service->create([
+            'skip_validation' => true,
+            'gateway_id' => 5,
+            'txn_id' => 'manual-txn-2',
+            'source' => 'admin',
+        ]);
+
+        $this->assertSame(321, $resultId);
+    }
+}

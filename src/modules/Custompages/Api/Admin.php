@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -22,8 +23,9 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
-        $search = $data['search'] ?? null;
-        $pager = $this->getService()->searchPages($search);
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('custompages', 'view');
+
+        $pager = $this->getService()->searchPages($data);
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = $item;
@@ -38,6 +40,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Custom page ID was not passed'])]
     public function delete($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('custompages', 'manage');
+
         $this->getService()->deletePage($data['id']);
 
         return true;
@@ -49,6 +53,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ids' => 'Custom page IDs were not passed'])]
     public function batch_delete($data): bool
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('custompages', 'manage');
+
         $this->getService()->deletePage($data['ids']);
 
         return true;
@@ -65,6 +71,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['title' => 'Title was not passed', 'content' => 'Content was not passed'])]
     public function create($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('custompages', 'manage');
+
         $title = $data['title'];
 
         $content = $data['content'];
@@ -90,6 +98,8 @@ class Admin extends \Api_Abstract
     ])]
     public function update($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('custompages', 'manage');
+
         $id = $data['id'];
         $title = $data['title'];
         $content = $data['content'];
@@ -107,6 +117,8 @@ class Admin extends \Api_Abstract
      */
     public function get_page($data)
     {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('custompages', 'view');
+
         return $this->getService()->getPage($data['page_id']);
     }
 }

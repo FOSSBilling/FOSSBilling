@@ -1,0 +1,286 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% import 'macro_functions.html.twig' as mf %}
+
+{% set active_menu = 'support' %}
+{% set has_filter_panel = true %}
+{% set filter_panel_id = 'page-search-filters' %}
+{% set filter_panel_open = request_has_filters %}
+{% set new_canned_response_action %}
+    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newCannedResponseModal">
+        <svg class="icon">
+            <use xlink:href="#plus" />
+        </svg>
+        {{ 'New Response'|trans }}
+    </button>
+{% endset %}
+{% set new_canned_category_action %}
+    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newCannedCategoryModal">
+        <svg class="icon">
+            <use xlink:href="#plus" />
+        </svg>
+        {{ 'New Category'|trans }}
+    </button>
+{% endset %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|url }}">
+                <svg class="icon" width="24">
+                    <use xlink:href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'support'|url }}">{{ 'Support'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Canned Responses'|trans }}</li>
+    </ol>
+{% endblock %}
+
+{% block meta_title %}{{ 'Canned Responses'|trans }}{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'Canned Responses'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Manage reusable support responses and organize them into categories.'|trans }}</p>
+            </div>
+        </div>
+        <div class="card-body pt-3 pb-0 px-0">
+            <div class="card border-0 shadow-none rounded-0">
+                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
+                    <ul class="nav nav-pills card-header-pills">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Canned Responses'|trans }}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#tab-categories" data-bs-toggle="tab">{{ 'Manage Categories'|trans }}</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="tab-content border-top">
+                    <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+            {{ include('partial_search.html.twig', {
+                search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
+                search_toolbar_actions: new_canned_response_action
+            }) }}
+            <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
+                <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
+                    {% if request.search %}
+                        <input type="hidden" name="search" value="{{ request.search }}">
+                    {% endif %}
+                    <div class="row g-3">
+                        <div class="col-md-6 col-xl-4">
+                            <div>
+                                <label class="form-label text-muted small mb-1" for="canned-response-id">{{ 'ID'|trans }}</label>
+                                <input class="form-control" type="text" id="canned-response-id" name="id" value="{{ request.id }}" placeholder="{{ 'Response ID'|trans }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-xl-8">
+                            <div>
+                                <label class="form-label text-muted small mb-1" for="canned-response-category">{{ 'Category'|trans }}</label>
+                                {{ mf.selectbox('category_id', admin.support_canned_category_pairs, request.category_id, 0, 'All Categories'|trans) }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-3">
+                        <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
+                        <button class="btn btn-primary" type="submit">
+                            <svg class="icon">
+                                <use xlink:href="#filter" />
+                            </svg>
+                            {{ 'Apply Filters'|trans }}
+                        </button>
+                    </div>
+                </form>
+            </section>
+            <div class="table-responsive">
+                <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                <thead>
+                    <tr>
+                        <th>{{ 'Title'|trans }}</th>
+                        <th class="text-center">{{ 'Category'|trans }}</th>
+                        <th class="w-1 no-sort"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% set responses = admin.support_canned_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
+                {% for i, response in responses.list %}
+                <tr>
+                    <td>
+                        <a href='{{ "support/canned/#{response.id}"|url }}'>{{ response.title }}</a>
+                    </td>
+                    <td class="text-center">
+                        <a href='{{ "support/canned-category/#{response.category.id}"|url }}'>{{ response.category.title }}</a>
+                    </td>
+                    <td>
+                        <a class="btn btn-icon" href='{{ "support/canned/#{response.id}"|url }}'>
+                            <svg class="icon">
+                                <use xlink:href="#edit" />
+                            </svg>
+                        </a>
+                        <a class="btn btn-icon" href="{{ 'support/canned_delete'|api_url(query: { 'id': response.id }) }}"
+                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/canned-responses'|url}) }}>
+                            <svg class="icon">
+                                <use xlink:href="#delete" />
+                            </svg>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td class="text-muted" colspan="3">{{ 'The list is empty'|trans }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+                </table>
+            </div>
+            <div class="card-footer d-flex align-items-center">
+                {{ include('partial_pagination.html.twig', { 'list': responses, 'url': 'support/canned-responses', 'split_footer_controls': true }) }}
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-categories" role="tabpanel">
+            <div class="card-body border-bottom py-3">
+                <div class="d-flex justify-content-end">
+                    {{ new_canned_category_action|raw }}
+                </div>
+            </div>
+            <div class="table-responsive">
+            <table class="table card-table table-vcenter table-striped text-nowrap">
+                <thead>
+                    <tr>
+                        <th>{{ 'Title'|trans }}</th>
+                        <th class="w-1"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cat_id, cat_title in admin.support_canned_category_pairs %}
+                    <tr>
+                        <td>
+                            <a href='{{ "support/canned-category/#{cat_id}"|url }}'>{{ cat_title }}</a>
+                        </td>
+                        <td>
+                            <a class="btn btn-icon" href='{{ "support/canned-category/#{cat_id}"|url }}'>
+                                <svg class="icon">
+                                    <use xlink:href="#edit" />
+                                </svg>
+                            </a>
+                            <a class="btn btn-icon" href="{{ 'support/canned_category_delete'|api_url(query: { 'id': cat_id }) }}"
+                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/canned-responses#tab-categories'|url}) }}>
+                                <svg class="icon">
+                                    <use xlink:href="#delete" />
+                                </svg>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td class="text-muted" colspan="2">{{ 'The list is empty'|trans }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal modal-blur fade" id="newCannedResponseModal" tabindex="-1" aria-labelledby="newCannedResponseModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-md-down modal-lg">
+                <form class="modal-content fb-modal-form" method="post" action="{{ 'support/canned_create'|api_url }}" {{ fb_api_form({redirect: 'support/canned-responses'|url}) }}>
+                    <div class="modal-header">
+                        <h3 class="modal-title" id="newCannedResponseModalLabel">{{ 'Create New Response'|trans }}</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <section class="fb-modal-section">
+                            <div class="fb-modal-section-header">
+                                <div class="fb-modal-section-heading-row">
+                                    <h4 class="fb-modal-section-title">{{ 'Response Details'|trans }}</h4>
+                                </div>
+                                <p class="fb-modal-section-description">{{ 'Choose a category, name the response, and draft the reusable support message.'|trans }}</p>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ 'Category'|trans }}</label>
+                                    {{ mf.selectbox('category_id', admin.support_canned_category_pairs, '', 1) }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="new-canned-response-title">{{ 'Title'|trans }}</label>
+                                    <input class="form-control" type="text" id="new-canned-response-title" name="title" value="{{ request.title }}" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="new-canned-response-content">{{ 'Content'|trans }}</label>
+                                    <textarea class="form-control editor-textarea" id="new-canned-response-content" name="content" rows="10">{{ request.content }}</textarea>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                        <button class="btn btn-primary" type="submit">{{ 'Create'|trans }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="modal modal-blur fade" id="newCannedCategoryModal" tabindex="-1" aria-labelledby="newCannedCategoryModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <form class="modal-content" method="post" action="{{ 'support/canned_category_create'|api_url }}" {{ fb_api_form({redirect: 'support/canned-responses#tab-categories'|url}) }}>
+                    <div class="modal-header">
+                        <h3 class="modal-title" id="newCannedCategoryModalLabel">{{ 'Create New Category'|trans }}</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label" for="new-canned-category-title">{{ 'Title'|trans }}</label>
+                        <input class="form-control" type="text" id="new-canned-category-title" name="title" value="{{ request.title }}" required>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                        <button class="btn btn-primary" type="submit">{{ 'Create'|trans }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalConfigs = [
+        { elementId: 'newCannedResponseModal', hash: '#tab-new' },
+        { elementId: 'newCannedCategoryModal', hash: '#tab-new-category' }
+    ];
+
+    for (const { elementId, hash } of modalConfigs) {
+        const modalElement = document.getElementById(elementId);
+        if (!modalElement) {
+            continue;
+        }
+
+        const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+        if (window.location.hash === hash) {
+            modal.show();
+        }
+
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            if (window.location.hash !== hash) {
+                return;
+            }
+
+            const url = new URL(window.location.href);
+            url.hash = '';
+            window.history.replaceState({}, '', url);
+        });
+    }
+});
+</script>
+{% endblock %}
+
+{% block head %}{{ wysiwyg('.editor-textarea') }}{% endblock %}

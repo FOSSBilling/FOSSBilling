@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -33,6 +34,27 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    public function getModulePermissions(): array
+    {
+        return [
+            'manage_domains' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage domains'),
+                'description' => __trans('Allows the staff member to manage domain services (nameservers, contacts, privacy, transfers).'),
+            ],
+            'manage_tlds' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage TLDs'),
+                'description' => __trans('Allows the staff member to create, update, and delete TLDs and their pricing.'),
+            ],
+            'manage_registrars' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage registrars'),
+                'description' => __trans('Allows the staff member to install, update, and delete domain registrars.'),
+            ],
+        ];
     }
 
     public function getCartProductTitle($product, array $data)
@@ -145,7 +167,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             // return by reference
             $data['period'] = $years . 'Y';
-            $data['quantity'] = $years;
         }
     }
 
@@ -333,6 +354,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $locked = $whois->getLocked();
         if ($locked !== null) {
             $model->locked = $locked;
+        }
+
+        $privacy = $whois->getPrivacyEnabled();
+        if ($privacy !== null) {
+            $model->privacy = $privacy;
         }
 
         // sync whois
@@ -604,7 +630,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $data['transfer_code'] = $model->transfer_code;
 
             $tldRegistrar = $this->di['db']->load('TldRegistrar', $model->tld_registrar_id);
-            $data['registrar'] = $tldRegistrar->name;
+            $data['registrar'] = $tldRegistrar instanceof \Model_TldRegistrar ? $tldRegistrar->name : null;
         }
 
         return $data;
@@ -855,11 +881,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function tldToApiArray(\Model_Tld $model): array
+    public function tldToApiArray(\Model_Tld $model, $identity = null): array
     {
-        $tldRegistrar = $this->di['db']->load('TldRegistrar', $model->tld_registrar_id);
-
-        return [
+        $result = [
             'id' => $model->id,
             'tld' => $model->tld,
             'price_registration' => $model->price_registration,
@@ -869,11 +893,18 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'allow_register' => $model->allow_register,
             'allow_transfer' => $model->allow_transfer,
             'min_years' => $model->min_years,
-            'registrar' => [
-                'id' => $model->tld_registrar_id,
-                'title' => $tldRegistrar->name,
-            ],
         ];
+
+        if ($identity instanceof \Model_Admin) {
+            $tldRegistrar = $this->di['db']->load('TldRegistrar', $model->tld_registrar_id);
+
+            $result['registrar'] = [
+                'id' => $model->tld_registrar_id,
+                'title' => $tldRegistrar instanceof \Model_TldRegistrar ? $tldRegistrar->name : null,
+            ];
+        }
+
+        return $result;
     }
 
     /**
@@ -1026,10 +1057,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function registrarRm(\Model_TldRegistrar $model): bool
     {
         $domains = $this->di['db']->find('ServiceDomain', 'tld_registrar_id = :registrar_id', [':registrar_id' => $model->id]);
-        $count = is_countable($domains) ? count($domains) : 0;
+        $count = \FOSSBilling\Tools::safeCount($domains);
 
         if ($count > 0) {
             throw new \FOSSBilling\InformationException('Registrar is used by :count: domains', [':count:' => $count], 707);
+        }
+
+        $tlds = $this->di['db']->find('Tld', 'tld_registrar_id = :registrar_id', [':registrar_id' => $model->id]);
+        $count = \FOSSBilling\Tools::safeCount($tlds);
+
+        if ($count > 0) {
+            throw new \FOSSBilling\InformationException('Registrar is used by :count: TLDs', [':count:' => $count], 707);
         }
 
         $name = $model->name;

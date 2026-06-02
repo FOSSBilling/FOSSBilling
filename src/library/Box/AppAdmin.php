@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -9,12 +10,9 @@
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use DebugBar\Bridge\Twig\NamespacedTwigProfileCollector;
-use FOSSBilling\Environment;
-use FOSSBilling\TwigExtensions\DebugBar;
+use FOSSBilling\Http\HttpResponseException;
 use Symfony\Component\Filesystem\Path;
-use Twig\Extension\ProfilerExtension;
-use Twig\Profiler\Profile;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class Box_AppAdmin extends Box_App
 {
@@ -31,11 +29,14 @@ class Box_AppAdmin extends Box_App
     {
         $service = $this->di['mod_service']('Staff');
 
+        if ($this->di['auth']->isAdminLoggedIn() && $this->di['update_finalization']->isRequired() && !$this->di['update_finalization']->isAdminPathAllowed($this->uri)) {
+            $this->redirect('system/update/finalize');
+        }
+
         if ($this->mod !== 'extension' && $this->di['auth']->isAdminLoggedIn() && !$service->hasPermission(null, $this->mod)) {
-            http_response_code(403);
             $e = new FOSSBilling\InformationException('You do not have permission to access the :mod: module', [':mod:' => $this->mod], 403);
-            echo $this->render('error', ['exception' => $e]);
-            exit;
+
+            throw new HttpResponseException($this->errorResponse($e, 403));
         }
     }
 
@@ -51,43 +52,16 @@ class Box_AppAdmin extends Box_App
     public function redirect($path): never
     {
         $location = $this->di['url']->adminLink($path);
-        header("Location: $location");
-        exit;
+        $this->abortWithResponse(new RedirectResponse($location));
     }
 
+    /**
+     * Get Twig environment for admin area.
+     */
     protected function getTwig(): Twig\Environment
     {
-        $service = $this->di['mod_service']('theme');
-        $theme = $service->getCurrentAdminAreaTheme();
+        $twigFactory = $this->di['twig_factory'];
 
-        $loader = new Box_TwigLoader(
-            [
-                'mods' => PATH_MODS,
-                'theme' => Path::join(PATH_THEMES, $theme['code']),
-                'type' => 'admin',
-            ]
-        );
-
-        $twig = $this->di['twig'];
-        $twig->setLoader($loader);
-        $twig->addGlobal('theme', $theme);
-        $twig->addGlobal('current_theme', $theme['code']);
-
-        if (Environment::isDevelopment()) {
-            $profile = new Profile();
-            $twig->addExtension(new ProfilerExtension($profile));
-            $collector = new NamespacedTwigProfileCollector($profile);
-            if (!$this->debugBar->hasCollector($collector->getName())) {
-                $this->debugBar->addCollector($collector);
-            }
-        }
-
-        $twig->addExtension(new DebugBar($this->getDebugBar()));
-
-        if ($this->di['auth']->isAdminLoggedIn()) {
-            $twig->addGlobal('admin', $this->di['api_admin']);
-        }
-
-        return $twig;
+        return $twigFactory->createAdminEnvironment($this->debugBar);
     }
 }

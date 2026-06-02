@@ -19,7 +19,6 @@ use Egulias\EmailValidator\Validation\RFCValidation;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
-use Symfony\Component\HttpClient\RetryableHttpClient;
 
 class Tools
 {
@@ -57,7 +56,7 @@ class Tools
      * @param int      $length         the length of the password to generate
      * @param bool|int $includeSpecial If special characters should be included. If 4 is passed, that's considered to be true (added for backwards compatibility).
      *
-     * @throws InformationException if it failed to generate a password meeting the requirements within 50 iterations
+     * @throws InformationException if it failed to generate a password meeting the requirements within 100 iterations
      */
     public function generatePassword(int $length = 8, bool|int $includeSpecial = false): string
     {
@@ -77,47 +76,28 @@ class Tools
 
         $charSetLength = strlen($charSet);
 
-        // Loop flow-control
-        $valid = false;
-        $iterations = 0;
+        // Ensure minimum length for all required character types
+        $minRequiredLength = $includeSpecial ? 4 : 3;
+        if ($length < $minRequiredLength) {
+            throw new InformationException('Password length must be at least ' . $minRequiredLength . ' characters to meet complexity requirements');
+        }
 
-        // Password requirements validation
-        $hasLowercase = false;
-        $hasUppercase = false;
-        $hasNumber = false;
-        $hasSpecial = false;
-
+        // Deterministically build password with one from each required category, then fill the rest
         $password = '';
-        while (!$valid && $iterations < 100) {
-            // Add a random character to the password from the provided list of acceptable.
-            $character = substr($charSet, random_int(0, $charSetLength - 1), 1);
-            $password .= $character;
-
-            // Handle validations
-            $hasLowercase = $hasLowercase || str_contains($characters, $character);
-            $hasUppercase = $hasUppercase || str_contains(strtoupper($characters), $character);
-            $hasNumber = $hasNumber || str_contains($numbers, $character);
-            $hasSpecial = !$includeSpecial || $hasSpecial || str_contains($specialCharacters, $character);
-
-            // Once we reach the required length, check if the password is valid
-            if (strlen($password) === $length) {
-                $valid = $hasLowercase && $hasUppercase && $hasNumber && $hasSpecial;
-                if (!$valid) {
-                    ++$iterations;
-                    $password = '';
-                    $hasLowercase = false;
-                    $hasUppercase = false;
-                    $hasNumber = false;
-                    $hasSpecial = false;
-                }
-            }
+        $password .= $characters[random_int(0, strlen($characters) - 1)];
+        $password .= strtoupper($characters)[random_int(0, strlen($characters) - 1)];
+        $password .= $numbers[random_int(0, strlen($numbers) - 1)];
+        if ($includeSpecial) {
+            $password .= $specialCharacters[random_int(0, strlen($specialCharacters) - 1)];
         }
 
-        if ($valid) {
-            return $password;
+        // Fill remaining length with random characters from the full set
+        for ($i = strlen($password); $i < $length; ++$i) {
+            $password .= $charSet[random_int(0, $charSetLength - 1)];
         }
 
-        throw new InformationException('We were unable to generate a password with the required parameters');
+        // Shuffle to avoid predictable positions for required characters
+        return str_shuffle($password);
     }
 
     public function slug($str): string
@@ -193,8 +173,8 @@ class Tools
             return [];
         }
 
-        // @phpstan-ignore function.alreadyNarrowedType (ids is an array at this point, but keeping for safety)
-        $slots = (is_countable($ids) ? count($ids) : 0) ? implode(',', array_fill(0, is_countable($ids) ? count($ids) : 0, '?')) : ''; // same as RedBean genSlots() method
+        $count = self::safeCount($ids);
+        $slots = $count ? implode(',', array_fill(0, $count, '?')) : ''; // same as RedBean genSlots() method
 
         $rows = $this->di['db']->getAll('SELECT id, title FROM ' . $table . ' WHERE id in (' . $slots . ')', $ids);
 
@@ -238,11 +218,61 @@ class Tools
         return $email;
     }
 
+    /**
+     * Safely count a value that may or may not be countable.
+     */
+    public static function safeCount(mixed $value): int
+    {
+        return is_countable($value) ? count($value) : 0;
+    }
+
+    /**
+     * Normalizes mixed input into a boolean value.
+     */
+    public static function normalizeBoolean(mixed $value, bool $default = false): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return (bool) $value;
+        }
+
+        if (is_string($value)) {
+            $normalized = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+            return $normalized ?? $default;
+        }
+
+        return $default;
+    }
+
+    /**
+     * Normalizes mixed input into a valid TCP/UDP port number.
+     */
+    public static function normalizePort(mixed $value, ?int $default = null): ?int
+    {
+        if (!is_int($value) && !is_string($value)) {
+            return $default;
+        }
+
+        if (is_string($value)) {
+            $value = trim($value);
+        }
+
+        $port = filter_var($value, FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1, 'max_range' => 65535],
+        ]);
+
+        return $port === false ? $default : $port;
+    }
+
     public static function isHTTPS(): bool
     {
-        $protocol = $_SERVER['HTTPS'] ?? $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? $_SERVER['REQUEST_SCHEME'] ?? '';
+        $protocol = $_SERVER['HTTPS'] ?? $_SERVER['REQUEST_SCHEME'] ?? '';
 
-        // $_SERVER['HTTPS'] will be set to `on` to indicate HTTPS and the others to will be set to `https`, so either one means we are connected via HTTPS.
+        // $_SERVER['HTTPS'] will be set to `on` to indicate HTTPS and REQUEST_SCHEME may be set to `https`, so either one means we are connected via HTTPS.
         return strcasecmp((string) $protocol, 'on') === 0 || strcasecmp((string) $protocol, 'https') === 0;
     }
 
@@ -278,16 +308,33 @@ class Tools
     }
 
     /**
+     * Validates an interface value for HTTP client binding.
+     * Accepts IP addresses and hostname/interface names like "eth0".
+     */
+    public static function isValidHttpInterface(string $interface): bool
+    {
+        if (filter_var($interface, FILTER_VALIDATE_IP) !== false) {
+            return true;
+        }
+
+        if (ctype_digit($interface)) {
+            return false;
+        }
+
+        return preg_match('/^[a-zA-Z0-9._-]*[a-zA-Z._-][a-zA-Z0-9._-]*$/', $interface) === 1;
+    }
+
+    /**
      * Returns the currently configured default network interface.
-     * If a custom interface IP address is entered, no validation is performed.
-     * However, if we are using an interface IP address that was selected from a given list, we will validate that the IP address is still in the list of known IP address interfaces.
+     * If a custom interface IP address, hostname, or interface name is entered, it is validated before being used.
+     * If we are using an interface IP address that was selected from a given list, we will validate that the IP address is still in the list of known IP address interfaces.
      *
      * @return string|int either the IP address of the interface to use (string) or 0 if there's none set / the set one is invalid
      */
     public static function getDefaultInterface(): string|int
     {
         $customInterface = Config::getProperty('custom_interface_ip', '');
-        if (!empty($customInterface)) {
+        if (!empty($customInterface) && self::isValidHttpInterface($customInterface)) {
             return $customInterface;
         }
 
@@ -309,33 +356,41 @@ class Tools
     /**
      * Returns the public IP address of the current FOSSBilling instance.
      * Will try multiple services in order if they time out.
-     * Try order: ipify.org, ifconfig.io, ip.hestiacp.com.
+     * Try order: ipify.org, checkip.global.api.aws, ifconfig.io.
      *
      * @param bool    $throw if the function should throw an exception on an error
-     * @param ?string $bind  overrides the default network interface bind. Set to `null` to disable this behavior.
+     * @param ?string $bind  overrides the default network interface bind. When `null` (default), the configured default (BIND_TO) is used.
      *
      * @return ?string `null` if there was an error, otherwise an IP address will be returned
      */
     public static function getExternalIP(bool $throw = true, ?string $bind = null): ?string
     {
-        $services = ['https://api64.ipify.org', 'https://ifconfig.io/ip', 'https://ip.hestiacp.com/'];
+        $services = ['https://api64.ipify.org', 'https://checkip.global.api.aws', 'https://ifconfig.io/ip'];
         $bind ??= BIND_TO;
+        $client = HttpClient::create(['bindto' => $bind]);
 
-        try {
-            $client = new RetryableHttpClient(HttpClient::create(['bindto' => $bind]));
-            $response = $client->request('GET', '', [
-                'base_uri' => $services,
-                'timeout' => 2,
-            ]);
-            $ip = filter_var($response->getContent(), FILTER_VALIDATE_IP);
-            if ($ip) {
-                return $ip;
+        foreach ($services as $service) {
+            try {
+                $response = $client->request('GET', $service, [
+                    'timeout' => 2,
+                ]);
+
+                $ip = filter_var($response->getContent(), FILTER_VALIDATE_IP);
+                if ($ip) {
+                    return $ip;
+                }
+            } catch (\Exception $e) {
+                error_log(sprintf(
+                    'Error fetching external IP from "%s" (%s): %s',
+                    $service,
+                    $e::class,
+                    $e->getMessage()
+                ));
             }
-        } catch (\Exception $e) {
-            error_log($e->getMessage());
-            if ($throw) {
-                throw $e;
-            }
+        }
+
+        if ($throw) {
+            throw new \Exception('Unable to determine external IP address from any service.');
         }
 
         return null;
@@ -419,5 +474,40 @@ class Tools
         }
 
         return $number;
+    }
+
+    public static function createSessionRestoreToken(string $sessionId): string
+    {
+        $expiry = time() + 3600;
+        $payload = $sessionId . '|' . $expiry;
+        $signature = hash_hmac('sha256', $payload, (string) Config::getProperty('info.salt'));
+
+        return base64_encode($payload . '|' . $signature);
+    }
+
+    public static function validateSessionRestoreToken(string $token): ?string
+    {
+        $decoded = base64_decode($token, true);
+        if ($decoded === false) {
+            return null;
+        }
+
+        $parts = explode('|', $decoded);
+        if (count($parts) !== 3) {
+            return null;
+        }
+
+        [$sessionId, $expiry, $signature] = $parts;
+
+        if (time() > (int) $expiry) {
+            return null;
+        }
+
+        $expectedSignature = hash_hmac('sha256', $sessionId . '|' . $expiry, (string) Config::getProperty('info.salt'));
+        if (!hash_equals($expectedSignature, $signature)) {
+            return null;
+        }
+
+        return $sessionId;
     }
 }

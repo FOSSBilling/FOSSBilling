@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html class="no-js" lang="{{ settings.locale|default('en') }}" data-bs-theme="{{ settings.theme|default('light') }}">
+{% set active_locale = guest.system_locale|default('en')|replace({'_': '-'}) %}
+{% set canonical_url = guest.system_current_url|url %}
+<html class="no-js" lang="{{ active_locale }}" data-bs-theme="{{ settings.theme|default('light') }}">
 <head>
     <meta charset="utf-8">
-    <title>{{ settings.meta_title_prefix }} {% block meta_title %}{% endblock %} {{ settings.meta_title_suffix }}</title>
+    <title>{{ (settings.meta_title_prefix ~ ' ' ~ block('meta_title') ~ ' ' ~ settings.meta_title_suffix)|trim }}</title>
 
     <meta name="description" content="{% block meta_description %}{{ settings.meta_description }}{% endblock %}">
     <meta name="keywords" content="{{ settings.meta_keywords }}">
@@ -11,21 +13,44 @@
     <meta name="generator" content="FOSSBilling">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    {% block opengraph %}{% endblock %}
+    {% block canonical %}
+        <link rel="canonical" href="{{ canonical_url }}">
+    {% endblock %}
+
+    {% block opengraph %}
+        <meta property="og:title" content="{{ (settings.meta_title_prefix ~ ' ' ~ block('meta_title') ~ ' ' ~ settings.meta_title_suffix)|trim }}" />
+        <meta property="og:type" content="website" />
+        <meta property="og:description" content="{{ block('meta_description') }}" />
+        <meta property="og:url" content="{{ canonical_url }}" />
+        <meta property="og:site_name" content="{{ guest.system_company.name }}" />
+    {% endblock %}
 
     <link rel="stylesheet" href="{{ 'build/css/vendor.css' | asset_url }}">
     <link rel="stylesheet" href="{{ 'build/css/huraga.css' | asset_url }}">
 
     <link rel="shortcut icon" href="{{ guest.system_company.favicon_url }}">
 
-    {{ "Api/API.js" | library_url | script_tag }}
+    <script>
+        (function (docEl) {
+            const cls = docEl.className || '';
+            if (/\bno-js\b/.test(cls)) {
+                docEl.className = cls.replace(/\bno-js\b/, 'js').trim();
+            } else if (!/\bjs\b/.test(cls)) {
+                docEl.className = (cls + ' js').trim();
+            }
+        }(document.documentElement));
+    </script>
+    {{ 'js/fossbilling.js' | public_asset_url | script_tag }}
+    {{ 'js/api.js' | public_asset_url | script_tag }}
     <script src="{{ 'build/js/huraga.js' | asset_url }}"></script>
     {% block head %}{% endblock %}
     {% block js %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
+    {{ render_widgets('client.theme.body.start') }}
     {% block body %}{% endblock %}
     <div class="toast-container position-fixed bottom-0 end-0 p-3 toast-container-zindex" aria-live="polite" aria-atomic="true"></div>
     {{ include('partial_pending_messages.html.twig', ignore_missing: true) }}
+    {{ render_widgets('client.theme.body.end') }}
 </body>
 </html>

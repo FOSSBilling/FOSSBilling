@@ -1,36 +1,92 @@
-<div class="card-body border-bottom py-3">
-    <div class="d-flex">
-        <div class="ms-auto text-muted">
-            <div class="ms-2 d-inline-block">
-                <div class="d-flex">
-                    <form method="get">
-                        <input type="hidden" name="_url" value="{{ request._url }}">
-                        <div class="input-group input-group-flat">
-                            <input class="form-control"
-                                type="search"
-                                name="search"
-                                value="{{ request.search }}"
-                                placeholder="{{ 'Enter search text...'|trans }}"
-                                aria-label="{{ 'Search'|trans }}">
-                            <span class="input-group-text">
-                                <a class="link-secondary"
-                                    href="{{ request._url|link(request|merge({ 'show_filter': 1 })) }}"
-                                    data-bs-toggle="tooltip"
-                                    data-bs-original-title="{{ 'Search settings'|trans }}">
-                                    <svg class="icon">
-                                        <use xlink:href="#settings" />
-                                    </svg>
-                                </a>
-                            </span>
-                            <button class="btn btn-icon">
+<div class="card-body border-bottom py-3 {{ search_body_class|default('') }}">
+    {% set has_search_toolbar_actions = search_toolbar_actions is defined and search_toolbar_actions is not empty %}
+    {% set search_max_width = search_max_width|default('22rem') %}
+    {% if has_search_toolbar_actions %}
+        <div class="d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center justify-content-lg-end gap-3">
+            <div class="text-muted w-100 w-lg-auto" style="max-width: {{ search_max_width }};">
+                <form method="get">
+                    {% for field_name, field_value in search_hidden_fields|default({}) %}
+                        <input type="hidden" name="{{ field_name }}" value="{{ field_value }}">
+                    {% endfor %}
+                    <div class="input-group input-group-flat search-input-group">
+                        <span class="input-group-text">
+                            <button class="search-submit-toggle" type="submit" aria-label="{{ 'Search'|trans }}" title="{{ 'Search'|trans }}">
                                 <svg class="icon">
                                     <use xlink:href="#search" />
                                 </svg>
                             </button>
-                        </div>
-                    </form>
+                        </span>
+                        <input class="form-control"
+                            type="search"
+                            name="search"
+                            value="{{ request.search }}"
+                            placeholder="{{ 'Enter search text...'|trans }}"
+                            aria-label="{{ 'Search'|trans }}">
+                        {% if has_filter_panel|default(false) %}
+                        <span class="input-group-text search-actions">
+                            <button class="search-filter-toggle {% if filter_panel_open|default(false) %}text-primary{% else %}text-secondary{% endif %}"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#{{ filter_panel_id|default('page-search-filters') }}"
+                                aria-expanded="{% if filter_panel_open|default(false) %}true{% else %}false{% endif %}"
+                                aria-controls="{{ filter_panel_id|default('page-search-filters') }}"
+                                title="{{ 'Search Settings'|trans }}">
+                                <svg class="icon">
+                                    <use xlink:href="#settings" />
+                                </svg>
+                            </button>
+                        </span>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+            <div class="d-flex justify-content-end flex-wrap gap-2">
+                {{ search_toolbar_actions|raw }}
+            </div>
+        </div>
+    {% else %}
+        <div class="d-flex">
+            <div class="ms-auto text-muted">
+                <div class="ms-2 d-inline-block">
+                    <div class="d-flex">
+                        <form method="get">
+                            {% for field_name, field_value in search_hidden_fields|default({}) %}
+                                <input type="hidden" name="{{ field_name }}" value="{{ field_value }}">
+                            {% endfor %}
+                            <div class="input-group input-group-flat search-input-group">
+                                <span class="input-group-text">
+                                    <button class="search-submit-toggle" type="submit" aria-label="{{ 'Search'|trans }}" title="{{ 'Search'|trans }}">
+                                        <svg class="icon">
+                                            <use xlink:href="#search" />
+                                        </svg>
+                                    </button>
+                                </span>
+                                <input class="form-control"
+                                    type="search"
+                                    name="search"
+                                    value="{{ request.search }}"
+                                    placeholder="{{ 'Enter search text...'|trans }}"
+                                    aria-label="{{ 'Search'|trans }}">
+                                {% if has_filter_panel|default(false) %}
+                                <span class="input-group-text search-actions">
+                                    <button class="search-filter-toggle {% if filter_panel_open|default(false) %}text-primary{% else %}text-secondary{% endif %}"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#{{ filter_panel_id|default('page-search-filters') }}"
+                                        aria-expanded="{% if filter_panel_open|default(false) %}true{% else %}false{% endif %}"
+                                        aria-controls="{{ filter_panel_id|default('page-search-filters') }}"
+                                        title="{{ 'Search Settings'|trans }}">
+                                        <svg class="icon">
+                                            <use xlink:href="#settings" />
+                                        </svg>
+                                    </button>
+                                </span>
+                                {% endif %}
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    {% endif %}
 </div>

@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
@@ -19,25 +20,46 @@ class Box_Authorization
 
     public function isClientLoggedIn(): bool
     {
-        return (bool) $this->session->get('client_id');
+        $clientId = $this->session->get('client_id');
+        if (!$clientId) {
+            return false;
+        }
+
+        $client = $this->di['db']->load('Client', $clientId);
+        if (!$client || $client->status !== Model_Client::ACTIVE) {
+            $this->session->delete('client_id');
+
+            return false;
+        }
+
+        return true;
     }
 
     public function isAdminLoggedIn(): bool
     {
-        return (bool) $this->session->get('admin');
+        $admin = $this->session->get('admin');
+        if (!$admin) {
+            return false;
+        }
+
+        $adminModel = $this->di['db']->load('Admin', $admin['id']);
+        if (!$adminModel || $adminModel->status !== Model_Admin::STATUS_ACTIVE) {
+            $this->session->delete('admin');
+
+            return false;
+        }
+
+        return true;
     }
 
-    public function authorizeUser(?object $user, string $plainTextPassword)
+    public function authorizeUser(?object $user, string $plainTextPassword): ?object
     {
         if ($user === null) {
-            // 25 to 100ms delay
-            usleep(random_int(25000, 100000));
             $this->di['password']->dummyVerify($plainTextPassword);
 
             return null;
         }
 
-        $user = $this->passwordBackwardCompatibility($user, $plainTextPassword);
         if ($this->di['password']->verify($plainTextPassword, $user->pass)) {
             if ($this->di['password']->needsRehash($user->pass)) {
                 $user->pass = $this->di['password']->hashIt($plainTextPassword);
@@ -49,15 +71,5 @@ class Box_Authorization
         }
 
         return null;
-    }
-
-    public function passwordBackwardCompatibility($user, $plainTextPassword)
-    {
-        if (sha1((string) $plainTextPassword) == $user->pass) {
-            $user->pass = $this->di['password']->hashIt($plainTextPassword);
-            $this->di['db']->store($user);
-        }
-
-        return $user;
     }
 }
