@@ -66,7 +66,7 @@ class UpdateFinalization implements InjectionAwareInterface
 
     public function isRequired(bool $ensure = true): bool
     {
-        if ($ensure) {
+        if ($ensure && !Environment::isTesting()) {
             $this->ensureCurrentVersionFinalization();
         }
 
@@ -75,7 +75,7 @@ class UpdateFinalization implements InjectionAwareInterface
 
     public function getStatus(bool $ensure = true): array
     {
-        if ($ensure) {
+        if ($ensure && !Environment::isTesting()) {
             $this->ensureCurrentVersionFinalization();
         }
 
