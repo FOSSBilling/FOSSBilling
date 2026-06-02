@@ -316,6 +316,8 @@ test('handles after admin invoice reminder sent event', function (): void {
     $dbMock->shouldReceive('load')
         ->atLeast()->once()
         ->andReturn($invoiceModel);
+    $dbMock->shouldReceive('store')
+        ->atLeast()->once();
 
     $di = container();
     $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $serviceMock) {
