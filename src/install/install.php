@@ -90,7 +90,7 @@ const URL_ADMIN = SYSTEM_URL . 'admin';
 
 // Load action and initialize the installer
 $action = $request->query->get('a', 'index');
-$action = is_string($action) && $action !== '' ? $action : 'index';
+$action = $action !== '' ? $action : 'index';
 $installer = new FOSSBilling_Installer($request, $preConfigProxyCandidate);
 
 // Run the installer only in non-CLI mode

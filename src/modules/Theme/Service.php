@@ -35,7 +35,7 @@ class Service implements InjectionAwareInterface
     private static ?string $adminThemeCache = null;
     /**
      * In-request cache for the current client theme name.
-     * This cache is used to avoid repeated lookups during a single request.
+     * This cache is used to store theme information during a single request.
      * It is cleared whenever theme settings are changed by calling clearThemeCache().
      */
     private static ?string $clientThemeCache = null;
@@ -442,18 +442,20 @@ class Service implements InjectionAwareInterface
     public function getCurrentRouteTheme(): string
     {
         // Runtime check for admin area - uses index.php defined constant
-        $isAdmin = defined('ADMIN_AREA') && ADMIN_AREA;
-        if ($isAdmin) {
+        // @phpstan-ignore if.alwaysTrue
+        if (ADMIN_AREA) {
             return $this->getCurrentAdminAreaTheme()['code'];
         }
 
+        // @phpstan-ignore deadCode.unreachable
         return $this->getCurrentClientAreaTheme()->getName();
     }
 
     public function getDefaultMarkdownAttributes(): array
     {
         // Runtime check for admin area - uses index.php defined constant
-        $isAdmin = defined('ADMIN_AREA') && ADMIN_AREA;
+        $isAdmin = ADMIN_AREA;
+        // @phpstan-ignore if.alwaysTrue
         if ($isAdmin) {
             $config = $this->getThemeConfig(false);
         } else {

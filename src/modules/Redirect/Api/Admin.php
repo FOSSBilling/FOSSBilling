@@ -26,7 +26,7 @@ class Admin extends \Api_Abstract
      */
     public function get_list()
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'view');
 
         return $this->getService()->getRedirects();
     }
@@ -37,7 +37,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Redirect ID was not passed'])]
     public function get($data): array
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'view');
 
         return $this->getService()->toApiArray($this->getService()->get((int) $data['id']));
     }
@@ -50,14 +50,14 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['path' => 'Redirect path was not passed', 'target' => 'Redirect target was not passed'])]
     public function create($data): int
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'create_and_edit');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'create_and_edit');
 
         $id = $this->getService()->create(
             (string) $data['path'],
             (string) $data['target']
         );
 
-        $this->di['logger']->info('Created new redirect #%s', $id);
+        $this->getDi()['logger']->info('Created new redirect #%s', $id);
 
         return $id;
     }
@@ -73,11 +73,11 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Redirect ID was not passed'])]
     public function update($data): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'create_and_edit');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'create_and_edit');
 
         $this->getService()->update($this->getService()->get((int) $data['id']), $data);
 
-        $this->di['logger']->info('Updated redirect #%s', $data['id']);
+        $this->getDi()['logger']->info('Updated redirect #%s', $data['id']);
 
         return true;
     }
@@ -90,11 +90,11 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Redirect ID was not passed'])]
     public function delete($data): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'delete');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'delete');
 
         $this->getService()->delete($this->getService()->get((int) $data['id']));
 
-        $this->di['logger']->info('Removed redirect #%s', $data['id']);
+        $this->getDi()['logger']->info('Removed redirect #%s', $data['id']);
 
         return true;
     }

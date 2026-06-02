@@ -30,6 +30,7 @@ class EntityManagerFactory
             static fn (\SplFileInfo $directory): string => $directory->getPathname(),
             iterator_to_array($finder)
         );
+        $moduleEntityPaths = array_values($moduleEntityPaths);
 
         $cache = new FilesystemAdapter('doctrine', 0, PATH_CACHE);
 

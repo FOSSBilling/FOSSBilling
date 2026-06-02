@@ -153,7 +153,7 @@ class Service implements InjectionAwareInterface
         $this->di['validator']->checkRequiredParamsForArray($required, $config);
 
         $data['filename'] = $config['filename'];
-        $data[self::STORED_FILENAME_CONFIG_KEY] = $this->validateStoredFilename($config[self::STORED_FILENAME_CONFIG_KEY]);
+        $data[self::STORED_FILENAME_CONFIG_KEY] = $this->validateStoredFilename($config[self::STORED_FILENAME_CONFIG_KEY] ?? null);
 
         return array_merge($config, $data);
     }
@@ -165,7 +165,7 @@ class Service implements InjectionAwareInterface
             self::STORED_FILENAME_CONFIG_KEY => 'Stored filename is missing in product config',
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
-        $data[self::STORED_FILENAME_CONFIG_KEY] = $this->validateStoredFilename($data[self::STORED_FILENAME_CONFIG_KEY]);
+        $data[self::STORED_FILENAME_CONFIG_KEY] = $this->validateStoredFilename($data[self::STORED_FILENAME_CONFIG_KEY] ?? null);
     }
 
     /**

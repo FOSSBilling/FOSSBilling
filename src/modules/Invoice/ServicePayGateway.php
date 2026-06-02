@@ -22,11 +22,9 @@ use Symfony\Component\Finder\Finder;
 class ServicePayGateway implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
-    private readonly Filesystem $filesystem;
 
-    public function __construct()
+    public function __construct(private readonly ?Filesystem $filesystem = new Filesystem())
     {
-        $this->filesystem = new Filesystem();
     }
 
     public function setDi(\Pimple\Container $di): void
@@ -401,6 +399,7 @@ class ServicePayGateway implements InjectionAwareInterface
             return [];
         }
 
+        // @phpstan-ignore argument.type
         return call_user_func([$class, 'getConfig']);
     }
 

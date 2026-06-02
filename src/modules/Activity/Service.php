@@ -72,7 +72,6 @@ class Service implements InjectionAwareInterface
         ]);
     }
 
-    /** EVENTS  **/
     public static function onAfterClientLogin(\Box_Event $event): void
     {
         $params = $event->getParameters();

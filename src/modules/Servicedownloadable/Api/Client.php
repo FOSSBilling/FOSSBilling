@@ -32,12 +32,12 @@ class Client extends \Api_Abstract
         }
 
         $identity = $this->getIdentity();
-        $order = $this->di['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', [':id' => $data['order_id'], ':client_id' => $identity->id]);
+        $order = $this->getDi()['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', [':id' => $data['order_id'], ':client_id' => $identity->id]);
         if (!$order instanceof \Model_ClientOrder) {
             throw new \FOSSBilling\Exception('Order not found');
         }
 
-        $orderService = $this->di['mod_service']('order');
+        $orderService = $this->getDi()['mod_service']('order');
         $s = $orderService->getOrderService($order);
         if (!$s instanceof \Model_ServiceDownloadable || $order->status !== 'active') {
             throw new \FOSSBilling\Exception('Order is not activated');

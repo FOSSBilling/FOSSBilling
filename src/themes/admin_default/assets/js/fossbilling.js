@@ -72,7 +72,6 @@ globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
   }
 });
 
-  //===== Global ajax methods =====//
   document.addEventListener('DOMContentLoaded', function() {
     // Global error handler for unhandled Promise rejections (API-related only)
     window.addEventListener('unhandledrejection', function(event) {
@@ -88,7 +87,6 @@ globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
     FOSSBilling.backToTop = backToTop;
     FOSSBilling.backToTop();
 
-    //===== Form elements styling =====//
     document.addEventListener("click", function(event) {
       const target = event.target;
       if (target.matches("div.msg span.close") || target.closest("div.msg span.close")) {

@@ -25,7 +25,7 @@ class Admin extends \Api_Abstract
      */
     public function get_summary()
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
 
         return $this->getService()->getSummary();
     }
@@ -37,7 +37,7 @@ class Admin extends \Api_Abstract
      */
     public function get_summary_income()
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
 
         return $this->getService()->getSummaryIncome();
     }
@@ -49,7 +49,7 @@ class Admin extends \Api_Abstract
      */
     public function get_orders_statuses($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
 
         return $this->getService()->getOrdersStatuses($data);
     }
@@ -61,7 +61,7 @@ class Admin extends \Api_Abstract
      */
     public function get_product_summary($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
 
         return $this->getService()->getProductSummary($data);
     }
@@ -73,7 +73,7 @@ class Admin extends \Api_Abstract
      */
     public function get_product_sales($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
 
         return $this->getService()->getProductSales($data);
     }
@@ -85,7 +85,7 @@ class Admin extends \Api_Abstract
      */
     public function get_income_vs_refunds($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
 
         return $this->getService()->incomeAndRefundStats($data);
     }
@@ -101,7 +101,7 @@ class Admin extends \Api_Abstract
      */
     public function get_refunds($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
 
         return $this->getService()->getRefunds($data);
     }
@@ -117,7 +117,7 @@ class Admin extends \Api_Abstract
      */
     public function get_income($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
 
         return $this->getService()->getIncome($data);
     }
@@ -132,7 +132,7 @@ class Admin extends \Api_Abstract
      */
     public function get_orders($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
 
         return $this->getService()->getTableStats('client_order', $data);
     }
@@ -148,7 +148,7 @@ class Admin extends \Api_Abstract
      */
     public function get_clients($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
 
         return $this->getService()->getTableStats('client', $data);
     }
@@ -160,7 +160,7 @@ class Admin extends \Api_Abstract
      */
     public function client_countries($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
 
         return $this->getService()->getClientCountries($data);
     }
@@ -172,7 +172,7 @@ class Admin extends \Api_Abstract
      */
     public function sales_countries($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
 
         return $this->getService()->getSalesByCountry($data);
     }
@@ -188,7 +188,7 @@ class Admin extends \Api_Abstract
      */
     public function get_invoices($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
 
         return $this->getService()->getTableStats('invoice', $data);
     }
@@ -204,7 +204,7 @@ class Admin extends \Api_Abstract
      */
     public function get_tickets($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('stats', 'view');
 
         return $this->getService()->getTableStats('support_ticket', $data);
     }

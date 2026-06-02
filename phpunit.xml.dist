@@ -1,30 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" backupGlobals="false" colors="true" processIsolation="false" stopOnFailure="false" beStrictAboutChangesToGlobalState="true" bootstrap="tests-legacy/bootstrap.php" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.4/phpunit.xsd" cacheDirectory=".phpunit.cache" backupStaticProperties="false">
-  <coverage/>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/12.5/phpunit.xsd"
+    bootstrap="tests/Pest.php"
+    cacheDirectory="cache/phpunit"
+    executionOrder="depends,defects"
+    failOnWarning="false"
+    failOnRisky="false"
+    failOnEmptyTestSuite="false"
+    beStrictAboutOutputDuringTests="false"
+    colors="true"
+    testdox="true"
+    testdoxSummary="true"
+    displayDetailsOnTestsThatTriggerDeprecations="false"
+    displayDetailsOnTestsThatTriggerWarnings="false"
+    defaultTestSuite="Unit,Modules">
   <testsuites>
-    <testsuite name="Library">
-      <directory>tests-legacy/library</directory>
+    <testsuite name="Unit">
+      <directory>tests/Unit</directory>
     </testsuite>
     <testsuite name="Modules">
-      <directory>tests-legacy/modules</directory>
+      <directory>src/modules/*/tests/Unit</directory>
+    </testsuite>
+    <testsuite name="API">
+      <directory>tests/Modules</directory>
+    </testsuite>
+    <testsuite name="E2E">
+      <directory>tests/E2E</directory>
+      <directory>src/modules/*/tests/E2E</directory>
     </testsuite>
   </testsuites>
-  <php>
-    <ini name="display_errors" value="On"/>
-    <ini name="display_startup_errors" value="On"/>
-    <env name="APP_ENV" value="test"/>
-  </php>
   <source>
     <include>
       <directory suffix=".php">src</directory>
     </include>
     <exclude>
-      <directory>src/data</directory>
-      <directory>src/library/Registrar/includes</directory>
-      <directory>src/themes</directory>
-      <directory>src/vendor</directory>
-      <directory>src/install</directory>
-      <file>src/library/PdoSessionHandler.php</file>
+      <directory suffix=".php">src/vendor</directory>
+      <directory suffix=".php">src/data</directory>
     </exclude>
   </source>
 </phpunit>

@@ -408,6 +408,28 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    public static function onAfterInvoiceCreate(\Box_Event $event): bool
+    {
+        $params = $event->getParameters();
+        $di = $event->getDi();
+        $service = $di['mod_service']('invoice');
+
+        try {
+            $invoiceModel = $di['db']->load('Invoice', $params['id']);
+            $invoice = $service->toApiArray($invoiceModel, true);
+            $email = [];
+            $email['to_client'] = $invoiceModel->client_id;
+            $email['code'] = 'mod_invoice_created';
+            $email['invoice'] = $invoice;
+            $emailService = $di['mod_service']('Email');
+            $emailService->sendTemplate($email);
+        } catch (\Exception $exc) {
+            error_log($exc->getMessage());
+        }
+
+        return true;
+    }
+
     public static function onAfterAdminInvoiceApprove(\Box_Event $event): bool
     {
         $params = $event->getParameters();
@@ -679,7 +701,7 @@ class Service implements InjectionAwareInterface
             $currencyCode = $currency->getCode();
             $client->currency = $currencyCode;
             $this->di['db']->store($client);
-            error_log("Client #{$client->id} currency was not defined. Set default currency {$currencyCode}.");
+            $this->di['logger']->warning("Client #{$client->id} currency was not defined. Set default currency {$currencyCode}.");
         }
 
         $model = $this->di['db']->dispense('Invoice');
@@ -817,6 +839,7 @@ class Service implements InjectionAwareInterface
         $epsilon = 0.01;
 
         if (abs($balance - $required) < $epsilon || $balance - $required > 0.00001) {
+            // @phpstan-ignore if.alwaysFalse
             if (DEBUG) {
                 $this->di['logger']->setChannel('billing')->info("Setting invoice {$invoice->id} as paid with credits for the amount of {$required}.");
             }
@@ -838,7 +861,7 @@ class Service implements InjectionAwareInterface
 
             return true;
         }
-
+        // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
         if (DEBUG) {
             $this->di['logger']->setChannel('billing')->info("Invoice {$invoice->id} could not be paid with credits. Money in balance {$balance} Required: {$required}.");
         }
@@ -981,6 +1004,7 @@ class Service implements InjectionAwareInterface
                 break;
 
             case 'manual':
+                // @phpstan-ignore if.alwaysFalse
                 if (DEBUG) {
                     error_log('Refunds are managed manually. No actions performed.');
                 }
@@ -1142,6 +1166,7 @@ class Service implements InjectionAwareInterface
                 $model = $this->di['db']->getExistingModelById('Invoice', $proforma['id'] ?? null);
                 $this->tryPayWithCredits($model);
             } catch (\Exception $e) {
+                // @phpstan-ignore if.alwaysFalse
                 if (DEBUG) {
                     error_log($e->getMessage());
                 }
@@ -1275,7 +1300,7 @@ class Service implements InjectionAwareInterface
                 $model = $this->di['db']->getExistingModelById('InvoiceItem', $item['id'] ?? 0);
                 $invoiceItemService->executeTask($model);
             } catch (\Exception $e) {
-                error_log($e->getMessage());
+                $this->di['logger']->error($e->getMessage());
             }
         }
         $this->di['logger']->info('Executed action to activate paid invoices.');

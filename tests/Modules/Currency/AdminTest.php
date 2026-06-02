@@ -2,34 +2,22 @@
 
 declare(strict_types=1);
 
-namespace CurrencyTests;
+use Tests\Helpers\ApiClient;
 
-use APIHelper\Request;
-use PHPUnit\Framework\TestCase;
+test('gets currency pairs', function (): void {
+    $result = ApiClient::request('admin/currency/get_pairs');
 
-final class AdminTest extends TestCase
-{
-    public function testGetPairs(): void
-    {
-        $result = Request::makeRequest('admin/currency/get_pairs');
-        $this->assertTrue($result->wasSuccessful());
+    expect($result->wasSuccessful())->toBeTrue();
 
-        $list = $result->getResult();
+    $list = $result->getResult();
 
-        $this->assertArrayHasKey('USD', $list);
-        $this->assertArrayHasKey('EUR', $list);
-        $this->assertArrayHasKey('GBP', $list);
-        $this->assertArrayHasKey('JPY', $list);
-        $this->assertArrayHasKey('CHF', $list);
-        $this->assertArrayHasKey('AUD', $list);
-        $this->assertArrayHasKey('CAD', $list);
-        $this->assertArrayHasKey('NZD', $list);
-        $this->assertArrayHasKey('INR', $list);
-        $this->assertArrayHasKey('HKD', $list);
-
-        $this->assertArrayNotHasKey('XXX', $list);
-        $this->assertArrayNotHasKey('XTS', $list);
-
-        $this->assertMatchesRegularExpression('/^USD \(.*\)$/', $list['USD']);
+    foreach (['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'CAD', 'NZD', 'INR', 'HKD'] as $currencyCode) {
+        expect($list)->toHaveKey($currencyCode);
     }
-}
+
+    foreach (['XXX', 'XTS'] as $currencyCode) {
+        expect($list)->not->toHaveKey($currencyCode);
+    }
+
+    expect($list['USD'])->toMatch('/^USD \(.*\)$/');
+});

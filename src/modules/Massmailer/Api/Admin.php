@@ -26,10 +26,10 @@ class Admin extends \Api_Abstract
      */
     public function get_list(array $data): array
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'view');
 
         $qb = $this->getService()->getSearchQueryBuilder($data);
-        $pager = $this->di['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $item['filter'] = $this->getService()->normalizeFilter($item['filter'] ?? null);
@@ -44,7 +44,7 @@ class Admin extends \Api_Abstract
      */
     public function get(array $data): array
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'view');
 
         $model = $this->_getMessage($data);
 
@@ -63,7 +63,7 @@ class Admin extends \Api_Abstract
      */
     public function update(array $data): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'create_and_edit');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'create_and_edit');
 
         $model = $this->_getMessage($data);
 
@@ -82,14 +82,14 @@ class Admin extends \Api_Abstract
         }
 
         if (isset($data['from_email'])) {
-            $this->di['tools']->validateAndSanitizeEmail($data['from_email']);
+            $this->getDi()['tools']->validateAndSanitizeEmail($data['from_email']);
             $model->setFromEmail($data['from_email']);
         }
 
         $model->setUpdatedAt(date('Y-m-d H:i:s'));
-        $this->di['em']->flush();
+        $this->getDi()['em']->flush();
 
-        $this->di['logger']->info('Updated mail message #%s', $model->getId());
+        $this->getDi()['logger']->info('Updated mail message #%s', $model->getId());
 
         return true;
     }
@@ -102,7 +102,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['subject' => 'Message subject was not passed'])]
     public function create(array $data): int
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'create_and_edit');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'create_and_edit');
 
         $default_content = '{% apply markdown_to_html %}
 Hi {{ c.first_name }} {{ c.last_name }},
@@ -122,7 +122,7 @@ Order our services at {{ "order"|url }}
 {{ guest.system_company.name }} - {{ guest.system_company.signature }}
 {% endapply %}
         ';
-        $systemService = $this->di['mod_service']('system');
+        $systemService = $this->getDi()['mod_service']('system');
         $company = $systemService->getCompany();
 
         $model = (new MassmailerMessage())
@@ -135,15 +135,15 @@ Order our services at {{ "order"|url }}
             ->setCreatedAt(date('Y-m-d H:i:s'))
             ->setUpdatedAt(date('Y-m-d H:i:s'));
 
-        $this->di['em']->persist($model);
-        $this->di['em']->flush();
+        $this->getDi()['em']->persist($model);
+        $this->getDi()['em']->flush();
 
         $id = $model->getId();
         if ($id === null) {
             throw new \FOSSBilling\Exception('Failed to retrieve ID of created mail message.');
         }
 
-        $this->di['logger']->info('Created mail message #%s', $id);
+        $this->getDi()['logger']->info('Created mail message #%s', $id);
 
         return $id;
     }
@@ -153,7 +153,7 @@ Order our services at {{ "order"|url }}
      */
     public function send_test(array $data): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'send');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'send');
 
         $model = $this->_getMessage($data);
         $client_id = $this->_getTestClientId();
@@ -164,7 +164,7 @@ Order our services at {{ "order"|url }}
 
         $this->getService()->sendMessage($model, $client_id, true);
 
-        $this->di['logger']->info('Sent test mail message #%s to client ', $model->getId());
+        $this->getDi()['logger']->info('Sent test mail message #%s to client ', $model->getId());
 
         return true;
     }
@@ -174,7 +174,7 @@ Order our services at {{ "order"|url }}
      */
     public function send(array $data): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'send');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'send');
 
         $model = $this->_getMessage($data);
 
@@ -189,9 +189,9 @@ Order our services at {{ "order"|url }}
 
         $model->setStatus(MassmailerMessage::STATUS_SENT);
         $model->setSentAt(date('Y-m-d H:i:s'));
-        $this->di['em']->flush();
+        $this->getDi()['em']->flush();
 
-        $this->di['logger']->info('Added mass mail messages #%s to queue', $model->getId());
+        $this->getDi()['logger']->info('Added mass mail messages #%s to queue', $model->getId());
 
         return true;
     }
@@ -201,7 +201,7 @@ Order our services at {{ "order"|url }}
      */
     public function copy(array $data): int
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'create_and_edit');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'create_and_edit');
 
         $model = $this->_getMessage($data);
 
@@ -215,15 +215,15 @@ Order our services at {{ "order"|url }}
             ->setCreatedAt(date('Y-m-d H:i:s'))
             ->setUpdatedAt(date('Y-m-d H:i:s'));
 
-        $this->di['em']->persist($copy);
-        $this->di['em']->flush();
+        $this->getDi()['em']->persist($copy);
+        $this->getDi()['em']->flush();
 
         $id = $copy->getId();
         if ($id === null) {
             throw new \FOSSBilling\Exception('Failed to retrieve ID of copied mail message.');
         }
 
-        $this->di['logger']->info('Copied mail message #%s to #%s', $model->getId(), $id);
+        $this->getDi()['logger']->info('Copied mail message #%s to #%s', $model->getId(), $id);
 
         return $id;
     }
@@ -233,7 +233,7 @@ Order our services at {{ "order"|url }}
      */
     public function receivers(array $data): array
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'view');
 
         $model = $this->_getMessage($data);
 
@@ -245,15 +245,15 @@ Order our services at {{ "order"|url }}
      */
     public function delete(array $data): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'delete');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'delete');
 
         $model = $this->_getMessage($data);
         $id = $model->getId();
 
-        $this->di['em']->remove($model);
-        $this->di['em']->flush();
+        $this->getDi()['em']->remove($model);
+        $this->getDi()['em']->flush();
 
-        $this->di['logger']->info('Removed mail message #%s', $id);
+        $this->getDi()['logger']->info('Removed mail message #%s', $id);
 
         return true;
     }
@@ -265,7 +265,7 @@ Order our services at {{ "order"|url }}
      */
     public function preview(array $data): array
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'view');
 
         $model = $this->_getMessage($data);
         $client_id = $this->_getTestClientId();
@@ -276,7 +276,7 @@ Order our services at {{ "order"|url }}
         $clients = $this->getService()->getMessageReceivers($model);
 
         if ($getRecipients) {
-            $clientService = $this->di['mod_service']('client');
+            $clientService = $this->getDi()['mod_service']('client');
             foreach ($clients as $client) {
                 $clientInfo = $clientService->get(['id' => $client['id']]);
                 $recipients[] = [
@@ -298,10 +298,10 @@ Order our services at {{ "order"|url }}
      */
     public function get_test_client(): string
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'view');
 
         try {
-            $client = $this->di['mod_service']('client')->get(['id' => $this->_getTestClientId()]);
+            $client = $this->getDi()['mod_service']('client')->get(['id' => $this->_getTestClientId()]);
         } catch (\Exception) {
             return 'Unknown';
         }
@@ -311,13 +311,13 @@ Order our services at {{ "order"|url }}
 
     private function _getTestClientId(): int
     {
-        $mod = $this->di['mod']('massmailer');
+        $mod = $this->getDi()['mod']('massmailer');
         $c = $mod->getConfig();
 
         $required = [
             'test_client_id' => 'Client ID needs to be configured in mass mailer settings.',
         ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $c);
+        $this->getDi()['validator']->checkRequiredParamsForArray($required, $c);
 
         return (int) $c['test_client_id'];
     }

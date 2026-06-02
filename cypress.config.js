@@ -2,8 +2,8 @@ module.exports = {
   projectId: 'zap1kb',
   e2e: {
     baseUrl: process.env.CYPRESS_BASE_URL || 'http://localhost',
-    specPattern: 'tests/e2e/cypress/e2e/**/*.cy.js',
-    supportFile: 'tests/e2e/cypress/support/e2e.js',
+    specPattern: 'tests/E2E/Cypress/specs/**/*.cy.js',
+    supportFile: 'tests/E2E/Cypress/support/e2e.js',
   },
   defaultCommandTimeout: 10000,
   viewportWidth: 1280,
@@ -14,7 +14,7 @@ module.exports = {
   },
   video: false,
   screenshotOnRunFailure: true,
-  screenshotsFolder: 'tests/e2e/cypress/screenshots',
-  videosFolder: 'tests/e2e/cypress/videos',
-  downloadsFolder: 'tests/e2e/cypress/downloads',
+  screenshotsFolder: 'tests/E2E/Cypress/artifacts/screenshots',
+  videosFolder: 'tests/E2E/Cypress/artifacts/videos',
+  downloadsFolder: 'tests/E2E/Cypress/artifacts/downloads',
 };

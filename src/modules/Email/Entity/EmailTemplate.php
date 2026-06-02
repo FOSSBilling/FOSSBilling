@@ -51,7 +51,9 @@ class EmailTemplate implements ApiArrayInterface
     public function __construct(
         #[ORM\Column(name: 'action_code', type: Types::STRING, length: 255, unique: true)]
         private string $actionCode,
+        ?int $id = null,
     ) {
+        $this->id = $id;
     }
 
     public function toApiArray(): array

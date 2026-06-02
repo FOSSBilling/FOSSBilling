@@ -382,7 +382,7 @@ class Service implements InjectionAwareInterface
                 return new $class_name();
             }
         }
-        error_log("License #{$model->id} plugin {$model->plugin} is invalid.");
+        $this->di['logger']->warning("License #{$model->id} plugin {$model->plugin} is invalid.");
 
         return null;
     }
@@ -420,7 +420,7 @@ class Service implements InjectionAwareInterface
     {
         $result = [];
         $log = $this->di['logger']->setChannel('license');
-
+        // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
         if (DEBUG) {
             $log->debug(print_r($data, true));
         }

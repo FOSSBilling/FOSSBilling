@@ -17,10 +17,6 @@ DOCKER_ENV
 docker_tag
 Dockerfile-php-build
 
-### phpunit/phpunit ###
-.phpunit.result.cache
-.phpunit.cache/test-results
-
 ### node_modules ###
 node_modules
 
@@ -31,6 +27,4 @@ src/themes/huraga/config/settings_data.json
 output.log
 
 ### Cypress ###
-tests/e2e/cypress/downloads
-tests/e2e/cypress/screenshots
-tests/e2e/cypress/videos
+tests/E2E/Cypress/artifacts

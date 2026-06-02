@@ -35,10 +35,10 @@ class Guest extends \Api_Abstract
             throw new \FOSSBilling\Exception('Invalid invoice hash', null, 4001);
         }
 
-        $this->di['rate_limiter']->consumeOrThrow('invoice_get_ip', (string) $this->getIp());
-        $this->di['rate_limiter']->consumeOrThrow('invoice_get_hash', (string) $data['hash']);
+        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_get_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_get_hash', (string) $data['hash']);
 
-        $model = $this->di['db']->findOne('Invoice', 'hash = :hash', ['hash' => $data['hash']]);
+        $model = $this->getDi()['db']->findOne('Invoice', 'hash = :hash', ['hash' => $data['hash']]);
         if (!$model) {
             throw new \FOSSBilling\Exception('Invoice was not found');
         }
@@ -57,7 +57,7 @@ class Guest extends \Api_Abstract
      */
     public function gateways($data)
     {
-        $gatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
+        $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
 
         return $gatewayService->getActive($data);
     }
@@ -90,8 +90,8 @@ class Guest extends \Api_Abstract
             throw new \FOSSBilling\Exception('Payment method not found. Missing param gateway_id', null, 811);
         }
 
-        $this->di['rate_limiter']->consumeOrThrow('invoice_payment_ip', (string) $this->getIp());
-        $this->di['rate_limiter']->consumeOrThrow('invoice_payment_hash', (string) $data['hash']);
+        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_payment_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_payment_hash', (string) $data['hash']);
 
         return $this->getService()->processInvoice($data);
     }
@@ -108,8 +108,8 @@ class Guest extends \Api_Abstract
             throw new \FOSSBilling\Exception('Invalid invoice hash', null, 4001);
         }
 
-        $this->di['rate_limiter']->consumeOrThrow('invoice_pdf_ip', (string) $this->getIp());
-        $this->di['rate_limiter']->consumeOrThrow('invoice_pdf_hash', (string) $data['hash']);
+        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_pdf_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_pdf_hash', (string) $data['hash']);
 
         return $this->getService()->generatePDF($data['hash'], $this->getIdentity());
     }

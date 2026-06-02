@@ -231,10 +231,8 @@ class Client implements InjectionAwareInterface
         if ($isLoginMethod && !$isAjax && ($isStaffLogin || $isClientLogin)) {
             if ($isStaffLogin) {
                 $redirectUrl = $this->di['url']->adminLink('');
-            } elseif ($isClientLogin) {
-                $redirectUrl = $this->di['url']->link('');
             } else {
-                $redirectUrl = '/';
+                $redirectUrl = $this->di['url']->link('');
             }
 
             return new RedirectResponse($redirectUrl);

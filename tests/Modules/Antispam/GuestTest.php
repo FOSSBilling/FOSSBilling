@@ -2,95 +2,90 @@
 
 declare(strict_types=1);
 
-namespace AntispamTests;
+use Tests\Helpers\ApiClient;
 
-use APIHelper\Request;
-use PHPUnit\Framework\TestCase;
+$originalAntispamConfig = null;
 
-final class GuestTest extends TestCase
+beforeEach(function () use (&$originalAntispamConfig): void {
+    $originalAntispamConfig = null;
+});
+
+afterEach(function () use (&$originalAntispamConfig): void {
+    if ($originalAntispamConfig === null) {
+        return;
+    }
+
+    $result = ApiClient::request('admin/extension/config_save', array_merge(
+        ['ext' => 'mod_antispam'],
+        $originalAntispamConfig
+    ));
+    expect($result->wasSuccessful())->toBeTrue();
+    $originalAntispamConfig = null;
+});
+
+function captureOriginalAntispamConfig(?array &$originalConfig): void
 {
-    private ?array $originalConfig = null;
-
-    protected function tearDown(): void
-    {
-        if ($this->originalConfig !== null) {
-            $result = Request::makeRequest('admin/extension/config_save', array_merge(
-                ['ext' => 'mod_antispam'],
-                $this->originalConfig
-            ));
-            $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-            $this->originalConfig = null;
-        }
-
-        parent::tearDown();
+    if ($originalConfig !== null) {
+        return;
     }
 
-    public function testConfigSave(): void
-    {
-        $this->captureOriginalConfig();
+    $result = ApiClient::request('admin/antispam/get_config');
+    expect($result->wasSuccessful())->toBeTrue();
 
-        $result = Request::makeRequest('admin/extension/config_save', [
-            'ext' => 'mod_antispam',
-            'captcha_enabled' => true,
-            'captcha_provider' => 'hcaptcha',
-            'hcaptcha_site_key' => 'site-key',
-            'hcaptcha_secret_key' => 'secret-key',
-            'captcha_recaptcha_v3_threshold' => '0.7',
-            'check_temp_emails' => false,
-            'sfs' => false,
-        ]);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
+    $config = $result->getResult();
+    expect($config)->toBeArray();
 
-        $result = Request::makeRequest('admin/antispam/get_config');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-
-        $config = $result->getResult();
-        $this->assertIsArray($config);
-        $this->assertTrue((bool) $config['captcha_enabled']);
-        $this->assertSame('hcaptcha', $config['captcha_provider']);
-        $this->assertSame('site-key', $config['hcaptcha_site_key']);
-        $this->assertSame('secret-key', $config['hcaptcha_secret_key']);
-        $this->assertSame('0.7', $config['captcha_recaptcha_v3_threshold']);
-        $this->assertFalse((bool) $config['check_temp_emails']);
-        $this->assertFalse((bool) $config['sfs']);
-    }
-
-    public function testRecaptchaConfig(): void
-    {
-        $this->captureOriginalConfig();
-
-        $result = Request::makeRequest('admin/extension/config_save', [
-            'ext' => 'mod_antispam',
-            'captcha_enabled' => true,
-            'captcha_provider' => 'recaptcha_v3',
-            'captcha_recaptcha_publickey' => 'recaptcha-site-key',
-            'captcha_recaptcha_v3_threshold' => '0.8',
-        ]);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-
-        $result = Request::makeRequest('guest/antispam/recaptcha');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-
-        $config = $result->getResult();
-        $this->assertIsArray($config);
-        $this->assertTrue((bool) $config['enabled']);
-        $this->assertSame('recaptcha_v3', $config['captcha_provider']);
-        $this->assertSame('recaptcha-site-key', $config['publickey']);
-        $this->assertSame('0.8', $config['recaptcha_v3_threshold']);
-    }
-
-    private function captureOriginalConfig(): void
-    {
-        if ($this->originalConfig !== null) {
-            return;
-        }
-
-        $result = Request::makeRequest('admin/antispam/get_config');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-
-        $config = $result->getResult();
-        $this->assertIsArray($config);
-
-        $this->originalConfig = $config;
-    }
+    $originalConfig = $config;
 }
+
+test('saves antispam config', function () use (&$originalAntispamConfig): void {
+    captureOriginalAntispamConfig($originalAntispamConfig);
+
+    $result = ApiClient::request('admin/extension/config_save', [
+        'ext' => 'mod_antispam',
+        'captcha_enabled' => true,
+        'captcha_provider' => 'hcaptcha',
+        'hcaptcha_site_key' => 'site-key',
+        'hcaptcha_secret_key' => 'secret-key',
+        'captcha_recaptcha_v3_threshold' => '0.7',
+        'check_temp_emails' => false,
+        'sfs' => false,
+    ]);
+    expect($result->wasSuccessful())->toBeTrue();
+
+    $result = ApiClient::request('admin/antispam/get_config');
+    expect($result->wasSuccessful())->toBeTrue();
+
+    $config = $result->getResult();
+    expect($config)->toBeArray()
+        ->and((bool) $config['captcha_enabled'])->toBeTrue()
+        ->and($config['captcha_provider'])->toBe('hcaptcha')
+        ->and($config['hcaptcha_site_key'])->toBe('site-key')
+        ->and($config['hcaptcha_secret_key'])->toBe('secret-key')
+        ->and($config['captcha_recaptcha_v3_threshold'])->toBe('0.7')
+        ->and((bool) $config['check_temp_emails'])->toBeFalse()
+        ->and((bool) $config['sfs'])->toBeFalse();
+});
+
+test('gets recaptcha config', function () use (&$originalAntispamConfig): void {
+    captureOriginalAntispamConfig($originalAntispamConfig);
+
+    $result = ApiClient::request('admin/extension/config_save', [
+        'ext' => 'mod_antispam',
+        'captcha_enabled' => true,
+        'captcha_provider' => 'recaptcha_v3',
+        'captcha_recaptcha_publickey' => 'recaptcha-site-key',
+        'captcha_recaptcha_v3_threshold' => '0.8',
+    ]);
+    expect($result->wasSuccessful())->toBeTrue();
+
+    $result = ApiClient::request('guest/antispam/recaptcha');
+    expect($result->wasSuccessful())->toBeTrue();
+
+    $config = $result->getResult();
+    expect($config)->toBeArray()
+        ->and((bool) $config['enabled'])->toBeTrue()
+        ->and($config['captcha_provider'])->toBe('recaptcha_v3')
+        ->and($config['publickey'])->toBe('recaptcha-site-key')
+        ->and($config['recaptcha_v3_threshold'])->toBe('0.8');
+});

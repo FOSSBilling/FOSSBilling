@@ -95,7 +95,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->err($exc->getMessage());
         }
     }
 
@@ -121,7 +121,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->err($exc->getMessage());
         }
     }
 
@@ -147,7 +147,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->err($exc->getMessage());
         }
     }
 
@@ -173,7 +173,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->err($exc->getMessage());
         }
     }
 
@@ -197,7 +197,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->err($exc->getMessage());
         }
     }
 
@@ -223,7 +223,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->err($exc->getMessage());
         }
     }
 

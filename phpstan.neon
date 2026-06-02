@@ -2,7 +2,11 @@ includes:
 	- phpstan-baseline.neon
 
 parameters:
-	level: 3
+	level: 5
+	reportUnmatchedIgnoredErrors: false
+	dynamicConstantNames:
+		- DEBUG
+		- INSTANCE_ID
 	paths:
 		- src
 	bootstrapFiles:
@@ -17,6 +21,7 @@ parameters:
 		- src/library/Server/Manager/Custom.php
 		- src/library/Server/Manager/Whm.php
 		- src/data/cache (?)
+		- '*/tests/*'
 	universalObjectCratesClasses:
 		- RedBeanPHP\SimpleModel
 		- RedBeanPHP\OODBBean

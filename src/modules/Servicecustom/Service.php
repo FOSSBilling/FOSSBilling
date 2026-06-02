@@ -111,7 +111,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             throw new \FOSSBilling\Exception('Could not activate order. Service was not created', null, 7456);
         }
 
-        /* @var \Model_ServiceCustom $model */
+        // @phpstan-ignore argument.type (Model is guaranteed to be Model_ServiceCustom by getOrderService)
         $this->callOnAdapter($model, 'activate');
 
         return true;
@@ -289,7 +289,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $file = Path::join('Plugin', $plugin, "{$plugin}.php");
         if (!Environment::isTesting() && !$this->filesystem->exists(Path::join(PATH_LIBRARY, $file))) {
             $e = new \FOSSBilling\Exception('Plugin class file :file was not found', [':file' => $file], 3124);
-
+            // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
             if (DEBUG) {
                 error_log($e->getMessage());
             }

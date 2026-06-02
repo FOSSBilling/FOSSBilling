@@ -75,13 +75,13 @@ jobs:
             fossbilling:test-${{ matrix.php }} \
             ./src/vendor/bin/phpstan analyse --configuration phpstan.neon --memory-limit=512M
 
-      - name: 'PHPUnit'
-        id: phpunit
+      - name: 'Pest'
+        id: pest
         run: |
           docker run --rm \
             --env APP_ENV=test \
             fossbilling:test-${{ matrix.php }} \
-            ./src/vendor/bin/phpunit --configuration phpunit.xml.dist
+            ./src/vendor/bin/pest --test-directory ../tests --configuration phpunit.xml.dist
 
       - name: 'Write Job Summary'
         if: always()
@@ -97,5 +97,5 @@ jobs:
           | Cache mode | `${{ inputs.write-cache && 'read/write' || 'read-only' }}` |
           | Docker build | `${{ inputs.write-cache && steps.build_write_cache.outcome || steps.build_read_cache.outcome }}` |
           | PHPStan | `${{ steps.phpstan.outcome }}` |
-          | PHPUnit | `${{ steps.phpunit.outcome }}` |
+          | Pest | `${{ steps.pest.outcome }}` |
           EOF

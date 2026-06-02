@@ -19,7 +19,7 @@ class Guest extends \Api_Abstract
      */
     public function recaptcha($data): array
     {
-        $config = $this->di['mod_config']('Antispam');
+        $config = $this->getDi()['mod_config']('Antispam');
 
         return [
             'publickey' => $config['captcha_recaptcha_publickey'] ?? null,

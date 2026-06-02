@@ -24,7 +24,7 @@ class Admin extends \Api_Abstract
      */
     public function info($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('seo', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('seo', 'view');
 
         return $this->getService()->getInfo();
     }
@@ -36,9 +36,9 @@ class Admin extends \Api_Abstract
      */
     public function ping_all()
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('seo', 'manage');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('seo', 'manage');
 
-        $extensionService = $this->di['mod_service']('extension');
+        $extensionService = $this->getDi()['mod_service']('extension');
         $config = $extensionService->getConfig('mod_seo');
 
         return $this->getService()->pingSitemap($config, true);

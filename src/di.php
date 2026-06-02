@@ -117,7 +117,12 @@ $di['pdo'] = function () {
  * @return \Box_Database The new Box_Database object that was just created.
  */
 $di['db'] = function () use ($di) {
-    RedBeanPHP\R::setup($di['pdo']);
+    $pdo = $di->offsetGet('pdo');
+    if (!$pdo instanceof PDO) {
+        throw new RuntimeException('PDO service must resolve to a PDO instance');
+    }
+
+    RedBeanPHP\R::setup($pdo);
     RedBeanPHP\Util\DispenseHelper::setEnforceNamingPolicy(false);
 
     // SECURITY: bind string literals as PARAM_STR, not PARAM_INT. Without
@@ -238,7 +243,12 @@ $di['events_manager'] = function () use ($di) {
  * @var \FOSSBilling\Session $di['session']
  */
 $di['session'] = function () use ($di) {
-    $handler = new PdoSessionHandler($di['pdo']);
+    $pdo = $di->offsetGet('pdo');
+    if (!$pdo instanceof PDO) {
+        throw new RuntimeException('PDO service must resolve to a PDO instance');
+    }
+
+    $handler = new PdoSessionHandler($pdo);
     $session = new FOSSBilling\Session($handler);
     $session->setDi($di);
     $session->setupSession();
@@ -641,7 +651,7 @@ $di['table'] = $di->protect(function ($name) use ($di) {
  * @return \Box\Mod\Servicelicense\Server
  */
 $di['license_server'] = function () use ($di) {
-    $server = new Box\Mod\Servicelicense\Server($di['logger']);
+    $server = new Box\Mod\Servicelicense\Server();
     $server->setDi($di);
 
     return $server;
@@ -683,7 +693,14 @@ $di['translate'] = $di->protect(function ($textDomain = '') {
     return $tr;
 });
 
-$di['csv_response_factory'] = fn (): FOSSBilling\Http\CsvResponseFactory => new FOSSBilling\Http\CsvResponseFactory($di['db']);
+$di['csv_response_factory'] = function () use ($di): FOSSBilling\Http\CsvResponseFactory {
+    $database = $di->offsetGet('db');
+    if (!$database instanceof Box_Database) {
+        throw new RuntimeException('Database service must resolve to a Box_Database instance');
+    }
+
+    return new FOSSBilling\Http\CsvResponseFactory($database);
+};
 
 $di['twig_factory'] = fn (): FOSSBilling\Twig\TwigFactory => new FOSSBilling\Twig\TwigFactory($di);
 

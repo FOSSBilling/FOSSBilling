@@ -26,7 +26,7 @@ class Admin extends \Api_Abstract
      */
     public function info($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('cron', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('cron', 'view');
 
         return $this->getService()->getCronInfo();
     }
@@ -38,7 +38,7 @@ class Admin extends \Api_Abstract
      */
     public function run($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('cron', 'manage');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('cron', 'manage');
 
         return $this->getService()->runCrons();
     }
@@ -53,7 +53,7 @@ class Admin extends \Api_Abstract
      */
     public function save_settings($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('cron', 'manage');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('cron', 'manage');
 
         $guestCron = !empty($data['guest_cron']);
 
@@ -71,7 +71,7 @@ class Admin extends \Api_Abstract
             $data['cron_hash'] = '';
         }
 
-        return $this->di['mod_service']('extension')->setConfig($data);
+        return $this->getDi()['mod_service']('extension')->setConfig($data);
     }
 
     /**
@@ -79,13 +79,13 @@ class Admin extends \Api_Abstract
      */
     public function regenerate_cron_hash($data): array
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('cron', 'manage');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('cron', 'manage');
 
         $config = $this->getMod()->getConfig();
         $config['cron_hash'] = bin2hex(random_bytes(32));
         $config['ext'] = 'mod_cron';
 
-        $this->di['mod_service']('extension')->setConfig($config);
+        $this->getDi()['mod_service']('extension')->setConfig($config);
 
         return ['cron_hash' => $config['cron_hash']];
     }

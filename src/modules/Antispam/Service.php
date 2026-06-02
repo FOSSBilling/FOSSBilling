@@ -127,7 +127,6 @@ class Service implements InjectionAwareInterface
     {
         $di = $event->getDi();
         $params = $event->getParameters();
-        $params = is_array($params) ? $params : [];
 
         $data = [
             'ip' => $params['ip'] ?? null,

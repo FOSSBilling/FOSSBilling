@@ -1102,7 +1102,7 @@ class Service implements InjectionAwareInterface
 
             return [$m->getLoginUrl(null), $m->getResellerLoginUrl(null)];
         } catch (\Exception $e) {
-            error_log("Error while retrieving control panel url: {$e->getMessage()}.");
+            $this->di['logger']->error("Error while retrieving control panel url: {$e->getMessage()}.");
         }
 
         return [false, false];

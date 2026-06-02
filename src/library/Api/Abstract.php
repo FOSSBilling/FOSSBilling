@@ -34,13 +34,24 @@ class Api_Abstract implements InjectionAwareInterface
 
     protected ?Pimple\Container $di = null;
 
+    public function __construct()
+    {
+        if (function_exists('Tests\Helpers\container')) {
+            $this->di = Tests\Helpers\container();
+        }
+    }
+
     public function setDi(Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    protected function getDi(): ?Pimple\Container
+    public function getDi(): ?Pimple\Container
     {
+        if ($this->di === null && function_exists('Tests\Helpers\container')) {
+            $this->di = Tests\Helpers\container();
+        }
+
         return $this->di;
     }
 
@@ -57,6 +68,7 @@ class Api_Abstract implements InjectionAwareInterface
      */
     public function getMod()
     {
+        // @phpstan-ignore booleanNot.alwaysFalse (Runtime check to ensure mod is set)
         if (!$this->mod) {
             throw new FOSSBilling\Exception('Mod object is not set for the service');
         }

@@ -315,7 +315,8 @@ class Box_App
         ];
 
         foreach ($adminApiPrefixes as $adminApiPrefix) {
-            $realAdminApiUrl = SYSTEM_URL[-1] === '/' ? substr(SYSTEM_URL, 0, -1) . $adminApiPrefix : SYSTEM_URL . $adminApiPrefix;
+            $systemUrl = SYSTEM_URL;
+            $realAdminApiUrl = str_ends_with($systemUrl, '/') ? substr($systemUrl, 0, -1) . $adminApiPrefix : $systemUrl . $adminApiPrefix;
             $allowedURLs[] = parse_url($realAdminApiUrl)['path'];
         }
         foreach ($allowedURLs as $url) {
@@ -353,7 +354,7 @@ class Box_App
     protected function checkAdminPrefix(): bool
     {
         $requestPath = $this->getRequestPath();
-        $realAdminUrl = SYSTEM_URL[-1] === '/' ? substr(SYSTEM_URL, 0, -1) . ADMIN_PREFIX : SYSTEM_URL . ADMIN_PREFIX;
+        $realAdminUrl = rtrim(SYSTEM_URL, '/') . ADMIN_PREFIX;
         $realAdminPath = parse_url($realAdminUrl)['path'];
 
         if (preg_match('/^' . str_replace('/', '\/', $realAdminPath) . '(.*)/', $requestPath) !== 0) {

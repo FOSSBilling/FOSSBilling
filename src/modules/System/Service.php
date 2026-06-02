@@ -31,11 +31,9 @@ class Service
     private const int MYSQL_DUPLICATE_ENTRY_ERROR = 23000;
 
     protected ?Container $di = null;
-    private readonly Filesystem $filesystem;
 
-    public function __construct()
+    public function __construct(private readonly ?Filesystem $filesystem = new Filesystem())
     {
-        $this->filesystem = new Filesystem();
     }
 
     public function setDi(Container $di): void
@@ -602,7 +600,7 @@ class Service
         }
 
         $code = (string) $code;
-        if ($code === null || $code === '' || $code === 0 || $code === '0') {
+        if ($code === '' || $code === '0') {
             return '-';
         }
 

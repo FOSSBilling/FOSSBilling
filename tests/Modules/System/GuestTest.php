@@ -2,38 +2,32 @@
 
 declare(strict_types=1);
 
-namespace SystemTests;
+use Tests\Helpers\ApiClient;
 
-use APIHelper\Request;
-use PHPUnit\Framework\TestCase;
+test('template exists', function (): void {
+    $result = ApiClient::request('guest/system/template_exists', ['file' => 'layout_default.html.twig']);
 
-final class GuestTest extends TestCase
-{
-    public function testTemplateExists(): void
-    {
-        $result = Request::makeRequest('guest/system/template_exists', ['file' => 'layout_default.html.twig']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertTrue($result->getResult());
-    }
+    expect($result->wasSuccessful())->toBeTrue()
+        ->and($result->getResult())->toBeTrue();
+});
 
-    public function testTemplateDoesNotExist(): void
-    {
-        $result = Request::makeRequest('guest/system/template_exists', ['file' => 'thisfiledoesnotexist.txt']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertFalse($result->getResult());
-    }
+test('template does not exist', function (): void {
+    $result = ApiClient::request('guest/system/template_exists', ['file' => 'thisfiledoesnotexist.txt']);
 
-    public function testPeriods(): void
-    {
-        $result = Request::makeRequest('guest/system/periods');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsArray($result->getResult());
-    }
+    expect($result->wasSuccessful())->toBeTrue()
+        ->and($result->getResult())->toBeFalse();
+});
 
-    public function testPhoneCodes(): void
-    {
-        $result = Request::makeRequest('guest/system/phone_codes');
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsArray($result->getResult());
-    }
-}
+test('gets periods', function (): void {
+    $result = ApiClient::request('guest/system/periods');
+
+    expect($result->wasSuccessful())->toBeTrue()
+        ->and($result->getResult())->toBeArray();
+});
+
+test('gets phone codes', function (): void {
+    $result = ApiClient::request('guest/system/phone_codes');
+
+    expect($result->wasSuccessful())->toBeTrue()
+        ->and($result->getResult())->toBeArray();
+});

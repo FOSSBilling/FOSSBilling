@@ -247,6 +247,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         if (!Environment::isProduction()) {
+            // @phpstan-ignore if.alwaysFalse
             if (DEBUG) {
                 error_log('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
             }
@@ -342,10 +343,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $normalized = array_values($normalized);
         sort($normalized);
-
-        if ($normalized === []) {
-            return [];
-        }
 
         $existingIds = $this->getExistingIds($table, $normalized);
         if (count($existingIds) !== count($normalized)) {

@@ -197,7 +197,7 @@ final class RequestFactory
 
     private static function parseForwardedHeader(string $header): array
     {
-        $firstForwardedValue = explode(',', $header)[0] ?? '';
+        $firstForwardedValue = explode(',', $header)[0];
         $values = [];
 
         foreach (explode(';', $firstForwardedValue) as $part) {

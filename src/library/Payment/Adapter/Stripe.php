@@ -126,7 +126,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         return Currencies::exists($currency) ? Currencies::getFractionDigits($currency) : 2;
     }
 
-    public function getInvoiceTitle(Model_Invoice $invoice)
+    public function getInvoiceTitle(Model_Invoice $invoice): string
     {
         $invoiceItems = $this->di['db']->getAll('SELECT title from invoice_item WHERE invoice_id = :invoice_id', [':invoice_id' => $invoice->id]);
 
@@ -153,6 +153,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
 
+        // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
         if (DEBUG) {
             error_log(json_encode($e->getJsonBody()));
         }

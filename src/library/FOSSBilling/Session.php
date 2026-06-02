@@ -132,7 +132,7 @@ class Session implements InjectionAwareInterface
         $sessionName = session_name();
         $sessionID = session_id();
         if ($sessionID === '') {
-            $sessionID = $sessionName !== '' ? ($_COOKIE[$sessionName] ?? '') : '';
+            $sessionID = $sessionName !== false ? ($_COOKIE[$sessionName] ?? '') : '';
         }
 
         if ($sessionID === '') {
@@ -170,14 +170,12 @@ class Session implements InjectionAwareInterface
             $cookieParams = session_get_cookie_params();
             $cookieOptions = [
                 'expires' => time() - 3600,
-                'path' => $cookieParams['path'] ?? '/',
-                'domain' => $cookieParams['domain'] ?? '',
-                'secure' => $cookieParams['secure'] ?? false,
-                'httponly' => $cookieParams['httponly'] ?? false,
+                'path' => $cookieParams['path'],
+                'domain' => $cookieParams['domain'],
+                'secure' => $cookieParams['secure'],
+                'httponly' => $cookieParams['httponly'],
             ];
-            if (!empty($cookieParams['samesite'])) {
-                $cookieOptions['samesite'] = $cookieParams['samesite'];
-            }
+            $cookieOptions['samesite'] = $cookieParams['samesite'];
             setcookie($sessionName, '', $cookieOptions);
             unset($_COOKIE[$sessionName]);
         }
@@ -191,7 +189,7 @@ class Session implements InjectionAwareInterface
         $sessionID = session_id();
         if ($sessionID === '') {
             $sessionName = session_name();
-            $sessionID = $sessionName !== '' ? ($_COOKIE[$sessionName] ?? '') : '';
+            $sessionID = $sessionName !== false ? ($_COOKIE[$sessionName] ?? '') : '';
         }
 
         if ($sessionID === '') {
@@ -240,11 +238,11 @@ class Session implements InjectionAwareInterface
 
             setcookie($sessionName, $sessionId, [
                 'expires' => 0,
-                'path' => $params['path'] ?? '/',
-                'domain' => $params['domain'] ?? '',
-                'secure' => $params['secure'] ?? false,
-                'httponly' => $params['httponly'] ?? true,
-                'samesite' => $params['samesite'] ?? 'Lax',
+                'path' => $params['path'],
+                'domain' => $params['domain'],
+                'secure' => $params['secure'],
+                'httponly' => $params['httponly'],
+                'samesite' => $params['samesite'],
             ]);
 
             $_COOKIE[$sessionName] = $sessionId;

@@ -41,7 +41,7 @@ FOSSBilling is a free and open-source billing and client management solution des
   * [PostCSS](https://postcss.org/) with Autoprefixer: CSS post-processing
   * [svg-sprite](https://github.com/svg-sprite/svg-sprite): SVG sprite generation for icons
 * **Testing:**
-  * [PHPUnit](https://phpunit.de/): Unit and integration testing framework
+  * [Pest](https://pestphp.com/): Unit, module, and live API test framework
 * **Code Quality & Analysis:**
   * [PHP-CS-Fixer](https://cs.symfony.com/): PSR-12 coding standards enforcement
   * [Rector](https://getrector.org/): Automated PHP code refactoring and modernization
@@ -135,18 +135,15 @@ cd src/themes/huraga && npm run dev
 
 ### Testing
 
-**PHPUnit Tests:** Run the PHP test suite using PHPUnit:
+**Pest Tests:** Run the PHP test suite using Pest:
 
 ```bash
 composer test
 ```
 
-The project has two test suites:
-
-* **Library Tests:** Located in `tests-legacy/library/` for testing core library functionality
-* **Module Tests:** Located in `tests-legacy/modules/` for testing individual modules
-
-`phpunit.xml.dist` currently runs the legacy PHPUnit suites by default. The `tests/` directory contains newer test and end-to-end test structure, including Cypress tests under `tests/e2e`.
+The default suite covers unit tests in `tests/Unit` and module unit tests in `src/modules/*/tests/Unit`.
+Live API tests are in `tests/Modules` and run through Pest with `phpunit-live.xml` when `APP_URL` and `TEST_API_KEY` are available.
+Cypress end-to-end tests live under `tests/E2E/Cypress`.
 
 ### Code Quality Tools
 
@@ -196,8 +193,7 @@ src/
 └── vendor/                    # Composer dependencies
 
 frontend/                      # Core frontend source and shared build tooling
-tests/                         # Modern and end-to-end test structure
-tests-legacy/                  # Legacy PHPUnit tests
+tests/                         # Pest, live API, and end-to-end test structure
 ```
 
 ### Front-end Guidelines
@@ -239,7 +235,7 @@ tests-legacy/                  # Legacy PHPUnit tests
 2. **Development Setup:** Install dependencies and build assets
 3. **Code Quality:** Run tests and code quality tools before submitting
 4. **Module Development:** Understand the distinction between Service modules and Extension modules
-5. **Testing:** Write tests for new functionality using PHPUnit
+5. **Testing:** Write tests for new functionality using Pest
 
 ## Key Files and Directories
 
@@ -249,7 +245,7 @@ tests-legacy/                  # Legacy PHPUnit tests
 * **`package.json`:** Node.js dependencies, build scripts, and workspace configuration
 * **`frontend/`:** Core frontend source and shared esbuild helper code
 * **`src/public/`:** Public shared assets, default branding, and gateway icons
-* **`phpunit.xml.dist`:** PHPUnit testing configuration
+* **`phpunit.xml.dist`:** Pest/PHPUnit testing configuration
 * **`phpstan.neon`:** PHPStan static analysis configuration
 * **`.php-cs-fixer.dist.php`:** PHP-CS-Fixer coding standards configuration
 * **`rector.php`:** Rector refactoring rules configuration

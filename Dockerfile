@@ -148,7 +148,6 @@ COPY --from=release-tree /app/src ./src
 COPY --from=php-dev-vendor /app/src/vendor ./src/vendor
 COPY composer.json composer.lock phpstan.neon phpstan-baseline.neon phpunit.xml.dist phpunit-live.xml ./
 COPY tests ./tests
-COPY tests-legacy ./tests-legacy
 
 RUN set -eux; \
   php -r '$config = require "./src/config-sample.php"; file_put_contents("./src/config.php", "<?php\nreturn " . var_export($config, true) . ";\n");'; \
