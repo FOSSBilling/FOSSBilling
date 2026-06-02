@@ -29,7 +29,7 @@ final class GuestTest extends TestCase
 
         // Validate that the rate limit is working
         $result = Request::makeRequest('guest/cron/run', ['hash' => $hash]);
-        $this->assertTrue($result->wasSuccessful(), 'Cron ran when it should have been rate limited');
+        $this->assertTrue($result->wasSuccessful(), 'Request should succeed but cron should be rate limited');
         $this->assertFalse($result->getResult());
 
         // Validate that a wrong hash is rejected
