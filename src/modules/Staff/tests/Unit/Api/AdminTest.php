@@ -211,8 +211,8 @@ test('create', function (): void {
     $data = [
         'admin_group_id' => '1',
         'password' => 'test!23A',
-        'email' => 'okey@example.com',
-        'name' => 'OkeyTest',
+        'email' => 'okay@example.com',
+        'name' => 'OkayTest',
     ];
 
     $newStaffId = 1;
