@@ -130,7 +130,7 @@ class Fingerprint
                 ++$itemCount;
                 $hashedData = hash('md5', (string) $properties['source']);
 
-                if ($fingerprint[$name] !== $hashedData) {
+                if (($fingerprint[$name] ?? null) !== $hashedData) {
                     $scoreSubtract += $properties['weight'];
                     $differing[] = $name;
                 }
