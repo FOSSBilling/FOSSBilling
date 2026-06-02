@@ -30,7 +30,7 @@ class SentryHelper
     final public const string last_change = '0.6.0';
 
     // A full list of our own modules which we want to receive error reports for
-    private static array $allowedModules = [
+    private const array ALLOWED_MODULES = [
         'activity',
         'api',
         'branding',
@@ -73,13 +73,13 @@ class SentryHelper
     ];
 
     // Themes we want to receive error reports for
-    private static array $allowedThemes = [
+    private const array ALLOWED_THEMES = [
         'admin_default',
         'huraga',
     ];
 
     // Array containing instance IDs that are blacklisted from error reporting and a timestamp of when their blacklist expires.
-    private static array $blacklistedInstances = [
+    private const array BLACKLISTED_INSTANCES = [
         '49f78ad3-9e99-492d-aa86-09ba959b16ee' => '2025-08-21',
         '40ea07d8-84db-49a0-8dcc-7ef53f9a38be' => '2025-12-01',
     ];
@@ -246,15 +246,15 @@ class SentryHelper
             return true;
         }
 
-        if (array_key_exists(INSTANCE_ID, self::$blacklistedInstances) && strtotime((string) self::$blacklistedInstances[INSTANCE_ID]) >= time()) {
+        if (array_key_exists(INSTANCE_ID, self::BLACKLISTED_INSTANCES) && strtotime((string) self::BLACKLISTED_INSTANCES[INSTANCE_ID]) >= time()) {
             return true;
         }
 
-        if (is_string($module) && !in_array(strtolower($module), self::$allowedModules)) {
+        if (is_string($module) && !in_array(strtolower($module), self::ALLOWED_MODULES, true)) {
             return true;
         }
 
-        if (is_string($theme) && !in_array(strtolower($theme), self::$allowedThemes)) {
+        if (is_string($theme) && !in_array(strtolower($theme), self::ALLOWED_THEMES, true)) {
             return true;
         }
 

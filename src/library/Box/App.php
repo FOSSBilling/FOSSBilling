@@ -354,7 +354,7 @@ class Box_App
     protected function checkAdminPrefix(): bool
     {
         $requestPath = $this->getRequestPath();
-        $realAdminUrl = SYSTEM_URL[-1] === '/' ? substr(SYSTEM_URL, 0, -1) . ADMIN_PREFIX : SYSTEM_URL . ADMIN_PREFIX;
+        $realAdminUrl = rtrim(SYSTEM_URL, '/') . ADMIN_PREFIX;
         $realAdminPath = parse_url($realAdminUrl)['path'];
 
         if (preg_match('/^' . str_replace('/', '\/', $realAdminPath) . '(.*)/', $requestPath) !== 0) {

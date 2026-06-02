@@ -138,15 +138,11 @@ class Server_Manager_Plesk extends Server_Manager
             }
         }
 
-        $result = $this->createClient($account);
-
-        if (!$id) {
+        if (!$this->createClient($account)) {
             $placeholders = [':action:' => __trans('create account'), ':type:' => 'Plesk'];
 
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
-
-        $client->setId((int) $id);
 
         $this->setSubscription($account);
 
@@ -240,7 +236,6 @@ class Server_Manager_Plesk extends Server_Manager
         if (!$result) {
             throw new Server_Exception('Can\'t modify client');
         }
-        $client->setId((int) $id);
 
         $account->setPackage($package);
         $this->updateSubscription($account);

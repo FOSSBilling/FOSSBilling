@@ -4,6 +4,9 @@ includes:
 parameters:
 	level: 5
 	reportUnmatchedIgnoredErrors: false
+	dynamicConstantNames:
+		- DEBUG
+		- INSTANCE_ID
 	paths:
 		- src
 	bootstrapFiles:

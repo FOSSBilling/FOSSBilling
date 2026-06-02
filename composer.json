@@ -20,7 +20,7 @@
         "post-install-cmd": [
             "php src/vendor/symfony/intl/Resources/bin/compress || true"
         ],
-        "test": "phpunit",
+        "test": "pest --test-directory ../tests",
         "phpstan": "phpstan analyze --memory-limit=512M",
         "phpstan:baseline": "phpstan analyze --generate-baseline",
         "cs:check": "php-cs-fixer fix --dry-run --diff",

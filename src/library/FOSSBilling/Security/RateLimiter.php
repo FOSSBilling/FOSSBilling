@@ -140,12 +140,12 @@ class RateLimiter implements InjectionAwareInterface
             'limit' => (int) ($policy['limit'] ?? 60),
         ];
 
-        if (($factoryConfig['policy'] ?? null) === 'token_bucket') {
+        if ($factoryConfig['policy'] === 'token_bucket') {
             $factoryConfig['rate'] = [
                 'amount' => (int) ($policy['limit'] ?? 60),
                 'interval' => (string) ($policy['interval'] ?? '1 minute'),
             ];
-        } elseif (($factoryConfig['policy'] ?? null) !== 'no_limit') {
+        } elseif ($factoryConfig['policy'] !== 'no_limit') {
             $factoryConfig['interval'] = (string) ($policy['interval'] ?? '1 minute');
         }
 

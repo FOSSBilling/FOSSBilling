@@ -600,7 +600,7 @@ class Service
         }
 
         $code = (string) $code;
-        if ($code === null || $code === '' || $code === 0 || $code === '0') {
+        if ($code === '' || $code === '0') {
             return '-';
         }
 

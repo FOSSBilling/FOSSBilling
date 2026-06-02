@@ -28,6 +28,11 @@ class MassmailerMessage implements ApiArrayInterface
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::INTEGER)]
     private ?int $id = null;
 
+    public function __construct(?int $id = null)
+    {
+        $this->id = $id;
+    }
+
     #[ORM\Column(name: 'from_email', type: \Doctrine\DBAL\Types\Types::STRING, length: 255, nullable: true)]
     private ?string $fromEmail = null;
 

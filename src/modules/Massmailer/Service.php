@@ -344,10 +344,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $normalized = array_values($normalized);
         sort($normalized);
 
-        if ($normalized === []) {
-            return [];
-        }
-
         $existingIds = $this->getExistingIds($table, $normalized);
         if (count($existingIds) !== count($normalized)) {
             return $this->handleInvalidFilter($field, $strict);

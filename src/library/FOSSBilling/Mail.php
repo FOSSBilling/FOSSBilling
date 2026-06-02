@@ -181,7 +181,7 @@ class Mail
         }
 
         $host = urlencode(trim((string) $options['smtp_host']));
-        $port = Tools::normalizePort($options['smtp_port'] ?? null);
+        $port = Tools::normalizePort($options['smtp_port']);
         if ($port === null) {
             throw new InformationException('SMTP port is invalid');
         }

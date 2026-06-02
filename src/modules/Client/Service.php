@@ -629,7 +629,7 @@ class Service implements InjectionAwareInterface
         $client->state = $data['state'] ?? null;
         $client->postcode = $data['postcode'] ?? null;
         $client->country = !empty($data['country']) ? $data['country'] : (!empty($systemCfg['default_country']) ? $systemCfg['default_country'] : null);
-        if ($client->country !== null && $client->country !== '' && !Countries::exists($client->country)) {
+        if ($client->country !== null && !Countries::exists($client->country)) {
             throw new InformationException('Invalid country code: :code', [':code' => $client->country]);
         }
         $client->document_type = $data['document_type'] ?? null;

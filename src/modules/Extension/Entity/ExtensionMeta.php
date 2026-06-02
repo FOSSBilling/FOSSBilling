@@ -27,6 +27,11 @@ class ExtensionMeta implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(type: Types::INTEGER)]
     private ?int $id = null;
 
+    public function __construct(?int $id = null)
+    {
+        $this->id = $id;
+    }
+
     #[ORM\Column(name: 'client_id', type: Types::INTEGER, nullable: true)]
     private ?int $clientId = null;
 

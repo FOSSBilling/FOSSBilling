@@ -44,7 +44,7 @@ test('validate target allows valid targets', function (string $input, string $ex
 test('validate target rejects invalid targets', function (string $input): void {
     $service = new Box\Mod\Redirect\Service();
     expect(fn () => $service->validateTarget($input))->toThrow(Exception::class);
-}->with('invalidTargets');
+})->with('invalidTargets');
 
 test('validate target trims whitespace', function (): void {
     $service = new Box\Mod\Redirect\Service();
@@ -54,9 +54,9 @@ test('validate target trims whitespace', function (): void {
 test('validate path strips slashes', function (string $input, string $expected): void {
     $service = new Box\Mod\Redirect\Service();
     expect($service->validatePath($input))->toBe($expected);
-}->with('validPaths');
+})->with('validPaths');
 
 test('validate path rejects invalid paths', function (string $input): void {
     $service = new Box\Mod\Redirect\Service();
     expect(fn () => $service->validatePath($input))->toThrow(Exception::class);
-}->with('invalidPaths');
+})->with('invalidPaths');
