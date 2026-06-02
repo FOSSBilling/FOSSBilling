@@ -355,7 +355,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->error($exc->getMessage());
         }
     }
 
@@ -387,7 +387,7 @@ class Service implements InjectionAwareInterface
             $email['ticket'] = $ticket;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->error($exc->getMessage());
         }
     }
 
@@ -409,7 +409,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->error($exc->getMessage());
         }
     }
 
@@ -430,7 +430,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->error($exc->getMessage());
         }
     }
 
@@ -450,7 +450,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->error($exc->getMessage());
         }
     }
 
@@ -469,7 +469,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->error($exc->getMessage());
         }
 
         return true;
@@ -491,7 +491,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->error($exc->getMessage());
         }
     }
 
@@ -511,7 +511,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->error($exc->getMessage());
         }
     }
 

@@ -47,7 +47,7 @@ class Admin extends \Api_Abstract
         $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('hook', 'trigger_hooks');
 
         if (!isset($data['event']) || empty($data['event'])) {
-            error_log('Invoked event call without providing event name');
+            $this->getDi()['logger']->warning('Invoked event call without providing event name');
 
             return false;
         }

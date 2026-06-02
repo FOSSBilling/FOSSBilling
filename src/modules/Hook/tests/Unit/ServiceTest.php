@@ -150,6 +150,8 @@ test('batch connects', function (): void {
     $expectation1 = $dbMock->shouldReceive('getCell');
     $expectation1->atLeast()->once();
     $expectation1->andReturn(false);
+    $dbMock->shouldReceive('exec')
+        ->byDefault();
 
     $extensionModel = new Model_ExtensionMeta();
     $extensionModel->loadBean(new Tests\Helpers\DummyBean());

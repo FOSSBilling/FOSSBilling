@@ -389,11 +389,14 @@ test('add item', function (): void {
     $serviceMock->shouldReceive('addItem')->atLeast()->once()
         ->andReturn(true);
 
+    $productModel = new Model_Product();
+    $productModel->loadBean(new Tests\Helpers\DummyBean());
+
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
     ->shouldReceive('getExistingModelById')
     ->atLeast()->once()
-    ->andReturn(new Model_Product());
+    ->andReturn($productModel);
 
     $di = container();
     $di['db'] = $dbMock;
@@ -429,11 +432,14 @@ test('add item single resets cart', function (): void {
     $apiMock->shouldReceive('reset')->atLeast()->once()
         ->andReturn(true);
 
+    $productModel = new Model_Product();
+    $productModel->loadBean(new Tests\Helpers\DummyBean());
+
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
     ->shouldReceive('getExistingModelById')
     ->atLeast()->once()
-    ->andReturn(new Model_Product());
+    ->andReturn($productModel);
 
     $di = container();
     $di['db'] = $dbMock;
