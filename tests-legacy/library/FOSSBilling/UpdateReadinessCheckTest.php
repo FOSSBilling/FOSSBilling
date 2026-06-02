@@ -89,7 +89,7 @@ final class UpdateReadinessCheckTest extends TestCase
 
     public function testFailsWhenVendorDirectoryIsNotWritable(): void
     {
-        $vendor = Path::join($this->root, 'src', 'vendor');
+        $vendor = Path::join($this->root, 'vendor');
         $this->makeUnwritable($vendor);
         $check = new UpdateReadinessCheck($this->root, $this->dataDir, $this->configPath);
 
@@ -101,7 +101,7 @@ final class UpdateReadinessCheckTest extends TestCase
 
     public function testFailsWhenInstallDirectoryIsNotRemovable(): void
     {
-        $install = Path::join($this->root, 'src', 'install');
+        $install = Path::join($this->root, 'install');
         $this->makeUnwritable($install);
         $check = new UpdateReadinessCheck($this->root, $this->dataDir, $this->configPath);
 
@@ -139,7 +139,7 @@ final class UpdateReadinessCheckTest extends TestCase
     public function testReportsAllFailuresAtOnce(): void
     {
         $cache = Path::join($this->dataDir, 'cache');
-        $vendor = Path::join($this->root, 'src', 'vendor');
+        $vendor = Path::join($this->root, 'vendor');
         $this->makeUnwritable($this->configPath);
         $this->makeUnwritable($cache);
         $this->makeUnwritable($vendor);
@@ -172,7 +172,7 @@ final class UpdateReadinessCheckTest extends TestCase
 
     public function testIgnoresMissingInstallDirectoryWhenReporting(): void
     {
-        $this->fs->remove(Path::join($this->root, 'src', 'install'));
+        $this->fs->remove(Path::join($this->root, 'install'));
         $check = new UpdateReadinessCheck($this->root, $this->dataDir, $this->configPath);
 
         $result = $check->check();
