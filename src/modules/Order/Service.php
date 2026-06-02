@@ -469,7 +469,7 @@ class Service implements InjectionAwareInterface
             $data['meta'] = $meta[$order['id']] ?? [];
             $data['active_tickets'] = $activeTickets[$order['id']] ?? 0;
             if (!isset($clients[$clientId])) {
-                $this->di['logger']->err('Missing client for order ' . $order['id']);
+                $this->di['logger']->error('Missing client for order ' . $order['id']);
                 $data['client'] = [];
             } else {
                 $data['client'] = $clients[$clientId];

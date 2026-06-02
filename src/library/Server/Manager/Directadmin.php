@@ -750,7 +750,7 @@ class Server_Manager_Directadmin extends Server_Manager
         } catch (TransportExceptionInterface|HttpExceptionInterface $error) {
             // If there is an error while sending the request, throw an exception
             $exception = new Server_Exception('HttpClientException: :error', [':error' => $error->getMessage()]);
-            $this->getLog()->err($exception->getMessage());
+            $this->getLog()->error($exception->getMessage());
 
             throw $exception;
         }
@@ -771,7 +771,7 @@ class Server_Manager_Directadmin extends Server_Manager
         // If the response contains an error, log the error and throw an exception
         if (isset($response['error']) && $response['error'] == 1) {
             $placeholders = [':action:' => $command, ':type:' => 'DirectAdmin'];
-            $this->getLog()->err('Failed to ' . $command . ' on the DirectAdmin server: ' . $response['text'] . ': ' . $response['details']);
+            $this->getLog()->error('Failed to ' . $command . ' on the DirectAdmin server: ' . $response['text'] . ': ' . $response['details']);
 
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }

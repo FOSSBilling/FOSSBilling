@@ -1245,9 +1245,7 @@ class UpdatePatcher implements InjectionAwareInterface
             $needsSave = false;
             foreach ($fields as $field) {
                 if (isset($config[$field]) && is_string($config[$field]) && preg_match('/\b(function|include|import|extends|range|max|min|dump|system|guest\.|admin\.|client\.)\b/i', $config[$field])) {
-                    $this->di['logger']->setChannel('update')->warning('Custom payment adapter template for gateway ID {id} contained incompatible Twig syntax and has been cleared. Please re-create it with compatible syntax.', [
-                        'id' => $gateway['id'],
-                    ]);
+                    $this->di['logger']->setChannel('update')->warning('Custom payment adapter template for gateway ID %s contained incompatible Twig syntax and has been cleared. Please re-create it with compatible syntax.', $gateway['id']);
                     unset($config[$field]);
                     $needsSave = true;
                 }
