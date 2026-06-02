@@ -25,6 +25,7 @@ test('create returns int', function (): void {
     $guestClient = new Box\Mod\Client\Api\Guest();
     $configArr = [
         'disable_signup' => false,
+        'auto_login_after_signup' => false,
         'required' => [],
     ];
     $data = [
@@ -56,7 +57,7 @@ test('create returns int', function (): void {
     $validatorMock->shouldReceive('passwordsMatch')->atLeast()->once();
 
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
+    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once()->andReturn($data['email']);
 
     $di = container();
     $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
@@ -104,7 +105,7 @@ test('create throws exception when client exists', function (): void {
     $di['validator'] = $validatorMock;
 
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
+    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once()->andReturn($data['email']);
     $di['tools'] = $toolsMock;
 
     $guestClient->setDi($di);
@@ -130,7 +131,7 @@ test('create throws exception when signup is disabled', function (): void {
     $guestClient->setDi($di);
 
     $guestClient->create($data);
-})->throws(FOSSBilling\Exception::class, 'New registrations are temporary disabled');
+})->throws(FOSSBilling\Exception::class, 'New registrations are temporarily disabled');
 
 test('create throws exception when passwords do not match', function (): void {
     $guestClient = new Box\Mod\Client\Api\Guest();
@@ -178,13 +179,15 @@ test('login returns array', function (): void {
     $sessionMock = Mockery::mock(FOSSBilling\Session::class);
     $sessionMock->shouldReceive('set')->atLeast()->once();
     $sessionMock->shouldReceive('getId')->atLeast()->once();
+    $sessionMock->shouldReceive('regenerateId')->atLeast()->once();
     $sessionMock->shouldReceive('delete')->atLeast()->once();
 
     $cartServiceMock = Mockery::mock(Box\Mod\Cart\Service::class);
     $cartServiceMock->shouldReceive('transferFromOtherSession')->atLeast()->once()
         ->andReturn(true);
 
-    $toolsStub = $this->createStub(FOSSBilling\Tools::class);
+    $toolsStub = Mockery::mock(FOSSBilling\Tools::class);
+    $toolsStub->shouldReceive('validateAndSanitizeEmail')->atLeast()->once()->with($data['email'], true, false)->andReturn($data['email']);
 
     $di = container();
     $di['events_manager'] = $eventMock;
@@ -210,21 +213,16 @@ test('resetPassword returns true with new flow', function (): void {
 
     $modelClient = new Model_Client();
     $modelClient->loadBean(new Tests\Helpers\DummyBean());
-
-    $modelPasswordReset = new Model_ClientPasswordReset();
-    $modelPasswordReset->loadBean(new Tests\Helpers\DummyBean());
+    $modelClient->id = 1;
+    $modelClient->status = Model_Client::ACTIVE;
 
     $dbMock = Mockery::mock('\Box_Database');
 
-    $dbMock->shouldReceive('findOne')->andReturn($modelClient, null);
+    $dbMock->shouldReceive('findOne')->andReturn($modelClient);
 
-    $dbMock->shouldReceive('dispense')->atLeast()->once()->andReturn($modelPasswordReset);
-
-    $dbMock
-        ->shouldReceive('store')->atLeast()->once()->andReturn(1);
-
-    $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
-    $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once();
+    $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
+    $serviceMock->shouldReceive('createPasswordResetRequestForClient')->atLeast()->once()->with($modelClient)->andReturn('hashedString');
+    $serviceMock->shouldReceive('sendPasswordResetRequestEmailForClient')->atLeast()->once()->with($modelClient, 'hashedString');
 
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
     $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once()->andReturn($data['email']);
@@ -232,7 +230,7 @@ test('resetPassword returns true with new flow', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['events_manager'] = $eventMock;
-    $di['mod_service'] = $di->protect(moduleService(['email' => $emailServiceMock]));
+    $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['tools'] = $toolsMock;
 
@@ -256,9 +254,10 @@ test('resetPassword returns true when email not found', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['events_manager'] = $eventMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
 
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
+    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once()->andReturn($data['email']);
     $di['tools'] = $toolsMock;
 
     $guestClient->setDi($di);
@@ -271,14 +270,16 @@ test('updatePassword returns true', function (): void {
     $guestClient = new Box\Mod\Client\Api\Guest();
     $data = [
         'hash' => 'hashedString',
-        'password' => 'newPassword',
-        'password_confirm' => 'newPassword',
+        'password' => 'NewPassword1',
+        'password_confirm' => 'NewPassword1',
     ];
 
     $dbMock = Mockery::mock('\Box_Database');
 
     $modelClient = new Model_Client();
     $modelClient->loadBean(new Tests\Helpers\DummyBean());
+    $modelClient->id = 1;
+    $modelClient->status = Model_Client::ACTIVE;
 
     $modelPasswordReset = new Model_ClientPasswordReset();
     $modelPasswordReset->loadBean(new Tests\Helpers\DummyBean());
@@ -304,6 +305,7 @@ test('updatePassword returns true', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['events_manager'] = $eventMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
     $di['password'] = $passwordMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(moduleService(['email' => $emailServiceMock]));
@@ -318,8 +320,8 @@ test('updatePassword throws exception when reset not found', function (): void {
     $guestClient = new Box\Mod\Client\Api\Guest();
     $data = [
         'hash' => 'hashedString',
-        'password' => 'newPassword',
-        'password_confirm' => 'newPassword',
+        'password' => 'NewPassword1',
+        'password_confirm' => 'NewPassword1',
     ];
 
     $dbMock = Mockery::mock('\Box_Database');
@@ -331,6 +333,7 @@ test('updatePassword throws exception when reset not found', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['events_manager'] = $eventMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
 
     $guestClient->setDi($di);
 

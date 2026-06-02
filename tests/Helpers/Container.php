@@ -151,8 +151,19 @@ function container(): Container
         $extensionMetaRepository->shouldReceive('findByExtensionAndScope')->byDefault()->andReturn([]);
         $extensionMetaRepository->shouldReceive('deleteByExtensionAndScope')->byDefault()->andReturn(0);
 
+        $emailTemplateRepository = \Mockery::mock(\Box\Mod\Email\Repository\EmailTemplateRepository::class)->shouldIgnoreMissing();
+        $templateQueryBuilder = \Mockery::mock(\Doctrine\ORM\QueryBuilder::class)->shouldIgnoreMissing();
+        $emailTemplateRepository->shouldReceive('find')->byDefault()->andReturn(null);
+        $emailTemplateRepository->shouldReceive('findOneByActionCode')->byDefault()->andReturn(null);
+        $emailTemplateRepository->shouldReceive('getSearchQueryBuilder')->byDefault()->andReturn($templateQueryBuilder);
+
         $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-        $em->shouldReceive('getRepository')->byDefault()->andReturn($extensionMetaRepository);
+        $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static function (string $class) use ($extensionMetaRepository, $emailTemplateRepository): object {
+            return match ($class) {
+                \Box\Mod\Email\Entity\EmailTemplate::class => $emailTemplateRepository,
+                default => $extensionMetaRepository,
+            };
+        });
 
         return $em;
     };

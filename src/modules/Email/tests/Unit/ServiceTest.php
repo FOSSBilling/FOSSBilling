@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\moduleService;
 
 test('di returns dependency injection container', function (): void {
     $service = new Box\Mod\Email\Service();
@@ -206,18 +207,19 @@ test('setVars encrypts and sets variables', function (): void {
     $service = new Box\Mod\Email\Service();
 
     $di = container();
-    $db = Mockery::mock('Box_Database');
-    $db->shouldReceive('store')->atLeast()->once();
-
     $cryptMock = Mockery::mock('\Box_Crypt');
     $cryptMock->shouldReceive('encrypt')
-        ->atLeast()->once();
+        ->atLeast()->once()
+        ->andReturn('encrypted-vars');
 
-    $di['db'] = $db;
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $di['em'] = $em;
     $di['crypt'] = $cryptMock;
     $service->setDi($di);
 
-    $t = new stdClass();
+    $t = new Model_EmailTemplate();
     $vars = [
         'param1' => 'value1',
     ];
@@ -230,8 +232,6 @@ test('getVars decrypts and returns variables', function (): void {
     $service = new Box\Mod\Email\Service();
 
     $di = container();
-    $db = Mockery::mock('Box_Database');
-
     $cryptMock = Mockery::mock('\Box_Crypt');
     $cryptMock->shouldReceive('decrypt')
         ->atLeast()->once()
@@ -239,11 +239,10 @@ test('getVars decrypts and returns variables', function (): void {
 
     $expected = ['param1' => 'value1'];
 
-    $di['db'] = $db;
     $di['crypt'] = $cryptMock;
     $service->setDi($di);
 
-    $t = new stdClass();
+    $t = new Model_EmailTemplate();
     $t->vars = 'haNUZYeNjo1oXhH6OkoKuHGPxakyKY10qR3O/DSy9Og=';
 
     $result = $service->getVars($t);
@@ -267,13 +266,13 @@ test('sendTemplate returns false when template does not exist', function (): voi
 
     $db = Mockery::mock('Box_Database');
     $db->shouldReceive('findOne')
-        ->atLeast()->once()
+        ->byDefault()
         ->andReturn(null);
     $db->shouldReceive('dispense')
-        ->atLeast()->once()
+        ->byDefault()
         ->andReturn($emailTemplate);
     $db->shouldReceive('store')
-        ->atLeast()->once()
+        ->byDefault()
         ->andReturn(1);
 
     $cryptMock = Mockery::mock('\Box_Crypt');
@@ -320,7 +319,7 @@ test('sendTemplate sends email when template exists', function (): void {
 
     $db = Mockery::mock('Box_Database');
     $db->shouldReceive('findOne')
-        ->atLeast()->once()
+        ->byDefault()
         ->andReturn($emailTemplate);
     $db->shouldReceive('store')
         ->atLeast()->once()
@@ -333,7 +332,7 @@ test('sendTemplate sends email when template exists', function (): void {
     $systemService->shouldReceive('getParamValue')
         ->atLeast()->once()
         ->andReturn('value');
-    $systemService->shouldReceive('renderString')
+    $systemService->shouldReceive('renderEmailTplString')
         ->atLeast()->once()
         ->andReturn('rendered content');
 
@@ -365,7 +364,7 @@ test('sendTemplate sends email when template exists', function (): void {
     $di['crypt'] = $cryptMock;
     $di['twig'] = $twigStub;
     $di['mod'] = $di->protect(fn () => $modMock);
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemService]));
     $di['tools'] = new FOSSBilling\Tools();
 
     $service->setDi($di);
@@ -416,7 +415,7 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
 
     $db = Mockery::mock('Box_Database');
     $db->shouldReceive('findOne')
-        ->atLeast()->once()
+        ->byDefault()
         ->andReturn(null);
     $db->shouldReceive('dispense')
         ->atLeast()->once()
@@ -430,7 +429,7 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
         ->atLeast()->once()
         ->andReturn('value');
 
-    $system->shouldReceive('renderString')
+    $system->shouldReceive('renderEmailTplString')
         ->atLeast()->once()
         ->andReturn('value');
 
@@ -444,6 +443,7 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
                         'id' => 1,
                         'email' => 'staff@fossbilling.org',
                         'name' => 'George',
+                        'signature' => '',
                     ],
                 ],
             ]);
@@ -502,15 +502,11 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
     $di['db'] = $db;
     $di['twig'] = $twigStub;
     $di['crypt'] = $cryptMock;
-    $di['mod_service'] = $di->protect(function ($name) use ($system, $staffServiceMock, $clientServiceMock) {
-        if ($name == 'staff') {
-            return $staffServiceMock;
-        } elseif ($name == 'System' || $name == 'system') {
-            return $system;
-        } elseif ($name == 'client') {
-            return $clientServiceMock;
-        }
-    });
+    $di['mod_service'] = $di->protect(moduleService([
+        'staff' => $staffServiceMock,
+        'system' => $system,
+        'client' => $clientServiceMock,
+    ]));
     $di['tools'] = new FOSSBilling\Tools();
 
     $service->setDi($di);
@@ -562,61 +558,6 @@ test('resend resends email', function (): void {
     expect($result)->toBeTrue();
 });
 
-dataset('templateGetSearchQueryProvider', fn(): array => [
-    [
-        [],
-        'SELECT * FROM email_template ORDER BY category ASC',
-        [],
-    ],
-    [
-        [
-            'search' => 'keyword',
-        ],
-        'SELECT * FROM email_template WHERE (action_code LIKE :action_code OR subject LIKE :subject OR content LIKE :content) ORDER BY category ASC',
-        [
-            ':action_code' => '%keyword%',
-            ':subject' => '%keyword%',
-            ':content' => '%keyword%',
-        ],
-    ],
-    [
-        [
-            'search' => 'keyword',
-            'code' => 'code',
-        ],
-        'SELECT * FROM email_template WHERE action_code LIKE :code AND (action_code LIKE :action_code OR subject LIKE :subject OR content LIKE :content) ORDER BY category ASC',
-        [
-            ':code' => '%code%',
-            ':action_code' => '%keyword%',
-            ':subject' => '%keyword%',
-            ':content' => '%keyword%',
-        ],
-    ],
-    [
-        [
-            'code' => 'code',
-        ],
-        'SELECT * FROM email_template WHERE action_code LIKE :code ORDER BY category ASC',
-        [
-            ':code' => '%code%',
-        ],
-    ],
-]);
-
-test('templateGetSearchQuery returns query and bindings', function (array $data, string $query, array $bindings): void {
-    $service = new Box\Mod\Email\Service();
-    $di = container();
-
-    $service->setDi($di);
-    $result = $service->templateGetSearchQuery($data);
-
-    expect($result[0])->toBeString();
-    expect($result[1])->toBeArray();
-
-    expect($result[0])->toBe($query);
-    expect($result[1])->toBe($bindings);
-})->with('templateGetSearchQueryProvider');
-
 test('templateToApiArray returns API array for template', function (): void {
     $id = 1;
     $action_code = 'code';
@@ -640,9 +581,12 @@ test('templateToApiArray returns API array for template', function (): void {
         'id' => $id,
         'action_code' => $action_code,
         'category' => $category,
-        'enabled' => $enabled,
+        'enabled' => true,
         'subject' => $subject,
         'description' => $description,
+        'is_custom' => false,
+        'has_default' => false,
+        'is_overridden' => false,
     ];
 
     $service = new Box\Mod\Email\Service();
@@ -675,13 +619,18 @@ test('templateToApiArray returns deep array with vars', function (): void {
         'id' => $id,
         'action_code' => $action_code,
         'category' => $category,
-        'enabled' => $enabled,
+        'enabled' => true,
         'subject' => $subject,
         'description' => $description,
+        'is_custom' => false,
+        'has_default' => false,
+        'is_overridden' => false,
         'content' => $content,
         'vars' => [
             'param1' => 'value1',
         ],
+        'subject_override' => $subject,
+        'content_override' => $content,
     ];
 
     $serviceMock = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
@@ -731,7 +680,7 @@ test('updateTemplate updates template', function (array $data, string $templateR
 
     $db = Mockery::mock('Box_Database');
     $db->shouldReceive('store')
-        ->atLeast()->once();
+        ->byDefault();
 
     $loggerStub = new Tests\Helpers\TestLogger();
 
@@ -751,13 +700,13 @@ test('updateTemplate updates template', function (array $data, string $templateR
 
     $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
     if ($templateRenderExpects === 'atLeastOnce') {
-        $systemServiceMock->shouldReceive('renderString')
+        $systemServiceMock->shouldReceive('renderEmailTplString')
             ->atLeast()->once();
     } else {
-        $systemServiceMock->shouldReceive('renderString')->never();
+        $systemServiceMock->shouldReceive('renderEmailTplString')->never();
     }
 
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemServiceMock);
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemServiceMock]));
 
     $emailService->setDi($di);
 
@@ -809,23 +758,12 @@ test('getEmailById throws exception when email not found', function (): void {
 test('templateCreate creates new template', function (): void {
     $service = new Box\Mod\Email\Service();
 
-    $id = 1;
-    $model = new Model_ActivityClientEmail();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->id = $id;
-
-    $db = Mockery::mock('Box_Database');
-    $db->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn($id);
-    $emailTemplateModel = new Model_EmailTemplate();
-    $emailTemplateModel->loadBean(new Tests\Helpers\DummyBean());
-    $db->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturn($emailTemplateModel);
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('persist')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $db;
+    $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
@@ -838,67 +776,14 @@ test('templateCreate creates new template', function (): void {
 
     $result = $service->templateCreate($data['action_code'], $data['subject'], $data['content'], 1, $data['category']);
 
-    expect($result)->toBe($emailTemplateModel);
+    expect($result)->toBeInstanceOf(Box\Mod\Email\Entity\EmailTemplate::class);
+    expect($result->getActionCode())->toBe($data['action_code']);
 });
-
-dataset('batchTemplateGenerateProvider', fn(): array => [
-    [true, false, 'never', 'never'],
-    [false, true, 'atLeastOnce', 'atLeastOnce'],
-    [true, true, 'atLeastOnce', 'never'],
-]);
-
-test('templateBatchGenerate generates templates in batch', function (bool $findOneReturn, bool $isExtensionActiveReturn, string $findOneExpects, string $dispenseExpects): void {
-    $service = new Box\Mod\Email\Service();
-
-    $db = Mockery::mock('Box_Database');
-    if ($findOneExpects === 'atLeastOnce') {
-        $db->shouldReceive('findOne')
-            ->atLeast()->once()
-            ->andReturn($findOneReturn);
-    } else {
-        $db->shouldReceive('findOne')->never();
-    }
-
-    $emailTemplateModel = new Model_EmailTemplate();
-    $emailTemplateModel->loadBean(new Tests\Helpers\DummyBean());
-    if ($dispenseExpects === 'atLeastOnce') {
-        $db->shouldReceive('dispense')
-            ->atLeast()->once()
-            ->andReturn($emailTemplateModel);
-        $db->shouldReceive('store')
-            ->atLeast()->once()
-            ->andReturn(1);
-    } else {
-        $db->shouldReceive('dispense')->never();
-    }
-
-    $extension = Mockery::mock(Box\Mod\Extension\Service::class);
-    $extension->shouldReceive('isExtensionActive')
-        ->atLeast()->once()
-        ->andReturn($isExtensionActiveReturn);
-
-    $di = container();
-    $di['db'] = $db;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $extension);
-
-    $service->setDi($di);
-
-    $result = $service->templateBatchGenerate();
-
-    expect($result)->toBeTrue();
-})->with('batchTemplateGenerateProvider');
 
 test('templateBatchDisable disables all templates', function (): void {
     $service = new Box\Mod\Email\Service();
 
-    $db = Mockery::mock('Box_Database');
-    $db->shouldReceive('exec')
-        ->atLeast()->once()
-        ->andReturn(true);
-
     $di = container();
-    $di['db'] = $db;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
@@ -910,13 +795,7 @@ test('templateBatchDisable disables all templates', function (): void {
 test('templateBatchEnable enables all templates', function (): void {
     $service = new Box\Mod\Email\Service();
 
-    $db = Mockery::mock('Box_Database');
-    $db->shouldReceive('exec')
-        ->atLeast()->once()
-        ->andReturn(true);
-
     $di = container();
-    $di['db'] = $db;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
@@ -976,66 +855,6 @@ test('batchSend processes email queue', function (): void {
     $result = $service->batchSend();
 
     expect($result)->toBeNull();
-});
-
-test('resetTemplateByCode resets template by code', function (): void {
-    $service = new Box\Mod\Email\Service();
-
-    $templateModel = new Model_EmailTemplate();
-    $templateModel->loadBean(new Tests\Helpers\DummyBean());
-    $templateModel->id = 1;
-    $templateModel->action_code = 'mod_email_test';
-
-    $db = Mockery::mock('Box_Database');
-    $db->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($templateModel);
-    $db->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(1);
-
-    $cryptMock = Mockery::mock('\Box_Crypt');
-    $cryptMock->shouldReceive('decrypt')
-        ->atLeast()->once();
-    $configMock = ['salt' => md5(random_bytes(13))];
-
-    $twigStub = Mockery::mock(Twig\Environment::class);
-
-    $di = container();
-    $di['db'] = $db;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['crypt'] = $cryptMock;
-    $di['config'] = $configMock;
-    $di['twig'] = $twigStub;
-
-    $systemService = Mockery::mock(Box\Mod\System\Service::class);
-    $systemService->shouldReceive('renderString')
-        ->atLeast()->once()
-        ->andReturn('rendered content');
-
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
-
-    $service->setDi($di);
-
-    $result = $service->resetTemplateByCode('mod_email_test');
-
-    expect($result)->toBeTrue();
-});
-
-test('resetTemplateByCode throws exception when template not found', function (): void {
-    $service = new Box\Mod\Email\Service();
-
-    $db = Mockery::mock('Box_Database');
-    $db->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn(false);
-
-    $di = container();
-    $di['db'] = $db;
-    $service->setDi($di);
-
-    expect(fn (): bool => $service->resetTemplateByCode('mod_email_test'))
-        ->toThrow(FOSSBilling\Exception::class);
 });
 
 test('sendMail queues email for sending', function (): void {
