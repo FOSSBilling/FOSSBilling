@@ -78,6 +78,7 @@ jobs:
       - name: 'Pest'
         id: pest
         run: |
+          # Pest resolves --test-directory from the Composer root, which is src because vendor-dir is src/vendor.
           docker run --rm \
             --env APP_ENV=test \
             fossbilling:test-${{ matrix.php }} \
