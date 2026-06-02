@@ -32,7 +32,7 @@ class Client extends \Api_Abstract
         $client = $this->getIdentity();
         $data['client_id'] = $client->id;
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [
@@ -82,8 +82,8 @@ class Client extends \Api_Abstract
     {
         $client = $this->getIdentity();
 
-        $this->di['rate_limiter']->consumeOrThrow('client_email_resend_ip', (string) $this->getIp());
-        $this->di['rate_limiter']->consumeOrThrow('client_email_resend_account', 'client:' . $client->id);
+        $this->getDi()['rate_limiter']->consumeOrThrow('client_email_resend_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('client_email_resend_account', 'client:' . $client->id);
 
         $model = $this->getService()->findOneForClientById($client, $data['id']);
         if (!$model instanceof \Model_ActivityClientEmail) {

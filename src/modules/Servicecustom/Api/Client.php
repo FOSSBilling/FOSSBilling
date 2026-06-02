@@ -28,6 +28,14 @@ class Client extends \Api_Abstract
     #[RequiredParams(['order_id' => 'Order ID is required', 'method' => 'Method is required'])]
     public function call($data)
     {
+        if (!isset($data['order_id'])) {
+            throw new \FOSSBilling\Exception('Order ID is required');
+        }
+
+        if (!isset($data['method'])) {
+            throw new \FOSSBilling\Exception('Method is required');
+        }
+
         $identity = $this->getIdentity();
         $model = $this->getService()->getServiceCustomByOrderId($data['order_id'], $identity->id);
 

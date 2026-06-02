@@ -105,10 +105,6 @@ test('gets category list', function (): void {
         ],
     ];
     $pagerMock = Mockery::mock(FOSSBilling\Pagination::class);
-    /** @var Mockery\Expectation $expectation3 */
-    $expectation3 = $pagerMock->shouldReceive('getDefaultPerPage');
-    $expectation3->atLeast()->once();
-    $expectation3->andReturn(50);
     /** @var Mockery\Expectation $expectation4 */
     $expectation4 = $pagerMock->shouldReceive('getPaginatedResultSet');
     $expectation4->atLeast()->once();
@@ -143,92 +139,4 @@ test('gets category pairs', function (): void {
     $api->setService($serviceMock);
     $result = $api->category_get_pairs([]);
     expect($result)->toBeArray();
-});
-
-test('gets slider with empty list', function (): void {
-    $api = new Guest();
-    $dbMock = Mockery::mock('\Box_Database');
-    /** @var Mockery\Expectation $expectation */
-    $expectation = $dbMock->shouldReceive('find');
-    $expectation->atLeast()->once();
-    $expectation->andReturn([]);
-
-    $di = container();
-    $di['db'] = $dbMock;
-
-    $api->setDi($di);
-
-    $result = $api->get_slider([]);
-    expect($result)->toBeArray();
-    expect($result)->toBe([]);
-});
-
-test('gets slider', function (): void {
-    $api = new Guest();
-    $productModel = new Model_Product();
-    $productModel->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock = Mockery::mock('\Box_Database');
-    /** @var Mockery\Expectation $expectation1 */
-    $expectation1 = $dbMock->shouldReceive('find');
-    $expectation1->atLeast()->once();
-    $expectation1->andReturn([$productModel]);
-
-    $di = container();
-    $di['db'] = $dbMock;
-
-    $api->setDi($di);
-
-    $arr = [
-        'id' => 1,
-        'slug' => '/',
-        'title' => 'New Item',
-        'pricing' => '1W',
-        'config' => [],
-    ];
-    $serviceMock = Mockery::mock(Service::class);
-    /** @var Mockery\Expectation $expectation2 */
-    $expectation2 = $serviceMock->shouldReceive('toApiArray');
-    $expectation2->atLeast()->once();
-    $expectation2->andReturn($arr);
-
-    $api->setService($serviceMock);
-    $result = $api->get_slider([]);
-    expect($result)->toBeArray();
-});
-
-test('gets slider in json format', function (): void {
-    $api = new Guest();
-    $productModel = new Model_Product();
-    $productModel->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock = Mockery::mock('\Box_Database');
-    /** @var Mockery\Expectation $expectation1 */
-    $expectation1 = $dbMock->shouldReceive('find');
-    $expectation1->atLeast()->once();
-    $expectation1->andReturn([$productModel]);
-
-    $di = container();
-    $di['db'] = $dbMock;
-
-    $api->setDi($di);
-
-    $arr = [
-        'id' => 1,
-        'slug' => '/',
-        'title' => 'New Item',
-        'pricing' => '1W',
-        'config' => [],
-    ];
-    $serviceMock = Mockery::mock(Service::class);
-    /** @var Mockery\Expectation $expectation2 */
-    $expectation2 = $serviceMock->shouldReceive('toApiArray');
-    $expectation2->atLeast()->once();
-    $expectation2->andReturn($arr);
-
-    $api->setService($serviceMock);
-    $result = $api->get_slider([]);
-    expect($result)->toBeArray();
-
-    $result = $api->get_slider(['format' => 'json']);
-    expect($result)->toBeString();
-    expect(json_decode($result ?? '', true))->toBeArray();
 });

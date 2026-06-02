@@ -31,7 +31,7 @@ class Guest extends \Api_Abstract
     public function company()
     {
         $companyInfo = $this->getService()->getCompany();
-        $auth = $this->di['auth'];
+        $auth = $this->getDi()['auth'];
         $hideExtraCompanyInfoFromGuest = $this->getService()->getParamValue('hide_company_public');
 
         if (!$auth->isAdminLoggedIn() && !$auth->isClientLoggedIn() && $hideExtraCompanyInfoFromGuest) {
@@ -56,7 +56,7 @@ class Guest extends \Api_Abstract
      */
     public function default_country(): ?string
     {
-        $mod = $this->di['mod']('system');
+        $mod = $this->getDi()['mod']('system');
         $cfg = $mod->getConfig();
 
         return $cfg['default_country'] ?? null;
@@ -69,7 +69,7 @@ class Guest extends \Api_Abstract
      */
     public function countries(): array
     {
-        $mod = $this->di['mod']('system');
+        $mod = $this->getDi()['mod']('system');
         $cfg = $mod->getConfig();
         $configuredCountries = trim((string) ($cfg['countries'] ?? ''));
 
@@ -171,7 +171,7 @@ class Guest extends \Api_Abstract
      */
     public function current_url()
     {
-        return $this->di['request']->getRequestUri();
+        return $this->getDi()['request']->getRequestUri();
     }
 
     /**

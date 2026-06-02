@@ -163,7 +163,7 @@ test('gets payment types', function (): void {
     $service = new Service();
     $expected = [
         'free' => 'Free',
-        'once' => 'One time',
+        'once' => 'One Time',
         'recurrent' => 'Recurrent',
     ];
 
@@ -226,7 +226,7 @@ test('throws exception when updating product with missing pricing type', functio
 
     $typesArr = [
         'free' => 'Free',
-        'once' => 'One time',
+        'once' => 'One Time',
         'recurrent' => 'Recurrent',
     ];
     /** @var Mockery\Expectation $expectation */
@@ -251,7 +251,7 @@ test('updates a product', function (): void {
 
     $typesArr = [
         'free' => 'Free',
-        'once' => 'One time',
+        'once' => 'One Time',
         'recurrent' => 'Recurrent',
     ];
     /** @var Mockery\Expectation $expectation1 */

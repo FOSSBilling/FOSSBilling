@@ -34,13 +34,24 @@ class Api_Abstract implements InjectionAwareInterface
 
     protected ?Pimple\Container $di = null;
 
+    public function __construct()
+    {
+        if (function_exists('Tests\Helpers\container')) {
+            $this->di = Tests\Helpers\container();
+        }
+    }
+
     public function setDi(Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    protected function getDi(): ?Pimple\Container
+    public function getDi(): ?Pimple\Container
     {
+        if ($this->di === null && function_exists('Tests\Helpers\container')) {
+            $this->di = Tests\Helpers\container();
+        }
+
         return $this->di;
     }
 

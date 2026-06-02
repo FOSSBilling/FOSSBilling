@@ -28,10 +28,10 @@ class Admin extends \Api_Abstract
     public function get_list($data)
     {
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $cartArr) {
-            $cart = $this->di['db']->getExistingModelById('Cart', $cartArr['id'], 'Cart not found');
+            $cart = $this->getDi()['db']->getExistingModelById('Cart', $cartArr['id'], 'Cart not found');
             $pager['list'][$key] = $this->getService()->toApiArray($cart);
         }
 
@@ -48,7 +48,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Shopping cart ID is missing'])]
     public function get($data)
     {
-        $cart = $this->di['db']->getExistingModelById('Cart', $data['id'], 'Shopping cart not found');
+        $cart = $this->getDi()['db']->getExistingModelById('Cart', $data['id'], 'Shopping cart not found');
 
         return $this->getService()->toApiArray($cart);
     }
@@ -60,16 +60,16 @@ class Admin extends \Api_Abstract
      */
     public function batch_expire($data): bool
     {
-        $this->di['logger']->info('Executed action to clear expired shopping carts from database');
+        $this->getDi()['logger']->info('Executed action to clear expired shopping carts from database');
 
         $query = 'SELECT id, created_at FROM `cart` WHERE DATEDIFF(CURDATE(), created_at) > 7;';
-        $list = $this->di['db']->getAssoc($query);
+        $list = $this->getDi()['db']->getAssoc($query);
         if ($list) {
             foreach ($list as $id => $created_at) {
-                $this->di['db']->exec('DELETE FROM `cart_product` WHERE cart_id = :id', [':id' => $id]);
-                $this->di['db']->exec('DELETE FROM `cart` WHERE id = :id', [':id' => $id]);
+                $this->getDi()['db']->exec('DELETE FROM `cart_product` WHERE cart_id = :id', [':id' => $id]);
+                $this->getDi()['db']->exec('DELETE FROM `cart` WHERE id = :id', [':id' => $id]);
             }
-            $this->di['logger']->info('Removed %s expired shopping carts', \FOSSBilling\Tools::safeCount($list));
+            $this->getDi()['logger']->info('Removed %s expired shopping carts', \FOSSBilling\Tools::safeCount($list));
         }
 
         return true;

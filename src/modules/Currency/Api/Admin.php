@@ -28,14 +28,14 @@ class Admin extends \Api_Abstract
      */
     public function get_list(array $data): array
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'view');
 
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
         $repo = $this->getService()->getCurrencyRepository();
 
         $qb = $repo->getSearchQueryBuilder($data);
 
-        return $this->di['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
     }
 
     /**
@@ -45,7 +45,7 @@ class Admin extends \Api_Abstract
      */
     public function get_pairs(): array
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'view');
 
         $currencies = Currencies::getNames();
         foreach ($currencies as $currencyCode => $currencyName) {
@@ -68,7 +68,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Currency code is missing'])]
     public function get($data): array
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'view');
 
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
         $repo = $this->getService()->getCurrencyRepository();
@@ -87,7 +87,7 @@ class Admin extends \Api_Abstract
      */
     public function get_default(): array
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'view');
 
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
         $repo = $this->getService()->getCurrencyRepository();
@@ -111,7 +111,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Currency code is missing'])]
     public function create($data = []): string
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'create');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'create');
 
         $service = $this->getService();
 
@@ -141,7 +141,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Currency code is missing'])]
     public function update($data): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'edit');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'edit');
 
         $conversionRate = $data['conversion_rate'] ?? null;
 
@@ -153,7 +153,7 @@ class Admin extends \Api_Abstract
      */
     public function is_cron_enabled(): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'view');
 
         return $this->getService()->isCronEnabled();
     }
@@ -163,7 +163,7 @@ class Admin extends \Api_Abstract
      */
     public function update_rates(): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'update_rates');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'update_rates');
 
         return $this->service->updateCurrencyRates();
     }
@@ -176,7 +176,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Currency code is missing'])]
     public function delete($data): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'delete');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'delete');
 
         return $this->getService()->removeCurrency($data['code']);
     }
@@ -190,7 +190,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Currency code is missing'])]
     public function set_default($data): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'set_default');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'set_default');
 
         $service = $this->getService();
 

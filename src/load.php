@@ -264,7 +264,9 @@ function init(): void
     // Set globals and relevant settings based on the config.
     date_default_timezone_set(Config::getProperty('i18n.timezone', 'UTC'));
     define('ADMIN_PREFIX', Config::getProperty('admin_area_prefix'));
-    define('DEBUG', (bool) Config::getProperty('debug_and_monitoring.debug', false));
+    if (!defined('DEBUG')) {
+        define('DEBUG', (bool) Config::getProperty('debug_and_monitoring.debug', false));
+    }
     $pathData = Path::normalize(Config::getProperty('path_data'));
     if (Environment::isTesting()) {
         $pathData = Path::join(sys_get_temp_dir(), 'fossbilling_test_data');

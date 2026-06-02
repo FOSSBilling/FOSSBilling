@@ -35,13 +35,13 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
 
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $clientArr) {
-            $client = $this->di['db']->getExistingModelById('Client', $clientArr['id'], 'Client not found');
+            $client = $this->getDi()['db']->getExistingModelById('Client', $clientArr['id'], 'Client not found');
             $pager['list'][$key] = $this->getService()->toApiArray($client, true, $this->getIdentity());
         }
 
@@ -57,9 +57,9 @@ class Admin extends \Api_Abstract
      */
     public function get_pairs($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
 
-        $service = $this->di['mod_service']('client');
+        $service = $this->getDi()['mod_service']('client');
 
         return $service->getPairs($data);
     }
@@ -73,11 +73,11 @@ class Admin extends \Api_Abstract
      */
     public function get($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
 
         $service = $this->getService();
         $client = $service->get($data);
-        $includeSensitive = $this->di['mod_service']('Staff')->hasPermission(null, 'client', 'manage_api_keys');
+        $includeSensitive = $this->getDi()['mod_service']('Staff')->hasPermission(null, 'client', 'manage_api_keys');
 
         return $service->toApiArray($client, true, $this->getIdentity(), $includeSensitive);
     }
@@ -90,16 +90,16 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'ID required'])]
     public function login($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'impersonate_login');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'impersonate_login');
 
-        $client = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
+        $client = $this->getDi()['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
-        $service = $this->di['mod_service']('client');
+        $service = $this->getDi()['mod_service']('client');
         $result = $service->toSessionArray($client);
 
-        $session = $this->di['session'];
+        $session = $this->getDi()['session'];
         $session->set('client_id', $client->id);
-        $this->di['logger']->info('Logged in as client #%s', $client->id);
+        $this->getDi()['logger']->info('Logged in as client #%s', $client->id);
 
         return $result;
     }
@@ -148,10 +148,10 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['email' => 'Email required', 'first_name' => 'First name is required'])]
     public function create($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'create');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'create');
 
-        $validator = $this->di['validator'];
-        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        $validator = $this->getDi()['validator'];
+        $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
         $data['send_welcome_email'] = Tools::normalizeBoolean($data['send_welcome_email'] ?? true, true);
 
         $service = $this->getService();
@@ -173,9 +173,9 @@ class Admin extends \Api_Abstract
             $validator->isPasswordStrong($data['password']);
         }
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientCreate', 'params' => $data]);
+        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientCreate', 'params' => $data]);
         $id = $service->adminCreateClient($data);
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminClientCreate', 'params' => $data]);
+        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientCreate', 'params' => $data]);
 
         return $id;
     }
@@ -186,17 +186,17 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Client ID is missing'])]
     public function delete($data): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'delete');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'delete');
 
-        $model = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
+        $model = $this->getDi()['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientDelete', 'params' => ['id' => $model->id]]);
+        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientDelete', 'params' => ['id' => $model->id]]);
 
         $id = $model->id;
         $this->getService()->remove($model);
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminClientDelete', 'params' => ['id' => $id]]);
+        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientDelete', 'params' => ['id' => $id]]);
 
-        $this->di['logger']->info('Removed client #%s', $id);
+        $this->getDi()['logger']->info('Removed client #%s', $id);
 
         return true;
     }
@@ -241,22 +241,22 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Client ID was not passed'])]
     public function update($data = []): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'edit_profile');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'edit_profile');
 
-        $client = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
+        $client = $this->getDi()['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
-        $service = $this->di['mod_service']('client');
+        $service = $this->getDi()['mod_service']('client');
 
         if (!is_null($data['email'] ?? null)) {
             $email = $data['email'];
-            $email = $this->di['tools']->validateAndSanitizeEmail($email);
+            $email = $this->getDi()['tools']->validateAndSanitizeEmail($email);
             if ($service->emailAlreadyRegistered($email, $client)) {
                 throw new InformationException('This email address is already registered.');
             }
         }
 
         if (!empty($data['birthday'])) {
-            $this->di['validator']->isBirthdayValid($data['birthday']);
+            $this->getDi()['validator']->isBirthdayValid($data['birthday']);
         }
 
         if (($data['birthday'] ?? null) === '') {
@@ -268,7 +268,7 @@ class Admin extends \Api_Abstract
             $client->currency = $currency;
         }
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientUpdate', 'params' => $data]);
+        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientUpdate', 'params' => $data]);
 
         // Special handling for the phone country codes
         $phoneCountryCode = $data['phone_cc'] ?? $client->phone_cc;
@@ -312,16 +312,16 @@ class Admin extends \Api_Abstract
 
         $client->updated_at = date('Y-m-d H:i:s');
 
-        $this->di['db']->store($client);
+        $this->getDi()['db']->store($client);
 
         if ($client->status !== \Model_Client::ACTIVE && $previousStatus === \Model_Client::ACTIVE) {
-            $profileService = $this->di['mod_service']('profile');
+            $profileService = $this->getDi()['mod_service']('profile');
             $profileService->invalidateSessions('client', (int) $client->id);
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminClientUpdate', 'params' => ['id' => $client->id]]);
+        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientUpdate', 'params' => ['id' => $client->id]]);
 
-        $this->di['logger']->info('Updated client #%s profile', $client->id);
+        $this->getDi()['logger']->info('Updated client #%s profile', $client->id);
 
         return true;
     }
@@ -332,26 +332,26 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'ID required', 'password' => 'Password required', 'password_confirm' => 'Password confirmation required'])]
     public function change_password(array $data): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'change_password');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'change_password');
 
-        $this->di['validator']->passwordsMatch($data);
+        $this->getDi()['validator']->passwordsMatch($data);
 
-        $this->di['validator']->isPasswordStrong($data['password']);
+        $this->getDi()['validator']->isPasswordStrong($data['password']);
 
-        $client = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
+        $client = $this->getDi()['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientPasswordChange', 'params' => ['id' => $client->id]]);
+        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientPasswordChange', 'params' => ['id' => $client->id]]);
 
-        $client->pass = $this->di['password']->hashIt($data['password']);
+        $client->pass = $this->getDi()['password']->hashIt($data['password']);
         $client->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($client);
+        $this->getDi()['db']->store($client);
 
-        $profileService = $this->di['mod_service']('profile');
+        $profileService = $this->getDi()['mod_service']('profile');
         $profileService->invalidateSessions('client', (int) $data['id']);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminClientPasswordChange', 'params' => ['id' => $client->id]]);
+        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientPasswordChange', 'params' => ['id' => $client->id]]);
 
-        $this->di['logger']->info('Changed client #%s password', $client->id);
+        $this->getDi()['logger']->info('Changed client #%s password', $client->id);
 
         return true;
     }
@@ -363,11 +363,11 @@ class Admin extends \Api_Abstract
      */
     public function balance_get_list($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_balance');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_balance');
 
-        $service = $this->di['mod_service']('Client', 'Balance');
+        $service = $this->getDi()['mod_service']('Client', 'Balance');
         [$q, $params] = $service->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($q, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($q, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [
@@ -388,17 +388,17 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Client ID was not passed'])]
     public function balance_delete($data): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_balance');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_balance');
 
-        $model = $this->di['db']->getExistingModelById('ClientBalance', $data['id'], 'Balance line not found');
+        $model = $this->getDi()['db']->getExistingModelById('ClientBalance', $data['id'], 'Balance line not found');
 
         $id = $model->id;
         $client_id = $model->client_id;
         $amount = $model->amount;
 
-        $this->di['db']->trash($model);
+        $this->getDi()['db']->trash($model);
 
-        $this->di['logger']->info('Removed line %s from client #%s balance for %s', $id, $client_id, $amount);
+        $this->getDi()['logger']->info('Removed line %s from client #%s balance for %s', $id, $client_id, $amount);
 
         return true;
     }
@@ -412,11 +412,11 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Client ID required', 'amount' => 'Amount is required', 'description' => 'Description is required'])]
     public function balance_add_funds($data): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_balance');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_balance');
 
-        $client = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
+        $client = $this->getDi()['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
-        $service = $this->di['mod_service']('client');
+        $service = $this->getDi()['mod_service']('client');
         $service->addFunds($client, $data['amount'], $data['description'], $data);
 
         return true;
@@ -427,15 +427,15 @@ class Admin extends \Api_Abstract
      */
     public function batch_expire_password_reminders(): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'delete', null, $this->identity);
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'delete', null, $this->identity);
 
-        $service = $this->di['mod_service']('client');
+        $service = $this->getDi()['mod_service']('client');
         $expired = $service->getExpiredPasswordReminders();
         foreach ($expired as $model) {
-            $this->di['db']->trash($model);
+            $this->getDi()['db']->trash($model);
         }
 
-        $this->di['logger']->info('Executed action to delete expired clients password reminders');
+        $this->getDi()['logger']->info('Executed action to delete expired clients password reminders');
 
         return true;
     }
@@ -449,10 +449,10 @@ class Admin extends \Api_Abstract
      */
     public function login_history_get_list($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view_login_history');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view_login_history');
 
         [$q, $params] = $this->getService()->getHistorySearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($q, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($q, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [
@@ -478,9 +478,9 @@ class Admin extends \Api_Abstract
      */
     public function get_statuses($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
 
-        $service = $this->di['mod_service']('client');
+        $service = $this->getDi()['mod_service']('client');
 
         return $service->counter();
     }
@@ -492,9 +492,9 @@ class Admin extends \Api_Abstract
      */
     public function group_get_pairs($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
 
-        $service = $this->di['mod_service']('client');
+        $service = $this->getDi()['mod_service']('client');
 
         return $service->getGroupPairs();
     }
@@ -507,7 +507,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['title' => 'Group title is missing'])]
     public function group_create($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_groups');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_groups');
 
         return $this->getService()->createGroup($data);
     }
@@ -520,13 +520,13 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Group ID is missing'])]
     public function group_update($data): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_groups');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_groups');
 
-        $model = $this->di['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
+        $model = $this->getDi()['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
 
         $model->title = $data['title'] ?? $model->title;
         $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $this->getDi()['db']->store($model);
 
         return true;
     }
@@ -539,11 +539,11 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Group ID is missing'])]
     public function group_delete($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_groups');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_groups');
 
-        $model = $this->di['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
+        $model = $this->getDi()['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
 
-        $clients = $this->di['db']->find('Client', 'client_group_id = :group_id', [':group_id' => $data['id']]);
+        $clients = $this->getDi()['db']->find('Client', 'client_group_id = :group_id', [':group_id' => $data['id']]);
 
         if (Tools::safeCount($clients) > 0) {
             throw new InformationException('Group has clients assigned. Please reassign them first.');
@@ -560,11 +560,11 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Group ID is missing'])]
     public function group_get($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_groups');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_groups');
 
-        $model = $this->di['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
+        $model = $this->getDi()['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
 
-        return $this->di['db']->toArray($model);
+        return $this->getDi()['db']->toArray($model);
     }
 
     /**
@@ -573,7 +573,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete($data): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'bulk_delete');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'bulk_delete');
 
         foreach ($data['ids'] as $id) {
             $this->delete(['id' => $id]);
@@ -584,7 +584,7 @@ class Admin extends \Api_Abstract
 
     public function export_csv($data): Response
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'export');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'export');
 
         $data['headers'] ??= [];
 

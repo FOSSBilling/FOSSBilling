@@ -213,9 +213,6 @@ test('gets tld list', function (): void {
     $adminApi = new Admin();
     $api = new Admin();
     $paginatorMock = Mockery::mock(Pagination::class);
-    $paginatorMock->shouldReceive('getDefaultPerPage')
-        ->atLeast()->once()
-        ->andReturn(100);
     $paginatorMock->shouldReceive('getPaginatedResultSet')
         ->atLeast()->once()
         ->andReturn(['list' => []]);
@@ -435,9 +432,6 @@ test('gets registrar list', function (): void {
     $adminApi = new Admin();
     $api = new Admin();
     $paginatorMock = Mockery::mock(Pagination::class);
-    $paginatorMock->shouldReceive('getDefaultPerPage')
-        ->atLeast()->once()
-        ->andReturn(100);
     $paginatorMock->shouldReceive('getPaginatedResultSet')
         ->atLeast()->once()
         ->andReturn(['list' => []]);
@@ -759,10 +753,14 @@ test('gets service', function (): void {
     $orderServiceMock->shouldReceive('getOrderService')
         ->atLeast()->once()
         ->andReturn(new Model_ServiceDomain());
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class)->shouldIgnoreMissing();
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->atLeast()->once()
+        ->with('servicedomain', 'manage_domains');
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+    $di['mod_service'] = $di->protect(fn (string $name = ''): Mockery\MockInterface => strtolower($name) === 'staff' ? $staffServiceMock : $orderServiceMock);
     $di['validator'] = new FOSSBilling\Validate();
 
     $adminApi->setDi($di);
@@ -791,10 +789,13 @@ test('throws exception when getting service without order_id', function (): void
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getOrderService')
         ->never();
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class)->shouldIgnoreMissing();
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->never();
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+    $di['mod_service'] = $di->protect(fn (string $name = ''): Mockery\MockInterface => strtolower($name) === 'staff' ? $staffServiceMock : $orderServiceMock);
     $di['validator'] = new FOSSBilling\Validate();
 
     $adminApi->setDi($di);
@@ -827,10 +828,14 @@ test('throws exception when getting service for not activated order', function (
     $orderServiceMock->shouldReceive('getOrderService')
         ->atLeast()->once()
         ->andReturn(null);
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class)->shouldIgnoreMissing();
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->atLeast()->once()
+        ->with('servicedomain', 'manage_domains');
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn () => $orderServiceMock);
+    $di['mod_service'] = $di->protect(fn (string $name = ''): Mockery\MockInterface => strtolower($name) === 'staff' ? $staffServiceMock : $orderServiceMock);
     $di['validator'] = new FOSSBilling\Validate();
 
     $adminApi->setDi($di);

@@ -31,9 +31,6 @@ test('gets product list', function (): void {
         ->andReturn(['sqlString', []]);
 
     $pagerMock = Mockery::mock(FOSSBilling\Pagination::class);
-    $pagerMock->shouldReceive('getDefaultPerPage')
-        ->atLeast()->once()
-        ->andReturn(50);
     $pagerMock->shouldReceive('getPaginatedResultSet')
         ->atLeast()->once()
         ->andReturn(['list' => []]);
@@ -501,9 +498,6 @@ test('gets promo list', function (): void {
         ->andReturn(['sqlString', []]);
 
     $pagerMock = Mockery::mock(FOSSBilling\Pagination::class);
-    $pagerMock->shouldReceive('getDefaultPerPage')
-        ->atLeast()->once()
-        ->andReturn(50);
     $pagerMock->shouldReceive('getPaginatedResultSet')
         ->atLeast()->once()
         ->andReturn(['list' => []]);

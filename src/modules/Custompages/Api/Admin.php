@@ -23,7 +23,7 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('custompages', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('custompages', 'view');
 
         $pager = $this->getService()->searchPages($data);
 
@@ -40,7 +40,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Custom page ID was not passed'])]
     public function delete($data): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('custompages', 'manage');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('custompages', 'manage');
 
         $this->getService()->deletePage($data['id']);
 
@@ -53,7 +53,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ids' => 'Custom page IDs were not passed'])]
     public function batch_delete($data): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('custompages', 'manage');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('custompages', 'manage');
 
         $this->getService()->deletePage($data['ids']);
 
@@ -71,7 +71,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['title' => 'Title was not passed', 'content' => 'Content was not passed'])]
     public function create($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('custompages', 'manage');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('custompages', 'manage');
 
         $title = $data['title'];
 
@@ -98,7 +98,7 @@ class Admin extends \Api_Abstract
     ])]
     public function update($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('custompages', 'manage');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('custompages', 'manage');
 
         $id = $data['id'];
         $title = $data['title'];
@@ -117,7 +117,7 @@ class Admin extends \Api_Abstract
      */
     public function get_page($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('custompages', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('custompages', 'view');
 
         return $this->getService()->getPage($data['page_id']);
     }

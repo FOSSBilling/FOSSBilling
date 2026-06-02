@@ -52,7 +52,7 @@ class Guest extends \Api_Abstract
     #[RequiredParams(['currency' => 'Currency code was not passed'])]
     public function set_currency($data)
     {
-        $currencyService = $this->di['mod_service']('currency');
+        $currencyService = $this->getDi()['mod_service']('currency');
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
         $currencyRepository = $currencyService->getCurrencyRepository();
         $currency = $currencyRepository->findOneByCode($data['currency']);
@@ -73,7 +73,7 @@ class Guest extends \Api_Abstract
     {
         $cart = $this->getService()->getSessionCart();
 
-        $currencyService = $this->di['mod_service']('currency');
+        $currencyService = $this->getDi()['mod_service']('currency');
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
         $currencyRepository = $currencyService->getCurrencyRepository();
         $currency = $currencyRepository->find($cart->currency_id);
@@ -95,7 +95,7 @@ class Guest extends \Api_Abstract
     #[RequiredParams(['promocode' => 'Promo code was not passed'])]
     public function apply_promo($data)
     {
-        $this->di['rate_limiter']->consumeOrThrow('cart_promo_apply_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('cart_promo_apply_ip', (string) $this->getIp());
 
         $promo = $this->getService()->findActivePromoByCode($data['promocode']);
         if (!$promo instanceof \Model_Promo) {
@@ -152,7 +152,7 @@ class Guest extends \Api_Abstract
     {
         $cart = $this->getService()->getSessionCart();
 
-        $product = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
+        $product = $this->getDi()['db']->getExistingModelById('Product', $data['id'], 'Product not found');
 
         if ($product->is_addon) {
             throw new \FOSSBilling\InformationException('Addon products cannot be added separately.');
@@ -166,7 +166,7 @@ class Guest extends \Api_Abstract
 
             foreach ($data['addons'] as $addon => $properties) {
                 if ($properties['selected']) {
-                    $addonModel = $this->di['db']->getExistingModelById('Product', $addon, 'Addon not found');
+                    $addonModel = $this->getDi()['db']->getExistingModelById('Product', $addon, 'Addon not found');
 
                     if ($addonModel->status !== 'enabled' || !in_array($addon, $validAddons)) {
                         throw new \FOSSBilling\InformationException('One or more of your selected add-ons are invalid for the associated product.');

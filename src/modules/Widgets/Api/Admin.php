@@ -20,7 +20,7 @@ class Admin extends \Api_Abstract
      */
     public function list(): array
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('widgets', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('widgets', 'view');
 
         return $this->getService()->getWidgetList();
     }
@@ -31,7 +31,7 @@ class Admin extends \Api_Abstract
      */
     public function rebuild(): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('widgets', 'manage');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('widgets', 'manage');
 
         $service = $this->getService();
         $service->invalidateCache();

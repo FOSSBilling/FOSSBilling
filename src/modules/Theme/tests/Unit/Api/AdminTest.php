@@ -77,9 +77,14 @@ test('testSelectNotAdminTheme', function (): void {
     $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
     $systemServiceMock->shouldReceive('setParamValue')
         ->with('theme', Mockery::any());
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class)->shouldIgnoreMissing();
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->atLeast()
+        ->once()
+        ->with('theme', 'manage');
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemServiceMock);
+    $di['mod_service'] = $di->protect(fn (string $name = ''): Mockery\MockInterface => strtolower($name) === 'staff' ? $staffServiceMock : $systemServiceMock);
     $api->setDi($di);
     $api->setService($serviceMock);
 
@@ -108,9 +113,14 @@ test('testSelectAdminTheme', function (): void {
     $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
     $systemServiceMock->shouldReceive('setParamValue')
         ->with('admin_theme', Mockery::any());
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class)->shouldIgnoreMissing();
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->atLeast()
+        ->once()
+        ->with('theme', 'manage');
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemServiceMock);
+    $di['mod_service'] = $di->protect(fn (string $name = ''): Mockery\MockInterface => strtolower($name) === 'staff' ? $staffServiceMock : $systemServiceMock);
     $api->setDi($di);
     $api->setService($serviceMock);
 

@@ -12,8 +12,22 @@ declare(strict_types=1);
 
 use Box\Mod\Theme\Model;
 use Box\Mod\Theme\Service;
+use Box\Mod\Extension\Entity\ExtensionMeta;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\injectMockFilesystem;
+
+function themeContainerWithRepository(\Mockery\MockInterface $repository, ?\Mockery\MockInterface $em = null): \Pimple\Container
+{
+    $di = container();
+    $em ??= Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em->shouldReceive('getRepository')
+        ->byDefault()
+        ->andReturn($repository);
+    $di['em'] = $em;
+
+    return $di;
+}
 
 test('getDi returns the dependency injection container', function (): void {
     $service = new Service();
@@ -36,11 +50,12 @@ test('getCurrentThemePreset sets current theme preset when empty', function (): 
         ->atLeast()
         ->once();
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getCell')
+    $repositoryMock = Mockery::mock(Box\Mod\Extension\Repository\ExtensionMetaRepository::class);
+    $repositoryMock->shouldReceive('findOneByExtensionAndScope')
         ->atLeast()
         ->once()
-        ->andReturn([]);
+        ->with('mod_theme', 'default', 'preset', 'current')
+        ->andReturn(null);
 
     $themeMock = Mockery::mock(Model\Theme::class);
     $themeMock->shouldReceive('getCurrentPreset')
@@ -52,10 +67,8 @@ test('getCurrentThemePreset sets current theme preset when empty', function (): 
         ->once()
         ->andReturn('default');
 
-    $di = container();
-
+    $di = themeContainerWithRepository($repositoryMock);
     $di['theme'] = $di->protect(fn (): Mockery\MockInterface => $themeMock);
-    $di['db'] = $dbMock;
 
     $serviceMock->setDi($di);
     $result = $serviceMock->getCurrentThemePreset($themeMock);
@@ -64,8 +77,17 @@ test('getCurrentThemePreset sets current theme preset when empty', function (): 
 
 test('setCurrentThemePreset updates theme preset', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('exec')
+    $repositoryMock = Mockery::mock(Box\Mod\Extension\Repository\ExtensionMetaRepository::class);
+    $repositoryMock->shouldReceive('findOneByExtensionAndScope')
+        ->atLeast()
+        ->once()
+        ->andReturn(null);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+    $emMock->shouldReceive('persist')
+        ->atLeast()
+        ->once()
+        ->with(Mockery::type(ExtensionMeta::class));
+    $emMock->shouldReceive('flush')
         ->atLeast()
         ->once();
 
@@ -75,10 +97,8 @@ test('setCurrentThemePreset updates theme preset', function (): void {
         ->once()
         ->andReturn('default');
 
-    $di = container();
-
+    $di = themeContainerWithRepository($repositoryMock, $emMock);
     $di['theme'] = $di->protect(fn (): Mockery\MockInterface => $themeMock);
-    $di['db'] = $dbMock;
 
     $service->setDi($di);
     $result = $service->setCurrentThemePreset($themeMock, 'dark_blue');
@@ -88,10 +108,10 @@ test('setCurrentThemePreset updates theme preset', function (): void {
 
 test('deletePreset removes a theme preset', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('exec')
-        ->atLeast()
-        ->once();
+    $repositoryMock = Mockery::mock(Box\Mod\Extension\Repository\ExtensionMetaRepository::class);
+    $repositoryMock->shouldReceive('deleteByExtensionAndScope')
+        ->twice()
+        ->andReturn(1);
 
     $themeMock = Mockery::mock(Model\Theme::class);
     $themeMock->shouldReceive('getName')
@@ -99,10 +119,8 @@ test('deletePreset removes a theme preset', function (): void {
         ->once()
         ->andReturn('default');
 
-    $di = container();
-
+    $di = themeContainerWithRepository($repositoryMock);
     $di['theme'] = $di->protect(fn (): Mockery\MockInterface => $themeMock);
-    $di['db'] = $dbMock;
 
     $service->setDi($di);
     $result = $service->deletePreset($themeMock, 'dark_blue');
@@ -117,10 +135,11 @@ test('getThemePresets returns available presets', function (): void {
         ->atLeast()
         ->once();
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAssoc')
+    $repositoryMock = Mockery::mock(Box\Mod\Extension\Repository\ExtensionMetaRepository::class);
+    $repositoryMock->shouldReceive('findByExtensionAndScope')
         ->atLeast()
-        ->once();
+        ->once()
+        ->andReturn([]);
 
     $themeMock = Mockery::mock(Model\Theme::class);
     $themeMock->shouldReceive('getName')
@@ -137,10 +156,8 @@ test('getThemePresets returns available presets', function (): void {
         ->once()
         ->andReturn($corePresets);
 
-    $di = container();
-
+    $di = themeContainerWithRepository($repositoryMock);
     $di['theme'] = $di->protect(fn (): Mockery\MockInterface => $themeMock);
-    $di['db'] = $dbMock;
 
     $serviceMock->setDi($di);
     $result = $serviceMock->getThemePresets($themeMock, 'dark_blue');
@@ -155,10 +172,11 @@ test('getThemePresets returns available presets', function (): void {
 
 test('getThemePresets returns default when theme has no settings data file', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAssoc')
+    $repositoryMock = Mockery::mock(Box\Mod\Extension\Repository\ExtensionMetaRepository::class);
+    $repositoryMock->shouldReceive('findByExtensionAndScope')
         ->atLeast()
-        ->once();
+        ->once()
+        ->andReturn([]);
 
     $themeMock = Mockery::mock(Model\Theme::class);
     $themeMock->shouldReceive('getName')
@@ -171,10 +189,8 @@ test('getThemePresets returns default when theme has no settings data file', fun
         ->once()
         ->andReturn([]);
 
-    $di = container();
-
+    $di = themeContainerWithRepository($repositoryMock);
     $di['theme'] = $di->protect(fn (): Mockery\MockInterface => $themeMock);
-    $di['db'] = $dbMock;
     $service->setDi($di);
 
     $result = $service->getThemePresets($themeMock);
@@ -188,12 +204,10 @@ test('getThemePresets returns default when theme has no settings data file', fun
 
 test('getThemeSettings returns theme settings', function (): void {
     $service = new Service();
-    $extensionMetaModel = new Model_ExtensionMeta();
-    $extensionMetaModel->loadBean(new Tests\Helpers\DummyBean());
-    $extensionMetaModel->meta_value = '{}';
+    $extensionMetaModel = (new ExtensionMeta())->setMetaValue('{}');
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
+    $repositoryMock = Mockery::mock(Box\Mod\Extension\Repository\ExtensionMetaRepository::class);
+    $repositoryMock->shouldReceive('findOneByExtensionAndScope')
         ->atLeast()
         ->once()
         ->andReturn($extensionMetaModel);
@@ -204,9 +218,7 @@ test('getThemeSettings returns theme settings', function (): void {
         ->once()
         ->andReturn('default');
 
-    $di = container();
-
-    $di['db'] = $dbMock;
+    $di = themeContainerWithRepository($repositoryMock);
 
     $service->setDi($di);
     $result = $service->getThemeSettings($themeMock, 'default');
@@ -221,8 +233,8 @@ test('getThemeSettings with empty presets returns empty array', function (): voi
         ->once()
         ->andReturn('default');
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
+    $repositoryMock = Mockery::mock(Box\Mod\Extension\Repository\ExtensionMetaRepository::class);
+    $repositoryMock->shouldReceive('findOneByExtensionAndScope')
         ->atLeast()
         ->once()
         ->andReturn(null);
@@ -237,9 +249,7 @@ test('getThemeSettings with empty presets returns empty array', function (): voi
         ->once()
         ->andReturn([]);
 
-    $di = container();
-
-    $di['db'] = $dbMock;
+    $di = themeContainerWithRepository($repositoryMock);
     $serviceMock->setDi($di);
 
     $result = $serviceMock->getThemeSettings($themeMock);
@@ -249,19 +259,17 @@ test('getThemeSettings with empty presets returns empty array', function (): voi
 
 test('updateSettings updates theme settings', function (): void {
     $service = new Service();
-    $extensionMetaModel = new Model_ExtensionMeta();
-    $extensionMetaModel->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
+    $repositoryMock = Mockery::mock(Box\Mod\Extension\Repository\ExtensionMetaRepository::class);
+    $repositoryMock->shouldReceive('findOneByExtensionAndScope')
         ->atLeast()
         ->once()
         ->andReturn(null);
-    $dbMock->shouldReceive('dispense')
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+    $emMock->shouldReceive('persist')
         ->atLeast()
         ->once()
-        ->andReturn($extensionMetaModel);
-    $dbMock->shouldReceive('store')
+        ->with(Mockery::type(ExtensionMeta::class));
+    $emMock->shouldReceive('flush')
         ->atLeast()
         ->once();
 
@@ -271,9 +279,7 @@ test('updateSettings updates theme settings', function (): void {
         ->once()
         ->andReturn('default');
 
-    $di = container();
-
-    $di['db'] = $dbMock;
+    $di = themeContainerWithRepository($repositoryMock, $emMock);
 
     $service->setDi($di);
     $params = [];
@@ -302,13 +308,14 @@ test('regenerateThemeSettingsDataFile regenerates settings file', function (): v
     $themeMock->shouldReceive('getPathSettingsDataFile')
         ->andReturn($testFile);
 
-    // Create service with mock filesystem injected via constructor
+    // Create service with mock filesystem injected into the readonly property.
     $filesystemMock = Mockery::mock(Symfony\Component\Filesystem\Filesystem::class);
     $filesystemMock->shouldReceive('dumpFile')
         ->atLeast()
         ->once();
 
-    $serviceMock = Mockery::mock(Service::class, [$filesystemMock])->makePartial();
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    injectMockFilesystem($serviceMock, $filesystemMock);
     $serviceMock->shouldReceive('getThemePresets')
         ->with($themeMock)
         ->andReturn($presets);
@@ -362,6 +369,7 @@ test('regenerateThemeCssAndJsFiles handles empty files', function (): void {
 });
 
 test('getCurrentAdminAreaTheme returns theme configuration', function (): void {
+    Service::clearThemeCache();
     $service = new Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getCell')
@@ -398,6 +406,7 @@ test('getCurrentClientAreaTheme returns Theme model', function (): void {
 });
 
 test('getCurrentClientAreaThemeCode returns theme code', function (): void {
+    Service::clearThemeCache();
     $service = new Service();
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getCell')

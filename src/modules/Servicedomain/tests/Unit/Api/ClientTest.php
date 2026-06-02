@@ -203,9 +203,12 @@ test('gets service', function (): void {
     $clientApi->setService($serviceMock);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->status = Model_ClientOrder::STATUS_ACTIVE;
     $orderServiceMock->shouldReceive('findForClientById')
         ->atLeast()->once()
-        ->andReturn(new Model_ClientOrder());
+        ->andReturn($order);
     $orderServiceMock->shouldReceive('getOrderService')
         ->atLeast()->once()
         ->andReturn(new Model_ServiceDomain());

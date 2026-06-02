@@ -33,11 +33,11 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('notification', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('notification', 'view');
 
         $queryBuilder = $this->getService()->getSearchQueryBuilder($data);
 
-        return $this->di['pager']->paginateDoctrineQuery($queryBuilder, PaginationOptions::fromArray($data));
+        return $this->getDi()['pager']->paginateDoctrineQuery($queryBuilder, PaginationOptions::fromArray($data));
     }
 
     /**
@@ -50,7 +50,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Notification ID was not passed'])]
     public function get($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('notification', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('notification', 'view');
 
         return $this->getService()->toApiArray($this->getService()->get((int) $data['id']));
     }
@@ -62,7 +62,7 @@ class Admin extends \Api_Abstract
      */
     public function add($data): int|false
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('notification', 'manage');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('notification', 'manage');
 
         if (!isset($data['message'])) {
             return false;
@@ -81,7 +81,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Notification ID was not passed'])]
     public function delete($data): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('notification', 'manage');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('notification', 'manage');
 
         return $this->getService()->delete((int) $data['id']);
     }
@@ -93,7 +93,7 @@ class Admin extends \Api_Abstract
      */
     public function delete_all(): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('notification', 'manage');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('notification', 'manage');
 
         return $this->getService()->deleteAll();
     }

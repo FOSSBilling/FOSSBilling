@@ -58,8 +58,7 @@ test('getTheme renders theme preset', function (): void {
         ->once()
         ->andReturn(false);
     $themeMock->shouldReceive('getSettingsPageHtml')
-        ->atLeast()
-        ->once()
+        ->zeroOrMoreTimes()
         ->andReturn('');
     $themeMock->shouldReceive('getPathAssets')
         ->atLeast()
@@ -80,6 +79,10 @@ test('getTheme renders theme preset', function (): void {
         ->atLeast()
         ->once()
         ->andReturn([]);
+    $themeServiceMock->shouldReceive('renderThemeSettingsPageHtml')
+        ->atLeast()
+        ->once()
+        ->andReturn('');
     $themeServiceMock->shouldReceive('getThemePresets')
         ->atLeast()
         ->once()

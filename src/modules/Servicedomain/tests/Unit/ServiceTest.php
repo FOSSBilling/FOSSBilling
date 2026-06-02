@@ -1330,7 +1330,7 @@ test('converts tld to api array', function (): void {
     $model->min_years = 2;
     $model->tld_registrar_id = 1;
 
-    $result = $service->tldToApiArray($model);
+    $result = $service->tldToApiArray($model, new Model_Admin());
     expect($result)->toBeArray();
 
     expect($result)->toHaveKey('tld');

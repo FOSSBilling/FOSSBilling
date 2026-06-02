@@ -34,7 +34,7 @@ class Guest extends \Api_Abstract
         // Repository method returns a QueryBuilder with filters applied
         $qb = $repo->getSearchQueryBuilder($data);
 
-        return $this->di['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
     }
 
     /**
@@ -68,7 +68,7 @@ class Guest extends \Api_Abstract
         }
 
         /**@todo Doctrine: Replace with actual Admin entity once it's migrated to Doctrine. */
-        $admin = $this->di['db']->getRow('SELECT name FROM admin WHERE id = :id', ['id' => $post->getAdminId()]);
+        $admin = $this->getDi()['db']->getRow('SELECT name FROM admin WHERE id = :id', ['id' => $post->getAdminId()]);
 
         $post->setAdminData($admin);
 

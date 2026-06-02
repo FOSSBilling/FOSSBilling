@@ -30,7 +30,7 @@ class Guest extends \Api_Abstract
     public function free_tlds($data = [])
     {
         $product_id = $data['product_id'] ?? 0;
-        $product = $this->di['db']->getExistingModelById('Product', $product_id, 'Product was not found');
+        $product = $this->getDi()['db']->getExistingModelById('Product', $product_id, 'Product was not found');
 
         if ($product->type !== \Model_Product::HOSTING) {
             $friendlyName = ucfirst(__trans('Product type'));

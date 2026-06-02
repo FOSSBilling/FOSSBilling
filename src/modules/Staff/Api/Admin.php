@@ -28,15 +28,15 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'view');
 
         $data['no_cron'] = true;
 
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
-            $staff = $this->di['db']->getExistingModelById('Admin', $item['id'] ?? 0, 'Admin is not found');
+            $staff = $this->getDi()['db']->getExistingModelById('Admin', $item['id'] ?? 0, 'Admin is not found');
             $pager['list'][$key] = $this->getService()->toModel_AdminApiArray($staff);
         }
 
@@ -52,7 +52,7 @@ class Admin extends \Api_Abstract
      */
     public function get_pairs(array $data): array
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'view');
 
         return $this->getService()->getPairs($data);
     }
@@ -67,9 +67,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'ID was not passed'])]
     public function get($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'view');
 
-        $model = $this->di['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
+        $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
 
         return $this->getService()->toModel_AdminApiArray($model);
     }
@@ -90,12 +90,12 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'ID was not passed'])]
     public function update($data)
     {
-        $model = $this->di['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
+        $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
         $role = $model->role === 'admin' ? 'admin' : 'staff';
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', $role === 'admin' ? 'create_and_edit_admin' : 'create_and_edit_staff');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', $role === 'admin' ? 'create_and_edit_admin' : 'create_and_edit_staff');
 
         if (isset($data['email'])) {
-            $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+            $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
         }
 
         return $this->getService()->update($model, $data);
@@ -111,9 +111,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'ID was not passed'])]
     public function delete($data)
     {
-        $model = $this->di['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
+        $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
         $role = $model->role === 'admin' ? 'admin' : 'staff';
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', $role === 'admin' ? 'delete_admin' : 'delete_staff');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', $role === 'admin' ? 'delete_admin' : 'delete_staff');
 
         return $this->getService()->delete($model);
     }
@@ -132,13 +132,13 @@ class Admin extends \Api_Abstract
     ])]
     public function change_password($data)
     {
-        $this->di['validator']->passwordsMatch($data);
+        $this->getDi()['validator']->passwordsMatch($data);
 
-        $this->di['validator']->isPasswordStrong($data['password']);
+        $this->getDi()['validator']->isPasswordStrong($data['password']);
 
-        $model = $this->di['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
+        $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
         $role = $model->role === 'admin' ? 'admin' : 'staff';
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', $role === 'admin' ? 'reset_admin_password' : 'reset_staff_password');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', $role === 'admin' ? 'reset_admin_password' : 'reset_staff_password');
 
         return $this->getService()->changePassword($model, $data['password']);
     }
@@ -161,11 +161,11 @@ class Admin extends \Api_Abstract
     public function create($data)
     {
         $role = $data['role'] ?? 'staff';
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', $role === 'admin' ? 'create_and_edit_admin' : 'create_and_edit_staff');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', $role === 'admin' ? 'create_and_edit_admin' : 'create_and_edit_staff');
 
-        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
 
-        $this->di['validator']->isPasswordStrong($data['password']);
+        $this->getDi()['validator']->isPasswordStrong($data['password']);
 
         return $this->getService()->create($data);
     }
@@ -178,9 +178,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'ID was not passed'])]
     public function permissions_get($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
 
-        $model = $this->di['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
+        $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
 
         return $this->getService()->getPermissions($model->id);
     }
@@ -191,9 +191,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'ID was not passed', 'permissions' => 'Missing "permissions" parameter'])]
     public function permissions_update($data): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_settings');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_settings');
 
-        $model = $this->di['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
+        $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
 
         if (!is_array($data['permissions'])) {
             throw new \FOSSBilling\InformationException('Parameter "permissions" must be an array');
@@ -201,7 +201,7 @@ class Admin extends \Api_Abstract
 
         $this->getService()->setPermissions($model, $data['permissions']);
 
-        $this->di['logger']->info('Changed staff member %s permissions', $model->id);
+        $this->getDi()['logger']->info('Changed staff member %s permissions', $model->id);
 
         return true;
     }
@@ -213,7 +213,7 @@ class Admin extends \Api_Abstract
      */
     public function group_get_pairs($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'view');
 
         return $this->getService()->getAdminGroupPair();
     }
@@ -225,13 +225,13 @@ class Admin extends \Api_Abstract
      */
     public function group_get_list($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_groups');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_groups');
 
         [$sql, $params] = $this->getService()->getAdminGroupSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
-            $model = $this->di['db']->getExistingModelById('AdminGroup', $item['id'], 'Post not found');
+            $model = $this->getDi()['db']->getExistingModelById('AdminGroup', $item['id'], 'Post not found');
             $pager['list'][$key] = $this->getService()->toAdminGroupApiArray($model, false, $this->getIdentity());
         }
 
@@ -248,7 +248,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['name' => 'Group name was not passed'])]
     public function group_create($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_groups');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_groups');
 
         return $this->getService()->createGroup($data['name']);
     }
@@ -263,9 +263,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Group ID was not passed'])]
     public function group_get($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_groups');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_groups');
 
-        $model = $this->di['db']->getExistingModelById('AdminGroup', $data['id'], 'Group not found');
+        $model = $this->getDi()['db']->getExistingModelById('AdminGroup', $data['id'], 'Group not found');
 
         return $this->getService()->toAdminGroupApiArray($model, true, $this->getIdentity());
     }
@@ -280,9 +280,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Group ID was not passed'])]
     public function group_delete($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_groups');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_groups');
 
-        $model = $this->di['db']->getExistingModelById('AdminGroup', $data['id'], 'Group not found');
+        $model = $this->getDi()['db']->getExistingModelById('AdminGroup', $data['id'], 'Group not found');
 
         return $this->getService()->deleteGroup($model);
     }
@@ -299,9 +299,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Group ID was not passed'])]
     public function group_update($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_groups');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_groups');
 
-        $model = $this->di['db']->getExistingModelById('AdminGroup', $data['id'], 'Group not found');
+        $model = $this->getDi()['db']->getExistingModelById('AdminGroup', $data['id'], 'Group not found');
 
         return $this->getService()->updateGroup($model, $data);
     }
@@ -313,13 +313,13 @@ class Admin extends \Api_Abstract
      */
     public function login_history_get_list($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_settings');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_settings');
 
         [$sql, $params] = $this->getService()->getActivityAdminHistorySearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
-            $activity = $this->di['db']->getExistingModelById('ActivityAdminHistory', $item['id'] ?? 0, sprintf('Staff activity item #%s not found', $item['id'] ?? 'unknown'));
+            $activity = $this->getDi()['db']->getExistingModelById('ActivityAdminHistory', $item['id'] ?? 0, sprintf('Staff activity item #%s not found', $item['id'] ?? 'unknown'));
             if ($activity) {
                 $pager['list'][$key] = $this->getService()->toActivityAdminHistoryApiArray($activity);
             }
@@ -336,9 +336,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Event ID was not passed'])]
     public function login_history_get($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_settings');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_settings');
 
-        $model = $this->di['db']->getExistingModelById('ActivityAdminHistory', $data['id'], 'Event not found');
+        $model = $this->getDi()['db']->getExistingModelById('ActivityAdminHistory', $data['id'], 'Event not found');
 
         return $this->getService()->toActivityAdminHistoryApiArray($model);
     }

@@ -36,10 +36,10 @@ class Client extends \Api_Abstract
             [$query, $bindings] = $this->getService()->getSearchQuery($data);
         }
 
-        $pager = $this->di['pager']->getPaginatedResultSet($query, $bindings, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($query, $bindings, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
-            $order = $this->di['db']->getExistingModelById('ClientOrder', $item['id'], 'Client order not found');
+            $order = $this->getDi()['db']->getExistingModelById('ClientOrder', $item['id'], 'Client order not found');
             $pager['list'][$key] = $this->getService()->toApiArray($order);
         }
 
@@ -97,8 +97,8 @@ class Client extends \Api_Abstract
     public function upgradables($data)
     {
         $model = $this->_getOrder($data);
-        $product = $this->di['db']->getExistingModelById('Product', $model->product_id);
-        $productService = $this->di['mod_service']('product');
+        $product = $this->getDi()['db']->getExistingModelById('Product', $model->product_id);
+        $productService = $this->getDi()['mod_service']('product');
 
         return $productService->getUpgradablePairs($product);
     }
@@ -121,7 +121,7 @@ class Client extends \Api_Abstract
         $required = [
             'id' => 'Order id required',
         ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+        $this->getDi()['validator']->checkRequiredParamsForArray($required, $data);
 
         $order = $this->getService()->findForClientById($this->getIdentity(), $data['id']);
         if (!$order instanceof \Model_ClientOrder) {

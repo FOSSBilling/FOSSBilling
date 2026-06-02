@@ -59,7 +59,7 @@ final class Api_Handler implements InjectionAwareInterface
             throw new FOSSBilling\Exception('Invalid module name', null, 714);
         }
 
-        $service = $this->di['mod']('extension')->getService();
+        $service = $this->getDi()['mod']('extension')->getService();
 
         if (!$service->isExtensionActive('mod', $mod)) {
             throw new FOSSBilling\Exception('FOSSBilling module :mod is not installed/activated', [':mod' => $mod], 715);
@@ -67,7 +67,7 @@ final class Api_Handler implements InjectionAwareInterface
 
         // permissions check
         if ($this->type == 'admin') {
-            $staff_service = $this->di['mod_service']('Staff');
+            $staff_service = $this->getDi()['mod_service']('Staff');
             if (!$staff_service->hasPermission($this->identity, $mod)) {
                 if ($this->_acl_exception) {
                     throw new FOSSBilling\Exception('You do not have access to the :mod module', [':mod' => $mod], 725);
@@ -89,14 +89,14 @@ final class Api_Handler implements InjectionAwareInterface
             throw new FOSSBilling\Exception('Api class must be an instance of Api_Abstract', null, 730);
         }
 
-        $bb_mod = $this->di['mod']($mod);
+        $bb_mod = $this->getDi()['mod']($mod);
 
         $api->setDi($this->di);
         $api->setMod($bb_mod);
         $api->setIdentity($this->identity);
-        $api->setIp($this->di['request']->getClientIp());
+        $api->setIp($this->getDi()['request']->getClientIp());
         if ($bb_mod->hasService()) {
-            $api->setService($this->di['mod_service']($mod));
+            $api->setService($this->getDi()['mod_service']($mod));
         }
 
         if (!method_exists($api, $method_name) || !is_callable([$api, $method_name])) {

@@ -19,14 +19,14 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ip' => 'You must specify an IP address to lookup.'])]
     public function ip_lookup(array $data): array
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'view');
 
         return $this->getService()->lookupIP($data['ip']);
     }
 
     public function list_checks(array $data): array
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'view');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'view');
 
         $result = [];
         $checkInterfaces = $this->getService()->getAllChecks();
@@ -44,14 +44,14 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'You must specify a check ID to run.'])]
     public function run_check(array $data): array
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'run_checks');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'run_checks');
 
         return $this->getService()->runCheck($data['id']);
     }
 
     public function run_checks(array $data): array
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'run_checks');
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'run_checks');
 
         return $this->getService()->runAllChecks();
     }

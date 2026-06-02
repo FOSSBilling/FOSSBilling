@@ -31,10 +31,10 @@ class Guest extends \Api_Abstract
         $data['show_hidden'] = false;
 
         [$sql, $params] = $this->getService()->getProductSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
-            $model = $this->di['db']->getExistingModelById('Product', $item['id'], 'Post not found');
+            $model = $this->getDi()['db']->getExistingModelById('Product', $item['id'], 'Post not found');
             $pager['list'][$key] = $this->getService()->toApiArray($model, false);
         }
 
@@ -96,10 +96,10 @@ class Guest extends \Api_Abstract
         $service = $this->getService();
 
         [$sql, $params] = $service->getProductCategorySearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
-            $category = $this->di['db']->getExistingModelById('ProductCategory', $item['id'], 'Product category not found');
+            $category = $this->getDi()['db']->getExistingModelById('ProductCategory', $item['id'], 'Product category not found');
             $pager['list'][$key] = $this->getService()->toProductCategoryApiArray($category);
         }
 
