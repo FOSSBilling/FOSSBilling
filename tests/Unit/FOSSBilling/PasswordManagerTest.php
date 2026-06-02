@@ -37,9 +37,9 @@ test('hashing', function (): void {
     expect($hash)->toBeString();
     expect($hash)->not->toBeEmpty();
 
-    $veryfied = $boxPassword->verify($password, $hash);
-    expect($veryfied)->toBeBool();
-    expect($veryfied)->toBeTrue();
+    $verified = $boxPassword->verify($password, $hash);
+    expect($verified)->toBeBool();
+    expect($verified)->toBeTrue();
 
     $needRehashing = $boxPassword->needsRehash($hash);
     expect($needRehashing)->toBeBool();
