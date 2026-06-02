@@ -110,7 +110,7 @@ test('period_title returns period title string', function (): void {
     $serviceMock
     ->shouldReceive('getPeriod')
     ->atLeast()->once()
-    ->andReturn('periodTtitleValue');
+    ->andReturn('periodTitleValue');
     $di = container();
 
     $api->setDi($di);
