@@ -1072,6 +1072,10 @@ test('testGetManagerUrlsException', function (): void {
         ->shouldReceive('getServerManager')
         ->andThrow(new Exception('Controlled unit test exception'));
 
+    $di = container();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $serviceMock->setDi($di);
+
     $result = $serviceMock->getManagerUrls($hostingServerModel);
     expect($result)->toBeArray();
     expect($result[0])->toBeFalse();

@@ -1103,7 +1103,7 @@ test('converts order to api array', function (): void {
     $dbMock->shouldReceive('load')
         ->atLeast()->once()
         ->andReturnUsing(fn(...$args): Model_Product => match ($args[0]) {
-            'Product' => new Model_Product(),
+            'Product' => $modelProduct,
         });
 
     $dbMock->shouldReceive('getExistingModelById')

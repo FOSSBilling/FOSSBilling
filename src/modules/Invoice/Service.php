@@ -701,7 +701,7 @@ class Service implements InjectionAwareInterface
             $currencyCode = $currency->getCode();
             $client->currency = $currencyCode;
             $this->di['db']->store($client);
-            error_log("Client #{$client->id} currency was not defined. Set default currency {$currencyCode}.");
+            $this->di['logger']->warning("Client #{$client->id} currency was not defined. Set default currency {$currencyCode}.");
         }
 
         $model = $this->di['db']->dispense('Invoice');
@@ -1300,7 +1300,7 @@ class Service implements InjectionAwareInterface
                 $model = $this->di['db']->getExistingModelById('InvoiceItem', $item['id'] ?? 0);
                 $invoiceItemService->executeTask($model);
             } catch (\Exception $e) {
-                error_log($e->getMessage());
+                $this->di['logger']->error($e->getMessage());
             }
         }
         $this->di['logger']->info('Executed action to activate paid invoices.');
