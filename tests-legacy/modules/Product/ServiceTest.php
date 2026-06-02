@@ -514,7 +514,7 @@ final class ServiceTest extends \BBTestCase
         $this->assertEquals($newProductId, $result);
     }
 
-    public function testDeleteProductActivaOrderException(): void
+    public function testDeleteProductActiveOrderException(): void
     {
         $model = new \Model_Product();
 
@@ -576,7 +576,7 @@ final class ServiceTest extends \BBTestCase
 
         $this->service->setDi($di);
 
-        $result = $this->service->updateCategory($model, 'title', 'decription', 'http://urltoimg.com/img.jpg');
+        $result = $this->service->updateCategory($model, 'title', 'description', 'http://urltoimg.com/img.jpg');
         $this->assertIsBool($result);
         $this->assertTrue($result);
     }
