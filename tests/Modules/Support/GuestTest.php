@@ -2,206 +2,162 @@
 
 declare(strict_types=1);
 
-namespace SupportTests;
-
 use APIHelper\Request;
-use PHPUnit\Framework\TestCase;
 
-final class GuestTest extends TestCase
-{
-    private const int MIN_TICKET_ID_LENGTH = 30;
-    private const int MAX_TICKET_ID_LENGTH = 60;
+const SUPPORT_MIN_TICKET_ID_LENGTH = 30;
+const SUPPORT_MAX_TICKET_ID_LENGTH = 60;
 
-    /**
-     * Snapshot of the initial Support extension config captured in setUp().
-     * Null means the config could not be determined and therefore cannot be safely restored.
-     *
-     * @var array<string, mixed>|null
-     */
-    private ?array $initialSupportConfig = null;
+$initialSupportConfig = null;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
+beforeEach(function () use (&$initialSupportConfig): void {
+    $configGetResult = Request::makeRequest('admin/extension/config_get', ['ext' => 'mod_support']);
+    expect($configGetResult->wasSuccessful())->toBeTrue();
 
-        $configGetResult = Request::makeRequest('admin/extension/config_get', ['ext' => 'mod_support']);
-        if (!$configGetResult->wasSuccessful()) {
-            $this->fail($configGetResult->generatePHPUnitMessage());
-        }
+    $configData = $configGetResult->getResult();
+    expect($configData)->toBeArray();
+    $initialSupportConfig = $configData;
+});
 
-        $configData = $configGetResult->getResult();
-        $this->assertIsArray($configData);
-        $this->initialSupportConfig = $configData;
+afterEach(function () use (&$initialSupportConfig): void {
+    if ($initialSupportConfig === null) {
+        return;
     }
 
-    protected function tearDown(): void
-    {
-        if ($this->initialSupportConfig !== null) {
-            // Always restore the original Support configuration captured in setUp().
-            $configResetResult = Request::makeRequest(
-                'admin/extension/config_save',
-                array_merge(['ext' => 'mod_support'], $this->initialSupportConfig)
-            );
-            if (!$configResetResult->wasSuccessful()) {
-                // Fail explicitly if configuration restoration fails to avoid test pollution.
-                $this->fail(
-                    method_exists($configResetResult, 'generatePHPUnitMessage')
-                        ? $configResetResult->generatePHPUnitMessage()
-                        : 'Failed to restore Support configuration in tearDown().'
-                );
-            }
-            $this->initialSupportConfig = null;
-        }
+    $configResetResult = Request::makeRequest(
+        'admin/extension/config_save',
+        array_merge(['ext' => 'mod_support'], $initialSupportConfig)
+    );
+    expect($configResetResult->wasSuccessful())->toBeTrue();
+    $initialSupportConfig = null;
+});
 
-        parent::tearDown();
-    }
+test('creates ticket for guest', function (): void {
+    $expectedName = 'Name';
+    $expectedEmail = 'email@example.com';
+    $expectedSubject = 'Subject';
+    $expectedMessage = 'message';
 
-    public function testTicketCreateForGuest(): void
-    {
-        $expectedName = 'Name';
-        $expectedEmail = 'email@example.com';
-        $expectedSubject = 'Subject';
-        $expectedMessage = 'message';
+    $result = Request::makeRequest('guest/support/ticket_create', [
+        'name' => $expectedName,
+        'email' => $expectedEmail,
+        'subject' => $expectedSubject,
+        'message' => $expectedMessage,
+    ]);
 
-        $result = Request::makeRequest('guest/support/ticket_create', [
-            'name' => $expectedName,
-            'email' => $expectedEmail,
-            'subject' => $expectedSubject,
-            'message' => $expectedMessage,
-        ]);
+    expect($result->wasSuccessful())->toBeTrue();
+    $ticketId = $result->getResult();
+    expect($ticketId)->toBeString()
+        ->and(strlen($ticketId))->toBeGreaterThanOrEqual(SUPPORT_MIN_TICKET_ID_LENGTH)
+        ->and(strlen($ticketId))->toBeLessThanOrEqual(SUPPORT_MAX_TICKET_ID_LENGTH)
+        ->and($ticketId)->toMatch('/^[A-Za-z0-9_-]+$/');
 
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $ticketId = $result->getResult();
-        $this->assertIsString($ticketId);
-        $this->assertGreaterThanOrEqual(self::MIN_TICKET_ID_LENGTH, strlen($ticketId));
-        $this->assertLessThanOrEqual(self::MAX_TICKET_ID_LENGTH, strlen($ticketId));
-        $this->assertMatchesRegularExpression(
-            '/^[A-Za-z0-9_-]+$/',
-            $ticketId,
-            'Ticket ID should contain only alphanumeric characters, underscores, or hyphens.'
-        );
+    $ticketGetResult = Request::makeRequest('guest/support/ticket_get', ['hash' => $ticketId]);
+    expect($ticketGetResult->wasSuccessful())->toBeTrue();
 
-        $ticketGetResult = Request::makeRequest('guest/support/ticket_get', ['hash' => $ticketId]);
-        $this->assertTrue($ticketGetResult->wasSuccessful(), $ticketGetResult->generatePHPUnitMessage());
+    $ticketData = $ticketGetResult->getResult();
+    expect($ticketData)->toBeArray()
+        ->toHaveKey('author_name')
+        ->toHaveKey('subject')
+        ->toHaveKey('messages')
+        ->and($ticketData['author_name'])->toBe($expectedName)
+        ->and($ticketData['subject'])->toBe($expectedSubject)
+        ->and($ticketData['messages'])->toBeArray()->not->toBeEmpty()
+        ->and($ticketData['messages'][0]['content'])->toBe($expectedMessage);
+});
 
-        $ticketData = $ticketGetResult->getResult();
-        $this->assertIsArray($ticketData);
-        $this->assertArrayHasKey('author_name', $ticketData);
-        $this->assertArrayHasKey('subject', $ticketData);
-        $this->assertArrayHasKey('messages', $ticketData);
+test('rejects guest ticket creation when public tickets are disabled', function (): void {
+    $configResult = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_support', 'disable_public_tickets' => true]);
+    expect($configResult->wasSuccessful())->toBeTrue();
 
-        $this->assertSame($expectedName, $ticketData['author_name']);
-        $this->assertSame($expectedSubject, $ticketData['subject']);
-        $this->assertIsArray($ticketData['messages']);
-        $this->assertNotEmpty($ticketData['messages']);
-        $this->assertSame($expectedMessage, $ticketData['messages'][0]['content']);
-    }
+    $configGetResult = Request::makeRequest('admin/extension/config_get', ['ext' => 'mod_support']);
+    expect($configGetResult->wasSuccessful())->toBeTrue();
 
-    public function testTicketCreateForGuestDisabled(): void
-    {
-        // Disable public tickets
-        $configResult = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_support', 'disable_public_tickets' => true]);
-        $this->assertTrue($configResult->wasSuccessful(), $configResult->generatePHPUnitMessage());
+    $configData = $configGetResult->getResult();
+    expect($configData)->toBeArray()
+        ->toHaveKey('disable_public_tickets')
+        ->and((bool) $configData['disable_public_tickets'])->toBeTrue();
 
-        // Verify that the configuration change to disable public tickets was actually applied.
-        $configGetResult = Request::makeRequest('admin/extension/config_get', ['ext' => 'mod_support']);
-        $this->assertTrue($configGetResult->wasSuccessful(), $configGetResult->generatePHPUnitMessage());
-        $configData = $configGetResult->getResult();
-        $this->assertIsArray($configData);
-        $this->assertArrayHasKey('disable_public_tickets', $configData);
-        $this->assertTrue((bool) $configData['disable_public_tickets']);
+    $result = Request::makeRequest('guest/support/ticket_create', [
+        'name' => 'Name',
+        'email' => 'email2@example.com',
+        'subject' => 'Subject',
+        'message' => 'message',
+    ]);
 
-        // Now ensure that guest ticket creation fails when public tickets are disabled
-        $result = Request::makeRequest('guest/support/ticket_create', [
-            'name' => 'Name',
-            'email' => 'email2@example.com',
-            'subject' => 'Subject',
-            'message' => 'message',
-        ]);
+    expect($result->wasSuccessful())->toBeFalse();
+    $errorMessage = $result->getErrorMessage();
+    expect($errorMessage)->toBeString()
+        ->toContain("aren't accepting support tickets")
+        ->toContain('unregistered users');
+});
 
-        $this->assertFalse($result->wasSuccessful());
-        $errorMessage = $result->getErrorMessage();
-        $this->assertIsString($errorMessage);
-        $this->assertStringContainsString("aren't accepting support tickets", $errorMessage);
-        $this->assertStringContainsString('unregistered users', $errorMessage);
-    }
+test('public tickets enabled reflects configuration', function (): void {
+    $enabledResult = Request::makeRequest('guest/support/public_tickets_enabled');
+    expect($enabledResult->wasSuccessful())->toBeTrue()
+        ->and($enabledResult->getResult())->toBeTrue();
 
-    public function testPublicTicketsEnabledReflectsConfiguration(): void
-    {
-        $enabledResult = Request::makeRequest('guest/support/public_tickets_enabled');
-        $this->assertTrue($enabledResult->wasSuccessful(), $enabledResult->generatePHPUnitMessage());
-        $this->assertTrue($enabledResult->getResult());
+    $configResult = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_support', 'disable_public_tickets' => true]);
+    expect($configResult->wasSuccessful())->toBeTrue();
 
-        $configResult = Request::makeRequest('admin/extension/config_save', ['ext' => 'mod_support', 'disable_public_tickets' => true]);
-        $this->assertTrue($configResult->wasSuccessful(), $configResult->generatePHPUnitMessage());
+    $disabledResult = Request::makeRequest('guest/support/public_tickets_enabled');
+    expect($disabledResult->wasSuccessful())->toBeTrue()
+        ->and($disabledResult->getResult())->toBeFalse();
+});
 
-        $disabledResult = Request::makeRequest('guest/support/public_tickets_enabled');
-        $this->assertTrue($disabledResult->wasSuccessful(), $disabledResult->generatePHPUnitMessage());
-        $this->assertFalse($disabledResult->getResult());
-    }
+test('rejects guest ticket creation without name', function (): void {
+    $result = Request::makeRequest('guest/support/ticket_create', [
+        'email' => 'email@example.com',
+        'subject' => 'Subject',
+        'message' => 'message',
+    ]);
 
-    public function testTicketCreateForGuestMissingName(): void
-    {
-        $result = Request::makeRequest('guest/support/ticket_create', [
-            // 'name' is intentionally omitted
-            'email' => 'email@example.com',
-            'subject' => 'Subject',
-            'message' => 'message',
-        ]);
+    expect($result->wasSuccessful())->toBeFalse()
+        ->and($result->getErrorMessage())->toBe('Please enter your name');
+});
 
-        $this->assertFalse($result->wasSuccessful());
-        $this->assertSame('Please enter your name', $result->getErrorMessage());
-    }
+test('rejects guest ticket creation without email', function (): void {
+    $result = Request::makeRequest('guest/support/ticket_create', [
+        'name' => 'Name',
+        'subject' => 'Subject',
+        'message' => 'message',
+    ]);
 
-    public function testTicketCreateForGuestMissingEmail(): void
-    {
-        $result = Request::makeRequest('guest/support/ticket_create', [
-            'name' => 'Name',
-            // 'email' is intentionally omitted
-            'subject' => 'Subject',
-            'message' => 'message',
-        ]);
+    expect($result->wasSuccessful())->toBeFalse()
+        ->and($result->getErrorMessage())->toBe('Please enter your email address');
+});
 
-        $this->assertFalse($result->wasSuccessful());
-        $this->assertSame('Please enter your email address', $result->getErrorMessage());
-    }
+test('rejects guest ticket creation with invalid email', function (): void {
+    $result = Request::makeRequest('guest/support/ticket_create', [
+        'name' => 'Name',
+        'email' => 'not-an-email',
+        'subject' => 'Subject',
+        'message' => 'message',
+    ]);
 
-    public function testTicketCreateForGuestInvalidEmail(): void
-    {
-        $result = Request::makeRequest('guest/support/ticket_create', [
-            'name' => 'Name',
-            'email' => 'not-an-email',
-            'subject' => 'Subject',
-            'message' => 'message',
-        ]);
+    expect($result->wasSuccessful())->toBeFalse()
+        ->and($result->getErrorMessage())->toBe('Email address is invalid');
+});
 
-        $this->assertFalse($result->wasSuccessful());
-        $this->assertSame('Email address is invalid', $result->getErrorMessage());
-    }
+test('rejects guest ticket creation with empty subject', function (): void {
+    $result = Request::makeRequest('guest/support/ticket_create', [
+        'name' => 'Name',
+        'email' => 'email@example.com',
+        'subject' => '',
+        'message' => 'message',
+    ]);
 
-    public function testTicketCreateForGuestEmptySubject(): void
-    {
-        $result = Request::makeRequest('guest/support/ticket_create', [
-            'name' => 'Name',
-            'email' => 'email@example.com',
-            'subject' => '',
-            'message' => 'message',
-        ]);
+    expect($result->wasSuccessful())->toBeFalse()
+        ->and($result->getErrorMessage())->toBe('Please enter the subject');
+});
 
-        $this->assertFalse($result->wasSuccessful());
-        $this->assertSame('Please enter the subject', $result->getErrorMessage());
-    }
+test('rejects guest ticket creation with empty message', function (): void {
+    $result = Request::makeRequest('guest/support/ticket_create', [
+        'name' => 'Name',
+        'email' => 'email@example.com',
+        'subject' => 'Subject',
+        'message' => '',
+    ]);
 
-    public function testTicketCreateForGuestEmptyMessage(): void
-    {
-        $result = Request::makeRequest('guest/support/ticket_create', [
-            'name' => 'Name',
-            'email' => 'email@example.com',
-            'subject' => 'Subject',
-            'message' => '',
-        ]);
-
-        $this->assertFalse($result->wasSuccessful());
-        $this->assertSame('Please enter your message', $result->getErrorMessage());
-    }
-}
+    expect($result->wasSuccessful())->toBeFalse()
+        ->and($result->getErrorMessage())->toBe('Please enter your message');
+});

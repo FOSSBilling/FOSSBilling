@@ -510,7 +510,7 @@ test('updates a category', function (): void {
 
     $service->setDi($di);
 
-    $result = $service->updateCategory($model, 'title', 'decription', 'http://urltoimg.com/img.jpg');
+    $result = $service->updateCategory($model, 'title', 'description', 'http://urltoimg.com/img.jpg');
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });

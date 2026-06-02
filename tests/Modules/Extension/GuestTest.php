@@ -2,38 +2,32 @@
 
 declare(strict_types=1);
 
-namespace ExtensionTests;
-
 use APIHelper\Request;
-use PHPUnit\Framework\TestCase;
 
-final class GuestTest extends TestCase
-{
-    public function testSettings(): void
-    {
-        $result = Request::makeRequest('guest/extension/settings', ['ext' => 'index']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertIsArray($result->getResult());
-    }
+test('gets extension settings', function (): void {
+    $result = Request::makeRequest('guest/extension/settings', ['ext' => 'index']);
 
-    public function testSettingsMissingExt(): void
-    {
-        $result = Request::makeRequest('guest/extension/settings', ['ext' => '']);
-        $this->assertFalse($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertEquals('Parameter ext is missing', $result->getErrorMessage());
-    }
+    expect($result->wasSuccessful())->toBeTrue()
+        ->and($result->getResult())->toBeArray();
+});
 
-    public function testExtensionIsActive(): void
-    {
-        $result = Request::makeRequest('guest/extension/is_on', ['mod' => 'index']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertTrue($result->getResult());
-    }
+test('returns error when extension settings ext is missing', function (): void {
+    $result = Request::makeRequest('guest/extension/settings', ['ext' => '']);
 
-    public function testExtensionIsNotActive(): void
-    {
-        $result = Request::makeRequest('guest/extension/is_on', ['mod' => 'serviceapikey']);
-        $this->assertTrue($result->wasSuccessful(), $result->generatePHPUnitMessage());
-        $this->assertFalse($result->getResult());
-    }
-}
+    expect($result->wasSuccessful())->toBeFalse()
+        ->and($result->getErrorMessage())->toBe('Parameter ext is missing');
+});
+
+test('reports active extension as enabled', function (): void {
+    $result = Request::makeRequest('guest/extension/is_on', ['mod' => 'index']);
+
+    expect($result->wasSuccessful())->toBeTrue()
+        ->and($result->getResult())->toBeTrue();
+});
+
+test('reports inactive extension as disabled', function (): void {
+    $result = Request::makeRequest('guest/extension/is_on', ['mod' => 'serviceapikey']);
+
+    expect($result->wasSuccessful())->toBeTrue()
+        ->and($result->getResult())->toBeFalse();
+});

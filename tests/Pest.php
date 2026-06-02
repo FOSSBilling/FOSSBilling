@@ -168,6 +168,18 @@ if ($appUrl && $testApiKey) {
         ->in('E2E');
 }
 
+uses()
+    ->beforeEach(function (): void {
+        if (!getenv('APP_URL') || !getenv('TEST_API_KEY')) {
+            $this->markTestSkipped('API tests require APP_URL and TEST_API_KEY.');
+        }
+
+        if (class_exists(APIHelper\Request::class)) {
+            APIHelper\Request::resetCookies();
+        }
+    })
+    ->in('Modules');
+
 /*
 |--------------------------------------------------------------------------
 | Expectations
