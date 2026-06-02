@@ -438,7 +438,7 @@ dataset('sendTemplateExistsStaffProvider', fn(): array => [
     ],
 ]);
 
-test('sendTemplate handles to_staff and to_client options', function (array $data, string $clientGetExpects, string $staffgetListExpects): void {
+test('sendTemplate handles to_staff and to_client options', function (array $data, string $clientGetExpects, string $staffGetListExpects): void {
     $service = new Box\Mod\Email\Service();
 
     $di = container();
@@ -469,7 +469,7 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
         ->andReturn('value');
 
     $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
-    if ($staffgetListExpects === 'atLeastOnce') {
+    if ($staffGetListExpects === 'atLeastOnce') {
         $staffServiceMock->shouldReceive('getList')
             ->atLeast()->once()
             ->andReturn([
