@@ -19,7 +19,7 @@ test('can create and delete client', function (): void {
     $clientId = clientCreateClient();
 
     $result = Tests\Helpers\ApiClient::request('admin/client/delete', ['id' => $clientId]);
-    expect($result->wasSuccessful())->toBeTrue($result);
+    expect($result->wasSuccessful())->toBeTrue();
     expect($result->getResult())->toBeTrue();
 });
 
@@ -73,7 +73,7 @@ function clientCreateClient(): int
         'phone_cc' => 1,
         'phone' => '(216) 245-2368',
     ]);
-    expect($result->wasSuccessful())->toBeTrue($result);
+    expect($result->wasSuccessful())->toBeTrue();
     expect($result->getResult())->toBeInt();
 
     return (int) $result->getResult();

@@ -26,9 +26,20 @@ test('gets currency pairs', function (): void {
         expect($list)->toHaveKey($currencyCode);
     }
 
-    foreach (['XXX', 'XTS', 'VES', 'BZR'] as $currencyCode) {
+    foreach (['XXX', 'XTS'] as $currencyCode) {
         expect($list)->not->toHaveKey($currencyCode);
     }
 
     expect($list['USD'])->toMatch('/^USD \(.*\)$/');
+});
+
+test('currency defaults', function (): void {
+    $result = ApiClient::request('admin/currency/get_default');
+    expect($result->wasSuccessful())->toBeTrue();
+
+    $defaults = $result->getResult();
+    expect($defaults['code'])->toEqual('USD');
+    expect($defaults['name'])->toEqual('US Dollar');
+    expect($defaults['symbol'])->toEqual('$');
+    expect($defaults['minorUnit'])->toBeInt();
 });

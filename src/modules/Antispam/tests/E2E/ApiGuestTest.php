@@ -17,10 +17,10 @@ if (!getenv('APP_URL') || !getenv('TEST_API_KEY')) {
 
 test('disposable email check', function (): void {
     $result = Tests\Helpers\ApiClient::request('admin/extension/activate', ['type' => 'mod', 'id' => 'antispam']);
-    expect($result->wasSuccessful())->toBeTrue($result);
+    expect($result->wasSuccessful())->toBeTrue();
 
     $result = Tests\Helpers\ApiClient::request('admin/extension/config_save', ['ext' => 'mod_antispam', 'check_temp_emails' => true]);
-    expect($result->wasSuccessful())->toBeTrue($result);
+    expect($result->wasSuccessful())->toBeTrue();
 
     $password = 'A1a' . bin2hex(random_bytes(6));
     $result = Tests\Helpers\ApiClient::request('guest/client/create', [
@@ -41,10 +41,10 @@ test('disposable email check', function (): void {
 
 test('stop forum spam', function (): void {
     $result = Tests\Helpers\ApiClient::request('admin/extension/activate', ['type' => 'mod', 'id' => 'antispam']);
-    expect($result->wasSuccessful())->toBeTrue($result);
+    expect($result->wasSuccessful())->toBeTrue();
 
     $result = Tests\Helpers\ApiClient::request('admin/extension/config_save', ['ext' => 'mod_antispam', 'sfs' => true]);
-    expect($result->wasSuccessful())->toBeTrue($result);
+    expect($result->wasSuccessful())->toBeTrue();
 
     $password = 'A1a' . bin2hex(random_bytes(6));
     $result = Tests\Helpers\ApiClient::request('guest/client/create', [
@@ -54,12 +54,12 @@ test('stop forum spam', function (): void {
         'password_confirm' => $password,
     ]);
 
-    expect($result->wasSuccessful())->toBeTrue($result);
+    expect($result->wasSuccessful())->toBeTrue();
     expect($result->getResult())->toBeNumeric();
 
     $id = intval($result->getResult());
 
     $result = Tests\Helpers\ApiClient::request('admin/client/delete', ['id' => $id]);
-    expect($result->wasSuccessful())->toBeTrue($result);
+    expect($result->wasSuccessful())->toBeTrue();
     expect($result->getResult())->toBeTrue();
 });
