@@ -18,16 +18,16 @@ test('is sld valid', function (string $domain, bool $expected): void {
     expect($validate->isSldValid($domain))->toEqual($expected);
 })->with('domainProvider');
 
-dataset('domainProvider', fn(): array => domainProvider());
+dataset('domainProvider', fn (): array => domainProvider());
 
 test('is email valid using builtin filter', function (string $email, bool $expected): void {
     // Validate uses PHP's built-in filter_var for email validation
     expect(filter_var($email, FILTER_VALIDATE_EMAIL) !== false)->toEqual($expected);
 })->with('emailProvider');
 
-dataset('emailProvider', fn(): array => emailProvider());
+dataset('emailProvider', fn (): array => emailProvider());
 
-dataset('requiredParamsProvider', fn() => [
+dataset('requiredParamsProvider', fn (): array => [
     [
         ['id' => 1, 'key' => 'value'],
         ['id' => 'ID is required', 'key' => 'Key is required'],

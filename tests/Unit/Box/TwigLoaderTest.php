@@ -26,6 +26,6 @@ test('templates', function (): void {
 test('exception', function (): void {
     $loader = new TwigLoader(AppArea::CLIENT, PATH_THEMES . DIRECTORY_SEPARATOR . 'huraga');
 
-    expect(fn (): \Twig\Source => $loader->getSourceContext('mod_non_existing_settings.html.twig'))
+    expect(fn (): Twig\Source => $loader->getSourceContext('mod_non_existing_settings.html.twig'))
         ->toThrow(LoaderError::class);
 });

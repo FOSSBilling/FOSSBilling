@@ -169,11 +169,9 @@ function container(): Container
         $emailTemplateRepository->shouldReceive('getSearchQueryBuilder')->byDefault()->andReturn($templateQueryBuilder);
 
         $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-        $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static function (string $class) use ($extensionMetaRepository, $emailTemplateRepository): object {
-            return match ($class) {
-                \Box\Mod\Email\Entity\EmailTemplate::class => $emailTemplateRepository,
-                default => $extensionMetaRepository,
-            };
+        $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {
+            \Box\Mod\Email\Entity\EmailTemplate::class => $emailTemplateRepository,
+            default => $extensionMetaRepository,
         });
 
         return $em;

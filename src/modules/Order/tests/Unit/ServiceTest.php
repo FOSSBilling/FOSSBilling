@@ -1102,7 +1102,7 @@ test('converts order to api array', function (): void {
     $modelClient->loadBean(new Tests\Helpers\DummyBean());
     $dbMock->shouldReceive('load')
         ->atLeast()->once()
-        ->andReturnUsing(fn(...$args): Model_Product => match ($args[0]) {
+        ->andReturnUsing(fn (...$args): Model_Product => match ($args[0]) {
             'Product' => $modelProduct,
         });
 
@@ -1245,12 +1245,12 @@ test('throws exception when creating order with missing currency', function (): 
     $modelProduct = new Model_Product();
     $modelProduct->loadBean(new Tests\Helpers\DummyBean());
 
-    $currencyRepositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
     $currencyRepositoryMock->shouldReceive('findDefault')
         ->atLeast()->once()
         ->andReturn(null);
 
-    $currencyServiceMock = Mockery::mock(\Box\Mod\Currency\Service::class);
+    $currencyServiceMock = Mockery::mock(Box\Mod\Currency\Service::class);
     $currencyServiceMock->shouldReceive('getCurrencyRepository')
         ->atLeast()->once()
         ->andReturn($currencyRepositoryMock);
@@ -1278,19 +1278,19 @@ test('throws exception when creating order for out of stock product', function (
     $modelProduct->loadBean(new Tests\Helpers\DummyBean());
     $modelProduct->id = 1;
 
-    $currencyModel = Mockery::mock(\Box\Mod\Currency\Entity\Currency::class);
+    $currencyModel = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
 
-    $currencyRepositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
     $currencyRepositoryMock->shouldReceive('findOneByCode')
         ->atLeast()->once()
         ->andReturn($currencyModel);
 
-    $currencyServiceMock = Mockery::mock(\Box\Mod\Currency\Service::class);
+    $currencyServiceMock = Mockery::mock(Box\Mod\Currency\Service::class);
     $currencyServiceMock->shouldReceive('getCurrencyRepository')
         ->atLeast()->once()
         ->andReturn($currencyRepositoryMock);
 
-    $cartServiceMock = Mockery::mock(\Box\Mod\Cart\Service::class);
+    $cartServiceMock = Mockery::mock(Box\Mod\Cart\Service::class);
     $cartServiceMock->shouldReceive('isStockAvailable')
         ->with($modelProduct, 1)
         ->atLeast()->once()
@@ -1328,19 +1328,19 @@ test('throws exception when creating addon order with missing group id', functio
     $modelProduct->id = 1;
     $modelProduct->is_addon = 1;
 
-    $currencyModel = Mockery::mock(\Box\Mod\Currency\Entity\Currency::class);
+    $currencyModel = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
 
-    $currencyRepositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
     $currencyRepositoryMock->shouldReceive('findOneByCode')
         ->atLeast()->once()
         ->andReturn($currencyModel);
 
-    $currencyServiceMock = Mockery::mock(\Box\Mod\Currency\Service::class);
+    $currencyServiceMock = Mockery::mock(Box\Mod\Currency\Service::class);
     $currencyServiceMock->shouldReceive('getCurrencyRepository')
         ->atLeast()->once()
         ->andReturn($currencyRepositoryMock);
 
-    $cartServiceMock = Mockery::mock(\Box\Mod\Cart\Service::class);
+    $cartServiceMock = Mockery::mock(Box\Mod\Cart\Service::class);
     $cartServiceMock->shouldReceive('isStockAvailable')
         ->with($modelProduct, 1)
         ->atLeast()->once()
@@ -1377,19 +1377,19 @@ test('throws exception when creating order with parent not found', function (): 
     $modelProduct->loadBean(new Tests\Helpers\DummyBean());
     $modelProduct->id = 1;
 
-    $currencyModel = Mockery::mock(\Box\Mod\Currency\Entity\Currency::class);
+    $currencyModel = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
 
-    $currencyRepositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
     $currencyRepositoryMock->shouldReceive('findOneByCode')
         ->atLeast()->once()
         ->andReturn($currencyModel);
 
-    $currencyServiceMock = Mockery::mock(\Box\Mod\Currency\Service::class);
+    $currencyServiceMock = Mockery::mock(Box\Mod\Currency\Service::class);
     $currencyServiceMock->shouldReceive('getCurrencyRepository')
         ->atLeast()->once()
         ->andReturn($currencyRepositoryMock);
 
-    $cartServiceMock = Mockery::mock(\Box\Mod\Cart\Service::class);
+    $cartServiceMock = Mockery::mock(Box\Mod\Cart\Service::class);
     $cartServiceMock->shouldReceive('isStockAvailable')
         ->with($modelProduct, 1)
         ->atLeast()->once()
@@ -1432,20 +1432,20 @@ test('creates order', function (): void {
     $modelProduct->id = 1;
     $modelProduct->type = 'custom';
 
-    $currencyModel = Mockery::mock(\Box\Mod\Currency\Entity\Currency::class);
+    $currencyModel = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
     $currencyModel->shouldReceive('getCode')
         ->atLeast()->once()
         ->andReturn('USD');
-    $currencyRepositoryMock = Mockery::mock(\Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
     $currencyRepositoryMock->shouldReceive('findOneByCode')
         ->atLeast()->once()
         ->andReturn($currencyModel);
-    $currencyServiceMock = Mockery::mock(\Box\Mod\Currency\Service::class);
+    $currencyServiceMock = Mockery::mock(Box\Mod\Currency\Service::class);
     $currencyServiceMock->shouldReceive('getCurrencyRepository')
         ->atLeast()->once()
         ->andReturn($currencyRepositoryMock);
 
-    $cartServiceMock = Mockery::mock(\Box\Mod\Cart\Service::class);
+    $cartServiceMock = Mockery::mock(Box\Mod\Cart\Service::class);
     $cartServiceMock->shouldReceive('isStockAvailable')
         ->with($modelProduct, 1)
         ->atLeast()->once()

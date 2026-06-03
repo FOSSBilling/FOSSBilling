@@ -34,7 +34,7 @@ test('get pairs', function (): void {
 
     $guestApi->setService($service);
 
-    $result = $guestApi->get_pairs([]);
+    $result = $guestApi->get_pairs();
     expect($willReturn)->toEqual($result);
     expect($result)->toBeArray();
     expect($result)->toHaveKey('EUR');

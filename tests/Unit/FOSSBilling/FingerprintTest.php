@@ -12,7 +12,6 @@ function createFingerprint(array $properties): FOSSBilling\Fingerprint
 
     $reflection = new ReflectionClass(FOSSBilling\Fingerprint::class);
     $prop = $reflection->getProperty('fingerprintProperties');
-    $prop->setAccessible(true);
     $prop->setValue($stub, $properties);
 
     return $stub;

@@ -76,8 +76,8 @@ class TestableClient extends Client
     public ?Exception $renderedException = null;
     public ?Response $sentResponse = null;
 
-    #[\Override]
-    public function renderJson($data = null, ?\Exception $e = null): Response
+    #[Override]
+    public function renderJson($data = null, ?Exception $e = null): Response
     {
         $this->renderedData = $data;
         $this->renderedException = $e;
@@ -85,7 +85,7 @@ class TestableClient extends Client
         return new JsonResponse(['result' => $data, 'error' => $e?->getMessage()]);
     }
 
-    #[\Override]
+    #[Override]
     protected function sendResponse(Response $response): Response
     {
         $this->sentResponse = $response;
@@ -93,7 +93,7 @@ class TestableClient extends Client
         return $response;
     }
 
-    #[\Override]
+    #[Override]
     protected function isRoleLoggedIn($role): bool
     {
         if (!$this->hasValidSession) {
@@ -103,7 +103,7 @@ class TestableClient extends Client
         return true;
     }
 
-    #[\Override]
+    #[Override]
     protected function _tryTokenLogin(string $routeRole): void
     {
         $this->calls[] = 'token';
@@ -113,13 +113,13 @@ class TestableClient extends Client
         }
     }
 
-    #[\Override]
+    #[Override]
     protected function shouldUseTokenLogin(string $routeRole): bool
     {
         return $this->shouldUseTokenLogin;
     }
 
-    #[\Override]
+    #[Override]
     public function _checkCSRFToken(): bool
     {
         $this->calls[] = 'csrf';

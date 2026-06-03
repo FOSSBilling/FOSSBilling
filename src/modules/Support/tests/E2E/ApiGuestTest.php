@@ -59,8 +59,8 @@ test('creates ticket for guest', function (): void {
     expect($result->wasSuccessful())->toBeTrue();
     $ticketId = $result->getResult();
     expect($ticketId)->toBeString()
-        ->and(strlen($ticketId))->toBeGreaterThanOrEqual(SUPPORT_MIN_TICKET_ID_LENGTH)
-        ->and(strlen($ticketId))->toBeLessThanOrEqual(SUPPORT_MAX_TICKET_ID_LENGTH)
+        ->and(strlen((string) $ticketId))->toBeGreaterThanOrEqual(SUPPORT_MIN_TICKET_ID_LENGTH)
+        ->and(strlen((string) $ticketId))->toBeLessThanOrEqual(SUPPORT_MAX_TICKET_ID_LENGTH)
         ->and($ticketId)->toMatch('/^[A-Za-z0-9_-]+$/');
 
     $ticketGetResult = ApiClient::request('guest/support/ticket_get', ['hash' => $ticketId]);

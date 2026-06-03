@@ -86,7 +86,7 @@ test('consume or throw raises rate limit exception', function (): void {
 test('unknown policy throws exception', function (): void {
     $limiter = createRateLimiter(requestIp: '1.1.1.1');
 
-    expect(fn () => $limiter->consume('unknown_policy', 'subject'))
+    expect(fn (): RateLimitResult => $limiter->consume('unknown_policy', 'subject'))
         ->toThrow(FOSSBilling\Exception::class, 'Rate limiter policy unknown_policy is not defined or invalid');
 });
 

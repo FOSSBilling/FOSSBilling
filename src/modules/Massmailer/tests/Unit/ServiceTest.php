@@ -56,7 +56,7 @@ test('normalize filter rejects unexpected keys in strict mode', function (): voi
     $service = new Box\Mod\Massmailer\Service();
     $service->setDi(createMassmailerDi());
 
-    expect(fn () => $service->normalizeFilter(['unexpected' => ['anything']], true))
+    expect(fn (): array => $service->normalizeFilter(['unexpected' => ['anything']], true))
         ->toThrow(InformationException::class, 'Mass mail filter contains invalid values for "unexpected"');
 });
 
@@ -68,7 +68,7 @@ test('normalize filter rejects unknown IDs in strict mode', function (): void {
     $service = new Box\Mod\Massmailer\Service();
     $service->setDi(createMassmailerDi($dbal));
 
-    expect(fn () => $service->normalizeFilter(['client_groups' => ['2', '1']], true))
+    expect(fn (): array => $service->normalizeFilter(['client_groups' => ['2', '1']], true))
         ->toThrow(InformationException::class, 'Mass mail filter contains invalid values for "client_groups"');
 });
 
@@ -97,6 +97,6 @@ test('get message receivers rejects invalid stored filter', function (): void {
     $service = new Box\Mod\Massmailer\Service();
     $service->setDi(createMassmailerDi());
 
-    expect(fn () => $service->getMessageReceivers($model))
+    expect(fn (): array => $service->getMessageReceivers($model))
         ->toThrow(InformationException::class, 'Mass mail filter contains invalid values for "client_status"');
 });

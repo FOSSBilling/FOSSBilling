@@ -98,7 +98,7 @@ test('getBaseCurrencyRate throws exception when currency not found', function ()
         ->toThrow(FOSSBilling\Exception::class, 'Currency not found');
 });
 
-dataset('toBaseCurrencyProvider', fn() => [
+dataset('toBaseCurrencyProvider', fn (): array => [
     ['EUR', 'USD', 100, 0.73, 73],
     ['USD', 'EUR', 100, 1.37, 137],
     ['EUR', 'EUR', 100, 0.5, 100],
@@ -135,7 +135,7 @@ test('toBaseCurrency converts amount to base currency', function (string $defaul
     expect(round($result, 2))->toEqual($expected);
 })->with('toBaseCurrencyProvider');
 
-dataset('getCurrencyByClientIdProvider', fn() => [
+dataset('getCurrencyByClientIdProvider', fn (): array => [
     ['USD', 'atLeastOnce', 'never'],
     [null, 'never', 'atLeastOnce'],
 ]);
@@ -181,7 +181,7 @@ test('getCurrencyByClientId returns currency for client', function (?string $cur
     expect($result)->toBeInstanceOf(Box\Mod\Currency\Entity\Currency::class);
 })->with('getCurrencyByClientIdProvider');
 
-dataset('getRateByCodeProvider', fn() => [
+dataset('getRateByCodeProvider', fn (): array => [
     ['EUR', 0.6, 0.6],
     ['GBP', null, null],
 ]);
@@ -207,7 +207,7 @@ test('getRateByCode returns rate for currency code', function (string $code, ?fl
     expect($result)->toBe($expected);
 })->with('getRateByCodeProvider');
 
-dataset('setAsDefaultProvider', fn() => [
+dataset('setAsDefaultProvider', fn (): array => [
     ['default_currency', 'atLeastOnce'],
     ['already_default', 'never'],
 ]);

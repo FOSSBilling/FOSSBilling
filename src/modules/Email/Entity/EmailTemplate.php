@@ -19,11 +19,6 @@ use FOSSBilling\Interfaces\ApiArrayInterface;
 #[ORM\Table(name: 'email_template')]
 class EmailTemplate implements ApiArrayInterface
 {
-    #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column(type: Types::INTEGER)]
-    private ?int $id = null;
-
     #[ORM\Column(type: Types::STRING, length: 30, nullable: true)]
     private ?string $category = null;
 
@@ -51,9 +46,11 @@ class EmailTemplate implements ApiArrayInterface
     public function __construct(
         #[ORM\Column(name: 'action_code', type: Types::STRING, length: 255, unique: true)]
         private string $actionCode,
-        ?int $id = null,
+        #[ORM\Id]
+        #[ORM\GeneratedValue]
+        #[ORM\Column(type: Types::INTEGER)]
+        private ?int $id = null,
     ) {
-        $this->id = $id;
     }
 
     public function toApiArray(): array

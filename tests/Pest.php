@@ -93,7 +93,6 @@ uses(MockeryPHPUnitIntegration::class)
     })
 ->in('Unit');
 
-
 // Configure E2E tests - requires live instance with API access
 // Run with: ./vendor/bin/pest --testsuite=E2E
 // Requires APP_URL and TEST_API_KEY environment variables

@@ -65,7 +65,7 @@ test('di returns dependency injection container', function (): void {
     expect($result)->toBe($di);
 });
 
-dataset('getSearchQueryProvider', fn(): array => [
+dataset('getSearchQueryProvider', fn (): array => [
     [
         [],
         'SELECT * FROM activity_client_email ORDER BY id DESC',
@@ -411,7 +411,7 @@ test('sendTemplate sends email when template exists', function (): void {
     expect($result)->toBeTrue();
 });
 
-dataset('sendTemplateExistsStaffProvider', fn(): array => [
+dataset('sendTemplateExistsStaffProvider', fn (): array => [
     [
         [
             'code' => 'mod_email_test',
@@ -454,7 +454,7 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
         ->andReturn(null);
     $db->shouldReceive('dispense')
         ->atLeast()->once()
-        ->andReturnUsing(fn($type) => $type === 'EmailTemplate' ? $emailTemplate : $queueModel);
+        ->andReturnUsing(fn ($type): EmailTemplate|\Model_ModEmailQueue => $type === 'EmailTemplate' ? $emailTemplate : $queueModel);
     $db->shouldReceive('store')
         ->atLeast()->once()
         ->andReturn(1);
@@ -678,7 +678,7 @@ test('templateToApiArray returns deep array with vars', function (): void {
     expect($result)->toBe($expected);
 });
 
-dataset('template_updateProvider', fn(): array => [
+dataset('template_updateProvider', fn (): array => [
     [
         [
             'id' => 5,
@@ -804,7 +804,7 @@ test('templateCreate creates new template', function (): void {
 
     $result = $service->templateCreate($data['action_code'], $data['subject'], $data['content'], 1, $data['category']);
 
-    expect($result)->toBeInstanceOf(Box\Mod\Email\Entity\EmailTemplate::class);
+    expect($result)->toBeInstanceOf(EmailTemplate::class);
     expect($result->getActionCode())->toBe($data['action_code']);
 });
 

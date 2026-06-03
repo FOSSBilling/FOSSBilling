@@ -93,7 +93,7 @@ test('converts product to api array', function (): void {
     /** @var Mockery\Expectation $expectation4 */
     $expectation4 = $dbMock->shouldReceive('load');
     $expectation4->atLeast()->once();
-    $expectation4->andReturnUsing(fn($type) => match ($type) {
+    $expectation4->andReturnUsing(fn ($type): Model_ProductPayment|\Model_ProductCategory => match ($type) {
         'ProductPayment' => $modelProductPayment,
         'ProductCategory' => $modelProductCategory,
     });
@@ -112,7 +112,7 @@ test('converts product to api array', function (): void {
 test('gets product types', function (): void {
     $service = new Service();
     $modArray = [
-        'service' . 'test',
+        'servicetest',
     ];
 
     $expectedArray = [
@@ -195,7 +195,7 @@ test('creates a product', function (): void {
     /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $dbMock->shouldReceive('dispense');
     $expectation2->atLeast()->once();
-    $expectation2->andReturnUsing(fn($type) => match ($type) {
+    $expectation2->andReturnUsing(fn ($type): Model_ProductPayment|\Model_Product => match ($type) {
         'ProductPayment' => $modelPayment,
         'Product' => $modelProduct,
     });
@@ -424,7 +424,7 @@ test('creates an addon', function (): void {
     /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $dbMock->shouldReceive('dispense');
     $expectation2->atLeast()->once();
-    $expectation2->andReturnUsing(fn($type) => match ($type) {
+    $expectation2->andReturnUsing(fn ($type): Model_ProductPayment|\Model_Product => match ($type) {
         'ProductPayment' => $modelPayment,
         'Product' => $modelProduct,
     });

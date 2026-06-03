@@ -72,7 +72,7 @@ test('update rejects invalid filter', function (): void {
     $api->setDi($di);
     $api->setService($service);
 
-    expect(fn () => $api->update([
+    expect(fn (): bool => $api->update([
         'id' => 1,
         'filter' => ['client_status' => ['active', 'not-valid']],
     ]))->toThrow(InformationException::class, 'Mass mail filter contains invalid values for "client_status"');
