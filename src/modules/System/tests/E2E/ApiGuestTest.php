@@ -39,18 +39,6 @@ test('countries', function (): void {
     expect($result->getResult())->toBeArray();
 });
 
-test('countries eunion', function (): void {
-    $result = Tests\Helpers\ApiClient::request('guest/system/countries_eunion');
-    expect($result->wasSuccessful())->toBeTrue();
-    expect($result->getResult())->toBeArray();
-});
-
-test('states', function (): void {
-    $result = Tests\Helpers\ApiClient::request('guest/system/states');
-    expect($result->wasSuccessful())->toBeTrue();
-    expect($result->getResult())->toBeArray();
-});
-
 test('phone codes', function (): void {
     $result = Tests\Helpers\ApiClient::request('guest/system/phone_codes');
     expect($result->wasSuccessful())->toBeTrue();

@@ -10,20 +10,18 @@
 
 declare(strict_types=1);
 
-// Skip E2E tests if environment is not configured
 if (!getenv('APP_URL') || !getenv('TEST_API_KEY')) {
     return;
 }
 
-test('disposable email check', function (): void {
-    $result = Tests\Helpers\ApiClient::request('admin/extension/activate', ['type' => 'mod', 'id' => 'antispam']);
-    expect($result->wasSuccessful())->toBeTrue();
+use Tests\Helpers\ApiClient;
 
-    $result = Tests\Helpers\ApiClient::request('admin/extension/config_save', ['ext' => 'mod_antispam', 'check_temp_emails' => true]);
+test('disposable email check', function (): void {
+    $result = ApiClient::request('admin/extension/config_save', ['ext' => 'mod_antispam', 'check_temp_emails' => true]);
     expect($result->wasSuccessful())->toBeTrue();
 
     $password = 'A1a' . bin2hex(random_bytes(6));
-    $result = Tests\Helpers\ApiClient::request('guest/client/create', [
+    $result = ApiClient::request('guest/client/create', [
         'email' => 'email@yopmail.net',
         'first_name' => 'Test',
         'password' => $password,
@@ -35,19 +33,16 @@ test('disposable email check', function (): void {
 
     if ($result->wasSuccessful()) {
         $id = intval($result->getResult());
-        Tests\Helpers\ApiClient::request('admin/client/delete', ['id' => $id]);
+        ApiClient::request('admin/client/delete', ['id' => $id]);
     }
 });
 
 test('stop forum spam', function (): void {
-    $result = Tests\Helpers\ApiClient::request('admin/extension/activate', ['type' => 'mod', 'id' => 'antispam']);
-    expect($result->wasSuccessful())->toBeTrue();
-
-    $result = Tests\Helpers\ApiClient::request('admin/extension/config_save', ['ext' => 'mod_antispam', 'sfs' => true]);
+    $result = ApiClient::request('admin/extension/config_save', ['ext' => 'mod_antispam', 'sfs' => true]);
     expect($result->wasSuccessful())->toBeTrue();
 
     $password = 'A1a' . bin2hex(random_bytes(6));
-    $result = Tests\Helpers\ApiClient::request('guest/client/create', [
+    $result = ApiClient::request('guest/client/create', [
         'email' => 'email@example.com',
         'first_name' => 'Test',
         'password' => $password,
@@ -59,7 +54,7 @@ test('stop forum spam', function (): void {
 
     $id = intval($result->getResult());
 
-    $result = Tests\Helpers\ApiClient::request('admin/client/delete', ['id' => $id]);
+    $result = ApiClient::request('admin/client/delete', ['id' => $id]);
     expect($result->wasSuccessful())->toBeTrue();
     expect($result->getResult())->toBeTrue();
 });

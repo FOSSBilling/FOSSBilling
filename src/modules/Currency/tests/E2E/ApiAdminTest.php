@@ -41,5 +41,6 @@ test('currency defaults', function (): void {
     expect($defaults['code'])->toEqual('USD');
     expect($defaults['name'])->toEqual('US Dollar');
     expect($defaults['symbol'])->toEqual('$');
-    expect($defaults['minorUnit'])->toBeInt();
+    expect($defaults)->toHaveKey('conversion_rate');
+    expect($defaults['default'])->toBeTrue();
 });
