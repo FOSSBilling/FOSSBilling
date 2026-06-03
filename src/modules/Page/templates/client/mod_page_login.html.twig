@@ -30,7 +30,7 @@
                     <form method="post" action="{{ 'client/login'|api_url(role: 'guest') }}" class="auth" {{ fb_api_form({redirect: redirect_uri|default('/')|url}) }}>
                         <div class="mb-3">
                             <label class="form-label" for="email">{{ 'Email'|trans }}</label>
-                            <input class="form-control" id="email" type="text" placeholder="{{ 'Enter your email address'|trans }}" name="email" value="{{ request.email }}" required="required" autofocus>
+                            <input class="form-control" id="email" type="email" placeholder="{{ 'Enter your email address'|trans }}" name="email" value="{{ request.email }}" required="required" autofocus>
                         </div>
                         <div class="mb-3">
                             <label class="form-label" for="password">{{ 'Password'|trans }}</label>
