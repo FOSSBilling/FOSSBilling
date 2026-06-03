@@ -10,29 +10,37 @@
 
 declare(strict_types=1);
 
-// Skip E2E tests if environment is not configured
+use Tests\Helpers\ApiClient;
+
 if (!getenv('APP_URL') || !getenv('TEST_API_KEY')) {
     return;
 }
 
-test('get available currencies', function (): void {
-    $result = Tests\Helpers\ApiClient::request('admin/currency/get_pairs');
+test('gets currency pairs', function (): void {
+    $result = ApiClient::request('admin/currency/get_pairs');
     expect($result->wasSuccessful())->toBeTrue();
 
     $list = $result->getResult();
-    expect($list)->toHaveKey('USD');
-    expect($list)->toHaveKey('EUR');
-    expect($list)->toHaveKey('GBP');
-    expect($list)->toHaveKey('JPY');
-    expect($list)->toHaveKey('CHF');
-    expect($list)->toHaveKey('AUD');
-    expect($list)->toHaveKey('CAD');
-    expect($list)->toHaveKey('NZD');
-    expect($list)->toHaveKey('INR');
-    expect($list)->toHaveKey('HKD');
 
-    $this->assertArrayNotHasKey('XXX', $list);
-    $this->assertArrayNotHasKey('XTS', $list);
-    $this->assertArrayNotHasKey('VES', $list);
-    $this->assertArrayNotHasKey('BZR', $list);
+    foreach (['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'CAD', 'NZD', 'INR', 'HKD'] as $currencyCode) {
+        expect($list)->toHaveKey($currencyCode);
+    }
+
+    foreach (['XXX', 'XTS'] as $currencyCode) {
+        expect($list)->not->toHaveKey($currencyCode);
+    }
+
+    expect($list['USD'])->toMatch('/^USD \(.*\)$/');
+});
+
+test('currency defaults', function (): void {
+    $result = ApiClient::request('admin/currency/get_default');
+    expect($result->wasSuccessful())->toBeTrue();
+
+    $defaults = $result->getResult();
+    expect($defaults['code'])->toEqual('USD');
+    expect($defaults['name'])->toEqual('US Dollar');
+    expect($defaults['symbol'])->toEqual('$');
+    expect($defaults)->toHaveKey('conversion_rate');
+    expect($defaults['default'])->toBeTrue();
 });

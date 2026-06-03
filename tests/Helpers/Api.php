@@ -77,13 +77,11 @@ class ApiClient
         if ($output === false) {
             $error = curl_error($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
 
             throw new \RuntimeException('cURL request failed: ' . $error . ' (HTTP ' . $httpCode . ')');
         }
 
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
 
         return new ApiResponse($httpCode, $output);
     }

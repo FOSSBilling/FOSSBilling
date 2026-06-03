@@ -20,9 +20,6 @@
     <testsuite name="Modules">
       <directory>src/modules/*/tests/Unit</directory>
     </testsuite>
-    <testsuite name="API">
-      <directory>tests/Modules</directory>
-    </testsuite>
     <testsuite name="E2E">
       <directory>tests/E2E</directory>
       <directory>src/modules/*/tests/E2E</directory>

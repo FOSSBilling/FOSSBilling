@@ -30,8 +30,6 @@ test('cart transfers on login', function (): void {
 
     $clientId = cartCreateClient();
 
-    cartLoginClient($clientId);
-
     $loggedInCart = cartGetCart();
     expect($loggedInCart)->toEqual($startingCart);
 
@@ -81,8 +79,9 @@ function cartGetCart(): array
 function cartCreateClient(): int
 {
     $password = 'A1a' . bin2hex(random_bytes(6));
+    $email = 'client_' . uniqid() . '@example.com';
     $result = Tests\Helpers\ApiClient::request('guest/client/create', [
-        'email' => 'client_' . uniqid() . '@example.com',
+        'email' => $email,
         'first_name' => 'Test',
         'password' => $password,
         'password_confirm' => $password,
@@ -90,16 +89,15 @@ function cartCreateClient(): int
     assertApiSuccess($result);
     assertApiResultIsInt($result);
 
-    return (int) $result->getResult();
-}
+    $clientId = (int) $result->getResult();
 
-function cartLoginClient(int $clientId): void
-{
-    $result = Tests\Helpers\ApiClient::request('guest/client/login', [
-        'email' => 'client_' . $clientId . '@example.com',
-        'password' => 'A1a' . bin2hex(random_bytes(6)),
+    $loginResult = Tests\Helpers\ApiClient::request('guest/client/login', [
+        'email' => $email,
+        'password' => $password,
     ]);
-    assertApiSuccess($result);
+    assertApiSuccess($loginResult);
+
+    return $clientId;
 }
 
 function cartCleanupClient(int $clientId): void
