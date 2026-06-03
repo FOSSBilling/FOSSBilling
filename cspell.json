@@ -520,7 +520,6 @@
         "data/**",
         "src/data/**",
         "phpunit.xml.dist",
-        "phpunit-live.xml",
         "bin/**",
         "*.mmdb",
         "cspell.json",

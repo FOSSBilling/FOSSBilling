@@ -90,5 +90,5 @@ compose run --rm --no-deps \
   app \
   sh -euxc "
     cd /workspace
-    ./src/vendor/bin/pest --test-directory ../tests --configuration phpunit-live.xml
+    ./src/vendor/bin/pest --test-directory ../tests --testsuite=E2E --ci
   "

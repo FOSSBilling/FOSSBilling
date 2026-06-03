@@ -10,22 +10,35 @@
 
 declare(strict_types=1);
 
-// Skip E2E tests if environment is not configured
+use Tests\Helpers\ApiClient;
+
 if (!getenv('APP_URL') || !getenv('TEST_API_KEY')) {
     return;
 }
 
-test('cron guest behavior', function (): void {
-    Tests\Helpers\ApiClient::request('admin/extension/config_save', ['ext' => 'mod_cron', 'guest_cron' => false]);
-    $result = Tests\Helpers\ApiClient::request('guest/cron/run');
+test('guest cron behavior', function (): void {
+    ApiClient::request('admin/cron/save_settings', ['ext' => 'mod_cron', 'guest_cron' => false]);
+    $result = ApiClient::request('guest/cron/run');
     expect($result->wasSuccessful())->toBeFalse();
 
-    Tests\Helpers\ApiClient::request('admin/extension/config_save', ['ext' => 'mod_cron', 'guest_cron' => true]);
-    Tests\Helpers\ApiClient::request('admin/system/update_params', ['last_cron_exec' => date('Y-m-d H:i:s', time() - 6400)]);
-    $result = Tests\Helpers\ApiClient::request('guest/cron/run');
-    expect($result->wasSuccessful())->toBeTrue($result);
+    ApiClient::request('admin/cron/save_settings', ['ext' => 'mod_cron', 'guest_cron' => true]);
+    $config = ApiClient::request('admin/extension/config_get', ['ext' => 'mod_cron']);
+    expect($config->wasSuccessful())->toBeTrue();
 
-    $result = Tests\Helpers\ApiClient::request('guest/cron/run');
+    $hash = $config->getResult()['cron_hash'] ?? '';
+    expect($hash)->not->toBeEmpty();
+
+    ApiClient::request('admin/system/update_params', ['last_cron_exec' => date('Y-m-d H:i:s', time() - 6400)]);
+    $result = ApiClient::request('guest/cron/run', ['hash' => $hash]);
     expect($result->wasSuccessful())->toBeTrue();
-    expect($result->getResult())->toBeFalse();
+
+    $result = ApiClient::request('guest/cron/run', ['hash' => $hash]);
+    expect($result->wasSuccessful())->toBeTrue()
+        ->and($result->getResult())->toBeFalse();
+
+    $result = ApiClient::request('guest/cron/run', ['hash' => 'invalid']);
+    expect($result->wasSuccessful())->toBeFalse();
+
+    $result = ApiClient::request('guest/cron/run');
+    expect($result->wasSuccessful())->toBeFalse();
 });
