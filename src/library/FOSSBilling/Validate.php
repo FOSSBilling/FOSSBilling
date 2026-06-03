@@ -208,6 +208,14 @@ class Validate
         }
     }
 
+    /**
+     * Check if an email address is valid.
+     */
+    public function isEmailValid(string $email): bool
+    {
+        return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+    }
+
     public function isBirthdayValid($birthday = ''): bool
     {
         if (strlen(trim((string) $birthday)) > 0 && strtotime((string) $birthday) === false) {

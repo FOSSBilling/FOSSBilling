@@ -125,7 +125,7 @@ class ApiResponse
 
     public function getHttpCode(): int
     {
-        return $this->code;
+        return $this->getStatusCode();
     }
 
     public function getStatusCode(): int
@@ -147,7 +147,8 @@ class ApiResponse
     {
         return !empty($this->decodedResponse)
             && array_key_exists('error', $this->decodedResponse)
-            && empty($this->decodedResponse['error']);
+            && empty($this->decodedResponse['error'])
+            && array_key_exists('result', $this->decodedResponse);
     }
 
     public function getErrorMessage(): string

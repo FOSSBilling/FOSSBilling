@@ -21,8 +21,8 @@ test('is sld valid', function (string $domain, bool $expected): void {
 dataset('domainProvider', fn (): array => domainProvider());
 
 test('is email valid using builtin filter', function (string $email, bool $expected): void {
-    // Validate uses PHP's built-in filter_var for email validation
-    expect(filter_var($email, FILTER_VALIDATE_EMAIL) !== false)->toEqual($expected);
+    $validate = new FOSSBilling\Validate();
+    expect($validate->isEmailValid($email))->toEqual($expected);
 })->with('emailProvider');
 
 dataset('emailProvider', fn (): array => emailProvider());
