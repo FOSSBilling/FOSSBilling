@@ -197,12 +197,12 @@ class Admin extends \Api_Abstract
     /**
      * Completely remove extension from FOSSBilling.
      */
+    #[RequiredParams(['id' => 'Extension ID was not passed', 'type' => 'Extension type was not passed'])]
     public function uninstall($data): bool
     {
         $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'uninstall_extensions');
 
-        $ext = $this->_getExtension($data);
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminUninstallExtension', 'params' => ['id' => $ext->id]]);
+        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminUninstallExtension', 'params' => ['type' => $data['type'], 'id' => $data['id']]]);
 
         $this->getService()->uninstall($data['type'], $data['id']);
 
