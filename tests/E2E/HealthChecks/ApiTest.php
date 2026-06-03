@@ -38,7 +38,6 @@ test('urls return ok status', function () use ($testUrls): void {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_exec($ch);
         $responseCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
 
         expect($responseCode)->toEqual($expectedCode, "URL '{$url}' should return {$expectedCode}");
     }
