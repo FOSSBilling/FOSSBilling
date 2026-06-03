@@ -278,16 +278,16 @@
         },
         {
             "name": "dicebear/core",
-            "version": "v10.0.1",
+            "version": "v10.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/dicebear/dicebear-php.git",
-                "reference": "3d200a79eca684c4b0487ddeb81b1a1835ed58f2"
+                "reference": "a8130febb57c75f07bc88df7ae65f85a3d5b8cb8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dicebear/dicebear-php/zipball/3d200a79eca684c4b0487ddeb81b1a1835ed58f2",
-                "reference": "3d200a79eca684c4b0487ddeb81b1a1835ed58f2",
+                "url": "https://api.github.com/repos/dicebear/dicebear-php/zipball/a8130febb57c75f07bc88df7ae65f85a3d5b8cb8",
+                "reference": "a8130febb57c75f07bc88df7ae65f85a3d5b8cb8",
                 "shasum": ""
             },
             "require": {
@@ -318,9 +318,9 @@
                 "svg"
             ],
             "support": {
-                "source": "https://github.com/dicebear/dicebear-php/tree/v10.0.1"
+                "source": "https://github.com/dicebear/dicebear-php/tree/v10.0.2"
             },
-            "time": "2026-05-27T21:31:26+00:00"
+            "time": "2026-06-02T22:00:31+00:00"
         },
         {
             "name": "dicebear/schema",
