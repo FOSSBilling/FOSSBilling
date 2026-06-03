@@ -81,7 +81,7 @@ jobs:
           docker run --rm \
             --env APP_ENV=test \
             fossbilling:test-${{ matrix.php }} \
-            ./src/vendor/bin/pest --test-directory ../tests --configuration phpunit.xml.dist
+            ./src/vendor/bin/pest --test-directory ../tests --configuration phpunit.xml.dist --ci
 
       - name: 'Write Job Summary'
         if: always()

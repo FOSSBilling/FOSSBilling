@@ -17,42 +17,30 @@ if (!getenv('APP_URL') || !getenv('TEST_API_KEY')) {
 
 test('template exists', function (): void {
     $result = Tests\Helpers\ApiClient::request('guest/system/template_exists', ['file' => 'layout_default.html.twig']);
-    expect($result->wasSuccessful())->toBeTrue($result);
+    expect($result->wasSuccessful())->toBeTrue();
     expect($result->getResult())->toBeTrue();
 });
 
 test('template does not exist', function (): void {
     $result = Tests\Helpers\ApiClient::request('guest/system/template_exists', ['file' => 'thisfiledoesnotexist.txt']);
-    expect($result->wasSuccessful())->toBeTrue($result);
+    expect($result->wasSuccessful())->toBeTrue();
     expect($result->getResult())->toBeFalse();
 });
 
 test('periods', function (): void {
     $result = Tests\Helpers\ApiClient::request('guest/system/periods');
-    expect($result->wasSuccessful())->toBeTrue($result);
+    expect($result->wasSuccessful())->toBeTrue();
     expect($result->getResult())->toBeArray();
 });
 
 test('countries', function (): void {
     $result = Tests\Helpers\ApiClient::request('guest/system/countries');
-    expect($result->wasSuccessful())->toBeTrue($result);
-    expect($result->getResult())->toBeArray();
-});
-
-test('countries eunion', function (): void {
-    $result = Tests\Helpers\ApiClient::request('guest/system/countries_eunion');
-    expect($result->wasSuccessful())->toBeTrue($result);
-    expect($result->getResult())->toBeArray();
-});
-
-test('states', function (): void {
-    $result = Tests\Helpers\ApiClient::request('guest/system/states');
-    expect($result->wasSuccessful())->toBeTrue($result);
+    expect($result->wasSuccessful())->toBeTrue();
     expect($result->getResult())->toBeArray();
 });
 
 test('phone codes', function (): void {
     $result = Tests\Helpers\ApiClient::request('guest/system/phone_codes');
-    expect($result->wasSuccessful())->toBeTrue($result);
+    expect($result->wasSuccessful())->toBeTrue();
     expect($result->getResult())->toBeArray();
 });

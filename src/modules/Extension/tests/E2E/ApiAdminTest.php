@@ -17,36 +17,36 @@ if (!getenv('APP_URL') || !getenv('TEST_API_KEY')) {
 
 test('can activate extension', function (): void {
     $result = Tests\Helpers\ApiClient::request('admin/extension/activate', ['type' => 'mod', 'id' => 'massmailer']);
-    expect($result->wasSuccessful())->toBeTrue($result);
+    expect($result->wasSuccessful())->toBeTrue();
 });
 
 test('can deactivate extension', function (): void {
     $result = Tests\Helpers\ApiClient::request('admin/extension/deactivate', ['type' => 'mod', 'id' => 'massmailer']);
-    expect($result->wasSuccessful())->toBeTrue($result);
+    expect($result->wasSuccessful())->toBeTrue();
 });
 
 test('language management', function (): void {
     $result = Tests\Helpers\ApiClient::request('admin/extension/languages');
-    expect($result->wasSuccessful())->toBeTrue($result);
+    expect($result->wasSuccessful())->toBeTrue();
     $this->assertNotCount(0, $result->getResult());
 
     $result = Tests\Helpers\ApiClient::request('admin/extension/languages', ['disabled' => true]);
-    expect($result->wasSuccessful())->toBeTrue($result);
+    expect($result->wasSuccessful())->toBeTrue();
     expect($result->getResult())->toHaveCount(0);
 
     $result = Tests\Helpers\ApiClient::request('admin/extension/toggle_language', ['locale_id' => 'en_US']);
-    expect($result->wasSuccessful())->toBeTrue($result);
+    expect($result->wasSuccessful())->toBeTrue();
 
     $result = Tests\Helpers\ApiClient::request('admin/extension/languages', ['disabled' => true, 'details' => false]);
-    expect($result->wasSuccessful())->toBeTrue($result);
+    expect($result->wasSuccessful())->toBeTrue();
     expect($result->getResult())->toContain('en_US');
 
     $result = Tests\Helpers\ApiClient::request('admin/extension/languages');
-    expect($result->wasSuccessful())->toBeTrue($result);
+    expect($result->wasSuccessful())->toBeTrue();
     expect($result->getResult())->not->toContain('en_US');
 
     $result = Tests\Helpers\ApiClient::request('admin/extension/toggle_language', ['locale_id' => 'en_US']);
-    expect($result->wasSuccessful())->toBeTrue($result);
+    expect($result->wasSuccessful())->toBeTrue();
 });
 
 test('language completion', function (): void {

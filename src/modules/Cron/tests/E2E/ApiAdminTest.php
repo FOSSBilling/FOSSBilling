@@ -17,7 +17,7 @@ if (!getenv('APP_URL') || !getenv('TEST_API_KEY')) {
 
 test('cron execution', function (): void {
     $result = Tests\Helpers\ApiClient::request('admin/cron/info');
-    expect($result->wasSuccessful())->toBeTrue($result);
+    expect($result->wasSuccessful())->toBeTrue();
 
     if (!empty($result->getResult()['last_cron_exec'])) {
         $firstDate = new DateTime($result->getResult()['last_cron_exec']);
@@ -27,12 +27,12 @@ test('cron execution', function (): void {
     }
 
     $result = Tests\Helpers\ApiClient::request('admin/cron/run');
-    expect($result->wasSuccessful())->toBeTrue($result);
+    expect($result->wasSuccessful())->toBeTrue();
 
     sleep(2);
 
     $result = Tests\Helpers\ApiClient::request('admin/cron/info');
-    expect($result->wasSuccessful())->toBeTrue($result);
+    expect($result->wasSuccessful())->toBeTrue();
     expect($result->getResult()['last_cron_exec'])->not->toBeEmpty();
 
     $newDate = new DateTime($result->getResult()['last_cron_exec']);

@@ -146,7 +146,7 @@ WORKDIR /workspace
 
 COPY --from=release-tree /app/src ./src
 COPY --from=php-dev-vendor /app/src/vendor ./src/vendor
-COPY composer.json composer.lock phpstan.neon phpstan-baseline.neon phpunit.xml.dist phpunit-live.xml ./
+COPY composer.json composer.lock phpstan.neon phpstan-baseline.neon phpunit.xml.dist ./
 COPY tests ./tests
 
 RUN set -eux; \
