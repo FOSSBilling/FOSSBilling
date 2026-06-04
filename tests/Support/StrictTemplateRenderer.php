@@ -221,7 +221,7 @@ final class StrictTemplateRenderer
             'FOSSBillingVersion' => '0.0.0',
             'default_currency' => 'USD',
             'app_area' => 'admin',
-            'current_theme' => $themeCode ?? 'admin_default',
+            'current_theme' => 'admin_default',
             'theme' => ['code' => 'admin_default', 'name' => 'admin_default', 'url' => '/themes/admin_default/'],
             'settings' => $stub,
             'admin' => $stub,
