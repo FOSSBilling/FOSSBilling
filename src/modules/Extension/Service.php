@@ -774,10 +774,10 @@ class Service implements InjectionAwareInterface
 
     private function assertPathWithinBasePath(string $path, string $basePath): void
     {
-        $canonicalBasePath = rtrim(Path::canonicalize($basePath), '/');
+        $canonicalBasePath = Path::canonicalize($basePath);
         $canonicalPath = Path::canonicalize($path);
 
-        if ($canonicalPath !== $canonicalBasePath && !str_starts_with($canonicalPath, $canonicalBasePath . '/')) {
+        if (!Path::isBasePath($canonicalBasePath, $canonicalPath)) {
             throw new \FOSSBilling\InformationException('Extension path resolved outside the expected extension directory.');
         }
     }
