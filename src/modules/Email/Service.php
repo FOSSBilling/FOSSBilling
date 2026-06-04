@@ -211,6 +211,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getVars(EmailTemplate $template): array
     {
+        if ($template->getVars() === null || $template->getVars() === '') {
+            return [];
+        }
+
         $json = $this->di['crypt']->decrypt($template->getVars(), Config::getProperty('info.salt'));
 
         return is_string($json) ? json_decode($json, true) : [];
@@ -965,11 +969,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         foreach ($templates as $template) {
             [$subjectTemplate, $contentTemplate] = $this->getEffectiveTemplateParts($template);
+            $vars = $this->getVars($template);
             $error = null;
 
             try {
-                $systemService->checkEmailTplSyntax($contentTemplate);
-                $systemService->checkEmailTplSyntax($subjectTemplate);
+                $systemService->renderEmailTplString($contentTemplate, $vars);
+                $systemService->renderEmailTplString($subjectTemplate, $vars);
             } catch (\Throwable $e) {
                 $error = $e->getMessage();
             }

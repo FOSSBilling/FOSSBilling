@@ -972,15 +972,17 @@ test('validateAllTemplates reports invalid templates', function (): void {
         ->once()
         ->andReturn([$validTemplate, $invalidTemplate]);
 
-    $callCount = 0;
     $systemMock = Mockery::mock();
-    $systemMock->shouldReceive('checkEmailTplSyntax')
+    $systemMock->shouldReceive('renderEmailTplString')
         ->times(3)
-        ->andReturnUsing(function () use (&$callCount) {
-            ++$callCount;
-            if ($callCount === 3) {
+        ->andReturnUsing(function (string $template, array $vars): string {
+            expect($vars)->toBe([]);
+
+            if ($template === 'Broken') {
                 throw new FOSSBilling\InformationException('Email template syntax error: Unknown "filter" filter');
             }
+
+            return $template;
         });
 
     $emMock = Mockery::mock();
@@ -1024,8 +1026,9 @@ test('validateAllTemplates clears previous errors on valid templates', function 
         ->andReturn([$template]);
 
     $systemMock = Mockery::mock();
-    $systemMock->shouldReceive('checkEmailTplSyntax')
-        ->twice();
+    $systemMock->shouldReceive('renderEmailTplString')
+        ->twice()
+        ->andReturnArg(0);
 
     $emMock = Mockery::mock();
     $emMock->shouldReceive('flush')->once();
@@ -1048,6 +1051,62 @@ test('validateAllTemplates clears previous errors on valid templates', function 
     expect($result['valid'])->toBe(1);
     expect($result['invalid'])->toBe(0);
     expect($template->hasError())->toBeFalse();
+});
+
+test('validateAllTemplates renders templates with stored vars to enforce sandbox policy', function (): void {
+    $serviceMock = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
+    $di = container();
+
+    $template = emailTemplate('mod_email_sandbox', 1, [
+        'enabled' => true,
+        'subject' => 'Hello {{ name }}',
+        'content' => '{{ content|disallowed_filter }}',
+        'vars' => 'encrypted-vars',
+    ]);
+
+    $repoMock = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class);
+    $repoMock->shouldReceive('findAll')
+        ->once()
+        ->andReturn([$template]);
+
+    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock->shouldReceive('decrypt')
+        ->once()
+        ->with('encrypted-vars', Mockery::type('string'))
+        ->andReturn('{"name":"Ada","content":"Body"}');
+
+    $systemMock = Mockery::mock();
+    $systemMock->shouldReceive('renderEmailTplString')
+        ->once()
+        ->with('{{ content|disallowed_filter }}', ['name' => 'Ada', 'content' => 'Body'])
+        ->andThrow(new FOSSBilling\InformationException('Email template contains disallowed Twig syntax: Filter "disallowed_filter" is not allowed'));
+    $systemMock->shouldReceive('renderEmailTplString')
+        ->with('Hello {{ name }}', Mockery::any())
+        ->never();
+
+    $emMock = Mockery::mock();
+    $emMock->shouldReceive('flush')->once();
+
+    $di['crypt'] = $cryptMock;
+    $di['mod_service'] = $di->protect(function ($name) use ($systemMock) {
+        if ($name === 'System' || $name === 'system') {
+            return $systemMock;
+        }
+    });
+    $di['em'] = $emMock;
+
+    $serviceMock->setDi($di);
+
+    $ref = new ReflectionProperty($serviceMock, 'templateRepository');
+    $ref->setAccessible(true);
+    $ref->setValue($serviceMock, $repoMock);
+
+    $result = $serviceMock->validateAllTemplates();
+
+    expect($result['valid'])->toBe(0);
+    expect($result['invalid'])->toBe(1);
+    expect($template->hasError())->toBeTrue();
+    expect($template->getLastError())->toContain('disallowed Twig syntax');
 });
 
 test('templateCreate validates subject and content', function (): void {
