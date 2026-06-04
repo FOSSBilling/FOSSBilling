@@ -974,15 +974,13 @@ test('validateAllTemplates reports invalid templates', function (): void {
 
     $callCount = 0;
     $systemMock = Mockery::mock();
-    $systemMock->shouldReceive('renderEmailTplString')
+    $systemMock->shouldReceive('checkEmailTplSyntax')
         ->times(3)
         ->andReturnUsing(function () use (&$callCount) {
             ++$callCount;
             if ($callCount === 3) {
                 throw new FOSSBilling\InformationException('Email template syntax error: Unknown "filter" filter');
             }
-
-            return 'rendered';
         });
 
     $emMock = Mockery::mock();
@@ -994,8 +992,6 @@ test('validateAllTemplates reports invalid templates', function (): void {
         }
     });
     $di['em'] = $emMock;
-
-    $serviceMock->shouldReceive('getVars')->andReturn([]);
 
     $serviceMock->setDi($di);
 
@@ -1028,9 +1024,8 @@ test('validateAllTemplates clears previous errors on valid templates', function 
         ->andReturn([$template]);
 
     $systemMock = Mockery::mock();
-    $systemMock->shouldReceive('renderEmailTplString')
-        ->twice()
-        ->andReturn('rendered');
+    $systemMock->shouldReceive('checkEmailTplSyntax')
+        ->twice();
 
     $emMock = Mockery::mock();
     $emMock->shouldReceive('flush')->once();
@@ -1041,8 +1036,6 @@ test('validateAllTemplates clears previous errors on valid templates', function 
         }
     });
     $di['em'] = $emMock;
-
-    $serviceMock->shouldReceive('getVars')->andReturn([]);
 
     $serviceMock->setDi($di);
 

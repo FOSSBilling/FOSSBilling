@@ -964,14 +964,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $systemService = $this->di['mod_service']('System');
 
         foreach ($templates as $template) {
-            $vars = $this->getVars($template);
             [$subjectTemplate, $contentTemplate] = $this->getEffectiveTemplateParts($template);
             $error = null;
 
             try {
-                $systemService->renderEmailTplString($contentTemplate, $vars);
-                $systemService->renderEmailTplString($subjectTemplate, $vars);
-            } catch (\FOSSBilling\Exception $e) {
+                $systemService->checkEmailTplSyntax($contentTemplate);
+                $systemService->checkEmailTplSyntax($subjectTemplate);
+            } catch (\Throwable $e) {
                 $error = $e->getMessage();
             }
 

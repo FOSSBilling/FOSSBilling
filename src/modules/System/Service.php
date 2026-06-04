@@ -580,6 +580,21 @@ class Service
         );
     }
 
+    public function checkEmailTplSyntax(string $tpl): void
+    {
+        $twigFactory = $this->di['twig_factory'];
+        $twig = $twigFactory->createEmailEnvironment();
+
+        try {
+            $stream = $twig->tokenize(new \Twig\Source($tpl, '__validation__'));
+            $twig->parse($stream);
+        } catch (\Twig\Error\SyntaxError $e) {
+            throw new \FOSSBilling\InformationException('Email template syntax error: ' . $e->getMessage());
+        } catch (\Twig\Sandbox\SecurityError $e) {
+            throw new \FOSSBilling\InformationException('Email template contains disallowed Twig syntax: ' . $e->getMessage());
+        }
+    }
+
     public function clearCache(?string $cachePath = null): bool
     {
         $path = $cachePath ?? PATH_CACHE;

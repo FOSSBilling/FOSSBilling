@@ -173,7 +173,7 @@
                                 </th>
                                 {% endif %}
                                 <th class="w-1">{{ 'Subject'|trans }}</th>
-                                <th>{{ 'Extension'|trans }}</th>
+                                <th>{{ 'Module'|trans }}</th>
                                 <th>{{ 'Code'|trans }}</th>
                                 <th>{{ 'Type'|trans }}</th>
                                 <th>{{ 'Status'|trans }}</th>
@@ -648,11 +648,19 @@
                 FOSSBilling.api.admin.get('email/template_validate_all', {},
                     (result) => {
                         if (result.invalid > 0) {
-                            FOSSBilling.message("{{ 'Validation complete: :valid valid, :invalid invalid'|trans }}".replace(':valid', result.valid).replace(':invalid', result.invalid), 'warning');
+                            let msg = "{{ 'Validation complete: :valid valid, :invalid invalid'|trans }}".replace(':valid', result.valid).replace(':invalid', result.invalid);
+                            if (result.errors && result.errors.length) {
+                                msg += '<ul class="mt-2 mb-0 text-start">';
+                                result.errors.forEach(function(e) {
+                                    msg += '<li><strong>' + e.action_code + '</strong>: ' + e.error + '</li>';
+                                });
+                                msg += '</ul>';
+                            }
+                            FOSSBilling.message(msg, 'warning');
                         } else {
                             FOSSBilling.message("{{ 'All :count templates are valid'|trans }}".replace(':count', result.valid));
                         }
-                        setTimeout(() => location.reload(), 1500);
+                        setTimeout(() => location.reload(), 3000);
                     },
                     (result) => {
                         FOSSBilling.message(result.message, 'error');
