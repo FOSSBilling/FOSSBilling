@@ -203,7 +203,7 @@
                                     {% set status_label = 'Default'|trans %}
                                     {% set status_class = 'bg-secondary-lt' %}
                                 {% endif %}
-                                <tr{% if template.has_error %} class="table-danger"{% endif %}>
+                                <tr>
                                     {% if can_manage_templates %}
                                     <td>
                                         <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ template.id }}">

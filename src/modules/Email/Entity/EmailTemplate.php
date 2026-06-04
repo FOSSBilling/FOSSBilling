@@ -70,6 +70,7 @@ class EmailTemplate implements ApiArrayInterface
             'description' => $this->getDescription(),
             'is_custom' => $this->isCustom(),
             'is_overridden' => $this->isOverridden(),
+            'last_error' => $this->getLastError(),
         ];
     }
 
