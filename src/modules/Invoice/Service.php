@@ -402,7 +402,7 @@ class Service implements InjectionAwareInterface
                 $emailService->sendTemplate($email);
             }
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send email for invoice payment', ['exception' => $exc->getMessage()]);
         }
 
         return true;
@@ -424,7 +424,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('Email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send email for invoice creation', ['exception' => $exc->getMessage()]);
         }
 
         return true;
@@ -456,7 +456,7 @@ class Service implements InjectionAwareInterface
                 $service->extendInvoiceHashLifetime($invoiceModel);
             }
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send email for invoice approval', ['exception' => $exc->getMessage()]);
         }
 
         return true;
@@ -486,7 +486,7 @@ class Service implements InjectionAwareInterface
             // since the recipient is being re-engaged via the same link.
             $service->extendInvoiceHashLifetime($invoiceModel);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send invoice reminder email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -526,7 +526,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            error_log($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send overdue invoice email', ['exception' => $exc->getMessage()]);
         }
     }
 

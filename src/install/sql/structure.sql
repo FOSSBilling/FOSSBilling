@@ -417,6 +417,8 @@ CREATE TABLE `email_template` (
   `content` text,
   `description` text,
   `vars` text,
+  `last_error` text DEFAULT NULL,
+  `error_checked_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `action_code` (`action_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

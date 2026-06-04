@@ -577,3 +577,37 @@ test('batch delete', function (): void {
     $result = $activityMock->batch_delete(['ids' => [1, 2, 3]]);
     expect($result)->toBeTrue();
 });
+
+test('batch template delete skips built-in templates with defaults', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
+
+    $builtinTemplate = new EmailTemplate('mod_email_test', 1);
+    $builtinTemplate->setIsCustom(false);
+
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
+    $emailService->shouldReceive('getTemplate')->once()->andReturn($builtinTemplate);
+    $emailService->shouldReceive('hasDefaultTemplate')->once()->andReturn(true);
+
+    $emMock = Mockery::mock();
+    $emMock->shouldReceive('flush')->once();
+
+    $staffService = Mockery::mock();
+    $staffService->shouldReceive('checkPermissionsAndThrowException')->once();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(function ($name) use ($emailService, $staffService) {
+        if ($name === 'email') {
+            return $emailService;
+        }
+        if ($name === 'Staff') {
+            return $staffService;
+        }
+    });
+    $di['em'] = $emMock;
+
+    $adminApi->setDi($di);
+    $adminApi->setService($emailService);
+
+    $result = $adminApi->batch_template_delete(['ids' => [1]]);
+    expect($result)->toBeTrue();
+});

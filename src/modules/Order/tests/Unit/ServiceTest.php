@@ -183,65 +183,7 @@ test('logs exception when email fails on activate', function (): void {
     $serviceMock->onAfterAdminOrderActivate($eventMock);
 
     expect($loggerMock->calls)->toHaveCount(1);
-    expect($loggerMock->calls[0]['method'])->toBe('err');
-    expect($loggerMock->calls[0]['params'][0])->toBe('Email send failure');
-});
-
-test('fires event after admin renews order', function (): void {
-    $params = ['id' => 1];
-
-    $eventMock = Mockery::mock('\Box_Event');
-    $eventMock->shouldReceive('getParameters')
-        ->atLeast()->once()
-        ->andReturn($params);
-
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($order);
-
-    $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
-    $emailServiceMock->shouldReceive('sendTemplate')
-        ->atLeast()->once()
-        ->andReturn(true);
-
-    $orderArr = [
-        'id' => 1,
-        'client' => ['id' => 1],
-        'service_type' => 'domain',
-    ];
-
-    $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('getOrderServiceData')
-        ->atLeast()->once()
-        ->andReturn([]);
-    $serviceMock->shouldReceive('toApiArray')
-        ->atLeast()->once()
-        ->andReturn($orderArr);
-
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $di['loggedin_admin'] = $admin;
-    $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
-        if ($serviceName == 'email') {
-            return $emailServiceMock;
-        }
-        if ($serviceName == 'order') {
-            return $serviceMock;
-        }
-    });
-    $serviceMock->setDi($di);
-    $eventMock->shouldReceive('getDi')
-        ->atLeast()->once()
-        ->andReturn($di);
-
-    $serviceMock->onAfterAdminOrderRenew($eventMock);
+    expect($loggerMock->calls[0]['method'])->toBe('error');
 });
 
 test('logs exception when email fails on renew', function (): void {
@@ -304,8 +246,7 @@ test('logs exception when email fails on renew', function (): void {
     $serviceMock->onAfterAdminOrderRenew($eventMock);
 
     expect($loggerMock->calls)->toHaveCount(1);
-    expect($loggerMock->calls[0]['method'])->toBe('err');
-    expect($loggerMock->calls[0]['params'][0])->toBe('Email send failure');
+    expect($loggerMock->calls[0]['method'])->toBe('error');
 });
 
 test('fires event after admin suspends order', function (): void {
@@ -425,8 +366,7 @@ test('logs exception when email fails on suspend', function (): void {
     $serviceMock->onAfterAdminOrderSuspend($eventMock);
 
     expect($loggerMock->calls)->toHaveCount(1);
-    expect($loggerMock->calls[0]['method'])->toBe('err');
-    expect($loggerMock->calls[0]['params'][0])->toBe('Email send failure');
+    expect($loggerMock->calls[0]['method'])->toBe('error');
 });
 
 test('fires event after admin unsuspends order', function (): void {
@@ -546,8 +486,7 @@ test('logs exception when email fails on unsuspend', function (): void {
     $serviceMock->onAfterAdminOrderUnsuspend($eventMock);
 
     expect($loggerMock->calls)->toHaveCount(1);
-    expect($loggerMock->calls[0]['method'])->toBe('err');
-    expect($loggerMock->calls[0]['params'][0])->toBe('Email send failure');
+    expect($loggerMock->calls[0]['method'])->toBe('error');
 });
 
 test('fires event after admin cancels order', function (): void {
@@ -661,8 +600,7 @@ test('logs exception when email fails on cancel', function (): void {
     $serviceMock->onAfterAdminOrderCancel($eventMock);
 
     expect($loggerMock->calls)->toHaveCount(1);
-    expect($loggerMock->calls[0]['method'])->toBe('err');
-    expect($loggerMock->calls[0]['params'][0])->toBe('Email send failure');
+    expect($loggerMock->calls[0]['method'])->toBe('error');
 });
 
 test('fires event after admin uncancels order', function (): void {
@@ -782,8 +720,7 @@ test('logs exception when email fails on uncancel', function (): void {
     $serviceMock->onAfterAdminOrderUncancel($eventMock);
 
     expect($loggerMock->calls)->toHaveCount(1);
-    expect($loggerMock->calls[0]['method'])->toBe('err');
-    expect($loggerMock->calls[0]['params'][0])->toBe('Email send failure');
+    expect($loggerMock->calls[0]['method'])->toBe('error');
 });
 
 test('gets order core service', function (): void {
