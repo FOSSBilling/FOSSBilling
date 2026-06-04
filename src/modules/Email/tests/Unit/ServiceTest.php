@@ -725,7 +725,7 @@ test('updateTemplate updates template', function (array $data, string $templateR
 
     $cryptMock = Mockery::mock('\Box_Crypt');
     $cryptMock->shouldReceive('decrypt')
-        ->atLeast()->once();
+        ->never();
     $configMock = ['salt' => md5(random_bytes(13))];
 
     $twigStub = Mockery::mock(Twig\Environment::class);
