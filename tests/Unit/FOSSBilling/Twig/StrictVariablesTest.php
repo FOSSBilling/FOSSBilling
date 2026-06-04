@@ -95,7 +95,7 @@ test('all email templates render under strict_variables', function (): void {
 })->skip(false, 'Strict-variables email render harness always runs');
 
 /**
- * @param list<array{file: string, template: string, error: string}> $findings
+ * @param list<array{file: string, template: string, error: string, category: string}> $findings
  */
 function formatFindings(array $findings): string
 {
