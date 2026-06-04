@@ -71,6 +71,7 @@
             } %}
                 
                 {% block form_content %}
+                    {% import 'macro_functions.html.twig' as mf %}
                     <div class="d-flex flex-column gap-4">
                         {% for name, element in gateway.form %}
                             {% set field_required = mf.compute_field_required(element, gateway) == 'true' %}
