@@ -28,28 +28,29 @@ final class CombinedTwigLoader extends FilesystemLoader
     {
         parent::__construct();
 
-        $paths = [];
-
         foreach (['admin_default', 'huraga'] as $code) {
             $custom = Path::join($themesPath, $code, 'html_custom');
             if (is_dir($custom)) {
-                $paths[] = $custom;
+                $this->addPath($custom);
             }
             $default = Path::join($themesPath, $code, 'html');
             if (is_dir($default)) {
-                $paths[] = $default;
+                $this->addPath($default);
             }
         }
 
         $finder = new Finder();
-        $finder->directories()->in(PATH_MODS)->depth('== 2')->ignoreDotFiles(true)->name(['admin', 'client']);
+        $finder->directories()->in(PATH_MODS)->depth('== 2')->ignoreDotFiles(true)->name(['admin', 'client', 'email']);
         foreach ($finder as $dir) {
             $parent = Path::getDirectory($dir->getPathName());
             if (basename($parent) === 'templates') {
-                $paths[] = $dir->getPathName();
+                $grandparent = Path::getDirectory($parent);
+                $module = basename($grandparent);
+                $area = basename($dir->getPathName());
+                // FilesystemLoader namespaces can't contain '/' (Twig splits
+                // `@ns/template` on the first '/'). Use an underscore join.
+                $this->addPath($dir->getPathName(), $module . '_' . $area);
             }
         }
-
-        $this->setPaths($paths);
     }
 }

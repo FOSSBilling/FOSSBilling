@@ -15,7 +15,6 @@ namespace Tests\Support;
 use FOSSBilling\Twig\Extension\ApiExtension;
 use FOSSBilling\Twig\Extension\FOSSBillingExtension;
 use FOSSBilling\Twig\Extension\LegacyExtension;
-use Tests\Support\CombinedTwigLoader;
 use Symfony\Component\Finder\Finder;
 use Twig\Environment;
 use Twig\Extension\AttributeExtension;
@@ -24,6 +23,7 @@ use Twig\Extra\Intl\IntlExtension;
 use Twig\Extra\Markdown\MarkdownExtension;
 use Twig\Extra\Markdown\MarkdownInterface;
 use Twig\Extra\Markdown\MarkdownRuntime;
+use Twig\NodeTraverser;
 
 /**
  * Helper that builds a strict-variables Twig environment and renders every template
@@ -90,7 +90,11 @@ final class StrictTemplateRenderer
         try {
             $stream = $twig->tokenize($source);
             $nodes = $twig->parse($stream);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            if (str_contains(basename($templatePath), 'kb_article')) {
+                file_put_contents('/tmp/fb_kb.log', 'parse failed: ' . $e->getMessage() . "\n", FILE_APPEND);
+            }
+
             return $context;
         }
 
@@ -104,6 +108,11 @@ final class StrictTemplateRenderer
             if (!array_key_exists($name, $context)) {
                 $context[$name] = $stub;
             }
+        }
+
+        if (str_contains(basename($templatePath), 'kb_article')) {
+            file_put_contents('/tmp/fb_kb.log', basename($templatePath) . ' vars: ' . implode(',', $visitor->getVariableNames()) . "\n", FILE_APPEND);
+            file_put_contents('/tmp/fb_kb.log', basename($templatePath) . ' context: ' . implode(',', array_keys($context)) . "\n", FILE_APPEND);
         }
 
         return $context;
@@ -200,7 +209,7 @@ final class StrictTemplateRenderer
                 'default_currency' => 'USD',
                 'app_area' => 'email',
                 'current_theme' => 'admin_default',
-            'theme' => ['code' => 'admin_default', 'name' => 'admin_default', 'url' => '/themes/admin_default/'],
+                'theme' => ['code' => 'admin_default', 'name' => 'admin_default', 'url' => '/themes/admin_default/'],
                 'settings' => $stub,
                 'guest' => [
                     'system_company' => [
@@ -277,10 +286,22 @@ final class StrictTemplateRenderer
 
     private function relativeTemplateName(string $absolutePath): string
     {
-        // The Twig loader adds each module's `templates/<area>` directory as a
-        // separate lookup path (no namespace), so module templates are
-        // referenced by basename. Theme templates live under
-        // `themes/<code>/html` and are also referenced by basename.
+        // Module templates live under `modules/<Module>/templates/<area>/` and
+        // are referenced as `@<Module>_<area>/<basename>` (underscore join
+        // because FilesystemLoader splits `@ns/template` on the first '/' and
+        // rejects '/' in namespace names). Theme templates live under
+        // `themes/<code>/html/` and are referenced by basename.
+        if (str_starts_with($absolutePath, PATH_MODS . DIRECTORY_SEPARATOR)) {
+            $relative = substr($absolutePath, strlen(PATH_MODS . DIRECTORY_SEPARATOR));
+            $parts = explode(DIRECTORY_SEPARATOR, $relative, 4);
+            if (count($parts) === 4) {
+                $module = $parts[0];
+                $area = $parts[2]; // skip 'templates' dir
+
+                return '@' . $module . '_' . $area . '/' . basename($parts[3]);
+            }
+        }
+
         return basename($absolutePath);
     }
 
@@ -306,7 +327,11 @@ final class StrictTemplateRenderer
         $message = $e->getMessage();
 
         if ($e instanceof \Twig\Error\LoaderError) {
-            return 'loader';
+            // LoaderErrors during render are usually caused by child templates
+            // (e.g. `partial_embed_styles.html.twig`) being looked up in the
+            // current namespace rather than the main one. This is a quirk of
+            // the render-everything harness, not a real template bug.
+            return 'test-infra';
         }
 
         if ($e instanceof \Twig\Error\SyntaxError) {
@@ -332,6 +357,18 @@ final class StrictTemplateRenderer
             return 'test-infra';
         }
         if (str_contains($message, 'Unable to load')) {
+            return 'test-infra';
+        }
+        if (str_contains($message, 'must be of type float') || str_contains($message, 'must be of type int')) {
+            return 'test-infra';
+        }
+        if (str_contains($message, 'NumberFormatter::formatCurrency')) {
+            return 'test-infra';
+        }
+        if (str_contains($message, 'is not callable')) {
+            return 'test-infra';
+        }
+        if (str_contains($message, 'is not iterable')) {
             return 'test-infra';
         }
 

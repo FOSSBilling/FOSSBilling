@@ -16,7 +16,7 @@
 </div>
 
 <div class="card-footer d-flex flex-wrap gap-2 justify-content-end">
-    {{ order_actions }}
+    {{ order_actions|default('') }}
     <a class="btn btn-primary" href="{{ 'serviceapikey/reset'|api_url(query: { 'order_id': order.id }) }}"
         {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
         <svg class="icon">
