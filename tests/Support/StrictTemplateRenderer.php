@@ -43,35 +43,48 @@ final class StrictTemplateRenderer
     {
         $findings = [];
 
+        // Suppress E_NOTICE/E_WARNING only for the duration of this harness.
+        // The render-everything pass routinely coerces a PermissiveStub to a
+        // scalar (e.g. `|format_currency` on a stub amount, or arithmetic on a
+        // stub count), which raises PHP notices that aren't bugs in the
+        // templates themselves. Restoring the previous level on the way out
+        // keeps unrelated tests in the suite under their normal reporting
+        // settings.
+        $previousLevel = error_reporting();
+        error_reporting($previousLevel & ~E_NOTICE & ~E_WARNING);
 
-        $twig = $this->buildEnvironment($emailMode);
+        try {
+            $twig = $this->buildEnvironment($emailMode);
 
-        $templates = $emailMode ? $this->discoverEmailTemplates() : $this->discoverAllTemplates();
+            $templates = $emailMode ? $this->discoverEmailTemplates() : $this->discoverAllTemplates();
 
-        foreach ($templates as $templatePath) {
-            $relative = $this->relativeTemplateName($templatePath);
-            $context = $this->buildContext($emailMode);
+            foreach ($templates as $templatePath) {
+                $relative = $this->relativeTemplateName($templatePath);
+                $context = $this->buildContext($emailMode);
 
-            // Pre-populate the context with stubs for every variable referenced in
-            // the template. This lets partials (which expect parent-passed
-            // variables) render successfully in isolation.
-            try {
-                $context = $this->enrichContextWithTemplateVariables($twig, $templatePath, $context, $emailMode);
-            } catch (\Throwable) {
-                // If we can't parse the template, fall through to render and let
-                // the loader/parser surface a meaningful error.
+                // Pre-populate the context with stubs for every variable referenced in
+                // the template. This lets partials (which expect parent-passed
+                // variables) render successfully in isolation.
+                try {
+                    $context = $this->enrichContextWithTemplateVariables($twig, $templatePath, $context, $emailMode);
+                } catch (\Throwable) {
+                    // If we can't parse the template, fall through to render and let
+                    // the loader/parser surface a meaningful error.
+                }
+
+                try {
+                    $twig->render($relative, $context);
+                } catch (\Throwable $e) {
+                    $findings[] = [
+                        'file' => $templatePath,
+                        'template' => $relative,
+                        'error' => $this->summarizeError($e),
+                        'category' => $this->categorizeError($e),
+                    ];
+                }
             }
-
-            try {
-                $twig->render($relative, $context);
-            } catch (\Throwable $e) {
-                $findings[] = [
-                    'file' => $templatePath,
-                    'template' => $relative,
-                    'error' => $this->summarizeError($e),
-                    'category' => $this->categorizeError($e),
-                ];
-            }
+        } finally {
+            error_reporting($previousLevel);
         }
 
         return $findings;

@@ -97,12 +97,6 @@ if (!class_exists(Tests\Helpers\TestLogger::class)) {
 // Redirect error_log to /dev/null during tests to prevent "PHPUnit controlled exception" clutter
 ini_set('error_log', '/dev/null');
 
-// Suppress the "Object of class X could not be converted to int" notices that
-// the strict-variables render harness produces when its PermissiveStub is
-// passed where a scalar is expected. These are expected for the test
-// environment, not real bugs.
-error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
-
 // Configure Unit tests base with Mockery integration
 uses(MockeryPHPUnitIntegration::class)
     ->beforeEach(function (): void {
