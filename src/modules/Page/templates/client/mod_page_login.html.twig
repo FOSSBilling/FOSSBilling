@@ -18,7 +18,7 @@
         <div class="col-md-6 col-lg-4">
             {% if settings.login_page_show_logo %}
                 <div class="d-flex justify-content-center">
-                    <a href="{{ settings.login_page_logo_url|default('/') }}" target="_blank">
+                    <a href="{{ settings.login_page_logo_url|default('/') }}" target="_blank" rel="noopener noreferrer">
                         <img class="my-4" height="50px" src="{{ logo_url }}" alt="{{ company.name }}"/>
                     </a>
                 </div>
