@@ -168,6 +168,8 @@ class Admin extends \Api_Abstract
                 'is_custom' => $item['is_custom'] ?? false,
                 'has_default' => $item['has_default'] ?? false,
                 'is_overridden' => $item['is_overridden'] ?? false,
+                'has_error' => $item['has_error'] ?? false,
+                'last_error' => $item['last_error'] ?? null,
             ];
         }
 
@@ -333,6 +335,19 @@ class Admin extends \Api_Abstract
     }
 
     /**
+     * Validate all email templates for Twig syntax errors.
+     * Returns a summary of valid and invalid templates with error details.
+     *
+     * @return array
+     */
+    public function template_validate_all()
+    {
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'manage_templates');
+
+        return $this->getService()->validateAllTemplates();
+    }
+
+    /**
      * Sends the test email to the currently authenticated admin / staff member.
      */
     public function send_test(array $data): bool
@@ -391,6 +406,26 @@ class Admin extends \Api_Abstract
         }
 
         return $this->getService()->sendTemplate($data);
+    }
+
+    /**
+     * Deletes email templates with given IDs.
+     */
+    #[RequiredParams(['ids' => 'IDs were not passed'])]
+    public function batch_template_delete($data): bool
+    {
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'manage_templates');
+
+        foreach ($data['ids'] as $id) {
+            $template = $this->getService()->getTemplate((int) $id);
+            if (!$template->isCustom() && $this->getService()->hasDefaultTemplate($template->getActionCode())) {
+                continue;
+            }
+            $this->getDi()['em']->remove($template);
+        }
+        $this->getDi()['em']->flush();
+
+        return true;
     }
 
     /**

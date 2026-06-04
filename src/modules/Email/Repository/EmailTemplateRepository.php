@@ -76,4 +76,13 @@ class EmailTemplateRepository extends EntityRepository
             ->getQuery()
             ->execute();
     }
+
+    public function countBroken(): int
+    {
+        return (int) $this->createQueryBuilder('t')
+            ->select('COUNT(t.id)')
+            ->where('t.lastError IS NOT NULL')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }

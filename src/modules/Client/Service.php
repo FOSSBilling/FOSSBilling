@@ -154,9 +154,7 @@ class Service implements InjectionAwareInterface
 
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            if (!\FOSSBilling\Environment::isTesting()) {
-                error_log($exc->getMessage());
-            }
+            $di['logger']->setChannel('email')->error('Failed to send client signup email', ['exception' => $exc->getMessage()]);
         }
 
         return true;
@@ -775,9 +773,7 @@ class Service implements InjectionAwareInterface
             $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            if (!\FOSSBilling\Environment::isTesting()) {
-                error_log($exc->getMessage());
-            }
+            $this->di['logger']->setChannel('email')->error('Failed to send client welcome email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -835,9 +831,7 @@ class Service implements InjectionAwareInterface
             $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            if (!\FOSSBilling\Environment::isTesting()) {
-                error_log($exc->getMessage());
-            }
+            $this->di['logger']->setChannel('email')->error('Failed to send email confirmation email', ['exception' => $exc->getMessage()]);
         }
     }
 

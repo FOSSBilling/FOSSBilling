@@ -467,6 +467,26 @@ class Service
             );
         }
 
+        try {
+            $emailService = $this->di['mod_service']('email');
+            $brokenTemplates = $emailService->getBrokenTemplateCount();
+            if ($brokenTemplates > 0) {
+                $emailSettingsUrl = $this->di['url']->adminLink('extension/settings/email');
+                $messages[] = $this->createAdminAlert(
+                    'warning',
+                    __trans(':count email template(s) have syntax errors and cannot send emails. Please review and fix them.', [':count' => $brokenTemplates]),
+                    __trans('Broken Email Templates'),
+                    [[
+                        'link' => $emailSettingsUrl,
+                        'text' => __trans('View Email Templates'),
+                        'type' => 'warning',
+                    ]]
+                );
+            }
+        } catch (\Exception $e) {
+            error_log($e->getMessage());
+        }
+
         if ($type === null || $type === '') {
             return $messages;
         }
@@ -558,6 +578,21 @@ class Service
                 ]);
             }
         );
+    }
+
+    public function checkEmailTplSyntax(string $tpl): void
+    {
+        $twigFactory = $this->di['twig_factory'];
+        $twig = $twigFactory->createEmailEnvironment();
+
+        try {
+            $stream = $twig->tokenize(new \Twig\Source($tpl, '__validation__'));
+            $twig->parse($stream);
+        } catch (\Twig\Error\SyntaxError $e) {
+            throw new \FOSSBilling\InformationException('Email template syntax error: ' . $e->getMessage());
+        } catch (\Twig\Sandbox\SecurityError $e) {
+            throw new \FOSSBilling\InformationException('Email template contains disallowed Twig syntax: ' . $e->getMessage());
+        }
     }
 
     public function clearCache(?string $cachePath = null): bool

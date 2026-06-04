@@ -457,6 +457,7 @@ class UpdatePatcher implements InjectionAwareInterface
             66 => 'patch66',
             67 => 'patch67',
             68 => 'patch68',
+            69 => 'patch69',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1501,6 +1502,17 @@ class UpdatePatcher implements InjectionAwareInterface
             "UPDATE extension_meta SET meta_value = :config WHERE extension = 'mod_cron' AND meta_key = 'config'",
             ['config' => $encrypted],
         );
+    }
+
+    private function patch69(): void
+    {
+        if (!$this->tableHasColumn('email_template', 'last_error')) {
+            $this->executeSql('ALTER TABLE `email_template` ADD COLUMN `last_error` TEXT DEFAULT NULL');
+        }
+
+        if (!$this->tableHasColumn('email_template', 'error_checked_at')) {
+            $this->executeSql('ALTER TABLE `email_template` ADD COLUMN `error_checked_at` DATETIME DEFAULT NULL');
+        }
     }
 
     private function generateDownloadableStoredFilename(): string

@@ -61,7 +61,7 @@ class Service implements InjectionAwareInterface
 
     public function isCoreModule(string $mod): bool
     {
-        $core = array_map('strtolower', $this->di['mod']('extension')->getCoreModules());
+        $core = array_map(strtolower(...), $this->di['mod']('extension')->getCoreModules());
 
         return in_array(strtolower($mod), $core, true);
     }

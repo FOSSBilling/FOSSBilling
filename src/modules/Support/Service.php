@@ -78,7 +78,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->error($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send ticket open email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -100,7 +100,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->error($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send admin ticket open email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -122,7 +122,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->error($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send ticket close email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -144,7 +144,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->error($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send ticket reply email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -166,7 +166,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->error($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send public ticket open email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -189,7 +189,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->error($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send admin public ticket open email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -212,7 +212,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->error($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send admin public ticket reply email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -235,7 +235,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->error($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send admin public ticket close email', ['exception' => $exc->getMessage()]);
         }
     }
 
