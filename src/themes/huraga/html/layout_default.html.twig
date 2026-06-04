@@ -5,7 +5,7 @@
 <html lang="{{ active_locale }}" data-bs-theme="{{ settings.theme|default('light') }}">
 <head>
     <meta charset="utf-8">
-    <title>{{ (settings.meta_title_prefix ~ ' ' ~ block('meta_title') ~ ' ' ~ settings.meta_title_suffix)|trim }}</title>
+    <title>{{ (settings.meta_title_prefix|default('') ~ ' ' ~ block('meta_title') ~ ' ' ~ settings.meta_title_suffix|default(''))|trim }}</title>
 
     <meta name="description" content="{% block meta_description %}{{ settings.meta_description }}{% endblock %}">
     <meta name="keywords" content="{{ settings.meta_keywords }}">
@@ -19,7 +19,7 @@
     {% endblock %}
 
     {% block opengraph %}
-        <meta property="og:title" content="{{ (settings.meta_title_prefix ~ ' ' ~ block('meta_title') ~ ' ' ~ settings.meta_title_suffix)|trim }}" />
+        <meta property="og:title" content="{{ (settings.meta_title_prefix|default('') ~ ' ' ~ block('meta_title') ~ ' ' ~ settings.meta_title_suffix|default(''))|trim }}" />
         <meta property="og:type" content="website" />
         <meta property="og:description" content="{{ block('meta_description') }}" />
         <meta property="og:url" content="{{ canonical_url }}" />
@@ -207,7 +207,7 @@
                         <div class="d-flex flex-column">
                             {{ render_widgets('client.theme.footer.start') }}
                             <div class="d-flex justify-content-center">
-                                <span>&copy; {{ now|format_date(pattern='yyyy') }} {{ settings.footer_signature|default(company.signature) }}
+                                <span>&copy; {{ 'now'|date('Y') }} {{ settings.footer_signature|default(company.signature) }}
                                     {% if company.bank_info_pagebottom == 1 %}
                                         <br/>
                                         <b>{{'Payment Information'|trans}}</b> - {{'Bank Name'|trans}}: {{ company.bank_name }} | {{'BIC / SWIFT Code'|trans}}: {{ company.bic }} | {{'Account Number'|trans}}: {{ company.account_number }}

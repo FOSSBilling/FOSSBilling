@@ -51,6 +51,11 @@ require_once __DIR__ . '/Helpers/Container.php';
 require_once __DIR__ . '/Helpers/Factories.php';
 require_once __DIR__ . '/Helpers/Api.php';
 require_once __DIR__ . '/Helpers/DummyBean.php';
+require_once __DIR__ . '/Support/CombinedTwigLoader.php';
+require_once __DIR__ . '/Support/PermissiveStub.php';
+require_once __DIR__ . '/Support/PermissiveContainer.php';
+require_once __DIR__ . '/Support/VariableCollectorVisitor.php';
+require_once __DIR__ . '/Support/StrictTemplateRenderer.php';
 
 // Load test datasets
 require_once __DIR__ . '/Datasets/PeriodCodes.php';
@@ -85,6 +90,12 @@ if (!class_exists(Tests\Helpers\TestLogger::class)) {
 
 // Redirect error_log to /dev/null during tests to prevent "PHPUnit controlled exception" clutter
 ini_set('error_log', '/dev/null');
+
+// Suppress the "Object of class X could not be converted to int" notices that
+// the strict-variables render harness produces when its PermissiveStub is
+// passed where a scalar is expected. These are expected for the test
+// environment, not real bugs.
+error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
 
 // Configure Unit tests base with Mockery integration
 uses(MockeryPHPUnitIntegration::class)
