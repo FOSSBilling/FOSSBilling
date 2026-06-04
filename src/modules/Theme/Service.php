@@ -232,10 +232,12 @@ class Service implements InjectionAwareInterface
         }
 
         $twigFactory = $this->di['twig_factory'];
+        $settings = $this->getThemeSettings($theme, $preset);
 
         foreach ($finder as $file) {
-            $settings = $this->getThemeSettings($theme, $preset);
-            $realFile = Path::join($file->getPath(), Path::getFilenameWithoutExtension($file->getRelativePathname(), '.html.twig'));
+            $templateFilename = $file->getFilename();
+            $realFilename = preg_replace('/\.(css|js)\.html\.twig$/', '.$1', $templateFilename);
+            $realFile = Path::join($file->getPath(), $realFilename);
 
             $twig = $twigFactory->createBaseEnvironment();
             $template = $twig->createTemplate($file->getContents());
