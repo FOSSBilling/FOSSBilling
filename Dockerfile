@@ -157,6 +157,7 @@ RUN set -eux; \
   apt-get update; \
   apt-get install -y --no-install-recommends nodejs npm; \
   npm ci --ignore-scripts; \
+  ln -s ../node_modules ./src/node_modules; \
   npx playwright install --with-deps chromium; \
   apt-get purge -y npm; \
   apt-get autoremove -y --purge; \
