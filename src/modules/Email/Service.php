@@ -751,6 +751,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'has_default' => !$isCustom && $default !== null,
             'is_overridden' => $isOverridden,
             'has_error' => !empty($template['last_error']),
+            'last_error' => $template['last_error'] ?? null,
         ];
     }
 
