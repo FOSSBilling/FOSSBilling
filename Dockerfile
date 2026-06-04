@@ -21,7 +21,7 @@ RUN set -eux; \
     unzip \
     zlib1g-dev; \
   docker-php-ext-configure gd --with-freetype --with-jpeg; \
-  docker-php-ext-install -j"$(nproc)" bz2 gd intl pdo_mysql sockets zip; \
+  docker-php-ext-install -j"$(nproc)" bz2 gd intl pdo_mysql posix sockets zip; \
   a2enmod rewrite; \
   apt-mark auto '.*' > /dev/null; \
   apt-mark manual \

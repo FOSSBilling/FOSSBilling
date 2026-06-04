@@ -116,6 +116,8 @@ pest()->browser()
     ->inChrome()
     ->timeout(10_000);
 
+uses(Pest\Browser\Browsable::class)->in('Browser');
+
 /*
 |--------------------------------------------------------------------------
 | Expectations

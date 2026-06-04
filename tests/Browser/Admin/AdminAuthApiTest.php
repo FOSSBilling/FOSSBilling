@@ -36,6 +36,13 @@ it('allows authenticated admin profile API requests', function (): void {
 });
 
 it('rejects admin API POST requests without a CSRF token', function (): void {
+    $page = visit(browserBaseUrl() . '/admin/staff/login');
+
+    $page->type('input[name="email"]', adminEmail());
+    $page->type('input[name="password"]', adminPassword());
+    $page->click('button[type="submit"]');
+    $page->assertPathIs('/admin');
+
     $result = apiRequest('POST', browserBaseUrl() . '/api/admin/profile/get');
 
     expect($result['status'])->toBe(403);

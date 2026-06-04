@@ -507,7 +507,8 @@
         "Resellerid",
         "Directadmin",
         "Traitable",
-        "varargs"
+        "varargs",
+        "Browsable"
     ],
     "ignorePaths": [
         "node_modules/**",
