@@ -209,8 +209,6 @@ final class StrictTemplateRenderer
                         'favicon_url' => '',
                     ],
                 ],
-                'admin' => $stub,
-                'client' => $stub,
             ];
         }
 
