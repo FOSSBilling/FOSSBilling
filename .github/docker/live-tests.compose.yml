@@ -15,8 +15,6 @@ services:
     image: ${FOSSBILLING_TEST_IMAGE:?FOSSBILLING_TEST_IMAGE is required}
     environment:
       APP_ENV: test
-    ports:
-      - "${FOSSBILLING_TEST_PORT:-8080}:80"
     depends_on:
       db:
         condition: service_healthy

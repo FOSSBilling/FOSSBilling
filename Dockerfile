@@ -147,9 +147,18 @@ WORKDIR /workspace
 COPY --from=release-tree /app/src ./src
 COPY --from=php-dev-vendor /app/src/vendor ./src/vendor
 COPY composer.json composer.lock phpstan.neon phpstan-baseline.neon phpunit.xml.dist ./
+COPY package.json package-lock.json ./
 COPY tests ./tests
 
 RUN set -eux; \
   php -r '$config = require "./src/config-sample.php"; file_put_contents("./src/config.php", "<?php\nreturn " . var_export($config, true) . ";\n");'; \
   mkdir -p ./src/data/cache ./src/data/log ./src/data/uploads; \
-  chown -R www-data:www-data ./src/data ./src/config.php
+  chown -R www-data:www-data ./src/data ./src/config.php; \
+  apt-get update; \
+  apt-get install -y --no-install-recommends nodejs npm; \
+  npm ci --ignore-scripts; \
+  npx playwright install --with-deps chromium; \
+  apt-get purge -y npm; \
+  apt-get autoremove -y --purge; \
+  apt-get clean; \
+  rm -rf /var/lib/apt/lists/* /var/cache/apt/* /root/.npm
