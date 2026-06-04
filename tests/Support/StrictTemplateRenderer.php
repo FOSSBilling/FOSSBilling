@@ -110,10 +110,6 @@ final class StrictTemplateRenderer
             }
         }
 
-        if (str_contains(basename($templatePath), 'kb_article')) {
-            file_put_contents('/tmp/fb_kb.log', basename($templatePath) . ' vars: ' . implode(',', $visitor->getVariableNames()) . "\n", FILE_APPEND);
-            file_put_contents('/tmp/fb_kb.log', basename($templatePath) . ' context: ' . implode(',', array_keys($context)) . "\n", FILE_APPEND);
-        }
 
         return $context;
     }
