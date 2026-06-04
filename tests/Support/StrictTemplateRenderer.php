@@ -89,11 +89,7 @@ final class StrictTemplateRenderer
         try {
             $stream = $twig->tokenize($source);
             $nodes = $twig->parse($stream);
-        } catch (\Throwable $e) {
-            if (str_contains(basename($templatePath), 'kb_article')) {
-                file_put_contents('/tmp/fb_kb.log', 'parse failed: ' . $e->getMessage() . "\n", FILE_APPEND);
-            }
-
+        } catch (\Throwable) {
             return $context;
         }
 
