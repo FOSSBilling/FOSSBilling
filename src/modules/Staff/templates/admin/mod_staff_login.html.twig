@@ -10,6 +10,7 @@
     title: 'Log Into Your Account'|trans
 } %}
     {% block auth_form %}
+                {{ render_widgets('admin.staff.login.form.before') }}
                 <form method="post" action="{{ 'staff/login'|api_url(role: 'guest') }}" {{ fb_api_form({redirect: redirect_uri|default('/')|url}) }}>
                     <div class="mb-3">
                         <label class="form-label" for="inputEmail">{{ 'Email'|trans }}</label>
@@ -35,7 +36,6 @@
                             id="inputPassword"
                             type="password"
                             name="password"
-                            value="{{ request.password }}"
                             placeholder="{{ 'Enter your password'|trans }}"
                             required>
                     </div>
@@ -43,6 +43,7 @@
                         <button class="btn btn-primary px-5" type="submit">{{ 'Login'|trans }}</button>
                     </div>
                 </form>
+                {{ render_widgets('admin.staff.login.form.after') }}
     {% endblock %}
 {% endembed %}
 {% endblock %}

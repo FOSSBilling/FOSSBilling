@@ -357,16 +357,16 @@
         },
         {
             "name": "dicebear/styles",
-            "version": "v10.0.0",
+            "version": "v10.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/dicebear/styles.git",
-                "reference": "59eaf3e63c08fec63ab71550f46b7534450f9e79"
+                "reference": "f10825ca6537c0543507f04b3b7c3688a35abafc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dicebear/styles/zipball/59eaf3e63c08fec63ab71550f46b7534450f9e79",
-                "reference": "59eaf3e63c08fec63ab71550f46b7534450f9e79",
+                "url": "https://api.github.com/repos/dicebear/styles/zipball/f10825ca6537c0543507f04b3b7c3688a35abafc",
+                "reference": "f10825ca6537c0543507f04b3b7c3688a35abafc",
                 "shasum": ""
             },
             "type": "library",
@@ -374,9 +374,9 @@
             "description": "Official DiceBear avatar styles.",
             "support": {
                 "issues": "https://github.com/dicebear/styles/issues",
-                "source": "https://github.com/dicebear/styles/tree/v10.0.0"
+                "source": "https://github.com/dicebear/styles/tree/v10.1.0"
             },
-            "time": "2026-05-27T20:50:12+00:00"
+            "time": "2026-06-03T20:10:01+00:00"
         },
         {
             "name": "doctrine/collections",

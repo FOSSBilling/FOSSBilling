@@ -441,11 +441,12 @@ class Service implements InjectionAwareInterface
 
     public function getCurrentRouteTheme(): string
     {
-        // Runtime check for admin area - uses index.php defined constant
-        // @phpstan-ignore if.alwaysTrue
-        return $this->getCurrentAdminAreaTheme()['code'];
+        // Runtime check for admin area - uses index.php defined constant.
+        // @phpstan-ignore if.alwaysTrue, booleanAnd.rightAlwaysTrue
+        if (\defined('ADMIN_AREA') && ADMIN_AREA) {
+            return $this->getCurrentAdminAreaTheme()['code'];
+        }
 
-        // @phpstan-ignore deadCode.unreachable
         return $this->getCurrentClientAreaTheme()->getName();
     }
 
