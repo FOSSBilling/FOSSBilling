@@ -43,7 +43,6 @@ final class StrictTemplateRenderer
     {
         $findings = [];
 
-        $themeCode = $emailMode ? 'admin_default' : 'admin_default';
 
         $twig = $this->buildEnvironment($emailMode);
 
