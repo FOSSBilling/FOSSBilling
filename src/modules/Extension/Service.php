@@ -61,9 +61,9 @@ class Service implements InjectionAwareInterface
 
     public function isCoreModule(string $mod): bool
     {
-        $core = $this->di['mod']('extension')->getCoreModules();
+        $core = array_map('strtolower', $this->di['mod']('extension')->getCoreModules());
 
-        return in_array($mod, $core);
+        return in_array(strtolower($mod), $core, true);
     }
 
     public function isExtensionActive(string $type, string $id): bool
@@ -736,15 +736,50 @@ class Service implements InjectionAwareInterface
      */
     public function getExtensionPath(string $type, string $id, bool $includeMessagesSubdir = false): string
     {
-        return match ($type) {
-            \FOSSBilling\ExtensionManager::TYPE_MOD => Path::join(PATH_MODS, ucfirst($id)),
-            \FOSSBilling\ExtensionManager::TYPE_THEME => Path::join(PATH_THEMES, $id),
+        $this->assertValidExtensionIdentifier($id);
+
+        $basePath = $this->getExtensionBasePath($type);
+        $path = match ($type) {
+            \FOSSBilling\ExtensionManager::TYPE_MOD,
+            \FOSSBilling\ExtensionManager::TYPE_PG => Path::join($basePath, ucfirst($id)),
+            \FOSSBilling\ExtensionManager::TYPE_THEME => Path::join($basePath, $id),
             \FOSSBilling\ExtensionManager::TYPE_TRANSLATION => $includeMessagesSubdir
-                ? Path::join(PATH_LANGS, $id, 'LC_MESSAGES')
-                : Path::join(PATH_LANGS, $id),
-            \FOSSBilling\ExtensionManager::TYPE_PG => Path::join(PATH_LIBRARY, 'Payment', 'Adapter', ucfirst($id)),
+                ? Path::join($basePath, $id, 'LC_MESSAGES')
+                : Path::join($basePath, $id),
             default => throw new \FOSSBilling\InformationException('Extension type (:type) is not supported for automatic path determination.', [':type' => $type]),
         };
+
+        $this->assertPathWithinBasePath($path, $basePath);
+
+        return $path;
+    }
+
+    private function getExtensionBasePath(string $type): string
+    {
+        return match ($type) {
+            \FOSSBilling\ExtensionManager::TYPE_MOD => PATH_MODS,
+            \FOSSBilling\ExtensionManager::TYPE_THEME => PATH_THEMES,
+            \FOSSBilling\ExtensionManager::TYPE_TRANSLATION => PATH_LANGS,
+            \FOSSBilling\ExtensionManager::TYPE_PG => Path::join(PATH_LIBRARY, 'Payment', 'Adapter'),
+            default => throw new \FOSSBilling\InformationException('Extension type (:type) is not supported for automatic path determination.', [':type' => $type]),
+        };
+    }
+
+    private function assertValidExtensionIdentifier(string $id): void
+    {
+        if (preg_match('/\A[A-Za-z0-9_-]+\z/', $id) !== 1) {
+            throw new \FOSSBilling\InformationException('Extension ID contains invalid characters.');
+        }
+    }
+
+    private function assertPathWithinBasePath(string $path, string $basePath): void
+    {
+        $canonicalBasePath = rtrim(Path::canonicalize($basePath), '/');
+        $canonicalPath = Path::canonicalize($path);
+
+        if ($canonicalPath !== $canonicalBasePath && !str_starts_with($canonicalPath, $canonicalBasePath . '/')) {
+            throw new \FOSSBilling\InformationException('Extension path resolved outside the expected extension directory.');
+        }
     }
 
     private function _getSalt(): ?string

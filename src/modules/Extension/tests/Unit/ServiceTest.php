@@ -51,6 +51,10 @@ test('isCoreModule checks if module is core module', function (): void {
     $result = $service->isCoreModule('extension');
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
+
+    $result = $service->isCoreModule('Extension');
+    expect($result)->toBeBool();
+    expect($result)->toBeTrue();
 });
 
 test('isExtensionActive returns false when module not found', function (): void {
@@ -596,6 +600,18 @@ test('uninstall uninstalls an extension', function (): void {
     $result = $serviceMock->uninstall('mod', 'Branding');
     expect($result)->toBeTrue();
 });
+
+test('getExtensionPath rejects unsafe extension IDs', function (string $type, string $id): void {
+    $service = new Box\Mod\Extension\Service();
+
+    expect(fn (): string => $service->getExtensionPath($type, $id))
+        ->toThrow(FOSSBilling\InformationException::class, 'Extension ID contains invalid characters.');
+})->with([
+    [FOSSBilling\ExtensionManager::TYPE_MOD, '..'],
+    [FOSSBilling\ExtensionManager::TYPE_THEME, '../admin_default'],
+    [FOSSBilling\ExtensionManager::TYPE_TRANSLATION, '/tmp/language'],
+    [FOSSBilling\ExtensionManager::TYPE_PG, 'Paypal/../../Adapter'],
+]);
 
 test('downloadAndExtract throws exception when download URL is missing', function (): void {
     $service = new Box\Mod\Extension\Service();
