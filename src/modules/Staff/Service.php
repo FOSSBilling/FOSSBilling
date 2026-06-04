@@ -355,7 +355,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->error($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send staff order notification email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -387,7 +387,7 @@ class Service implements InjectionAwareInterface
             $email['ticket'] = $ticket;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->error($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send staff ticket notification email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -409,7 +409,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->error($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send staff ticket reply notification email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -430,7 +430,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->error($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send staff ticket close notification email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -450,7 +450,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->error($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send staff public ticket notification email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -469,7 +469,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->error($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send staff client signup notification email', ['exception' => $exc->getMessage()]);
         }
 
         return true;
@@ -491,7 +491,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->error($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send staff public ticket reply notification email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -511,7 +511,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->error($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send staff public ticket close notification email', ['exception' => $exc->getMessage()]);
         }
     }
 

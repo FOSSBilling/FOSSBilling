@@ -566,10 +566,24 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $systemService = $this->di['mod_service']('System');
         [$subjectTemplate, $contentTemplate] = $this->getEffectiveTemplateParts($template);
-        $pc = $systemService->renderEmailTplString($contentTemplate, $vars);
-        $ps = $systemService->renderEmailTplString($subjectTemplate, $vars);
 
-        return [$ps, $pc];
+        try {
+            $pc = $systemService->renderEmailTplString($contentTemplate, $vars);
+            $ps = $systemService->renderEmailTplString($subjectTemplate, $vars);
+
+            if ($template->hasError()) {
+                $template->clearError();
+                $this->di['em']->flush();
+            }
+
+            return [$ps, $pc];
+        } catch (\FOSSBilling\Exception $e) {
+            $template->setLastError($e->getMessage());
+            $template->setErrorCheckedAt(new \DateTimeImmutable());
+            $this->di['em']->flush();
+
+            throw $e;
+        }
     }
 
     public function resend(\Model_ActivityClientEmail $email): bool
@@ -699,6 +713,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $data['vars'] = $this->getVars($template);
             $data['subject_override'] = $isCustom ? null : $template->getSubject();
             $data['content_override'] = $isCustom ? null : $template->getContent();
+            $data['has_error'] = $template->hasError();
+            $data['last_error'] = $template->getLastError();
         }
 
         return $data;
@@ -734,6 +750,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'is_custom' => $isCustom,
             'has_default' => !$isCustom && $default !== null,
             'is_overridden' => $isOverridden,
+            'has_error' => !empty($template['last_error']),
         ];
     }
 
@@ -764,6 +781,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $systemService->renderEmailTplString($content, $vars);
             $template->setContent($content);
         }
+
+        $template->clearError();
 
         if (!$isCustom && $default !== null) {
             $subjectMatches = $template->getSubject() === $default['subject'];
@@ -810,6 +829,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function templateCreate($actionCode, $subject, $content, $enabled = 0, $category = null): EmailTemplate
     {
+        $systemService = $this->di['mod_service']('System');
+
+        if ($subject !== null && $subject !== '') {
+            $systemService->renderEmailTplString($subject, []);
+        }
+
+        if ($content !== null && $content !== '') {
+            $systemService->renderEmailTplString($content, []);
+        }
+
         $template = new EmailTemplate($actionCode);
         $template->setSubject($subject)
             ->setEnabled((bool) $enabled)
@@ -920,6 +949,51 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $result['list'] = $list;
 
         return $result;
+    }
+
+    public function getBrokenTemplateCount(): int
+    {
+        return $this->getTemplateRepository()->countBroken();
+    }
+
+    public function validateAllTemplates(): array
+    {
+        $templates = $this->getTemplateRepository()->findAll();
+        $results = ['valid' => 0, 'invalid' => 0, 'errors' => []];
+        $systemService = $this->di['mod_service']('System');
+
+        foreach ($templates as $template) {
+            $vars = $this->getVars($template);
+            [$subjectTemplate, $contentTemplate] = $this->getEffectiveTemplateParts($template);
+            $error = null;
+
+            try {
+                $systemService->renderEmailTplString($contentTemplate, $vars);
+                $systemService->renderEmailTplString($subjectTemplate, $vars);
+            } catch (\FOSSBilling\Exception $e) {
+                $error = $e->getMessage();
+            }
+
+            if ($error !== null) {
+                $template->setLastError($error);
+                $template->setErrorCheckedAt(new \DateTimeImmutable());
+                ++$results['invalid'];
+                $results['errors'][] = [
+                    'id' => $template->getId(),
+                    'action_code' => $template->getActionCode(),
+                    'error' => $error,
+                ];
+            } else {
+                if ($template->hasError()) {
+                    $template->clearError();
+                }
+                ++$results['valid'];
+            }
+        }
+
+        $this->di['em']->flush();
+
+        return $results;
     }
 
     /**

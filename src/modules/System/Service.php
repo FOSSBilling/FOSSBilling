@@ -467,6 +467,26 @@ class Service
             );
         }
 
+        try {
+            $emailService = $this->di['mod_service']('email');
+            $brokenTemplates = $emailService->getBrokenTemplateCount();
+            if ($brokenTemplates > 0) {
+                $emailSettingsUrl = $this->di['url']->adminLink('extension/settings/email');
+                $messages[] = $this->createAdminAlert(
+                    'warning',
+                    __trans(':count email template(s) have syntax errors and cannot send emails. Please review and fix them.', [':count' => $brokenTemplates]),
+                    __trans('Broken Email Templates'),
+                    [[
+                        'link' => $emailSettingsUrl,
+                        'text' => __trans('View Email Templates'),
+                        'type' => 'warning',
+                    ]]
+                );
+            }
+        } catch (\Exception $e) {
+            error_log($e->getMessage());
+        }
+
         if ($type === null || $type === '') {
             return $messages;
         }

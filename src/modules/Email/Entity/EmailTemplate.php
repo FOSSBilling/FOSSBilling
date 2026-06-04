@@ -43,6 +43,12 @@ class EmailTemplate implements ApiArrayInterface
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $vars = null;
 
+    #[ORM\Column(name: 'last_error', type: Types::TEXT, nullable: true)]
+    private ?string $lastError = null;
+
+    #[ORM\Column(name: 'error_checked_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $errorCheckedAt = null;
+
     public function __construct(
         #[ORM\Column(name: 'action_code', type: Types::STRING, length: 255, unique: true)]
         private string $actionCode,
@@ -176,6 +182,43 @@ class EmailTemplate implements ApiArrayInterface
     public function setVars(?string $vars): self
     {
         $this->vars = $vars;
+
+        return $this;
+    }
+
+    public function getLastError(): ?string
+    {
+        return $this->lastError;
+    }
+
+    public function setLastError(?string $lastError): self
+    {
+        $this->lastError = $lastError;
+
+        return $this;
+    }
+
+    public function getErrorCheckedAt(): ?\DateTimeImmutable
+    {
+        return $this->errorCheckedAt;
+    }
+
+    public function setErrorCheckedAt(?\DateTimeImmutable $errorCheckedAt): self
+    {
+        $this->errorCheckedAt = $errorCheckedAt;
+
+        return $this;
+    }
+
+    public function hasError(): bool
+    {
+        return $this->lastError !== null && $this->lastError !== '';
+    }
+
+    public function clearError(): self
+    {
+        $this->lastError = null;
+        $this->errorCheckedAt = null;
 
         return $this;
     }

@@ -91,6 +91,12 @@
                             </svg>
                             <span>{{ 'Disable All'|trans }}</span>
                         </a>
+                        <button class="btn btn-secondary" id="validateTemplatesBtn">
+                            <svg class="icon">
+                                <use xlink:href="#check" />
+                            </svg>
+                            <span>{{ 'Validate All'|trans }}</span>
+                        </button>
                     </div>
                     {% endif %}
                     {{ include('partial_search.html.twig', {
@@ -179,7 +185,10 @@
                             {% for i, template in templates.list %}
                                 {% set type_label = template.is_custom ? 'Custom'|trans : 'Built-in'|trans %}
                                 {% set type_class = template.is_custom ? 'bg-blue-lt' : 'bg-secondary-lt' %}
-                                {% if template.is_custom %}
+                                {% if template.has_error %}
+                                    {% set status_label = 'Syntax Error'|trans %}
+                                    {% set status_class = 'bg-danger-lt' %}
+                                {% elseif template.is_custom %}
                                     {% set status_label = 'Database Only'|trans %}
                                     {% set status_class = 'bg-blue-lt' %}
                                 {% elseif not template.has_default %}
@@ -618,6 +627,29 @@
                 }
             });
         });
+
+        const validateBtn = document.getElementById('validateTemplatesBtn');
+        if (validateBtn) {
+            validateBtn.addEventListener('click', function(event) {
+                validateBtn.disabled = true;
+                FOSSBilling.api.admin.get('email/template_validate_all', {},
+                    (result) => {
+                        validateBtn.disabled = false;
+                        if (result.invalid > 0) {
+                            FOSSBilling.message("{{ 'Validation complete: :valid valid, :invalid invalid'|trans }}".replace(':valid', result.valid).replace(':invalid', result.invalid), 'warning');
+                        } else {
+                            FOSSBilling.message("{{ 'All :count templates are valid'|trans }}".replace(':count', result.valid));
+                        }
+                        setTimeout(() => location.reload(), 1500);
+                    },
+                    (result) => {
+                        validateBtn.disabled = false;
+                        FOSSBilling.message(result.message, 'error');
+                    });
+
+                event.preventDefault();
+            });
+        }
 
         {% if can_manage_templates %}
         if (window.location.hash === '#tab-new') {

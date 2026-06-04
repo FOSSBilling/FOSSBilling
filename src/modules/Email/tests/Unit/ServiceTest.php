@@ -51,6 +51,14 @@ function emailTemplate(string $actionCode = '', ?int $id = null, array $data = [
         $template->setIsOverridden((bool) $data['is_overridden']);
     }
 
+    if (array_key_exists('last_error', $data)) {
+        $template->setLastError($data['last_error']);
+    }
+
+    if (array_key_exists('error_checked_at', $data)) {
+        $template->setErrorCheckedAt($data['error_checked_at']);
+    }
+
     return $template;
 }
 
@@ -662,6 +670,8 @@ test('templateToApiArray returns deep array with vars', function (): void {
         ],
         'subject_override' => $subject,
         'content_override' => $content,
+        'has_error' => false,
+        'last_error' => null,
     ];
 
     $serviceMock = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
@@ -921,4 +931,218 @@ test('sendMail queues email for sending', function (): void {
     $content = 'content';
     $result = $service->sendMail($to, $from, $subject, $content);
     expect($result)->toBeTrue();
+});
+
+test('getBrokenTemplateCount returns count from repository', function (): void {
+    $service = new Box\Mod\Email\Service();
+    $di = container();
+
+    $repoMock = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class);
+    $repoMock->shouldReceive('countBroken')
+        ->once()
+        ->andReturn(3);
+
+    $service->setDi($di);
+
+    $ref = new ReflectionProperty($service, 'templateRepository');
+    $ref->setAccessible(true);
+    $ref->setValue($service, $repoMock);
+
+    expect($service->getBrokenTemplateCount())->toBe(3);
+});
+
+test('validateAllTemplates reports invalid templates', function (): void {
+    $serviceMock = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
+    $di = container();
+
+    $validTemplate = emailTemplate('mod_email_valid', 1, [
+        'enabled' => true,
+        'subject' => 'Hello',
+        'content' => 'World',
+    ]);
+
+    $invalidTemplate = emailTemplate('mod_email_broken', 2, [
+        'enabled' => true,
+        'subject' => 'Hello',
+        'content' => 'Broken',
+    ]);
+
+    $repoMock = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class);
+    $repoMock->shouldReceive('findAll')
+        ->once()
+        ->andReturn([$validTemplate, $invalidTemplate]);
+
+    $callCount = 0;
+    $systemMock = Mockery::mock();
+    $systemMock->shouldReceive('renderEmailTplString')
+        ->times(3)
+        ->andReturnUsing(function () use (&$callCount) {
+            ++$callCount;
+            if ($callCount === 3) {
+                throw new FOSSBilling\InformationException('Email template syntax error: Unknown "filter" filter');
+            }
+
+            return 'rendered';
+        });
+
+    $emMock = Mockery::mock();
+    $emMock->shouldReceive('flush')->once();
+
+    $di['mod_service'] = $di->protect(function ($name) use ($systemMock) {
+        if ($name === 'System' || $name === 'system') {
+            return $systemMock;
+        }
+    });
+    $di['em'] = $emMock;
+
+    $serviceMock->shouldReceive('getVars')->andReturn([]);
+
+    $serviceMock->setDi($di);
+
+    $ref = new ReflectionProperty($serviceMock, 'templateRepository');
+    $ref->setAccessible(true);
+    $ref->setValue($serviceMock, $repoMock);
+
+    $result = $serviceMock->validateAllTemplates();
+
+    expect($result['valid'])->toBe(1);
+    expect($result['invalid'])->toBe(1);
+    expect($result['errors'])->toHaveCount(1);
+    expect($result['errors'][0]['action_code'])->toBe('mod_email_broken');
+});
+
+test('validateAllTemplates clears previous errors on valid templates', function (): void {
+    $serviceMock = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
+    $di = container();
+
+    $template = emailTemplate('mod_email_recovery', 1, [
+        'enabled' => true,
+        'subject' => 'Hello',
+        'content' => 'World',
+        'last_error' => 'Previous error',
+    ]);
+
+    $repoMock = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class);
+    $repoMock->shouldReceive('findAll')
+        ->once()
+        ->andReturn([$template]);
+
+    $systemMock = Mockery::mock();
+    $systemMock->shouldReceive('renderEmailTplString')
+        ->twice()
+        ->andReturn('rendered');
+
+    $emMock = Mockery::mock();
+    $emMock->shouldReceive('flush')->once();
+
+    $di['mod_service'] = $di->protect(function ($name) use ($systemMock) {
+        if ($name === 'System' || $name === 'system') {
+            return $systemMock;
+        }
+    });
+    $di['em'] = $emMock;
+
+    $serviceMock->shouldReceive('getVars')->andReturn([]);
+
+    $serviceMock->setDi($di);
+
+    $ref = new ReflectionProperty($serviceMock, 'templateRepository');
+    $ref->setAccessible(true);
+    $ref->setValue($serviceMock, $repoMock);
+
+    $result = $serviceMock->validateAllTemplates();
+
+    expect($result['valid'])->toBe(1);
+    expect($result['invalid'])->toBe(0);
+    expect($template->hasError())->toBeFalse();
+});
+
+test('templateCreate validates subject and content', function (): void {
+    $service = new Box\Mod\Email\Service();
+    $di = container();
+
+    $systemMock = Mockery::mock();
+    $systemMock->shouldReceive('renderEmailTplString')
+        ->once()
+        ->withArgs(fn ($tpl) => str_contains($tpl, 'valid subject'))
+        ->andReturn('rendered');
+    $systemMock->shouldReceive('renderEmailTplString')
+        ->once()
+        ->withArgs(fn ($tpl) => str_contains($tpl, 'valid content'))
+        ->andReturn('rendered');
+
+    $emMock = Mockery::mock();
+    $emMock->shouldReceive('persist')->once();
+    $emMock->shouldReceive('flush')->once();
+
+    $di['mod_service'] = $di->protect(function ($name) use ($systemMock) {
+        if ($name === 'System' || $name === 'system') {
+            return $systemMock;
+        }
+    });
+    $di['em'] = $emMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $service->setDi($di);
+
+    $template = $service->templateCreate('mod_test_code', 'valid subject', 'valid content', 1, 'test');
+
+    expect($template)->toBeInstanceOf(EmailTemplate::class);
+});
+
+test('templateCreate throws on invalid content', function (): void {
+    $service = new Box\Mod\Email\Service();
+    $di = container();
+
+    $systemMock = Mockery::mock();
+    $systemMock->shouldReceive('renderEmailTplString')
+        ->once()
+        ->andReturn('rendered');
+    $systemMock->shouldReceive('renderEmailTplString')
+        ->once()
+        ->andThrow(new FOSSBilling\InformationException('Email template syntax error: Unknown "bad_filter" filter'));
+
+    $di['mod_service'] = $di->protect(function ($name) use ($systemMock) {
+        if ($name === 'System' || $name === 'system') {
+            return $systemMock;
+        }
+    });
+
+    $service->setDi($di);
+
+    $service->templateCreate('mod_test_broken', 'subject', '{{ x|bad_filter }}', 1);
+})->throws(FOSSBilling\InformationException::class, 'Email template syntax error');
+
+test('EmailTemplate hasError returns true when lastError is set', function (): void {
+    $template = new EmailTemplate('test_code', 1);
+
+    expect($template->hasError())->toBeFalse();
+
+    $template->setLastError('Some error message');
+    expect($template->hasError())->toBeTrue();
+
+    $template->clearError();
+    expect($template->hasError())->toBeFalse();
+    expect($template->getLastError())->toBeNull();
+    expect($template->getErrorCheckedAt())->toBeNull();
+});
+
+test('EmailTemplate toApiArray includes has_error and last_error in deep mode', function (): void {
+    $template = emailTemplate('mod_test_code', 1, [
+        'enabled' => true,
+        'subject' => 'Test Subject',
+        'content' => 'Test Content',
+        'is_custom' => true,
+        'last_error' => 'Some syntax error',
+    ]);
+
+    $serviceMock = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
+    $serviceMock->shouldReceive('getVars')
+        ->atLeast()->once()
+        ->andReturn([]);
+
+    $result = $serviceMock->templateToApiArray($template, true);
+
+    expect($result['has_error'])->toBeTrue();
+    expect($result['last_error'])->toBe('Some syntax error');
 });

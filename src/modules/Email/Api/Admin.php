@@ -168,6 +168,7 @@ class Admin extends \Api_Abstract
                 'is_custom' => $item['is_custom'] ?? false,
                 'has_default' => $item['has_default'] ?? false,
                 'is_overridden' => $item['is_overridden'] ?? false,
+                'has_error' => $item['has_error'] ?? false,
             ];
         }
 
@@ -330,6 +331,19 @@ class Admin extends \Api_Abstract
         $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'manage_templates');
 
         return $this->getService()->templateBatchEnable();
+    }
+
+    /**
+     * Validate all email templates for Twig syntax errors.
+     * Returns a summary of valid and invalid templates with error details.
+     *
+     * @return array
+     */
+    public function template_validate_all()
+    {
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'manage_templates');
+
+        return $this->getService()->validateAllTemplates();
     }
 
     /**
