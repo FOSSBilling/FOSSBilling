@@ -37,7 +37,7 @@ use Twig\NodeTraverser;
 final class StrictTemplateRenderer
 {
     /**
-     * @return list<array{file: string, template: string, error: string}>
+     * @return list<array{file: string, template: string, error: string, category: string}>
      */
     public function renderAllTemplates(bool $emailMode = false): array
     {
