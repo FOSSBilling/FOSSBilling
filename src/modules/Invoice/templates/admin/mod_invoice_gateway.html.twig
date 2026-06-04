@@ -78,7 +78,7 @@
                             <div>
                                 {% if element[0] == 'select' %}
                                     <label class="form-label" for="gateway-config-{{ name }}">{{ element[1].label }}</label>
-                                    {% if element[1].description %}<div class="form-text mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
+                                    {% if element[1].description %}<div class="form-text mb-2">{{ (element[1].description ?? '')|markdown_to_html }}</div>{% endif %}
                                     <select class="form-select" id="gateway-config-{{ name }}" name="config[{{ name }}]">
                                         {% for k, v in element[1].multiOptions %}
                                             <option value="{{ k }}"{% if k == gateway.config[name] %} selected{% endif %}>{{ v }}</option>

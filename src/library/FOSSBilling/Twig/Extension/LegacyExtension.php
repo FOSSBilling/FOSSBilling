@@ -52,14 +52,22 @@ class LegacyExtension
     }
 
     #[AsTwigFilter('mod_asset_url')]
-    public function modAssetUrl(string $asset, string $module): string
+    public function modAssetUrl(?string $asset, ?string $module): string
     {
+        if ($asset === null || $module === null) {
+            return '';
+        }
+
         return SYSTEM_URL . 'modules/' . ucfirst($module) . "/assets/{$asset}";
     }
 
     #[AsTwigFilter('period_title', isSafe: ['html'])]
     public function periodTitle(?string $period): string
     {
+        if ($period === null) {
+            return '';
+        }
+
         return $this->di['api_guest']->system_period_title(['code' => $period]);
     }
 }
