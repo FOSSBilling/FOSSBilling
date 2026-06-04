@@ -8,11 +8,34 @@ jobs:
     name: 'Browser Tests'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      APP_URL: http://localhost:8080/
+      ADMIN_EMAIL: email@example.com
+      ADMIN_PASSWORD: 4WGemqiihh8iM3
+      TEST_API_KEY: AW6qEQCa7U7FG96J9NFIZXNYMJ79M8LH
     steps:
       - name: 'Checkout Repository'
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           persist-credentials: false
+
+      - name: 'Setup PHP'
+        uses: shivammathur/setup-php@9e720905d8c4bade3a3a5d2e2f99d8650843e1e4 # v2
+        with:
+          php-version: '8.3'
+
+      - name: 'Install Composer Dependencies'
+        uses: ramsey/composer-install@3cf2f65b13b65b9a50e7d709042e246c04939b04 # v3
+        with:
+          working-directory: .
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: lts/*
+
+      - name: 'Install Playwright'
+        run: npm ci && npx playwright install --with-deps chromium
 
       - name: 'Lowercase github.repository'
         run: |
@@ -37,8 +60,15 @@ jobs:
             fossbilling:browser-test
           target: test
 
+      - name: 'Start FOSSBilling Test Environment'
+        run: bash ./.github/scripts/run-docker-browser-tests.sh setup fossbilling:browser-test
+
       - name: 'Run Browser Tests'
-        run: bash ./.github/scripts/run-docker-browser-tests.sh fossbilling:browser-test
+        run: ./src/vendor/bin/pest --test-directory ../tests --testsuite=Browser --ci
+
+      - name: 'Tear Down Test Environment'
+        if: always()
+        run: bash ./.github/scripts/run-docker-browser-tests.sh teardown
 
       - name: 'Upload Browser Test Artifacts'
         if: ${{ failure() }}

@@ -19,11 +19,6 @@ function adminPassword(): string
     return getenv('ADMIN_PASSWORD') ?: '4WGemqiihh8iM3';
 }
 
-function adminApiKey(): string
-{
-    return getenv('TEST_API_KEY') ?: 'AW6qEQCa7U7FG96J9NFIZXNYMJ79M8LH';
-}
-
 function createTestClient(array $overrides = []): array
 {
     $suffix = uniqid('', true);
@@ -66,25 +61,6 @@ function createTestClient(array $overrides = []): array
         ...$client,
         'id' => $data['result'],
     ];
-}
-
-function apiGetCsrfToken(string $baseUrl): string
-{
-    $ch = curl_init();
-    curl_setopt_array($ch, [
-        CURLOPT_URL => $baseUrl,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HEADER => true,
-    ]);
-    $response = curl_exec($ch);
-    curl_close($ch);
-
-    preg_match('/csrf_token=([^;]+)/', $response, $matches);
-    if (!isset($matches[1])) {
-        throw new \RuntimeException('CSRF token not found in response');
-    }
-
-    return $matches[1];
 }
 
 function apiRequest(string $method, string $url, array $body = [], ?string $csrfToken = null): array
