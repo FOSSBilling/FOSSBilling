@@ -443,9 +443,10 @@ class Service implements InjectionAwareInterface
     {
         // Runtime check for admin area - uses index.php defined constant
         // @phpstan-ignore if.alwaysTrue
-        return $this->getCurrentAdminAreaTheme()['code'];
+        if (ADMIN_AREA) {
+            return $this->getCurrentAdminAreaTheme()['code'];
+        }
 
-        // @phpstan-ignore deadCode.unreachable
         return $this->getCurrentClientAreaTheme()->getName();
     }
 
