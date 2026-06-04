@@ -51,6 +51,7 @@ require_once __DIR__ . '/Helpers/Container.php';
 require_once __DIR__ . '/Helpers/Factories.php';
 require_once __DIR__ . '/Helpers/Api.php';
 require_once __DIR__ . '/Helpers/DummyBean.php';
+require_once __DIR__ . '/Helpers/Browser.php';
 
 // Load test datasets
 require_once __DIR__ . '/Datasets/PeriodCodes.php';
@@ -107,6 +108,13 @@ if ($appUrl && $testApiKey) {
         })
         ->in('E2E');
 }
+
+// Configure Browser tests - requires live instance with Playwright
+// Run with: ./vendor/bin/pest --testsuite=Browser
+// Requires APP_URL environment variable and Playwright installed (npm install playwright)
+pest()->browser()
+    ->inChrome()
+    ->timeout(10_000);
 
 /*
 |--------------------------------------------------------------------------

@@ -91,6 +91,7 @@
         "friendsofphp/php-cs-fixer": "^3.92.3",
         "mockery/mockery": "^1.6",
         "pestphp/pest": "^4.0",
+        "pestphp/pest-plugin-browser": "^4.3",
         "phpstan/extension-installer": "^1.4.3",
         "phpstan/phpstan": "^2.1.33",
         "phpstan/phpstan-deprecation-rules": "^2.0.3",
