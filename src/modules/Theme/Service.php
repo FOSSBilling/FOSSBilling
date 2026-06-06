@@ -341,11 +341,11 @@ class Service implements InjectionAwareInterface
         foreach ($finder as $file) {
             try {
                 if (!$client && str_contains($file->getFilename(), 'admin')) {
-                    $list[] = $this->_loadTheme($file->getFilename());
+                    $list[] = $this->buildThemeConfig($file->getFilename());
                 }
 
                 if ($client && !str_contains($file->getFilename(), 'admin')) {
-                    $list[] = $this->_loadTheme($file->getFilename());
+                    $list[] = $this->buildThemeConfig($file->getFilename());
                 }
             } catch (\Exception $e) {
                 error_log($e->getMessage());
