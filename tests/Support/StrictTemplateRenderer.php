@@ -376,7 +376,7 @@ final class StrictTemplateRenderer
     {
         $message = $e->getMessage();
         if (strlen($message) > 250) {
-            $message = substr($message, 0, 250) . '…';
+            $message = substr($message, 0, 250) . '...';
         }
 
         return $e::class . ': ' . $message;
