@@ -46,7 +46,7 @@ class Service
         return [
             'view' => [
                 'type' => 'bool',
-                'display_name' => __trans('View system information'),
+                'display_name' => __trans('View System Information'),
                 'description' => __trans('Allows the staff member to view system status, update availability, and other read-only system information.'),
             ],
             'manage_settings' => [
