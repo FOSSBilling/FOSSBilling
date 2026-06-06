@@ -27,6 +27,14 @@ return (new PhpCsFixer\Config())
         'array_push' => true, // Risky when the function array_push is overridden. In our case, it's not.
         'no_useless_sprintf' => true, // Risky when the function sprintf is overridden. In our case, it's not.
         'no_homoglyph_names' => true, // Risky - https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/blob/master/doc/rules/naming/no_homoglyph_names.rst.
+        // Keep parentheses around `new ClassName()->method()` chains so the
+        // code parses on PHP 8.3 — the project's minimum supported version.
+        // PHP 8.4 added the ability to omit the parens
+        // (https://wiki.php.net/rfc/new_without_parentheses) and the
+        // `@auto` rule set's default of `use_parentheses: false` enforces
+        // that, but the CI matrix still runs on PHP 8.3 where the bare
+        // `new X()->y()` form is a syntax error.
+        'new_expression_parentheses' => ['use_parentheses' => true],
     ])
     ->setRiskyAllowed(true)
     ->setFinder(

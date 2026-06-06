@@ -77,7 +77,7 @@ function edgeCaseCartCurrency(): array
 }
 
 test('orderbutton product configuration renders a domain product', function (): void {
-    $html = new StrictTemplateRenderer()->renderTemplate(
+    $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_MODS . '/Orderbutton/templates/client/mod_orderbutton_product_configuration.html.twig',
         [
             'app_area' => 'client',
@@ -103,7 +103,7 @@ test('orderbutton product configuration renders a domain product', function (): 
 });
 
 test('orderbutton product configuration renders a hosting product', function (): void {
-    $html = new StrictTemplateRenderer()->renderTemplate(
+    $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_MODS . '/Orderbutton/templates/client/mod_orderbutton_product_configuration.html.twig',
         [
             'app_area' => 'client',
@@ -134,7 +134,7 @@ test('orderbutton product configuration renders a hosting product', function ():
 });
 
 test('orderbutton product configuration renders a one-time payment product', function (): void {
-    $html = new StrictTemplateRenderer()->renderTemplate(
+    $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_MODS . '/Orderbutton/templates/client/mod_orderbutton_product_configuration.html.twig',
         [
             'app_area' => 'client',
@@ -160,7 +160,7 @@ test('orderbutton product configuration renders a one-time payment product', fun
 });
 
 test('orderbutton addons renders a product without addons key', function (): void {
-    $html = new StrictTemplateRenderer()->renderTemplate(
+    $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_MODS . '/Orderbutton/templates/client/mod_orderbutton_addons.html.twig',
         [
             'app_area' => 'client',
@@ -178,7 +178,7 @@ test('orderbutton addons renders a product without addons key', function (): voi
 });
 
 test('activity index renders a staff-only event (no client key)', function (): void {
-    $html = new StrictTemplateRenderer()->renderTemplate(
+    $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_MODS . '/Activity/templates/admin/mod_activity_index.html.twig',
         [
             'app_area' => 'admin',
@@ -211,7 +211,7 @@ test('activity index renders a staff-only event (no client key)', function (): v
 });
 
 test('activity index renders a system event (no client, no staff)', function (): void {
-    $html = new StrictTemplateRenderer()->renderTemplate(
+    $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_MODS . '/Activity/templates/admin/mod_activity_index.html.twig',
         [
             'app_area' => 'admin',
@@ -243,7 +243,7 @@ test('activity index renders a system event (no client, no staff)', function ():
 });
 
 test('activity index renders a mixed list of all three event shapes', function (): void {
-    $html = new StrictTemplateRenderer()->renderTemplate(
+    $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_MODS . '/Activity/templates/admin/mod_activity_index.html.twig',
         [
             'app_area' => 'admin',
@@ -282,7 +282,7 @@ test('activity index renders a mixed list of all three event shapes', function (
 });
 
 test('security iplookup renders with empty asn array', function (): void {
-    $html = new StrictTemplateRenderer()->renderTemplate(
+    $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_MODS . '/Security/templates/admin/mod_security_iplookup.html.twig',
         [
             'app_area' => 'admin',
@@ -299,7 +299,7 @@ test('security iplookup renders with empty asn array', function (): void {
 });
 
 test('security iplookup renders with empty country array', function (): void {
-    $html = new StrictTemplateRenderer()->renderTemplate(
+    $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_MODS . '/Security/templates/admin/mod_security_iplookup.html.twig',
         [
             'app_area' => 'admin',
@@ -316,7 +316,7 @@ test('security iplookup renders with empty country array', function (): void {
 });
 
 test('security iplookup renders with no record (initial page load)', function (): void {
-    $html = new StrictTemplateRenderer()->renderTemplate(
+    $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_MODS . '/Security/templates/admin/mod_security_iplookup.html.twig',
         [
             'app_area' => 'admin',
@@ -329,7 +329,7 @@ test('security iplookup renders with no record (initial page load)', function ()
 });
 
 test('support admin ticket renders with no notes and no rel', function (): void {
-    $html = new StrictTemplateRenderer()->renderTemplate(
+    $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_MODS . '/Support/templates/admin/mod_support_ticket.html.twig',
         [
             'app_area' => 'admin',
@@ -378,7 +378,7 @@ test('support admin ticket renders with no notes and no rel', function (): void 
 });
 
 test('support admin ticket renders with a related order and a note', function (): void {
-    $html = new StrictTemplateRenderer()->renderTemplate(
+    $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_MODS . '/Support/templates/admin/mod_support_ticket.html.twig',
         [
             'app_area' => 'admin',
@@ -434,7 +434,7 @@ test('support admin ticket renders with a related order and a note', function ()
 });
 
 test('support admin ticket renders with a pending task (rel.status=pending)', function (): void {
-    $html = new StrictTemplateRenderer()->renderTemplate(
+    $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_MODS . '/Support/templates/admin/mod_support_ticket.html.twig',
         [
             'app_area' => 'admin',

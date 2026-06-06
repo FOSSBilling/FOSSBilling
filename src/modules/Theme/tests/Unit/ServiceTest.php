@@ -220,7 +220,7 @@ test('getThemePresets returns default when theme has no settings data file', fun
 
 test('getThemeSettings returns theme settings', function (): void {
     $service = new Service();
-    $extensionMetaModel = new ExtensionMeta()->setMetaValue('{}');
+    $extensionMetaModel = (new ExtensionMeta())->setMetaValue('{}');
 
     $repositoryMock = Mockery::mock(Box\Mod\Extension\Repository\ExtensionMetaRepository::class);
     $repositoryMock->shouldReceive('findOneByExtensionAndScope')
