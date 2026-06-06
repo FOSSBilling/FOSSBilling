@@ -154,6 +154,15 @@ final class StrictTemplateRenderer
     private function buildEnvironment(bool $emailMode, bool $stringifyUrls = false): Environment
     {
         $loader = new CombinedTwigLoader(PATH_THEMES);
+        // Also register every module template directory under the unnamed path
+        // so unqualified `{% include 'mod_foo.html.twig' %}` calls resolve.
+        // CombinedTwigLoader already registers them under `@Module_area`
+        // namespaces; this mirrors that for bare-name lookups.
+        $finder = new Finder();
+        $finder->directories()->in(PATH_MODS)->depth('== 2')->ignoreDotFiles(true)->name(['admin', 'client', 'email']);
+        foreach ($finder as $dir) {
+            $loader->addPath($dir->getPathName());
+        }
         $twig = new Environment($loader, [
             'strict_variables' => true,
             'auto_reload' => true,
@@ -254,6 +263,20 @@ final class StrictTemplateRenderer
                         public function adminLink(string $path, ?array $query = null): string
                         {
                             return '';
+                        }
+                    };
+                }
+
+                if ($offset === 'geoip') {
+                    return new class {
+                        public function __call(string $name, array $args): mixed
+                        {
+                            throw new \RuntimeException('geoip service not available in test environment');
+                        }
+
+                        public function __get(string $name): mixed
+                        {
+                            throw new \RuntimeException('geoip service not available in test environment');
                         }
                     };
                 }

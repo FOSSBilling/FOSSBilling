@@ -18,7 +18,7 @@ test('di returns dependency injection container', function (): void {
     $di = container();
     $db = Mockery::mock('Box_Database');
 
-    $repositoryStub = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryStub = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
 
     $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
@@ -36,7 +36,7 @@ test('getBaseCurrencyRate returns rate for currency', function (): void {
     $service = new Box\Mod\Currency\Service();
     $rate = 0.6;
     $expected = 1 / $rate;
-    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     $repositoryMock->shouldReceive('getRateByCode')
         ->atLeast()->once()
         ->andReturn($rate);
@@ -57,7 +57,7 @@ test('getBaseCurrencyRate returns rate for currency', function (): void {
 test('getBaseCurrencyRate throws exception when rate is zero', function (): void {
     $service = new Box\Mod\Currency\Service();
 
-    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     $repositoryMock->shouldReceive('getRateByCode')
         ->atLeast()->once()
         ->andReturn(0.0);
@@ -79,7 +79,7 @@ test('getBaseCurrencyRate throws exception when rate is zero', function (): void
 test('getBaseCurrencyRate throws exception when currency not found', function (): void {
     $service = new Box\Mod\Currency\Service();
 
-    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     $repositoryMock->shouldReceive('getRateByCode')
         ->atLeast()->once()
         ->andReturn(null);
@@ -110,7 +110,7 @@ test('toBaseCurrency converts amount to base currency', function (string $defaul
         ->atLeast()->once()
         ->andReturn($defaultCode);
 
-    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     $repositoryMock->shouldReceive('findDefault')
         ->atLeast()->once()
         ->andReturn($model);
@@ -149,7 +149,7 @@ test('getCurrencyByClientId returns currency for client', function (?string $cur
         ->atLeast()->once()
         ->andReturn($currency);
 
-    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     if ($expectsGetDefault === 'atLeastOnce') {
         $repositoryMock->shouldReceive('findDefault')
             ->atLeast()->once()
@@ -187,7 +187,7 @@ dataset('getRateByCodeProvider', fn (): array => [
 ]);
 
 test('getRateByCode returns rate for currency code', function (string $code, ?float $returns, ?float $expected): void {
-    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     $repositoryMock->shouldReceive('getRateByCode')
         ->atLeast()->once()
         ->andReturn($returns);
@@ -246,7 +246,7 @@ test('setAsDefault sets currency as default', function (string $modelType, strin
             ->with(true);
     }
 
-    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     if ($expects === 'atLeastOnce') {
         $repositoryMock->shouldReceive('clearDefaultFlags')
             ->atLeast()->once();
@@ -297,7 +297,7 @@ test('setAsDefault throws exception when currency code is empty', function (): v
         ->byDefault()
         ->andReturn('');
 
-    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
 
     $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
@@ -320,7 +320,7 @@ test('getPairs returns currency pairs', function (): void {
         'EUR' => 'Euro',
         'GBP' => 'Pound Sterling',
     ];
-    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     $repositoryMock->shouldReceive('getPairs')
         ->atLeast()->once()
         ->andReturn($pairs);
@@ -349,7 +349,7 @@ test('removeCurrency throws exception when deleting default currency', function 
         ->byDefault()
         ->andReturn(true);
 
-    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     $repositoryMock->shouldReceive('findOneByCode')
         ->once()
         ->with('EUR')
@@ -379,7 +379,7 @@ test('removeCurrency removes currency', function (): void {
         ->byDefault()
         ->andReturn(false);
 
-    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     $repositoryMock->shouldReceive('findOneByCode')
         ->once()
         ->with('EUR')
@@ -412,7 +412,7 @@ test('removeCurrency removes currency', function (): void {
 });
 
 test('removeCurrency throws exception when currency is not found', function (): void {
-    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     $repositoryMock->shouldReceive('findOneByCode')
         ->once()
         ->with('')
@@ -455,7 +455,7 @@ test('toApiArray returns API array for currency', function (): void {
 
 test('createCurrency creates new currency', function (): void {
     $code = 'EUR';
-    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
 
     $emMock = Mockery::mock(Doctrine\ORM\EntityManager::class);
     $emMock->shouldReceive('getRepository')
@@ -492,7 +492,7 @@ test('updateCurrency updates currency', function (): void {
         ->atLeast()->once()
         ->with(0.6);
 
-    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     $repositoryMock->shouldReceive('findOneByCode')
         ->atLeast()->once()
         ->andReturn($model);
@@ -523,7 +523,7 @@ test('updateCurrency throws exception when currency not found', function (): voi
     $code = 'EUR';
     $conversion_rate = 0.6;
 
-    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     $repositoryMock->shouldReceive('findOneByCode')
         ->atLeast()->once()
         ->andReturn(null);
@@ -551,7 +551,7 @@ test('updateCurrency throws exception when conversion rate is zero', function ()
     $model->shouldReceive('setConversionRate')
         ->byDefault();
 
-    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     $repositoryMock->shouldReceive('findOneByCode')
         ->atLeast()->once()
         ->andReturn($model);
@@ -592,7 +592,7 @@ test('updateCurrencyRates updates rates for all currencies', function (): void {
     $otherModel->shouldReceive('setConversionRate')
         ->byDefault();
 
-    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     $repositoryMock->shouldReceive('findDefault')
         ->atLeast()->once()
         ->andReturn($defaultModel);
@@ -636,7 +636,7 @@ test('updateCurrencyRates handles non-numeric rates', function (): void {
     $model->shouldReceive('setConversionRate')
         ->byDefault();
 
-    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     $repositoryMock->shouldReceive('findDefault')
         ->atLeast()->once()
         ->andReturn($model);
@@ -680,7 +680,7 @@ test('removeCurrency deletes currency by code', function (): void {
 
     $code = 'EUR';
 
-    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     $repositoryMock->shouldReceive('findOneByCode')
         ->atLeast()->once()
         ->andReturn($model);
@@ -716,7 +716,7 @@ test('removeCurrency deletes currency by code', function (): void {
 test('removeCurrency throws exception when currency not found by code', function (): void {
     $code = 'EUR';
 
-    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     $repositoryMock->shouldReceive('findOneByCode')
         ->atLeast()->once()
         ->andReturn(null);

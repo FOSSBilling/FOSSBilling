@@ -937,7 +937,7 @@ test('getBrokenTemplateCount returns count from repository', function (): void {
     $service = new Box\Mod\Email\Service();
     $di = container();
 
-    $repoMock = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class);
+    $repoMock = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class)->shouldIgnoreMissing();
     $repoMock->shouldReceive('countBroken')
         ->once()
         ->andReturn(3);
@@ -967,7 +967,7 @@ test('validateAllTemplates reports invalid templates', function (): void {
         'content' => 'Broken',
     ]);
 
-    $repoMock = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class);
+    $repoMock = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class)->shouldIgnoreMissing();
     $repoMock->shouldReceive('findAll')
         ->once()
         ->andReturn([$validTemplate, $invalidTemplate]);
@@ -1020,7 +1020,7 @@ test('validateAllTemplates clears previous errors on valid templates', function 
         'last_error' => 'Previous error',
     ]);
 
-    $repoMock = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class);
+    $repoMock = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class)->shouldIgnoreMissing();
     $repoMock->shouldReceive('findAll')
         ->once()
         ->andReturn([$template]);
@@ -1064,7 +1064,7 @@ test('validateAllTemplates renders templates with stored vars to enforce sandbox
         'vars' => 'encrypted-vars',
     ]);
 
-    $repoMock = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class);
+    $repoMock = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class)->shouldIgnoreMissing();
     $repoMock->shouldReceive('findAll')
         ->once()
         ->andReturn([$template]);

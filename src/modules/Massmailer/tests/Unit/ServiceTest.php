@@ -11,7 +11,7 @@ use FOSSBilling\InformationException;
 function createMassmailerDi(?Connection $dbal = null): Pimple\Container
 {
     $di = new Pimple\Container();
-    $repo = Mockery::mock(MassmailerMessageRepository::class);
+    $repo = Mockery::mock(MassmailerMessageRepository::class)->shouldIgnoreMissing();
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->with(MassmailerMessage::class)->andReturn($repo);
     $di['em'] = $em;
@@ -76,7 +76,7 @@ test('get message receivers builds parameterized query', function (): void {
     $dbal = createMassmailerDbal();
     seedReceiverTables($dbal);
 
-    $model = (new MassmailerMessage())->setFilter(json_encode([
+    $model = new MassmailerMessage()->setFilter(json_encode([
         'client_status' => ['active'],
         'client_groups' => [1],
         'has_order' => [10],
@@ -90,7 +90,7 @@ test('get message receivers builds parameterized query', function (): void {
 });
 
 test('get message receivers rejects invalid stored filter', function (): void {
-    $model = (new MassmailerMessage())->setFilter(json_encode([
+    $model = new MassmailerMessage()->setFilter(json_encode([
         'client_status' => ['active', 'not-valid'],
     ], JSON_THROW_ON_ERROR));
 

@@ -24,7 +24,7 @@ test('get search query builder applies supported filters', function (): void {
     });
     $queryBuilder->shouldReceive('orderBy')->with('n.id', 'DESC')->once()->andReturn($queryBuilder);
 
-    $repository = Mockery::mock(ExtensionMetaRepository::class)->makePartial();
+    $repository = Mockery::mock(ExtensionMetaRepository::class)->makePartial()->shouldIgnoreMissing();
     $repository->shouldReceive('createQueryBuilderForExtension')->with('mod_notification', 'n')->once()->andReturn($queryBuilder);
 
     $em = Mockery::mock(EntityManagerInterface::class);

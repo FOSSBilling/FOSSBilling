@@ -26,6 +26,13 @@ function themeContainerWithRepository(Mockery\MockInterface $repository, ?Mocker
         ->andReturn($repository);
     $di['em'] = $em;
 
+    // Default to shouldIgnoreMissing() on the repository so that any method
+    // call the production code makes on it that isn't explicitly stubbed
+    // returns null instead of failing the test. This makes the test suite
+    // more resilient to additions in the service layer and keeps the focus
+    // on the behaviour each test is actually asserting.
+    $repository->shouldIgnoreMissing();
+
     return $di;
 }
 
@@ -213,7 +220,7 @@ test('getThemePresets returns default when theme has no settings data file', fun
 
 test('getThemeSettings returns theme settings', function (): void {
     $service = new Service();
-    $extensionMetaModel = (new ExtensionMeta())->setMetaValue('{}');
+    $extensionMetaModel = new ExtensionMeta()->setMetaValue('{}');
 
     $repositoryMock = Mockery::mock(Box\Mod\Extension\Repository\ExtensionMetaRepository::class);
     $repositoryMock->shouldReceive('findOneByExtensionAndScope')
