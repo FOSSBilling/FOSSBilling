@@ -118,7 +118,6 @@ final class StrictTemplateRenderer
             }
         }
 
-
         return $context;
     }
 
