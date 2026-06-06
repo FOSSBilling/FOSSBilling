@@ -365,12 +365,12 @@ class Service implements InjectionAwareInterface
             $theme = $default;
         }
 
-        return $this->_loadTheme($theme, $client, $mod);
+        return $this->buildThemeConfig($theme, $client, $mod);
     }
 
     public function loadTheme($code, $client = true, $mod = null)
     {
-        return $this->_loadTheme($code, $client, $mod);
+        return $this->buildThemeConfig($code, $client, $mod);
     }
 
     public function getThemesPath()
@@ -378,7 +378,7 @@ class Service implements InjectionAwareInterface
         return PATH_THEMES;
     }
 
-    private function _loadTheme($theme, $client = true, $mod = null): array
+    private function buildThemeConfig($theme, $client = true, $mod = null): array
     {
         $theme_path = Path::join($this->getThemesPath(), $theme);
 
