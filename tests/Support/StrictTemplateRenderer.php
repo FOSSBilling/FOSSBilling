@@ -36,13 +36,18 @@ use Twig\NodeTraverser;
  */
 final class StrictTemplateRenderer
 {
+    private function suppressNoticesAndWarnings(int $reportingLevel): int
+    {
+        return $reportingLevel & ~E_NOTICE & ~E_WARNING;
+    }
+
     /**
      * @param array<string, mixed> $contextOverrides
      */
     public function renderTemplate(string $templatePath, array $contextOverrides = [], bool $emailMode = false): string
     {
         $previousLevel = error_reporting();
-        error_reporting($previousLevel & ~E_NOTICE & ~E_WARNING);
+        error_reporting($this->suppressNoticesAndWarnings($previousLevel));
 
         try {
             $twig = $this->buildEnvironment($emailMode, stringifyUrls: true);
@@ -76,7 +81,7 @@ final class StrictTemplateRenderer
         // keeps unrelated tests in the suite under their normal reporting
         // settings.
         $previousLevel = error_reporting();
-        error_reporting($previousLevel & ~E_NOTICE & ~E_WARNING);
+        error_reporting($this->suppressNoticesAndWarnings($previousLevel));
 
         try {
             $twig = $this->buildEnvironment($emailMode);
