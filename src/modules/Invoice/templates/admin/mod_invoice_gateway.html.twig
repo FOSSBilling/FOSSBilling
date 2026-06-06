@@ -71,48 +71,49 @@
             } %}
                 
                 {% block form_content %}
+                    {% import 'macro_functions.html.twig' as mf %}
                     <div class="d-flex flex-column gap-4">
                         {% for name, element in gateway.form %}
                             {% set field_required = mf.compute_field_required(element, gateway) == 'true' %}
                             <div>
                                 {% if element[0] == 'select' %}
                                     <label class="form-label" for="gateway-config-{{ name }}">{{ element[1].label }}</label>
-                                    {% if element[1].description %}<div class="form-text mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
+                                    {% if element[1].description is defined and element[1].description %}<div class="form-text mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
                                     <select class="form-select" id="gateway-config-{{ name }}" name="config[{{ name }}]">
                                         {% for k, v in element[1].multiOptions %}
-                                            <option value="{{ k }}"{% if k == gateway.config[name] %} selected{% endif %}>{{ v }}</option>
+                                            <option value="{{ k }}"{% if k == gateway.config[name]|default('') %} selected{% endif %}>{{ v }}</option>
                                         {% endfor %}
                                     </select>
                                 {% elseif element[0] == 'multiselect' %}
                                     <label class="form-label" for="gateway-config-{{ name }}">{{ element[1].label }}</label>
-                                    {% if element[1].description %}<div class="form-text mb-2">{{ (element[1].description ?? '')|markdown_to_html }}</div>{% endif %}
+                                    {% if element[1].description is defined and element[1].description %}<div class="form-text mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
                                     <select class="form-select" id="gateway-config-{{ name }}" name="config[{{ name }}]" multiple>
                                         {% for k, v in element[1].multiOptions %}
-                                            <option value="{{ k }}"{% if gateway.config[name] is iterable and k in gateway.config[name] %} selected{% endif %}>{{ v }}</option>
+                                            <option value="{{ k }}"{% if k in gateway.config[name]|default([]) %} selected{% endif %}>{{ v }}</option>
                                         {% endfor %}
                                     </select>
                                 {% elseif element[0] == 'radio' %}
                                     <label class="form-label d-block">{{ element[1].label }}</label>
-                                    {% if element[1].description %}<div class="form-text mb-2">{{ (element[1].description ?? '')|markdown_to_html }}</div>{% endif %}
+                                    {% if element[1].description is defined and element[1].description %}<div class="form-text mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
                                     <div class="d-flex flex-wrap gap-3">
                                         {% for k, v in element[1].multiOptions %}
                                             <label class="form-check">
-                                                <input class="form-check-input" id="gateway-config-{{ name }}-{{ k }}" type="radio" name="config[{{ name }}]" value="{{ k }}"{% if k == gateway.config[name] %} checked{% endif %}>
+                                                <input class="form-check-input" id="gateway-config-{{ name }}-{{ k }}" type="radio" name="config[{{ name }}]" value="{{ k }}"{% if k == gateway.config[name]|default('') %} checked{% endif %}>
                                                 <span class="form-check-label">{{ v }}</span>
                                             </label>
                                         {% endfor %}
                                     </div>
                                 {% elseif element[0] == 'textarea' %}
                                     <label class="form-label" for="gateway-config-{{ name }}">{{ element[1].label }}</label>
-                                    {% if element[1].description %}<div class="form-text mb-2">{{ (element[1].description ?? '')|markdown_to_html }}</div>{% endif %}
+                                    {% if element[1].description is defined and element[1].description %}<div class="form-text mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
                                     <textarea class="form-control" id="gateway-config-{{ name }}" name="config[{{ name }}]" rows="8"
                                         {% if field_required %} required{% endif %}
                                         {% if element[1].required_when is defined and element[1].required_when.enabled is defined %} data-required-when-enabled="{{ element[1].required_when.enabled ? 'true' : 'false' }}"{% endif %}
-                                        {% if element[1].required_when is defined and element[1].required_when.test_mode is defined %} data-required-when-test-mode="{{ element[1].required_when.test_mode ? 'true' : 'false' }}"{% endif %}>{{ gateway.config[name] }}</textarea>
+                                        {% if element[1].required_when is defined and element[1].required_when.test_mode is defined %} data-required-when-test-mode="{{ element[1].required_when.test_mode ? 'true' : 'false' }}"{% endif %}>{{ gateway.config[name]|default('') }}</textarea>
                                 {% else %}
                                     <label class="form-label" for="gateway-config-{{ name }}">{{ element[1].label }}</label>
-                                    {% if element[1].description %}<div class="form-text mb-2">{{ (element[1].description ?? '')|markdown_to_html }}</div>{% endif %}
-                                    <input class="form-control" id="gateway-config-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ gateway.config[name] }}"
+                                    {% if element[1].description is defined and element[1].description %}<div class="form-text mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
+                                    <input class="form-control" id="gateway-config-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ gateway.config[name]|default('') }}"
                                         {% if field_required %} required{% endif %}
                                         {% if element[1].required_when is defined and element[1].required_when.enabled is defined %} data-required-when-enabled="{{ element[1].required_when.enabled ? 'true' : 'false' }}"{% endif %}
                                         {% if element[1].required_when is defined and element[1].required_when.test_mode is defined %} data-required-when-test-mode="{{ element[1].required_when.test_mode ? 'true' : 'false' }}"{% endif %}>

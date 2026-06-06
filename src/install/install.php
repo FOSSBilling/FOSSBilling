@@ -271,6 +271,7 @@ final class FOSSBilling_Installer
             'autoescape' => 'html',
             'auto_reload' => true,
             'cache' => false,
+            'strict_variables' => true,
         ];
         $loader = new FilesystemLoader($options['paths']);
         $twig = new Twig\Environment($loader, $options);

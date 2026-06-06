@@ -24,41 +24,41 @@
     <div class="{{ field_class }}">
         {% if element[0] == 'select' %}
             <label class="form-label">{{ element[1].label }}</label>
-            {% if element[1].description %}<div class="form-text mt-0 mb-2">{{ element[1].description | markdown_to_html }}</div>{% endif %}
+            {% if element[1].description is defined and element[1].description %}<div class="form-text mt-0 mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
             <select class="form-select" name="config[{{ name }}]">
             {% for k, v in element[1].multiOptions %}
-                <option value="{{ k }}"{% if k == values[name] %} selected{% endif %}>{{ v }}</option>
+                <option value="{{ k }}"{% if k == values[name]|default('') %} selected{% endif %}>{{ v }}</option>
             {% endfor %}
             </select>
         {% elseif element[0] == 'multiselect' %}
             <label class="form-label">{{ element[1].label }}</label>
-            {% if element[1].description %}<div class="form-text mt-0 mb-2">{{ (element[1].description ?? '')|markdown_to_html }}</div>{% endif %}
+            {% if element[1].description is defined and element[1].description %}<div class="form-text mt-0 mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
             <select class="form-select" name="config[{{ name }}]" multiple>
             {% for k, v in element[1].multiOptions %}
-                <option value="{{ k }}"{% if values[name] is iterable and k in values[name] %} selected{% endif %}>{{ v }}</option>
+                <option value="{{ k }}"{% if k in values[name]|default([]) %} selected{% endif %}>{{ v }}</option>
             {% endfor %}
             </select>
         {% elseif element[0] == 'radio' %}
             <label class="form-label d-block">{{ element[1].label }}</label>
-            {% if element[1].description %}<div class="form-text mt-0 mb-2">{{ (element[1].description ?? '')|markdown_to_html }}</div>{% endif %}
+            {% if element[1].description is defined and element[1].description %}<div class="form-text mt-0 mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
             <div class="d-flex flex-wrap gap-3">
             {% for k, v in element[1].multiOptions %}
                 <label class="form-check">
-                    <input class="form-check-input" id="el-{{ name ~ k }}" type="radio" name="config[{{ name }}]" value="{{ k }}"{% if k == values[name] %}checked{% endif %}>
+                    <input class="form-check-input" id="el-{{ name ~ k }}" type="radio" name="config[{{ name }}]" value="{{ k }}"{% if k == values[name]|default('') %}checked{% endif %}>
                     <span class="form-check-label">{{ v }}</span>
                 </label>
             {% endfor %}
             </div>
         {% elseif element[0] == 'textarea' %}
             <label class="form-label" for="el-{{ name }}">{{ element[1].label }}</label>
-            {% if element[1].description %}<div class="form-text mt-0 mb-2">{{ (element[1].description ?? '')|markdown_to_html }}</div>{% endif %}
+            {% if element[1].description is defined and element[1].description %}<div class="form-text mt-0 mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
             <textarea class="form-control" id="el-{{ name }}" name="config[{{ name }}]" rows="20"
                 {% if field_required %} required{% endif %}
-                {% if element[1].required_when is defined and element[1].required_when.test_mode is defined %} data-required-when-test-mode="{{ element[1].required_when.test_mode ? 'true' : 'false' }}"{% endif %}>{{ values[name] }}</textarea>
+                {% if element[1].required_when is defined and element[1].required_when.test_mode is defined %} data-required-when-test-mode="{{ element[1].required_when.test_mode ? 'true' : 'false' }}"{% endif %}>{{ values[name]|default('') }}</textarea>
         {% else %}
             <label class="form-label" for="el-{{ name }}">{{ element[1].label }}</label>
-            {% if element[1].description %}<div class="form-text mt-0 mb-2">{{ (element[1].description ?? '')|markdown_to_html }}</div>{% endif %}
-            <input class="form-control" id="el-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ values[name] }}"
+            {% if element[1].description is defined and element[1].description %}<div class="form-text mt-0 mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
+            <input class="form-control" id="el-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ values[name]|default('') }}"
                 {% if field_required %} required{% endif %}
                 {% if element[1].required_when is defined and element[1].required_when.test_mode is defined %} data-required-when-test-mode="{{ element[1].required_when.test_mode ? 'true' : 'false' }}"{% endif %}>
         {% endif %}

@@ -21,6 +21,12 @@ use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 putenv('APP_ENV=test');
 define('PATH_TESTS', __DIR__);
 
+// Bump the memory limit. The strict-variables render-everything harness
+// parses every FOSSBilling template and allocates many stubs and AST nodes,
+// which exceeds the default 128M limit and causes the pest process to exit
+// with 255 mid-suite. 2G is comfortably above peak usage (~185M).
+ini_set('memory_limit', '2G');
+
 // Disable DEBUG mode to prevent FOSSBilling\Exception from logging stack traces
 // Must be defined BEFORE load.php is included
 if (!defined('DEBUG')) {
@@ -51,6 +57,11 @@ require_once __DIR__ . '/Helpers/Container.php';
 require_once __DIR__ . '/Helpers/Factories.php';
 require_once __DIR__ . '/Helpers/Api.php';
 require_once __DIR__ . '/Helpers/DummyBean.php';
+require_once __DIR__ . '/Support/CombinedTwigLoader.php';
+require_once __DIR__ . '/Support/PermissiveStub.php';
+require_once __DIR__ . '/Support/PermissiveContainer.php';
+require_once __DIR__ . '/Support/VariableCollectorVisitor.php';
+require_once __DIR__ . '/Support/StrictTemplateRenderer.php';
 
 // Load test datasets
 require_once __DIR__ . '/Datasets/PeriodCodes.php';

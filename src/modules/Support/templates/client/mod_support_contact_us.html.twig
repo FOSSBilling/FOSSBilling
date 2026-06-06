@@ -61,22 +61,22 @@
                             {{ company.name }}
                         </dd>
                         <dd>
-                            {{ company.address_1 }}
+                            {{ company.address_1|default('') }}
                         </dd>
                         <dd>
-                            {{ company.address_2 }}
+                            {{ company.address_2|default('') }}
                         </dd>
                         <dd>
-                            {{ company.address_3 }}
+                            {{ company.address_3|default('') }}
                         </dd>
                         <dd>
-                            {{ company.tel }}
+                            {{ company.tel|default('') }}
                         </dd>
                         <dd>
-                            {{ company.www }}
+                            {{ company.www|default('') }}
                         </dd>
                         <dd>
-                            {{ company.email }}
+                            {{ company.email|default('') }}
                         </dd>
                     </dl>
                 </div>

@@ -155,8 +155,8 @@
                             </div>
                             {% for i in 1..10 %}
                                 {% set custom = 'custom_' ~ i %}
-                                {% set current = guest.client_custom_fields[custom] %}
-                                {% if current.active %}
+                                {% set current = guest.client_custom_fields|default({})[custom]|default(null) %}
+                                {% if current and current.active %}
                                     <div class="mb-3">
                                         <label class="form-label" for="{{ custom }}">{{ current.title }}</label>
                                         <input type="text" class="form-control" name="{{ custom }}" id="{{ custom }}" value="{{ profile[custom] }}" {% if current.required %} required {% endif %}>

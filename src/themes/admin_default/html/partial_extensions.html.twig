@@ -1,4 +1,4 @@
-{% if header %}
+{% if header is defined and header %}
     <div class="card-header">
         <h3 class="card-title">{{ header }}</h3>
     </div>
@@ -31,7 +31,7 @@
         </tr>
         </thead>
         <tbody>
-        {% set extensions = admin.extension_get_latest({ "type": type}) %}
+        {% set extensions = admin.extension_get_latest({ "type": type|default('mod')}) %}
         {% for extension in extensions %}
         {% set latest = extension.releases|first %}
             <tr>
