@@ -41,8 +41,9 @@ test('all templates render under strict_variables', function (): void {
 
     $realBugs = array_values(array_filter($findings, fn (array $f): bool => $f['category'] === 'real-bug'));
 
-    $findingsFile = dirname(__DIR__, 3) . '/Strict/findings.json';
-    $isBaseline = file_exists(dirname(__DIR__, 3) . '/Strict/.baseline');
+    $strictDir = dirname(__DIR__, 3) . '/Strict';
+    $findingsFile = $strictDir . '/findings.json';
+    $isBaseline = file_exists($strictDir . '/.baseline');
 
     if (!is_dir(dirname($findingsFile))) {
         mkdir(dirname($findingsFile), 0o755, true);
@@ -54,15 +55,8 @@ test('all templates render under strict_variables', function (): void {
         // such finding fails the test. Test-infra findings are informational
         // only and never fail the test.
         if (!empty($realBugs)) {
-            test()->fail("New strict-variables findings detected:\n" . formatFindings($realBugs));
+            expect()->fail("New strict-variables findings detected:\n" . formatFindings($realBugs));
         }
-        expect(true)->toBeTrue();
-    } else {
-        // No baseline yet - pass with an informational message. Real-bug
-        // counts and infra-bug counts are written to the findings file for
-        // the developer to review. Once the real-bug count is 0, create the
-        // .baseline file to lock the test in CI-gate mode.
-        expect(true)->toBeTrue();
     }
 });
 
@@ -134,11 +128,8 @@ test('all email templates render under strict_variables', function (): void {
 
     if ($isBaseline) {
         if (!empty($realBugs)) {
-            test()->fail("New strict-variables findings in email templates:\n" . formatFindings($realBugs));
+            expect()->fail("New strict-variables findings in email templates:\n" . formatFindings($realBugs));
         }
-        expect(true)->toBeTrue();
-    } else {
-        expect(true)->toBeTrue();
     }
 });
 

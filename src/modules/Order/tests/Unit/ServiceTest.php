@@ -1182,7 +1182,7 @@ test('throws exception when creating order with missing currency', function (): 
     $modelProduct = new Model_Product();
     $modelProduct->loadBean(new Tests\Helpers\DummyBean());
 
-    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     $currencyRepositoryMock->shouldReceive('findDefault')
         ->atLeast()->once()
         ->andReturn(null);
@@ -1217,7 +1217,7 @@ test('throws exception when creating order for out of stock product', function (
 
     $currencyModel = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
 
-    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     $currencyRepositoryMock->shouldReceive('findOneByCode')
         ->atLeast()->once()
         ->andReturn($currencyModel);
@@ -1267,7 +1267,7 @@ test('throws exception when creating addon order with missing group id', functio
 
     $currencyModel = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
 
-    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     $currencyRepositoryMock->shouldReceive('findOneByCode')
         ->atLeast()->once()
         ->andReturn($currencyModel);
@@ -1316,7 +1316,7 @@ test('throws exception when creating order with parent not found', function (): 
 
     $currencyModel = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
 
-    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     $currencyRepositoryMock->shouldReceive('findOneByCode')
         ->atLeast()->once()
         ->andReturn($currencyModel);
@@ -1373,7 +1373,7 @@ test('creates order', function (): void {
     $currencyModel->shouldReceive('getCode')
         ->atLeast()->once()
         ->andReturn('USD');
-    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     $currencyRepositoryMock->shouldReceive('findOneByCode')
         ->atLeast()->once()
         ->andReturn($currencyModel);

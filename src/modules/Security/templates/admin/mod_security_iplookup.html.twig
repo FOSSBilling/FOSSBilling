@@ -44,9 +44,9 @@
                     {% if record %}
                     <tr>
                         <td>{{ record.ip.address }} ({{ record.ip.type }})</td>
-                        <td>{{ record.country.flag }} {{ record.country.name }}</td>
-                        <td>{{ record.asn.asnNumber }}</td>
-                        <td>{{ record.asn.asnOrg }}</td>
+                        <td>{{ record.country.flag|default('') }} {{ record.country.name|default('Unknown'|trans) }}</td>
+                        <td>{{ record.asn.asnNumber|default('Unknown'|trans) }}</td>
+                        <td>{{ record.asn.asnOrg|default('Unknown'|trans) }}</td>
                     </tr>
                     {% else %}
                     <tr class="ip-lookup-empty-state">

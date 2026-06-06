@@ -188,29 +188,29 @@
             <tr>
                 <td class="text-nowrap">{{ event.id }}</td>
                 <td class="d-none d-lg-table-cell">
-                    {% if event.client %}
-                    <a href='{{ "client/manage/#{event.client.id}"|url }}'>
-                        {{ avatar(event.client.email, 20, 'avatar avatar-sm d-none d-md-inline-block') }}
+                    {% if event.client_id %}
+                    <a href='{{ "client/manage/#{event.client_id}"|url }}'>
+                        {{ avatar(event.client.email|default(''), 20, 'avatar avatar-sm d-none d-md-inline-block') }}
                     </a>
-                    {% elseif event.staff %}
-                    <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>
-                        {{ avatar(event.staff.email, 24, 'avatar avatar-sm d-none d-md-inline-block') }}
+                    {% elseif event.staff_id %}
+                    <a href='{{ "staff/manage/#{event.staff_id}"|url }}'>
+                        {{ avatar(event.staff.email|default(''), 24, 'avatar avatar-sm d-none d-md-inline-block') }}
                     </a>
                     {% else %}
                     {{ avatar('guest@fossbilling.org', 24, 'avatar avatar-sm d-none d-md-inline-block') }}
                     {% endif %}
                 </td>
                 <td>
-                    {% if event.client %}
-                        <a href='{{ "client/manage/#{event.client.id}"|url }}'>{{ event.client.name }}</a>
-                        <a href="{{ request_path|url(request_query|merge({ 'client_id': event.client.id, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this client'|trans }}">
+                    {% if event.client_id %}
+                        <a href='{{ "client/manage/#{event.client_id}"|url }}'>{{ event.client.name|default('') }}</a>
+                        <a href="{{ request_path|url(request_query|merge({ 'client_id': event.client_id, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this client'|trans }}">
                             <svg class="icon icon-sm text-muted">
                                 <use xlink:href="#filter" />
                             </svg>
                         </a>
-                    {% elseif event.staff %}
-                        <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>{{ event.staff.name }}</a>
-                        <a href="{{ request_path|url(request_query|merge({ 'admin_id': event.staff.id, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this admin'|trans }}">
+                    {% elseif event.staff_id %}
+                        <a href='{{ "staff/manage/#{event.staff_id}"|url }}'>{{ event.staff.name|default('') }}</a>
+                        <a href="{{ request_path|url(request_query|merge({ 'admin_id': event.staff_id, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this admin'|trans }}">
                             <svg class="icon icon-sm text-muted">
                                 <use xlink:href="#filter" />
                             </svg>

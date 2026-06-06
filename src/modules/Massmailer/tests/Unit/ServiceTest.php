@@ -11,7 +11,7 @@ use FOSSBilling\InformationException;
 function createMassmailerDi(?Connection $dbal = null): Pimple\Container
 {
     $di = new Pimple\Container();
-    $repo = Mockery::mock(MassmailerMessageRepository::class);
+    $repo = Mockery::mock(MassmailerMessageRepository::class)->shouldIgnoreMissing();
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->with(MassmailerMessage::class)->andReturn($repo);
     $di['em'] = $em;

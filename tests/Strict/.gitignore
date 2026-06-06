@@ -1,2 +1,4 @@
-# Findings JSON files are written by StrictVariablesTest in informative mode.
+# Findings JSON files are written by StrictVariablesTest, TwigAstLinterTest, and ToApiArrayAuditTest in informative mode.
 findings*.json
+ast-linter-findings.json
+to-api-array-audit.json

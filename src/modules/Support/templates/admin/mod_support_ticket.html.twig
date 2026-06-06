@@ -39,7 +39,7 @@
                         <a class="nav-link" href="#tab-manage" data-bs-toggle="tab" role="tab">{{ 'Manage'|trans }}</a>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-notes" data-bs-toggle="tab" role="tab">{{ 'Notes'|trans }} {% if ticket.notes|length > 0 %}({{ ticket.notes|length }}){% endif %}</a>
+                        <a class="nav-link" href="#tab-notes" data-bs-toggle="tab" role="tab">{{ 'Notes'|trans }} {% if ticket.notes is defined and ticket.notes|length > 0 %}({{ ticket.notes|length }}){% endif %}</a>
                     </li>
                     <li class="nav-item" role="presentation">
                         <a class="nav-link" href="#tab-support" data-bs-toggle="tab" role="tab">{{ 'Client Tickets'|trans }}</a>
@@ -219,7 +219,7 @@
                     {% block section_content %}
                         <div class="table-responsive">
                             <table class="table card-table table-vcenter table-striped text-nowrap">
-                            {% for note in ticket.notes %}
+                            {% for note in ticket.notes|default([]) %}
                                 <tr>
                                     <td class="w-1"><a href='{{ "staff/manage/#{note.admin_id}"|url }}'>{{ note.author.name }}</a></td>
                                     <td>{{ note.note }}</td>

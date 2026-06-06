@@ -44,6 +44,27 @@ final class PermissiveContainer extends \Pimple\Container
             return parent::offsetGet($offset);
         }
 
+        // The LegacyExtension's `ip_country_name`/`ip_country_code` filters call
+        // `$this->di['geoip']->country($ip)` and then read properties on the
+        // returned record. The signatures are `: string`, so a permissive
+        // stub would fail with a TypeError. Provide a stub object whose
+        // `country()` call throws — the surrounding try/catch then returns
+        // the empty-string fallback the real code emits when GeoIP is
+        // unavailable.
+        if ($offset === 'geoip') {
+            return new class {
+                public function __call(string $name, array $args): mixed
+                {
+                    throw new \RuntimeException('geoip service not available in test environment');
+                }
+
+                public function __get(string $name): mixed
+                {
+                    throw new \RuntimeException('geoip service not available in test environment');
+                }
+            };
+        }
+
         return $this->stub;
     }
 

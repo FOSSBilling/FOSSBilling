@@ -507,7 +507,10 @@
         "Resellerid",
         "Directadmin",
         "Traitable",
-        "varargs"
+        "varargs",
+        "elseifs",
+        "CLOUDFLARENET",
+        "baselined"
     ],
     "ignorePaths": [
         "node_modules/**",

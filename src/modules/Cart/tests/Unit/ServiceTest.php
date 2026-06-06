@@ -114,7 +114,7 @@ test('get session cart does not exist', function (?int $sessionGetWillReturn, st
         ->atLeast()->once()
         ->andReturn($sessionGetWillReturn);
 
-    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     if ($sessionGetWillReturn === null) {
         $currencyRepositoryMock->shouldReceive('findDefault')
             ->atLeast()->once()
@@ -1097,7 +1097,7 @@ test('to api array', function (): void {
         ->atLeast()->once()
         ->andReturn([]);
 
-    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
     $currencyRepositoryMock->shouldReceive('find')
         ->atLeast()->once()
         ->andReturn($currencyModelMock);

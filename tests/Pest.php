@@ -62,6 +62,8 @@ require_once __DIR__ . '/Support/PermissiveStub.php';
 require_once __DIR__ . '/Support/PermissiveContainer.php';
 require_once __DIR__ . '/Support/VariableCollectorVisitor.php';
 require_once __DIR__ . '/Support/StrictTemplateRenderer.php';
+require_once __DIR__ . '/Support/TwigAstLinter.php';
+require_once __DIR__ . '/Support/ToApiArrayAuditor.php';
 
 // Load test datasets
 require_once __DIR__ . '/Datasets/PeriodCodes.php';

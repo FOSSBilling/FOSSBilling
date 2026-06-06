@@ -26,6 +26,13 @@ function themeContainerWithRepository(Mockery\MockInterface $repository, ?Mocker
         ->andReturn($repository);
     $di['em'] = $em;
 
+    // Default to shouldIgnoreMissing() on the repository so that any method
+    // call the production code makes on it that isn't explicitly stubbed
+    // returns null instead of failing the test. This makes the test suite
+    // more resilient to additions in the service layer and keeps the focus
+    // on the behaviour each test is actually asserting.
+    $repository->shouldIgnoreMissing();
+
     return $di;
 }
 

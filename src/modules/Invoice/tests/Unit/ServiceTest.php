@@ -445,7 +445,7 @@ test('marks invoice as paid', function (): void {
     $systemService->shouldReceive('getParamValue')
         ->atLeast()->once();
 
-    $currencyRepositoryMock = Mockery::mock(CurrencyRepository::class);
+    $currencyRepositoryMock = Mockery::mock(CurrencyRepository::class)->shouldIgnoreMissing();
     $currencyRepositoryMock->shouldReceive('getRateByCode')
         ->atLeast()->once()
         ->andReturn(1.0);
@@ -545,7 +545,7 @@ test('prepares invoice with undefined currency', function (): void {
     $currencyModel->shouldReceive('getCode')
         ->andReturn($defaultCurrencyCode);
 
-    $currencyRepositoryMock = Mockery::mock(CurrencyRepository::class);
+    $currencyRepositoryMock = Mockery::mock(CurrencyRepository::class)->shouldIgnoreMissing();
     $currencyRepositoryMock->shouldReceive('findDefault')
         ->atLeast()->once()
         ->andReturn($currencyModel);

@@ -25,6 +25,72 @@ use Twig\Extra\Markdown\MarkdownInterface;
 use Twig\Extra\Markdown\MarkdownRuntime;
 use Twig\NodeTraverser;
 
+class UrlAwarePermissiveContainer extends \Pimple\Container
+{
+    private PermissiveStub $stub;
+    /** @var array<string, mixed> */
+    private array $store = [];
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->stub = new PermissiveStub();
+        $this->store['loaded_assets'] = [];
+    }
+
+    public function offsetExists(mixed $offset): bool
+    {
+        return true;
+    }
+
+    public function offsetGet(mixed $offset): mixed
+    {
+        if ($offset === 'url') {
+            return new class {
+                public function link(string $path, ?array $query = null): string
+                {
+                    return '';
+                }
+
+                public function adminLink(string $path, ?array $query = null): string
+                {
+                    return '';
+                }
+            };
+        }
+        // The LegacyExtension's `ip_country_name`/`ip_country_code` filters
+        // call `$this->di['geoip']->country($ip)` and then read properties on
+        // the returned record. The signatures are `: string`, so a permissive
+        // stub would fail with a TypeError. Provide a stub object whose
+        // `country()` call throws — the surrounding try/catch then returns
+        // the empty-string fallback the real code emits when GeoIP is
+        // unavailable. Mirrors the same handling in `PermissiveContainer`.
+        if ($offset === 'geoip') {
+            return new class {
+                public function __call(string $name, array $args): mixed
+                {
+                    throw new \RuntimeException('geoip service not available in test environment');
+                }
+
+                public function __get(string $name): mixed
+                {
+                    throw new \RuntimeException('geoip service not available in test environment');
+                }
+            };
+        }
+        if (array_key_exists((string) $offset, $this->store)) {
+            return $this->store[(string) $offset];
+        }
+
+        return $this->stub;
+    }
+
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
+        $this->store[(string) $offset] = $value;
+    }
+}
+
 /**
  * Helper that builds a strict-variables Twig environment and renders every template
  * with a permissive stub context, capturing any rendering errors.
@@ -154,6 +220,15 @@ final class StrictTemplateRenderer
     private function buildEnvironment(bool $emailMode, bool $stringifyUrls = false): Environment
     {
         $loader = new CombinedTwigLoader(PATH_THEMES);
+        // Also register every module template directory under the unnamed path
+        // so unqualified `{% include 'mod_foo.html.twig' %}` calls resolve.
+        // CombinedTwigLoader already registers them under `@Module_area`
+        // namespaces; this mirrors that for bare-name lookups.
+        $finder = new Finder();
+        $finder->directories()->in(PATH_MODS)->depth('== 2')->ignoreDotFiles(true)->name(['admin', 'client', 'email']);
+        foreach ($finder as $dir) {
+            $loader->addPath($dir->getPathName());
+        }
         $twig = new Environment($loader, [
             'strict_variables' => true,
             'auto_reload' => true,
@@ -225,51 +300,7 @@ final class StrictTemplateRenderer
 
     private function buildUrlAwareContainer(): \Pimple\Container
     {
-        return new class extends \Pimple\Container {
-            private PermissiveStub $stub;
-            /** @var array<string, mixed> */
-            private array $store = [];
-
-            public function __construct()
-            {
-                parent::__construct();
-                $this->stub = new PermissiveStub();
-                $this->store['loaded_assets'] = [];
-            }
-
-            public function offsetExists(mixed $offset): bool
-            {
-                return true;
-            }
-
-            public function offsetGet(mixed $offset): mixed
-            {
-                if ($offset === 'url') {
-                    return new class {
-                        public function link(string $path, ?array $query = null): string
-                        {
-                            return '';
-                        }
-
-                        public function adminLink(string $path, ?array $query = null): string
-                        {
-                            return '';
-                        }
-                    };
-                }
-
-                if (array_key_exists((string) $offset, $this->store)) {
-                    return $this->store[(string) $offset];
-                }
-
-                return $this->stub;
-            }
-
-            public function offsetSet(mixed $offset, mixed $value): void
-            {
-                $this->store[(string) $offset] = $value;
-            }
-        };
+        return new UrlAwarePermissiveContainer();
     }
 
     /**
@@ -385,11 +416,13 @@ final class StrictTemplateRenderer
         return basename($absolutePath);
     }
 
+    private const MAX_ERROR_MESSAGE_LENGTH = 250;
+
     private function summarizeError(\Throwable $e): string
     {
         $message = $e->getMessage();
-        if (strlen($message) > 250) {
-            $message = substr($message, 0, 250) . '...';
+        if (strlen($message) > self::MAX_ERROR_MESSAGE_LENGTH) {
+            $message = substr($message, 0, self::MAX_ERROR_MESSAGE_LENGTH) . '...';
         }
 
         return $e::class . ': ' . $message;
