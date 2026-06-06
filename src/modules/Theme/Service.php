@@ -220,7 +220,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function regenerateThemeCssAndJsFiles(Model\Theme $theme, $preset, $api_admin): bool
+    public function regenerateThemeCssAndJsFiles(Model\Theme $theme, $preset): bool
     {
         $assets = $theme->getPathAssets();
 
