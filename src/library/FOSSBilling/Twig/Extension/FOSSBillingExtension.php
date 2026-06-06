@@ -186,22 +186,34 @@ class FOSSBillingExtension
     }
 
     #[AsTwigFilter('public_asset_url', isSafe: ['html'])]
-    public function publicAssetUrl(string $asset): string
+    public function publicAssetUrl(?string $asset): string
     {
+        if ($asset === null) {
+            return '';
+        }
+
         return SYSTEM_URL . 'public/assets/' . ltrim($asset, '/');
     }
 
     #[AsTwigFilter('daysleft')]
-    public function daysleft(string $dateTime): int
+    public function daysleft(?string $dateTime): int
     {
+        if ($dateTime === null) {
+            return 0;
+        }
+
         $timeLeft = strtotime($dateTime) - time();
 
         return intval($timeLeft / 86400);
     }
 
     #[AsTwigFilter('file_size')]
-    public function fileSize(int $size): string
+    public function fileSize(?int $size): string
     {
+        if ($size === null) {
+            return '';
+        }
+
         return \FOSSBilling\Tools::humanReadableBytes($size);
     }
 
@@ -275,8 +287,12 @@ class FOSSBillingExtension
     }
 
     #[AsTwigFunction('wysiwyg', isSafe: ['html'])]
-    public function wysiwyg(string $selector, array $options = []): string
+    public function wysiwyg(?string $selector, array $options = []): string
     {
+        if ($selector === null) {
+            return '';
+        }
+
         $options['adapter'] ??= 'ckeditor';
 
         $selectorJson = json_encode($selector, JSON_THROW_ON_ERROR | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
@@ -304,8 +320,12 @@ class FOSSBillingExtension
     }
 
     #[AsTwigFilter('script_tag', isSafe: ['html'])]
-    public function scriptTag(string $path): string
+    public function scriptTag(?string $path): string
     {
+        if ($path === null) {
+            return '';
+        }
+
         if ($this->isAssetLoaded($path)) {
             return '';
         }
@@ -319,8 +339,12 @@ class FOSSBillingExtension
     }
 
     #[AsTwigFilter('stylesheet_tag', isSafe: ['html'])]
-    public function stylesheetTag(string $path, string $media = 'screen'): string
+    public function stylesheetTag(?string $path, ?string $media = null): string
     {
+        if ($path === null) {
+            return '';
+        }
+
         if ($this->isAssetLoaded($path)) {
             return '';
         }
@@ -329,7 +353,7 @@ class FOSSBillingExtension
 
         $escapedPath = htmlspecialchars($path, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $escapedCacheBuster = htmlspecialchars($this->getCacheBuster($path), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-        $escapedMedia = htmlspecialchars($media, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $escapedMedia = htmlspecialchars($media ?? 'screen', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 
         return sprintf('<link rel="stylesheet" type="text/css" href="%s?v=%s" media="%s" />', $escapedPath, $escapedCacheBuster, $escapedMedia);
     }
@@ -380,8 +404,12 @@ class FOSSBillingExtension
     }
 
     #[AsTwigFilter('truncate')]
-    public function truncate(string $text, int $length = 30, string $suffix = '...'): string
+    public function truncate(?string $text, int $length = 30, string $suffix = '...'): string
     {
+        if ($text === null) {
+            return '';
+        }
+
         if (mb_strlen($text) > $length) {
             return mb_substr($text, 0, $length) . $suffix;
         }

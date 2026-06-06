@@ -85,7 +85,7 @@
                         {% endif %}
                     {% endfor %}
 
-                    {% if paginator.range[paginator.midrange -1] < paginator.numpages -1 and paginator.end == paginator.range[paginator.midrange-1] %}
+                    {% if paginator.range|length > 0 and paginator.range|last < paginator.numpages and paginator.end == paginator.range|last %}
                         ...
                         <li class="page-item">
                             <a class="page-link" href="{{ url|url(filteredRequest|merge({ (pageParam): paginator.numpages, (perPageParam): currentPerPage })) }}"> {{ paginator.numpages }}</a>

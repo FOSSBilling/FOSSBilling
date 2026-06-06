@@ -10,6 +10,8 @@
 {% endblock %}
 
 {% block content %}
+    {% set unpaid_invoices = client.invoice_get_list({"status":"unpaid", "per_page":10, "page":request.page}) %}
+    {% set paid_invoices = client.invoice_get_list({"per_page":10, "page":request.page, "status":"paid"}) %}
     <div class="row">
         <div class="col-md-12">
             <div class="card mb-4">
@@ -50,7 +52,6 @@
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {% set unpaid_invoices = client.invoice_get_list({"status":"unpaid", "per_page":10, "page":request.page}) %}
                                 {% for i, invoice in unpaid_invoices.list %}
                                     <tr>
                                         <td>{{ 'Invoice'|trans }} #{{ invoice.serie ~ "%05s"|format(invoice.nr) }}</td>
@@ -82,7 +83,6 @@
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {% set paid_invoices = client.invoice_get_list({"per_page":10, "page":request.page, "status":"paid"}) %}
                                 {% for i, invoice in paid_invoices.list %}
                                     <tr>
                                         <td>{{ 'Invoice'|trans }} #{{ invoice.serie ~ "%05s"|format(invoice.nr) }}</td>

@@ -479,6 +479,7 @@
         });
     </script>
     {% if admin.system_is_allowed({ 'mod': 'stats' }) %}
+        {% set currency = guest.currency_get %}
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 const charts = [
