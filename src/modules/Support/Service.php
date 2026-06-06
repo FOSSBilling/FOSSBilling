@@ -517,17 +517,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      */
     private function _getRelDetails(\Model_SupportTicket $model): array
     {
-        if (!$model->rel_type || !$model->rel_id) {
-            return [];
-        }
-
         $result = [
-            'id' => $model->rel_id,
-            'type' => $model->rel_type,
-            'task' => $model->rel_task,
-            'new_value' => $model->rel_new_value,
-            'status' => $model->rel_status,
+            'id' => $model->rel_id ?: null,
+            'type' => $model->rel_type ?: null,
+            'task' => $model->rel_task ?: null,
+            'new_value' => $model->rel_new_value ?: null,
+            'status' => $model->rel_status ?: null,
         ];
+
+        if (!$model->rel_type || !$model->rel_id) {
+            return $result;
+        }
 
         $client = $this->di['db']->load('Client', $model->client_id);
 
@@ -592,6 +592,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if ($identity instanceof \Model_Admin) {
             $data['rel'] = $this->_getRelDetails($model);
             $data['priority'] = $model->priority;
+            $data['notes'] = [];
             $supportTicketNotes = $this->di['db']->find('SupportTicketNote', 'support_ticket_id = :support_ticket_id', [':support_ticket_id' => $model->id]);
 
             foreach ($supportTicketNotes as $note) {

@@ -235,7 +235,7 @@
                             <div>
                                 <a href='{{ "support/ticket/#{ticket.id}"|url }}#reply-box'>#{{ ticket.id }} - {{ ticket.subject|truncate(50) }} ({{ ticket.replies }})</a>
                             </div>
-                            {% if ticket.notes|length %}
+                            {% if ticket.notes is defined and ticket.notes|length %}
                                 <a href="#" rel="{{ ticket.id }}" title="{{ ticket.notes|length }}" class="show-notes">
                                     <svg class="icon">
                                         <use xlink:href="#notes" />
