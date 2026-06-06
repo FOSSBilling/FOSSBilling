@@ -222,10 +222,14 @@ final class StrictTemplateRenderer
     {
         return new class extends \Pimple\Container {
             private PermissiveStub $stub;
+            /** @var array<string, mixed> */
+            private array $store = [];
 
             public function __construct()
             {
+                parent::__construct();
                 $this->stub = new PermissiveStub();
+                $this->store['loaded_assets'] = [];
             }
 
             public function offsetExists(mixed $offset): bool
@@ -249,12 +253,16 @@ final class StrictTemplateRenderer
                     };
                 }
 
+                if (array_key_exists((string) $offset, $this->store)) {
+                    return $this->store[(string) $offset];
+                }
+
                 return $this->stub;
             }
 
             public function offsetSet(mixed $offset, mixed $value): void
             {
-                // Tests don't write to the container; ignore.
+                $this->store[(string) $offset] = $value;
             }
         };
     }
