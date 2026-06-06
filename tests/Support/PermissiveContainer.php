@@ -26,7 +26,11 @@ final class PermissiveContainer extends \Pimple\Container
 
     public function __construct()
     {
+        parent::__construct();
         $this->stub = new PermissiveStub();
+
+        // FOSSBillingExtension tracks loaded assets via $di['loaded_assets'].
+        $this['loaded_assets'] = [];
     }
 
     public function offsetExists(mixed $offset): bool
@@ -36,11 +40,15 @@ final class PermissiveContainer extends \Pimple\Container
 
     public function offsetGet(mixed $offset): mixed
     {
+        if (parent::offsetExists($offset)) {
+            return parent::offsetGet($offset);
+        }
+
         return $this->stub;
     }
 
     public function offsetSet(mixed $offset, mixed $value): void
     {
-        // Tests don't write to the container; ignore.
+        parent::offsetSet($offset, $value);
     }
 }
