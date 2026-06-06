@@ -945,7 +945,6 @@ test('getBrokenTemplateCount returns count from repository', function (): void {
     $service->setDi($di);
 
     $ref = new ReflectionProperty($service, 'templateRepository');
-    $ref->setAccessible(true);
     $ref->setValue($service, $repoMock);
 
     expect($service->getBrokenTemplateCount())->toBe(3);
@@ -998,7 +997,6 @@ test('validateAllTemplates reports invalid templates', function (): void {
     $serviceMock->setDi($di);
 
     $ref = new ReflectionProperty($serviceMock, 'templateRepository');
-    $ref->setAccessible(true);
     $ref->setValue($serviceMock, $repoMock);
 
     $result = $serviceMock->validateAllTemplates();
@@ -1043,7 +1041,6 @@ test('validateAllTemplates clears previous errors on valid templates', function 
     $serviceMock->setDi($di);
 
     $ref = new ReflectionProperty($serviceMock, 'templateRepository');
-    $ref->setAccessible(true);
     $ref->setValue($serviceMock, $repoMock);
 
     $result = $serviceMock->validateAllTemplates();
@@ -1098,7 +1095,6 @@ test('validateAllTemplates renders templates with stored vars to enforce sandbox
     $serviceMock->setDi($di);
 
     $ref = new ReflectionProperty($serviceMock, 'templateRepository');
-    $ref->setAccessible(true);
     $ref->setValue($serviceMock, $repoMock);
 
     $result = $serviceMock->validateAllTemplates();
