@@ -58,14 +58,14 @@ FROM composer-base AS php-vendor
 
 COPY composer.json composer.lock ./
 
-RUN --mount=type=cache,target=/tmp/composer-cache \
+RUN --mount=type=cache,target=/tmp/composer-cache,id=composer-prod \
   COMPOSER_CACHE_DIR=/tmp/composer-cache \
   composer install --prefer-dist --no-dev --optimize-autoloader --no-interaction --no-progress
 
 FROM composer-base AS php-dev-vendor
 COPY composer.json composer.lock ./
 
-RUN --mount=type=cache,target=/tmp/composer-cache \
+RUN --mount=type=cache,target=/tmp/composer-cache,id=composer-dev \
   COMPOSER_CACHE_DIR=/tmp/composer-cache \
   composer install --prefer-dist --optimize-autoloader --no-interaction --no-progress
 
