@@ -136,8 +136,14 @@ class Service implements InjectionAwareInterface
 
     public function deletePreset(Model\Theme $theme, $preset): bool
     {
-        $this->getExtensionMetaRepository()->deleteByExtensionAndScope('mod_theme', (string) $preset, 'settings', $theme->getName());
-        $this->getExtensionMetaRepository()->deleteByExtensionAndScope('mod_theme', $theme->getName(), 'preset', 'current');
+        $preset = (string) $preset;
+        $currentPreset = (string) $this->getCurrentThemePreset($theme);
+
+        $this->getExtensionMetaRepository()->deleteByExtensionAndScope('mod_theme', $preset, 'settings', $theme->getName());
+
+        if ($preset === $currentPreset) {
+            $this->getExtensionMetaRepository()->deleteByExtensionAndScope('mod_theme', $theme->getName(), 'preset', 'current');
+        }
 
         return true;
     }
@@ -220,7 +226,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function regenerateThemeCssAndJsFiles(Model\Theme $theme, $preset, $api_admin): bool
+    public function regenerateThemeCssAndJsFiles(Model\Theme $theme, $preset): bool
     {
         $assets = $theme->getPathAssets();
 
@@ -335,11 +341,11 @@ class Service implements InjectionAwareInterface
         foreach ($finder as $file) {
             try {
                 if (!$client && str_contains($file->getFilename(), 'admin')) {
-                    $list[] = $this->_loadTheme($file->getFilename());
+                    $list[] = $this->buildThemeConfig($file->getFilename());
                 }
 
                 if ($client && !str_contains($file->getFilename(), 'admin')) {
-                    $list[] = $this->_loadTheme($file->getFilename());
+                    $list[] = $this->buildThemeConfig($file->getFilename());
                 }
             } catch (\Exception $e) {
                 error_log($e->getMessage());
@@ -365,12 +371,12 @@ class Service implements InjectionAwareInterface
             $theme = $default;
         }
 
-        return $this->_loadTheme($theme, $client, $mod);
+        return $this->buildThemeConfig($theme, $client, $mod);
     }
 
     public function loadTheme($code, $client = true, $mod = null)
     {
-        return $this->_loadTheme($code, $client, $mod);
+        return $this->buildThemeConfig($code, $client, $mod);
     }
 
     public function getThemesPath()
@@ -378,7 +384,7 @@ class Service implements InjectionAwareInterface
         return PATH_THEMES;
     }
 
-    private function _loadTheme($theme, $client = true, $mod = null): array
+    private function buildThemeConfig($theme, $client = true, $mod = null): array
     {
         $theme_path = Path::join($this->getThemesPath(), $theme);
 

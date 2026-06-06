@@ -21,36 +21,38 @@
                                 {{ (product.description ?? '')|markdown_to_html }}
                             {% endif %}
 
-                            <hr>
+                            {% if product.pricing.type is defined %}
+                                <hr>
 
-                            <h4 class="mt-4 mb-1"><strong>{{ 'Billing'|trans }}</strong></h4>
+                                <h4 class="mt-4 mb-1"><strong>{{ 'Billing'|trans }}</strong></h4>
 
-                            <div class="row">
-                                <div class="col-12 col-md-4 col-xl-3">
-                                    {% if product.pricing.type == 'recurrent' %}
-                                    <span>{{ 'Billing Cycle'|trans }}</span>
-                                    {% else %}
-                                    <span>{{ 'One-time payment'|trans }}</span>
-                                    {% endif %}
+                                <div class="row">
+                                    <div class="col-12 col-md-4 col-xl-3">
+                                        {% if product.pricing.type == 'recurrent' %}
+                                        <span>{{ 'Billing Cycle'|trans }}</span>
+                                        {% else %}
+                                        <span>{{ 'One-time payment'|trans }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col">
+                                        {% set cart_currency = guest.cart_get_currency %}
+                                        {% if product.pricing.type == 'recurrent' %}
+                                        {% set periods = guest.system_periods %}
+                                        <select class="form-select" name="period" id="period-selector">
+                                            {% for code,prices in product.pricing.recurrent %}
+                                                {% if prices.enabled %}
+                                                    <option value="{{ code }}" data-bb-price="{{ (prices.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}" name="period">{{ (prices.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }} ({{ periods[code] }})</option>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </select>
+                                        {% elseif product.pricing.type == 'free' %}
+                                        <span class="badge text-bg-success">{{ 0|format_currency(cart_currency.code) }}</span>
+                                        {% else %}
+                                        <span class="badge text-bg-success">{{ (product.pricing.once.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</span>
+                                        {% endif %}
+                                    </div>
                                 </div>
-                                <div class="col">
-                                    {% set cart_currency = guest.cart_get_currency %}
-                                    {% if product.pricing.type == 'recurrent' %}
-                                    {% set periods = guest.system_periods %}
-                                    <select class="form-select" name="period" id="period-selector">
-                                        {% for code,prices in product.pricing.recurrent %}
-                                            {% if prices.enabled %}
-                                                <option value="{{ code }}" data-bb-price="{{ (prices.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}" name="period">{{ (prices.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }} ({{ periods[code] }})</option>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </select>
-                                    {% elseif product.pricing.type == 'free' %}
-                                    <span class="badge text-bg-success">{{ 0|format_currency(cart_currency.code) }}</span>
-                                    {% else %}
-                                    <span class="badge text-bg-success">{{ (product.pricing.once.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</span>
-                                    {% endif %}
-                                </div>
-                            </div>
+                            {% endif %}
                             {% if product.allow_quantity_select %}
                             <div class="row mt-3">
                                 <div class="col-12 col-md-4 col-xl-3">

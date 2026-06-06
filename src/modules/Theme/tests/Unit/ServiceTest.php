@@ -108,7 +108,17 @@ test('setCurrentThemePreset updates theme preset', function (): void {
 
 test('deletePreset removes a theme preset', function (): void {
     $service = new Service();
+    $currentMetaMock = Mockery::mock(ExtensionMeta::class);
+    $currentMetaMock->shouldReceive('getMetaValue')
+        ->atLeast()
+        ->once()
+        ->andReturn('dark_blue');
+
     $repositoryMock = Mockery::mock(Box\Mod\Extension\Repository\ExtensionMetaRepository::class);
+    $repositoryMock->shouldReceive('findOneByExtensionAndScope')
+        ->atLeast()
+        ->once()
+        ->andReturn($currentMetaMock);
     $repositoryMock->shouldReceive('deleteByExtensionAndScope')
         ->twice()
         ->andReturn(1);
