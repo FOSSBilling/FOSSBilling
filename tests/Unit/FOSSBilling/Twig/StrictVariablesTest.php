@@ -64,7 +64,7 @@ test('all templates render under strict_variables', function (): void {
         // .baseline file to lock the test in CI-gate mode.
         expect(true)->toBeTrue();
     }
-})->skip(false, 'Strict-variables render harness always runs');
+});
 
 test('orderbutton checkout renders for guests under strict_variables', function (): void {
     $renderer = new StrictTemplateRenderer();
@@ -140,7 +140,7 @@ test('all email templates render under strict_variables', function (): void {
     } else {
         expect(true)->toBeTrue();
     }
-})->skip(false, 'Strict-variables email render harness always runs');
+});
 
 /**
  * @param list<array{file: string, template: string, error: string, category: string}> $findings

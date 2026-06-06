@@ -33,8 +33,7 @@ test('getDi returns the dependency injection container', function (): void {
     $service = new Service();
     $di = container();
     $service->setDi($di);
-    $getDi = $service->getDi();
-    expect($getDi)->toBe($di);
+    expect($service->getDi())->toBe($di);
 });
 
 test('getTheme returns a Theme model instance', function (): void {
@@ -367,7 +366,7 @@ test('regenerateThemeCssAndJsFiles handles empty files', function (): void {
     $di = container();
     $service->setDi($di);
 
-    $result = $service->regenerateThemeCssAndJsFiles($themeMock, 'default', new Model_Admin());
+    $result = $service->regenerateThemeCssAndJsFiles($themeMock, 'default');
 
     // Clean up temp directory
     if (is_dir($tmpDir)) {
