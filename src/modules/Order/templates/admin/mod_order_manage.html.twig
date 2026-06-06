@@ -113,7 +113,7 @@
                                         <td class="text-end">{{ 'Order Notes'|trans }}</td>
                                         <td>
                                             <svg class="icon">
-                                                <use xlink:href="#support" />
+                                                <use xlink:href="#headset" />
                                             </svg>
                                             <a>{{ order.notes }}</a>
                                         </td>
@@ -165,7 +165,7 @@
                     <a class="btn btn-primary"
                         {{ fb_api_link({href: 'order/activate'|api_url(query: {id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
-                            <use xlink:href="#play" />
+                            <use xlink:href="#player-play" />
                         </svg>
                         <span>{{ 'Activate'|trans }}</span>
                     </a>
@@ -185,14 +185,14 @@
                     <a class="btn btn-primary"
                         {{ fb_api_link({href: 'order/suspend'|api_url(query: {'id': order.id}), modal: {type: 'prompt', title: 'Suspension Reason'|trans, label: 'Reason for Suspension'|trans, key: 'reason'}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
-                            <use xlink:href="#pause" />
+                            <use xlink:href="#player-pause" />
                         </svg>
                         <span>{{ 'Suspend'|trans }}</span>
                     </a>
                     {% else %}
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#suspendModal">
                         <svg class="icon" width="24" height="24">
-                            <use xlink:href="#close" />
+                            <use xlink:href="#x" />
                         </svg>
                         <span>{{ 'Suspend'|trans }}</span>
                     </button>
@@ -200,7 +200,7 @@
                     <a class="btn btn-primary"
                         {{ fb_api_link({href: 'order/cancel'|api_url(query: {'id': order.id}), modal: {type: 'prompt', title: 'Cancellation Reason'|trans, label: 'Reason for Cancellation'|trans, key: 'reason'}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
-                            <use xlink:href="#close" />
+                            <use xlink:href="#x" />
                         </svg>
                         <span>{{ 'Cancel'|trans }}</span>
                     </a>
@@ -210,7 +210,7 @@
                     <a class="btn btn-primary"
                         {{ fb_api_link({href: 'order/unsuspend'|api_url(query: {id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
-                            <use xlink:href="#play" />
+                            <use xlink:href="#player-play" />
                         </svg>
                         <span>{{ 'Unsuspend'|trans }}</span>
                     </a>
@@ -220,7 +220,7 @@
                     <a class="btn btn-primary"
                         {{ fb_api_link({href: 'order/uncancel'|api_url(query: {id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
-                            <use xlink:href="#play" />
+                            <use xlink:href="#player-play" />
                         </svg>
                         <span>{{ 'Activate'|trans }}</span>
                     </a>
@@ -228,7 +228,7 @@
 
                     <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
                         <svg class="icon" width="24" height="24">
-                            <use xlink:href="#delete" />
+                            <use xlink:href="#trash" />
                         </svg>
                         <span>{{ 'Delete'|trans }}</span>
                     </button>
@@ -571,7 +571,7 @@
                                         <a class="btn btn-icon"
                                             {{ fb_api_link({href: 'order/status_history_delete'|api_url(query: {'id': sh.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'order'|url}) }}>
                                             <svg class="icon">
-                                                <use xlink:href="#delete" />
+                                                <use xlink:href="#trash" />
                                             </svg>
                                         </a>
                                     </td>

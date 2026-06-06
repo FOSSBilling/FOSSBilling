@@ -68,10 +68,19 @@ body {
     }
 }
 
-.svg-icon {
+.svg-icon,
+.icon {
     height: 20px;
     width: 20px;
     fill: currentColor;
+}
+
+.icon {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 // Order management accordion

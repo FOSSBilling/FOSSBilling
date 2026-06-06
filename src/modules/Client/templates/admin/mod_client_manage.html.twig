@@ -132,7 +132,7 @@
                                         <td class="text-end">{{ 'Notes'|trans }}:</td>
                                         <td>
                                             <svg class="icon">
-                                                <use xlink:href="#support" />
+                                                <use xlink:href="#headset" />
                                             </svg>
                                             {% if has_profile_edit_actions %}
                                                 <a href="#tab-profile" data-bs-toggle="tab" role="button">{{ client.notes }}</a>
@@ -183,7 +183,7 @@
                         <a class="btn btn-danger"
                             {{ fb_api_link({href: 'client/delete'|api_url(query: {'id': client.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'client'|url}) }}>
                             <svg class="icon" width="24" height="24">
-                                <use xlink:href="#delete" />
+                                <use xlink:href="#trash" />
                             </svg>
                             <span>{{ 'Delete'|trans }}</span>
                         </a>
@@ -679,7 +679,7 @@
                                         <a class="btn btn-icon"
                                             {{ fb_api_link({ href: 'client/balance_delete'|api_url(query: {id: tx.id }), modal: {type: 'confirm', title: 'Are you sure?'|trans} }) }}>
                                             <svg class="icon">
-                                                <use xlink:href="#delete" />
+                                                <use xlink:href="#trash" />
                                             </svg>
                                         </a>
                                     </td>

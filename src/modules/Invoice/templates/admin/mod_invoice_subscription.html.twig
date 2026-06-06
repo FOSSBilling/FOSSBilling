@@ -90,7 +90,7 @@
                             <a class="btn btn-danger" href="{{ 'invoice/subscription_delete'|api_url(query: { 'id': subscription.id }) }}"
                                 {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice/subscriptions'|url}) }}>
                                 <svg class="icon icon-tabler" width="24" height="24">
-                                    <use xlink:href="#delete" />
+                                    <use xlink:href="#trash" />
                                 </svg>
                                 <span>{{ 'Delete'|trans }}</span>
                             </a>

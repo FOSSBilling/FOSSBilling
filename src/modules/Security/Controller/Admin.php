@@ -33,7 +33,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 'index' => 650,
                 'location' => 'security',
                 'label' => __trans('Security'),
-                'class' => 'lock-closed',
+                'class' => 'lock',
             ],
             'subpages' => [
                 [

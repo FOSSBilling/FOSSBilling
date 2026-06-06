@@ -73,13 +73,13 @@
                         {% if ticket.status != 'closed' %}
                         <a class="btn btn-warning" href="{{ 'support/public_ticket_close'|api_url(query: { 'id': ticket.id }) }}"
                             {{ fb_api_link({ redirect: 'support/public-tickets'|url }) }}>
-                            <svg class="icon"><use xlink:href="#close" /></svg>
+                            <svg class="icon"><use xlink:href="#x" /></svg>
                             {{ 'Close'|trans }}
                         </a>
                         {% endif %}
                         <a class="btn btn-danger" href="{{ 'support/public_ticket_delete'|api_url(query: { 'id' : ticket.id  }) }}"
                             {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/public-tickets'|url }) }}>
-                            <svg class="icon"><use xlink:href="#delete" /></svg>
+                            <svg class="icon"><use xlink:href="#trash" /></svg>
                             {{ 'Delete'|trans }}
                         </a>
                         <a class="btn btn-primary"

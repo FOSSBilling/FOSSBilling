@@ -125,7 +125,7 @@
                         <a class="btn btn-icon" href="{{ 'support/canned_delete'|api_url(query: { 'id': response.id }) }}"
                             {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/canned-responses'|url}) }}>
                             <svg class="icon">
-                                <use xlink:href="#delete" />
+                                <use xlink:href="#trash" />
                             </svg>
                         </a>
                     </td>
@@ -172,7 +172,7 @@
                             <a class="btn btn-icon" href="{{ 'support/canned_category_delete'|api_url(query: { 'id': cat_id }) }}"
                                 {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/canned-responses#tab-categories'|url}) }}>
                                 <svg class="icon">
-                                    <use xlink:href="#delete" />
+                                    <use xlink:href="#trash" />
                                 </svg>
                             </a>
                         </td>

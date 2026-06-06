@@ -74,7 +74,7 @@
                                     <a class="btn btn-icon" href="{{ 'product/delete'|api_url({'id' : product.id }) }}"
                                         {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product'|url}) }}>
                                         <svg class="icon">
-                                            <use xlink:href="#delete" />
+                                            <use xlink:href="#trash" />
                                         </svg>
                                     </a>
                                 </td>
@@ -137,7 +137,7 @@
                             <a class="btn btn-icon" href="{{ 'product/category_delete'|api_url(query: { 'id': cat_id }) }}"
                                 {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product#tab-categories'|url}) }}>
                                 <svg class="icon">
-                                    <use xlink:href="#delete" />
+                                    <use xlink:href="#trash" />
                                 </svg>
                             </a>
                         </td>

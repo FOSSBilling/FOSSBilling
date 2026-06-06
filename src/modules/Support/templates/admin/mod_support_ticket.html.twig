@@ -79,13 +79,13 @@
                         {% if ticket.status != 'closed' %}
                         <a class="btn btn-primary" href="{{ 'support/ticket_close'|api_url(query: { 'id': ticket.id }) }}"
                             {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support'|url(query: { status: 'open' }) }) }}>
-                            <svg class="icon"><use xlink:href="#close" /></svg>
+                            <svg class="icon"><use xlink:href="#x" /></svg>
                             {{ 'Close'|trans }}
                         </a>
                         {% endif %}
                         <a class="btn btn-danger" href="{{ 'support/ticket_delete'|api_url(query: { 'id': ticket.id }) }}"
                             {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support'|url }) }}>
-                            <svg class="icon"><use xlink:href="#delete" /></svg>
+                            <svg class="icon"><use xlink:href="#trash" /></svg>
                             {{ 'Delete'|trans }}
                         </a>
                         {% if task.status == 'pending' %}
@@ -226,7 +226,7 @@
                                     <td class="w-1">
                                         <a class="btn btn-icon" href="{{ 'support/note_delete'|api_url(query: { 'id': note.id }) }}"
                                             {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true }) }}>
-                                            <svg class="icon"><use xlink:href="#delete" /></svg>
+                                            <svg class="icon"><use xlink:href="#trash" /></svg>
                                         </a>
                                     </td>
                                 </tr>

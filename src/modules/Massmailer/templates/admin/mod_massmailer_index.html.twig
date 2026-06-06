@@ -36,7 +36,7 @@
                         <li class="nav-item" role="presentation">
                             <a href="#tab-settings" class="nav-link" data-bs-toggle="tab" aria-selected="false" role="tab">
                                 <svg class="icon me-2">
-                                    <use xlink:href="#cog"/>
+                                    <use xlink:href="#settings"/>
                                 </svg>
                                 {{ 'Settings'|trans }}
                             </a>
@@ -122,7 +122,7 @@
                                             <a class="btn btn-icon" href="{{ 'massmailer/delete'|api_url(query: {'id' : msg.id }) }}"
                                                 {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'massmailer'|url}) }}>
                                                 <svg class="icon">
-                                                    <use xlink:href="#delete"/>
+                                                    <use xlink:href="#trash"/>
                                                 </svg>
                                             </a>
                                         </td>

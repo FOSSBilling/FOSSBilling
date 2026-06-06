@@ -18,7 +18,7 @@
     {% else %}
     {% set alerts = admin.system_cas_messages()|merge(admin.system_messages()) %}
     {% for alert in alerts %}
-    {% set alertIcon = {danger: 'alert-triangle', warning: 'alert-triangle', success: 'circle-check', info: 'info'}[alert.type]|default('info') %}
+    {% set alertIcon = {danger: 'alert-triangle', warning: 'alert-triangle', success: 'circle-check', info: 'info-circle'}[alert.type]|default('info-circle') %}
     <div class="alert alert-{{ alert.type }} {{ alert.dismissible ? "alert-dismissible" : "" }} fade show mb-3" role="alert">
         <div class="alert-icon">
             <svg class="icon alert-icon icon-2" aria-hidden="true">
@@ -58,7 +58,7 @@
                         <div class="col-auto">
                             <span class="bg-blue text-white avatar">
                                 <svg class="icon">
-                                    <use xlink:href="#contacts" />
+                                    <use xlink:href="#address-book" />
                                 </svg>
                             </span>
                         </div>
@@ -80,7 +80,7 @@
                         <div class="col-auto">
                         <span class="bg-green text-white avatar">
                             <svg class="icon">
-                                <use xlink:href="#orders" />
+                                <use xlink:href="#package" />
                             </svg>
                         </span>
                         </div>
@@ -124,7 +124,7 @@
                         <div class="col-auto">
                         <span class="bg-warning text-white avatar">
                             <svg class="icon">
-                                <use xlink:href="#support" />
+                                <use xlink:href="#headset" />
                             </svg>
                         </span>
                         </div>
@@ -288,7 +288,7 @@
                                 aria-label="{{ 'Graph date range help'|trans }}"
                             >
                                 <svg class="icon icon-sm">
-                                    <use xlink:href="#info" />
+                                    <use xlink:href="#info-circle" />
                                 </svg>
                             </span>
                         </div>

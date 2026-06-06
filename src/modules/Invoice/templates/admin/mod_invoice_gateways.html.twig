@@ -138,7 +138,7 @@
                                         <a class="btn btn-icon" href="{{ 'invoice/gateway_delete'|api_url(query: { 'id': gateway.id }) }}"
                                             {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice/gateways'|url}) }}>
                                             <svg class="icon">
-                                                <use xlink:href="#delete" />
+                                                <use xlink:href="#trash" />
                                             </svg>
                                         </a>
                                     </td>
@@ -209,7 +209,7 @@
                                                     <a class="btn btn-icon" href="{{ 'invoice/gateway_install'|api_url(query: { 'code': gtw }) }}" title="{{ 'Install'|trans }}"
                                                         {{ fb_api_link({redirect: 'invoice/gateways'|url}) }}>
                                                         <svg class="icon">
-                                                            <use xlink:href="#cog" />
+                                                            <use xlink:href="#settings" />
                                                         </svg>
                                                     </a>
                                                 </td>
