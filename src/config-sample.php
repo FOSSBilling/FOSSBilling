@@ -168,6 +168,7 @@ return [
         'debug' => false,
         'auto_reload' => true,
         'cache' => __DIR__ . '/data/cache',
+        'strict_variables' => true,
     ],
 
     'api' => [

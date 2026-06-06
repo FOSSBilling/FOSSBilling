@@ -66,7 +66,7 @@
 
         <div class="card-footer text-center">
             <div class="btn-list justify-content-center">
-                {{ order_actions }}
+                {{ order_actions|default('') }}
                 {% if order.status == 'active' %}
                 <a class="btn btn-primary" type="button" id="get-epp">
                     <svg class="icon">

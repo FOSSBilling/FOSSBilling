@@ -1,4 +1,4 @@
-{% if not product %}
+{% if product is not defined or not product %}
     {% set product = request.product ? guest.product_get({"id":request.product}) : null %}
 {% endif %}
 <div class="accordion-item">
@@ -18,7 +18,7 @@
                         <div class="well">
                             <h3>{{ product.title }}</h3>
                             {% if product.description %}
-                                {{ product.description|markdown_to_html }}
+                                {{ (product.description ?? '')|markdown_to_html }}
                             {% endif %}
 
                             <hr>

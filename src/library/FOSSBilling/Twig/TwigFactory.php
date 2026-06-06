@@ -121,10 +121,8 @@ class TwigFactory
         $twig->addGlobal('theme', $theme);
         $twig->addGlobal('current_theme', $theme['code']);
         $twig->addGlobal('app_area', AppArea::ADMIN->value);
-
-        if ($this->di['auth']->isAdminLoggedIn()) {
-            $twig->addGlobal('admin', $this->di['api_admin']);
-        }
+        $twig->addGlobal('admin', $this->di['auth']->isAdminLoggedIn() ? $this->di['api_admin'] : null);
+        $twig->addGlobal('client', $this->di['auth']->isClientLoggedIn() ? $this->di['api_client'] : null);
 
         $this->configureDebugging($twig, $debugBar);
 
@@ -154,14 +152,8 @@ class TwigFactory
         $twig->addGlobal('current_theme', $code);
         $twig->addGlobal('settings', $settings);
         $twig->addGlobal('app_area', AppArea::CLIENT->value);
-
-        if ($this->di['auth']->isClientLoggedIn()) {
-            $twig->addGlobal('client', $this->di['api_client']);
-        }
-
-        if ($this->di['auth']->isAdminLoggedIn()) {
-            $twig->addGlobal('admin', $this->di['api_admin']);
-        }
+        $twig->addGlobal('client', $this->di['auth']->isClientLoggedIn() ? $this->di['api_client'] : null);
+        $twig->addGlobal('admin', $this->di['auth']->isAdminLoggedIn() ? $this->di['api_admin'] : null);
 
         $this->configureDebugging($twig, $debugBar);
 
@@ -389,7 +381,8 @@ class TwigFactory
         $twig->addGlobal('default_currency', $this->getDefaultCurrencyCode());
 
         $twig->addGlobal('CSRFToken', $csrfToken);
-        $twig->addGlobal('request', $requestData);
+        $twig->addGlobal('flashes', $session->get('flashes') ?? []);
+        $twig->addGlobal('request', new RequestDataView($requestData));
         $twig->addGlobal('request_query', $requestQuery);
         $twig->addGlobal('request_path', $requestPath);
         $twig->addGlobal('request_has_filters', $requestHasFilters);
