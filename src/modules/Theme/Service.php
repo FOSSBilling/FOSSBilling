@@ -136,8 +136,14 @@ class Service implements InjectionAwareInterface
 
     public function deletePreset(Model\Theme $theme, $preset): bool
     {
-        $this->getExtensionMetaRepository()->deleteByExtensionAndScope('mod_theme', (string) $preset, 'settings', $theme->getName());
-        $this->getExtensionMetaRepository()->deleteByExtensionAndScope('mod_theme', $theme->getName(), 'preset', 'current');
+        $preset = (string) $preset;
+        $currentPreset = (string) $this->getCurrentThemePreset($theme);
+
+        $this->getExtensionMetaRepository()->deleteByExtensionAndScope('mod_theme', $preset, 'settings', $theme->getName());
+
+        if ($preset === $currentPreset) {
+            $this->getExtensionMetaRepository()->deleteByExtensionAndScope('mod_theme', $theme->getName(), 'preset', 'current');
+        }
 
         return true;
     }
