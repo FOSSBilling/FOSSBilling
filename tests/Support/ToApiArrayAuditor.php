@@ -50,7 +50,13 @@ final class ToApiArrayAuditor
 
     public function __construct(private readonly string $srcDir)
     {
-        $this->parser = new ParserFactory()->createForHostVersion();
+        // Parenthesise the `new` so the chained `->createForHostVersion()`
+        // call parses on PHP 8.3 as well as 8.4+. Without the parentheses,
+        // PHP 8.3 sees `new ParserFactory()->...` as a syntax error: the
+        // ability to omit them is a PHP 8.4 language change
+        // (https://wiki.php.net/rfc/new_without_parentheses).
+        $factory = new ParserFactory();
+        $this->parser = $factory->createForHostVersion();
         $this->nodeFinder = new NodeFinder();
     }
 

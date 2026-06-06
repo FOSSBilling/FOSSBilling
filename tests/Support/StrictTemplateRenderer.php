@@ -30,16 +30,19 @@ class UrlAwarePermissiveContainer extends \Pimple\Container
     private PermissiveStub $stub;
     /** @var array<string, mixed> */
     private array $store = [];
+
     public function __construct()
     {
         parent::__construct();
         $this->stub = new PermissiveStub();
         $this->store['loaded_assets'] = [];
     }
+
     public function offsetExists(mixed $offset): bool
     {
         return true;
     }
+
     public function offsetGet(mixed $offset): mixed
     {
         if ($offset === 'url') {
@@ -48,17 +51,40 @@ class UrlAwarePermissiveContainer extends \Pimple\Container
                 {
                     return '';
                 }
+
                 public function adminLink(string $path, ?array $query = null): string
                 {
                     return '';
                 }
             };
         }
+        // The LegacyExtension's `ip_country_name`/`ip_country_code` filters
+        // call `$this->di['geoip']->country($ip)` and then read properties on
+        // the returned record. The signatures are `: string`, so a permissive
+        // stub would fail with a TypeError. Provide a stub object whose
+        // `country()` call throws — the surrounding try/catch then returns
+        // the empty-string fallback the real code emits when GeoIP is
+        // unavailable. Mirrors the same handling in `PermissiveContainer`.
+        if ($offset === 'geoip') {
+            return new class {
+                public function __call(string $name, array $args): mixed
+                {
+                    throw new \RuntimeException('geoip service not available in test environment');
+                }
+
+                public function __get(string $name): mixed
+                {
+                    throw new \RuntimeException('geoip service not available in test environment');
+                }
+            };
+        }
         if (array_key_exists((string) $offset, $this->store)) {
             return $this->store[(string) $offset];
         }
+
         return $this->stub;
     }
+
     public function offsetSet(mixed $offset, mixed $value): void
     {
         $this->store[(string) $offset] = $value;
