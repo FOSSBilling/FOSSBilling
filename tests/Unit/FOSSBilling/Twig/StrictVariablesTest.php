@@ -66,6 +66,54 @@ test('all templates render under strict_variables', function (): void {
     }
 })->skip(false, 'Strict-variables render harness always runs');
 
+test('orderbutton checkout renders for guests under strict_variables', function (): void {
+    $renderer = new StrictTemplateRenderer();
+
+    $html = $renderer->renderTemplate(PATH_MODS . '/Orderbutton/templates/client/mod_orderbutton_checkout.html.twig', [
+        'app_area' => 'client',
+        'client' => null,
+        'request' => [
+            'checkout' => true,
+            'show_custom_form_values' => false,
+            'promocode' => '',
+        ],
+        'settings' => [
+            'checkout_tos' => 'implicit',
+        ],
+        'guest' => [
+            'cart_get' => [
+                'items' => [
+                    [
+                        'id' => 1,
+                        'title' => 'Test product',
+                        'quantity' => 1,
+                        'period' => null,
+                        'discount_price' => 0,
+                        'total' => 10,
+                        'setup_price' => 0,
+                        'discount_setup' => 0,
+                        'form_id' => null,
+                    ],
+                ],
+                'promocode' => '',
+                'discount' => 0,
+                'subtotal' => 10,
+                'total' => 10,
+                'currency' => [
+                    'code' => 'USD',
+                ],
+            ],
+            'cart_get_currency' => [
+                'code' => 'USD',
+                'conversion_rate' => 1,
+            ],
+            'invoice_gateways' => [],
+        ],
+    ]);
+
+    expect($html)->toContain('You must first login / create an account before you can checkout.');
+});
+
 /*
  * Email templates use a sandboxed environment and a different global shape.
  * Run the same harness in email mode to catch issues specific to email rendering.

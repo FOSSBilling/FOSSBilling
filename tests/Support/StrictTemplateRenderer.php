@@ -37,6 +37,31 @@ use Twig\NodeTraverser;
 final class StrictTemplateRenderer
 {
     /**
+     * @param array<string, mixed> $contextOverrides
+     */
+    public function renderTemplate(string $templatePath, array $contextOverrides = [], bool $emailMode = false): string
+    {
+        $previousLevel = error_reporting();
+        error_reporting($previousLevel & ~E_NOTICE & ~E_WARNING);
+
+        try {
+            $twig = $this->buildEnvironment($emailMode, stringifyUrls: true);
+            $context = array_replace($this->buildContext($emailMode), $contextOverrides);
+
+            try {
+                $context = $this->enrichContextWithTemplateVariables($twig, $templatePath, $context, $emailMode);
+                $context = array_replace($context, $contextOverrides);
+            } catch (\Throwable) {
+                // Let the render call surface any meaningful parser/loader error.
+            }
+
+            return $twig->render($this->relativeTemplateName($templatePath), $context);
+        } finally {
+            error_reporting($previousLevel);
+        }
+    }
+
+    /**
      * @return list<array{file: string, template: string, error: string, category: string}>
      */
     public function renderAllTemplates(bool $emailMode = false): array
@@ -121,7 +146,7 @@ final class StrictTemplateRenderer
         return $context;
     }
 
-    private function buildEnvironment(bool $emailMode): Environment
+    private function buildEnvironment(bool $emailMode, bool $stringifyUrls = false): Environment
     {
         $loader = new CombinedTwigLoader(PATH_THEMES);
         $twig = new Environment($loader, [
@@ -152,9 +177,9 @@ final class StrictTemplateRenderer
         // extension instances so filter/function method dispatch works in the
         // test environment. A PermissiveContainer absorbs every `$di['x']`
         // access so the extensions can render without a live DI graph.
-        $di = new PermissiveContainer();
+        $di = $stringifyUrls ? $this->buildUrlAwareContainer() : new PermissiveContainer();
         $twig->addRuntimeLoader(new class($di) implements \Twig\RuntimeLoader\RuntimeLoaderInterface {
-            public function __construct(private readonly PermissiveContainer $di)
+            public function __construct(private readonly \Pimple\Container $di)
             {
             }
 
@@ -191,6 +216,47 @@ final class StrictTemplateRenderer
         }
 
         return $twig;
+    }
+
+    private function buildUrlAwareContainer(): \Pimple\Container
+    {
+        return new class extends \Pimple\Container {
+            private PermissiveStub $stub;
+
+            public function __construct()
+            {
+                $this->stub = new PermissiveStub();
+            }
+
+            public function offsetExists(mixed $offset): bool
+            {
+                return true;
+            }
+
+            public function offsetGet(mixed $offset): mixed
+            {
+                if ($offset === 'url') {
+                    return new class {
+                        public function link(string $path, ?array $query = null): string
+                        {
+                            return '';
+                        }
+
+                        public function adminLink(string $path, ?array $query = null): string
+                        {
+                            return '';
+                        }
+                    };
+                }
+
+                return $this->stub;
+            }
+
+            public function offsetSet(mixed $offset, mixed $value): void
+            {
+                // Tests don't write to the container; ignore.
+            }
+        };
     }
 
     /**
