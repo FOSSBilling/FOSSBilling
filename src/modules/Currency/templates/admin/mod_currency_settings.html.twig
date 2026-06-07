@@ -350,9 +350,9 @@
         document.getElementById("provider_select").onchange = function() {
             switchKeyBox(this.value);
         };
-        document.getElementById("sync_rate").value = "{{ sync_rate }}";
-        document.getElementById("provider_select").value = "{{ provider }}";
-        switchKeyBox("{{ provider }}");
+        document.getElementById("sync_rate").value = "{{ sync_rate|e('js') }}";
+        document.getElementById("provider_select").value = "{{ provider|e('js') }}";
+        switchKeyBox("{{ provider|e('js') }}");
 
         {% if can_create_currency %}
         if (window.location.hash === '#tab-new-currency') {
