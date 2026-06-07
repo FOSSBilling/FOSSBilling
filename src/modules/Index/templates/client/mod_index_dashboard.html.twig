@@ -17,6 +17,8 @@
 {% import "macro_functions.html.twig" as mf %}
 
 {% block content %}
+    {{ render_widgets('client.index.dashboard.content.before') }}
+
     {% if settings.showcase_enabled %}
         <div class="alert alert-info" role="alert">
             <p>{{ (settings.showcase_text ?? '')|markdown_to_html }}</p>
@@ -31,6 +33,8 @@
     {% if client %}
         {% set dashboard = client.index_get_dashboard %}
         {% set profile = dashboard.profile %}
+
+        {{ render_widgets('client.index.dashboard.client.before', { 'dashboard': dashboard, 'profile': profile }) }}
 
         {% if dashboard.tickets.on_hold > 0 %}
             <div class="row">
@@ -212,7 +216,11 @@
                 </div>
             </div>
         </div>
+
+        {{ render_widgets('client.index.dashboard.client.after', { 'dashboard': dashboard, 'profile': profile }) }}
     {% else %}
+        {{ render_widgets('client.index.dashboard.guest.before') }}
+
         <div class="row">
             <div class="col-md-6">
                 <div class="card mb-4">
@@ -267,5 +275,9 @@
                 </div>
             {% endif %}
         </div>
+
+        {{ render_widgets('client.index.dashboard.guest.after') }}
     {% endif %}
+
+    {{ render_widgets('client.index.dashboard.content.after') }}
 {% endblock %}
