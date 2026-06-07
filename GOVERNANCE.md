@@ -66,7 +66,7 @@ As of this writing, the SC consists of the following individuals (listed by GitH
 
 - [admdly](https://github.com/admdly)
 - [BelleNottelling](https://github.com/BelleNottelling)
-- [evrifaessa](https://github.com/evrifaessa)
+- [yagiz-dev](https://github.com/yagiz-dev)
 - [HunterNyan](https://github.com/HunterNyan)
 - [jaapmarcus](https://github.com/jaapmarcus)
 
