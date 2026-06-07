@@ -45,7 +45,8 @@
         "minmax",
         "grecaptcha",
         "resends",
-        "Parenthesise"
+        "Parenthesise",
+        "yagiz"
     ],
 
     "ignoreWords": [
