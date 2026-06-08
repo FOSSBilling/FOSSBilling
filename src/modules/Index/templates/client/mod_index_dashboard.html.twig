@@ -71,7 +71,7 @@
                                 <dd class="col-sm-8">{{ profile.email }}</dd>
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'Balance'|trans }}</dt>
                                 {% if profile.currency is not null %}
-                                    <dd class="col-sm-8">{{ profile.balance|format_currency(profile.currency ?? default_currency) }}</dd>
+                                    <dd class="col-sm-8">{{ profile.balance|format_currency(profile.currency) }}</dd>
                                 {% else %}
                                     <dd class="col-sm-8">-</dd>
                                 {% endif %}
@@ -228,7 +228,7 @@
                     <div class="card-body">
                         <p>{{ 'You are currently logged out'|trans }}</p>
                         <div class="d-flex gap-2">
-                            <a class="btn btn-sm  btn-primary" href="{{ 'login'|url }}">{{ 'Login'|trans }}</a>
+                            <a class="btn btn-sm btn-primary" href="{{ 'login'|url }}">{{ 'Login'|trans }}</a>
                             <a class="btn btn-sm btn-dark" href="{{ 'signup'|url }}">{{ 'Register'|trans }}</a>
                         </div>
                     </div>
