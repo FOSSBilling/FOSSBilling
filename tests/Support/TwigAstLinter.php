@@ -56,7 +56,7 @@ final class TwigAstLinter
      *
      * @var list<string>
      */
-    public const KNOWN_GLOBALS = [
+    public const array KNOWN_GLOBALS = [
         'app_area',
         'current_theme',
         'CSRFToken',
@@ -274,13 +274,11 @@ final class LinterVisitor implements NodeVisitorInterface
     {
         $names = [];
         $namesNode = $node->getNode('names');
-        if ($namesNode instanceof Node) {
-            foreach ($namesNode as $child) {
-                if ($child instanceof AssignNameExpression) {
-                    $name = $child->getAttribute('name');
-                    if (is_string($name) && $name !== '' && !str_starts_with($name, '_')) {
-                        $names[] = $name;
-                    }
+        foreach ($namesNode as $child) {
+            if ($child instanceof AssignNameExpression) {
+                $name = $child->getAttribute('name');
+                if (is_string($name) && $name !== '' && !str_starts_with($name, '_')) {
+                    $names[] = $name;
                 }
             }
         }

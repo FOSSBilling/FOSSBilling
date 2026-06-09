@@ -23,14 +23,12 @@ namespace Tests\Support;
  * interoperates with Twig filters like |merge, |length, |first, |last, |join,
  * |keys, |sort, |reverse, |slice, etc.
  */
-final class PermissiveStub implements \ArrayAccess, \Countable, \IteratorAggregate
+final class PermissiveStub implements \ArrayAccess, \Countable, \IteratorAggregate, \Stringable
 {
-    /** @var array<string, mixed> */
-    private array $data = [];
-
-    public function __construct(array $data = [])
-    {
-        $this->data = $data;
+    public function __construct(
+        /** @var array<string, mixed> */
+        private array $data = [],
+    ) {
     }
 
     public function __get(string $name): mixed
