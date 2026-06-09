@@ -39,7 +39,7 @@
         {% if dashboard.tickets.on_hold > 0 %}
             <div class="row">
                 <div class="col-md-12">
-                    {% for i, ticket in dashboard.recent_tickets %}
+                    {% for ticket in dashboard.recent_tickets %}
                         {% if ticket.status == 'on_hold' %}
                             <div class="alert alert-info d-flex justify-content-between" role="alert">
                                 <span>Ticket <strong>#{{ ticket.id }}</strong> was replied to {{ ticket.updated_at|timeago }} {{ 'ago'|trans }}.</span>
@@ -159,7 +159,7 @@
                         <div class="card-body p-1">
                             {% if dashboard.recent_orders %}
                                 <div class="list-group list-group-flush">
-                                    {% for i, order in dashboard.recent_orders %}
+                                    {% for order in dashboard.recent_orders %}
                                         <a href='{{ "order/service/manage/#{order.id}"|url }}'
                                            class="list-group-item d-flex justify-content-between align-items-center" aria-current="true">
                                             <div>
@@ -191,7 +191,7 @@
                         <div class="card-body p-1">
                             {% if dashboard.recent_tickets %}
                                 <div class="list-group list-group-flush">
-                                    {% for i, ticket in dashboard.recent_tickets %}
+                                    {% for ticket in dashboard.recent_tickets %}
                                         <a href='{{ "support/ticket/#{ticket.id}"|url }}'
                                            class="list-group-item d-flex justify-content-between align-items-center" aria-current="true">
                                             <div>
