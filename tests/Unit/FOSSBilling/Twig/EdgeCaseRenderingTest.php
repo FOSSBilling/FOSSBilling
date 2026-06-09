@@ -488,14 +488,12 @@ test('support admin ticket renders with a pending task (rel.status=pending)', fu
  * stub `admin.activity_log_get_list({...})` style calls with real data while
  * still letting other `admin.*` lookups succeed.
  */
-final class PermissiveCallableStub
+final class PermissiveCallableStub implements Stringable
 {
-    /** @var array<string, mixed> */
-    private array $methods;
-
-    public function __construct(array $methods = [])
-    {
-        $this->methods = $methods;
+    public function __construct(
+        /** @var array<string, mixed> */
+        private array $methods = [],
+    ) {
     }
 
     public function __call(string $name, array $args): mixed
