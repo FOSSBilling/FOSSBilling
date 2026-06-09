@@ -7671,16 +7671,16 @@
         },
         {
             "name": "friendsofphp/php-cs-fixer",
-            "version": "v3.95.4",
+            "version": "v3.95.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer.git",
-                "reference": "3f8f68856837a77e1f1d870354eca3c8747f2f72"
+                "reference": "7f86d8763063f5d2e2e2d0e1e45bb2f15895361d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHP-CS-Fixer/PHP-CS-Fixer/zipball/3f8f68856837a77e1f1d870354eca3c8747f2f72",
-                "reference": "3f8f68856837a77e1f1d870354eca3c8747f2f72",
+                "url": "https://api.github.com/repos/PHP-CS-Fixer/PHP-CS-Fixer/zipball/7f86d8763063f5d2e2e2d0e1e45bb2f15895361d",
+                "reference": "7f86d8763063f5d2e2e2d0e1e45bb2f15895361d",
                 "shasum": ""
             },
             "require": {
@@ -7698,7 +7698,7 @@
                 "react/event-loop": "^1.5",
                 "react/socket": "^1.16",
                 "react/stream": "^1.4",
-                "sebastian/diff": "^4.0.6 || ^5.1.1 || ^6.0.2 || ^7.0 || ^8.0",
+                "sebastian/diff": "^4.0.6 || ^5.1.1 || ^6.0.2 || ^7.0 || ^8.0 || ^9.0",
                 "symfony/console": "^5.4.47 || ^6.4.24 || ^7.0 || ^8.0",
                 "symfony/event-dispatcher": "^5.4.45 || ^6.4.24 || ^7.0 || ^8.0",
                 "symfony/filesystem": "^5.4.45 || ^6.4.24 || ^7.0 || ^8.0",
@@ -7764,7 +7764,7 @@
             ],
             "support": {
                 "issues": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/issues",
-                "source": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/tree/v3.95.4"
+                "source": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/tree/v3.95.5"
             },
             "funding": [
                 {
@@ -7772,7 +7772,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-06-03T18:02:44+00:00"
+            "time": "2026-06-09T14:55:16+00:00"
         },
         {
             "name": "hamcrest/hamcrest-php",
