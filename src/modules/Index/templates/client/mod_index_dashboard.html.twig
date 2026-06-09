@@ -159,7 +159,7 @@
                         <div class="card-body p-1">
                             {% if dashboard.recent_orders %}
                                 <div class="list-group list-group-flush">
-                                    {% for i, order in dashboard.recent_orders %}
+                                    {% for order in dashboard.recent_orders %}
                                         <a href='{{ "order/service/manage/#{order.id}"|url }}'
                                            class="list-group-item d-flex justify-content-between align-items-center" aria-current="true">
                                             <div>
