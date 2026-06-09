@@ -1112,11 +1112,11 @@ test('templateCreate validates subject and content', function (): void {
     $systemMock = Mockery::mock();
     $systemMock->shouldReceive('renderEmailTplString')
         ->once()
-        ->withArgs(fn ($tpl) => str_contains($tpl, 'valid subject'))
+        ->withArgs(fn ($tpl): bool => str_contains((string) $tpl, 'valid subject'))
         ->andReturn('rendered');
     $systemMock->shouldReceive('renderEmailTplString')
         ->once()
-        ->withArgs(fn ($tpl) => str_contains($tpl, 'valid content'))
+        ->withArgs(fn ($tpl): bool => str_contains((string) $tpl, 'valid content'))
         ->andReturn('rendered');
 
     $emMock = Mockery::mock();

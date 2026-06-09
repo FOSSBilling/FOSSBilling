@@ -28,10 +28,10 @@ namespace FOSSBilling\Twig;
  * `{{ request.foo }}` renders as empty string when missing, which is the existing
  * form pre-fill behavior in dozens of templates.
  */
-final class RequestDataView implements \ArrayAccess, \Countable, \IteratorAggregate
+final readonly class RequestDataView implements \ArrayAccess, \Countable, \IteratorAggregate
 {
     public function __construct(
-        private readonly array $data,
+        private array $data,
     ) {
     }
 

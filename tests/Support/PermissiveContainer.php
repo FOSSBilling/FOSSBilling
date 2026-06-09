@@ -22,7 +22,7 @@ namespace Tests\Support;
  */
 final class PermissiveContainer extends \Pimple\Container
 {
-    private PermissiveStub $stub;
+    private readonly PermissiveStub $stub;
 
     public function __construct()
     {
@@ -33,11 +33,13 @@ final class PermissiveContainer extends \Pimple\Container
         $this['loaded_assets'] = [];
     }
 
+    #[\Override]
     public function offsetExists(mixed $offset): bool
     {
         return true;
     }
 
+    #[\Override]
     public function offsetGet(mixed $offset): mixed
     {
         if (parent::offsetExists($offset)) {
@@ -68,6 +70,7 @@ final class PermissiveContainer extends \Pimple\Container
         return $this->stub;
     }
 
+    #[\Override]
     public function offsetSet(mixed $offset, mixed $value): void
     {
         parent::offsetSet($offset, $value);

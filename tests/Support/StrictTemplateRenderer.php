@@ -27,7 +27,7 @@ use Twig\NodeTraverser;
 
 class UrlAwarePermissiveContainer extends \Pimple\Container
 {
-    private PermissiveStub $stub;
+    private readonly PermissiveStub $stub;
     /** @var array<string, mixed> */
     private array $store = [];
 
@@ -38,11 +38,13 @@ class UrlAwarePermissiveContainer extends \Pimple\Container
         $this->store['loaded_assets'] = [];
     }
 
+    #[\Override]
     public function offsetExists(mixed $offset): bool
     {
         return true;
     }
 
+    #[\Override]
     public function offsetGet(mixed $offset): mixed
     {
         if ($offset === 'url') {
@@ -85,6 +87,7 @@ class UrlAwarePermissiveContainer extends \Pimple\Container
         return $this->stub;
     }
 
+    #[\Override]
     public function offsetSet(mixed $offset, mixed $value): void
     {
         $this->store[(string) $offset] = $value;
@@ -258,8 +261,8 @@ final class StrictTemplateRenderer
         // test environment. A PermissiveContainer absorbs every `$di['x']`
         // access so the extensions can render without a live DI graph.
         $di = $stringifyUrls ? $this->buildUrlAwareContainer() : new PermissiveContainer();
-        $twig->addRuntimeLoader(new class($di) implements \Twig\RuntimeLoader\RuntimeLoaderInterface {
-            public function __construct(private readonly \Pimple\Container $di)
+        $twig->addRuntimeLoader(new readonly class($di) implements \Twig\RuntimeLoader\RuntimeLoaderInterface {
+            public function __construct(private \Pimple\Container $di)
             {
             }
 
@@ -416,7 +419,7 @@ final class StrictTemplateRenderer
         return basename($absolutePath);
     }
 
-    private const MAX_ERROR_MESSAGE_LENGTH = 250;
+    private const int MAX_ERROR_MESSAGE_LENGTH = 250;
 
     private function summarizeError(\Throwable $e): string
     {

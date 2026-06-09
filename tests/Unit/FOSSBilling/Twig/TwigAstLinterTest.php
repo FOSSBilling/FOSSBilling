@@ -76,7 +76,7 @@ test('no template introduces unguarded attribute accesses', function (): void {
 
     if (!empty($new)) {
         $lines = array_map(
-            fn (string $sig) => '  - ' . str_replace(dirname(__DIR__, 3) . '/../', '', explode(':', $sig, 2)[0]) . ':' . explode(':', $sig, 2)[1],
+            fn (string $sig): string => '  - ' . str_replace(dirname(__DIR__, 3) . '/../', '', explode(':', $sig, 2)[0]) . ':' . explode(':', $sig, 2)[1],
             array_slice($new, 0, 50),
         );
         $msg = sprintf(
