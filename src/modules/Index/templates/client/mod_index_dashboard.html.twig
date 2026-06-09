@@ -191,7 +191,7 @@
                         <div class="card-body p-1">
                             {% if dashboard.recent_tickets %}
                                 <div class="list-group list-group-flush">
-                                    {% for i, ticket in dashboard.recent_tickets %}
+                                    {% for ticket in dashboard.recent_tickets %}
                                         <a href='{{ "support/ticket/#{ticket.id}"|url }}'
                                            class="list-group-item d-flex justify-content-between align-items-center" aria-current="true">
                                             <div>
