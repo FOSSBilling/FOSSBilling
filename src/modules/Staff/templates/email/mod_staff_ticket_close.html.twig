@@ -1,4 +1,4 @@
-{% block subject %}[{{ guest.system_company.name }}] {{ ticket.subject }}{% endblock %}
+{% block subject %}[{{ guest.system_company.name }}] {{ ticket.subject|default('') }}{% endblock %}
 {% block content %}
 <!DOCTYPE html>
 <html>
@@ -36,12 +36,12 @@
 </head>
 <body>
 	<h1>Ticket Closed</h1>
-	<p>Hello {{ c.name }},</p>
+	<p>Hello {{ staff.name|default('') }},</p>
 
-    <p><strong>{{ ticket.client.first_name }} {{ ticket.client.last_name }}</strong> closed support ticket #{{ ticket.id }}</p>
-	<a href='{{ "support/ticket/#{ticket.id}"|url(area: 'admin') }}' target="_blank">Review the ticket</a>
+    <p><strong>{{ ticket.client.first_name|default('') }} {{ ticket.client.last_name|default('') }}</strong> closed support ticket #{{ ticket.id|default('') }}</p>
+	<a href='{{ "support/ticket/#{ticket.id|default('')}"|url(area: 'admin') }}' target="_blank">Review the ticket</a>
 
-    <p>You may <a href="{{ 'staff/login'|url(query: { 'email': c.email }, area: 'admin') }}" target="_blank">login</a> or <a href="{{ 'staff/profile'|url(area: 'admin') }}" target="_blank">edit your profile.</a>
+    <p>You may <a href="{{ 'staff/login'|url(query: { 'email': staff.email|default('') }, area: 'admin') }}" target="_blank">login</a> or <a href="{{ 'staff/profile'|url(area: 'admin') }}" target="_blank">edit your profile.</a>
 
 	<p class="signature">{{ guest.system_company.signature }}</p>
 </body>

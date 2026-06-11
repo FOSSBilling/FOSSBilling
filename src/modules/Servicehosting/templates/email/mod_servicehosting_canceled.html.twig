@@ -1,5 +1,6 @@
-{% block subject %}[{{ guest.system_company.name }}] {{ order.title }} Canceled{% endblock %}
+{% block subject %}[{{ guest.system_company.name }}] {{ order.title|default('') }} Canceled{% endblock %}
 {% block content %}
+{% set order = order|default({}) %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -36,15 +37,15 @@
 </head>
 <body>
 	<h1>Order Canceled</h1>
-	<p>Hello {{ c.first_name }} {{ c.last_name }},</p>
-	<p>Your <strong>{{ order.title }}</strong> that was activated on <strong>{{ order.activated_at|format_date }}</strong> is now canceled.</p>
-    {% if order.reason %}
-        <p><strong>Reason:</strong> {{ order.reason }}</p>
+	<p>Hello {{ c.first_name|default('') }} {{ c.last_name|default('') }},</p>
+	<p>Your <strong>{{ order.title|default('') }}</strong> that was activated on <strong>{{ order.activated_at|default('')|format_date }}</strong> is now canceled.</p>
+    {% if order.reason|default('') %}
+        <p><strong>Reason:</strong> {{ order.reason|default('') }}</p>
     {% endif %}
 
     <p>If you have any questions regarding this, please login to the members area and submit a support ticket.</p>
 
-    <p>You may <a href="{{ 'login'|url(query: { 'email': c.email }, area: 'client') }}" target="_blank">login</a> or <a href="{{ 'support'|url(query: { 'ticket': 1 }, area: 'client') }}" target="_blank">submit a ticket.</a>
+    <p>You may <a href="{{ 'login'|url(query: { 'email': c.email|default('') }, area: 'client') }}" target="_blank">login</a> or <a href="{{ 'support'|url(query: { 'ticket': 1 }, area: 'client') }}" target="_blank">submit a ticket.</a>
 
 	<p class="signature">{{ guest.system_company.signature }}</p>
 </body>

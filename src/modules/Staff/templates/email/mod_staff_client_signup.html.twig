@@ -36,10 +36,10 @@
 </head>
 <body>
 	<h1>New Client Signed Up</h1>
-	<p>Hello {{ staff.name }},</p>
-	<p><strong>{{ c.first_name }} {{ c.last_name }}</strong> has just signed up with {{ guest.system_company.name }}</p>
+	<p>Hello {{ staff.name|default('') }},</p>
+	<p><strong>{{ c.first_name|default('') }} {{ c.last_name|default('') }}</strong> has just signed up with {{ guest.system_company.name }}</p>
 
-    <p><a href='{{ "client/manage/#{c.id}"|url(area: 'admin') }}' target="_blank">Manage client.</a>
+    <p><a href='{{ "client/manage/#{c.id|default('')}"|url(area: 'admin') }}' target="_blank">Manage client.</a>
 
 	<p class="signature">{{ guest.system_company.signature }}</p>
 </body>
