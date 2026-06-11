@@ -43,6 +43,7 @@ function edgeCaseRequest(array $overrides = []): array
         'min_priority' => null,
         'priority' => null,
         'page' => 1,
+        'period' => null,
     ], $overrides);
 }
 
