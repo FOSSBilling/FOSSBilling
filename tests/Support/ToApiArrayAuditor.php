@@ -43,12 +43,12 @@ use Symfony\Component\Finder\Finder;
  * ]
  * </code>
  */
-final class ToApiArrayAuditor
+final readonly class ToApiArrayAuditor
 {
-    private readonly \PhpParser\Parser $parser;
-    private readonly NodeFinder $nodeFinder;
+    private \PhpParser\Parser $parser;
+    private NodeFinder $nodeFinder;
 
-    public function __construct(private readonly string $srcDir)
+    public function __construct(private string $srcDir)
     {
         // Parenthesise the `new` so the chained `->createForHostVersion()`
         // call parses on PHP 8.3 as well as 8.4+. Without the parentheses,
@@ -71,7 +71,7 @@ final class ToApiArrayAuditor
         $finder->files()->in($this->srcDir . '/modules')->name('*.php');
 
         foreach ($finder as $file) {
-            $code = (string) $file->getContents();
+            $code = $file->getContents();
 
             try {
                 $ast = $this->parser->parse($code);
