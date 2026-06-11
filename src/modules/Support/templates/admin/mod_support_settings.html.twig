@@ -50,14 +50,14 @@
                             <h4 class="card-title mb-2">{{ 'Auto Responder'|trans }}</h4>
                             <p class="text-secondary mb-3">{{ 'Automatically send a canned response when a new ticket is created.'|trans }}</p>
                             <label class="form-check form-switch form-switch-2 mb-3">
-                                <input class="form-check-input" name="autorespond_enable" type="checkbox" {% if params.autorespond_enable %} checked="checked"{% endif %}>
+                                <input class="form-check-input" name="autorespond_enable" type="checkbox" {% if params.autorespond_enable|default(false) %} checked="checked"{% endif %}>
                                 <span class="form-check-label">{{ 'Enable Auto Responder'|trans }}</span>
                             </label>
-                            <div id="autorespond_enable"{% if not params.autorespond_enable %} style="display:none;"{% endif %}>
+                            <div id="autorespond_enable"{% if not params.autorespond_enable|default(false) %} style="display:none;"{% endif %}>
                                 <label class="form-label" for="autorespond_message_id">{{ 'Auto Response Message'|trans }}</label>
                                 <select class="form-select col-12 col-xl-8" id="autorespond_message_id" name="autorespond_message_id">
                                     {% for response in admin.support_canned_get_list({ 'per_page': 90 }).list %}
-                                        <option value="{{ response.id }}"{% if params.autorespond_message_id == response.id %} selected{% endif %}>{{ response.title }}</option>
+                                        <option value="{{ response.id }}"{% if params.autorespond_message_id|default('') == response.id %} selected{% endif %}>{{ response.title }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -66,11 +66,11 @@
                             <h4 class="card-title mb-2">{{ 'Ticket Delay'|trans }}</h4>
                             <p class="text-secondary mb-3">{{ 'Optionally add a canned response when a ticket remains unanswered for a configured number of hours.'|trans }}</p>
                             <label class="form-check form-switch form-switch-2 mb-2">
-                                <input class="form-check-input" name="delay_enable" type="checkbox" {% if params.delay_enable %} checked="checked"{% endif %}>
+                                <input class="form-check-input" name="delay_enable" type="checkbox" {% if params.delay_enable|default(false) %} checked="checked"{% endif %}>
                                 <span class="form-check-label">{{ 'Enable Delay Message'|trans }}</span>
                             </label>
                             <small class="form-hint d-block mb-3">{{ 'If enabled, the selected canned response will be added to the default reply message.'|trans }}</small>
-                            <div id="delay_enable"{% if not params.delay_enable %} style="display:none;"{% endif %}>
+                            <div id="delay_enable"{% if not params.delay_enable|default(false) %} style="display:none;"{% endif %}>
                                 <div class="row g-3">
                                     <div class="col-lg-4">
                                         <label class="form-label" for="delay_hours">{{ 'Delay'|trans }}</label>
@@ -83,7 +83,7 @@
                                         <label class="form-label" for="delay_message_id">{{ 'Delay Message'|trans }}</label>
                                         <select class="form-select" id="delay_message_id" name="delay_message_id">
                                             {% for response in admin.support_canned_get_list({ 'per_page': 90 }).list %}
-                                                <option value="{{ response.id }}"{% if params.delay_message_id == response.id %} selected{% endif %}>{{ response.title }}</option>
+                                                <option value="{{ response.id }}"{% if params.delay_message_id|default('') == response.id %} selected{% endif %}>{{ response.title }}</option>
                                             {% endfor %}
                                         </select>
                                     </div>
@@ -92,7 +92,7 @@
                             <div class="mt-3">
                                 <label class="form-label" for="wait_hours">{{ 'Wait Time Between Ticket Submissions'|trans }}</label>
                                 <div class="input-group col-12 col-xl-8">
-                                    <input class="form-control" id="wait_hours" type="number" min="0" name="wait_hours" value="{{ params.wait_hours }}">
+                                    <input class="form-control" id="wait_hours" type="number" min="0" name="wait_hours" value="{{ params.wait_hours|default('') }}">
                                     <span class="input-group-text">{{ 'hours'|trans }}</span>
                                 </div>
                                 <small class="form-hint">{{ 'If set, users must wait this many hours between consecutive ticket submissions.'|trans }}</small>
@@ -103,7 +103,7 @@
                             <h4 class="card-title mb-2">{{ 'Knowledge Base'|trans }}</h4>
                             <p class="text-secondary mb-3">{{ 'Control whether the knowledge base is visible to clients and available throughout the support area.'|trans }}</p>
                             <label class="form-check form-switch form-switch-2">
-                                <input class="form-check-input" name="kb_enable" type="checkbox" {% if params.kb_enable %} checked="checked"{% endif %}>
+                                <input class="form-check-input" name="kb_enable" type="checkbox" {% if params.kb_enable|default(false) %} checked="checked"{% endif %}>
                                 <span class="form-check-label">{{ 'Enable Knowledge Base'|trans }}</span>
                             </label>
                         </div>
@@ -111,7 +111,7 @@
                             <h4 class="card-title mb-2">{{ 'Public Tickets'|trans }}</h4>
                             <p class="text-secondary mb-3">{{ 'Control whether non-client visitors may open public support tickets.'|trans }}</p>
                             <label class="form-check form-switch form-switch-2">
-                                <input class="form-check-input" name="disable_public_tickets" type="checkbox" {% if params.disable_public_tickets %} checked="checked"{% endif %}>
+                                <input class="form-check-input" name="disable_public_tickets" type="checkbox" {% if params.disable_public_tickets|default(false) %} checked="checked"{% endif %}>
                                 <span class="form-check-label">{{ 'Disable Public Tickets'|trans }}</span>
                             </label>
                         </div>

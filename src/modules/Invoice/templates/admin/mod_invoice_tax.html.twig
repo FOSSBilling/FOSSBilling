@@ -119,7 +119,7 @@
                                     {% block form_content %}
                                         <input type="hidden" name="tax_enabled" value="0">
                                         <label class="form-check form-switch form-switch-2">
-                                            <input class="form-check-input" id="tax_enabled" type="checkbox" name="tax_enabled" value="1"{% if params.tax_enabled %} checked{% endif %}>
+                                            <input class="form-check-input" id="tax_enabled" type="checkbox" name="tax_enabled" value="1"{% if params.tax_enabled|default(false) %} checked{% endif %}>
                                             <span class="form-check-label">{{ 'Enable Tax Support'|trans }}</span>
                                         </label>
                                     {% endblock %}

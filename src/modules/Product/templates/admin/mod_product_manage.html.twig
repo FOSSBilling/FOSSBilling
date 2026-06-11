@@ -250,7 +250,7 @@
                             {% for id,ptitle in products %}
                             {% if id != product.id %}
                             <div class="list-group-item d-flex align-items-center gap-3">
-                                <input class="form-check-input mt-0" type="checkbox" name="upgrades[]" value="{{id}}" id="upgrades{{ id }}" {% if product.upgrades[id] %} checked{% endif %}>
+                                <input class="form-check-input mt-0" type="checkbox" name="upgrades[]" value="{{id}}" id="upgrades{{ id }}" {% if product.upgrades[id]|default(false) %} checked{% endif %}>
                                 <label class="mb-0 flex-grow-1" for="upgrades{{ id }}">{{ ptitle }}</label>
                             </div>
                             {% endif %}

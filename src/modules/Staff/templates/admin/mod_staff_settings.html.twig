@@ -179,22 +179,22 @@
                             <h4 class="card-title mb-2">{{ 'Login Restrictions'|trans }}</h4>
                             <p class="text-secondary mb-3">{{ 'Optionally restrict staff access to a specific list of known administrator IP addresses.'|trans }}</p>
                             <label class="form-check form-switch form-switch-2 mb-3">
-                                <input class="form-check-input" id="check_ip_enabled" type="checkbox" name="check_ip" value="1"{% if params.check_ip == '1' %} checked{% endif %}>
+                                <input class="form-check-input" id="check_ip_enabled" type="checkbox" name="check_ip" value="1"{% if params.check_ip|default('') == '1' %} checked{% endif %}>
                                 <span class="form-check-label">{{ 'Check Login IP'|trans }}</span>
                             </label>
-                            <div id="check_ip"{% if not params.check_ip %} style="display:none;"{% endif %}>
+                            <div id="check_ip"{% if not params.check_ip|default(false) %} style="display:none;"{% endif %}>
                                 <label class="form-label" for="allowed_ips">{{ 'Allowed IPs. One Per Line'|trans }}</label>
                                 <div class="alert alert-warning mb-3" role="alert">
                                     <strong class="me-1">{{ 'Warning:'|trans }}</strong>{{ 'Incorrect configuration of allowed IPs can lead to a complete lockout of the administrator panel. Only use when you have static addresses.'|trans }}
                                 </div>
-                                <textarea class="form-control" id="allowed_ips" name="allowed_ips" rows="4" placeholder="{{ admin.system_env({ 'ip': 1 }) }}">{{ params.allowed_ips }}</textarea>
+                                <textarea class="form-control" id="allowed_ips" name="allowed_ips" rows="4" placeholder="{{ admin.system_env({ 'ip': 1 }) }}">{{ params.allowed_ips|default('') }}</textarea>
                             </div>
                         </div>
                         <div class="card-body border-top">
                             <h4 class="card-title mb-2">{{ 'Password Recovery'|trans }}</h4>
                             <p class="text-secondary mb-3">{{ 'Control whether staff users may request password reset emails from the public login flow.'|trans }}</p>
                             <label class="form-check form-switch form-switch-2">
-                                <input class="form-check-input" type="checkbox" name="public[reset_pw]" value="1"{% if params.public.reset_pw == '1' %} checked{% endif %}>
+                                <input class="form-check-input" type="checkbox" name="public[reset_pw]" value="1"{% if params.public.reset_pw|default('') == '1' %} checked{% endif %}>
                                 <span class="form-check-label">{{ 'Allow Staff Reset Passwords'|trans }}</span>
                             </label>
                         </div>

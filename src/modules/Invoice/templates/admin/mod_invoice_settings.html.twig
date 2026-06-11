@@ -41,27 +41,27 @@
                     <div class="col-lg-6">
                         <label class="form-label" for="invoice_issue_days_before_expire">{{ 'Generate New Invoice Before Order Expiration'|trans }}</label>
                         <div class="input-group">
-                            <input class="form-control" id="invoice_issue_days_before_expire" type="number" min="0" name="invoice_issue_days_before_expire" value="{{ params.invoice_issue_days_before_expire }}">
+                            <input class="form-control" id="invoice_issue_days_before_expire" type="number" min="0" name="invoice_issue_days_before_expire" value="{{ params.invoice_issue_days_before_expire|default('') }}">
                             <span class="input-group-text">{{ 'days'|trans }}</span>
                         </div>
                     </div>
                     <div class="col-lg-6">
                         <label class="form-label" for="invoice_due_days">{{ 'Invoice Due Days'|trans }}</label>
                         <div class="input-group">
-                            <input class="form-control" id="invoice_due_days" type="number" min="0" name="invoice_due_days" value="{{ params.invoice_due_days }}">
+                            <input class="form-control" id="invoice_due_days" type="number" min="0" name="invoice_due_days" value="{{ params.invoice_due_days|default('') }}">
                             <span class="input-group-text">{{ 'days'|trans }}</span>
                         </div>
                     </div>
                 </div>
                 <div class="mt-3">
                     <label class="form-check form-switch form-switch-2">
-                        <input class="form-check-input" name="invoice_auto_approval" type="checkbox" value="1" {% if params.invoice_auto_approval == '1' %}checked{% endif %}>
+                        <input class="form-check-input" name="invoice_auto_approval" type="checkbox" value="1" {% if params.invoice_auto_approval|default('') == '1' %}checked{% endif %}>
                         <span class="form-check-label">{{ 'Enable Auto Invoice Approval'|trans }}</span>
                     </label>
                 </div>
                 <div class="mt-3">
                     <label class="form-label" for="invoice_default_note">{{ 'Default Invoice Note'|trans }}</label>
-                    <textarea class="form-control editor-textarea" id="invoice_default_note" name="invoice_default_note" rows="5">{{ params.invoice_default_note }}</textarea>
+                    <textarea class="form-control editor-textarea" id="invoice_default_note" name="invoice_default_note" rows="5">{{ params.invoice_default_note|default('') }}</textarea>
                     <small class="form-hint">{{ 'Supports markdown format.'|trans }}</small>
                 </div>
             </div>
@@ -83,15 +83,15 @@
                     </div>
                     <div class="col-lg-4">
                         <label class="form-label" for="invoice_series">{{ 'Invoice Prefix / Series'|trans }}</label>
-                        <input class="form-control" id="invoice_series" type="text" name="invoice_series" value="{{ params.invoice_series }}">
+                        <input class="form-control" id="invoice_series" type="text" name="invoice_series" value="{{ params.invoice_series|default('') }}">
                     </div>
                     <div class="col-lg-4">
                         <label class="form-label" for="invoice_series_paid">{{ 'Paid Invoice Prefix / Series'|trans }}</label>
-                        <input class="form-control" id="invoice_series_paid" type="text" name="invoice_series_paid" value="{{ params.invoice_series_paid }}">
+                        <input class="form-control" id="invoice_series_paid" type="text" name="invoice_series_paid" value="{{ params.invoice_series_paid|default('') }}">
                     </div>
                     <div class="col-lg-4">
                         <label class="form-label" for="invoice_starting_number">{{ 'Next Paid Invoice Number'|trans }}</label>
-                        <input class="form-control" id="invoice_starting_number" type="text" name="invoice_starting_number" value="{{ params.invoice_starting_number }}">
+                        <input class="form-control" id="invoice_starting_number" type="text" name="invoice_starting_number" value="{{ params.invoice_starting_number|default('') }}">
                     </div>
                 </div>
             </div>
@@ -102,17 +102,17 @@
                     <div class="col-lg-6">
                         <label class="form-label d-block">{{ 'Document Format'|trans }}</label>
                         <div class="form-check">
-                            <input class="form-check-input" id="radioLetter" type="radio" name="invoice_document_format" value="Letter" {% if params.invoice_document_format == 'Letter' %}checked{% endif %}>
+                            <input class="form-check-input" id="radioLetter" type="radio" name="invoice_document_format" value="Letter" {% if params.invoice_document_format|default('') == 'Letter' %}checked{% endif %}>
                             <label class="form-check-label" for="radioLetter">{{ 'Letter'|trans }}</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" id="radioA4" type="radio" name="invoice_document_format" value="A4" {% if params.invoice_document_format == 'A4' %}checked{% endif %}>
+                            <input class="form-check-input" id="radioA4" type="radio" name="invoice_document_format" value="A4" {% if params.invoice_document_format|default('') == 'A4' %}checked{% endif %}>
                             <label class="form-check-label" for="radioA4">{{ 'A4'|trans }}</label>
                         </div>
                     </div>
                     <div class="col-lg-6">
                         <label class="form-check form-switch form-switch-2">
-                            <input class="form-check-input" type="checkbox" name="invoice_accessible_from_hash" value="1" {% if params.invoice_accessible_from_hash == '1' %}checked{% endif %}>
+                            <input class="form-check-input" type="checkbox" name="invoice_accessible_from_hash" value="1" {% if params.invoice_accessible_from_hash|default('') == '1' %}checked{% endif %}>
                             <span class="form-check-label">{{ 'Allow Access Without Authentication Using Invoice Hash'|trans }}</span>
                         </label>
                         <small class="form-hint">{{ "If enabled, invoices can be accessed by anyone who knows the invoice hash. The hash is a 30-60 character random hex string and is unfeasible to brute-force, but the link exposes the buyer's name, email, full address, phone, country and company/VAT. Use the lifetime setting below to automatically expire links."|trans }}</small>
@@ -131,15 +131,15 @@
                 <label class="form-label d-block">{{ 'Refunds Logic'|trans }}</label>
                 <div class="d-flex flex-column gap-2">
                     <div class="form-check">
-                        <input class="form-check-input" id="radioNegativeInvoice" type="radio" name="invoice_refund_logic" value="negative_invoice" {% if params.invoice_refund_logic == 'negative_invoice' %}checked{% endif %}>
+                        <input class="form-check-input" id="radioNegativeInvoice" type="radio" name="invoice_refund_logic" value="negative_invoice" {% if params.invoice_refund_logic|default('') == 'negative_invoice' %}checked{% endif %}>
                         <label class="form-check-label" for="radioNegativeInvoice">{{ 'Negative Invoice - Generate refund invoice continuing paid invoices numbering'|trans }}</label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" id="radioCreditNote" type="radio" name="invoice_refund_logic" value="credit_note" {% if params.invoice_refund_logic == 'credit_note' %}checked{% endif %}>
+                        <input class="form-check-input" id="radioCreditNote" type="radio" name="invoice_refund_logic" value="credit_note" {% if params.invoice_refund_logic|default('') == 'credit_note' %}checked{% endif %}>
                         <label class="form-check-label" for="radioCreditNote">{{ 'Credit Note - Generate credit note with unique numbering'|trans }}</label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" id="radioInvoiceRefundLogic" type="radio" name="invoice_refund_logic" value="manual" {% if params.invoice_refund_logic == 'manual' %}checked{% endif %}>
+                        <input class="form-check-input" id="radioInvoiceRefundLogic" type="radio" name="invoice_refund_logic" value="manual" {% if params.invoice_refund_logic|default('') == 'manual' %}checked{% endif %}>
                         <label class="form-check-label" for="radioInvoiceRefundLogic">{{ 'Manual - No actions performed'|trans }}</label>
                     </div>
                 </div>
@@ -150,11 +150,11 @@
                 <div class="row g-3">
                     <div class="col-lg-6">
                         <label class="form-label" for="funds_min_amount">{{ 'Minimum Amount for Add Funds Invoice'|trans }}</label>
-                        <input class="form-control" id="funds_min_amount" type="text" name="funds_min_amount" value="{{ params.funds_min_amount }}" placeholder="{{ 'Unlimited'|trans }}">
+                        <input class="form-control" id="funds_min_amount" type="text" name="funds_min_amount" value="{{ params.funds_min_amount|default('') }}" placeholder="{{ 'Unlimited'|trans }}">
                     </div>
                     <div class="col-lg-6">
                         <label class="form-label" for="funds_max_amount">{{ 'Maximum Amount for Add Funds Invoice'|trans }}</label>
-                        <input class="form-control" id="funds_max_amount" type="text" name="funds_max_amount" value="{{ params.funds_max_amount }}" placeholder="{{ 'Unlimited'|trans }}">
+                        <input class="form-control" id="funds_max_amount" type="text" name="funds_max_amount" value="{{ params.funds_max_amount|default('') }}" placeholder="{{ 'Unlimited'|trans }}">
                     </div>
                 </div>
             </div>
