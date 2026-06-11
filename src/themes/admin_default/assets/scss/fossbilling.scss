@@ -333,6 +333,18 @@ body {
     }
 }
 
+.db-avatar {
+    display: inline-block;
+    flex-shrink: 0;
+    vertical-align: middle;
+    background-color: var(--tblr-bg-surface);
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
 @media (min-width: 992px) {
     .activity-log-filters .form-label {
         margin-bottom: 0;

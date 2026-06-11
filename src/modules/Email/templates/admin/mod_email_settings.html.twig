@@ -415,12 +415,12 @@
                             <div class="row g-3">
                                 <div class="col-lg-6">
                                     <label class="form-label" for="email-from-name">{{ 'From Name'|trans }}</label>
-                                    <input class="form-control" id="email-from-name" type="text" name="from_name" value="{{ params.from_name }}" placeholder="{{ company.name }}">
+                                    <input class="form-control" id="email-from-name" type="text" name="from_name" value="{{ params.from_name|default('') }}" placeholder="{{ company.name }}">
                                     <small class="form-hint">{{ 'Leave blank to use company public name'|trans }}</small>
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="email-from-address">{{ 'From Email'|trans }}</label>
-                                    <input class="form-control" id="email-from-address" type="email" name="from_email" value="{{ params.from_email }}" placeholder="{{ company.email }}">
+                                    <input class="form-control" id="email-from-address" type="email" name="from_email" value="{{ params.from_email|default('') }}" placeholder="{{ company.email }}">
                                     <small class="form-hint">{{ 'Leave blank to use company public email'|trans }}</small>
                                 </div>
                             </div>
@@ -453,68 +453,68 @@
                             <p class="text-secondary mb-3">{{ 'Choose how outgoing email is delivered and whether sent emails should be stored in the database.'|trans }}</p>
 
                             <label class="form-check form-switch form-switch-2 mb-4">
-                                <input class="form-check-input" type="checkbox" name="log_enabled" value="1" {% if params.log_enabled %}checked{% endif %}>
+                                <input class="form-check-input" type="checkbox" name="log_enabled" value="1" {% if params.log_enabled|default(false) %}checked{% endif %}>
                                 <span class="form-check-label">{{ 'Log Sent Emails to Database'|trans }}</span>
                             </label>
 
                             <label class="form-label d-block">{{ 'Email Transport'|trans }}</label>
                             <div class="d-flex flex-wrap gap-3" id="mailer">
                                     <div class="form-check">
-                                        <input class="form-check-input" id="radioSendMail" type="radio" name="mailer" value="sendmail"{% if params.mailer == 'sendmail' or not params.mailer %} checked{% endif %}>
+                                        <input class="form-check-input" id="radioSendMail" type="radio" name="mailer" value="sendmail"{% if params.mailer|default('sendmail') == 'sendmail' %} checked{% endif %}>
                                         <label class="form-check-label" for="radioSendMail">{{ 'SendMail'|trans }}</label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" id="radioSMTP" type="radio" name="mailer" value="smtp"{% if params.mailer == 'smtp' %} checked{% endif %}>
+                                        <input class="form-check-input" id="radioSMTP" type="radio" name="mailer" value="smtp"{% if params.mailer|default('') == 'smtp' %} checked{% endif %}>
                                         <label class="form-check-label" for="radioSMTP">{{ 'SMTP'|trans }}</label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" id="radioSendGrid" type="radio" name="mailer" value="sendgrid"{% if params.mailer == 'sendgrid' %} checked{% endif %}>
+                                        <input class="form-check-input" id="radioSendGrid" type="radio" name="mailer" value="sendgrid"{% if params.mailer|default('') == 'sendgrid' %} checked{% endif %}>
                                         <label class="form-check-label" for="radioSendGrid">{{ 'SendGrid'|trans }}</label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" id="radioCustom" type="radio" name="mailer" value="custom"{% if params.mailer == 'custom' %} checked{% endif %}>
+                                        <input class="form-check-input" id="radioCustom" type="radio" name="mailer" value="custom"{% if params.mailer|default('') == 'custom' %} checked{% endif %}>
                                         <label class="form-check-label" for="radioCustom">{{ 'Custom'|trans }}</label>
                                     </div>
                             </div>
 
-                            <fieldset class="smtp mt-4"{% if params.mailer != 'smtp' %} style="display:none;"{% endif %}>
+                            <fieldset class="smtp mt-4"{% if params.mailer|default('') != 'smtp' %} style="display:none;"{% endif %}>
                                 <legend class="h5 mb-3">{{ 'SMTP Settings'|trans }}</legend>
                                 <div class="row g-3">
                                     <div class="col-lg-6">
                                         <label class="form-label" for="smtp-host">{{ 'SMTP Hostname'|trans }}</label>
-                                        <input class="form-control" id="smtp-host" type="text" name="smtp_host" value="{{ params.smtp_host }}" placeholder="smtp.gmail.com">
+                                        <input class="form-control" id="smtp-host" type="text" name="smtp_host" value="{{ params.smtp_host|default('') }}" placeholder="smtp.gmail.com">
                                     </div>
                                     <div class="col-lg-6">
                                         <label class="form-label" for="smtp-port">{{ 'SMTP Port'|trans }}</label>
-                                        <input class="form-control" id="smtp-port" type="text" name="smtp_port" value="{{ params.smtp_port }}" placeholder="587">
+                                        <input class="form-control" id="smtp-port" type="text" name="smtp_port" value="{{ params.smtp_port|default('') }}" placeholder="587">
                                     </div>
                                     <div class="col-lg-6">
                                         <label class="form-label" for="smtp-username">{{ 'SMTP Username'|trans }}</label>
-                                        <input class="form-control" id="smtp-username" type="text" name="smtp_username" value="{{ params.smtp_username }}" placeholder="my.email@gmail.com">
+                                        <input class="form-control" id="smtp-username" type="text" name="smtp_username" value="{{ params.smtp_username|default('') }}" placeholder="my.email@gmail.com">
                                     </div>
                                     <div class="col-lg-6">
                                         <label class="form-label" for="smtp-password">{{ 'SMTP Password'|trans }}</label>
-                                        <input class="form-control" id="smtp-password" type="password" name="smtp_password" value="{{ params.smtp_password }}">
+                                        <input class="form-control" id="smtp-password" type="password" name="smtp_password" value="{{ params.smtp_password|default('') }}">
                                     </div>
                                 </div>
                             </fieldset>
 
-                            <fieldset class="sendgrid mt-4"{% if params.mailer != 'sendgrid' %} style="display:none;"{% endif %}>
+                            <fieldset class="sendgrid mt-4"{% if params.mailer|default('') != 'sendgrid' %} style="display:none;"{% endif %}>
                                 <legend class="h5 mb-3">{{ 'SendGrid Settings'|trans }}</legend>
                                 <div>
                                     <label class="form-label" for="sendgrid-key">{{ 'SendGrid API Key'|trans }}</label>
-                                    <input class="form-control" id="sendgrid-key" type="text" name="sendgrid_key" value="{{ params.sendgrid_key }}">
+                                    <input class="form-control" id="sendgrid-key" type="text" name="sendgrid_key" value="{{ params.sendgrid_key|default('') }}">
                                 </div>
                             </fieldset>
 
-                            <fieldset class="custom mt-4"{% if params.mailer != 'custom' %} style="display:none;"{% endif %}>
+                            <fieldset class="custom mt-4"{% if params.mailer|default('') != 'custom' %} style="display:none;"{% endif %}>
                                 <legend class="h5 mb-3">{{ 'Custom Transport'|trans }}</legend>
                                 <div>
                                         <label class="form-label" for="custom_dsn">{{ 'Custom DSN'|trans }}</label>
                                         <p>{{"If none of the available options exactly meet your needs, you can define a custom DSN. Please keep in mind that usernames, passwords, and hostnames with special characters need to be URL-encoded."|trans}}</p>
                                         <p>{{"More information"|trans}}: <a href="https://symfony.com/doc/current/mailer.html#using-built-in-transports">{{"Symfony Documentation"}}</a></p>
                                         <p class="fw-light">{{"Example"|trans}}: smtp://user:pass@smtp.example.com?verify_peer=0</p>
-                                        <input class="form-control" type="text" name="custom_dsn" value="{{ params.custom_dsn }}">
+                                        <input class="form-control" type="text" name="custom_dsn" value="{{ params.custom_dsn|default('') }}">
                                 </div>
                             </fieldset>
                         </div>

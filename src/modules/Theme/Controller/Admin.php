@@ -119,6 +119,11 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             'settings' => $settings,
             'current_preset' => $preset,
             'presets' => $service->getThemePresets($t),
+            'snippets' => [
+                'client-login-form' => 'Client Area Login Form',
+                'domain-checker-form' => 'Domain Checker Form',
+                'contact-us-form' => 'Contact Us Form',
+            ],
         ];
 
         return $app->render('mod_theme_preset', $data);

@@ -86,7 +86,7 @@
                 </div>
                     {% if emails.pages >= 2 %}
                         <div class="card-footer">
-                            {{ include('partial_pagination.html.twig', { 'list': emails }) }}
+                            {{ include('partial_pagination.html.twig', { 'list': emails, 'url': 'email' }) }}
                         </div>
                     {% endif %}
                 {% endif %}

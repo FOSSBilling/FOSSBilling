@@ -91,7 +91,7 @@
                                     <dt class="col-sm-6">{{ 'Bank Account'|trans }}:</dt>
                                     <dd class="col-sm-6">{{ seller.account_number }}</dd>
                                 {% endif %}
-                                {% if seller.note %}
+                                {% if seller.note|default('') %}
                                     <dt class="col-sm-6">{{ 'Note'|trans }}:</dt>
                                     <dd class="col-sm-6">{{ seller.note }}</dd>
                                 {% endif %}
@@ -191,7 +191,7 @@
                                 <td>{{ invoice.tax|format_currency(invoice.currency ?? default_currency) }}</td>
                             </tr>
                         {% endif %}
-                        {% if invoice.discount > 0 %}
+                        {% if invoice.discount|default(0) > 0 %}
                             <tr class="text-end">
                                 <td>{{ 'Discount'|trans }}</td>
                                 <td>{{ invoice.discount|format_currency(invoice.currency ?? default_currency) }}</td>

@@ -39,15 +39,15 @@
                 <p class="text-secondary mb-3">{{ 'Choose how the next service expiration date is calculated after a renewal payment is received.'|trans }}</p>
                 <div class="d-flex flex-column gap-2">
                     <div class="form-check">
-                        <input class="form-check-input" id="radioFromExpirationDay" type="radio" name="order_renewal_logic" value="from_expiration_date" {% if params.order_renewal_logic == 'from_expiration_date' or not params.order_renewal_logic %}checked{% endif %}>
+                        <input class="form-check-input" id="radioFromExpirationDay" type="radio" name="order_renewal_logic" value="from_expiration_date" {% if params.order_renewal_logic|default('from_expiration_date') == 'from_expiration_date' %}checked{% endif %}>
                         <label class="form-check-label" for="radioFromExpirationDay">{{ 'Next date is counted from last order expiration date'|trans }}</label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" id="radioFromToday" type="radio" name="order_renewal_logic" value="from_today" {% if params.order_renewal_logic == 'from_today' %}checked{% endif %}>
+                        <input class="form-check-input" id="radioFromToday" type="radio" name="order_renewal_logic" value="from_today" {% if params.order_renewal_logic|default('') == 'from_today' %}checked{% endif %}>
                         <label class="form-check-label" for="radioFromToday">{{ 'Next date is counted from renewal (payment) date'|trans }}</label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" id="radioFromGreater" type="radio" name="order_renewal_logic" value="from_greater" {% if params.order_renewal_logic == 'from_greater' %}checked{% endif %}>
+                        <input class="form-check-input" id="radioFromGreater" type="radio" name="order_renewal_logic" value="from_greater" {% if params.order_renewal_logic|default('') == 'from_greater' %}checked{% endif %}>
                         <label class="form-check-label" for="radioFromGreater">{{ 'Next date is counted from last expiration date or renewal date whichever is greater'|trans }}</label>
                     </div>
                 </div>
@@ -56,7 +56,7 @@
                 <h4 class="card-title mb-2">{{ 'Order Visibility'|trans }}</h4>
                 <p class="text-secondary mb-3">{{ 'Control whether addon orders are shown directly in the main orders list.'|trans }}</p>
                 <label class="form-check form-switch form-switch-2">
-                    <input class="form-check-input" type="checkbox" name="show_addons" value="1" {% if params.show_addons %}checked{% endif %}>
+                    <input class="form-check-input" type="checkbox" name="show_addons" value="1" {% if params.show_addons|default(false) %}checked{% endif %}>
                     <span class="form-check-label">{{ 'Show Addon Orders in Orders List'|trans }}</span>
                 </label>
                 <small class="form-hint">{{ 'If disabled, addon orders remain available in the main order view under the Addons tab.'|trans }}</small>
@@ -67,29 +67,29 @@
                 <div class="row g-3">
                     <div class="col-lg-6">
                         <label class="form-label" for="batch_suspend_reason">{{ 'Auto Suspend Reason'|trans }}</label>
-                        <input class="form-control" id="batch_suspend_reason" type="text" name="batch_suspend_reason" value="{{ params.batch_suspend_reason }}">
+                        <input class="form-control" id="batch_suspend_reason" type="text" name="batch_suspend_reason" value="{{ params.batch_suspend_reason|default('') }}">
                     </div>
                     <div class="col-lg-6">
                         <label class="form-label" for="batch_cancel_suspended">{{ 'Auto Cancellation Policy'|trans }}</label>
                         <select class="form-select" id="batch_cancel_suspended" name="batch_cancel_suspended">
-                            <option value="1" {{ params.batch_cancel_suspended ? 'selected' : '' }}>{{ 'Cancel Suspended Orders'|trans }}</option>
-                            <option value="0" {{ params.batch_cancel_suspended ? '' : 'selected' }}>{{ 'Do Not Cancel Suspended Orders'|trans }}</option>
+                            <option value="1" {{ params.batch_cancel_suspended|default('1') ? 'selected' : '' }}>{{ 'Cancel Suspended Orders'|trans }}</option>
+                            <option value="0" {{ params.batch_cancel_suspended|default('1') ? '' : 'selected' }}>{{ 'Do Not Cancel Suspended Orders'|trans }}</option>
                         </select>
                     </div>
                     <div class="col-lg-4">
                         <label class="form-label" for="batch_cancel_suspended_after_days">{{ 'Cancel After Suspension'|trans }}</label>
                         <div class="input-group">
-                            <input class="form-control" id="batch_cancel_suspended_after_days" type="number" min="0" name="batch_cancel_suspended_after_days" value="{{ params.batch_cancel_suspended_after_days }}" placeholder="7">
+                            <input class="form-control" id="batch_cancel_suspended_after_days" type="number" min="0" name="batch_cancel_suspended_after_days" value="{{ params.batch_cancel_suspended_after_days|default('') }}" placeholder="7">
                             <span class="input-group-text">{{ 'days'|trans }}</span>
                         </div>
                     </div>
                     <div class="col-lg-8">
                         <label class="form-label" for="batch_cancel_suspended_reason">{{ 'Required Suspension Reason'|trans }}</label>
-                        <input class="form-control" id="batch_cancel_suspended_reason" type="text" name="batch_cancel_suspended_reason" value="{{ params.batch_cancel_suspended_reason }}">
+                        <input class="form-control" id="batch_cancel_suspended_reason" type="text" name="batch_cancel_suspended_reason" value="{{ params.batch_cancel_suspended_reason|default('') }}">
                     </div>
                     <div class="col-12">
                         <label class="form-label" for="suspend_reason_list">{{ 'Suspension Reasons'|trans }}</label>
-                        <textarea class="form-control" id="suspend_reason_list" name="suspend_reason_list" rows="3">{{ params.suspend_reason_list }}</textarea>
+                        <textarea class="form-control" id="suspend_reason_list" name="suspend_reason_list" rows="3">{{ params.suspend_reason_list|default('') }}</textarea>
                     </div>
                 </div>
             </div>

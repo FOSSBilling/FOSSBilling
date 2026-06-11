@@ -55,7 +55,7 @@ test('all templates render under strict_variables', function (): void {
         // such finding fails the test. Test-infra findings are informational
         // only and never fail the test.
         if (!empty($realBugs)) {
-            expect()->fail("New strict-variables findings detected:\n" . formatFindings($realBugs));
+            expect($realBugs)->toBeEmpty("New strict-variables findings detected:\n" . formatFindings($realBugs));
         }
     }
 });
@@ -128,7 +128,7 @@ test('all email templates render under strict_variables', function (): void {
 
     if ($isBaseline) {
         if (!empty($realBugs)) {
-            expect()->fail("New strict-variables findings in email templates:\n" . formatFindings($realBugs));
+            expect($realBugs)->toBeEmpty("New strict-variables findings in email templates:\n" . formatFindings($realBugs));
         }
     }
 });

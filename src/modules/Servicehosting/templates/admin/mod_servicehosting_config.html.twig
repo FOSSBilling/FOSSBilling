@@ -1,5 +1,7 @@
 {% import 'macro_functions.html.twig' as mf %}
 
+{% set config = product.config|default({}) %}
+
 <div class="card-body">
     <form method="post" action="{{ 'product/update_config'|api_url }}" {{ fb_api_form({message: 'Hosting Settings Updated'|trans}) }} id="hosting-settings-form">
         <div class="mb-5">
@@ -10,21 +12,21 @@
             <div class="row g-3">
                 <div class="col-lg-6">
                     <label class="form-label">{{ 'Server'|trans }}</label>
-                    {{ mf.selectbox('config[server_id]', admin.servicehosting_server_get_pairs, product.config.server_id, 0, 'Select Server'|trans) }}
+                    {{ mf.selectbox('config[server_id]', admin.servicehosting_server_get_pairs, config.server_id|default(''), 0, 'Select Server'|trans) }}
                 </div>
                 <div class="col-lg-6">
                     <label class="form-label">{{ 'Hosting Plan'|trans }}</label>
-                    {{ mf.selectbox('config[hosting_plan_id]', admin.servicehosting_hp_get_pairs, product.config.hosting_plan_id, 0, 'Select Hosting Plan'|trans) }}
+                    {{ mf.selectbox('config[hosting_plan_id]', admin.servicehosting_hp_get_pairs, config.hosting_plan_id|default(''), 0, 'Select Hosting Plan'|trans) }}
                 </div>
                 <div class="col-lg-6">
                     <label class="form-label">{{ 'Reseller Hosting'|trans }}</label>
                     <div class="d-flex flex-wrap gap-3 pt-1">
                         <label class="form-check">
-                            <input class="form-check-input" id="radioResellerYes" type="radio" name="config[reseller]" value="1"{% if product.config.reseller %} checked{% endif %}>
+                            <input class="form-check-input" id="radioResellerYes" type="radio" name="config[reseller]" value="1"{% if config.reseller|default(false) %} checked{% endif %}>
                             <span class="form-check-label">{{ 'Yes'|trans }}</span>
                         </label>
                         <label class="form-check">
-                            <input class="form-check-input" id="radioResellerNo" type="radio" name="config[reseller]" value="0"{% if not product.config.reseller %} checked{% endif %}>
+                            <input class="form-check-input" id="radioResellerNo" type="radio" name="config[reseller]" value="0"{% if not config.reseller|default(false) %} checked{% endif %}>
                             <span class="form-check-label">{{ 'No'|trans }}</span>
                         </label>
                     </div>
@@ -44,11 +46,11 @@
                     <label class="form-label">{{ 'Allow Domain Registration'|trans }}</label>
                     <div class="d-flex flex-wrap gap-3 pt-1">
                         <label class="form-check">
-                            <input class="form-check-input" id="radioAllowRegisterYes" type="radio" name="config[allow_domain_register]" value="1"{% if product.config.allow_domain_register is not defined or product.config.allow_domain_register %} checked{% endif %}>
+                            <input class="form-check-input" id="radioAllowRegisterYes" type="radio" name="config[allow_domain_register]" value="1"{% if config.allow_domain_register is not defined or config.allow_domain_register %} checked{% endif %}>
                             <span class="form-check-label">{{ 'Yes'|trans }}</span>
                         </label>
                         <label class="form-check">
-                            <input class="form-check-input" id="radioAllowRegisterNo" type="radio" name="config[allow_domain_register]" value="0"{% if product.config.allow_domain_register is defined and not product.config.allow_domain_register %} checked{% endif %}>
+                            <input class="form-check-input" id="radioAllowRegisterNo" type="radio" name="config[allow_domain_register]" value="0"{% if config.allow_domain_register is defined and not config.allow_domain_register %} checked{% endif %}>
                             <span class="form-check-label">{{ 'No'|trans }}</span>
                         </label>
                     </div>
@@ -57,11 +59,11 @@
                     <label class="form-label">{{ 'Allow Domain Transfer'|trans }}</label>
                     <div class="d-flex flex-wrap gap-3 pt-1">
                         <label class="form-check">
-                            <input class="form-check-input" id="radioAllowTransferYes" type="radio" name="config[allow_domain_transfer]" value="1"{% if product.config.allow_domain_transfer is not defined or product.config.allow_domain_transfer %} checked{% endif %}>
+                            <input class="form-check-input" id="radioAllowTransferYes" type="radio" name="config[allow_domain_transfer]" value="1"{% if config.allow_domain_transfer is not defined or config.allow_domain_transfer %} checked{% endif %}>
                             <span class="form-check-label">{{ 'Yes'|trans }}</span>
                         </label>
                         <label class="form-check">
-                            <input class="form-check-input" id="radioAllowTransferNo" type="radio" name="config[allow_domain_transfer]" value="0"{% if product.config.allow_domain_transfer is defined and not product.config.allow_domain_transfer %} checked{% endif %}>
+                            <input class="form-check-input" id="radioAllowTransferNo" type="radio" name="config[allow_domain_transfer]" value="0"{% if config.allow_domain_transfer is defined and not config.allow_domain_transfer %} checked{% endif %}>
                             <span class="form-check-label">{{ 'No'|trans }}</span>
                         </label>
                     </div>
@@ -70,11 +72,11 @@
                     <label class="form-label">{{ 'Allow Using Own Domain'|trans }}</label>
                     <div class="d-flex flex-wrap gap-3 pt-1">
                         <label class="form-check">
-                            <input class="form-check-input" id="radioAllowOwnYes" type="radio" name="config[allow_domain_own]" value="1"{% if product.config.allow_domain_own is not defined or product.config.allow_domain_own %} checked{% endif %}>
+                            <input class="form-check-input" id="radioAllowOwnYes" type="radio" name="config[allow_domain_own]" value="1"{% if config.allow_domain_own is not defined or config.allow_domain_own %} checked{% endif %}>
                             <span class="form-check-label">{{ 'Yes'|trans }}</span>
                         </label>
                         <label class="form-check">
-                            <input class="form-check-input" id="radioAllowOwnNo" type="radio" name="config[allow_domain_own]" value="0"{% if product.config.allow_domain_own is defined and not product.config.allow_domain_own %} checked{% endif %}>
+                            <input class="form-check-input" id="radioAllowOwnNo" type="radio" name="config[allow_domain_own]" value="0"{% if config.allow_domain_own is defined and not config.allow_domain_own %} checked{% endif %}>
                             <span class="form-check-label">{{ 'No'|trans }}</span>
                         </label>
                     </div>
@@ -83,18 +85,18 @@
                     <label class="form-label">{{ 'Offer Free Subdomains'|trans }}</label>
                     <div class="d-flex flex-wrap gap-3 pt-1">
                         <label class="form-check">
-                            <input class="form-check-input" id="radioAllowSubdomainYes" type="radio" name="config[allow_subdomain]" value="1"{% if product.config.allow_subdomain %} checked{% endif %}>
+                            <input class="form-check-input" id="radioAllowSubdomainYes" type="radio" name="config[allow_subdomain]" value="1"{% if config.allow_subdomain|default(false) %} checked{% endif %}>
                             <span class="form-check-label">{{ 'Yes'|trans }}</span>
                         </label>
                         <label class="form-check">
-                            <input class="form-check-input" id="radioAllowSubdomainNo" type="radio" name="config[allow_subdomain]" value="0"{% if not product.config.allow_subdomain %} checked{% endif %}>
+                            <input class="form-check-input" id="radioAllowSubdomainNo" type="radio" name="config[allow_subdomain]" value="0"{% if not config.allow_subdomain|default(false) %} checked{% endif %}>
                             <span class="form-check-label">{{ 'No'|trans }}</span>
                         </label>
                     </div>
                 </div>
-                <div class="col-lg-6 subdomain-base-row{% if not product.config.allow_subdomain %} d-none{% endif %}">
+                <div class="col-lg-6 subdomain-base-row{% if not config.allow_subdomain|default(false) %} d-none{% endif %}">
                     <label class="form-label">{{ 'Free Subdomain Base Domain'|trans }}</label>
-                    <input class="form-control" type="text" name="config[subdomain_base_domain]" value="{{ product.config.subdomain_base_domain }}" placeholder="example.com">
+                    <input class="form-control" type="text" name="config[subdomain_base_domain]" value="{{ config.subdomain_base_domain|default('') }}" placeholder="example.com">
                     <div class="form-hint">{{ 'Customers can use a free subdomain provided by you, such as username.example.com, without registering or transferring a domain.'|trans }}</div>
                 </div>
             </div>
@@ -121,11 +123,11 @@
                     <label class="form-label">{{ 'Free Domain Registration'|trans }}</label>
                     <div class="d-flex flex-wrap gap-3 pt-1">
                         <label class="form-check">
-                            <input class="form-check-input" id="radioFreeRegistrationYes" type="radio" name="config[free_domain]" value="1"{% if product.config.free_domain %} checked{% endif %}>
+                            <input class="form-check-input" id="radioFreeRegistrationYes" type="radio" name="config[free_domain]" value="1"{% if config.free_domain|default(false) %} checked{% endif %}>
                             <span class="form-check-label">{{ 'Yes'|trans }}</span>
                         </label>
                         <label class="form-check">
-                            <input class="form-check-input" id="radioFreeRegistrationNo" type="radio" name="config[free_domain]" value="0"{% if not product.config.free_domain %} checked{% endif %}>
+                            <input class="form-check-input" id="radioFreeRegistrationNo" type="radio" name="config[free_domain]" value="0"{% if not config.free_domain|default(false) %} checked{% endif %}>
                             <span class="form-check-label">{{ 'No'|trans }}</span>
                         </label>
                     </div>
@@ -134,17 +136,17 @@
                     <label class="form-label">{{ 'Free Domain Transfer'|trans }}</label>
                     <div class="d-flex flex-wrap gap-3 pt-1">
                         <label class="form-check">
-                            <input class="form-check-input" id="radioFreeTransferYes" type="radio" name="config[free_transfer]" value="1"{% if product.config.free_transfer %} checked{% endif %}>
+                            <input class="form-check-input" id="radioFreeTransferYes" type="radio" name="config[free_transfer]" value="1"{% if config.free_transfer|default(false) %} checked{% endif %}>
                             <span class="form-check-label">{{ 'Yes'|trans }}</span>
                         </label>
                         <label class="form-check">
-                            <input class="form-check-input" id="radioFreeTransferNo" type="radio" name="config[free_transfer]" value="0"{% if not product.config.free_transfer %} checked{% endif %}>
+                            <input class="form-check-input" id="radioFreeTransferNo" type="radio" name="config[free_transfer]" value="0"{% if not config.free_transfer|default(false) %} checked{% endif %}>
                             <span class="form-check-label">{{ 'No'|trans }}</span>
                         </label>
                     </div>
                 </div>
 
-                <div class="col-xl-6 free-tlds-row{% if not product.config.free_domain %} d-none{% endif %}">
+                <div class="col-xl-6 free-tlds-row{% if not config.free_domain|default(false) %} d-none{% endif %}">
                     <label class="form-label">{{ 'Select Free TLDs'|trans }}</label>
                     <div class="table-responsive border rounded-2">
                         <table class="table card-table table-vcenter table-striped mb-0">
@@ -153,7 +155,7 @@
                                 {% for id, tld in tlds %}
                                     <tr>
                                         <td class="w-1">
-                                            <input type="checkbox" name="config[free_tlds][]" value="{{ tld.tld }}"{% if tld.tld in product.config.free_tlds %} checked{% endif %}>
+                                            <input type="checkbox" name="config[free_tlds][]" value="{{ tld.tld }}"{% if tld.tld in config.free_tlds|default([]) %} checked{% endif %}>
                                         </td>
                                         <td>{{ tld.tld }}</td>
                                     </tr>
@@ -163,17 +165,17 @@
                     </div>
                 </div>
 
-                <div class="col-xl-6 free-periods-row{% if not product.config.free_domain %} d-none{% endif %}">
+                <div class="col-xl-6 free-periods-row{% if not config.free_domain|default(false) %} d-none{% endif %}">
                     <label class="form-label">{{ 'Select Free Periods'|trans }}</label>
                     <div class="table-responsive border rounded-2">
                         <table class="table card-table table-vcenter table-striped mb-0">
                             <tbody>
-                                <tr><td class="w-1"><input type="checkbox" name="config[free_domain_periods][]" value="1M"{% if '1M' in product.config.free_domain_periods %} checked{% endif %}></td><td>1 {{ 'Month'|trans }}</td></tr>
-                                <tr><td class="w-1"><input type="checkbox" name="config[free_domain_periods][]" value="2M"{% if '2M' in product.config.free_domain_periods %} checked{% endif %}></td><td>2 {{ 'Months'|trans }}</td></tr>
-                                <tr><td class="w-1"><input type="checkbox" name="config[free_domain_periods][]" value="3M"{% if '3M' in product.config.free_domain_periods %} checked{% endif %}></td><td>3 {{ 'Months'|trans }}</td></tr>
-                                <tr><td class="w-1"><input type="checkbox" name="config[free_domain_periods][]" value="1Y"{% if '1Y' in product.config.free_domain_periods %} checked{% endif %}></td><td>1 {{ 'Year'|trans }}</td></tr>
-                                <tr><td class="w-1"><input type="checkbox" name="config[free_domain_periods][]" value="2Y"{% if '2Y' in product.config.free_domain_periods %} checked{% endif %}></td><td>2 {{ 'Years'|trans }}</td></tr>
-                                <tr><td class="w-1"><input type="checkbox" name="config[free_domain_periods][]" value="3Y"{% if '3Y' in product.config.free_domain_periods %} checked{% endif %}></td><td>3 {{ 'Years'|trans }}</td></tr>
+                                <tr><td class="w-1"><input type="checkbox" name="config[free_domain_periods][]" value="1M"{% if '1M' in config.free_domain_periods|default([]) %} checked{% endif %}></td><td>1 {{ 'Month'|trans }}</td></tr>
+                                <tr><td class="w-1"><input type="checkbox" name="config[free_domain_periods][]" value="2M"{% if '2M' in config.free_domain_periods|default([]) %} checked{% endif %}></td><td>2 {{ 'Months'|trans }}</td></tr>
+                                <tr><td class="w-1"><input type="checkbox" name="config[free_domain_periods][]" value="3M"{% if '3M' in config.free_domain_periods|default([]) %} checked{% endif %}></td><td>3 {{ 'Months'|trans }}</td></tr>
+                                <tr><td class="w-1"><input type="checkbox" name="config[free_domain_periods][]" value="1Y"{% if '1Y' in config.free_domain_periods|default([]) %} checked{% endif %}></td><td>1 {{ 'Year'|trans }}</td></tr>
+                                <tr><td class="w-1"><input type="checkbox" name="config[free_domain_periods][]" value="2Y"{% if '2Y' in config.free_domain_periods|default([]) %} checked{% endif %}></td><td>2 {{ 'Years'|trans }}</td></tr>
+                                <tr><td class="w-1"><input type="checkbox" name="config[free_domain_periods][]" value="3Y"{% if '3Y' in config.free_domain_periods|default([]) %} checked{% endif %}></td><td>3 {{ 'Years'|trans }}</td></tr>
                             </tbody>
                         </table>
                     </div>

@@ -238,7 +238,7 @@ class FOSSBillingExtension
         $size = max(1, $size);
         $dataUri = $this->getAvatarDataUri($this->hash($email), $size);
         $styles = sprintf(
-            'width: %1$dpx; height: %1$dpx; background-image: url(%2$s); background-size: 100%% 100%%; background-position: center; background-repeat: no-repeat;',
+            'width: %1$dpx; height: %1$dpx; background-image: url("%2$s"); background-size: 100%% 100%%; background-position: center; background-repeat: no-repeat;',
             $size,
             $dataUri,
         );

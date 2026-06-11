@@ -10,15 +10,15 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label" for="new-helpdesk-name">{{ 'Title'|trans }}</label>
-                        <input class="form-control" id="new-helpdesk-name" type="text" name="name" value="{{ helpdesk.name }}" required>
+                        <input class="form-control" id="new-helpdesk-name" type="text" name="name" value="{{ helpdesk.name|default('') }}" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="new-helpdesk-email">{{ 'Email'|trans }}</label>
-                        <input class="form-control" id="new-helpdesk-email" type="email" name="email" value="{{ helpdesk.email }}" required>
+                        <input class="form-control" id="new-helpdesk-email" type="email" name="email" value="{{ helpdesk.email|default('') }}" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="new-helpdesk-signature">{{ 'Signature'|trans }}</label>
-                        <textarea class="form-control" id="new-helpdesk-signature" name="signature" rows="2">{{ helpdesk.signature }}</textarea>
+                        <textarea class="form-control" id="new-helpdesk-signature" name="signature" rows="2">{{ helpdesk.signature|default('') }}</textarea>
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="new-helpdesk-close-after">{{ 'Close Tickets After (in hours)'|trans }}</label>
@@ -40,7 +40,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <input type="hidden" name="id" value="{{ helpdesk.id }}">
+                    <input type="hidden" name="id" value="{{ helpdesk.id|default('') }}">
                     <button class="btn btn-primary" type="submit">{{ 'Create'|trans }}</button>
                 </div>
             </form>

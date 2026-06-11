@@ -160,3 +160,77 @@ test('hash throws on unsupported algorithm', function (): void {
     $extension = makeFossBillingTwigExtension();
     $extension->hash('foo', 'not-a-real-algorithm');
 })->throws(InvalidArgumentException::class);
+
+test('avatar returns empty string for null email', function (): void {
+    $extension = makeFossBillingTwigExtension();
+    expect($extension->avatar(null))->toBe('');
+});
+
+test('avatar returns empty string for empty email', function (): void {
+    $extension = makeFossBillingTwigExtension();
+    expect($extension->avatar(''))->toBe('');
+    expect($extension->avatar('   '))->toBe('');
+});
+
+test('avatar returns escaped fallback for null email', function (): void {
+    $extension = makeFossBillingTwigExtension();
+    expect($extension->avatar(null, fallback: '<script>'))->toBe('&lt;script&gt;');
+});
+
+test('avatar returns span element with quoted data URI for valid email', function (): void {
+    $extension = makeFossBillingTwigExtension();
+    $output = $extension->avatar('user@example.com');
+
+    expect($output)->toBeString();
+    expect($output)->toStartWith('<span class="db-avatar avatar"');
+    expect($output)->toEndWith('</span>');
+    expect($output)->toContain('width: 40px; height: 40px;');
+    expect($output)->toContain('background-image: url(&quot;data:image/svg+xml;charset=utf-8,');
+    expect($output)->toContain('background-size: 100% 100%;');
+    expect($output)->toContain('background-position: center;');
+    expect($output)->toContain('background-repeat: no-repeat;');
+});
+
+test('avatar quotes the data URI so the unencoded semicolon does not break CSS', function (): void {
+    $extension = makeFossBillingTwigExtension();
+    $output = $extension->avatar('user@example.com');
+
+    expect($output)->toContain('url(&quot;data:image/svg+xml;charset=utf-8,');
+    expect($output)->not->toContain('url(data:image/svg+xml;charset=utf-8,');
+});
+
+test('avatar honors custom size and additional classes', function (): void {
+    $extension = makeFossBillingTwigExtension();
+    $output = $extension->avatar('user@example.com', 24, 'avatar avatar-xs rounded');
+
+    expect($output)->toContain('class="db-avatar avatar avatar-xs rounded"');
+    expect($output)->toContain('width: 24px; height: 24px;');
+});
+
+test('avatar supports a div tag when requested', function (): void {
+    $extension = makeFossBillingTwigExtension();
+    $output = $extension->avatar('user@example.com', 60, 'img-thumbnail', null, 'div');
+
+    expect($output)->toStartWith('<div class="db-avatar img-thumbnail"');
+    expect($output)->toEndWith('</div>');
+});
+
+test('avatar falls back to span for unsupported tag values', function (): void {
+    $extension = makeFossBillingTwigExtension();
+    $output = $extension->avatar('user@example.com', 40, 'avatar', null, 'section');
+
+    expect($output)->toStartWith('<span class="db-avatar avatar"');
+});
+
+test('avatar html-escapes the class attribute', function (): void {
+    $extension = makeFossBillingTwigExtension();
+    $output = $extension->avatar('user@example.com', 40, 'a"b');
+
+    expect($output)->toContain('class="db-avatar a&quot;b"');
+});
+
+test('avatar clamps non-positive sizes to 1', function (): void {
+    $extension = makeFossBillingTwigExtension();
+    expect($extension->avatar('user@example.com', 0))->toContain('width: 1px; height: 1px;');
+    expect($extension->avatar('user@example.com', -5))->toContain('width: 1px; height: 1px;');
+});

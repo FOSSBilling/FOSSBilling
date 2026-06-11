@@ -1,4 +1,4 @@
-{% if list.pages > 1 %}
+{% if list.pages > 1 and (url is defined and url is not null) %}
     {% set pageParam = page_param|default('page') %}
     {% set currentPageRaw = request.(pageParam)|default(1) %}
     {% if currentPageRaw matches '/^\\d+$/' %}
