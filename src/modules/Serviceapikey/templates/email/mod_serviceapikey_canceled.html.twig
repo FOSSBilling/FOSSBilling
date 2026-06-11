@@ -38,7 +38,7 @@
 <body>
 	<h1>Order Canceled</h1>
 	<p>Hello {{ c.first_name|default('') }} {{ c.last_name|default('') }},</p>
-	<p>Your <strong>{{ order.title|default('') }}</strong> that was activated on <strong>{{ order.activated_at|format_date }}</strong> is now canceled.</p>
+	<p>Your <strong>{{ order.title|default('') }}</strong> that was activated on <strong>{{ order.activated_at|default('')|format_date }}</strong> is now canceled.</p>
     {% if order.reason|default('') %}
         <p><strong>Reason:</strong> {{ order.reason|default('') }}</p>
     {% endif %}
