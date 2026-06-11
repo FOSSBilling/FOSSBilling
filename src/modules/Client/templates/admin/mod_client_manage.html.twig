@@ -828,7 +828,7 @@
 
                 {% block section_footer %}
                     <div class="d-flex align-items-center">
-                        {{ include('partial_pagination.html.twig', { 'list': emails, 'split_footer_controls': true }) }}
+                        {{ include('partial_pagination.html.twig', { 'list': emails, 'url': 'client/manage/' ~ client.id, 'hash': '#tab-emails', 'split_footer_controls': true }) }}
                     </div>
                 {% endblock %}
             {% endembed %}
