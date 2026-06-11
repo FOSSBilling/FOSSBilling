@@ -410,3 +410,15 @@ body {
 
 // Dark mode support uses Bootstrap's native color mode system via data-bs-theme attribute in HTML tag.
 // Bootstrap 5.3+ automatically handles dark mode colors through CSS variables.
+
+.db-avatar {
+    display: inline-block;
+    flex-shrink: 0;
+    vertical-align: middle;
+    background-color: var(--bs-secondary-bg);
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 50%;
+    overflow: hidden;
+}
