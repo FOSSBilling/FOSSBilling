@@ -20,6 +20,10 @@ Options -Indexes +SymLinksIfOwnerMatch
     RewriteCond %{REQUEST_URI} ^/(index\.php|ipn\.php|install/index\.php|install/install\.php) [NC]
     RewriteRule ^ - [L]
 
+    # Alias from bb-ipn.php to ipn.php for those who have upgraded from BoxBilling.
+    # Required for older PayPal transactions as IPN on them cannot be updated.
+    RewriteRule ^bb-ipn\.php$ /ipn.php [L]
+
     # Block direct access to sensitive files and file types.
     RewriteCond %{REQUEST_URI} /themes/[^/]+/config/ [NC]
     RewriteRule ^(.*)$ index.php?_url=/$1&_errcode=404 [L]
