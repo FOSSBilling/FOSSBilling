@@ -1,4 +1,4 @@
-{% block subject %}[{{ guest.system_company.name }}] {{ticket.subject}}{% endblock %}
+{% block subject %}[{{ guest.system_company.name }}] {{ticket.subject|default('')}}{% endblock %}
 {% block content %}
 <!DOCTYPE html>
 <html>
@@ -36,12 +36,12 @@
 </head>
 <body>
 	<h1>New Ticket Reply</h1>
-	<p>Hello {{ c.name }},</p>
+	<p>Hello {{ staff.name|default('') }},</p>
 
-    <p>Public ticket {{ticket.id}} has a new reply.</p>
-	<a href='{{ "support/public-ticket/#{ticket.id}"|url(area: 'admin') }}' target="_blank">Reply here.</a></p>
+    <p>Public ticket {{ticket.id|default('')}} has a new reply.</p>
+	<a href='{{ "support/public-ticket/#{ticket.id|default('')}"|url(area: 'admin') }}' target="_blank">Reply here.</a></p>
 
-    <p>You may <a href="{{ 'staff/login'|url(query: { 'email': c.email }, area: 'admin') }}" target="_blank">login</a> or <a href="{{ 'staff/profile'|url(area: 'admin') }}" target="_blank">edit your profile.</a>
+    <p>You may <a href="{{ 'staff/login'|url(query: { 'email': staff.email|default('') }, area: 'admin') }}" target="_blank">login</a> or <a href="{{ 'staff/profile'|url(area: 'admin') }}" target="_blank">edit your profile.</a>
 
 	<p class="signature">{{ guest.system_company.signature }}</p>
 </body>

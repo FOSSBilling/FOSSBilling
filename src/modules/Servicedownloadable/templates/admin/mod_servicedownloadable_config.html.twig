@@ -1,4 +1,5 @@
 <div class="card-body">
+    {% set config = product.config|default({}) %}
     <div class="mb-5">
         <form method="post" action="{{ 'servicedownloadable/config_save'|api_url }}" {{ fb_api_form({ message: 'Settings Updated'|trans}) }}>
             <div class="mb-3">
@@ -10,11 +11,11 @@
                     <label class="form-label">{{ 'Keep Orders Updated'|trans }}</label>
                     <div class="d-flex flex-wrap gap-3 pt-1">
                         <label class="form-check">
-                            <input class="form-check-input" type="radio" name="update_orders" value="1"{% if product.config.update_orders == '1' or product.config.update_orders == '' %} checked{% endif %} required>
+                            <input class="form-check-input" type="radio" name="update_orders" value="1"{% if config.update_orders|default('') == '1' or config.update_orders|default('') == '' %} checked{% endif %} required>
                             <span class="form-check-label">{{ 'Yes'|trans }}</span>
                         </label>
                         <label class="form-check">
-                            <input class="form-check-input" type="radio" name="update_orders" value="0"{% if product.config.update_orders == '0' %} checked{% endif %} required>
+                            <input class="form-check-input" type="radio" name="update_orders" value="0"{% if config.update_orders|default('') == '0' %} checked{% endif %} required>
                             <span class="form-check-label">{{ 'No'|trans }}</span>
                         </label>
                     </div>
@@ -37,11 +38,11 @@
 
         <form method="post" action="{{ 'servicedownloadable/upload'|api_url }}" enctype="multipart/form-data" id="upload-form">
             <div class="row g-3">
-                {% if product.config.filename %}
+                {% if config.filename is defined and config.filename %}
                     <div class="col-12">
                         <label class="form-label">{{ 'Currently Uploaded File'|trans }}</label>
                         <div class="form-control-plaintext">
-                            <a href="{{ 'servicedownloadable/get-file'|url }}/{{ product.id }}" target="_blank">{{ product.config.filename }}</a>
+                            <a href="{{ 'servicedownloadable/get-file'|url }}/{{ product.id }}" target="_blank">{{ config.filename }}</a>
                         </div>
                     </div>
                 {% endif %}

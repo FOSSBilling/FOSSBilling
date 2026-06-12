@@ -41,7 +41,7 @@
                                         <select class="form-select" name="period" id="period-selector">
                                             {% for code,prices in product.pricing.recurrent %}
                                                 {% if prices.enabled %}
-                                                    <option value="{{ code }}" data-bb-price="{{ (prices.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}" name="period">{{ (prices.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }} ({{ periods[code] }})</option>
+                                                    <option value="{{ code }}"{% if request.period == code %} selected="selected"{% endif %}>{{ (prices.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }} ({{ periods[code] }})</option>
                                                 {% endif %}
                                             {% endfor %}
                                         </select>

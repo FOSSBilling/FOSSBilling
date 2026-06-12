@@ -1,4 +1,4 @@
-{% block subject %}[{{ guest.system_company.name }}] {{ ticket.subject }}{% endblock %}
+{% block subject %}[{{ guest.system_company.name }}] {{ ticket.subject|default('') }}{% endblock %}
 {% block content %}
 <!DOCTYPE html>
 <html>
@@ -42,16 +42,16 @@
 
     <p>Ticket info</p>
     <ul>
-        <li><strong>Ticket ID:</strong> #{{ticket.id}}</li>
-        <li><strong>Department:</strong> {{ticket.helpdesk.name}}</li>
-        <li><strong>Status:</strong> {{ticket.status|title}}</li>
+        <li><strong>Ticket ID:</strong> #{{ticket.id|default('')}}</li>
+        <li><strong>Department:</strong> {{ticket.helpdesk|default({}).name|default('')}}</li>
+        <li><strong>Status:</strong> {{ticket.status|default('')|title}}</li>
     </ul>
 
-    <a href='{{ "support/ticket/#{ticket.id}"|url(area: 'client') }}' target="_blank">Reply</a>
+    <a href='{{ "support/ticket/#{ticket.id|default('')}"|url(area: 'client') }}' target="_blank">Reply</a>
 
     <p>Please do not reply to this email directly. Use the link provided above.</p>
 
-    <p>You may <a href="{{ 'staff/login'|url(query: { 'email': c.email }, area: 'admin') }}" target="_blank">login</a> or <a href="{{ 'staff/profile'|url(area: 'admin') }}" target="_blank">edit your profile.</a>
+    <p>You may <a href="{{ 'staff/login'|url(query: { 'email': c.email|default('') }, area: 'admin') }}" target="_blank">login</a> or <a href="{{ 'staff/profile'|url(area: 'admin') }}" target="_blank">edit your profile.</a>
 
 	<p class="signature">{{ guest.system_company.signature }}</p>
 </body>

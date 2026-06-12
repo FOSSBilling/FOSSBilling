@@ -117,7 +117,7 @@
                             <div class="control-group">
                                 <div class="form-controls">
                                     <div class="input-append">
-                                        <input class="span8" type="text" name="promocode" id="promocode" value="{{ request.promocode|default(cart.promocode) }}" {% if promo.required %}required="required"{% endif %} placeholder="{{ 'Enter code'|trans }}">
+                                        <input class="span8" type="text" name="promocode" id="promocode" value="{{ request.promocode|default(cart.promocode) }}" {% if promo|default({}).required|default(false) %}required="required"{% endif %} placeholder="{{ 'Enter code'|trans }}">
                                         {% if cart.promocode %}
                                             <a class="btn btn-warning btn-sm mb-1" href="{{ 'cart/remove_promo'|api_url(role: 'guest') }}" type="button" {{ fb_api_link({reload: true}) }}>{{ 'Remove'|trans }}</a>
                                         {% else %}

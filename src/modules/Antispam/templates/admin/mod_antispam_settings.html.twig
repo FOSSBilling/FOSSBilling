@@ -33,7 +33,7 @@
                     <svg class="icon">
                         <use xlink:href="#help" />
                     </svg>
-                    {{ 'Read the documentation'|trans }}
+                    {{ 'Read the Documentation'|trans }}
                 </a>
             </div>
         </div>
@@ -56,13 +56,13 @@
                                         <p class="text-secondary mb-0">{{ 'Blocked IPs are not allowed to log in, register, or open public tickets. Add one IP address per line.'|trans }}</p>
                                     </div>
                                     <label class="form-check form-switch form-switch-2 m-0">
-                                        <input id="block_ips_check" class="form-check-input" name="block_ips" type="checkbox" {% if params.block_ips %}checked="checked"{% endif %}>
+                                        <input id="block_ips_check" class="form-check-input" name="block_ips" type="checkbox" {% if params.block_ips|default(false) %}checked="checked"{% endif %}>
                                         <span class="form-check-label">{{ 'Enable IP Blocking'|trans }}</span>
                                     </label>
                                 </div>
 
                                 <label class="form-label" for="blocked_ips">{{ 'Blocked IP List'|trans }}</label>
-                                <textarea id="blocked_ips" class="form-control" name="blocked_ips" rows="5" placeholder="127.0.0.1">{{ params.blocked_ips }}</textarea>
+                                <textarea id="blocked_ips" class="form-control" name="blocked_ips" rows="5" placeholder="127.0.0.1">{{ params.blocked_ips|default('') }}</textarea>
                             </div>
                         </section>
                     </div>
@@ -76,7 +76,7 @@
                                         <p class="text-secondary mb-0">{{ 'Enable CAPTCHA for client registration and contact forms. Get keys from %recaptcha%, %turnstile%, or %hcaptcha%.'|trans({ '%recaptcha%': '<a href="https://www.google.com/recaptcha/about/" target="_blank">Google reCAPTCHA</a>', '%turnstile%': '<a href="https://www.cloudflare.com/products/turnstile/" target="_blank">Cloudflare Turnstile</a>', '%hcaptcha%': '<a href="https://www.hcaptcha.com" target="_blank">hCaptcha</a>' })|raw }}</p>
                                     </div>
                                     <label class="form-check form-switch form-switch-2 m-0">
-                                        <input id="captcha_enabled" class="form-check-input" name="captcha_enabled" type="checkbox" {% if params.captcha_enabled %}checked="checked"{% endif %}>
+                                        <input id="captcha_enabled" class="form-check-input" name="captcha_enabled" type="checkbox" {% if params.captcha_enabled|default(false) %}checked="checked"{% endif %}>
                                         <span class="form-check-label">{{ 'Enable CAPTCHA'|trans }}</span>
                                     </label>
                                 </div>
@@ -85,10 +85,10 @@
                                     <div class="col-lg-6">
                                         <label class="form-label" for="provider-select">{{ 'CAPTCHA Provider'|trans }}</label>
                                         <select name="captcha_provider" class="form-select" id="provider-select">
-                                            <option value="recaptcha_v2" {% if not params.captcha_provider or params.captcha_provider == 'recaptcha_v2' %}selected{% endif %}>{{ 'Google reCAPTCHA v2'|trans }}</option>
-                                            <option value="recaptcha_v3" {% if params.captcha_provider == 'recaptcha_v3' %}selected{% endif %}>{{ 'Google reCAPTCHA v3'|trans }}</option>
-                                            <option value="turnstile" {% if params.captcha_provider == 'turnstile' %}selected{% endif %}>{{ 'Cloudflare Turnstile'|trans }}</option>
-                                            <option value="hcaptcha" {% if params.captcha_provider == 'hcaptcha' %}selected{% endif %}>{{ 'hCaptcha'|trans }}</option>
+                                            <option value="recaptcha_v2" {% if not params.captcha_provider|default('') or params.captcha_provider|default('') == 'recaptcha_v2' %}selected{% endif %}>{{ 'Google reCAPTCHA v2'|trans }}</option>
+                                            <option value="recaptcha_v3" {% if params.captcha_provider|default('') == 'recaptcha_v3' %}selected{% endif %}>{{ 'Google reCAPTCHA v3'|trans }}</option>
+                                            <option value="turnstile" {% if params.captcha_provider|default('') == 'turnstile' %}selected{% endif %}>{{ 'Cloudflare Turnstile'|trans }}</option>
+                                            <option value="hcaptcha" {% if params.captcha_provider|default('') == 'hcaptcha' %}selected{% endif %}>{{ 'hCaptcha'|trans }}</option>
                                         </select>
                                     </div>
                                 </div>
@@ -97,11 +97,11 @@
                                     <div class="row g-3">
                                         <div class="col-lg-6">
                                             <label class="form-label" for="captcha_recaptcha_publickey">{{ 'reCAPTCHA Site Key'|trans }}</label>
-                                            <input class="form-control" type="text" id="captcha_recaptcha_publickey" name="captcha_recaptcha_publickey" value="{{ params.captcha_recaptcha_publickey }}">
+                                            <input class="form-control" type="text" id="captcha_recaptcha_publickey" name="captcha_recaptcha_publickey" value="{{ params.captcha_recaptcha_publickey|default('') }}">
                                         </div>
                                         <div class="col-lg-6">
                                             <label class="form-label" for="captcha_recaptcha_privatekey">{{ 'reCAPTCHA Secret Key'|trans }}</label>
-                                            <input class="form-control" type="text" id="captcha_recaptcha_privatekey" name="captcha_recaptcha_privatekey" value="{{ params.captcha_recaptcha_privatekey }}">
+                                            <input class="form-control" type="text" id="captcha_recaptcha_privatekey" name="captcha_recaptcha_privatekey" value="{{ params.captcha_recaptcha_privatekey|default('') }}">
                                         </div>
                                         <div class="col-lg-6" id="recaptcha_v3_threshold_wrap">
                                             <label class="form-label" for="captcha_recaptcha_v3_threshold">{{ 'reCAPTCHA v3 Minimum Score'|trans }}</label>
@@ -115,11 +115,11 @@
                                     <div class="row g-3">
                                         <div class="col-lg-6">
                                             <label class="form-label" for="turnstile_site_key">{{ 'Turnstile Site Key'|trans }}</label>
-                                            <input class="form-control" type="text" id="turnstile_site_key" name="turnstile_site_key" value="{{ params.turnstile_site_key }}">
+                                            <input class="form-control" type="text" id="turnstile_site_key" name="turnstile_site_key" value="{{ params.turnstile_site_key|default('') }}">
                                         </div>
                                         <div class="col-lg-6">
                                             <label class="form-label" for="turnstile_secret_key">{{ 'Turnstile Secret Key'|trans }}</label>
-                                            <input class="form-control" type="text" id="turnstile_secret_key" name="turnstile_secret_key" value="{{ params.turnstile_secret_key }}">
+                                            <input class="form-control" type="text" id="turnstile_secret_key" name="turnstile_secret_key" value="{{ params.turnstile_secret_key|default('') }}">
                                         </div>
                                     </div>
                                 </div>
@@ -128,11 +128,11 @@
                                     <div class="row g-3">
                                         <div class="col-lg-6">
                                             <label class="form-label" for="hcaptcha_site_key">{{ 'hCaptcha Site Key'|trans }}</label>
-                                            <input class="form-control" type="text" id="hcaptcha_site_key" name="hcaptcha_site_key" value="{{ params.hcaptcha_site_key }}">
+                                            <input class="form-control" type="text" id="hcaptcha_site_key" name="hcaptcha_site_key" value="{{ params.hcaptcha_site_key|default('') }}">
                                         </div>
                                         <div class="col-lg-6">
                                             <label class="form-label" for="hcaptcha_secret_key">{{ 'hCaptcha Secret Key'|trans }}</label>
-                                            <input class="form-control" type="text" id="hcaptcha_secret_key" name="hcaptcha_secret_key" value="{{ params.hcaptcha_secret_key }}">
+                                            <input class="form-control" type="text" id="hcaptcha_secret_key" name="hcaptcha_secret_key" value="{{ params.hcaptcha_secret_key|default('') }}">
                                         </div>
                                     </div>
                                 </div>
@@ -149,7 +149,7 @@
                                         <p class="text-secondary mb-0">{{ 'Check client IP addresses against the <a href="https://stopforumspam.com/" target="_blank">Stop Forum Spam</a> database before registration.'|trans|raw }}</p>
                                     </div>
                                     <label class="form-check form-switch form-switch-2 mt-auto">
-                                        <input id="sfs" class="form-check-input" name="sfs" type="checkbox" {% if params.sfs %}checked="checked"{% endif %}>
+                                        <input id="sfs" class="form-check-input" name="sfs" type="checkbox" {% if params.sfs|default(false) %}checked="checked"{% endif %}>
                                         <span class="form-check-label">{{ 'Enable Stop Forum Spam'|trans }}</span>
                                     </label>
                                 </div>
@@ -167,7 +167,7 @@
                                         <p class="text-secondary mb-0">{{ 'This database is updated daily and provided free of charge by the FakeFilter project under the BSD 3-Clause License.'|trans }}</p>
                                     </div>
                                     <label class="form-check form-switch form-switch-2 mt-auto">
-                                        <input id="check_temp_emails" class="form-check-input" name="check_temp_emails" type="checkbox" {% if params.check_temp_emails %}checked="checked"{% endif %}>
+                                        <input id="check_temp_emails" class="form-check-input" name="check_temp_emails" type="checkbox" {% if params.check_temp_emails|default(false) %}checked="checked"{% endif %}>
                                         <span class="form-check-label">{{ 'Check for Disposable Email Addresses'|trans }}</span>
                                     </label>
                                 </div>
@@ -184,7 +184,7 @@
                                         <p class="text-secondary mb-0">{{ 'Add a hidden form field that bots typically fill out but humans do not. Registration fails when that field is submitted.'|trans }}</p>
                                     </div>
                                     <label class="form-check form-switch form-switch-2">
-                                        <input id="honeypot_enabled" class="form-check-input" name="honeypot_enabled" type="checkbox" {% if params.honeypot_enabled ?? true %}checked="checked"{% endif %}>
+                                        <input id="honeypot_enabled" class="form-check-input" name="honeypot_enabled" type="checkbox" {% if params.honeypot_enabled|default(true) %}checked="checked"{% endif %}>
                                         <span class="form-check-label">{{ 'Enable Honeypot Protection'|trans }}</span>
                                     </label>
                                     <div>

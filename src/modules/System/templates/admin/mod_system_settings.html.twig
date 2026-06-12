@@ -20,6 +20,8 @@
     </ol>
 {% endblock %}
 
+{% set can_manage_network_interface = has_permission('system', 'manage_network_interface') %}
+
 {% block content %}
     {% set new_params = admin.extension_config_get({ 'ext': 'mod_system' }) %}
     {% set params = admin.system_get_params %}
@@ -27,7 +29,6 @@
     {% set can_update_params = has_permission('system', 'update_params') %}
     {% set can_invalidate_cache = has_permission('system', 'invalidate_cache') %}
     {% set can_toggle_error_reporting = has_permission('system', 'toggle_error_reporting') %}
-    {% set can_manage_network_interface = has_permission('system', 'manage_network_interface') %}
     <div class="card">
         <div class="card-header">
             <div>
@@ -76,33 +77,33 @@
                             <div class="row g-3">
                                 <div class="col-lg-6">
                                     <label class="form-label" for="company_name">{{ 'Name'|trans }}</label>
-                                    <input class="form-control" id="company_name" type="text" name="company_name" value="{{ params.company_name }}">
+                                    <input class="form-control" id="company_name" type="text" name="company_name" value="{{ params.company_name|default('') }}">
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="company_email">{{ 'Email'|trans }}</label>
-                                    <input class="form-control" id="company_email" type="text" name="company_email" value="{{ params.company_email }}">
+                                    <input class="form-control" id="company_email" type="text" name="company_email" value="{{ params.company_email|default('') }}">
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="company_tel">{{ 'Phone'|trans }}</label>
-                                    <input class="form-control" id="company_tel" type="text" name="company_tel" value="{{ params.company_tel }}">
+                                    <input class="form-control" id="company_tel" type="text" name="company_tel" value="{{ params.company_tel|default('') }}">
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="company_favicon">{{ 'Favicon'|trans }}</label>
-                                    <input class="form-control" id="company_favicon" type="text" name="company_favicon" value="{{ params.company_favicon }}">
+                                    <input class="form-control" id="company_favicon" type="text" name="company_favicon" value="{{ params.company_favicon|default('') }}">
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label" for="company_address_1">{{ 'Address'|trans }}</label>
-                                    <input class="form-control mb-2" id="company_address_1" type="text" name="company_address_1" value="{{ params.company_address_1 }}" placeholder="{{ 'Address line 1'|trans }}">
-                                    <input class="form-control mb-2" type="text" name="company_address_2" value="{{ params.company_address_2 }}" placeholder="{{ 'Address line 2'|trans }}">
-                                    <input class="form-control" type="text" name="company_address_3" value="{{ params.company_address_3 }}" placeholder="{{ 'Address line 3'|trans }}">
+                                    <input class="form-control mb-2" id="company_address_1" type="text" name="company_address_1" value="{{ params.company_address_1|default('') }}" placeholder="{{ 'Address line 1'|trans }}">
+                                    <input class="form-control mb-2" type="text" name="company_address_2" value="{{ params.company_address_2|default('') }}" placeholder="{{ 'Address line 2'|trans }}">
+                                    <input class="form-control" type="text" name="company_address_3" value="{{ params.company_address_3|default('') }}" placeholder="{{ 'Address line 3'|trans }}">
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="company_logo">{{ 'Logo URL'|trans }}</label>
-                                    <input class="form-control" id="company_logo" type="text" name="company_logo" value="{{ params.company_logo }}">
+                                    <input class="form-control" id="company_logo" type="text" name="company_logo" value="{{ params.company_logo|default('') }}">
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="company_logo_dark">{{ 'Logo URL (dark mode)'|trans }}</label>
-                                    <input class="form-control" id="company_logo_dark" type="text" name="company_logo_dark" value="{{ params.company_logo_dark }}">
+                                    <input class="form-control" id="company_logo_dark" type="text" name="company_logo_dark" value="{{ params.company_logo_dark|default('') }}">
                                 </div>
                             </div>
                         </div>
@@ -112,39 +113,39 @@
                             <div class="row g-3">
                                 <div class="col-lg-6">
                                     <label class="form-label" for="company_number">{{ 'Company Number'|trans }}</label>
-                                    <input class="form-control" id="company_number" type="text" name="company_number" value="{{ params.company_number }}">
+                                    <input class="form-control" id="company_number" type="text" name="company_number" value="{{ params.company_number|default('') }}">
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="company_vat_number">{{ 'VAT Number'|trans }}</label>
-                                    <input class="form-control" id="company_vat_number" type="text" name="company_vat_number" value="{{ params.company_vat_number }}">
+                                    <input class="form-control" id="company_vat_number" type="text" name="company_vat_number" value="{{ params.company_vat_number|default('') }}">
                                 </div>
                                 <div class="col-lg-4">
                                     <label class="form-label" for="company_bank_name">{{ 'Bank Name'|trans }}</label>
-                                    <input class="form-control" id="company_bank_name" type="text" name="company_bank_name" value="{{ params.company_bank_name }}">
+                                    <input class="form-control" id="company_bank_name" type="text" name="company_bank_name" value="{{ params.company_bank_name|default('') }}">
                                 </div>
                                 <div class="col-lg-4">
                                     <label class="form-label" for="company_bic">{{ 'BIC / SWIFT Code'|trans }}</label>
-                                    <input class="form-control" id="company_bic" type="text" name="company_bic" value="{{ params.company_bic }}">
+                                    <input class="form-control" id="company_bic" type="text" name="company_bic" value="{{ params.company_bic|default('') }}">
                                 </div>
                                 <div class="col-lg-4">
                                     <label class="form-label" for="company_account_number">{{ 'Bank Account Number'|trans }}</label>
-                                    <input class="form-control" id="company_account_number" type="text" name="company_account_number" value="{{ params.company_account_number }}">
+                                    <input class="form-control" id="company_account_number" type="text" name="company_account_number" value="{{ params.company_account_number|default('') }}">
                                 </div>
                             </div>
                             <div class="mt-4 d-flex flex-column gap-3">
                                 <label class="form-check form-switch form-switch-2">
                                     <input type="hidden" name="company_display_bank_info" value="0">
-                                    <input class="form-check-input" type="checkbox" name="company_display_bank_info" value="1" {% if params.company_display_bank_info == '1' %}checked{% endif %}>
+                                    <input class="form-check-input" type="checkbox" name="company_display_bank_info" value="1" {% if params.company_display_bank_info|default('') == '1' %}checked{% endif %}>
                                     <span class="form-check-label">{{ 'Display Bank Account Information on Documents'|trans }}</span>
                                 </label>
                                 <label class="form-check form-switch form-switch-2">
                                     <input type="hidden" name="company_bank_info_pagebottom" value="0">
-                                    <input class="form-check-input" type="checkbox" name="company_bank_info_pagebottom" value="1" {% if params.company_bank_info_pagebottom == '1' %}checked{% endif %}>
+                                    <input class="form-check-input" type="checkbox" name="company_bank_info_pagebottom" value="1" {% if params.company_bank_info_pagebottom|default('') == '1' %}checked{% endif %}>
                                     <span class="form-check-label">{{ 'Display Bank Account Information at the Bottom of Every Page'|trans }}</span>
                                 </label>
                                 <label class="form-check form-switch form-switch-2">
                                     <input type="hidden" name="hide_company_public" value="0">
-                                    <input class="form-check-input" id="hide_company_public" type="checkbox" name="hide_company_public" value="1" {% if params.hide_company_public == '1' %}checked{% endif %}>
+                                    <input class="form-check-input" id="hide_company_public" type="checkbox" name="hide_company_public" value="1" {% if params.hide_company_public|default('') == '1' %}checked{% endif %}>
                                     <span class="form-check-label">{{ 'Hide Some Company Information in the Guest API'|trans }}</span>
                                 </label>
                                 <small class="form-hint">{{ 'Enabling this hides some information from the company guest API endpoint, including address, phone number, email, VAT number, and more.'|trans }}</small>
@@ -153,7 +154,7 @@
                         <div class="card-body border-top">
                             <h4 class="card-title mb-2">{{ 'Signature'|trans }}</h4>
                             <p class="text-secondary mb-3">{{ 'Set a default company signature for use in documents and communications.'|trans }}</p>
-                            <textarea class="form-control" name="company_signature" rows="3">{{ params.company_signature }}</textarea>
+                            <textarea class="form-control" name="company_signature" rows="3">{{ params.company_signature|default('') }}</textarea>
                         </div>
                         <div class="card-footer text-end">
                             <button class="btn btn-primary" type="submit"{% if not can_update_params %} disabled aria-disabled="true"{% endif %}>{{ 'Update Settings'|trans }}</button>
@@ -169,15 +170,15 @@
                             </div>
                             <div class="mb-3">
                                 <h4 class="card-title mb-2">{{ 'Company Terms of Service, Legal Regulation'|trans }}</h4>
-                                <textarea class="form-control editor-textarea" name="company_tos" rows="5">{{ params.company_tos }}</textarea>
+                                <textarea class="form-control editor-textarea" name="company_tos" rows="5">{{ params.company_tos|default('') }}</textarea>
                             </div>
                             <div class="mb-3">
                                 <h4 class="card-title mb-2">{{ 'Company Privacy Policy'|trans }}</h4>
-                                <textarea class="form-control editor-textarea" name="company_privacy_policy" rows="5">{{ params.company_privacy_policy }}</textarea>
+                                <textarea class="form-control editor-textarea" name="company_privacy_policy" rows="5">{{ params.company_privacy_policy|default('') }}</textarea>
                             </div>
                             <div class="mb-3">
                                 <h4 class="card-title mb-2">{{ 'Notes'|trans }}</h4>
-                                <textarea class="form-control editor-textarea" name="company_note" rows="5">{{ params.company_note }}</textarea>
+                                <textarea class="form-control editor-textarea" name="company_note" rows="5">{{ params.company_note|default('') }}</textarea>
                             </div>
                         </div>
                         <div class="card-footer text-end">

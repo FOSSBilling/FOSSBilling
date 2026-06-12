@@ -22,7 +22,7 @@
     {% if post.updated_at %}<meta property="article:modified_time" content="{{ post.updated_at }}" />{% endif %}
     {% if post.expires_at %}<meta property="article:expiration_time" content="{{ post.expires_at }}" />{% endif %}
     {% if post.section %}<meta property="article:section" content="{{ post.section }}" />{% endif %}
-    {% if post.tags %}<meta property="article:tag" content="{{ post.tags|join(', ') }}" />{% endif %}
+    {% if post.tags|default([])|length > 0 %}<meta property="article:tag" content="{{ post.tags|join(', ') }}" />{% endif %}
 {% endblock %}
 
 {% block content %}

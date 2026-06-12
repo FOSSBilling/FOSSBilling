@@ -1,5 +1,7 @@
 {% import 'macro_functions.html.twig' as mf %}
 
+{% set config = product.config|default({}) %}
+
 <div class="card-body">
     <form method="post" action="{{ 'product/update_config'|api_url }}" {{ fb_api_form({message: 'License Settings Updated'|trans}) }}>
         <div class="mb-5">
@@ -10,15 +12,15 @@
             <div class="row g-3">
                 <div class="col-lg-4">
                     <label class="form-label">{{ 'Prefix'|trans }}</label>
-                    <input type="text" class="form-control" name="config[prefix]" value="{{ product.config.prefix }}">
+                    <input type="text" class="form-control" name="config[prefix]" value="{{ config.prefix|default('') }}">
                 </div>
                 <div class="col-lg-4">
                     <label class="form-label">{{ 'Length'|trans }}</label>
-                    <input type="number" class="form-control" name="config[length]" value="{{ product.config.length }}">
+                    <input type="number" class="form-control" name="config[length]" value="{{ config.length|default('') }}">
                 </div>
                 <div class="col-lg-4">
                     <label class="form-label">{{ 'Plugin'|trans }}</label>
-                    {{ mf.selectbox('config[plugin]', admin.servicelicense_plugin_get_pairs, product.config.plugin, 1) }}
+                    {{ mf.selectbox('config[plugin]', admin.servicelicense_plugin_get_pairs, config.plugin|default(''), 1) }}
                 </div>
             </div>
         </div>
@@ -35,11 +37,11 @@
                     <label class="form-label">{{ 'Validate IP'|trans }}</label>
                     <div class="d-flex flex-wrap gap-3 pt-1">
                         <label class="form-check">
-                            <input class="form-check-input" id="validateIPYes" type="radio" name="config[validate_ip]" value="1"{% if product.config.validate_ip %} checked{% endif %}>
+                            <input class="form-check-input" id="validateIPYes" type="radio" name="config[validate_ip]" value="1"{% if config.validate_ip|default(false) %} checked{% endif %}>
                             <span class="form-check-label">{{ 'Yes'|trans }}</span>
                         </label>
                         <label class="form-check">
-                            <input class="form-check-input" id="validateIPNo" type="radio" name="config[validate_ip]" value="0"{% if not product.config.validate_ip %} checked{% endif %}>
+                            <input class="form-check-input" id="validateIPNo" type="radio" name="config[validate_ip]" value="0"{% if not config.validate_ip|default(false) %} checked{% endif %}>
                             <span class="form-check-label">{{ 'No'|trans }}</span>
                         </label>
                     </div>
@@ -48,11 +50,11 @@
                     <label class="form-label">{{ 'Validate Hostname'|trans }}</label>
                     <div class="d-flex flex-wrap gap-3 pt-1">
                         <label class="form-check">
-                            <input class="form-check-input" id="validateHostnameYes" type="radio" name="config[validate_host]" value="1"{% if product.config.validate_host %} checked{% endif %}>
+                            <input class="form-check-input" id="validateHostnameYes" type="radio" name="config[validate_host]" value="1"{% if config.validate_host|default(false) %} checked{% endif %}>
                             <span class="form-check-label">{{ 'Yes'|trans }}</span>
                         </label>
                         <label class="form-check">
-                            <input class="form-check-input" id="validateHostnameNo" type="radio" name="config[validate_host]" value="0"{% if not product.config.validate_host %} checked{% endif %}>
+                            <input class="form-check-input" id="validateHostnameNo" type="radio" name="config[validate_host]" value="0"{% if not config.validate_host|default(false) %} checked{% endif %}>
                             <span class="form-check-label">{{ 'No'|trans }}</span>
                         </label>
                     </div>
@@ -61,11 +63,11 @@
                     <label class="form-label">{{ 'Validate Version'|trans }}</label>
                     <div class="d-flex flex-wrap gap-3 pt-1">
                         <label class="form-check">
-                            <input class="form-check-input" id="validateVersionYes" type="radio" name="config[validate_version]" value="1"{% if product.config.validate_version %} checked{% endif %}>
+                            <input class="form-check-input" id="validateVersionYes" type="radio" name="config[validate_version]" value="1"{% if config.validate_version|default(false) %} checked{% endif %}>
                             <span class="form-check-label">{{ 'Yes'|trans }}</span>
                         </label>
                         <label class="form-check">
-                            <input class="form-check-input" id="validateVersionNo" type="radio" name="config[validate_version]" value="0"{% if not product.config.validate_version %} checked{% endif %}>
+                            <input class="form-check-input" id="validateVersionNo" type="radio" name="config[validate_version]" value="0"{% if not config.validate_version|default(false) %} checked{% endif %}>
                             <span class="form-check-label">{{ 'No'|trans }}</span>
                         </label>
                     </div>
@@ -74,11 +76,11 @@
                     <label class="form-label">{{ 'Validate Path'|trans }}</label>
                     <div class="d-flex flex-wrap gap-3 pt-1">
                         <label class="form-check">
-                            <input class="form-check-input" id="validatePathYes" type="radio" name="config[validate_path]" value="1"{% if product.config.validate_path %} checked{% endif %}>
+                            <input class="form-check-input" id="validatePathYes" type="radio" name="config[validate_path]" value="1"{% if config.validate_path|default(false) %} checked{% endif %}>
                             <span class="form-check-label">{{ 'Yes'|trans }}</span>
                         </label>
                         <label class="form-check">
-                            <input class="form-check-input" id="validatePathNo" type="radio" name="config[validate_path]" value="0"{% if not product.config.validate_path %} checked{% endif %}>
+                            <input class="form-check-input" id="validatePathNo" type="radio" name="config[validate_path]" value="0"{% if not config.validate_path|default(false) %} checked{% endif %}>
                             <span class="form-check-label">{{ 'No'|trans }}</span>
                         </label>
                     </div>
@@ -102,7 +104,7 @@
             <li>{{ 'See the default example plugin at'|trans }} <strong>/modules/Servicelicense/Plugin/Simple.php</strong></li>
             <li>{{ 'Save your custom plugin in'|trans }} <strong>/modules/Servicelicense/Plugin/PluginName.php</strong></li>
             <li>{{ 'FOSSBilling will automatically detect your new plugin.'|trans }}</li>
-            <li><a href="https://docs.fossbilling.org/admin-guide/product-types/license/#custom-license-plugins" target="_blank" rel="noopener noreferrer">{{ 'Read the documentation'|trans }}</a> {{ 'for more details.'|trans }}</li>
+            <li><a href="https://docs.fossbilling.org/admin-guide/product-types/license/#custom-license-plugins" target="_blank" rel="noopener noreferrer">{{ 'Read the Documentation'|trans }}</a> {{ 'for more details.'|trans }}</li>
         </ul>
     </div>
 </div>

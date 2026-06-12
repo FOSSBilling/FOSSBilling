@@ -60,7 +60,7 @@
                             <span class="m-0">{{ 'No orders yet'|trans }}</span>
                         </div>
                     {% endif %}
-                    {{ include('partial_pagination.html.twig', { 'list': orders }) }}
+                    {{ include('partial_pagination.html.twig', { 'list': orders, 'url': 'order' }) }}
                 </div>
             </div>
         </div>

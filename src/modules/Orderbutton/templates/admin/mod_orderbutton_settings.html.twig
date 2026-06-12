@@ -61,10 +61,10 @@
                                     <div class="col-lg-6">
                                         <label class="form-label" for="theme_color">{{ 'Theme Color'|trans }}</label>
                                     <select class="form-select" name="theme_color" id="theme_color">
-                                        <option value="green" {% if params.theme_color == 'green' %}selected{% endif %}>{{ 'Green'|trans }}</option>
-                                        <option value="red" {% if params.theme_color == 'red' %}selected{% endif %}>{{ 'Red'|trans }}</option>
-                                        <option value="blue" {% if params.theme_color == 'blue' %}selected{% endif %}>{{ 'Blue'|trans }}</option>
-                                        <option value="dark" {% if params.theme_color == 'dark' %}selected{% endif %}>{{ 'Dark'|trans }}</option>
+                                        <option value="green" {% if params.theme_color|default('green') == 'green' %}selected{% endif %}>{{ 'Green'|trans }}</option>
+                                        <option value="red" {% if params.theme_color|default('green') == 'red' %}selected{% endif %}>{{ 'Red'|trans }}</option>
+                                        <option value="blue" {% if params.theme_color|default('green') == 'blue' %}selected{% endif %}>{{ 'Blue'|trans }}</option>
+                                        <option value="dark" {% if params.theme_color|default('green') == 'dark' %}selected{% endif %}>{{ 'Dark'|trans }}</option>
                                     </select>
                                 </div>
                                 </div>
@@ -126,7 +126,7 @@
                                             {% set loader_link = 'img/assets/loaders/loader'~i~'.gif' %}
                                             <div class="col-lg-6">
                                             <label class="form-selectgroup-item h-100">
-                                                <input type="radio" name="loader" id="loader{{ i }}" value="{{ i }}" {% if params.loader == i %}checked{% endif %} class="form-selectgroup-input">
+                                                <input type="radio" name="loader" id="loader{{ i }}" value="{{ i }}" {% if params.loader|default(1) == i %}checked{% endif %} class="form-selectgroup-input">
                                                 <div class="form-selectgroup-label d-flex align-items-center justify-content-between p-3 h-100">
                                                     <div class="me-3">
                                                         <span class="form-selectgroup-check"></span>
@@ -149,7 +149,7 @@
                                     <div>
                                         <label class="form-label d-block" for="background-close">{{ 'Close Behavior'|trans }}</label>
                                     <label class="form-check form-switch">
-                                        <input class="form-check-input" id="background-close" type="checkbox" name="background_close" {% if params.background_close %}checked{% endif %}>
+                                        <input class="form-check-input" id="background-close" type="checkbox" name="background_close" {% if params.background_close|default(false) %}checked{% endif %}>
                                         <span class="form-check-label">{{ 'Click on Background Closes Popup'|trans }}</span>
                                     </label>
                                     </div>
@@ -158,7 +158,7 @@
                                         <div>
                                             <label class="form-label d-block" for="show-custom-form-values">{{ 'Custom Form Preview'|trans }}</label>
                                         <label class="form-check form-switch">
-                                            <input class="form-check-input" id="show-custom-form-values" type="checkbox" name="show_custom_form_values" {% if params.show_custom_form_values %}checked{% endif %}>
+                                            <input class="form-check-input" id="show-custom-form-values" type="checkbox" name="show_custom_form_values" {% if params.show_custom_form_values|default(false) %}checked{% endif %}>
                                             <span class="form-check-label">{{ 'User input will be shown before checkout for custom form'|trans }}</span>
                                         </label>
                                         </div>

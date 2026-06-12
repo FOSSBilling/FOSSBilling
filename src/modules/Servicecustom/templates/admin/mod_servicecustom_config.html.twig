@@ -9,7 +9,7 @@
             <div class="row g-3">
                 <div class="col-lg-6">
                     <label class="form-label">{{ 'Plugin Name'|trans }}</label>
-                    <input class="form-control" type="text" name="plugin" value="{{ product.plugin }}">
+                    <input class="form-control" type="text" name="plugin" value="{{ product.plugin|default('') }}">
                 </div>
             </div>
             <input type="hidden" name="id" value="{{ product.id }}">

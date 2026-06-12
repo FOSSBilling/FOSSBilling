@@ -9,6 +9,8 @@
 {% set can_delete_currency = has_permission('currency', 'delete') %}
 {% set can_set_default_currency = has_permission('currency', 'set_default') %}
 {% set can_update_currency_rates = has_permission('currency', 'update_rates') %}
+{% set sync_rate = params.sync_rate|default('auto') %}
+{% set provider = params.provider|default('exchangerate-api') %}
 
 {% block meta_title %}{{ 'Currency Settings'|trans }}{% endblock %}
 
@@ -76,7 +78,7 @@
                             </div>
                         </div>
 
-                        {% if params.sync_rate != 'never' %}
+                        {% if sync_rate != 'never' %}
                             <div class="alert alert-success" role="alert">
                                 <strong class="me-1">{{ 'Success:'|trans }}</strong>{{ 'FOSSBilling is configured to automatically sync currency exchange rates.'|trans }}
                             </div>
@@ -145,7 +147,7 @@
                         </table>
                     </div>
                     <div class="card-footer text-center">
-                        {% if can_update_currency_rates and params.provider|default('exchangerate-api') == "exchangerate-api" and not params.exchangerate_api_key %}
+                        {% if can_update_currency_rates and provider == "exchangerate-api" and not params.exchangerate_api_key|default('') %}
                             <a href="https://www.exchangerate-api.com" target="_blank"><p class="mt-1 mb-0">{{ 'Currency exchange rates by ExchangeRate-API'|trans }}</p></a>
                         {% endif %}
                     </div>
@@ -207,28 +209,28 @@
                                 <div class="col-lg-6">
                                     <label class="form-label" for="provider_select">{{ 'Currency Exchange Rate Data Provider'|trans }}</label>
                                     <select class="form-select" aria-label="{{ 'Currency data provider selection'|trans }}" name="provider" id="provider_select">
-                                        <option value="exchangerate-api" selected>ExchangeRate-API</option>
-                                        <option value="currency_data_api">Currency Data API</option>
-                                        <option value="currencylayer">currencylayer</option>
+                                        <option value="exchangerate-api" {% if provider == 'exchangerate-api' %}selected{% endif %}>ExchangeRate-API</option>
+                                        <option value="currency_data_api" {% if provider == 'currency_data_api' %}selected{% endif %}>Currency Data API</option>
+                                        <option value="currencylayer" {% if provider == 'currencylayer' %}selected{% endif %}>currencylayer</option>
                                     </select>
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label">{{ 'API Key'|trans }}</label>
-                                    <input class="form-control" type="text" name="exchangerate_api_key" id="exchangerate_api" value="{{ params.exchangerate_api_key }}" hidden="true">
-                                    <input class="form-control" type="text" name="currencydata_key" id="currencydata" value="{{ params.currencydata_key }}" hidden="true">
-                                    <input class="form-control" type="text" name="currencylayer_key" id="currencylayer" value="{{ params.currencylayer_key }}"  hidden="true">
-                                    <small class="form-hint" id="exchangerate_api_help_text" hidden="true">{{ 'Leave blank to use ExchangeRate-API (Open Access).'|trans }}</small>
+                                    <input class="form-control" type="text" name="exchangerate_api_key" id="exchangerate_api" value="{{ params.exchangerate_api_key|default('') }}" hidden>
+                                    <input class="form-control" type="text" name="currencydata_key" id="currencydata" value="{{ params.currencydata_key|default('') }}" hidden>
+                                    <input class="form-control" type="text" name="currencylayer_key" id="currencylayer" value="{{ params.currencylayer_key|default('') }}" hidden>
+                                    <small class="form-hint" id="exchangerate_api_help_text" hidden>{{ 'Leave blank to use ExchangeRate-API (Open Access).'|trans }}</small>
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="sync_rate">{{ 'Automatic Sync Rate'|trans }}</label>
                                     <select class="form-select" aria-label="{{ 'Currency data provider selection'|trans }}" name="sync_rate" id="sync_rate">
-                                        <option value="auto" id="auto-sync" selected>{{ 'Auto'|trans }}</option>
-                                        <option value="never">{{ 'Never'|trans }}</option>
-                                        <option value="1d">{{ 'Daily'|trans }}</option>
-                                        <option value="1h">{{ 'Hourly'|trans }}</option>
-                                        <option value="10m">{{ 'Every 10 Minutes'|trans }}</option>
-                                        <option value="5m">{{ 'Every 5 Minutes'|trans }}</option>
-                                        <option value="1m" id="1m-sync">{{ 'Every Minute'|trans }}</option>
+                                        <option value="auto" id="auto-sync" {{ sync_rate == 'auto' ? 'selected' : '' }}>{{ 'Auto'|trans }}</option>
+                                        <option value="never" {{ sync_rate == 'never' ? 'selected' : '' }}>{{ 'Never'|trans }}</option>
+                                        <option value="1d" {{ sync_rate == '1d' ? 'selected' : '' }}>{{ 'Daily'|trans }}</option>
+                                        <option value="1h" {{ sync_rate == '1h' ? 'selected' : '' }}>{{ 'Hourly'|trans }}</option>
+                                        <option value="10m" {{ sync_rate == '10m' ? 'selected' : '' }}>{{ 'Every 10 Minutes'|trans }}</option>
+                                        <option value="5m" {{ sync_rate == '5m' ? 'selected' : '' }}>{{ 'Every 5 Minutes'|trans }}</option>
+                                       <option value="1m" id="1m-sync" {{ sync_rate == '1m' ? 'selected' : '' }}>{{ 'Every Minute'|trans }}</option>
                                     </select>
                                     <small class="form-hint d-block mt-2">{{ '"Auto" is only available for ExchangeRate-API and will only request new data when the provider indicates fresh rates are available.'|trans }}</small>
                                     <small class="form-hint d-block">{{ 'Exchange rate syncing runs via cron and is therefore still limited by your cron schedule frequency.'|trans }}</small>
@@ -307,7 +309,7 @@
             (result) => {
                 document.getElementById('converted_result').value = result;
             });
-    };
+    }
 
     function switchKeyBox(value){
         if(value === 'currencylayer'){
@@ -348,9 +350,9 @@
         document.getElementById("provider_select").onchange = function() {
             switchKeyBox(this.value);
         };
-        document.getElementById("sync_rate").value = "{{ params.sync_rate }}";
-        document.getElementById("provider_select").value = "{{ params.provider|default('exchangerate-api') }}";
-        switchKeyBox("{{ params.provider|default('exchangerate-api') }}");
+        document.getElementById("sync_rate").value = "{{ sync_rate|e('js') }}";
+        document.getElementById("provider_select").value = "{{ provider|e('js') }}";
+        switchKeyBox("{{ provider|e('js') }}");
 
         {% if can_create_currency %}
         if (window.location.hash === '#tab-new-currency') {
