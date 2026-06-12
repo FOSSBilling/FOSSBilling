@@ -1,4 +1,4 @@
-import { basename, dirname, join, resolve } from 'path';
+import { basename, resolve } from 'path';
 import { copyFile, mkdir, readFile, readdir, rm, writeFile } from 'fs/promises';
 
 export async function generateIconSprite(options) {
