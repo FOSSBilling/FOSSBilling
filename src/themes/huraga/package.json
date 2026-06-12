@@ -8,5 +8,8 @@
     "bootstrap": "^5.3.3",
     "flag-icons": "^7.2.3",
     "tom-select": "^2.3.1"
+  },
+  "devDependencies": {
+    "svg-sprite": "2.0.4"
   }
 }

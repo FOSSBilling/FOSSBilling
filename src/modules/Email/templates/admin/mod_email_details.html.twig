@@ -69,7 +69,7 @@
         <a class="btn btn-primary"
             {{ fb_api_link({href: 'email/email_delete'|api_url(query: {id: email.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'email/history'|url}) }}>
             <svg class="icon icon-tabler" width="24" height="24">
-                <use xlink:href="#delete" />
+                <use xlink:href="#trash" />
             </svg>
             <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
         </a>

@@ -240,7 +240,7 @@
                                 <a class="btn btn-icon" href="{{ 'invoice/delete'|api_url(query: { 'id': invoice.id }) }}"
                                     {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                                     <svg class="icon">
-                                        <use xlink:href="#delete" />
+                                        <use xlink:href="#trash" />
                                     </svg>
                                 </a>
                             </td>
@@ -416,7 +416,7 @@
                 const deleteBtn = document.createElement('button');
                 deleteBtn.type = 'button';
                 deleteBtn.className = 'btn btn-icon btn-danger';
-                deleteBtn.innerHTML = '<svg class="icon"><use xlink:href="#delete" /></svg>';
+                deleteBtn.innerHTML = '<svg class="icon"><use xlink:href="#trash" /></svg>';
                 deleteBtn.addEventListener('click', function() {
                     productDiv.remove();
                 });

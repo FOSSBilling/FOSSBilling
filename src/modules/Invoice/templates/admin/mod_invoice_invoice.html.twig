@@ -127,7 +127,7 @@
                         <a class="btn btn-danger"
                             {{ fb_api_link({href: 'invoice/delete'|api_url(query: {id: invoice.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice'|url}) }}>
                             <svg class="icon" width="24" height="24">
-                                <use xlink:href="#delete" />
+                                <use xlink:href="#trash" />
                             </svg>
                             <span>{{ 'Delete'|trans }}</span>
                         </a>
@@ -231,7 +231,7 @@
                                     <a class="btn btn-icon" href="{{ 'invoice/item_delete'|api_url(query: { 'id': item.id }) }}"
                                         {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                                         <svg class="icon">
-                                            <use xlink:href="#delete" />
+                                            <use xlink:href="#trash" />
                                         </svg>
                                     </a>
                                 </td>

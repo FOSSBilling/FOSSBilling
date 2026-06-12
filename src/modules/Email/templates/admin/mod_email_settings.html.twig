@@ -41,11 +41,11 @@
                 </button>
                 <div class="dropdown-menu">
                     <a class="dropdown-item" href="{{ 'email/batch_template_enable'|api_url }}" {{ fb_api_link({ message: 'All Email Templates Enabled'|trans}) }}>
-                        <svg class="icon me-1"><use xlink:href="#play" /></svg>
+                        <svg class="icon me-1"><use xlink:href="#player-play" /></svg>
                         {{ 'Enable All'|trans }}
                     </a>
                     <a class="dropdown-item" href="{{ 'email/batch_template_disable'|api_url }}" {{ fb_api_link({ message: 'All Email Templates Disabled'|trans}) }}>
-                        <svg class="icon me-1"><use xlink:href="#close" /></svg>
+                        <svg class="icon me-1"><use xlink:href="#x" /></svg>
                         {{ 'Disable All'|trans }}
                     </a>
                     <div class="dropdown-divider"></div>
@@ -231,7 +231,7 @@
                                                 data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
                                                 {{ fb_api_link({href: 'email/template_delete'|api_url(query:{'id': template.id}), modal: {type: 'danger', title: 'Are you sure?'|trans, content: 'This action will delete the email template'|trans, button: 'Delete'|trans}, reload: true}) }}>
                                                 <svg class="icon">
-                                                    <use xlink:href="#delete" />
+                                                    <use xlink:href="#trash" />
                                                 </svg>
                                             </a>
                                         {% endif %}
@@ -422,6 +422,11 @@
                                     <label class="form-label" for="email-from-address">{{ 'From Email'|trans }}</label>
                                     <input class="form-control" id="email-from-address" type="email" name="from_email" value="{{ params.from_email|default('') }}" placeholder="{{ company.email }}">
                                     <small class="form-hint">{{ 'Leave blank to use company public email'|trans }}</small>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="email-signature">{{ 'Email Signature'|trans }}</label>
+                                    <textarea class="form-control" id="email-signature" name="signature" rows="4" placeholder="{{ company.signature }}">{{ params.signature|default('') }}</textarea>
+                                    <small class="form-hint">{{ 'Used by email templates. Safe HTML is allowed. Leave blank to use the company signature.'|trans }}</small>
                                 </div>
                             </div>
                         </div>

@@ -36,7 +36,11 @@
         {% set latest = extension.releases|first %}
             <tr>
                 <td class="text-nowrap">
-                    <img src="{{ extension.icon_url|default('assets/icons/cog.svg') }}" alt="{{ extension.name }}" style="width: 32px; height: 32px;">
+                    {% if extension.icon_url %}
+                        <img src="{{ extension.icon_url }}" alt="{{ extension.name }}" style="width: 32px; height: 32px;">
+                    {% else %}
+                        <svg class="icon" style="width: 32px; height: 32px;"><use xlink:href="#settings" /></svg>
+                    {% endif %}
                 </td>
                 <td class="text-wrap">
                     <strong>{{ extension.name }}</strong> {{ latest.tag }}<br>

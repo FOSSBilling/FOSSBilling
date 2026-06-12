@@ -128,7 +128,7 @@ class FOSSBillingExtension
     public function svgSprite(Environment $env): string
     {
         $globals = $env->getGlobals();
-        $themeCode = $globals['theme']['code'] ?? null;
+        $themeCode = $globals['current_theme'] ?? ($globals['theme']['code'] ?? null);
 
         if ($themeCode === null) {
             return '';

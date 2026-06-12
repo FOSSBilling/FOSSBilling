@@ -45,7 +45,7 @@
 
     <p>You may <a href="{{'login'|url(query: { 'email': c.email|default('') }, area: 'client') }}" target="_blank">login</a> or <a href='{{ "order/service/manage/#{order.id}"|url(area: 'client') }}' target="_blank">manage your order.</a>
 
-	<p class="signature">{{ guest.system_company.signature }}</p>
+	<div class="signature">{{ guest.system_email.signature }}</div>
 </body>
 </html>
 {% endblock %}

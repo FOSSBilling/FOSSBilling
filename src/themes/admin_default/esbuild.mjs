@@ -1,7 +1,7 @@
 import * as esbuild from 'esbuild';
 import { fileURLToPath } from 'url';
-import { dirname, resolve, join, basename } from 'path';
-import { readFile, readdir, writeFile } from 'fs/promises';
+import { dirname, resolve } from 'path';
+import { writeFile } from 'fs/promises';
 import {
   ensureDir,
   postprocessCssFile,
@@ -10,6 +10,7 @@ import {
   sassPlugin,
   sharedLoaders,
 } from '../../../frontend/tools/esbuild-helpers.mjs';
+import { generateIconSprite } from '../../../frontend/tools/icon-sprite.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
@@ -26,53 +27,6 @@ async function generateManifest() {
   };
 
   await writeFile(resolve(__dirname, 'assets/build/manifest.json'), JSON.stringify(manifest, null, 2));
-}
-
-async function generateSvgSprite() {
-  const { default: SVGSpriter } = await import('svg-sprite');
-
-  const iconsDir = resolve(__dirname, 'assets/icons');
-  const outputDir = resolve(__dirname, 'assets/build/symbol');
-
-  await ensureDir(outputDir);
-
-  const spriter = new SVGSpriter({
-    mode: {
-      symbol: {
-        dest: '.',
-        sprite: 'icons-sprite.svg',
-        example: false
-      }
-    },
-    shape: {
-      id: {
-        generator: (name) => basename(name, '.svg')
-      }
-    }
-  });
-
-  const files = await readdir(iconsDir);
-  const svgFiles = files.filter(file => file.endsWith('.svg'));
-
-  if (svgFiles.length === 0) {
-    console.error('No SVG files found in assets/icons');
-    return;
-  }
-
-  for (const file of svgFiles) {
-    const filePath = join(iconsDir, file);
-    const content = await readFile(filePath, 'utf8');
-    spriter.add(filePath, file, content);
-  }
-
-  const result = await new Promise((resolve, reject) => {
-    spriter.compile((error, result) => {
-      if (error) reject(error);
-      else resolve(result);
-    });
-  });
-
-  await writeFile(join(outputDir, 'icons-sprite.svg'), result.symbol.sprite.contents);
 }
 
 async function cleanBuild() {
@@ -95,7 +49,13 @@ async function build() {
     await ensureDir(resolve(__dirname, 'assets/build/css'));
     await ensureDir(resolve(__dirname, 'assets/build/symbol'));
 
-    await generateSvgSprite();
+    console.log('Generating icon sprite...');
+    await generateIconSprite({
+      manifestPath: resolve(__dirname, 'icon-manifest.json'),
+      outputDir: resolve(__dirname, 'assets/build/symbol'),
+      customIconsDir: resolve(__dirname, 'custom-icons'),
+      rootDir,
+    });
 
     await esbuild.build({
       entryPoints: [resolve(__dirname, 'assets/scss/fossbilling.scss')],

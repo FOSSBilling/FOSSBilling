@@ -238,7 +238,7 @@
                             {% if ticket.notes is defined and ticket.notes|length %}
                                 <a href="#" rel="{{ ticket.id }}" title="{{ ticket.notes|length }}" class="show-notes">
                                     <svg class="icon">
-                                        <use xlink:href="#notes" />
+                                        <use xlink:href="#note" />
                                     </svg>
                                 </a>
                             {% endif %}
@@ -255,7 +255,7 @@
                             <a class="btn btn-icon" href="{{ 'support/ticket_delete'|api_url(query: { 'id': ticket.id }) }}"
                                 {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support'|url }) }}>
                                 <svg class="icon">
-                                    <use xlink:href="#delete" />
+                                    <use xlink:href="#trash" />
                                 </svg>
                             </a>
                         </td>

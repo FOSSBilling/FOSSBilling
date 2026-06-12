@@ -34,7 +34,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 'location' => 'client',
                 'label' => __trans('Clients'),
                 'uri' => $this->di['url']->adminLink('client'),
-                'class' => 'contacts',
+                'class' => 'address-book',
             ],
             'subpages' => [
                 [

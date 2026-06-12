@@ -135,7 +135,7 @@
                                                <a class="btn btn-icon" href="{{ 'support/kb_article_delete'|api_url(query: { 'id': post.id }) }}"
                                                    {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/kb'|url }) }}>
                                                    <svg class="icon">
-                                                       <use xlink:href="#delete" />
+                                                       <use xlink:href="#trash" />
                                                    </svg>
                                                </a>
                                            </td>
@@ -182,7 +182,7 @@
                                             <a class="btn btn-icon" href="{{ 'support/kb_category_delete'|api_url(query: { 'id': cat_id }) }}"
                                                 {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/kb#tab-categories'|url }) }}>
                                                 <svg class="icon">
-                                                    <use xlink:href="#delete" />
+                                                    <use xlink:href="#trash" />
                                                 </svg>
                                             </a>
                                         </td>

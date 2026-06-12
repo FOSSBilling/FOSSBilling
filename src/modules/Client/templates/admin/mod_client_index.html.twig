@@ -255,9 +255,7 @@
                                                     <span class="flag flag-country-{{ client.country|lower }}" title="{{ client.country|country_name }}"></span>
                                                 {% endif %}
                                             </div>
-                                            <div class="text-muted">
-                                                <a href="#" class="text-reset">{{ client.email }}</a>
-                                            </div>
+                                            <div class="text-muted">{{ client.email }}</div>
                                         </div>
                                     </div>
                                 </td>
@@ -278,7 +276,7 @@
                                     <a class="btn btn-icon"
                                         {{ fb_api_link({href: 'client/delete'|api_url(query: { 'id': client.id }), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                                         <svg class="icon">
-                                            <use xlink:href="#delete" />
+                                            <use xlink:href="#trash" />
                                         </svg>
                                     </a>
                                     {% endif %}
@@ -345,7 +343,7 @@
                                 <a class="btn btn-icon"
                                     {{ fb_api_link({href: 'client/group_delete'|api_url(query: {'id': id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'client#tab-groups'|url}) }}>
                                     <svg class="icon">
-                                        <use xlink:href="#delete" />
+                                        <use xlink:href="#trash" />
                                     </svg>
                                 </a>
                             </td>

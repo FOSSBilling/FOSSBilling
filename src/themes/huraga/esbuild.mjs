@@ -10,6 +10,7 @@ import {
   sassPlugin,
   sharedLoaders,
 } from '../../../frontend/tools/esbuild-helpers.mjs';
+import { generateIconSprite } from '../../../frontend/tools/icon-sprite.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
@@ -35,9 +36,19 @@ async function build() {
     const buildDir = resolve(__dirname, 'assets/build');
     const jsDir = join(buildDir, 'js');
     const cssDir = join(buildDir, 'css');
+    const symbolDir = join(buildDir, 'symbol');
 
     await ensureDir(jsDir);
     await ensureDir(cssDir);
+    await ensureDir(symbolDir);
+
+    console.log('Generating icon sprite...');
+    await generateIconSprite({
+      manifestPath: resolve(__dirname, 'icon-manifest.json'),
+      outputDir: symbolDir,
+      customIconsDir: null,
+      rootDir,
+    });
 
     await esbuild.build({
       entryPoints: [resolve(__dirname, 'assets/huraga.js')],
@@ -96,7 +107,8 @@ async function build() {
     const manifest = {
       'build/huraga.js': '/themes/huraga/assets/build/js/huraga.js',
       'build/vendor.css': '/themes/huraga/assets/build/css/vendor.css',
-      'build/huraga.css': '/themes/huraga/assets/build/css/huraga.css'
+      'build/huraga.css': '/themes/huraga/assets/build/css/huraga.css',
+      'build/symbol/icons-sprite.svg': '/themes/huraga/assets/build/symbol/icons-sprite.svg'
     };
 
     await writeFile(join(buildDir, 'manifest.json'), JSON.stringify(manifest, null, 2));

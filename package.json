@@ -25,6 +25,7 @@
     "src/themes/admin_default"
   ],
   "devDependencies": {
+    "@tabler/icons": "3.44.0",
     "autoprefixer": "10.5.0",
     "ckeditor5": "48.2.0",
     "esbuild": "0.28.1",
