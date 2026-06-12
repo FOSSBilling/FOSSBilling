@@ -42,7 +42,7 @@
 
     <p><a href='{{ "order/manage/#{order.id|default('')}"|url(area: 'admin') }}' target="_blank">Manage order.</a>
 
-	<p class="signature">{{ guest.system_company.signature }}</p>
+	<div class="signature">{{ guest.system_email.signature }}</div>
 </body>
 </html>
 {% endblock %}

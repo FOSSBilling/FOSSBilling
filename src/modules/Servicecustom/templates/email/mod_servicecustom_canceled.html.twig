@@ -47,7 +47,7 @@
 
     <p>You may <a href="{{ 'login'|url(query: { 'email': c.email|default('') }, area: 'client') }}" target="_blank">login</a> or <a href="{{ 'support'|url(query: { 'ticket' : 1 }, area: 'client') }}" target="_blank">submit a ticket.</a>
 
-	<p class="signature">{{ guest.system_company.signature }}</p>
+	<div class="signature">{{ guest.system_email.signature }}</div>
 </body>
 </html>
 {% endblock %}

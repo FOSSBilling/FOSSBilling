@@ -314,7 +314,7 @@ final class StrictTemplateRenderer
         $stub = new PermissiveStub();
 
         if ($emailMode) {
-            // Email templates have a different `guest` shape (array with system_company)
+            // Email templates have a different `guest` shape with precomputed globals.
             return [
                 'request' => $stub,
                 'request_query' => $stub,
@@ -332,6 +332,9 @@ final class StrictTemplateRenderer
                         'name' => 'Test Co',
                         'signature' => '',
                         'favicon_url' => '',
+                    ],
+                    'system_email' => [
+                        'signature' => '',
                     ],
                 ],
             ];

@@ -119,8 +119,9 @@ vut amet et nunc! Elementum dolor, dictumst porta ultrices. Rhoncus, amet.
 
 Order our services at {{ "order"|url }}
 
-{{ guest.system_company.name }} - {{ guest.system_company.signature }}
+{{ guest.system_company.name }}
 {% endapply %}
+{{ guest.system_email.signature }}
         ';
         $systemService = $this->getDi()['mod_service']('system');
         $company = $systemService->getCompany();

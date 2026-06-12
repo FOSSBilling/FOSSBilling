@@ -17,6 +17,7 @@ use DebugBar\StandardDebugBar;
 use FOSSBilling\Config;
 use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\i18n;
+use FOSSBilling\Tools;
 use FOSSBilling\Twig\Enum\AppArea;
 use FOSSBilling\Twig\Extension\ApiExtension;
 use FOSSBilling\Twig\Extension\DebugBarExtension;
@@ -37,6 +38,7 @@ use Twig\Extra\Intl\IntlExtension;
 use Twig\Extra\Markdown\MarkdownExtension;
 use Twig\Extra\Markdown\MarkdownRuntime;
 use Twig\Loader\ArrayLoader;
+use Twig\Markup;
 use Twig\Profiler\Profile;
 use Twig\RuntimeLoader\FactoryRuntimeLoader;
 use Twig\RuntimeLoader\RuntimeLoaderInterface;
@@ -236,6 +238,7 @@ class TwigFactory
         $apiGuest = $this->di['api_guest'];
         $twig->addGlobal('guest', [
             'system_company' => $apiGuest->system_company(),
+            'system_email' => $this->getEmailSettingsForTemplates(),
         ]);
         $twig->addGlobal('default_currency', $this->getDefaultCurrencyCode());
         $twig->addGlobal('FOSSBillingVersion', Version::VERSION);
@@ -243,6 +246,23 @@ class TwigFactory
         $this->emailEnvironment = $twig;
 
         return $twig;
+    }
+
+    /**
+     * @return array{signature: Markup}
+     */
+    private function getEmailSettingsForTemplates(): array
+    {
+        $emailConfig = $this->di['mod']('email')->getConfig();
+        $signature = trim((string) ($emailConfig['signature'] ?? ''));
+
+        if ($signature === '') {
+            $signature = (string) ($this->di['api_guest']->system_company()['signature'] ?? '');
+        }
+
+        return [
+            'signature' => new Markup(Tools::sanitizeContent($signature), 'UTF-8'),
+        ];
     }
 
     public function createAdapterEnvironment(): Environment

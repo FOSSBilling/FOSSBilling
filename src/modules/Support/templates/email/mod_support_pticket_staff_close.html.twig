@@ -45,7 +45,7 @@
     <p>Please do not reply to this email directly. Use the link provided above.</p>
 
     <p>You may <a href="{{ 'login'|url(query: { 'email': c.email|default('') }, area: 'client') }}" target="_blank">login</a> or <a href="{{ 'client/profile'|url(area: 'client') }}" target="_blank">edit your profile.</a>
-	<p class="signature">{{ guest.system_company.signature }}</p>
+	<div class="signature">{{ guest.system_email.signature }}</div>
 </body>
 </html>
 {% endblock %}

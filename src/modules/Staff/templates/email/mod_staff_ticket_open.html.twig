@@ -55,7 +55,7 @@
 
     <p>You may <a href="{{ 'staff/login'|url(query: { 'email': staff.email|default('') }, area: 'admin') }}" target="_blank">login</a> or <a href="{{ 'staff/profile'|url(area: 'admin') }}" target="_blank">edit your profile.</a>
 
-	<p class="signature">{{ guest.system_company.signature }}</p>
+	<div class="signature">{{ guest.system_email.signature }}</div>
 </body>
 </html>
 {% endblock %}

@@ -423,6 +423,11 @@
                                     <input class="form-control" id="email-from-address" type="email" name="from_email" value="{{ params.from_email|default('') }}" placeholder="{{ company.email }}">
                                     <small class="form-hint">{{ 'Leave blank to use company public email'|trans }}</small>
                                 </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="email-signature">{{ 'Email Signature'|trans }}</label>
+                                    <textarea class="form-control" id="email-signature" name="signature" rows="4" placeholder="{{ company.signature }}">{{ params.signature|default('') }}</textarea>
+                                    <small class="form-hint">{{ 'Used by email templates. Safe HTML is allowed. Leave blank to use the company signature.'|trans }}</small>
+                                </div>
                             </div>
                         </div>
 
