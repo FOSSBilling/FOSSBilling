@@ -28,7 +28,7 @@
     "@tabler/icons": "3.44.0",
     "autoprefixer": "10.5.0",
     "ckeditor5": "48.2.0",
-    "esbuild": "0.28.0",
+    "esbuild": "0.28.1",
     "github-markdown-css": "5.9.0",
     "postcss": "8.5.15",
     "purgecss": "8.0.0",
