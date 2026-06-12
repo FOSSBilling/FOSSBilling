@@ -12,6 +12,10 @@ declare(strict_types=1);
 
 use FOSSBilling\Twig\Extension\FOSSBillingExtension;
 use Pimple\Container;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
+use Twig\Environment;
+use Twig\Loader\ArrayLoader;
 
 function makeFossBillingTwigExtension(?Container $di = null): FOSSBillingExtension
 {
@@ -21,6 +25,48 @@ function makeFossBillingTwigExtension(?Container $di = null): FOSSBillingExtensi
 
     return new FOSSBillingExtension($container);
 }
+
+test('svgSprite uses current_theme global for client environments', function (): void {
+    $extension = makeFossBillingTwigExtension();
+    $filesystem = new Filesystem();
+    $themeCode = 'test_current_theme_sprite';
+    $spriteDirectory = Path::join(PATH_THEMES, $themeCode, 'assets/build/symbol');
+    $spritePath = Path::join($spriteDirectory, 'icons-sprite.svg');
+    $sprite = '<svg><symbol id="icon-test"></symbol></svg>';
+
+    $filesystem->mkdir($spriteDirectory);
+    $filesystem->dumpFile($spritePath, $sprite);
+
+    try {
+        $env = new Environment(new ArrayLoader([]));
+        $env->addGlobal('current_theme', $themeCode);
+
+        expect($extension->svgSprite($env))->toBe($sprite);
+    } finally {
+        $filesystem->remove(Path::join(PATH_THEMES, $themeCode));
+    }
+});
+
+test('svgSprite still supports theme code global for admin environments', function (): void {
+    $extension = makeFossBillingTwigExtension();
+    $filesystem = new Filesystem();
+    $themeCode = 'test_theme_code_sprite';
+    $spriteDirectory = Path::join(PATH_THEMES, $themeCode, 'assets/build/symbol');
+    $spritePath = Path::join($spriteDirectory, 'icons-sprite.svg');
+    $sprite = '<svg><symbol id="icon-admin-test"></symbol></svg>';
+
+    $filesystem->mkdir($spriteDirectory);
+    $filesystem->dumpFile($spritePath, $sprite);
+
+    try {
+        $env = new Environment(new ArrayLoader([]));
+        $env->addGlobal('theme', ['code' => $themeCode]);
+
+        expect($extension->svgSprite($env))->toBe($sprite);
+    } finally {
+        $filesystem->remove(Path::join(PATH_THEMES, $themeCode));
+    }
+});
 
 test('publicAssetUrl returns full URL for an asset', function (): void {
     $extension = makeFossBillingTwigExtension();
