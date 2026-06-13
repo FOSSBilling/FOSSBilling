@@ -263,7 +263,7 @@ FOSSBilling version: {{ FOSSBillingVersion }}
 
 Today's date: {{ 'now'|date('Y-m-d') }}
 
-You can event use IF statements in email templates: {% if 1 == 2 %}This will never show{% else %}Of course 1 is not equal 2{% endif %}
+You can even use IF statements in email templates: {% if 1 == 2 %}This will never show{% else %}Of course 1 is not equal 2{% endif %}
 
 ***
 
@@ -339,8 +339,9 @@ document.addEventListener('DOMContentLoaded', function() {
             id: '{{ template.id }}',
         };
 
+        const sampleTemplate = document.getElementById('email-sample-template').value;
         const contentParams = {
-            _tpl: document.getElementById('email-sample-template').value,
+            _tpl: `{{ '{%' }} apply markdown_to_html {{ '%}' }}\n${sampleTemplate}\n{{ '{%' }} endapply {{ '%}' }}`,
             id: '{{ template.id }}',
         };
 

@@ -134,7 +134,9 @@ test('email template example renders without calling email globals in admin cont
     expect($html)
         ->toContain('*Italic text*')
         ->toContain('{{ guest.system_email.signature }}')
-        ->toContain('{% if 1 == 2 %}');
+        ->toContain('{% if 1 == 2 %}')
+        ->not->toContain('{% apply markdown_to_html %}')
+        ->not->toContain('{% endapply %}');
 });
 
 test('orderbutton product configuration renders a hosting product', function (): void {
