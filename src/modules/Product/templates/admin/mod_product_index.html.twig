@@ -58,7 +58,11 @@
                                 <td>{{ product.id }}</td>
                                 <td>{{ mf.status_name(product.type) }}</td>
                                 <td>
+                                    {% if product.category is defined %}
                                     <a href='{{ "product/category/#{product.category.id}"|url }}'>{{ product.category.title }}</a>
+                                    {% else %}
+                                    –
+                                    {% endif %}
                                 </td>
                                 <td><a href='{{ "product/manage/#{product.id}"|url }}'>{{ product.title }}</a></td>
                                 <td>{{ mf.status_badge(product.status, 'product') }}</td>

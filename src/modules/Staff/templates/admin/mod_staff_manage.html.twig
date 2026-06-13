@@ -148,18 +148,18 @@
 								{% endblock %}
 
 								{% block form_content %}
-									<input type="hidden" name="permissions[default][all]" id="permissions-default-all" value="{% if prms.default.all %}1{% endif %}">
+									<input type="hidden" name="permissions[default][all]" id="permissions-default-all" value="{% if prms.default is defined and prms.default.all is defined and prms.default.all %}1{% endif %}">
 
-									{% for modName, mod in mods|filter(mod => mod.permissions.hide_permissions is not true) %}
+									{% for modName, mod in mods|filter(mod => mod.permissions.hide_permissions|default(false) is not true) %}
 										<section class="mb-4 pb-4 border-bottom">
 											<div class="row g-3">
 												<div class="col-lg-3">
 													<h6 class="card-title mb-0">{{ modName|replace({'_': ' '})|title|trim }}</h6>
 												</div>
 												<div class="col-lg-9">
-													{% if not mod.permissions.can_always_access %}
+													{% if not mod.permissions.can_always_access|default(false) %}
 														<div class="form-check mb-3">
-															<input class="form-check-input permission-box" id="input-{{ modName }}" type="checkbox" name="permissions[{{ modName }}][access]" value="1" {% if prms[modName] %} checked {% endif %}>
+															<input class="form-check-input permission-box" id="input-{{ modName }}" type="checkbox" name="permissions[{{ modName }}][access]" value="1" {% if prms[modName]|default({}) %} checked {% endif %}>
 															<label class="form-check-label" for="input-{{ modName }}">{{ 'Module access'|trans }}
 																<svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ 'Can be disabled to prevent the staff member from using any part of this module.'|trans }}" data-bs-placement="right"><use xlink:href="#info-circle"/></svg>
 															</label>
@@ -171,7 +171,7 @@
 														{% if permission.type == 'bool' %}
 															<div class="col-lg-6">
 																<div class="form-check mt-1">
-																	<input class="form-check-input permission-box" id="input-{{ modName }}-{{ permissionName }}" type="checkbox" name="permissions[{{ modName }}][{{ permissionName }}]" value="1"{% if prms[modName][permissionName] %} checked {% endif %}>
+																	<input class="form-check-input permission-box" id="input-{{ modName }}-{{ permissionName }}" type="checkbox" name="permissions[{{ modName }}][{{ permissionName }}]" value="1"{% if prms[modName]|default({})[permissionName]|default(false) %} checked {% endif %}>
 																	<label class="form-check-label" for="input-{{ modName }}-{{ permissionName }}">{{ permission.display_name }}
 																		<svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ permission.description }}" data-bs-placement="right"><use xlink:href="#info-circle"/></svg>
 																	</label>
@@ -187,7 +187,7 @@
 																<select class="form-select permission-select" id="input-{{ modName }}-{{ permissionName }}" name="permissions[{{ modName }}][{{ permissionName }}]">
 																	<option value="">{{ 'None'|trans }}</option>
 																	{% for optionName, option in permission.options %}
-																		<option value="{{ optionName }}" {% if prms[modName][permissionName] == optionName %} selected {% endif %}>{{ option }}</option>
+																		<option value="{{ optionName }}" {% if prms[modName]|default({})[permissionName]|default(false) == optionName %} selected {% endif %}>{{ option }}</option>
 																	{% endfor %}
 																</select>
 															</div>

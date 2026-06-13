@@ -173,13 +173,11 @@ test('converts to api array', function (): void {
         'taxname' => '',
         'taxrate' => '',
         'currency' => '',
-        'currency_rate' => '',
         'status' => '',
         'notes' => '',
         'text_1' => '',
         'text_2' => '',
         'due_at' => '',
-        'paid_at' => '',
         'created_at' => '',
         'updated_at' => '',
         'buyer_first_name' => '',
@@ -192,7 +190,6 @@ test('converts to api array', function (): void {
         'buyer_state' => '',
         'buyer_country' => '',
         'buyer_phone' => '',
-        'buyer_phone_cc' => '',
         'buyer_email' => '',
         'buyer_zip' => '',
         'seller_company_vat' => '',
@@ -238,6 +235,9 @@ test('converts to api array', function (): void {
 
     $result = $service->toApiArray($invoiceModel);
     expect($result)->toBeArray();
+    expect($result['currency_rate'])->toBe(1);
+    expect($result['paid_at'])->toBeNull();
+    expect($result['buyer']['phone_cc'])->toBe('');
 });
 
 test('handles after admin invoice payment received event', function (): void {
@@ -1568,6 +1568,61 @@ test('processes an invoice', function (): void {
     expect($result)->toHaveKey('service_url');
     expect($result)->toHaveKey('subscription');
     expect($result)->toHaveKey('result');
+});
+
+test('paypal email html generation does not require admin api invoice access', function (): void {
+    $adapter = new Payment_Adapter_PayPalEmail([
+        'email' => 'payments@example.com',
+        'test_mode' => false,
+        'auto_redirect' => false,
+        'thankyou_url' => 'https://example.com/invoice/thank-you/hash',
+        'cancel_url' => 'https://example.com/invoice/hash',
+        'notify_url' => 'https://example.com/ipn.php',
+    ]);
+
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('load')
+        ->once()
+        ->with('Invoice', 1)
+        ->andReturn($invoiceModel);
+
+    $invoiceService = Mockery::mock(Service::class);
+    $invoiceService->shouldReceive('toApiArray')
+        ->once()
+        ->with($invoiceModel, true)
+        ->andReturn([
+            'id' => 1,
+            'nr' => '1001',
+            'serie' => 'INV-',
+            'currency' => 'USD',
+            'subtotal' => 10.00,
+            'tax' => 0.00,
+            'lines' => [
+                ['title' => 'Hosting'],
+            ],
+        ]);
+
+    $apiAdmin = Mockery::mock();
+    $apiAdmin->shouldNotReceive('invoice_get');
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(function ($serviceName) use ($invoiceService) {
+        if ($serviceName === 'Invoice') {
+            return $invoiceService;
+        }
+    });
+
+    $adapter->setDi($di);
+
+    $html = $adapter->getHtml($apiAdmin, 1, false);
+
+    expect($html)->toContain('https://www.paypal.com/cgi-bin/webscr');
+    expect($html)->toContain('payments@example.com');
+    expect($html)->toContain('Pay with PayPal');
 });
 
 test('adds note to invoice', function (): void {

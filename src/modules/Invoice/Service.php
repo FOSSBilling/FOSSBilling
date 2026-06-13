@@ -250,7 +250,7 @@ class Service implements InjectionAwareInterface
         $result['taxname'] = $row['taxname'];
         $result['taxrate'] = $row['taxrate'];
         $result['currency'] = $row['currency'];
-        $result['currency_rate'] = $row['currency_rate'];
+        $result['currency_rate'] = $row['currency_rate'] ?? 1;
         $result['tax'] = $tax;
         $result['subtotal'] = $total;
         $result['total'] = $total + $tax;
@@ -259,7 +259,7 @@ class Service implements InjectionAwareInterface
         $result['text_1'] = $row['text_1'];
         $result['text_2'] = $row['text_2'];
         $result['due_at'] = $row['due_at'];
-        $result['paid_at'] = $row['paid_at'];
+        $result['paid_at'] = $row['paid_at'] ?? null;
         $result['created_at'] = $row['created_at'];
         $result['updated_at'] = $row['updated_at'];
         $result['lines'] = $lines;
@@ -275,7 +275,7 @@ class Service implements InjectionAwareInterface
             'state' => $row['buyer_state'],
             'country' => $row['buyer_country'],
             'phone' => $row['buyer_phone'],
-            'phone_cc' => $row['buyer_phone_cc'],
+            'phone_cc' => $row['buyer_phone_cc'] ?? '',
             'email' => $row['buyer_email'],
             'zip' => $row['buyer_zip'],
         ];
