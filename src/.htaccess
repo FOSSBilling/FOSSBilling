@@ -16,13 +16,34 @@ Options -Indexes +SymLinksIfOwnerMatch
     RewriteCond %{QUERY_STRING} (GLOBALS|_REQUEST)(=|\[|\%[0-9A-Z]{0,2})
     RewriteRule .* index.php [F]
 
+    # Map legacy IPN query parameters to new query parameters, and alias
+    # from bb-ipn.php to ipn.php for users upgrading from BoxBilling.
+    # Required for older PayPal transactions as IPN cannot be updated.
+    RewriteCond %{REQUEST_URI} ^/(bb-)?ipn\.php$ [NC]
+    RewriteCond %{QUERY_STRING} !(^|&)invoice_id= [NC]
+    RewriteCond %{QUERY_STRING} (^|&)bb_invoice_id=([^&]*) [NC]
+    RewriteRule ^(bb-)?ipn\.php$ $1ipn.php?%{QUERY_STRING}&invoice_id=%2 [NE]
+
+    RewriteCond %{REQUEST_URI} ^/(bb-)?ipn\.php$ [NC]
+    RewriteCond %{QUERY_STRING} !(^|&)gateway_id= [NC]
+    RewriteCond %{QUERY_STRING} (^|&)bb_gateway_id=([^&]*) [NC]
+    RewriteRule ^(bb-)?ipn\.php$ $1ipn.php?%{QUERY_STRING}&gateway_id=%2 [NE]
+
+    RewriteCond %{REQUEST_URI} ^/(bb-)?ipn\.php$ [NC]
+    RewriteCond %{QUERY_STRING} !(^|&)redirect($|=|&) [NC]
+    RewriteCond %{QUERY_STRING} (^|&)bb_redirect($|=([^&]*)|&) [NC]
+    RewriteRule ^(bb-)?ipn\.php$ $1ipn.php?%{QUERY_STRING}&redirect=%3 [NE]
+
+    RewriteCond %{REQUEST_URI} ^/(bb-)?ipn\.php$ [NC]
+    RewriteCond %{QUERY_STRING} !(^|&)invoice_hash= [NC]
+    RewriteCond %{QUERY_STRING} (^|&)bb_invoice_hash=([^&]*) [NC]
+    RewriteRule ^(bb-)?ipn\.php$ $1ipn.php?%{QUERY_STRING}&invoice_hash=%2 [NE]
+
+    RewriteRule ^bb-ipn\.php$ /ipn.php [L]
+
     # Allow access to the index.php, ipn.php, /install/index.php, and /install/install.php files.
     RewriteCond %{REQUEST_URI} ^/(index\.php|ipn\.php|install/index\.php|install/install\.php) [NC]
     RewriteRule ^ - [L]
-
-    # Alias from bb-ipn.php to ipn.php for those who have upgraded from BoxBilling.
-    # Required for older PayPal transactions as IPN on them cannot be updated.
-    RewriteRule ^bb-ipn\.php$ /ipn.php [L]
 
     # Block direct access to sensitive files and file types.
     RewriteCond %{REQUEST_URI} /themes/[^/]+/config/ [NC]
