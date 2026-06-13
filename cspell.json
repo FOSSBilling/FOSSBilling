@@ -506,7 +506,8 @@
         "varargs",
         "elseifs",
         "CLOUDFLARENET",
-        "baselined"
+        "baselined",
+        "endverbatim"
     ],
     "ignorePaths": [
         "node_modules/**",

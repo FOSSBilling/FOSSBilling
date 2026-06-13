@@ -241,7 +241,7 @@
                                     </div>
                                     <div class="col-12">
                                         <label class="form-label" for="email-sample-template">{{ 'Example Message'|trans }}</label>
-                                        <textarea class="form-control" id="email-sample-template" rows="20">{% autoescape false %}{% apply markdown_to_html %}
+                                        <textarea class="form-control" id="email-sample-template" rows="20">{% verbatim %}
 This is an example of markdown syntax in email template
 
 *Italic text*
@@ -263,13 +263,13 @@ FOSSBilling version: {{ FOSSBillingVersion }}
 
 Today's date: {{ 'now'|date('Y-m-d') }}
 
-You can event use IF statements in email templates: {% if 1 == 2 %}This will never show{% else %}Of course 1 is not equal 2{% endif %}
+You can even use IF statements in email templates: {% if 1 == 2 %}This will never show{% else %}Of course 1 is not equal 2{% endif %}
 
 ***
 
 {# Comments in email templates. This text is not visible #}
 {# Uncomment the line below to see what is the output #}
-{% endapply %}{% endautoescape %}</textarea>
+{% endverbatim %}</textarea>
                                     </div>
                                 </div>
                             {% endblock %}
@@ -339,8 +339,9 @@ document.addEventListener('DOMContentLoaded', function() {
             id: '{{ template.id }}',
         };
 
+        const sampleTemplate = document.getElementById('email-sample-template').value;
         const contentParams = {
-            _tpl: document.getElementById('email-sample-template').value,
+            _tpl: `{{ '{%' }} apply markdown_to_html {{ '%}' }}\n${sampleTemplate}\n{{ '{%' }} endapply {{ '%}' }}`,
             id: '{{ template.id }}',
         };
 

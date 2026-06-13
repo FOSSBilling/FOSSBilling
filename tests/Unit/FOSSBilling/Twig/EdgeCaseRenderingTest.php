@@ -11,6 +11,8 @@
 declare(strict_types=1);
 
 use Tests\Support\StrictTemplateRenderer;
+use Twig\Environment;
+use Twig\Loader\ArrayLoader;
 
 /*
  * Render targeted templates with realistic edge-case data shapes to catch the
@@ -101,6 +103,40 @@ test('orderbutton product configuration renders a domain product', function (): 
     );
 
     expect($html)->toBeString();
+});
+
+test('email template example renders without calling email globals in admin context', function (): void {
+    $templateSource = file_get_contents(PATH_MODS . '/Email/templates/admin/mod_email_template.html.twig');
+    expect($templateSource)->not()->toBeFalse();
+
+    preg_match('/<textarea class="form-control" id="email-sample-template" rows="20">(.*?)<\/textarea>/s', $templateSource, $matches);
+    expect($matches[1] ?? null)->toBeString();
+
+    $twig = new Environment(new ArrayLoader(['example' => $matches[1]]), [
+        'strict_variables' => true,
+        'cache' => false,
+    ]);
+
+    $html = $twig->render('example', [
+        'guest' => new class {
+            public function __get(string $name): mixed
+            {
+                if ($name === 'system_email') {
+                    throw new RuntimeException('Admin email template example must not access guest.system_email while rendering the editor');
+                }
+
+                return null;
+            }
+        },
+        'FOSSBillingVersion' => '0.0.0',
+    ]);
+
+    expect($html)
+        ->toContain('*Italic text*')
+        ->toContain('{{ guest.system_email.signature }}')
+        ->toContain('{% if 1 == 2 %}')
+        ->not->toContain('{% apply markdown_to_html %}')
+        ->not->toContain('{% endapply %}');
 });
 
 test('orderbutton product configuration renders a hosting product', function (): void {
