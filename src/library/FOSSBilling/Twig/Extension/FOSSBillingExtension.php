@@ -274,8 +274,7 @@ class FOSSBillingExtension
                 throw new \RuntimeException(sprintf('DiceBear style definition "%s" was not found.', $definitionPath));
             }
 
-            $definition = json_decode($filesystem->readFile($definitionPath), true, flags: JSON_THROW_ON_ERROR);
-            $this->avatarStyle = new Style($definition);
+            $this->avatarStyle = Style::fromJson($filesystem->readFile($definitionPath));
         }
 
         $avatar = new Avatar($this->avatarStyle, [
