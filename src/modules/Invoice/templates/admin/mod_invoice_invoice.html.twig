@@ -11,7 +11,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
@@ -120,27 +120,27 @@
                     {% block summary_actions %}
                         <a href='{{ "invoice/#{invoice.hash}"|url(area: 'client') }}' class="btn btn-primary" target="_blank">
                             <svg class="icon" width="24" height="24">
-                                <use xlink:href="#eye" />
+                                <use href="#eye" />
                             </svg>
                             <span>{{ 'View as Client'|trans }}</span>
                         </a>
                         <a class="btn btn-danger"
                             {{ fb_api_link({href: 'invoice/delete'|api_url(query: {id: invoice.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice'|url}) }}>
                             <svg class="icon" width="24" height="24">
-                                <use xlink:href="#trash" />
+                                <use href="#trash" />
                             </svg>
                             <span>{{ 'Delete'|trans }}</span>
                         </a>
                         {% if invoice.status == 'unpaid' %}
                         <a class="btn btn-primary" {{ fb_api_link({href: 'invoice/send_reminder'|api_url(query: {id: invoice.id}), message: 'Payment Reminder Sent'|trans}) }}>
                             <svg class="icon" width="24" height="24">
-                                <use xlink:href="#mail" />
+                                <use href="#mail" />
                             </svg>
                             <span>{{ 'Send Reminder'|trans }}</span>
                         </a>
                         <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#transactionModal">
                             <svg class="icon" width="24" height="24">
-                                <use xlink:href="#check" />
+                                <use href="#check" />
                             </svg>
                             <span>{{ 'Mark as Paid'|trans }}</span>
                         </a>
@@ -177,14 +177,14 @@
                         <a class="btn btn-primary"
                             {{ fb_api_link({href: 'invoice/refund'|api_url(query: {'id': invoice.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice'|url}) }}>
                             <svg class="icon" width="24" height="24">
-                                <use xlink:href="#receipt-refund" />
+                                <use href="#receipt-refund" />
                             </svg>
                             <span>{{ 'Refund'|trans }}</span>
                         </a>
                         {% endif %}
                         <a href='{{ "invoice/pdf/#{invoice.hash}"|url(area: 'client') }}' class="btn btn-primary" target="_blank">
                             <svg class="icon" width="24" height="24">
-                                <use xlink:href="#download" />
+                                <use href="#download" />
                             </svg>
                             <span>{{ 'PDF'|trans }}</span>
                         </a>
@@ -231,7 +231,7 @@
                                     <a class="btn btn-icon" href="{{ 'invoice/item_delete'|api_url(query: { 'id': item.id }) }}"
                                         {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                                         <svg class="icon">
-                                            <use xlink:href="#trash" />
+                                            <use href="#trash" />
                                         </svg>
                                     </a>
                                 </td>
@@ -279,7 +279,7 @@
                         <a class="btn btn-success" href="{{ 'invoice/approve'|api_url(query: { 'id': invoice.id }) }}"
                             {{ fb_api_link({redirect: 'invoice'|url}) }}>
                             <svg class="icon">
-                                <use xlink:href="#check" />
+                                <use href="#check" />
                             </svg>
                             {{ 'Approve'|trans }}
                         </a>
@@ -370,7 +370,7 @@
                             <td>
                                 <a class="btn btn-icon" href='{{ "invoice/transaction/#{tx.id}"|url }}'>
                                     <svg class="icon">
-                                        <use xlink:href="#edit" />
+                                        <use href="#edit" />
                                     </svg>
                                 </a>
                             </td>
@@ -469,7 +469,7 @@
                                         <input class="form-control datepicker" id="created_at" value="{{ invoice.created_at|date('Y-m-d') }}" name="created_at">
                                         <span class="input-icon-addon">
                                             <svg class="icon">
-                                                <use xlink:href="#calendar" />
+                                                <use href="#calendar" />
                                             </svg>
                                         </span>
                                     </div>
@@ -480,7 +480,7 @@
                                         <input class="form-control datepicker" id="due_at" value="{% if invoice.due_at %}{{ invoice.due_at|date('Y-m-d') }}{% endif %}" name="due_at">
                                         <span class="input-icon-addon">
                                             <svg class="icon">
-                                                <use xlink:href="#calendar" />
+                                                <use href="#calendar" />
                                             </svg>
                                         </span>
                                     </div>
@@ -491,7 +491,7 @@
                                         <input class="form-control datepicker" id="paid_at" value="{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% endif %}" name="paid_at">
                                         <span class="input-icon-addon">
                                             <svg class="icon">
-                                                <use xlink:href="#calendar" />
+                                                <use href="#calendar" />
                                             </svg>
                                         </span>
                                     </div>

@@ -9,7 +9,7 @@
 {% set new_canned_response_action %}
     <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newCannedResponseModal">
         <svg class="icon">
-            <use xlink:href="#plus" />
+            <use href="#plus" />
         </svg>
         {{ 'New Response'|trans }}
     </button>
@@ -17,7 +17,7 @@
 {% set new_canned_category_action %}
     <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newCannedCategoryModal">
         <svg class="icon">
-            <use xlink:href="#plus" />
+            <use href="#plus" />
         </svg>
         {{ 'New Category'|trans }}
     </button>
@@ -28,7 +28,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|url }}">
                 <svg class="icon" width="24">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
@@ -90,7 +90,7 @@
                         <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
                         <button class="btn btn-primary" type="submit">
                             <svg class="icon">
-                                <use xlink:href="#filter" />
+                                <use href="#filter" />
                             </svg>
                             {{ 'Apply Filters'|trans }}
                         </button>
@@ -119,13 +119,13 @@
                     <td>
                         <a class="btn btn-icon" href='{{ "support/canned/#{response.id}"|url }}'>
                             <svg class="icon">
-                                <use xlink:href="#edit" />
+                                <use href="#edit" />
                             </svg>
                         </a>
                         <a class="btn btn-icon" href="{{ 'support/canned_delete'|api_url(query: { 'id': response.id }) }}"
                             {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/canned-responses'|url}) }}>
                             <svg class="icon">
-                                <use xlink:href="#trash" />
+                                <use href="#trash" />
                             </svg>
                         </a>
                     </td>
@@ -166,13 +166,13 @@
                         <td>
                             <a class="btn btn-icon" href='{{ "support/canned-category/#{cat_id}"|url }}'>
                                 <svg class="icon">
-                                    <use xlink:href="#edit" />
+                                    <use href="#edit" />
                                 </svg>
                             </a>
                             <a class="btn btn-icon" href="{{ 'support/canned_category_delete'|api_url(query: { 'id': cat_id }) }}"
                                 {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/canned-responses#tab-categories'|url}) }}>
                                 <svg class="icon">
-                                    <use xlink:href="#trash" />
+                                    <use href="#trash" />
                                 </svg>
                             </a>
                         </td>

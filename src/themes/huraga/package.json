@@ -10,6 +10,6 @@
     "tom-select": "^2.3.1"
   },
   "devDependencies": {
-    "svg-sprite": "2.0.4"
+    "@tabler/icons": "3.44.0"
   }
 }

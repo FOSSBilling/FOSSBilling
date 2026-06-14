@@ -59,7 +59,7 @@
                                 <strong class="me-1">{{ 'Update cannot start:'|trans }}</strong>{{ 'FOSSBilling does not have sufficient filesystem permissions to perform the update on this server. Please review the issues below and resolve them before attempting the update again.'|trans }}
                                 <ul class="mt-2 mb-0">
                                     {% for issue in readinessIssues %}
-                                        <li><code>{{ issue.path }}</code> &mdash; {{ issue.message }}</li>
+                                        <li><code>{{ issue.path }}</code>: {{ issue.message }}</li>
                                     {% endfor %}
                                 </ul>
                             </div>
@@ -118,14 +118,14 @@
                                     }
                                 }) }}>
                                 <svg class="icon">
-                                    <use xlink:href="#download" />
+                                    <use href="#download" />
                                 </svg>
                                 {{ updateButtonLabel }}
                             </a>
                         {% else %}
                             <a class="btn btn-secondary disabled" aria-disabled="true">
                                 <svg class="icon">
-                                    <use xlink:href="#download" />
+                                    <use href="#download" />
                                 </svg>
                                 {{ updateButtonLabel }}
                             </a>
@@ -133,7 +133,7 @@
                         {% if not isPreviewBranch %}
                             <a class="btn btn-outline-secondary" href="{{ 'system/recheck_update'|api_url }}" {{ fb_api_link({ reload: true }) }}>
                                 <svg class="icon">
-                                    <use xlink:href="#refresh" />
+                                    <use href="#refresh" />
                                 </svg>
                                 {{ 'Check for Updates'|trans }}
                             </a>
@@ -186,7 +186,7 @@
                                 }
                             }) }}>
                             <svg class="icon">
-                                <use xlink:href="#settings-bolt" />
+                                <use href="#settings-bolt" />
                             </svg>
                             {{ 'Apply Patches & Update Configuration'|trans }}
                         </a>

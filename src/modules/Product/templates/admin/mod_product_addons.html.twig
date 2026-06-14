@@ -9,7 +9,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
@@ -32,7 +32,7 @@
             <div class="p-3 border-bottom d-flex justify-content-end">
                 <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newAddonModal">
                     <svg class="icon">
-                        <use xlink:href="#plus" />
+                        <use href="#plus" />
                     </svg>
                     {{ 'New Addon'|trans }}
                 </button>
@@ -60,13 +60,13 @@
                         <td class="w-1">
                             <a class="btn btn-icon" href='{{ "product/addon/#{addon_id}"|url }}'>
                                 <svg class="icon">
-                                    <use xlink:href="#edit" />
+                                    <use href="#edit" />
                                 </svg>
                             </a>
                             <a class="btn btn-icon" href="{{ 'product/addon_delete'|api_url(query: { 'id': addon_id }) }}"
                                 {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product/addons'|url}) }}>
                                 <svg class="icon">
-                                    <use xlink:href="#trash" />
+                                    <use href="#trash" />
                                 </svg>
                             </a>
                         </td>

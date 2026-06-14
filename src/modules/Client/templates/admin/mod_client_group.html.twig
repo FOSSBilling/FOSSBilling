@@ -10,7 +10,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
@@ -45,7 +45,7 @@
         <div class="card-footer d-flex flex-wrap gap-2 justify-content-between">
             <a href="{{ 'client'|url }}#tab-groups" class="btn btn-secondary">
                 <svg class="icon">
-                    <use xlink:href="#arrow-left" />
+                    <use href="#arrow-left" />
                 </svg>
                 {{ 'Go Back'|trans }}
             </a>
@@ -53,7 +53,7 @@
                 <a class="btn btn-danger" href="{{ 'client/group_delete'|api_url(query: { 'id': group.id }) }}"
                     {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'client'|url ~ '#tab-groups'}) }}>
                     <svg class="icon">
-                        <use xlink:href="#trash" />
+                        <use href="#trash" />
                     </svg>
                     {{ 'Delete'|trans }}
                 </a>

@@ -11,7 +11,7 @@
 {% set new_staff_action %}
     <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newStaffModal">
         <svg class="icon">
-            <use xlink:href="#plus"/>
+            <use href="#plus"/>
         </svg>
         {{ 'New Staff Member'|trans }}
     </button>
@@ -19,7 +19,7 @@
 {% set new_staff_group_action %}
     <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newStaffGroupModal">
         <svg class="icon">
-            <use xlink:href="#plus"/>
+            <use href="#plus"/>
         </svg>
         {{ 'New Group'|trans }}
     </button>
@@ -30,7 +30,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home"/>
+                    <use href="#home"/>
                 </svg>
             </a>
         </li>
@@ -106,7 +106,7 @@
                                 <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
                                 <button class="btn btn-primary" type="submit">
                                     <svg class="icon">
-                                        <use xlink:href="#filter"/>
+                                        <use href="#filter"/>
                                     </svg>
                                     {{ 'Apply Filters'|trans }}
                                 </button>
@@ -145,14 +145,14 @@
                                         <a class="btn btn-icon" href='{{ "staff/manage/#{member.id}"|url }}'
                                            data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
                                             <svg class="icon">
-                                                <use xlink:href="#edit"/>
+                                                <use href="#edit"/>
                                             </svg>
                                         </a>
                                         <a class="btn btn-icon" href="{{ 'staff/delete'|api_url(query: { 'id': member.id }) }}"
                                             data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
                                             {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'extension/settings/staff'|url}) }}>
                                             <svg class="icon">
-                                                <use xlink:href="#trash"/>
+                                                <use href="#trash"/>
                                             </svg>
                                         </a>
                                     </td>
@@ -228,14 +228,14 @@
                                     <a class="btn btn-icon" href='{{ "staff/group/#{group.id}"|url }}'
                                        data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
                                         <svg class="icon">
-                                            <use xlink:href="#edit"/>
+                                            <use href="#edit"/>
                                         </svg>
                                     </a>
                                     <a class="btn btn-icon" href="{{ 'staff/group_delete'|api_url(query: { 'id': group.id }) }}"
                                         data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
                                         {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'extension/settings/staff#tab-groups'|url}) }}>
                                         <svg class="icon">
-                                            <use xlink:href="#trash"/>
+                                            <use href="#trash"/>
                                         </svg>
                                     </a>
                                 </td>

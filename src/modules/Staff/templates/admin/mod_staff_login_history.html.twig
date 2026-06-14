@@ -67,7 +67,7 @@
                                        data-name-to="date_to">
                                 <span class="input-icon-addon">
                                     <svg class="icon">
-                                        <use xlink:href="#calendar" />
+                                        <use href="#calendar" />
                                     </svg>
                                 </span>
                             </div>
@@ -79,7 +79,7 @@
                 <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
                 <button class="btn btn-primary" type="submit">
                     <svg class="icon">
-                        <use xlink:href="#filter" />
+                        <use href="#filter" />
                     </svg>
                     {{ 'Apply Filters'|trans }}
                 </button>
@@ -115,7 +115,7 @@
                     </a>
                     <a href="{{ request_path|url(request_query|merge({ 'admin_id': event.staff.id, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all login events for this staff member'|trans }}">
                         <svg class="icon icon-sm text-muted">
-                            <use xlink:href="#filter" />
+                            <use href="#filter" />
                         </svg>
                     </a>
                 </td>
@@ -125,7 +125,7 @@
                         {% if event.ip %}
                         <a href="{{ request_path|url(request_query|merge({ 'ip': event.ip, 'page': null })) }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all login events from this IP address'|trans }}">
                             <svg class="icon icon-sm text-muted">
-                                <use xlink:href="#filter" />
+                                <use href="#filter" />
                             </svg>
                         </a>
                         <a href="{{ 'antispam/block_ip'|api_url(query: { 'ip': event.ip }) }}" {{ fb_api_link({ modal: {type: 'confirm', title: 'Block IP'|trans, content: ('Are you sure you want to block IP address %ip%?'|trans({'%ip%': event.ip}))}, reload: true }) }} data-bs-toggle="tooltip" data-bs-title="{{ 'Block IP'|trans }}">

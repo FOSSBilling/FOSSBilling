@@ -11,7 +11,7 @@
 {% set new_subscription_action %}
     <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newSubscriptionModal">
         <svg class="icon">
-            <use xlink:href="#plus" />
+            <use href="#plus" />
         </svg>
         {{ 'New Subscription'|trans }}
     </button>
@@ -122,7 +122,7 @@
                         <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
                         <button class="btn btn-primary" type="submit">
                             <svg class="icon">
-                                <use xlink:href="#filter" />
+                                <use href="#filter" />
                             </svg>
                             {{ 'Apply Filters'|trans }}
                         </button>
@@ -167,13 +167,13 @@
                         <td>
                             <a class="btn btn-icon" href='{{ "invoice/subscription/#{subscription.id}"|url }}'>
                                 <svg class="icon">
-                                    <use xlink:href="#edit" />
+                                    <use href="#edit" />
                                 </svg>
                             </a>
                             <a class="btn btn-icon" href="{{ 'invoice/subscription_delete'|api_url(query: { 'id': subscription.id }) }}"
                                 {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                                 <svg class="icon">
-                                    <use xlink:href="#trash" />
+                                    <use href="#trash" />
                                 </svg>
                             </a>
                         </td>

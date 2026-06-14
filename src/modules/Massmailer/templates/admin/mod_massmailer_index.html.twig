@@ -11,7 +11,7 @@
 {% set new_message_action %}
     <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newMassMailerModal">
         <svg class="icon">
-            <use xlink:href="#plus"/>
+            <use href="#plus"/>
         </svg>
         {{ 'New Message'|trans }}
     </button>
@@ -36,7 +36,7 @@
                         <li class="nav-item" role="presentation">
                             <a href="#tab-settings" class="nav-link" data-bs-toggle="tab" aria-selected="false" role="tab">
                                 <svg class="icon me-2">
-                                    <use xlink:href="#settings"/>
+                                    <use href="#settings"/>
                                 </svg>
                                 {{ 'Settings'|trans }}
                             </a>
@@ -77,7 +77,7 @@
                                     <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
                                     <button class="btn btn-primary" type="submit">
                                         <svg class="icon">
-                                            <use xlink:href="#filter" />
+                                            <use href="#filter" />
                                         </svg>
                                         {{ 'Apply Filters'|trans }}
                                     </button>
@@ -111,18 +111,18 @@
                                             <a class="btn btn-icon" href="{{ 'massmailer/copy'|api_url(query: {'id' : msg.id }) }}"
                                                {{ fb_api_link({redirect: 'massmailer'|url}) }}>
                                                 <svg class="icon">
-                                                    <use xlink:href="#copy"/>
+                                                    <use href="#copy"/>
                                                 </svg>
                                             </a>
                                             <a class="btn btn-icon" href='{{ "massmailer/message/#{msg.id}"|url }}'>
                                                 <svg class="icon">
-                                                    <use xlink:href="#edit"/>
+                                                    <use href="#edit"/>
                                                 </svg>
                                             </a>
                                             <a class="btn btn-icon" href="{{ 'massmailer/delete'|api_url(query: {'id' : msg.id }) }}"
                                                 {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'massmailer'|url}) }}>
                                                 <svg class="icon">
-                                                    <use xlink:href="#trash"/>
+                                                    <use href="#trash"/>
                                                 </svg>
                                             </a>
                                         </td>

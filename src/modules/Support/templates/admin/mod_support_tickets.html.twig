@@ -9,7 +9,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
@@ -27,7 +27,7 @@
 {% set support_toolbar_actions %}
     <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newClientTicketModal">
         <svg class="icon">
-            <use xlink:href="#plus" />
+            <use href="#plus" />
         </svg>
         {{ 'New Client Ticket'|trans }}
     </button>
@@ -190,7 +190,7 @@
                         <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
                         <button class="btn btn-primary" type="submit">
                             <svg class="icon">
-                                <use xlink:href="#filter" />
+                                <use href="#filter" />
                             </svg>
                             {{ 'Apply Filters'|trans }}
                         </button>
@@ -238,7 +238,7 @@
                             {% if ticket.notes is defined and ticket.notes|length %}
                                 <a href="#" rel="{{ ticket.id }}" title="{{ ticket.notes|length }}" class="show-notes">
                                     <svg class="icon">
-                                        <use xlink:href="#note" />
+                                        <use href="#note" />
                                     </svg>
                                 </a>
                             {% endif %}
@@ -249,13 +249,13 @@
                         <td>
                             <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}#reply-box'>
                                 <svg class="icon">
-                                    <use xlink:href="#edit" />
+                                    <use href="#edit" />
                                 </svg>
                             </a>
                             <a class="btn btn-icon" href="{{ 'support/ticket_delete'|api_url(query: { 'id': ticket.id }) }}"
                                 {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support'|url }) }}>
                                 <svg class="icon">
-                                    <use xlink:href="#trash" />
+                                    <use href="#trash" />
                                 </svg>
                             </a>
                         </td>

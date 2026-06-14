@@ -6,7 +6,7 @@
 {% set product_toolbar_actions %}
     <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newProductModal">
         <svg class="icon">
-            <use xlink:href="#plus" />
+            <use href="#plus" />
         </svg>
         {{ 'New Product'|trans }}
     </button>
@@ -72,13 +72,13 @@
                                 <td>
                                     <a class="btn btn-icon" href='{{ "product/manage/#{product.id}"|url }}'>
                                         <svg class="icon">
-                                            <use xlink:href="#edit" />
+                                            <use href="#edit" />
                                         </svg>
                                     </a>
                                     <a class="btn btn-icon" href="{{ 'product/delete'|api_url({'id' : product.id }) }}"
                                         {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product'|url}) }}>
                                         <svg class="icon">
-                                            <use xlink:href="#trash" />
+                                            <use href="#trash" />
                                         </svg>
                                     </a>
                                 </td>
@@ -98,7 +98,7 @@
                     <div class="card-footer text-end">
                         <button type="submit" class="btn btn-primary">
                             <svg class="icon">
-                                <use xlink:href="#refresh" />
+                                <use href="#refresh" />
                             </svg>
                             {{ 'Update Priority'|trans }}
                         </button>
@@ -111,7 +111,7 @@
             <div class="p-3 border-bottom d-flex justify-content-end">
                 <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newCategoryModal">
                     <svg class="icon">
-                        <use xlink:href="#plus" />
+                        <use href="#plus" />
                     </svg>
                     {{ 'New Category'|trans }}
                 </button>
@@ -135,13 +135,13 @@
                         <td>
                             <a class="btn btn-icon" href='{{ "product/category/#{cat_id}"|url }}'>
                                 <svg class="icon">
-                                    <use xlink:href="#edit" />
+                                    <use href="#edit" />
                                 </svg>
                             </a>
                             <a class="btn btn-icon" href="{{ 'product/category_delete'|api_url(query: { 'id': cat_id }) }}"
                                 {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product#tab-categories'|url}) }}>
                                 <svg class="icon">
-                                    <use xlink:href="#trash" />
+                                    <use href="#trash" />
                                 </svg>
                             </a>
                         </td>

@@ -104,7 +104,7 @@
                                 >
                                 <span class="input-icon-addon">
                                     <svg class="icon">
-                                        <use xlink:href="#calendar" />
+                                        <use href="#calendar" />
                                     </svg>
                                 </span>
                             </div>
@@ -161,7 +161,7 @@
                 <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
                 <button class="btn btn-primary" type="submit">
                     <svg class="icon">
-                        <use xlink:href="#filter" />
+                        <use href="#filter" />
                     </svg>
                     {{ 'Apply Filters'|trans }}
                 </button>
@@ -205,14 +205,14 @@
                         <a href='{{ "client/manage/#{event.client_id}"|url }}'>{{ event.client.name|default('') }}</a>
                         <a href="{{ request_path|url(request_query|merge({ 'client_id': event.client_id, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this client'|trans }}">
                             <svg class="icon icon-sm text-muted">
-                                <use xlink:href="#filter" />
+                                <use href="#filter" />
                             </svg>
                         </a>
                     {% elseif event.staff_id %}
                         <a href='{{ "staff/manage/#{event.staff_id}"|url }}'>{{ event.staff.name|default('') }}</a>
                         <a href="{{ request_path|url(request_query|merge({ 'admin_id': event.staff_id, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this admin'|trans }}">
                             <svg class="icon icon-sm text-muted">
-                                <use xlink:href="#filter" />
+                                <use href="#filter" />
                             </svg>
                         </a>
                     {% else %}
@@ -247,7 +247,7 @@
                         {% if event.ip %}
                         <a href="{{ request_path|url(request_query|merge({ 'ip': event.ip, 'page': null })) }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this IP address'|trans }}">
                             <svg class="icon icon-sm text-muted">
-                                <use xlink:href="#filter" />
+                                <use href="#filter" />
                             </svg>
                         </a>
                         <a href="{{ 'antispam/block_ip'|api_url(query: { 'ip': event.ip }) }}" {{ fb_api_link({ modal: {type: 'confirm', title: 'Block IP'|trans, content: ('Are you sure you want to block IP address %ip%?'|trans({'%ip%': event.ip}))}, reload: true }) }} data-bs-toggle="tooltip" data-bs-title="{{ 'Block IP'|trans }}">

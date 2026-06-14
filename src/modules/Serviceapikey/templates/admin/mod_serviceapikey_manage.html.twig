@@ -20,7 +20,7 @@
     <a class="btn btn-primary" href="{{ 'serviceapikey/reset'|api_url(query: { 'order_id': order.id }) }}"
         {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
         <svg class="icon">
-            <use xlink:href="#refresh" />
+            <use href="#refresh" />
         </svg>
         <span>{{ 'Reset API Key'|trans }}</span>
     </a>

@@ -6,7 +6,7 @@
 {% set new_translation_action %}
     <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newTranslationsModal">
         <svg class="icon">
-            <use xlink:href="#plus" />
+            <use href="#plus" />
         </svg>
         {{ 'New Translations'|trans }}
     </button>
@@ -74,7 +74,7 @@
                                         <td class="w-1">
                                             <a class="btn btn-icon" href="{{ 'extension/toggle_language'|api_url(query: { 'locale_id': lang.locale }) }}" {{ fb_api_link({reload: true}) }}>
                                                 <svg class="icon">
-                                                    <use xlink:href="#x" />
+                                                    <use href="#x" />
                                                 </svg>
                                             </a>
                                         </td>
@@ -130,7 +130,7 @@
                                         <td class="w-1">
                                             <a class="btn btn-icon" href="{{ 'extension/toggle_language'|api_url(query: { 'locale_id': lang.locale }) }}" {{ fb_api_link({reload: true}) }}>
                                                 <svg class="icon">
-                                                    <use xlink:href="#check" />
+                                                    <use href="#check" />
                                                 </svg>
                                             </a>
                                         </td>

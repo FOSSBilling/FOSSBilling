@@ -11,7 +11,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
@@ -52,7 +52,7 @@
             data-email-subject="{{ email.subject }}"
             data-email-content="{{ email.content_html|e('html_attr') }}">
             <svg class="icon icon-tabler" width="24" height="24">
-                <use xlink:href="#eye" />
+                <use href="#eye" />
             </svg>
             <span class="d-block text-secondary">{{ 'Preview'|trans }}</span>
         </button>
@@ -60,7 +60,7 @@
         <a class="btn btn-primary"
             {{ fb_api_link({href: 'email/email_resend'|api_url(query: {id: email.id}), message: 'Email Resent'|trans}) }}>
             <svg class="icon icon-tabler" width="24" height="24">
-                <use xlink:href="#refresh" />
+                <use href="#refresh" />
             </svg>
             <span class="d-block text-secondary">{{ 'Resend'|trans }}</span>
         </a>
@@ -69,7 +69,7 @@
         <a class="btn btn-primary"
             {{ fb_api_link({href: 'email/email_delete'|api_url(query: {id: email.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'email/history'|url}) }}>
             <svg class="icon icon-tabler" width="24" height="24">
-                <use xlink:href="#trash" />
+                <use href="#trash" />
             </svg>
             <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
         </a>

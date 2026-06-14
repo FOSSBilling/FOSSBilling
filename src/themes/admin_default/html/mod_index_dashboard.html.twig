@@ -22,7 +22,7 @@
     <div class="alert alert-{{ alert.type }} {{ alert.dismissible ? "alert-dismissible" : "" }} fade show mb-3" role="alert">
         <div class="alert-icon">
             <svg class="icon alert-icon icon-2" aria-hidden="true">
-                <use xlink:href="{{ 'build/symbol/icons-sprite.svg'|asset_url }}#{{ alertIcon }}" />
+                <use href="#{{ alertIcon }}" />
             </svg>
         </div>
         {% if alert.title %}
@@ -58,7 +58,7 @@
                         <div class="col-auto">
                             <span class="bg-blue text-white avatar">
                                 <svg class="icon">
-                                    <use xlink:href="#address-book" />
+                                    <use href="#address-book" />
                                 </svg>
                             </span>
                         </div>
@@ -80,7 +80,7 @@
                         <div class="col-auto">
                         <span class="bg-green text-white avatar">
                             <svg class="icon">
-                                <use xlink:href="#package" />
+                                <use href="#package" />
                             </svg>
                         </span>
                         </div>
@@ -102,7 +102,7 @@
                         <div class="col-auto">
                             <span class="bg-danger text-white avatar">
                                 <svg class="icon">
-                                    <use xlink:href="#currency-dollar" />
+                                    <use href="#currency-dollar" />
                                 </svg>
                             </span>
                         </div>
@@ -124,7 +124,7 @@
                         <div class="col-auto">
                         <span class="bg-warning text-white avatar">
                             <svg class="icon">
-                                <use xlink:href="#headset" />
+                                <use href="#headset" />
                             </svg>
                         </span>
                         </div>
@@ -274,7 +274,7 @@
                                         data-name-from="date_from" data-name-to="date_to">
                                     <span class="input-icon-addon">
                                         <svg class="icon">
-                                            <use xlink:href="#calendar" />
+                                            <use href="#calendar" />
                                         </svg>
                                     </span>
                                 </div>
@@ -288,7 +288,7 @@
                                 aria-label="{{ 'Graph date range help'|trans }}"
                             >
                                 <svg class="icon icon-sm">
-                                    <use xlink:href="#info-circle" />
+                                    <use href="#info-circle" />
                                 </svg>
                             </span>
                         </div>

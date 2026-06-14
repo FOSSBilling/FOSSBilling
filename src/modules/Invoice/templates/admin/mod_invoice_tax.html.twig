@@ -9,7 +9,7 @@
 {% set new_tax_rule_action %}
     <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newTaxRuleModal">
         <svg class="icon">
-            <use xlink:href="#plus" />
+            <use href="#plus" />
         </svg>
         {{ 'New Tax Rule'|trans }}
     </button>
@@ -83,13 +83,13 @@
                                         <td>
                                             <a class="btn btn-icon" href='{{ "invoice/tax/#{tax.id}"|url }}'>
                                                 <svg class="icon">
-                                                    <use xlink:href="#edit" />
+                                                    <use href="#edit" />
                                                 </svg>
                                             </a>
                                             <a class="btn btn-icon" href="{{ 'invoice/tax_delete'|api_url(query: { 'id': tax.id }) }}"
                                                 {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                                                 <svg class="icon">
-                                                    <use xlink:href="#trash" />
+                                                    <use href="#trash" />
                                                 </svg>
                                             </a>
                                         </td>

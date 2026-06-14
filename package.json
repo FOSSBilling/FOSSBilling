@@ -9,6 +9,8 @@
     "build-themes": "npm run build-admin_default && npm run build -w huraga",
     "build-huraga": "npm run build -w huraga",
     "build-admin_default": "npm run build -w admin_default",
+    "check": "npm run check-icons",
+    "check-icons": "node ./frontend/tools/check-icons.mjs",
     "cy:open": "npm exec --yes cypress@15.15.0 -- open",
     "cy:run": "npm exec --yes cypress@15.15.0 -- run",
     "cy:run:record": "npm exec --yes cypress@15.15.0 -- run --record"
@@ -25,14 +27,14 @@
     "src/themes/admin_default"
   ],
   "devDependencies": {
-    "@tabler/icons": "3.44.0",
     "autoprefixer": "10.5.0",
     "ckeditor5": "48.2.0",
     "esbuild": "0.28.1",
     "github-markdown-css": "5.9.0",
     "postcss": "8.5.15",
     "purgecss": "8.0.0",
-    "sass": "1.101.0"
+    "sass": "1.101.0",
+    "svg-sprite": "2.0.4"
   },
   "config": {
     "platform": {

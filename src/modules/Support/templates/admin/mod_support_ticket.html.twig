@@ -9,7 +9,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
@@ -79,18 +79,18 @@
                         {% if ticket.status != 'closed' %}
                         <a class="btn btn-primary" href="{{ 'support/ticket_close'|api_url(query: { 'id': ticket.id }) }}"
                             {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support'|url(query: { status: 'open' }) }) }}>
-                            <svg class="icon"><use xlink:href="#x" /></svg>
+                            <svg class="icon"><use href="#x" /></svg>
                             {{ 'Close'|trans }}
                         </a>
                         {% endif %}
                         <a class="btn btn-danger" href="{{ 'support/ticket_delete'|api_url(query: { 'id': ticket.id }) }}"
                             {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support'|url }) }}>
-                            <svg class="icon"><use xlink:href="#trash" /></svg>
+                            <svg class="icon"><use href="#trash" /></svg>
                             {{ 'Delete'|trans }}
                         </a>
                         {% if task.status == 'pending' %}
                         <a class="btn btn-primary" href="{{ 'support/task_complete'|api_url(query: { 'id': ticket.id }) }}" {{ fb_api_link({ reload: true }) }}>
-                            <svg class="icon"><use xlink:href="#check" /></svg>
+                            <svg class="icon"><use href="#check" /></svg>
                             {{ 'Set Task Complete'|trans }}
                         </a>
                         {% endif %}
@@ -106,7 +106,7 @@
                             </div>
                             <a href="#" class="btn btn-secondary" id="toggleMessages">
                                 <svg class="icon">
-                                    <use xlink:href="#eye" />
+                                    <use href="#eye" />
                                 </svg>
                                 {{ 'Show/Hide Messages'|trans }}
                             </a>
@@ -121,7 +121,7 @@
                                     {{ message.author.name }}
                                     <a class="ms-2" href='{{ "support/ticket/#{ticket.id}/message/#{message.id}"|url }}'>
                                         <svg class="icon">
-                                            <use xlink:href="#link" />
+                                            <use href="#link" />
                                         </svg>
                                     </a>
                                     <span class="ms-auto text-muted">{{ message.created_at|format_datetime }}</span>
@@ -160,7 +160,7 @@
                             <a class="btn btn-warning" href="{{ 'support/ticket_close'|api_url(query: { 'id': ticket.id }) }}"
                                 {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support'|url(query: { status: 'open' }) }) }}>
                                 <svg class="icon">
-                                    <use xlink:href="#check" />
+                                    <use href="#check" />
                                 </svg>
                                 {{ 'Close Ticket'|trans }}
                             </a>
@@ -226,7 +226,7 @@
                                     <td class="w-1">
                                         <a class="btn btn-icon" href="{{ 'support/note_delete'|api_url(query: { 'id': note.id }) }}"
                                             {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true }) }}>
-                                            <svg class="icon"><use xlink:href="#trash" /></svg>
+                                            <svg class="icon"><use href="#trash" /></svg>
                                         </a>
                                     </td>
                                 </tr>
@@ -253,7 +253,7 @@
                         {% block form_actions %}
                             <button class="btn btn-primary" type="submit">
                                 <svg class="icon">
-                                    <use xlink:href="#plus" />
+                                    <use href="#plus" />
                                 </svg>
                                 {{ 'Add Note'|trans }}
                             </button>
@@ -271,7 +271,7 @@
             } %}
                 {% block section_action %}
                     <a href="{{ 'support'|url(query: { 'client_id': ticket.client.id}) }}#tab-new" class="btn btn-primary">
-                        <svg class="icon"><use xlink:href="#plus" /></svg>
+                        <svg class="icon"><use href="#plus" /></svg>
                         {{ 'New Support Ticket'|trans }}
                     </a>
                 {% endblock %}
@@ -299,7 +299,7 @@
                                     <td>{{ mf.status_badge(related_ticket.status, 'ticket') }}</td>
                                     <td>
                                         <a class="btn btn-icon" href='{{ "support/ticket/#{related_ticket.id}"|url }}'>
-                                            <svg class="icon"><use xlink:href="#edit" /></svg>
+                                            <svg class="icon"><use href="#edit" /></svg>
                                         </a>
                                     </td>
                                 </tr>

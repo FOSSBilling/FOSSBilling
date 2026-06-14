@@ -55,13 +55,13 @@
                                                 <div class="d-flex flex-column gap-2">
                                                     <div class="btn-group d-flex" role="group" aria-label="{{ 'Mail Action'|trans }}">
                                                         <a class="btn btn-sm btn-outline-secondary border-end-0" href='{{ "email/#{email.id}"|url }}' data-bs-toggle="tooltip" data-bs-title="{{ 'View'|trans }}">
-                                                            <svg class="icon"><use xlink:href="#eye" /></svg>
+                                                            <svg class="icon"><use href="#eye" /></svg>
                                                         </a>
                                                         <a class="btn btn-sm btn-outline-secondary email-resend" href="#" data-id="{{ email.id }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Resend'|trans }}">
-                                                            <svg class="icon"><use xlink:href="#arrows-exchange" /></svg>
+                                                            <svg class="icon"><use href="#arrows-exchange" /></svg>
                                                         </a>
                                                         <a class="btn btn-sm btn-outline-danger border-start-0 email-delete" href="#" data-id="{{ email.id }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}">
-                                                            <svg class="icon"><use xlink:href="#trash" /></svg>
+                                                            <svg class="icon"><use href="#trash" /></svg>
                                                         </a>
                                                     </div>
                                                     <small class="text-muted">{{ email.created_at|format_date }}</small>

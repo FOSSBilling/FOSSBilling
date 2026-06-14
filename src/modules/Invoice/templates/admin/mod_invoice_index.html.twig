@@ -11,7 +11,7 @@
 {% set new_invoice_action %}
     <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newInvoiceModal">
         <svg class="icon">
-            <use xlink:href="#plus" />
+            <use href="#plus" />
         </svg>
         {{ 'New Invoice'|trans }}
     </button>
@@ -183,7 +183,7 @@
                             <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
                             <button class="btn btn-primary" type="submit">
                                 <svg class="icon">
-                                    <use xlink:href="#filter" />
+                                    <use href="#filter" />
                                 </svg>
                                 {{ 'Apply Filters'|trans }}
                             </button>
@@ -234,13 +234,13 @@
                             <td>
                                 <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
                                     <svg class="icon">
-                                        <use xlink:href="#edit" />
+                                        <use href="#edit" />
                                     </svg>
                                 </a>
                                 <a class="btn btn-icon" href="{{ 'invoice/delete'|api_url(query: { 'id': invoice.id }) }}"
                                     {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                                     <svg class="icon">
-                                        <use xlink:href="#trash" />
+                                        <use href="#trash" />
                                     </svg>
                                 </a>
                             </td>
@@ -263,7 +263,7 @@
                     <div class="d-flex align-items-center gap-2 ms-auto">
                         <a class="btn btn-secondary" href="{{ 'invoice/export_csv'|api_url(query: { CSRFToken: CSRFToken }) }}" title="{{ 'Export Invoices'|trans }}">
                             <svg class="icon">
-                                <use xlink:href="#download" />
+                                <use href="#download" />
                             </svg>
                             {{ 'Export Invoices'|trans }}
                         </a>
@@ -416,7 +416,7 @@
                 const deleteBtn = document.createElement('button');
                 deleteBtn.type = 'button';
                 deleteBtn.className = 'btn btn-icon btn-danger';
-                deleteBtn.innerHTML = '<svg class="icon"><use xlink:href="#trash" /></svg>';
+                deleteBtn.innerHTML = '<svg class="icon"><use href="#trash" /></svg>';
                 deleteBtn.addEventListener('click', function() {
                     productDiv.remove();
                 });

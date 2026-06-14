@@ -48,11 +48,11 @@
                     <span class="small text-secondary">{{ 'Domain locking is a security feature which prevents your domain name from being transferred without first unlocking it. When this is enabled, a domain cannot be transferred even with the transfer code.'|trans }}</span>
                 </div>
                 <button class="btn btn-danger icon-link" type="button" id="domain-unlock" {% if service.locked == 0 %}style="display:none;"{% endif %}>
-                    <svg class="icon"><use xlink:href="#lock-open" /></svg>
+                    <svg class="icon"><use href="#lock-open" /></svg>
                     {{ 'Unlock'|trans }}
                 </button>
                 <button class="btn btn-primary icon-link" type="button" id="domain-lock" {% if service.locked == 1 %}style="display:none;"{% endif %}>
-                    <svg class="icon"><use xlink:href="#lock" /></svg>
+                    <svg class="icon"><use href="#lock" /></svg>
                     {{ 'Lock'|trans }}
                 </button>
             </div>

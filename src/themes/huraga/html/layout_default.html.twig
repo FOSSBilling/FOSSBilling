@@ -85,17 +85,12 @@
         {{ render_widgets('client.theme.header.start') }}
         <nav class="navbar navbar-expand-md py-4">
             <div class="container-fluid">
-                {% if logo_url and settings.show_company_logo %}
-                    <a class="navbar-brand" href="{{ '/'|url }}">
-                        <img class="d-none d-sm-block" src="{{ logo_url }}" alt="{{ company.name }}" height="45px"
-                             title="{{ company.name }}">
-                        <span class="d-sm-none">{{ company.name }}</span>
-                    </a>
-                {% else %}
-                    <a class="navbar-brand" href="{{ '/'|url }}">
-                        <span>{{ company.name }}</span>
-                    </a>
-                {% endif %}
+                {{ include('partial_company_logo.html.twig', {
+                    logo_url: settings.show_company_logo ? logo_url : null,
+                    link_class: 'navbar-brand',
+                    image_class: 'd-none d-sm-block',
+                    show_mobile_name: true
+                }) }}
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                         data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="{{ 'Toggle navigation'|trans }}">
@@ -247,7 +242,7 @@
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;"></div>
     {% if settings.footer_to_top_enabled %}
         <a href="#top" class="position-fixed btn btn-primary bottom-0 end-0 m-3">
-            <svg class="icon"><use xlink:href="#arrow-up" /></svg> {{ 'Top'|trans }}</a>
+            <svg class="icon"><use href="#arrow-up" /></svg> {{ 'Top'|trans }}</a>
     {% endif %}
     <div class="wait" style="display:none" onclick="this.style.display='none'">
         <div class="spinner-border"

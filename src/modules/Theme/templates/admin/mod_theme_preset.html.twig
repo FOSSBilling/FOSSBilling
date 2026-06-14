@@ -7,7 +7,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
@@ -61,7 +61,7 @@
                                 <a class="btn btn-icon" href="{{ 'theme/preset_delete'|api_url(query: { 'code': theme_code, 'preset': current_preset }) }}"
                                     {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true }) }}>
                                     <svg class="icon">
-                                        <use xlink:href="#trash"/>
+                                        <use href="#trash"/>
                                     </svg>
                                 </a>
                             {% endif %}
