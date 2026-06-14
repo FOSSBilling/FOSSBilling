@@ -599,6 +599,7 @@ class Service implements InjectionAwareInterface
 
         if (($payGateway->gateway ?? null) === 'Custom' && (int) ($payGateway->enabled ?? 0) === 1) {
             $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+            $invoiceTotal = $this->getTotalWithTax($invoice);
             $newtx = $transactionService->create([
                 'invoice_id' => $invoice->id,
                 'gateway_id' => $invoice->gateway_id,
@@ -611,10 +612,15 @@ class Service implements InjectionAwareInterface
                 ],
                 'txn_id' => $transactionId,
             ]);
+            $transaction = $this->di['db']->getExistingModelById('Transaction', $newtx, 'Transaction not found');
+            if ((int) $transaction->invoice_id !== (int) $invoice->id) {
+                throw new InformationException('Transaction ID is already associated with another invoice.');
+            }
 
             $result = $this->markAsPaid($invoice, false, $execute);
             if ($result) {
-                $transaction = $this->di['db']->getExistingModelById('Transaction', $newtx, 'Transaction not found');
+                $transaction->amount = $invoiceTotal;
+                $transaction->currency = $invoice->currency;
                 $transaction->status = \Model_Transaction::STATUS_PROCESSED;
                 $gatewayTitle = $payGateway->title ?: $payGateway->gateway;
                 $transaction->note = sprintf('%s transaction No: %s', $gatewayTitle, $transactionId);
