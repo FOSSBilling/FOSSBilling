@@ -1,7 +1,7 @@
 import * as esbuild from 'esbuild';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
-import { writeFile } from 'fs/promises';
+import { access, readFile, writeFile } from 'fs/promises';
 import {
   ensureDir,
   postprocessCssFile,
@@ -17,6 +17,46 @@ const isProduction = process.env.NODE_ENV === 'production';
 const rootDir = resolve(__dirname, '../../..');
 const nodeModulesDir = resolve(rootDir, 'node_modules');
 const adminLoaders = { ...sharedLoaders, '.svg': 'dataurl' };
+const tablerIconsDir = (variant) => resolve(nodeModulesDir, '@tabler/icons/icons', variant);
+
+async function fileExists(filePath) {
+  try {
+    await access(filePath);
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function resolveIconFiles() {
+  const manifest = JSON.parse(await readFile(resolve(__dirname, 'icon-manifest.json'), 'utf8'));
+  const defaultVariant = manifest.defaultVariant || 'outline';
+  const customIconsDir = resolve(__dirname, 'custom-icons');
+  const iconFiles = [];
+
+  for (const entry of manifest.icons) {
+    const name = typeof entry === 'string' ? entry : entry.name;
+    const variant = (typeof entry === 'object' && entry.variant) || defaultVariant;
+    const customPath = resolve(customIconsDir, `${name}.svg`);
+
+    if (await fileExists(customPath)) {
+      iconFiles.push({ name, path: customPath });
+      continue;
+    }
+
+    const iconPath = resolve(tablerIconsDir(variant), `${name}.svg`);
+
+    if (!await fileExists(iconPath)) {
+      console.warn(`  Warning: Icon "${name}" not found in "${variant}" variant, skipping`);
+      continue;
+    }
+
+    iconFiles.push({ name, path: iconPath });
+  }
+
+  return iconFiles;
+}
 
 async function generateManifest() {
   const manifest = {
@@ -51,10 +91,8 @@ async function build() {
 
     console.log('Generating icon sprite...');
     await generateIconSprite({
-      manifestPath: resolve(__dirname, 'icon-manifest.json'),
       outputDir: resolve(__dirname, 'assets/build/symbol'),
-      customIconsDir: resolve(__dirname, 'custom-icons'),
-      rootDir,
+      iconFiles: await resolveIconFiles(),
     });
 
     await esbuild.build({
