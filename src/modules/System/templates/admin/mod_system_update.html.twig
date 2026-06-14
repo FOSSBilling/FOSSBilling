@@ -59,7 +59,7 @@
                                 <strong class="me-1">{{ 'Update cannot start:'|trans }}</strong>{{ 'FOSSBilling does not have sufficient filesystem permissions to perform the update on this server. Please review the issues below and resolve them before attempting the update again.'|trans }}
                                 <ul class="mt-2 mb-0">
                                     {% for issue in readinessIssues %}
-                                        <li><code>{{ issue.path }}</code> &mdash; {{ issue.message }}</li>
+                                        <li><code>{{ issue.path }}</code>: {{ issue.message }}</li>
                                     {% endfor %}
                                 </ul>
                             </div>
