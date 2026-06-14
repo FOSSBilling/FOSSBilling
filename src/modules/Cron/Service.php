@@ -100,12 +100,12 @@ class Service
     /**
      * @param string $method
      */
-    protected function _exec($api, $method, $params = null): void
+    protected function _exec($api, $method, array $params = []): void
     {
         $api->{$method}($params);
 
         if (Environment::isCLI()) {
-            echo "\e[32mSuccessfully ran {$method}({$params}).\e[0m\n";
+            echo "\e[32mSuccessfully ran {$method}(" . json_encode($params) . ").\e[0m\n";
         }
     }
 

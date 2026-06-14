@@ -16,7 +16,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Cron\Api;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Returns cron job information. When it was last executed, where cron job

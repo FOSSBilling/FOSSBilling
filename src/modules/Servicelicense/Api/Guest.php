@@ -15,7 +15,7 @@ namespace Box\Mod\Servicelicense\Api;
 /**
  * Licensing server.
  */
-class Guest extends \Api_Abstract
+class Guest extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Check license details callback. Request IP is detected automatically

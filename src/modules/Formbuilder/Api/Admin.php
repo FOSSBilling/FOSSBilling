@@ -18,7 +18,7 @@ namespace Box\Mod\Formbuilder\Api;
 
 use FOSSBilling\Validation\Api\RequiredParams;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Create custom order form for product.

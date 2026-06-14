@@ -118,9 +118,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['debug_and_monitoring']['report_errors'] ??= false;
 
         // Instance ID handling
-        if (!class_exists(Uuid::class)) {
-            $this->registerFallbackAutoloader();
-        }
+        $this->refreshComposerAutoloader();
         $newConfig['info']['instance_id'] ??= Uuid::v4()->toString();
         $newConfig['info']['salt'] ??= $newConfig['salt'];
 
@@ -1276,20 +1274,45 @@ class UpdatePatcher implements InjectionAwareInterface
         ]);
     }
 
-    /**
-     * If we end up needing a newly introduced package during the update process, composer's autoloader won't have it until the next load.
-     * As a workaround, we can register AntLoader and point it at the Vendor folder which will then act as fallback to find the needed classes.
-     * This isn't particularly fast though as it'll scan the entire vendor, so only use it if we know a needed class is missing.
-     */
-    private function registerFallbackAutoloader(): void
+    private function refreshComposerAutoloader(): void
     {
-        $loader = new \AntCMS\AntLoader([
-            'mode' => 'filesystem',
-            'path' => Path::join(PATH_CACHE, 'fallbackClassMap.php'),
-        ]);
-        $loader->addNamespace('', PATH_VENDOR);
-        $loader->checkClassMap();
-        $loader->register(true);
+        $uuidClass = 'Symfony\\Component\\Uid\\Uuid';
+
+        if (!class_exists($uuidClass)) {
+            $autoloadPath = Path::join(PATH_VENDOR, 'autoload.php');
+            if ($this->filesystem->exists($autoloadPath)) {
+                require $autoloadPath;
+            }
+        }
+
+        if (!class_exists($uuidClass)) {
+            $this->registerSymfonyUidAutoloader();
+        }
+
+        if (!class_exists($uuidClass)) {
+            throw new Exception('Unable to load the Symfony UID package from Composer. Please reinstall dependencies and try again.');
+        }
+    }
+
+    private function registerSymfonyUidAutoloader(): void
+    {
+        $uidPath = Path::join(PATH_VENDOR, 'symfony', 'uid');
+        if (!$this->filesystem->exists($uidPath)) {
+            return;
+        }
+
+        spl_autoload_register(function (string $class) use ($uidPath): void {
+            $prefix = 'Symfony\\Component\\Uid\\';
+            if (!str_starts_with($class, $prefix)) {
+                return;
+            }
+
+            $relativeClass = substr($class, strlen($prefix));
+            $path = Path::join($uidPath, str_replace('\\', DIRECTORY_SEPARATOR, $relativeClass) . '.php');
+            if ($this->filesystem->exists($path)) {
+                require $path;
+            }
+        });
     }
 
     private function getDefaultEmailTemplateData(string $code): ?array

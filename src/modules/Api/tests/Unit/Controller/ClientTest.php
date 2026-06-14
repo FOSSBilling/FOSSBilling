@@ -29,9 +29,21 @@ class ClientTestRateLimiterDouble
 
 class ClientTestDefaultApiDouble
 {
-    public function testMethod(array $params): array
+    public function getIdentity(): Model_Client
     {
-        return ['ok' => true];
+        return new Model_Client();
+    }
+}
+
+class ClientTestApiDispatcherDouble
+{
+    public function __construct(private mixed $result = ['ok' => true])
+    {
+    }
+
+    public function dispatch(object $identity, string $method, array $params): mixed
+    {
+        return $this->result;
     }
 }
 
@@ -138,7 +150,7 @@ function invokeApiCall(TestableClient $controller, string $role, string $class, 
     $reflection->invoke($controller, $role, $class, $method, $params);
 }
 
-function createTestController(array $sessionData = [], ?object $api = null): array
+function createTestController(array $sessionData = [], ?object $api = null, mixed $dispatcherResult = ['ok' => true]): array
 {
     $request = Mockery::mock(Request::class);
     $request->shouldReceive('getClientIp')->andReturn('127.0.0.1');
@@ -153,7 +165,8 @@ function createTestController(array $sessionData = [], ?object $api = null): arr
     $di['rate_limiter'] = $rateLimiter;
     $di['session'] = new ClientTestSessionDouble($sessionData);
     $di['update_finalization'] = new ClientTestUpdateFinalizationDouble();
-    $di['api'] = $di->protect(fn (string $role): object => $api);
+    $di['api_identity'] = $di->protect(fn (string $role): object => $api);
+    $di['api_dispatcher'] = new ClientTestApiDispatcherDouble($dispatcherResult);
 
     $controller = new TestableClient();
     $controller->setDi($di);
@@ -268,13 +281,13 @@ test('raw response bypasses JSON rendering', function (): void {
         {
         }
 
-        public function testMethod(array $params): Response
+        public function getIdentity(): Model_Guest
         {
-            return $this->response;
+            return new Model_Guest();
         }
     };
 
-    [$controller] = createTestController(api: $api);
+    [$controller] = createTestController(api: $api, dispatcherResult: $response);
 
     invokeApiCall($controller, 'guest', 'test', 'testMethod', []);
 

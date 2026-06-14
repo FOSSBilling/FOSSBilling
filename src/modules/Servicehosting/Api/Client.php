@@ -15,7 +15,7 @@ namespace Box\Mod\Servicehosting\Api;
 /**
  * Hosting service management.
  */
-class Client extends \Api_Abstract
+class Client extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Change hosting account username.

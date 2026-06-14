@@ -545,7 +545,7 @@ class Service implements InjectionAwareInterface
         $this->filesystem->mkdir($extractedPath, 0o755);
 
         // Download the extension archive and save it to the cache folder
-        $client = \Symfony\Component\HttpClient\HttpClient::create(['bindto' => BIND_TO]);
+        $client = $this->di['http_client'];
         $response = $client->request('GET', $latest['download_url']);
 
         $code = $response->getStatusCode();

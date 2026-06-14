@@ -707,10 +707,6 @@ class Service
         Reader::updateDefaultDatabases();
 
         try {
-            // Prune the classmap to remove classes which are no longer on the disk or that have moved.
-            $loader = new \FOSSBilling\AutoLoader();
-            $loader->getAntLoader()->pruneClassmap();
-
             // Prune the FS cache
             $cache = $di['cache'];
             if ($cache->prune()) {

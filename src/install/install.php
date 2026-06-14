@@ -35,9 +35,6 @@ define('PATH_ROOT', dirname(__DIR__));
 define('PATH_LIBRARY', PATH_ROOT . DIRECTORY_SEPARATOR . 'library');
 define('PATH_VENDOR', PATH_ROOT . DIRECTORY_SEPARATOR . 'vendor');
 
-// Set the default include path to include the library directory.
-set_include_path(get_include_path() . PATH_SEPARATOR . PATH_LIBRARY);
-
 // Check vendor folder exists and load Composer autoloader.
 if (!file_exists(PATH_VENDOR)) {
     throw new Exception('The composer packages are missing.', 1);
@@ -68,17 +65,6 @@ define('PAGE_RESULT', Path::join('./assets', 'result.html.twig'));
 // Some functions and classes reference this, so we define it here to avoid errors.
 const DEBUG = false;
 
-// Set default include path
-set_include_path(implode(PATH_SEPARATOR, [
-    PATH_LIBRARY,
-    get_include_path(),
-]));
-
-// Set up custom autoloader.
-require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Autoloader.php');
-$loader = new FOSSBilling\AutoLoader();
-$loader->register();
-
 $preConfigProxyCandidate = RequestFactory::getPreConfigProxyCandidate($_SERVER);
 $request = RequestFactory::createFromGlobals();
 $url = $request->getSchemeAndHttpHost() . $request->getRequestUri();
@@ -108,7 +94,7 @@ final class FOSSBilling_Installer
 
     public function __construct(private readonly Request $request, private readonly array $preConfigProxyCandidate = [])
     {
-        require_once 'session.php';
+        require_once Path::join(PATH_INSTALL, 'session.php');
         $this->session = new Session();
         $this->filesystem = new Filesystem();
         $config = $this->getExistingConfig();

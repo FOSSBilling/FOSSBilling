@@ -16,7 +16,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Stats\Api;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Return summary of your system.

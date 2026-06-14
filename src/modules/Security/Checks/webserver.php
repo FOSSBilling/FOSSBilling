@@ -21,7 +21,6 @@ class webserver implements \FOSSBilling\Interfaces\SecurityCheckInterface
     // A list of URIs that should not respond with HTTP 200
     private array $testUris = [
         'config.php',
-        'data/cache/classMap.php',
         'data/log/php_error.log',
         'vendor/autoload.php',
     ];

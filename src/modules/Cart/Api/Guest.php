@@ -18,7 +18,7 @@ use FOSSBilling\Validation\Api\RequiredParams;
 /**
  * Shopping cart management.
  */
-class Guest extends \Api_Abstract
+class Guest extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get the contents of the current shopping cart.

@@ -15,7 +15,7 @@ namespace Box\Mod\Extension\Api;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get list of active and inactive extensions on system.

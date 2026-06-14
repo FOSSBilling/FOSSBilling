@@ -15,7 +15,7 @@ namespace Box\Mod\News\Api;
 use Box\Mod\News\Entity\Post;
 use FOSSBilling\PaginationOptions;
 
-class Guest extends \Api_Abstract
+class Guest extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get paginated list of active news items.

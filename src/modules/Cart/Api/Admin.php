@@ -18,7 +18,7 @@ use FOSSBilling\Validation\Api\RequiredParams;
 /**
  * Shopping cart management.
  */
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * @param array $data

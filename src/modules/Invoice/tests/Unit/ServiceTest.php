@@ -1750,7 +1750,7 @@ test('processes an invoice', function (): void {
             return $subscribeService;
         }
     });
-    $di['api_admin'] = new Api_Handler(new Model_Admin());
+    $di['api_admin'] = new FOSSBilling\Api\Proxy(new Model_Admin());
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);

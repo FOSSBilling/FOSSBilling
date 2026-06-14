@@ -17,7 +17,6 @@ use EmailChecker\Utilities;
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
-use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\Cache\ItemInterface;
 
 class Service implements InjectionAwareInterface
@@ -160,7 +159,7 @@ class Service implements InjectionAwareInterface
                     throw new \FOSSBilling\InformationException('You have to complete the CAPTCHA to continue');
                 }
 
-                $client = HttpClient::create(['bindto' => BIND_TO]);
+                $client = $di['http_client'];
                 $response = $client->request('POST', 'https://google.com/recaptcha/api/siteverify', [
                     'body' => [
                         'secret' => $config['captcha_recaptcha_privatekey'],
@@ -203,7 +202,7 @@ class Service implements InjectionAwareInterface
                     throw new \FOSSBilling\InformationException('Please complete the CAPTCHA verification.');
                 }
 
-                $client = HttpClient::create(['bindto' => BIND_TO]);
+                $client = $di['http_client'];
                 $response = $client->request('POST', 'https://challenges.cloudflare.com/turnstile/v0/siteverify', [
                     'body' => [
                         'secret' => $config['turnstile_secret_key'],
@@ -226,7 +225,7 @@ class Service implements InjectionAwareInterface
                     throw new \FOSSBilling\InformationException('Please complete the CAPTCHA verification.');
                 }
 
-                $client = HttpClient::create(['bindto' => BIND_TO]);
+                $client = $di['http_client'];
                 $response = $client->request('POST', 'https://hcaptcha.com/siteverify', [
                     'body' => [
                         'secret' => $config['hcaptcha_secret_key'],
@@ -285,7 +284,7 @@ class Service implements InjectionAwareInterface
     public function isInStopForumSpamDatabase(array $data): bool
     {
         $url = 'https://www.stopforumspam.com/api';
-        $client = HttpClient::create(['bindto' => BIND_TO]);
+        $client = $this->di['http_client'];
         $queryParams = array_merge($data, ['f' => 'json']);
         $response = $client->request(
             'GET',
@@ -355,7 +354,7 @@ class Service implements InjectionAwareInterface
         return $this->di['cache']->get('tempMailDB', function (ItemInterface $item) {
             $item->expiresAfter(86400); // The list is updated once every 24 hours, so we will cache it for that long
 
-            $client = HttpClient::create(['bindto' => BIND_TO]);
+            $client = $this->di['http_client'];
             $response = $client->request('GET', 'https://raw.githubusercontent.com/7c/fakefilter/main/txt/data.txt');
             $dbPath = Path::join(PATH_CACHE, 'tempEmailDB.txt');
 

@@ -16,7 +16,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Page\Api;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Return page pairs. Includes module and currently selected client area

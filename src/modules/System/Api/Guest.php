@@ -21,7 +21,7 @@ use FOSSBilling\Validation\Api\RequiredParams;
 use PrinsFrank\Standards\CountryCallingCode\CountryCallingCode;
 use Symfony\Component\Intl\Countries;
 
-class Guest extends \Api_Abstract
+class Guest extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Returns company information.

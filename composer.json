@@ -44,7 +44,6 @@
         "ext-mbstring": "*",
         "ext-pdo": "*",
         "ext-zlib": "*",
-        "antcms/antloader": "^2.0.5",
         "dicebear/core": "^10.0",
         "dicebear/styles": "^10.0",
         "doctrine/orm": "^3.6",
@@ -95,6 +94,18 @@
         "phpstan/phpstan": "^2.1.33",
         "phpstan/phpstan-deprecation-rules": "^2.0.3",
         "rector/rector": "^2.3"
+    },
+    "autoload": {
+        "psr-0": {
+            "Payment_": "src/library/",
+            "Registrar_": "src/library/"
+        },
+        "psr-4": {
+            "Box\\Mod\\": "src/modules/"
+        },
+        "classmap": [
+            "src/library/"
+        ]
     },
     "config": {
         "sort-packages": true,

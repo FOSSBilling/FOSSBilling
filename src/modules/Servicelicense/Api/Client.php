@@ -15,7 +15,7 @@ namespace Box\Mod\Servicelicense\Api;
 /**
  *License Service management.
  */
-class Client extends \Api_Abstract
+class Client extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Reset license validation rules.

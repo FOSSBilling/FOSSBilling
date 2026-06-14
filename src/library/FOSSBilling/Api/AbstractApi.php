@@ -10,9 +10,17 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use FOSSBilling\InjectionAwareInterface;
+namespace FOSSBilling\Api;
 
-class Api_Abstract implements InjectionAwareInterface
+use FOSSBilling\Exception;
+use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Module;
+use Model_Admin;
+use Model_Client;
+use Model_Guest;
+use Pimple\Container;
+
+class AbstractApi implements InjectionAwareInterface
 {
     /**
      * @var string - request ip
@@ -20,7 +28,7 @@ class Api_Abstract implements InjectionAwareInterface
     protected $ip;
 
     /**
-     * @var FOSSBilling\Module
+     * @var Module
      */
     protected $mod;
 
@@ -32,31 +40,31 @@ class Api_Abstract implements InjectionAwareInterface
      */
     protected $identity;
 
-    protected ?Pimple\Container $di = null;
+    protected ?Container $di = null;
 
     public function __construct()
     {
         if (function_exists('Tests\Helpers\container')) {
-            $this->di = Tests\Helpers\container();
+            $this->di = \Tests\Helpers\container();
         }
     }
 
-    public function setDi(Pimple\Container $di): void
+    public function setDi(Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?Pimple\Container
+    public function getDi(): ?Container
     {
         if ($this->di === null && function_exists('Tests\Helpers\container')) {
-            $this->di = Tests\Helpers\container();
+            $this->di = \Tests\Helpers\container();
         }
 
         return $this->di;
     }
 
     /**
-     * @param FOSSBilling\Module $mod
+     * @param Module $mod
      */
     public function setMod($mod): void
     {
@@ -64,13 +72,13 @@ class Api_Abstract implements InjectionAwareInterface
     }
 
     /**
-     * @return FOSSBilling\Module
+     * @return Module
      */
     public function getMod()
     {
-        // @phpstan-ignore booleanNot.alwaysFalse (Runtime check to ensure mod is set)
-        if (!$this->mod) {
-            throw new FOSSBilling\Exception('Mod object is not set for the service');
+        // @phpstan-ignore isset.property (Runtime check to ensure mod is set)
+        if (!isset($this->mod)) {
+            throw new Exception('Mod object is not set for the service');
         }
 
         return $this->mod;

@@ -1467,11 +1467,9 @@ test('kb category get id not set exception', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
     $adminApi = new Box\Mod\Support\Api\Admin();
 
-    $apiHandler = new Api_Handler(new Model_Admin());
-    $reflection = new ReflectionClass($apiHandler);
-    $method = $reflection->getMethod('validateRequiredParams');
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
 
-    expect(fn (): mixed => $method->invokeArgs($apiHandler, [$adminApi, 'kb_category_get', []]))
+    expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'kb_category_get', []))
         ->toThrow(FOSSBilling\InformationException::class);
 });
 
@@ -1565,11 +1563,9 @@ test('kb category update id not set', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
     $adminApi = new Box\Mod\Support\Api\Admin();
 
-    $apiHandler = new Api_Handler(new Model_Admin());
-    $reflection = new ReflectionClass($apiHandler);
-    $method = $reflection->getMethod('validateRequiredParams');
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
 
-    expect(fn (): mixed => $method->invokeArgs($apiHandler, [$adminApi, 'kb_category_update', []]))
+    expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'kb_category_update', []))
         ->toThrow(FOSSBilling\InformationException::class);
 });
 
@@ -1638,11 +1634,9 @@ test('kb category delete id not set', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
     $adminApi = new Box\Mod\Support\Api\Admin();
 
-    $apiHandler = new Api_Handler(new Model_Admin());
-    $reflection = new ReflectionClass($apiHandler);
-    $method = $reflection->getMethod('validateRequiredParams');
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
 
-    expect(fn (): mixed => $method->invokeArgs($apiHandler, [$adminApi, 'kb_category_delete', []]))
+    expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'kb_category_delete', []))
         ->toThrow(FOSSBilling\InformationException::class);
 });
 

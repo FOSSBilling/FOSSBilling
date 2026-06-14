@@ -18,7 +18,7 @@ namespace Box\Mod\Activity\Api;
 
 use FOSSBilling\PaginationOptions;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get a list of activity messages.

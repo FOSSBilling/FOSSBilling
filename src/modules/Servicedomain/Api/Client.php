@@ -15,7 +15,7 @@ namespace Box\Mod\Servicedomain\Api;
 /**
  * Domain service management.
  */
-class Client extends \Api_Abstract
+class Client extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Change domain nameservers. Method sends action to registrar.
