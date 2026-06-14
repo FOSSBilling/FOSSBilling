@@ -1,7 +1,7 @@
 {
   "name": "huraga",
   "scripts": {
-    "dev": "node ./esbuild.mjs --watch",
+    "dev": "node ./esbuild.mjs",
     "build": "node ./esbuild.mjs"
   },
   "dependencies": {

@@ -4,7 +4,7 @@
   "homepage": "https://fossbilling.org",
   "license": "Apache License 2.0",
   "scripts": {
-    "build": "npm run build-core && npm run build-themes",
+    "build": "npm run check && npm run build-core && npm run build-themes",
     "build-core": "node ./frontend/esbuild.mjs",
     "build-themes": "npm run build-admin_default && npm run build -w huraga",
     "build-huraga": "npm run build -w huraga",

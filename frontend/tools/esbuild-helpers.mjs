@@ -4,6 +4,7 @@ import * as sass from 'sass';
 import { PurgeCSS } from 'purgecss';
 import { dirname, join, resolve } from 'path';
 import { mkdir, readFile, readdir, rm, writeFile } from 'fs/promises';
+import * as esbuild from 'esbuild';
 
 export const sharedLoaders = {
   '.svg': 'file',
@@ -50,6 +51,24 @@ export async function removeDirContents(dir) {
       throw error;
     }
   }
+}
+
+export function getThemeBuildPaths(themePath) {
+  const buildDir = resolve(themePath, 'assets/build');
+
+  return {
+    buildDir,
+    jsDir: join(buildDir, 'js'),
+    cssDir: join(buildDir, 'css'),
+    symbolDir: join(buildDir, 'symbol'),
+  };
+}
+
+export async function prepareThemeBuildDirs(paths) {
+  await removeDirContents(paths.buildDir);
+  await ensureDir(paths.jsDir);
+  await ensureDir(paths.cssDir);
+  await ensureDir(paths.symbolDir);
 }
 
 export async function postprocessCssFile(cssPath, isProduction) {
@@ -148,6 +167,76 @@ export async function purgeCssFile(cssFilePath, options = {}) {
       console.log(`PurgeCSS applied to ${cssFilePath.split('/').pop()}`);
     }
   } catch (error) {
+    if (enabled) {
+      throw new Error(`PurgeCSS failed for ${cssFilePath.split('/').pop()}: ${error.message}`);
+    }
+
     console.warn(`PurgeCSS failed for ${cssFilePath.split('/').pop()}:`, error.message);
   }
+}
+
+export async function buildCssFile(options) {
+  const {
+    entryPoint,
+    outfile,
+    nodeModulesDir,
+    isProduction,
+    loader = sharedLoaders,
+    themePath,
+    purge,
+  } = options;
+
+  await esbuild.build({
+    entryPoints: [entryPoint],
+    bundle: true,
+    outfile,
+    loader,
+    plugins: [sassPlugin(nodeModulesDir, isProduction)],
+    minify: isProduction,
+    sourcemap: !isProduction,
+    logLevel: 'info',
+    define: { 'process.env.NODE_ENV': isProduction ? '"production"' : '"development"' },
+    treeShaking: true,
+    legalComments: 'none',
+  });
+
+  await postprocessCssFile(outfile, isProduction);
+
+  if (purge) {
+    await purgeCssFile(outfile, {
+      themePath,
+      enabled: isProduction,
+      ...purge,
+    });
+  }
+}
+
+export async function buildJsFile(options) {
+  const {
+    entryPoint,
+    outfile,
+    isProduction,
+    loader = sharedLoaders,
+    drop = isProduction ? ['console', 'debugger'] : [],
+  } = options;
+
+  await esbuild.build({
+    entryPoints: [entryPoint],
+    bundle: true,
+    outfile,
+    platform: 'browser',
+    target: 'es2018',
+    loader,
+    define: { 'process.env.NODE_ENV': isProduction ? '"production"' : '"development"' },
+    minify: isProduction,
+    sourcemap: !isProduction,
+    logLevel: 'info',
+    treeShaking: true,
+    legalComments: 'none',
+    drop,
+  });
+}
+
+export async function writeAssetManifest(buildDir, manifest) {
+  await writeFile(join(buildDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
 }
