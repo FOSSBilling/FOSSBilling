@@ -55,4 +55,33 @@ class Admin extends \Api_Abstract
 
         return $this->getService()->runAllChecks();
     }
+
+    public function rate_limit_status(array $data): array
+    {
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'view');
+
+        return $this->getService()->getRateLimitStatus();
+    }
+
+    public function rate_limit_get_list(array $data): array
+    {
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'view');
+
+        return $this->getService()->getRateLimitList($data['ip'] ?? null);
+    }
+
+    #[RequiredParams(['ip' => 'You must specify an IP address to reset.'])]
+    public function rate_limit_reset_ip(array $data): array
+    {
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'manage_rate_limits');
+
+        return $this->getService()->resetRateLimitIp($data['ip'], $data['policy'] ?? null);
+    }
+
+    public function rate_limit_reset_all(array $data): array
+    {
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'manage_rate_limits');
+
+        return $this->getService()->resetAllRateLimits();
+    }
 }
