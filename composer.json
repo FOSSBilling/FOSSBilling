@@ -96,6 +96,10 @@
         "rector/rector": "^2.3"
     },
     "autoload": {
+        "psr-0": {
+            "Payment_": "src/library/",
+            "Registrar_": "src/library/"
+        },
         "psr-4": {
             "Box\\Mod\\": "src/modules/"
         },

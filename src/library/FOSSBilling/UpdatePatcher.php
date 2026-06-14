@@ -1286,8 +1286,33 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         if (!class_exists($uuidClass)) {
+            $this->registerSymfonyUidAutoloader();
+        }
+
+        if (!class_exists($uuidClass)) {
             throw new Exception('Unable to load the Symfony UID package from Composer. Please reinstall dependencies and try again.');
         }
+    }
+
+    private function registerSymfonyUidAutoloader(): void
+    {
+        $uidPath = Path::join(PATH_VENDOR, 'symfony', 'uid');
+        if (!$this->filesystem->exists($uidPath)) {
+            return;
+        }
+
+        spl_autoload_register(function (string $class) use ($uidPath): void {
+            $prefix = 'Symfony\\Component\\Uid\\';
+            if (!str_starts_with($class, $prefix)) {
+                return;
+            }
+
+            $relativeClass = substr($class, strlen($prefix));
+            $path = Path::join($uidPath, str_replace('\\', DIRECTORY_SEPARATOR, $relativeClass) . '.php');
+            if ($this->filesystem->exists($path)) {
+                require $path;
+            }
+        });
     }
 
     private function getDefaultEmailTemplateData(string $code): ?array
