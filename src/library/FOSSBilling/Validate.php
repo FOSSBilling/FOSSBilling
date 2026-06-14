@@ -14,7 +14,6 @@ namespace FOSSBilling;
 
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
-use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\Cache\ItemInterface;
 
 class Validate
@@ -83,7 +82,7 @@ class Validate
         $validTlds = $this->di['cache']->get('validTlds', function (ItemInterface $item): array {
             $item->expiresAfter(86400);
 
-            $client = HttpClient::create(['bindto' => BIND_TO]);
+            $client = $this->di['http_client'];
             $response = $client->request('GET', 'https://publicsuffix.org/list/public_suffix_list.dat');
             $dbPath = Path::join(PATH_CACHE, 'tlds.txt');
 

@@ -16,7 +16,6 @@ use PhpZip\ZipFile;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
-use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
@@ -93,7 +92,7 @@ class Update implements InjectionAwareInterface
         return $this->di['cache']->get("changelog_from_$end", function (ItemInterface $item) use ($end) {
             $item->expiresAfter(3600);
 
-            $httpClient = HttpClient::create(['bindto' => BIND_TO]);
+            $httpClient = $this->di['http_client'];
             $response = $httpClient->request('GET', "https://api.fossbilling.net/versions/v1/build_changelog/{$end}");
             $result = $response->toArray();
 
@@ -144,7 +143,7 @@ class Update implements InjectionAwareInterface
 
             try {
                 $releaseInfoUrl = 'https://api.fossbilling.net/versions/v1/latest';
-                $httpClient = HttpClient::create(['bindto' => BIND_TO]);
+                $httpClient = $this->di['http_client'];
                 $response = $httpClient->request('GET', $releaseInfoUrl);
                 $releaseInfo = $response->toArray()['result'];
             } catch (TransportExceptionInterface|HttpExceptionInterface $e) {
@@ -269,10 +268,9 @@ class Update implements InjectionAwareInterface
 
         // Download latest version archive for configured update branch.
         try {
-            $httpClient = HttpClient::create([
+            $httpClient = $this->di['http_client']->withOptions([
                 'timeout' => 30,
                 'max_duration' => 120,
-                'bindto' => BIND_TO,
             ]);
             $response = $httpClient->request('GET', $releaseInfo['download_url']);
 
