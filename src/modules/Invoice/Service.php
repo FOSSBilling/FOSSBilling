@@ -605,10 +605,22 @@ class Service implements InjectionAwareInterface
                 'currency' => $invoice->currency,
                 'status' => 'received',
                 'source' => 'admin',
+                'post' => [
+                    'invoice_id' => $invoice->id,
+                    'txn_id' => $transactionId,
+                ],
                 'txn_id' => $transactionId,
             ]);
 
-            $result = $transactionService->processTransaction($newtx);
+            $result = $this->markAsPaid($invoice, false, $execute);
+            if ($result) {
+                $transaction = $this->di['db']->getExistingModelById('Transaction', $newtx, 'Transaction not found');
+                $transaction->status = \Model_Transaction::STATUS_PROCESSED;
+                $gatewayTitle = $payGateway->title ?: ($payGateway->gateway ?: 'Payment gateway');
+                $transaction->note = sprintf('%s transaction No: %s', $gatewayTitle, $transactionId);
+                $transaction->updated_at = date('Y-m-d H:i:s');
+                $this->di['db']->store($transaction);
+            }
 
             return (bool) $result;
         }
