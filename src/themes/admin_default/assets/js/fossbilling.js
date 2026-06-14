@@ -1,5 +1,8 @@
 import backToTop from "./ui/backToTop";
-import { renderTimeSeriesSparkline } from "./ui/charts";
+
+function renderTimeSeriesSparkline(...args) {
+  return import("./ui/charts").then(({ renderTimeSeriesSparkline: renderChart }) => renderChart(...args));
+}
 
 globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
   message: (message, type = "info") => {

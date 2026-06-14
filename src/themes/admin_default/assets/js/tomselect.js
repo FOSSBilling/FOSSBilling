@@ -2,7 +2,6 @@ import TomSelect from 'tom-select';
 import { getCSRFToken, getBaseURL } from './utils';
 globalThis.TomSelect = TomSelect;
 
-// Unified template function for TomSelect options
 const createTomSelectTemplate = (data, escape, options = {}) => {
   const { showIndicator = false, indicatorField = 'customProperties', labelField = 'text' } = options;
 
@@ -15,11 +14,7 @@ const createTomSelectTemplate = (data, escape, options = {}) => {
   return `<div>${content}</div>`;
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-
-  /**
-   * Locale Selector
-   */
+export default function initTomSelectControls() {
   const localeSelectorEl = document.querySelector('.js-locale-selector');
   if (localeSelectorEl !== null) {
     const selectedLang = FOSSBilling.cookieRead("fb_locale") || localeSelectorEl.value;
@@ -43,9 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
-  /**
-   * Autocomplete selector
-   */
   const autocompleteTemplate = (item, escape) => {
     return `<div class="py-2 d-flex align-items-center text-body">
                 <span>${escape(item.label)}</span>
@@ -111,9 +103,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
-  /**
-   * Canned Ticket Response selector
-   */
   const cannedResponseSelectorEl = document.querySelector('.canned_ticket_response');
   if (cannedResponseSelectorEl !== null && cannedResponseSelectorEl.dataset.resturl) {
     const cannedResponseSelector = new TomSelect('.canned_ticket_response', {
@@ -190,4 +179,4 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-});
+}

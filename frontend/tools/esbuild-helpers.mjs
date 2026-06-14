@@ -215,15 +215,19 @@ export async function buildJsFile(options) {
   const {
     entryPoint,
     outfile,
+    outdir,
+    entryNames,
+    chunkNames,
     isProduction,
     loader = sharedLoaders,
     drop = isProduction ? ['console', 'debugger'] : [],
+    splitting = false,
+    format = splitting ? 'esm' : undefined,
   } = options;
 
-  await esbuild.build({
+  const buildOptions = {
     entryPoints: [entryPoint],
     bundle: true,
-    outfile,
     platform: 'browser',
     target: 'es2018',
     loader,
@@ -234,7 +238,25 @@ export async function buildJsFile(options) {
     treeShaking: true,
     legalComments: 'none',
     drop,
-  });
+    format,
+    splitting,
+  };
+
+  if (outdir) {
+    buildOptions.outdir = outdir;
+  } else {
+    buildOptions.outfile = outfile;
+  }
+
+  if (entryNames) {
+    buildOptions.entryNames = entryNames;
+  }
+
+  if (chunkNames) {
+    buildOptions.chunkNames = chunkNames;
+  }
+
+  await esbuild.build(buildOptions);
 }
 
 export async function writeAssetManifest(buildDir, manifest) {

@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+export default function initThemeSettings() {
 
   document.querySelectorAll('#theme-settings fieldset').forEach((el, index) => {
     let show = '', collapsed = '';
@@ -113,4 +113,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-});
+}

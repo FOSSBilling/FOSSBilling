@@ -63,9 +63,12 @@ async function build() {
 
     await buildJsFile({
       entryPoint: resolve(__dirname, 'assets/fossbilling.js'),
-      outfile: join(paths.jsDir, 'fossbilling.js'),
+      outdir: paths.jsDir,
+      entryNames: '[name]',
+      chunkNames: 'chunks/[name]-[hash]',
       isProduction,
       loader: adminLoaders,
+      splitting: true,
     });
 
     await writeAssetManifest(paths.buildDir, {
