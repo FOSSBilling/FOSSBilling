@@ -25,31 +25,41 @@ test('gets dependency injection container', function (): void {
 
 test('gets order list', function (): void {
     $api = new Client();
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client->id = 1;
+
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getSearchQuery')
-        ->atLeast()->once()
+        ->once()
         ->andReturn(['query', []]);
+    $serviceMock->shouldReceive('getBatchForApi')
+        ->once()
+        ->with([3, 2, 1], $client)
+        ->andReturn([
+            ['id' => 3, 'title' => 'Third order'],
+            ['id' => 2, 'title' => 'Second order'],
+            ['id' => 1, 'title' => 'First order'],
+        ]);
     $serviceMock->shouldReceive('toApiArray')
-        ->atLeast()->once()
-        ->andReturn([]);
+        ->never();
 
     $resultSet = [
         'list' => [
-            0 => ['id' => 1],
+            ['id' => 3],
+            ['id' => 2],
+            ['id' => 1],
         ],
+        'total' => 3,
     ];
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
     $paginatorMock->shouldReceive('getPaginatedResultSet')
-        ->atLeast()->once()
+        ->once()
         ->andReturn($resultSet);
-
-    $clientOrderMock = new Model_ClientOrder();
-    $clientOrderMock->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($clientOrderMock);
+        ->never();
 
     $di = container();
     $di['pager'] = $paginatorMock;
@@ -57,44 +67,61 @@ test('gets order list', function (): void {
 
     $api->setDi($di);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 1;
-
     $api->setIdentity($client);
     $api->setService($serviceMock);
 
     $result = $api->get_list([]);
-    expect($result)->toBeArray();
+    expect($result)
+        ->toBeArray()
+        ->and($result['list'])->toBe([
+            ['id' => 3, 'title' => 'Third order'],
+            ['id' => 2, 'title' => 'Second order'],
+            ['id' => 1, 'title' => 'First order'],
+        ])
+        ->and($result['total'])->toBe(3);
 });
 
 test('gets expiring order list', function (): void {
     $api = new Client();
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client->id = 1;
+
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getSoonExpiringActiveOrdersQuery')
-        ->atLeast()->once()
+        ->once()
         ->andReturn(['query', []]);
+    $serviceMock->shouldReceive('getBatchForApi')
+        ->once()
+        ->with([1], $client)
+        ->andReturn([
+            ['id' => 1, 'title' => 'Expiring order'],
+        ]);
 
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
     $paginatorMock->shouldReceive('getPaginatedResultSet')
-        ->atLeast()->once()
-        ->andReturn(['list' => []]);
+        ->once()
+        ->andReturn([
+            'list' => [
+                ['id' => 1],
+            ],
+        ]);
 
     $di = container();
     $di['pager'] = $paginatorMock;
 
     $api->setDi($di);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 1;
-
     $api->setIdentity($client);
     $api->setService($serviceMock);
 
     $data = ['expiring' => true];
     $result = $api->get_list($data);
-    expect($result)->toBeArray();
+    expect($result)
+        ->toBeArray()
+        ->and($result['list'])->toBe([
+            ['id' => 1, 'title' => 'Expiring order'],
+        ]);
 });
 
 test('gets an order', function (): void {
