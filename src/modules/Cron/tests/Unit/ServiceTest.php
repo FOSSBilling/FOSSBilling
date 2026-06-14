@@ -14,6 +14,18 @@ use Box\Mod\Cron\Service;
 
 use function Tests\Helpers\container;
 
+class CronServiceApiDouble
+{
+    public ?string $method = null;
+    public mixed $params = null;
+
+    public function __call(string $method, array $arguments): void
+    {
+        $this->method = $method;
+        $this->params = $arguments[0] ?? null;
+    }
+}
+
 test('getDi returns dependency injection container', function (): void {
     $di = container();
     $service = new Service();
@@ -60,4 +72,17 @@ test('isLate returns boolean indicating if cron execution is late', function ():
     $result = $serviceMock->isLate();
     expect($result)->toBeBool();
     expect($result)->toBeFalse();
+});
+
+test('exec passes empty array when cron task has no params', function (): void {
+    $service = new Service();
+    $api = new CronServiceApiDouble();
+
+    $method = new ReflectionMethod(Service::class, '_exec');
+    ob_start();
+    $method->invoke($service, $api, 'invoice_batch_pay_with_credits');
+    ob_end_clean();
+
+    expect($api->method)->toBe('invoice_batch_pay_with_credits');
+    expect($api->params)->toBe([]);
 });
