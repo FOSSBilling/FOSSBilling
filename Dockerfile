@@ -101,6 +101,7 @@ ARG INSTALL_TRANSLATIONS=true
 ARG TRANSLATIONS_URL=https://github.com/FOSSBilling/locale/releases/latest/download/translations.zip
 ARG TRANSLATIONS_SHA256=
 
+COPY --from=composer:2@sha256:c883af18892268b3b8369c4a39c08f80b393383e79d80b75140a3ea489dbbb78 /usr/bin/composer /usr/bin/composer
 COPY src ./src
 COPY README.md LICENSE ./src/
 COPY --from=php-vendor /app/src/vendor ./src/vendor
@@ -122,6 +123,9 @@ RUN set -eux; \
   FOSSBILLING_VERSION_TRUNCATE="${FOSSBILLING_VERSION_TRUNCATE}" \
   SENTRY_DSN="${SENTRY_DSN}" \
   php -r '$version = getenv("FOSSBILLING_VERSION") ?: "0.0.1"; $truncate = (int) (getenv("FOSSBILLING_VERSION_TRUNCATE") ?: 0); if ($truncate > 0) { $version = substr($version, 0, $truncate); } $versionFile = "./src/library/FOSSBilling/Version.php"; $contents = file_get_contents($versionFile); $quote = chr(39); $pattern = "/public const string VERSION = " . $quote . "[^" . $quote . "]+" . $quote . ";/"; $replacement = "public const string VERSION = " . var_export($version, true) . ";"; $contents = preg_replace($pattern, $replacement, $contents, 1, $count); if ($contents === null || $count !== 1) { fwrite(STDERR, "Failed to replace FOSSBilling version.\n"); exit(1); } file_put_contents($versionFile, $contents); $dsn = getenv("SENTRY_DSN"); if ($dsn !== false && $dsn !== "") { $sentryFile = "./src/library/FOSSBilling/SentryHelper.php"; file_put_contents($sentryFile, str_replace("--replace--this--during--release--process--", $dsn, file_get_contents($sentryFile))); }'; \
+  php -r 'file_put_contents("./src/composer.json", json_encode(["name" => "fossbilling/runtime", "autoload" => ["psr-4" => ["Box\\Mod\\" => "modules/"], "classmap" => ["library/"]], "config" => ["vendor-dir" => "vendor"]], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL);'; \
+  composer --no-plugins dump-autoload --working-dir=./src --no-dev --optimize --no-interaction; \
+  rm ./src/composer.json; \
   chmod -R u=rwX,go=rX ./src
 
 FROM scratch AS release-artifact
