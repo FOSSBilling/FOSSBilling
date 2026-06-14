@@ -38,10 +38,10 @@ class Client extends \Api_Abstract
 
         $pager = $this->getDi()['pager']->getPaginatedResultSet($query, $bindings, PaginationOptions::fromArray($data));
 
-        foreach ($pager['list'] as $key => $item) {
-            $order = $this->getDi()['db']->getExistingModelById('ClientOrder', $item['id'], 'Client order not found');
-            $pager['list'][$key] = $this->getService()->toApiArray($order);
-        }
+        $pager['list'] = $this->getService()->getBatchForApi(
+            array_column($pager['list'], 'id'),
+            $identity
+        );
 
         return $pager;
     }

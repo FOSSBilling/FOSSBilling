@@ -56,10 +56,10 @@ class Admin extends \Api_Abstract
         [$sql, $params] = $this->getService()->getSearchQuery($data);
         $resultSet = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
-        foreach ($resultSet['list'] as $key => $result) {
-            $orderObj = $this->getDi()['db']->getExistingModelById('ClientOrder', $result['id'], 'Order not found');
-            $resultSet['list'][$key] = $this->getService()->toApiArray($orderObj, true, $this->getIdentity());
-        }
+        $resultSet['list'] = $this->getService()->getBatchForApi(
+            array_column($resultSet['list'], 'id'),
+            $this->getIdentity()
+        );
 
         return $resultSet;
     }

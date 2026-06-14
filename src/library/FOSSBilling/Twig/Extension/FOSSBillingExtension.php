@@ -177,7 +177,7 @@ class FOSSBillingExtension
     }
 
     #[AsTwigFilter('asset_url', isSafe: ['html'], needsEnvironment: true)]
-    public function assetUrl(Environment $env, $asset): string
+    public function assetUrl(Environment $env, string $asset): string
     {
         $globals = $env->getGlobals();
         $themeCode = $globals['current_theme'] ?? ($globals['theme']['code'] ?? null);
@@ -218,7 +218,7 @@ class FOSSBillingExtension
     }
 
     #[AsTwigFilter('hash')]
-    public function hash($value, $algo = 'xxh128'): string
+    public function hash(mixed $value, string $algo = 'xxh128'): string
     {
         if (!in_array($algo, hash_algos(), true)) {
             throw new \InvalidArgumentException(sprintf('Hash algorithm "%s" is not supported.', $algo));

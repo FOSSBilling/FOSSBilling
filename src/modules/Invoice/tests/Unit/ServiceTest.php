@@ -24,6 +24,7 @@ use Box\Mod\Order\Service as OrderService;
 use Box\Mod\System\Service as SystemService;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\moduleService;
 
 test('gets dependency injection container', function (): void {
     $service = new Service();
@@ -485,6 +486,135 @@ test('marks invoice as paid', function (): void {
     $serviceMock->setDi($di);
     $result = $serviceMock->markAsPaid($invoiceModel, true, true);
     expect($result)->toBeBool()->toBeTrue();
+});
+
+test('admin mark as paid with custom gateway records transaction and marks invoice paid', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('markAsPaid')
+        ->once()
+        ->with(Mockery::type(Model_Invoice::class), false, true)
+        ->andReturn(true);
+    $serviceMock->shouldReceive('getTotalWithTax')
+        ->once()
+        ->with(Mockery::type(Model_Invoice::class))
+        ->andReturn(42.50);
+
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel->id = 10;
+    $invoiceModel->gateway_id = 5;
+    $invoiceModel->currency = 'USD';
+    $invoiceModel->status = Model_Invoice::STATUS_UNPAID;
+
+    $gatewayModel = new Model_PayGateway();
+    $gatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $gatewayModel->id = 5;
+    $gatewayModel->gateway = 'Custom';
+    $gatewayModel->enabled = 1;
+    $gatewayModel->title = 'Manual payment';
+
+    $transactionModel = new Model_Transaction();
+    $transactionModel->loadBean(new Tests\Helpers\DummyBean());
+    $transactionModel->invoice_id = 10;
+
+    $transactionServiceMock = Mockery::mock(\Box\Mod\Invoice\ServiceTransaction::class);
+    $transactionServiceMock->shouldReceive('create')
+        ->once()
+        ->with(Mockery::on(fn (array $data): bool => $data['invoice_id'] === 10
+            && $data['gateway_id'] === 5
+            && $data['currency'] === 'USD'
+            && $data['source'] === 'admin'
+            && $data['post'] === ['invoice_id' => 10, 'txn_id' => 'manual-reference-1']
+            && $data['txn_id'] === 'manual-reference-1'))
+        ->andReturn(20);
+    $transactionServiceMock->shouldNotReceive('processTransaction');
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')
+        ->once()
+        ->with('PayGateway', 5, 'Payment gateway not found')
+        ->andReturn($gatewayModel);
+    $dbMock->shouldReceive('getExistingModelById')
+        ->once()
+        ->with('Transaction', 20, 'Transaction not found')
+        ->andReturn($transactionModel);
+    $dbMock->shouldReceive('store')
+        ->once()
+        ->with($transactionModel)
+        ->andReturn(20);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(moduleService([
+        'invoice:transaction' => $transactionServiceMock,
+    ]));
+
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->markAsPaidByAdmin($invoiceModel, [
+        'execute' => true,
+        'transactionId' => 'manual-reference-1',
+    ]);
+
+    expect($result)->toBeTrue()
+        ->and($transactionModel->amount)->toBe(42.50)
+        ->and($transactionModel->currency)->toBe('USD')
+        ->and($transactionModel->status)->toBe(Model_Transaction::STATUS_PROCESSED)
+        ->and($transactionModel->note)->toBe('Manual payment transaction No: manual-reference-1');
+});
+
+test('admin mark as paid with custom gateway rejects transaction linked to another invoice', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldNotReceive('markAsPaid');
+    $serviceMock->shouldReceive('getTotalWithTax')
+        ->once()
+        ->with(Mockery::type(Model_Invoice::class))
+        ->andReturn(42.50);
+
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel->id = 10;
+    $invoiceModel->gateway_id = 5;
+    $invoiceModel->currency = 'USD';
+    $invoiceModel->status = Model_Invoice::STATUS_UNPAID;
+
+    $gatewayModel = new Model_PayGateway();
+    $gatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $gatewayModel->id = 5;
+    $gatewayModel->gateway = 'Custom';
+    $gatewayModel->enabled = 1;
+
+    $transactionModel = new Model_Transaction();
+    $transactionModel->loadBean(new Tests\Helpers\DummyBean());
+    $transactionModel->invoice_id = 99;
+
+    $transactionServiceMock = Mockery::mock(\Box\Mod\Invoice\ServiceTransaction::class);
+    $transactionServiceMock->shouldReceive('create')
+        ->once()
+        ->andReturn(20);
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')
+        ->once()
+        ->with('PayGateway', 5, 'Payment gateway not found')
+        ->andReturn($gatewayModel);
+    $dbMock->shouldReceive('getExistingModelById')
+        ->once()
+        ->with('Transaction', 20, 'Transaction not found')
+        ->andReturn($transactionModel);
+    $dbMock->shouldNotReceive('store');
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(moduleService([
+        'invoice:transaction' => $transactionServiceMock,
+    ]));
+
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->markAsPaidByAdmin($invoiceModel, [
+        'transactionId' => 'manual-reference-1',
+    ]))->toThrow(\FOSSBilling\InformationException::class, 'Transaction ID is already associated with another invoice.');
 });
 
 test('counts income', function (): void {

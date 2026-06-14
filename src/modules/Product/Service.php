@@ -105,11 +105,11 @@ class Service implements InjectionAwareInterface
     public function toApiArray(\Model_Product $model, $deep = true, $identity = null): array
     {
         $repo = $model->getTable();
-        $addons = $this->getAddonsApiArray($model);
         $config = json_decode($model->config ?? '', true) ?? [];
         $pricing = $repo->getPricingArray($model);
         $starting_from = $this->getStartingFromPrice($model);
         $isAdmin = $identity instanceof \Model_Admin;
+        $addons = $this->getAddonsApiArray($model, $isAdmin);
 
         $result = [
             'id' => $model->id,
@@ -122,6 +122,7 @@ class Service implements InjectionAwareInterface
             'priority' => $model->priority,
             'pricing' => $isAdmin ? $pricing : $this->getPublicPricing($pricing),
             'config' => $isAdmin ? $config : $this->getPublicConfig($config),
+            'addons' => $addons,
 
             'price_starting_from' => $starting_from,
             'icon_url' => $model->icon_url,
@@ -137,7 +138,6 @@ class Service implements InjectionAwareInterface
         if ($isAdmin) {
             $result['created_at'] = $model->created_at;
             $result['updated_at'] = $model->updated_at;
-            $result['addons'] = $addons;
             $result['quantity_in_stock'] = $model->quantity_in_stock;
             $result['stock_control'] = $model->stock_control;
             $result['upgrades'] = $this->getUpgradablePairs($model);
@@ -828,18 +828,18 @@ class Service implements InjectionAwareInterface
     /**
      * @return mixed[]
      */
-    private function getAddonsApiArray(\Model_Product $model): array
+    private function getAddonsApiArray(\Model_Product $model, bool $isAdmin): array
     {
         $addons = [];
-        foreach ($this->getProductAddons($model) as $addon) {
-            $d = $this->toAddonArray($addon);
+        foreach ($this->getProductAddons($model, !$isAdmin) as $addon) {
+            $d = $this->toAddonArray($addon, true, $isAdmin);
             $addons[] = $d;
         }
 
         return $addons;
     }
 
-    public function getProductAddons(\Model_Product $model)
+    public function getProductAddons(\Model_Product $model, bool $publicOnly = false)
     {
         $ids = json_decode($model->addons ?? '', true) ?? [];
 
@@ -851,16 +851,22 @@ class Service implements InjectionAwareInterface
         $slots = $count ? implode(',', array_fill(0, $count, '?')) : ''; // same as RedBean genSlots() method
         array_unshift($ids, (int) $model->id); // adding product ID as first param in array
 
-        return $this->di['db']->find('Product', 'type = "custom" and is_addon= 1 and id != ? and id IN (' . $slots . ')', $ids);
+        $query = 'type = "custom" and is_addon= 1 and id != ? and id IN (' . $slots . ')';
+        if ($publicOnly) {
+            $query .= ' and active = 1 and status = "enabled"';
+        }
+
+        return $this->di['db']->find('Product', $query, $ids);
     }
 
-    public function toAddonArray(\Model_Product $model, $deep = true): array
+    public function toAddonArray(\Model_Product $model, $deep = true, ?bool $isAdmin = null): array
     {
+        $isAdmin ??= true;
         $productPayment = $this->di['db']->load('ProductPayment', $model->product_payment_id);
         $pricing = $this->toProductPaymentApiArray($productPayment);
         $config = json_decode($model->config ?? '', true) ?? [];
 
-        return [
+        $result = [
             'id' => $model->id,
             'type' => $model->type,
             'title' => $model->title,
@@ -873,9 +879,15 @@ class Service implements InjectionAwareInterface
             'updated_at' => $model->updated_at,
             'icon_url' => $model->icon_url,
 
-            'pricing' => $pricing,
-            'config' => $config,
+            'pricing' => $isAdmin ? $pricing : $this->getPublicPricing($pricing),
+            'config' => $isAdmin ? $config : $this->getPublicConfig($config),
         ];
+
+        if (!$isAdmin) {
+            unset($result['plugin'], $result['created_at'], $result['updated_at']);
+        }
+
+        return $result;
     }
 
     /*

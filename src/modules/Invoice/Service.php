@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -599,16 +599,34 @@ class Service implements InjectionAwareInterface
 
         if (($payGateway->gateway ?? null) === 'Custom' && (int) ($payGateway->enabled ?? 0) === 1) {
             $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+            $invoiceTotal = $this->getTotalWithTax($invoice);
             $newtx = $transactionService->create([
                 'invoice_id' => $invoice->id,
                 'gateway_id' => $invoice->gateway_id,
                 'currency' => $invoice->currency,
                 'status' => 'received',
                 'source' => 'admin',
+                'post' => [
+                    'invoice_id' => $invoice->id,
+                    'txn_id' => $transactionId,
+                ],
                 'txn_id' => $transactionId,
             ]);
+            $transaction = $this->di['db']->getExistingModelById('Transaction', $newtx, 'Transaction not found');
+            if ((int) $transaction->invoice_id !== (int) $invoice->id) {
+                throw new InformationException('Transaction ID is already associated with another invoice.');
+            }
 
-            $result = $transactionService->processTransaction($newtx);
+            $result = $this->markAsPaid($invoice, false, $execute);
+            if ($result) {
+                $transaction->amount = $invoiceTotal;
+                $transaction->currency = $invoice->currency;
+                $transaction->status = \Model_Transaction::STATUS_PROCESSED;
+                $gatewayTitle = $payGateway->title ?: $payGateway->gateway;
+                $transaction->note = sprintf('%s transaction No: %s', $gatewayTitle, $transactionId);
+                $transaction->updated_at = date('Y-m-d H:i:s');
+                $this->di['db']->store($transaction);
+            }
 
             return (bool) $result;
         }
