@@ -2,9 +2,10 @@
 {% if pending_messages %}
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        {% for message in pending_messages %}
-            FOSSBilling.message('{{ message|e('js') }}');
-        {% endfor %}
+        const pendingMessages = {{ pending_messages|json_encode|raw }};
+        pendingMessages.forEach((message) => {
+            FOSSBilling.message(message);
+        });
     });
 </script>
 {% endif %}
