@@ -3,7 +3,8 @@ import postcss from 'postcss';
 import * as sass from 'sass';
 import { PurgeCSS } from 'purgecss';
 import { dirname, join, resolve } from 'path';
-import { mkdir, readFile, readdir, rm, writeFile } from 'fs/promises';
+import { mkdir, readFile, readdir, rm, stat, writeFile } from 'fs/promises';
+import * as esbuild from 'esbuild';
 
 export const sharedLoaders = {
   '.svg': 'file',
@@ -50,6 +51,24 @@ export async function removeDirContents(dir) {
       throw error;
     }
   }
+}
+
+export function getThemeBuildPaths(themePath) {
+  const buildDir = resolve(themePath, 'assets/build');
+
+  return {
+    buildDir,
+    jsDir: join(buildDir, 'js'),
+    cssDir: join(buildDir, 'css'),
+    symbolDir: join(buildDir, 'symbol'),
+  };
+}
+
+export async function prepareThemeBuildDirs(paths) {
+  await removeDirContents(paths.buildDir);
+  await ensureDir(paths.jsDir);
+  await ensureDir(paths.cssDir);
+  await ensureDir(paths.symbolDir);
 }
 
 export async function postprocessCssFile(cssPath, isProduction) {
@@ -148,6 +167,118 @@ export async function purgeCssFile(cssFilePath, options = {}) {
       console.log(`PurgeCSS applied to ${cssFilePath.split('/').pop()}`);
     }
   } catch (error) {
-    console.warn(`PurgeCSS failed for ${cssFilePath.split('/').pop()}:`, error.message);
+    throw new Error(`PurgeCSS failed for ${cssFilePath.split('/').pop()}: ${error.message}`);
   }
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) {
+    return `${bytes}b`;
+  }
+
+  const units = ['kb', 'mb'];
+  let size = bytes / 1024;
+  let unit = units.shift();
+
+  while (size >= 1024 && units.length > 0) {
+    size /= 1024;
+    unit = units.shift();
+  }
+
+  return `${size.toFixed(1)}${unit}`;
+}
+
+export async function logFileSize(filePath, label = filePath.split('/').pop()) {
+  const fileStat = await stat(filePath);
+  console.log(`  ${label}: ${formatBytes(fileStat.size)}`);
+}
+
+export async function buildCssFile(options) {
+  const {
+    entryPoint,
+    outfile,
+    nodeModulesDir,
+    isProduction,
+    loader = sharedLoaders,
+    themePath,
+    purge,
+  } = options;
+
+  await esbuild.build({
+    entryPoints: [entryPoint],
+    bundle: true,
+    outfile,
+    loader,
+    plugins: [sassPlugin(nodeModulesDir, isProduction)],
+    minify: isProduction,
+    sourcemap: !isProduction,
+    logLevel: 'info',
+    define: { 'process.env.NODE_ENV': isProduction ? '"production"' : '"development"' },
+    treeShaking: true,
+    legalComments: 'none',
+  });
+
+  await postprocessCssFile(outfile, isProduction);
+
+  if (purge) {
+    await purgeCssFile(outfile, {
+      themePath,
+      enabled: isProduction,
+      ...purge,
+    });
+  }
+
+  await logFileSize(outfile, `${outfile.split('/').pop()} after CSS post-processing`);
+}
+
+export async function buildJsFile(options) {
+  const {
+    entryPoint,
+    outfile,
+    outdir,
+    entryNames,
+    chunkNames,
+    isProduction,
+    loader = sharedLoaders,
+    drop = isProduction ? ['console', 'debugger'] : [],
+    splitting = false,
+    format = splitting ? 'esm' : undefined,
+  } = options;
+
+  const buildOptions = {
+    entryPoints: [entryPoint],
+    bundle: true,
+    platform: 'browser',
+    target: 'es2018',
+    loader,
+    define: { 'process.env.NODE_ENV': isProduction ? '"production"' : '"development"' },
+    minify: isProduction,
+    sourcemap: !isProduction,
+    logLevel: 'info',
+    treeShaking: true,
+    legalComments: 'none',
+    drop,
+    format,
+    splitting,
+  };
+
+  if (outdir) {
+    buildOptions.outdir = outdir;
+  } else {
+    buildOptions.outfile = outfile;
+  }
+
+  if (entryNames) {
+    buildOptions.entryNames = entryNames;
+  }
+
+  if (chunkNames) {
+    buildOptions.chunkNames = chunkNames;
+  }
+
+  await esbuild.build(buildOptions);
+}
+
+export async function writeAssetManifest(buildDir, manifest) {
+  await writeFile(join(buildDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
 }
