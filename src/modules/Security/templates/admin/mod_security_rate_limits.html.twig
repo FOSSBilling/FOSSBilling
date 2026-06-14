@@ -109,7 +109,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for counter in counters %}
+                {% for counter in counters.list %}
                     <tr>
                         <td class="text-nowrap">{{ counter.ip }}</td>
                         <td><code>{{ counter.policy }}</code></td>
@@ -145,8 +145,9 @@
             </tbody>
         </table>
     </div>
-    <div class="card-footer text-secondary">
-        {{ 'Only IP-based counters are shown here. Reset all also clears account, email, token, and hash-based counters.'|trans }}
+    <div class="card-footer d-flex align-items-center justify-content-between gap-3">
+        <div class="text-secondary">{{ 'Only IP-based counters are shown here. Reset all also clears account, email, token, and hash-based counters.'|trans }}</div>
+        {{ include('partial_pagination.html.twig', { 'list': counters, 'url': 'security/rate-limits' }) }}
     </div>
 </div>
 {% endblock %}

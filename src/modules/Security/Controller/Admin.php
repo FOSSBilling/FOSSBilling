@@ -115,6 +115,19 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             $counters = array_values(array_filter($counters, static fn (array $counter): bool => $status === 'limited' ? (bool) $counter['limited'] : !(bool) $counter['limited']));
         }
 
+        $page = filter_var($_GET['page'] ?? 1, FILTER_VALIDATE_INT, ['options' => ['default' => 1, 'min_range' => 1]]);
+        $perPage = filter_var($_GET['per_page'] ?? 25, FILTER_VALIDATE_INT, ['options' => ['default' => 25, 'min_range' => 1, 'max_range' => 100]]);
+        $total = count($counters);
+        $pages = $total > 0 ? (int) ceil($total / $perPage) : 0;
+        $page = min($page, max(1, $pages));
+        $counters = [
+            'pages' => $pages,
+            'page' => $page,
+            'per_page' => $perPage,
+            'total' => $total,
+            'list' => array_slice($counters, ($page - 1) * $perPage, $perPage),
+        ];
+
         return $app->render('mod_security_rate_limits', [
             'rate_limit_status' => $this->di['mod_service']('Security')->getRateLimitStatus(),
             'rate_limit_counters' => $counters,
