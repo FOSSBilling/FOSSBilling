@@ -11,7 +11,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
@@ -114,7 +114,7 @@
                                     <td class="text-end">{{ 'Note'|trans }}</td>
                                     <td>
                                         <svg class="icon">
-                                            <use xlink:href="#headset" />
+                                            <use href="#headset" />
                                         </svg>
                                         <a href="#tab-note" data-bs-toggle="tab" role="button">{{ transaction.note }}</a>
                                     </td>
@@ -137,14 +137,14 @@
                     {% block summary_actions %}
                         <a class="btn btn-primary" href="{{ 'invoice/transaction_process'|api_url(query: { 'id': transaction.id }) }}" {{ fb_api_link({reload: true}) }}>
                             <svg class="icon" width="24" height="24">
-                                <use xlink:href="#refresh" />
+                                <use href="#refresh" />
                             </svg>
                             <span>{{ 'Process'|trans }}</span>
                         </a>
                         <a class="btn btn-danger" href="{{ 'invoice/transaction_delete'|api_url(query: { 'id': transaction.id }) }}"
                             {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice/transactions'|url}) }}>
                             <svg class="icon" width="24" height="24">
-                                <use xlink:href="#trash" />
+                                <use href="#trash" />
                             </svg>
                             <span>{{ 'Delete'|trans }}</span>
                         </a>

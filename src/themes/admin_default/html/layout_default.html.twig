@@ -54,14 +54,9 @@
                            <span class="navbar-toggler-icon"></span>
                        </button>
                        <h1 class="d-none d-sm-flex navbar-brand d-none-navbar-horizontal pe-0 pe-md-3">
-                           <a href="{{ '/'|url }}">
-                               {% if company.logo_url %}
-                                   <img class="navbar-brand-image hide-theme-light" src="{{ company.logo_url_dark }}" alt="{{ company.name }}">
-                                   <img class="navbar-brand-image hide-theme-dark" src="{{ company.logo_url }}" alt="{{ company.name }}">
-                               {% else %}
-                                   <span>{{ company.name }}</span>
-                               {% endif %}
-                           </a>
+                           {{ include('partial_company_logo.html.twig', {
+                               image_class: 'navbar-brand-image'
+                           }) }}
                        </h1>
                    </div>
                   <div class="navbar-nav flex-row order-md-last gap-2">
@@ -79,12 +74,12 @@
                         <div class="btn-list gap-2">
                            <a href="https://github.com/FOSSBilling/FOSSBilling" class="btn px-3" target="_blank" rel="noreferrer" title="GitHub">
                               <svg class="icon m-0">
-                                 <use xlink:href="#brand-github" />
+                                 <use href="#brand-github" />
                               </svg>
                            </a>
                            <a href="https://github.com/sponsors/FOSSBilling" class="btn px-3" target="_blank" rel="noreferrer" title="{{ 'Sponsor'|trans }}">
                               <svg class="icon m-0 text-pink">
-                                 <use xlink:href="#heart" />
+                                 <use href="#heart" />
                               </svg>
                            </a>
                         </div>
@@ -96,7 +91,7 @@
                            data-bs-placement="bottom"
                            data-bs-original-title="{{ 'Enable dark mode'|trans }}">
                            <svg class="icon text-dark">
-                              <use xlink:href="#moon" />
+                              <use href="#moon" />
                            </svg>
                         </a>
                         <a class="nav-link px-0 hide-theme-light js-theme-toggler"
@@ -105,7 +100,7 @@
                            data-bs-placement="bottom"
                            data-bs-original-title="{{ 'Enable light mode'|trans }}">
                            <svg class="icon text-white">
-                              <use xlink:href="#sun" />
+                              <use href="#sun" />
                            </svg>
                         </a>
                      </div>
@@ -144,7 +139,7 @@
                                     <a class="nav-link{% if current_active_menu == 'dashboard' %} active{% endif %}" href="{{ '/'|url }}"{% if current_active_menu == 'dashboard' %} aria-current="page"{% endif %}>
                                         <span class="d-none d-xxl-block me-1">
                                             <svg class="icon">
-                                                <use xlink:href="#home" />
+                                                <use href="#home" />
                                             </svg>
                                         </span>
                                         <span>{{ 'Dashboard'|trans }}</span>
@@ -155,7 +150,7 @@
                                 <li class="nav-item dropdown{% if current_active_menu == location %} active{% endif %}">
                                     <a class="nav-link dropdown-toggle{% if current_active_menu == location %} active{% endif %}" href="{{ group.uri ?: '#' }}" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false"{% if current_active_menu == location %} aria-current="page"{% endif %}>
                                         <svg class="icon d-none d-xxl-block me-1">
-                                            <use xlink:href="#{{ group.class }}" />
+                                            <use href="#{{ group.class }}" />
                                          </svg>
                                         <span class="nav-link-title">{{ group.label|trans }}</span>
                                     </a>
@@ -174,7 +169,7 @@
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#navbar-base" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false" >
                                     <svg class="icon d-none d-xxl-block me-1">
-                                         <use xlink:href="#help" />
+                                         <use href="#help" />
                                       </svg>
                                     <span class="nav-link-title">{{ 'Help'|trans }}</span>
                                   </a>
@@ -201,7 +196,7 @@
                             <li class="breadcrumb-item">
                                 <a href="{{ '/'|url }}">
                                     <svg class="icon">
-                                        <use xlink:href="#home" />
+                                        <use href="#home" />
                                     </svg>
                                 </a>
                             </li>
@@ -237,7 +232,7 @@
 
     <button type="button" aria-label="{{ 'Back to Top'|trans }}" class="btn btn-floating btn-lg btn-icon back-to-top-hidden" id="back-to-top">
         <svg class="icon">
-            <use xlink:href="#arrow-up" />
+            <use href="#arrow-up" />
         </svg>
     </button>
 

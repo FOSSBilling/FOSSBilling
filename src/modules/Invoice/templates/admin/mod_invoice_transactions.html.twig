@@ -160,7 +160,7 @@
                 <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
                 <button class="btn btn-primary" type="submit">
                     <svg class="icon">
-                        <use xlink:href="#filter" />
+                        <use href="#filter" />
                     </svg>
                     {{ 'Apply Filters'|trans }}
                 </button>
@@ -212,18 +212,18 @@
                 <td>
                     <a class="btn btn-icon" href='{{ "invoice/transaction/#{tx.id}"|url }}'>
                         <svg class="icon">
-                            <use xlink:href="#edit" />
+                            <use href="#edit" />
                         </svg>
                     </a>
                     <a class="btn btn-icon" href="{{ 'invoice/transaction_process'|api_url(query: { 'id': tx.id }) }}" title="{{ 'Process Again'|trans }}" {{ fb_api_link({message: 'Processed'|trans}) }}>
                         <svg class="icon">
-                            <use xlink:href="#refresh" />
+                            <use href="#refresh" />
                         </svg>
                     </a>
                     <a class="btn btn-icon" href="{{ 'invoice/transaction_delete'|api_url(query: { 'id': tx.id }) }}"
                         {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                         <svg class="icon">
-                            <use xlink:href="#trash" />
+                            <use href="#trash" />
                         </svg>
                     </a>
                 </td>

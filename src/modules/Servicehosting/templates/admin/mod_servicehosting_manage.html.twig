@@ -74,14 +74,14 @@
     {{ order_actions }}
     <a class="btn btn-primary" href="{{ server.cpanel_url }}" target="_blank">
         <svg class="icon">
-            <use xlink:href="#server" />
+            <use href="#server" />
         </svg>
         <span>{{ 'Jump to control panel'|trans }}</span>
     </a>
     {% if service.reseller %}
         <a class="btn btn-primary" href="{{ server.reseller_cpanel_url }}" target="_blank">
             <svg class="icon">
-                <use xlink:href="#server" />
+                <use href="#server" />
             </svg>
             <span>{{ 'Reseller control panel'|trans }}</span>
         </a>
@@ -89,7 +89,7 @@
     <a class="btn btn-primary" href="{{ 'servicehosting/sync'|api_url(query: { 'order_id': order.id }) }}"
         {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, message: 'Account Synced'|trans}) }}>
         <svg class="icon">
-            <use xlink:href="#refresh" />
+            <use href="#refresh" />
         </svg>
         <span>{{ 'Sync with server'|trans }}</span>
     </a>

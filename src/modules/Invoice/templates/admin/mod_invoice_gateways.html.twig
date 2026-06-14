@@ -9,7 +9,7 @@
 {% set new_gateway_action %}
     <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newPaymentGatewayModal">
         <svg class="icon">
-            <use xlink:href="#plus" />
+            <use href="#plus" />
         </svg>
         {{ 'New Payment Gateway'|trans }}
     </button>
@@ -94,7 +94,7 @@
                                     <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
                                     <button class="btn btn-primary" type="submit">
                                         <svg class="icon">
-                                            <use xlink:href="#filter" />
+                                            <use href="#filter" />
                                         </svg>
                                         {{ 'Apply Filters'|trans }}
                                     </button>
@@ -127,18 +127,18 @@
                                         <a class="btn btn-icon" href="{{ 'invoice/gateway_copy'|api_url(query: { 'id': gateway.id }) }}" title="{{ 'Copy'|trans }}"
                                             {{ fb_api_link({redirect: 'invoice/gateways'|url}) }}>
                                             <svg class="icon">
-                                                <use xlink:href="#copy" />
+                                                <use href="#copy" />
                                             </svg>
                                         </a>
                                         <a class="btn btn-icon" href='{{ "invoice/gateway/#{gateway.id}"|url }}'>
                                             <svg class="icon">
-                                                <use xlink:href="#edit" />
+                                                <use href="#edit" />
                                             </svg>
                                         </a>
                                         <a class="btn btn-icon" href="{{ 'invoice/gateway_delete'|api_url(query: { 'id': gateway.id }) }}"
                                             {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice/gateways'|url}) }}>
                                             <svg class="icon">
-                                                <use xlink:href="#trash" />
+                                                <use href="#trash" />
                                             </svg>
                                         </a>
                                     </td>
@@ -209,7 +209,7 @@
                                                     <a class="btn btn-icon" href="{{ 'invoice/gateway_install'|api_url(query: { 'code': gtw }) }}" title="{{ 'Install'|trans }}"
                                                         {{ fb_api_link({redirect: 'invoice/gateways'|url}) }}>
                                                         <svg class="icon">
-                                                            <use xlink:href="#settings" />
+                                                            <use href="#settings" />
                                                         </svg>
                                                     </a>
                                                 </td>

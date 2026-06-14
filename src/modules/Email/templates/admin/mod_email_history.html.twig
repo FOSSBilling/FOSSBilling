@@ -94,7 +94,7 @@
                                        data-name-to="date_to">
                                 <span class="input-icon-addon">
                                     <svg class="icon">
-                                        <use xlink:href="#calendar" />
+                                        <use href="#calendar" />
                                     </svg>
                                 </span>
                             </div>
@@ -106,7 +106,7 @@
                 <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
                 <button class="btn btn-primary" type="submit">
                     <svg class="icon">
-                        <use xlink:href="#filter" />
+                        <use href="#filter" />
                     </svg>
                     {{ 'Apply Filters'|trans }}
                 </button>
@@ -150,19 +150,19 @@
                     data-email-content="{{ email.content_html|e('html_attr') }}"
                     title="{{ 'Preview'|trans }}">
                     <svg class="icon">
-                        <use xlink:href="#eye" />
+                        <use href="#eye" />
                     </svg>
                 </button>
                 <a class="btn btn-icon" href='{{ "email/#{email.id}"|url }}'>
                     <svg class="icon">
-                        <use xlink:href="#edit" />
+                        <use href="#edit" />
                     </svg>
                 </a>
                 {% if can_delete_email_history %}
                 <a class="btn btn-icon" href="{{ 'email/email_delete'|api_url(query: { 'id': email.id }) }}"
                     {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'email/history'|url}) }}>
                     <svg class="icon">
-                        <use xlink:href="#trash" />
+                        <use href="#trash" />
                     </svg>
                 </a>
                 {% endif %}

@@ -21,7 +21,7 @@
             search_toolbar_actions: '
                 <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newNotificationNoteModal">
                     <svg class="icon">
-                        <use xlink:href="#plus" />
+                        <use href="#plus" />
                     </svg>
                     ' ~ ('New Note'|trans) ~ '
                 </button>
@@ -70,7 +70,7 @@
                         <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
                         <button class="btn btn-primary" type="submit">
                             <svg class="icon">
-                                <use xlink:href="#filter" />
+                                <use href="#filter" />
                             </svg>
                             {{ 'Apply Filters'|trans }}
                         </button>
@@ -96,7 +96,7 @@
                                 <a class="btn btn-icon" href="{{ 'notification/delete'|api_url(query: { 'id': event.id }) }}"
                                     {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'notification'|url}) }}>
                                     <svg class="icon">
-                                        <use xlink:href="#trash" />
+                                        <use href="#trash" />
                                     </svg>
                                 </a>
                             </td>
@@ -113,7 +113,7 @@
                 <a class="btn btn-danger" href="{{ 'notification/delete_all'|api_url }}"
                     {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                     <svg class="icon">
-                        <use xlink:href="#trash"></use>
+                        <use href="#trash"></use>
                     </svg>
                     {{ 'Delete all'|trans }}
                 </a>

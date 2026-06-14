@@ -11,7 +11,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
@@ -73,19 +73,19 @@
                         {% if ticket.status != 'closed' %}
                         <a class="btn btn-warning" href="{{ 'support/public_ticket_close'|api_url(query: { 'id': ticket.id }) }}"
                             {{ fb_api_link({ redirect: 'support/public-tickets'|url }) }}>
-                            <svg class="icon"><use xlink:href="#x" /></svg>
+                            <svg class="icon"><use href="#x" /></svg>
                             {{ 'Close'|trans }}
                         </a>
                         {% endif %}
                         <a class="btn btn-danger" href="{{ 'support/public_ticket_delete'|api_url(query: { 'id' : ticket.id  }) }}"
                             {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/public-tickets'|url }) }}>
-                            <svg class="icon"><use xlink:href="#trash" /></svg>
+                            <svg class="icon"><use href="#trash" /></svg>
                             {{ 'Delete'|trans }}
                         </a>
                         <a class="btn btn-primary"
                             href='{{ "support/contact-us/conversation/#{ticket.hash}"|url(area: 'client') }}'
                             target="_blank">
-                            <svg class="icon"><use xlink:href="#eye" /></svg>
+                            <svg class="icon"><use href="#eye" /></svg>
                             {{ 'View as Author'|trans }}
                         </a>
                     {% endblock %}
@@ -100,7 +100,7 @@
                             </div>
                             <a href="#" class="btn btn-secondary" id="toggleMessages">
                                 <svg class="icon">
-                                    <use xlink:href="#eye" />
+                                    <use href="#eye" />
                                 </svg>
                                 {{ 'Show/Hide Messages'|trans }}
                             </a>
@@ -151,7 +151,7 @@
                             <a class="btn btn-warning" href="{{ 'support/public_ticket_close'|api_url(query: { 'id': ticket.id }) }}"
                                 {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/public-tickets'|url(query: { 'status': 'open' }) }) }}>
                                 <svg class="icon">
-                                    <use xlink:href="#check" />
+                                    <use href="#check" />
                                 </svg>
                                 {{ 'Close Ticket'|trans }}
                             </a>

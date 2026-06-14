@@ -9,7 +9,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
@@ -27,7 +27,7 @@
 {% set public_ticket_toolbar_actions %}
     <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newPublicTicketModal">
         <svg class="icon">
-            <use xlink:href="#plus" />
+            <use href="#plus" />
         </svg>
         {{ 'New Public Ticket'|trans }}
     </button>
@@ -165,7 +165,7 @@
                     <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
                     <button class="btn btn-primary" type="submit">
                         <svg class="icon">
-                            <use xlink:href="#filter" />
+                            <use href="#filter" />
                         </svg>
                         {{ 'Apply Filters'|trans }}
                     </button>
@@ -202,7 +202,7 @@
                 <td>
                     <a class="btn btn-icon" href='{{ "support/public-ticket/#{ticket.id}"|url }}'>
                         <svg class="icon">
-                            <use xlink:href="#edit" />
+                            <use href="#edit" />
                         </svg>
                     </a>
                 </td>

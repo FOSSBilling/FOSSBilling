@@ -118,14 +118,14 @@
                                     }
                                 }) }}>
                                 <svg class="icon">
-                                    <use xlink:href="#download" />
+                                    <use href="#download" />
                                 </svg>
                                 {{ updateButtonLabel }}
                             </a>
                         {% else %}
                             <a class="btn btn-secondary disabled" aria-disabled="true">
                                 <svg class="icon">
-                                    <use xlink:href="#download" />
+                                    <use href="#download" />
                                 </svg>
                                 {{ updateButtonLabel }}
                             </a>
@@ -133,7 +133,7 @@
                         {% if not isPreviewBranch %}
                             <a class="btn btn-outline-secondary" href="{{ 'system/recheck_update'|api_url }}" {{ fb_api_link({ reload: true }) }}>
                                 <svg class="icon">
-                                    <use xlink:href="#refresh" />
+                                    <use href="#refresh" />
                                 </svg>
                                 {{ 'Check for Updates'|trans }}
                             </a>
@@ -186,7 +186,7 @@
                                 }
                             }) }}>
                             <svg class="icon">
-                                <use xlink:href="#settings-bolt" />
+                                <use href="#settings-bolt" />
                             </svg>
                             {{ 'Apply Patches & Update Configuration'|trans }}
                         </a>

@@ -18,7 +18,7 @@
                 <a class="page-link"
                    href="{{ url|url(filteredRequest|merge({ (pageParam): 1 })) }}"
                    aria-label="{{ 'First'|trans }}">
-                    <svg class="icon"><use xlink:href="#chevrons-left" /></svg>
+                    <svg class="icon"><use href="#chevrons-left" /></svg>
                 </a>
             </li>
 
@@ -26,7 +26,7 @@
                 <a class="page-link"
                    href="{{ url|url(filteredRequest|merge({ (pageParam): currentPage - 1 })) }}"
                    aria-label="{{ 'Previous'|trans }}" rel="prev">
-                    <svg class="icon"><use xlink:href="#chevron-left" /></svg>
+                    <svg class="icon"><use href="#chevron-left" /></svg>
                 </a>
             </li>
 
@@ -45,7 +45,7 @@
                 <a class="page-link"
                    href="{{ url|url(filteredRequest|merge({ (pageParam): currentPage + 1 })) }}"
                    aria-label="{{ 'Next'|trans }}" rel="next">
-                    <svg class="icon"><use xlink:href="#chevron-right" /></svg>
+                    <svg class="icon"><use href="#chevron-right" /></svg>
                 </a>
             </li>
 
@@ -53,7 +53,7 @@
                 <a class="page-link"
                    href="{{ url|url(filteredRequest|merge({ (pageParam): list.pages })) }}"
                    aria-label="{{ 'Last'|trans }}">
-                    <svg class="icon"><use xlink:href="#chevrons-right" /></svg>
+                    <svg class="icon"><use href="#chevrons-right" /></svg>
                 </a>
             </li>
         </ul>

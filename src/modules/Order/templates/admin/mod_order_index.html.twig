@@ -9,7 +9,7 @@
 {% set new_order_action %}
     <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newOrderModal">
         <svg class="icon">
-            <use xlink:href="#plus" />
+            <use href="#plus" />
         </svg>
         {{ 'New Order'|trans }}
     </button>
@@ -175,7 +175,7 @@
                             <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
                             <button class="btn btn-primary" type="submit">
                                 <svg class="icon">
-                                    <use xlink:href="#filter" />
+                                    <use href="#filter" />
                                 </svg>
                                 {{ 'Apply Filters'|trans }}
                             </button>
@@ -224,13 +224,13 @@
                                 <td>
                                     <a class="btn btn-icon" href='{{ "order/manage/#{order.id}"|url }}'>
                                         <svg class="icon">
-                                            <use xlink:href="#edit" />
+                                            <use href="#edit" />
                                         </svg>
                                     </a>
                                     <a class="btn btn-icon" href="{{ 'order/delete'|api_url(query: { 'id': order.id }) }}"
                                         {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'order'|url}) }}>
                                         <svg class="icon">
-                                            <use xlink:href="#trash" />
+                                            <use href="#trash" />
                                         </svg>
                                     </a>
                                 </td>
@@ -252,7 +252,7 @@
                         {% include 'partial_pagination.html.twig' with { 'list': orders, 'url': 'order' } %}
                         <a class="btn btn-secondary" href="{{ 'order/export_csv'|api_url(query: { CSRFToken: CSRFToken }) }}" title="{{ 'Export Orders'|trans }}">
                             <svg class="icon">
-                                <use xlink:href="#download" />
+                                <use href="#download" />
                             </svg>
                             {{ 'Export Orders'|trans }}
                         </a>

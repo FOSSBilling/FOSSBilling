@@ -2,7 +2,7 @@
 <div class="accordion-item">
     <h3 class="accordion-header">
         <button class="accordion-button {% if not request.checkout %}collapsed{%endif%}" type="button" data-bs-toggle="collapse" data-bs-target="#checkout" aria-expanded="false" aria-controls="checkout">
-            <svg class="icon me-2"><use xlink:href="#shopping-cart" /></svg>
+            <svg class="icon me-2"><use href="#shopping-cart" /></svg>
             <span>{{ 'Cart'|trans }}</span>&nbsp;<span class="badge text-bg-success">{{ cart.items | length }}</span>
         </button>
     </h3>
@@ -40,7 +40,7 @@
                                     {{ (item.total * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}
                                 {% endif %}
                             </td>
-                            <td><button data-cart-item-id="{{ item.id }}" class="btn btn-dark btn-sm remove-cart-item" title="{{ 'Remove item'|trans }}"><svg class="icon"><use xlink:href="#x" /></svg></button></td>
+                            <td><button data-cart-item-id="{{ item.id }}" class="btn btn-dark btn-sm remove-cart-item" title="{{ 'Remove item'|trans }}"><svg class="icon"><use href="#x" /></svg></button></td>
                         </tr>
 
                         {% if request.show_custom_form_values %}

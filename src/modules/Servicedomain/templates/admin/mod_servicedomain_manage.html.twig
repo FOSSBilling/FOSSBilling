@@ -70,31 +70,31 @@
                 {% if order.status == 'active' %}
                 <a class="btn btn-primary" type="button" id="get-epp">
                     <svg class="icon">
-                        <use xlink:href="#key" />
+                        <use href="#key" />
                     </svg>
                     <span>{{ 'Get EPP'|trans }}</span>
                 </a>
                 <a class="btn btn-warning{% if service.locked == 0 %} d-none{% endif %}" type="button" id="domain-unlock">
                     <svg class="icon">
-                        <use xlink:href="#lock-open" />
+                        <use href="#lock-open" />
                     </svg>
                     <span>{{ 'Unlock'|trans }}</span>
                 </a>
                 <a class="btn btn-primary{% if service.locked == 1 %} d-none{% endif %}" type="button" id="domain-lock">
                     <svg class="icon">
-                        <use xlink:href="#lock" />
+                        <use href="#lock" />
                     </svg>
                     <span>{{ 'Lock'|trans }}</span>
                 </a>
                 <a class="btn btn-danger{% if service.privacy == 0 %} d-none{% endif %}" type="button" id="domain-disable-pp">
                     <svg class="icon">
-                        <use xlink:href="#eye" />
+                        <use href="#eye" />
                     </svg>
                     <span>{{ 'Disable Privacy'|trans }}</span>
                 </a>
                 <a class="btn btn-primary{% if service.privacy == 1 %} d-none{% endif %}" type="button" id="domain-enable-pp">
                     <svg class="icon">
-                        <use xlink:href="#eye-off" />
+                        <use href="#eye-off" />
                     </svg>
                     <span>{{ 'Enable Privacy'|trans }}</span>
                 </a>

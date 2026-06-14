@@ -11,7 +11,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
@@ -113,12 +113,12 @@
                                             <a href="{{ 'extension/settings/formbuilder'|url }}{% if product.form_id %}?id={{ product.form_id }}{% endif %}" class="btn" id="formbuilder_btn">
                                                 {% if product.form_id %}
                                                 <svg class="icon">
-                                                    <use xlink:href="#edit" />
+                                                    <use href="#edit" />
                                                 </svg>
                                                 {{ 'Edit'|trans }}
                                                 {% else %}
                                                 <svg class="icon">
-                                                    <use xlink:href="#plus" />
+                                                    <use href="#plus" />
                                                 </svg>
                                                 {{ 'Add New'|trans }}
                                                 {% endif %}
@@ -207,7 +207,7 @@
                                     <label class="mb-0 flex-grow-1" for="addon_{{ addon_id }}">{{ addon_title }}</label>
                                     <a class="btn btn-icon" href='{{ "product/addon/#{addon_id}"|url }}'>
                                         <svg class="icon">
-                                            <use xlink:href="#edit" />
+                                            <use href="#edit" />
                                         </svg>
                                     </a>
                                 </div>
@@ -224,7 +224,7 @@
                         <div class="d-flex justify-content-end gap-2">
                             <a href="{{ 'product/addons'|url }}#tab-new" class="btn btn-primary">
                                 <svg class="icon">
-                                    <use xlink:href="#plus" />
+                                    <use href="#plus" />
                                 </svg>
                                 {{ 'Create New Addon'|trans }}
                             </a>
@@ -293,7 +293,7 @@
                     <div class="d-flex justify-content-end">
                         <a href='{{ "order/#{product.slug}"|url(area: 'client') }}' class="btn btn-primary" target="_blank">
                             <svg class="icon" width="24" height="24">
-                                <use xlink:href="#search" />
+                                <use href="#search" />
                             </svg>
                             <span>{{ 'View as Client'|trans }}</span>
                         </a>

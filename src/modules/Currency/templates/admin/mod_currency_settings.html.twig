@@ -19,7 +19,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
@@ -62,7 +62,7 @@
                                 {% if can_update_currency_rates %}
                                     <a class="btn btn-primary" href="{{ 'currency/update_rates'|api_url }}" {{ fb_api_link({redirect: 'extension/settings/currency'|url}) }}>
                                         <svg class="icon icon-tabler">
-                                            <use xlink:href="#refresh" />
+                                            <use href="#refresh" />
                                         </svg>
                                         <span>{{ 'Update Rates'|trans }}</span>
                                     </a>
@@ -70,7 +70,7 @@
                                 {% if can_create_currency %}
                                     <button class="btn btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#newCurrencyModal">
                                         <svg class="icon">
-                                            <use xlink:href="#plus" />
+                                            <use href="#plus" />
                                         </svg>
                                         <span>{{ 'Add New Currency'|trans }}</span>
                                     </button>
@@ -114,7 +114,7 @@
                                             <a class="btn btn-icon" href='{{ "currency/manage/#{currency.code}"|url }}'
                                                data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
                                                 <svg class="icon">
-                                                    <use xlink:href="#edit" />
+                                                    <use href="#edit" />
                                                 </svg>
                                             </a>
                                         {% endif %}
@@ -123,7 +123,7 @@
                                                 data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
                                                 {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Delete'|trans}, redirect: 'extension/settings/currency'|url}) }}>
                                                 <svg class="icon">
-                                                    <use xlink:href="#trash" />
+                                                    <use href="#trash" />
                                                 </svg>
                                             </a>
                                         {% endif %}
@@ -132,7 +132,7 @@
                                                 data-bs-toggle="tooltip" data-bs-title="{{ 'Set as Default'|trans }}"
                                                 {{ fb_api_link({redirect: 'extension/settings/currency'|url}) }}>
                                                 <svg class="icon">
-                                                    <use xlink:href="#check" />
+                                                    <use href="#check" />
                                                 </svg>
                                             </a>
                                         {% endif %}

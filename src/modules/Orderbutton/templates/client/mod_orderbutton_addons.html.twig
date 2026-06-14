@@ -44,14 +44,14 @@
             id="addon_{{ addon.id }}" autocomplete="off">
           <label class="btn btn-outline-success" for="addon_{{ addon.id }}" data-bs-toggle="tooltip"
             data-bs-title="{{ 'Add to cart'|trans }}">
-            <svg class="icon"><use xlink:href="#check" /></svg>
+            <svg class="icon"><use href="#check" /></svg>
           </label>
 
           <input type="radio" class="btn-check" name="addons[{{ addon.id }}][selected]" value="0"
             id="addon_{{ addon.id }}_decline" autocomplete="off" checked>
           <label class="btn btn-outline-danger" for="addon_{{ addon.id }}_decline" data-bs-toggle="tooltip"
             data-bs-title="{{ 'Remove from cart'|trans }}">
-            <svg class="icon"><use xlink:href="#x" /></svg>
+            <svg class="icon"><use href="#x" /></svg>
           </label>
         </div>
       </td>

@@ -9,7 +9,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
@@ -113,7 +113,7 @@
                                         <td class="text-end">{{ 'Order Notes'|trans }}</td>
                                         <td>
                                             <svg class="icon">
-                                                <use xlink:href="#headset" />
+                                                <use href="#headset" />
                                             </svg>
                                             <a>{{ order.notes }}</a>
                                         </td>
@@ -165,7 +165,7 @@
                     <a class="btn btn-primary"
                         {{ fb_api_link({href: 'order/activate'|api_url(query: {id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
-                            <use xlink:href="#player-play" />
+                            <use href="#player-play" />
                         </svg>
                         <span>{{ 'Activate'|trans }}</span>
                     </a>
@@ -176,7 +176,7 @@
                     <a class="btn btn-primary"
                         {{ fb_api_link({href: 'order/renew'|api_url(query: {'id': order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
-                            <use xlink:href="#refresh" />
+                            <use href="#refresh" />
                         </svg>
                         <span>{{ 'Renew'|trans }}</span>
                     </a>
@@ -185,14 +185,14 @@
                     <a class="btn btn-primary"
                         {{ fb_api_link({href: 'order/suspend'|api_url(query: {'id': order.id}), modal: {type: 'prompt', title: 'Suspension Reason'|trans, label: 'Reason for Suspension'|trans, key: 'reason'}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
-                            <use xlink:href="#player-pause" />
+                            <use href="#player-pause" />
                         </svg>
                         <span>{{ 'Suspend'|trans }}</span>
                     </a>
                     {% else %}
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#suspendModal">
                         <svg class="icon" width="24" height="24">
-                            <use xlink:href="#x" />
+                            <use href="#x" />
                         </svg>
                         <span>{{ 'Suspend'|trans }}</span>
                     </button>
@@ -200,7 +200,7 @@
                     <a class="btn btn-primary"
                         {{ fb_api_link({href: 'order/cancel'|api_url(query: {'id': order.id}), modal: {type: 'prompt', title: 'Cancellation Reason'|trans, label: 'Reason for Cancellation'|trans, key: 'reason'}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
-                            <use xlink:href="#x" />
+                            <use href="#x" />
                         </svg>
                         <span>{{ 'Cancel'|trans }}</span>
                     </a>
@@ -210,7 +210,7 @@
                     <a class="btn btn-primary"
                         {{ fb_api_link({href: 'order/unsuspend'|api_url(query: {id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
-                            <use xlink:href="#player-play" />
+                            <use href="#player-play" />
                         </svg>
                         <span>{{ 'Unsuspend'|trans }}</span>
                     </a>
@@ -220,7 +220,7 @@
                     <a class="btn btn-primary"
                         {{ fb_api_link({href: 'order/uncancel'|api_url(query: {id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
-                            <use xlink:href="#player-play" />
+                            <use href="#player-play" />
                         </svg>
                         <span>{{ 'Activate'|trans }}</span>
                     </a>
@@ -228,7 +228,7 @@
 
                     <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
                         <svg class="icon" width="24" height="24">
-                            <use xlink:href="#trash" />
+                            <use href="#trash" />
                         </svg>
                         <span>{{ 'Delete'|trans }}</span>
                     </button>
@@ -237,7 +237,7 @@
                     <a class="btn btn-primary"
                         {{ fb_api_link({href: 'invoice/renewal_invoice'|api_url(query: {id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                         <svg class="icon" width="24" height="24">
-                            <use xlink:href="#plus" />
+                            <use href="#plus" />
                         </svg>
                         <span>{{ 'Issue Invoice'|trans }}</span>
                     </a>
@@ -340,7 +340,7 @@
                                         >
                                         <span class="input-icon-addon">
                                             <svg class="icon">
-                                                <use xlink:href="#calendar" />
+                                                <use href="#calendar" />
                                             </svg>
                                         </span>
                                     </div>
@@ -468,7 +468,7 @@
                                     <td>
                                         <a class="btn btn-icon" href='{{ "order/manage/#{addon.id}"|url }}'>
                                             <svg class="icon">
-                                                <use xlink:href="#edit" />
+                                                <use href="#edit" />
                                             </svg>
                                         </a>
                                     </td>
@@ -524,7 +524,7 @@
                                     <td>
                                         <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
                                             <svg class="icon">
-                                                <use xlink:href="#edit" />
+                                                <use href="#edit" />
                                             </svg>
                                         </a>
                                     </td>
@@ -571,7 +571,7 @@
                                         <a class="btn btn-icon"
                                             {{ fb_api_link({href: 'order/status_history_delete'|api_url(query: {'id': sh.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'order'|url}) }}>
                                             <svg class="icon">
-                                                <use xlink:href="#trash" />
+                                                <use href="#trash" />
                                             </svg>
                                         </a>
                                     </td>
@@ -620,7 +620,7 @@
                                     <td>
                                         <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}'>
                                             <svg class="icon">
-                                                <use xlink:href="#edit" />
+                                                <use href="#edit" />
                                             </svg>
                                         </a>
                                     </td>

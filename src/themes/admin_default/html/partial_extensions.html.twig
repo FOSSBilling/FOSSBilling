@@ -39,7 +39,7 @@
                     {% if extension.icon_url %}
                         <img src="{{ extension.icon_url }}" alt="{{ extension.name }}" style="width: 32px; height: 32px;">
                     {% else %}
-                        <svg class="icon" style="width: 32px; height: 32px;"><use xlink:href="#settings" /></svg>
+                        <svg class="icon" style="width: 32px; height: 32px;"><use href="#settings" /></svg>
                     {% endif %}
                 </td>
                 <td class="text-wrap">
@@ -53,7 +53,7 @@
                 <td class="text-nowrap" data-bs-toggle="tooltip" data-bs-title="{{ 'View extension README'|trans }}">
                     <a class="btn btn-icon" data-bs-toggle="modal" data-bs-target="#extensionReadMe" onclick="getExtensionReadme('{{ extension.id }}', '{{ extension.name }}');">
                      <svg class="icon">
-                         <use xlink:href="#eye" />
+                         <use href="#eye" />
                      </svg>
                     </a>
                 </td>
@@ -62,7 +62,7 @@
                         data-bs-toggle="tooltip" data-bs-title="{{ 'Install extension'|trans }}"
                         {{ fb_api_link({ message: 'By installing "' ~ extension.name ~ '", you agree with terms and conditions. Only install extensions you trust. You also might want to have a full backup ready in case something goes wrong.'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true }) }}>
                         <svg class="icon">
-                            <use xlink:href="#download" />
+                            <use href="#download" />
                         </svg>
                     </a>
                 </td>

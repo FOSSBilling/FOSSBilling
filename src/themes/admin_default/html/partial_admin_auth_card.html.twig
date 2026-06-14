@@ -6,14 +6,11 @@
 <div class="page page-center">
     <div class="container-tight py-4">
         <div class="text-center mb-4">
-            <a href="{{ '/'|url(area: 'client') }}">
-                {% if company.logo_url %}
-                    <img class="hide-theme-light" src="{{ company.logo_url_dark }}" style="height: 60px; width: auto;" alt="{{ company.name }}">
-                    <img class="hide-theme-dark" src="{{ company.logo_url }}" style="height: 60px; width: auto;" alt="{{ company.name }}">
-                {% else %}
-                    <span class="h1">{{ company.name }}</span>
-                {% endif %}
-            </a>
+            {{ include('partial_company_logo.html.twig', {
+                link_url: '/'|url(area: 'client'),
+                image_style: 'height: 60px; width: auto;',
+                fallback_class: 'h1'
+            }) }}
         </div>
         <div class="card card-md">
             <div class="card-body">

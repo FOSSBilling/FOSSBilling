@@ -61,7 +61,7 @@
                     <li class="page-item">
                         <a class="page-link" href="{{ url|url(filteredRequest|merge({ (pageParam): currentPage - 1, (perPageParam): currentPerPage })) ~ hash }}">
                             <svg class="icon">
-                                <use xlink:href="#chevron-left" />
+                                <use href="#chevron-left" />
                             </svg>
                         </a>
                     </li>
@@ -98,7 +98,7 @@
                     <li class="page-item">
                         <a class="page-link" href="{{ url|url(filteredRequest|merge({ (pageParam): currentPage + 1, (perPageParam): currentPerPage })) ~ hash }}">
                             <svg class="icon">
-                                <use xlink:href="#chevron-right" />
+                                <use href="#chevron-right" />
                             </svg>
                         </a>
                     </li>

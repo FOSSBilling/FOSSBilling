@@ -9,7 +9,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
@@ -53,7 +53,7 @@
                     <div class="col-xl-2 d-flex align-items-end">
                         <button type="submit" class="btn btn-primary">
                             <svg class="icon me-2">
-                                <use xlink:href="#plus" />
+                                <use href="#plus" />
                             </svg>
                             {{ 'Add'|trans }}
                         </button>
@@ -81,7 +81,7 @@
                         </td>
                         <td>
                             <svg class="icon">
-                                <use xlink:href="#arrow-right" />
+                                <use href="#arrow-right" />
                             </svg>
                         </td>
                         <td>
@@ -95,7 +95,7 @@
                             <a class="btn btn-icon" href="{{ 'redirect/delete'|api_url(query: { 'id': r.id }) }}"
                                 {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Delete'|trans}, reload: true}) }}>
                                 <svg class="icon">
-                                    <use xlink:href="#trash" />
+                                    <use href="#trash" />
                                 </svg>
                             </a>
                         </td>

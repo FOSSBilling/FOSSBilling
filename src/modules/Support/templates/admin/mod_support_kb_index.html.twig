@@ -9,7 +9,7 @@
 {% set new_article_action %}
     <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newKbArticleModal">
         <svg class="icon">
-            <use xlink:href="#plus" />
+            <use href="#plus" />
         </svg>
         {{ 'New Article'|trans }}
     </button>
@@ -17,7 +17,7 @@
 {% set new_kb_category_action %}
     <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newKbCategoryModal">
         <svg class="icon">
-            <use xlink:href="#plus" />
+            <use href="#plus" />
         </svg>
         {{ 'New Category'|trans }}
     </button>
@@ -28,7 +28,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|url }}">
                 <svg class="icon" width="24">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
@@ -94,7 +94,7 @@
                                     <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
                                     <button class="btn btn-primary" type="submit">
                                         <svg class="icon">
-                                            <use xlink:href="#filter" />
+                                            <use href="#filter" />
                                         </svg>
                                         {{ 'Apply Filters'|trans }}
                                     </button>
@@ -129,13 +129,13 @@
                                            <td>
                                                <a class="btn btn-icon" href='{{ "support/kb/article/#{post.id}"|url }}'>
                                                    <svg class="icon">
-                                                       <use xlink:href="#edit" />
+                                                       <use href="#edit" />
                                                    </svg>
                                                </a>
                                                <a class="btn btn-icon" href="{{ 'support/kb_article_delete'|api_url(query: { 'id': post.id }) }}"
                                                    {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/kb'|url }) }}>
                                                    <svg class="icon">
-                                                       <use xlink:href="#trash" />
+                                                       <use href="#trash" />
                                                    </svg>
                                                </a>
                                            </td>
@@ -176,13 +176,13 @@
                                         <td class="w-1">
                                             <a class="btn btn-icon" href='{{ "support/kb/category/#{cat_id}"|url }}'>
                                                 <svg class="icon">
-                                                    <use xlink:href="#edit" />
+                                                    <use href="#edit" />
                                                 </svg>
                                             </a>
                                             <a class="btn btn-icon" href="{{ 'support/kb_category_delete'|api_url(query: { 'id': cat_id }) }}"
                                                 {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/kb#tab-categories'|url }) }}>
                                                 <svg class="icon">
-                                                    <use xlink:href="#trash" />
+                                                    <use href="#trash" />
                                                 </svg>
                                             </a>
                                         </td>

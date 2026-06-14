@@ -6,7 +6,7 @@
 {% set new_tld_action %}
     <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newTldModal">
         <svg class="icon">
-            <use xlink:href="#plus" />
+            <use href="#plus" />
         </svg>
         {{ 'New Top Level Domain'|trans }}
     </button>
@@ -14,7 +14,7 @@
 {% set new_registrar_action %}
     <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newRegistrarModal">
         <svg class="icon">
-            <use xlink:href="#plus" />
+            <use href="#plus" />
         </svg>
         {{ 'New Domain Registrar'|trans }}
     </button>
@@ -95,13 +95,13 @@
                                         <td>
                                             <a class="btn btn-icon" href='{{ "servicedomain/id/#{tld.id}"|url }}'>
                                                 <svg class="icon">
-                                                    <use xlink:href="#edit" />
+                                                    <use href="#edit" />
                                                 </svg>
                                             </a>
                                             <a class="btn btn-icon" href="{{ 'servicedomain/tld_delete'|api_url(query: { 'tld': tld.tld }) }}"
                                                 {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'servicedomain#tab-tlds'|url}) }}>
                                                 <svg class="icon">
-                                                    <use xlink:href="#trash" />
+                                                    <use href="#trash" />
                                                 </svg>
                                             </a>
                                         </td>
@@ -143,18 +143,18 @@
                                         <td>
                                             <a class="btn btn-icon" href="{{ 'servicedomain/registrar_copy'|api_url(query: { 'id': registrar.id }) }}" title="{{ 'Copy'|trans }}" {{ fb_api_link({redirect: 'servicedomain#tab-registrars'|url}) }}>
                                                 <svg class="icon">
-                                                    <use xlink:href="#copy" />
+                                                    <use href="#copy" />
                                                 </svg>
                                             </a>
                                             <a class="btn btn-icon" href='{{ "servicedomain/registrar/#{registrar.id}"|url }}'>
                                                 <svg class="icon">
-                                                    <use xlink:href="#edit" />
+                                                    <use href="#edit" />
                                                 </svg>
                                             </a>
                                             <a class="btn btn-icon" href="{{ 'servicedomain/registrar_delete'|api_url(query: { 'id': registrar.id }) }}"
                                                 {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'servicedomain#tab-registrars'|url}) }}>
                                                 <svg class="icon">
-                                                    <use xlink:href="#trash" />
+                                                    <use href="#trash" />
                                                 </svg>
                                             </a>
                                         </td>
@@ -365,7 +365,7 @@
                                                 <td>
                                                     <a class="btn btn-icon" href="{{ 'servicedomain/registrar_install'|api_url(query: { 'code': code }) }}" title="{{ 'Install'|trans }}" {{ fb_api_link({redirect: 'servicedomain#tab-registrars'|url, message: 'Domain Registrar Installed'|trans}) }}>
                                                         <svg class="icon">
-                                                            <use xlink:href="#settings" />
+                                                            <use href="#settings" />
                                                         </svg>
                                                     </a>
                                                 </td>

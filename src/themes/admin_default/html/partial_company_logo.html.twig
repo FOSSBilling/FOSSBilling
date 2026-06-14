@@ -1,0 +1,16 @@
+{% set logo_url = logo_url|default(company.logo_url) %}
+{% set dark_logo_url = dark_logo_url|default(company.logo_url_dark) %}
+{% set link_url = link_url|default('/'|url) %}
+{% set link_class = link_class|default('') %}
+{% set image_class = image_class|default('') %}
+{% set image_style = image_style|default(null) %}
+{% set fallback_class = fallback_class|default('') %}
+
+<a{% if link_class %} class="{{ link_class }}"{% endif %} href="{{ link_url }}">
+    {% if logo_url or dark_logo_url %}
+        <img class="hide-theme-light{% if image_class %} {{ image_class }}{% endif %}" src="{{ dark_logo_url|default(logo_url) }}" alt="{{ company.name }}"{% if image_style %} style="{{ image_style }}"{% endif %}>
+        <img class="hide-theme-dark{% if image_class %} {{ image_class }}{% endif %}" src="{{ logo_url|default(dark_logo_url) }}" alt="{{ company.name }}"{% if image_style %} style="{{ image_style }}"{% endif %}>
+    {% else %}
+        <span{% if fallback_class %} class="{{ fallback_class }}"{% endif %}>{{ company.name }}</span>
+    {% endif %}
+</a>

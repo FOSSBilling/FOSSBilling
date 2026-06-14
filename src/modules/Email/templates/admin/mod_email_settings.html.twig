@@ -8,7 +8,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
@@ -32,7 +32,7 @@
     {% set new_template_action %}
         <div class="d-flex flex-wrap gap-2">
             <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newEmailTemplateModal">
-                <svg class="icon"><use xlink:href="#plus" /></svg>
+                <svg class="icon"><use href="#plus" /></svg>
                 {{ 'New Template'|trans }}
             </button>
             <div class="dropdown">
@@ -41,21 +41,21 @@
                 </button>
                 <div class="dropdown-menu">
                     <a class="dropdown-item" href="{{ 'email/batch_template_enable'|api_url }}" {{ fb_api_link({ message: 'All Email Templates Enabled'|trans}) }}>
-                        <svg class="icon me-1"><use xlink:href="#player-play" /></svg>
+                        <svg class="icon me-1"><use href="#player-play" /></svg>
                         {{ 'Enable All'|trans }}
                     </a>
                     <a class="dropdown-item" href="{{ 'email/batch_template_disable'|api_url }}" {{ fb_api_link({ message: 'All Email Templates Disabled'|trans}) }}>
-                        <svg class="icon me-1"><use xlink:href="#x" /></svg>
+                        <svg class="icon me-1"><use href="#x" /></svg>
                         {{ 'Disable All'|trans }}
                     </a>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" id="validateTemplatesLink" href="#">
-                        <svg class="icon me-1"><use xlink:href="#check" /></svg>
+                        <svg class="icon me-1"><use href="#check" /></svg>
                         {{ 'Validate All'|trans }}
                     </a>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="{{ 'email/batch_template_generate'|api_url }}" {{ fb_api_link({ reload: true }) }}>
-                        <svg class="icon me-1"><use xlink:href="#mail" /></svg>
+                        <svg class="icon me-1"><use href="#mail" /></svg>
                         {{ 'Regenerate Built-in Templates'|trans }}
                     </a>
                 </div>
@@ -156,7 +156,7 @@
                                 <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
                                 <button class="btn btn-primary" type="submit">
                                     <svg class="icon">
-                                        <use xlink:href="#filter" />
+                                        <use href="#filter" />
                                     </svg>
                                     {{ 'Apply Filters'|trans }}
                                 </button>
@@ -223,7 +223,7 @@
                                         <a class="btn btn-icon" href='{{ "email/template/#{template.id}"|url }}'
                                            data-bs-toggle="tooltip" data-bs-title="{{ (can_manage_templates ? 'Edit' : 'View')|trans }}">
                                             <svg class="icon">
-                                                <use xlink:href="{{ can_manage_templates ? '#edit' : '#eye' }}" />
+                                                <use href="{{ can_manage_templates ? '#edit' : '#eye' }}" />
                                             </svg>
                                         </a>
                                         {% if can_manage_templates and (template.is_custom or not template.has_default) %}
@@ -231,7 +231,7 @@
                                                 data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
                                                 {{ fb_api_link({href: 'email/template_delete'|api_url(query:{'id': template.id}), modal: {type: 'danger', title: 'Are you sure?'|trans, content: 'This action will delete the email template'|trans, button: 'Delete'|trans}, reload: true}) }}>
                                                 <svg class="icon">
-                                                    <use xlink:href="#trash" />
+                                                    <use href="#trash" />
                                                 </svg>
                                             </a>
                                         {% endif %}
@@ -320,7 +320,7 @@
                                                        data-name-to="date_to">
                                                 <span class="input-icon-addon">
                                                     <svg class="icon">
-                                                        <use xlink:href="#calendar" />
+                                                        <use href="#calendar" />
                                                     </svg>
                                                 </span>
                                             </div>
@@ -332,7 +332,7 @@
                                 <a class="btn btn-outline-secondary" href="{{ request_path|url({ tab: 'queue' }) }}">{{ 'Reset'|trans }}</a>
                                 <button class="btn btn-primary" type="submit">
                                     <svg class="icon">
-                                        <use xlink:href="#filter" />
+                                        <use href="#filter" />
                                     </svg>
                                     {{ 'Apply Filters'|trans }}
                                 </button>
@@ -386,7 +386,7 @@
                                             data-email-content="{{ queuedEmail.content|e('html_attr') }}"
                                             title="{{ 'Preview'|trans }}">
                                             <svg class="icon">
-                                                <use xlink:href="#eye" />
+                                                <use href="#eye" />
                                             </svg>
                                         </button>
                                     </td>
@@ -529,7 +529,7 @@
                             {% if can_send_emails %}
                             <button class="btn btn-secondary" id="emailTest">
                                 <svg class="icon">
-                                    <use xlink:href="#wifi" />
+                                    <use href="#wifi" />
                                 </svg>
                                 {{ 'Send a Test Email to Yourself'|trans }}
                             </button>

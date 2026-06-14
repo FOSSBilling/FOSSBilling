@@ -1,7 +1,7 @@
 {% if settings.side_menu_dashboard %}
     <li class="nav-item">
         <a class="nav-link d-flex align-items-center gap-2{% if current_active_menu == 'dashboard' %} active{% endif %}" href="{{ '/'|url }}"{% if current_active_menu == 'dashboard' %} aria-current="page"{% endif %}>
-            <svg class="icon"><use xlink:href="#layout-grid" /></svg>
+            <svg class="icon"><use href="#layout-grid" /></svg>
             {{ 'Dashboard'|trans }}
         </a>
     </li>
@@ -10,7 +10,7 @@
 {% if settings.side_menu_order %}
     <li class="nav-item">
         <a class="nav-link d-flex align-items-center gap-2{% if current_active_menu == 'order' %} active{% endif %}" href="{{ 'order'|url }}"{% if current_active_menu == 'order' %} aria-current="page"{% endif %}>
-            <svg class="icon"><use xlink:href="#shopping-cart" /></svg>
+            <svg class="icon"><use href="#shopping-cart" /></svg>
             {{ 'Order'|trans }}
         </a>
     </li>
@@ -21,7 +21,7 @@
 {% if settings.side_menu_support %}
     <li class="nav-item">
                     <a class="nav-link d-flex align-items-center gap-2{% if current_active_menu == 'support' %} active{% endif %}" href="{{ support_url }}"{% if current_active_menu == 'support' %} aria-current="page"{% endif %}>
-            <svg class="icon"><use xlink:href="#lifebuoy" /></svg>
+            <svg class="icon"><use href="#lifebuoy" /></svg>
             {{ 'Support'|trans }}
         </a>
     </li>
@@ -30,7 +30,7 @@
 {% if settings.side_menu_services %}
     <li class="nav-item">
         <a class="nav-link d-flex align-items-center gap-2{% if current_active_menu == 'services' %} active{% endif %}" href="{{ 'order/service'|url }}"{% if current_active_menu == 'services' %} aria-current="page"{% endif %}>
-            <svg class="icon"><use xlink:href="#apps" /></svg>
+            <svg class="icon"><use href="#apps" /></svg>
             {{ 'Services'|trans }}
         </a>
     </li>
@@ -39,7 +39,7 @@
 {% if settings.side_menu_invoices %}
     <li class="nav-item">
         <a class="nav-link d-flex align-items-center gap-2{% if current_active_menu == 'invoices' %} active{% endif %}" href="{{ 'invoice'|url }}"{% if current_active_menu == 'invoices' %} aria-current="page"{% endif %}>
-            <svg class="icon"><use xlink:href="#receipt" /></svg>
+            <svg class="icon"><use href="#receipt" /></svg>
             {{ 'Invoices'|trans }}
         </a>
     </li>
@@ -48,7 +48,7 @@
 {% if settings.side_menu_emails %}
     <li class="nav-item">
         <a class="nav-link d-flex align-items-center gap-2{% if current_active_menu == 'emails' %} active{% endif %}" href="{{ 'email'|url}}"{% if current_active_menu == 'emails' %} aria-current="page"{% endif %}>
-            <svg class="icon"><use xlink:href="#mail" /></svg>
+            <svg class="icon"><use href="#mail" /></svg>
             {{ 'Email'|trans }}
         </a>
     </li>
@@ -57,7 +57,7 @@
 {% if settings.side_menu_payments %}
     <li class="nav-item">
         <a class="nav-link d-flex align-items-center gap-2{% if current_active_menu == 'payments' %} active{% endif %}" href="{{ 'client/balance'|url }}"{% if current_active_menu == 'payments' %} aria-current="page"{% endif %}>
-            <svg class="icon"><use xlink:href="#wallet" /></svg>
+            <svg class="icon"><use href="#wallet" /></svg>
             {{ 'Wallet'|trans }}
         </a>
     </li>
@@ -66,7 +66,7 @@
 {% if (guest.extension_is_on({"mod":"news"}) and settings.side_menu_news) %}
     <li class="nav-item">
         <a class="nav-link d-flex align-items-center gap-2{% if current_active_menu == 'news' %} active{% endif %}" href="{{ 'news'|url }}"{% if current_active_menu == 'news' %} aria-current="page"{% endif %}>
-            <svg class="icon"><use xlink:href="#news" /></svg>
+            <svg class="icon"><use href="#news" /></svg>
             {{ 'News'|trans }}
         </a>
     </li>
@@ -75,7 +75,7 @@
 {% if (guest.support_kb_enabled() and settings.side_menu_kb) %}
     <li class="nav-item">
         <a class="nav-link d-flex align-items-center gap-2{% if current_active_menu == 'kb' %} active{% endif %}" href="{{ 'support/kb'|url }}"{% if current_active_menu == 'kb' %} aria-current="page"{% endif %}>
-            <svg class="icon"><use xlink:href="#book" /></svg>
+            <svg class="icon"><use href="#book" /></svg>
             {{ 'Knowledge Base'|trans }}
         </a>
     </li>

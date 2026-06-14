@@ -2,7 +2,7 @@
 <div class="accordion-item">
     <h3 class="accordion-header">
         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#products" aria-expanded="false" aria-controls="products">
-            <svg class="icon me-2"><use xlink:href="#apps" /></svg>
+            <svg class="icon me-2"><use href="#apps" /></svg>
             <span>{{ 'Select Product'|trans }}</span>&nbsp;<span class="badge bg-info">{{ products.list|length }} {{ 'Items'|trans }}</span>
         </button>
     </h3>
@@ -15,7 +15,7 @@
                     {% for i, product in category.products|sort((a, b) => a.priority <=> b.priority) %}
                         <a class="list-group-item" href="{{ 'order'|url(query: { 'product': product.id, 'show_custom_form_values': request.show_custom_form_values }) }}">
                             {{ product.title }}
-                            <svg class="icon"><use xlink:href="#arrow-right" /></svg>
+                            <svg class="icon"><use href="#arrow-right" /></svg>
                         </a>
                     {% endfor %}
                 </div>

@@ -19,7 +19,7 @@
 <ul class="breadcrumb">
     <li class="breadcrumb-item">
         <svg class="icon">
-            <use xlink:href="#home" />
+            <use href="#home" />
         </svg>
     </li>
     <li class="breadcrumb-item">
@@ -132,7 +132,7 @@
                                         <td class="text-end">{{ 'Notes'|trans }}:</td>
                                         <td>
                                             <svg class="icon">
-                                                <use xlink:href="#headset" />
+                                                <use href="#headset" />
                                             </svg>
                                             {% if has_profile_edit_actions %}
                                                 <a href="#tab-profile" data-bs-toggle="tab" role="button">{{ client.notes }}</a>
@@ -175,7 +175,7 @@
                     {% block summary_actions %}
                         <a href='{{ "client/login/#{client.id}"|url }}' class="btn btn-primary" target="_blank">
                             <svg class="icon" width="24" height="24">
-                                <use xlink:href="#login" />
+                                <use href="#login" />
                             </svg>
                             <span>{{ 'Login to Client Area'|trans }}</span>
                         </a>
@@ -183,7 +183,7 @@
                         <a class="btn btn-danger"
                             {{ fb_api_link({href: 'client/delete'|api_url(query: {'id': client.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'client'|url}) }}>
                             <svg class="icon" width="24" height="24">
-                                <use xlink:href="#trash" />
+                                <use href="#trash" />
                             </svg>
                             <span>{{ 'Delete'|trans }}</span>
                         </a>
@@ -481,7 +481,7 @@
                 {% block section_action %}
                     <a href="{{ 'order'|url(query: { 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
                         <svg class="icon">
-                            <use xlink:href="#plus" />
+                            <use href="#plus" />
                         </svg>
                         {{ 'New Order'|trans }}
                     </a>
@@ -515,7 +515,7 @@
                                     <td>
                                         <a class="btn btn-icon" href='{{ "order/manage/#{order.id}"|url }}'>
                                             <svg class="icon">
-                                                <use xlink:href="#settings" />
+                                                <use href="#settings" />
                                             </svg>
                                         </a>
                                     </td>
@@ -541,7 +541,7 @@
                 {% block section_action %}
                     <a href="{{ 'invoice'|url(query: { 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
                         <svg class="icon">
-                            <use xlink:href="#plus" />
+                            <use href="#plus" />
                         </svg>
                         {{ 'New Invoice'|trans }}
                     </a>
@@ -575,7 +575,7 @@
                                     <td>
                                         <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
                                             <svg class="icon">
-                                                <use xlink:href="#edit" />
+                                                <use href="#edit" />
                                             </svg>
                                         </a>
                                     </td>
@@ -601,7 +601,7 @@
                 {% block section_action %}
                     <a href="{{ 'support'|url(query: { 'client_id': client.id }) }}#tab-new" class="btn btn-primary">
                         <svg class="icon">
-                            <use xlink:href="#plus" />
+                            <use href="#plus" />
                         </svg>
                         {{ 'New Support Ticket'|trans }}
                     </a>
@@ -633,7 +633,7 @@
                                     <td>
                                         <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}'>
                                             <svg class="icon">
-                                                <use xlink:href="#edit" />
+                                                <use href="#edit" />
                                             </svg>
                                         </a>
                                     </td>
@@ -679,7 +679,7 @@
                                         <a class="btn btn-icon"
                                             {{ fb_api_link({ href: 'client/balance_delete'|api_url(query: {id: tx.id }), modal: {type: 'confirm', title: 'Are you sure?'|trans} }) }}>
                                             <svg class="icon">
-                                                <use xlink:href="#trash" />
+                                                <use href="#trash" />
                                             </svg>
                                         </a>
                                     </td>
@@ -721,7 +721,7 @@
                         {% block form_actions %}
                             <button class="btn btn-primary" type="submit">
                                 <svg class="icon">
-                                    <use xlink:href="#plus" />
+                                    <use href="#plus" />
                                 </svg>
                                 {{ 'Add Funds'|trans }}
                             </button>
@@ -806,12 +806,12 @@
                                             data-email-content="{{ email.content_html|e('html_attr') }}"
                                             title="{{ 'Preview'|trans }}">
                                             <svg class="icon">
-                                                <use xlink:href="#eye" />
+                                                <use href="#eye" />
                                             </svg>
                                         </button>
                                         <a class="btn btn-icon" href='{{ "email/#{email.id}"|url }}'>
                                             <svg class="icon">
-                                                <use xlink:href="#edit"></use>
+                                                <use href="#edit"></use>
                                             </svg>
                                         </a>
                                     </td>
@@ -873,7 +873,7 @@
                                     <td>
                                         <a class="btn btn-icon" href='{{ "invoice/transaction/#{tx.id}"|url }}'>
                                             <svg class="icon">
-                                                <use xlink:href="#edit" />
+                                                <use href="#edit" />
                                             </svg>
                                         </a>
                                     </td>

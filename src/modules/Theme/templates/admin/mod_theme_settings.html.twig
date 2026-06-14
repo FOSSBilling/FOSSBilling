@@ -9,7 +9,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home"/>
+                    <use href="#home"/>
                 </svg>
             </a>
         </li>
@@ -63,7 +63,7 @@
                                 {% if theme.hasSettings %}
                                     <a class="btn btn-outline-primary" href='{{ "theme/#{theme.code}"|url }}'>
                                         <svg class="icon">
-                                            <use xlink:href="#settings"/>
+                                            <use href="#settings"/>
                                         </svg>
                                         {{ 'Settings'|trans }}
                                     </a>
@@ -75,14 +75,14 @@
                                 {% if current_client_theme.code != theme.code %}
                                     <a class="btn btn-primary" href="{{ 'theme/select'|api_url(query: { 'code': theme.code }) }}" {{ fb_api_link({ redirect: 'extension/settings/theme'|url }) }}>
                                         <svg class="icon">
-                                            <use xlink:href="#check"/>
+                                            <use href="#check"/>
                                         </svg>
                                         {{ 'Set as Default'|trans }}
                                     </a>
                                 {% else %}
                                     <button class="btn btn-primary" type="button" disabled aria-disabled="true">
                                         <svg class="icon">
-                                            <use xlink:href="#check"/>
+                                            <use href="#check"/>
                                         </svg>
                                         {{ 'Set as Default'|trans }}
                                     </button>
@@ -131,7 +131,7 @@
                                 {% if theme.hasSettings %}
                                     <a class="btn btn-outline-primary" href='{{ "theme/#{theme.code}"|url }}'>
                                         <svg class="icon">
-                                            <use xlink:href="#settings"/>
+                                            <use href="#settings"/>
                                         </svg>
                                         {{ 'Settings'|trans }}
                                     </a>
@@ -143,14 +143,14 @@
                                 {% if current_admin_theme.code != theme.code %}
                                     <a class="btn btn-primary" href="{{ 'theme/select'|api_url(query: {'code' : theme.code }) }}" {{ fb_api_link({ redirect: 'extension/settings/theme'|url }) }}>
                                         <svg class="icon">
-                                            <use xlink:href="#check"/>
+                                            <use href="#check"/>
                                         </svg>
                                         {{ 'Set as Default'|trans }}
                                     </a>
                                 {% else %}
                                     <button class="btn btn-primary" type="button" disabled aria-disabled="true">
                                         <svg class="icon">
-                                            <use xlink:href="#check"/>
+                                            <use href="#check"/>
                                         </svg>
                                         {{ 'Set as Default'|trans }}
                                     </button>

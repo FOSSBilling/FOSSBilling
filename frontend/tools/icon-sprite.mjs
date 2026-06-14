@@ -1,5 +1,89 @@
 import { basename, resolve } from 'path';
-import { mkdir, readFile, writeFile } from 'fs/promises';
+import { access, mkdir, readFile, writeFile } from 'fs/promises';
+
+async function fileExists(filePath) {
+  try {
+    await access(filePath);
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function normalizeIconEntry(entry, defaultVariant) {
+  if (typeof entry === 'string') {
+    return {
+      name: entry,
+      variant: defaultVariant,
+      optional: false,
+    };
+  }
+
+  return {
+    name: entry.name,
+    variant: entry.variant || defaultVariant,
+    optional: entry.optional || false,
+    dynamic: entry.dynamic || false,
+  };
+}
+
+export async function resolveIconFiles(options) {
+  const {
+    manifestPath,
+    sources,
+  } = options;
+
+  const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+  const defaultVariant = manifest.defaultVariant || 'outline';
+  const icons = manifest.icons.map((entry) => normalizeIconEntry(entry, defaultVariant));
+  const iconFiles = [];
+  const missingIcons = [];
+  const sourceCounts = new Map();
+
+  for (const icon of icons) {
+    let resolvedIcon = null;
+
+    for (const source of sources) {
+      const iconPath = resolve(source.dir, source.variant ? `${icon.name}.svg` : `${icon.variant}/${icon.name}.svg`);
+
+      if (await fileExists(iconPath)) {
+        resolvedIcon = {
+          name: icon.name,
+          path: iconPath,
+          source: source.name,
+          variant: source.variant || icon.variant,
+          dynamic: icon.dynamic,
+        };
+        break;
+      }
+    }
+
+    if (!resolvedIcon && !icon.optional) {
+      missingIcons.push(`${icon.name} (${icon.variant})`);
+      continue;
+    }
+
+    if (!resolvedIcon) {
+      continue;
+    }
+
+    sourceCounts.set(resolvedIcon.source, (sourceCounts.get(resolvedIcon.source) || 0) + 1);
+    iconFiles.push(resolvedIcon);
+  }
+
+  if (missingIcons.length > 0) {
+    throw new Error(`Missing required icons: ${missingIcons.join(', ')}`);
+  }
+
+  return {
+    iconFiles,
+    report: {
+      total: iconFiles.length,
+      sources: Object.fromEntries(sourceCounts),
+    },
+  };
+}
 
 export async function generateIconSprite(options) {
   const {

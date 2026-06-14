@@ -10,9 +10,14 @@
         <div class="col-md-6 col-lg-4">
             {% if public_logo_url and settings.login_page_show_logo %}
                 <div class="d-flex justify-content-center">
-                    <a href="{{ settings.login_page_logo_url|default('/') }}" target="_blank" rel="noopener noreferrer">
-                        <img class="my-4" height="50px" src="{{ public_logo_url }}" alt="{{ company.name }}"/>
-                    </a>
+                    {{ include('partial_company_logo.html.twig', {
+                        logo_url: public_logo_url,
+                        link_url: settings.login_page_logo_url|default('/'),
+                        link_target: '_blank',
+                        link_rel: 'noopener noreferrer',
+                        image_class: 'my-4',
+                        image_height: '50px'
+                    }) }}
                 </div>
             {% endif %}
             <div class="card">

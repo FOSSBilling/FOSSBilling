@@ -9,7 +9,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
@@ -76,14 +76,14 @@
             {% block form_actions %}
                 <a href="{{ 'extension/settings/support'|url }}" class="btn btn-secondary">
                     <svg class="icon">
-                        <use xlink:href="#arrow-left" />
+                        <use href="#arrow-left" />
                     </svg>
                     {{ 'Go Back'|trans }}
                 </a>
                 <a class="btn btn-danger" href="{{ 'support/helpdesk_delete'|api_url(query: { 'id': helpdesk.id }) }}"
                     {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'extension/settings/support'|url }) }}>
                     <svg class="icon">
-                        <use xlink:href="#trash" />
+                        <use href="#trash" />
                     </svg>
                     {{ 'Delete'|trans }}
                 </a>

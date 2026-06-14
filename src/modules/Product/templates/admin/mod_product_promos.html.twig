@@ -8,7 +8,7 @@
 {% set promo_toolbar_actions %}
     <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newPromoModal">
         <svg class="icon">
-            <use xlink:href="#plus" />
+            <use href="#plus" />
         </svg>
         {{ 'New Promotion'|trans }}
     </button>
@@ -19,7 +19,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
@@ -85,13 +85,13 @@
                         <td>
                             <a class="btn btn-icon" href='{{ "product/promo/#{promo.id}"|url }}'>
                                 <svg class="icon">
-                                    <use xlink:href="#edit" />
+                                    <use href="#edit" />
                                 </svg>
                             </a>
                             <a class="btn btn-icon" href="{{ 'product/promo_delete'|api_url(query: { 'id': promo.id }) }}"
                                 {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product/promos'|url}) }}>
                                 <svg class="icon">
-                                    <use xlink:href="#trash" />
+                                    <use href="#trash" />
                                 </svg>
                             </a>
                         </td>
