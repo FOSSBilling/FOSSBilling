@@ -47,19 +47,41 @@ test('gets an order', function (): void {
 
 test('gets order list', function (): void {
     $api = new Admin();
+    $identity = new Model_Admin();
+
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getSearchQuery')
-        ->atLeast()->once()
+        ->once()
         ->andReturn(['query', []]);
+    $serviceMock->shouldReceive('getBatchForApi')
+        ->once()
+        ->with([3, 2, 1], $identity)
+        ->andReturn([
+            ['id' => 3, 'title' => 'Third order'],
+            ['id' => 2, 'title' => 'Second order'],
+            ['id' => 1, 'title' => 'First order'],
+        ]);
+    $serviceMock->shouldReceive('toApiArray')
+        ->never();
 
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
     $paginatorMock->shouldReceive('getPaginatedResultSet')
-        ->atLeast()->once()
-        ->andReturn(['list' => []]);
+        ->once()
+        ->andReturn([
+            'list' => [
+                ['id' => 3],
+                ['id' => 2],
+                ['id' => 1],
+            ],
+            'total' => 3,
+            'pages' => 1,
+            'page' => 1,
+            'per_page' => 25,
+        ]);
 
     $modMock = Mockery::mock(FOSSBilling\Module::class);
     $modMock->shouldReceive('getConfig')
-        ->atLeast()->once()
+        ->once()
         ->andReturn(['show_addons' => 0]);
 
     $di = container();
@@ -68,9 +90,17 @@ test('gets order list', function (): void {
 
     $api->setDi($di);
     $api->setService($serviceMock);
+    $api->setIdentity($identity);
 
     $result = $api->get_list([]);
-    expect($result)->toBeArray();
+    expect($result)
+        ->toBeArray()
+        ->and($result['list'])->toBe([
+            ['id' => 3, 'title' => 'Third order'],
+            ['id' => 2, 'title' => 'Second order'],
+            ['id' => 1, 'title' => 'First order'],
+        ])
+        ->and($result['total'])->toBe(3);
 });
 
 test('creates an order', function (): void {
