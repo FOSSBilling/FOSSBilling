@@ -3,7 +3,7 @@ import postcss from 'postcss';
 import * as sass from 'sass';
 import { PurgeCSS } from 'purgecss';
 import { dirname, join, resolve } from 'path';
-import { mkdir, readFile, readdir, rm, writeFile } from 'fs/promises';
+import { mkdir, readFile, readdir, rm, stat, writeFile } from 'fs/promises';
 import * as esbuild from 'esbuild';
 
 export const sharedLoaders = {
@@ -175,6 +175,28 @@ export async function purgeCssFile(cssFilePath, options = {}) {
   }
 }
 
+function formatBytes(bytes) {
+  if (bytes < 1024) {
+    return `${bytes}b`;
+  }
+
+  const units = ['kb', 'mb'];
+  let size = bytes / 1024;
+  let unit = units.shift();
+
+  while (size >= 1024 && units.length > 0) {
+    size /= 1024;
+    unit = units.shift();
+  }
+
+  return `${size.toFixed(1)}${unit}`;
+}
+
+export async function logFileSize(filePath, label = filePath.split('/').pop()) {
+  const fileStat = await stat(filePath);
+  console.log(`  ${label}: ${formatBytes(fileStat.size)}`);
+}
+
 export async function buildCssFile(options) {
   const {
     entryPoint,
@@ -209,6 +231,8 @@ export async function buildCssFile(options) {
       ...purge,
     });
   }
+
+  await logFileSize(outfile, `${outfile.split('/').pop()} after CSS post-processing`);
 }
 
 export async function buildJsFile(options) {

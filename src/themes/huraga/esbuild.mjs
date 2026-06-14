@@ -36,9 +36,12 @@ async function build() {
 
     await buildJsFile({
       entryPoint: resolve(__dirname, 'assets/huraga.js'),
-      outfile: join(paths.jsDir, 'huraga.js'),
+      outdir: paths.jsDir,
+      entryNames: '[name]',
+      chunkNames: 'chunks/[name]-[hash]',
       isProduction,
       loader: sharedLoaders,
+      splitting: true,
       drop: isProduction ? ['console', 'debugger'] : []
     });
 

@@ -1,57 +1,54 @@
-import * as esbuild from 'esbuild';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
-import { mkdir, writeFile } from 'fs/promises';
+import {
+  buildCssFile,
+  buildJsFile,
+  ensureDir,
+  sharedLoaders,
+  writeAssetManifest,
+} from './tools/esbuild-helpers.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(__dirname, '..');
 const outputDir = resolve(rootDir, 'src/public/assets');
+const nodeModulesDir = resolve(rootDir, 'node_modules');
 const isProduction = process.env.NODE_ENV === 'production';
 
-const sharedOptions = {
-  bundle: true,
-  platform: 'browser',
-  target: 'es2018',
-  minify: isProduction,
-  sourcemap: !isProduction,
-  logLevel: 'info',
-  legalComments: 'none',
-};
-
 async function build() {
-  await mkdir(resolve(outputDir, 'js'), { recursive: true });
-  await mkdir(resolve(outputDir, 'css'), { recursive: true });
-  await mkdir(resolve(outputDir, 'editor'), { recursive: true });
+  await ensureDir(resolve(outputDir, 'js'));
+  await ensureDir(resolve(outputDir, 'css'));
+  await ensureDir(resolve(outputDir, 'editor'));
 
-  await esbuild.build({
-    ...sharedOptions,
-    entryPoints: [resolve(__dirname, 'core/fossbilling.js')],
+  await buildJsFile({
+    entryPoint: resolve(__dirname, 'core/fossbilling.js'),
     outfile: resolve(outputDir, 'js/fossbilling.js'),
+    isProduction,
+    drop: [],
   });
 
-  await esbuild.build({
-    ...sharedOptions,
-    entryPoints: [resolve(__dirname, 'core/api.js')],
+  await buildJsFile({
+    entryPoint: resolve(__dirname, 'core/api.js'),
     outfile: resolve(outputDir, 'js/api.js'),
+    isProduction,
+    drop: [],
   });
 
-  await esbuild.build({
-    ...sharedOptions,
-    entryPoints: [resolve(__dirname, 'editor/ckeditor.js')],
+  await buildJsFile({
+    entryPoint: resolve(__dirname, 'editor/ckeditor.js'),
     outfile: resolve(outputDir, 'editor/ckeditor.js'),
+    isProduction,
+    drop: [],
     loader: {
+      ...sharedLoaders,
       '.svg': 'dataurl',
-      '.woff': 'file',
-      '.woff2': 'file',
-      '.ttf': 'file',
-      '.eot': 'file',
     },
   });
 
-  await esbuild.build({
-    ...sharedOptions,
-    entryPoints: [resolve(__dirname, 'styles/markdown.css')],
+  await buildCssFile({
+    entryPoint: resolve(__dirname, 'styles/markdown.css'),
     outfile: resolve(outputDir, 'css/markdown.css'),
+    nodeModulesDir,
+    isProduction,
   });
 
   const manifest = {
@@ -62,7 +59,7 @@ async function build() {
     'editor/ckeditor.css': '/public/assets/editor/ckeditor.css',
   };
 
-  await writeFile(resolve(outputDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
+  await writeAssetManifest(outputDir, manifest);
 }
 
 build().catch((error) => {
