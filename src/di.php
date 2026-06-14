@@ -439,7 +439,7 @@ $di['set_return_uri'] = function () use ($di): void {
  *
  * @param string $role The role to create the API object for. Can be 'guest', 'client', or 'admin'.
  *
- * @return \Api_Handler The new API identity wrapper that was just created.
+ * @return \FOSSBilling\Api\Identity The new API identity wrapper that was just created.
  *
  * @throws \Exception If the specified role is not recognized or if a client is trying to use the API while their email is not valid.
  */
@@ -465,10 +465,7 @@ $di['api'] = $di->protect(function ($role) use ($di) {
         }
     }
 
-    $api = new Api_Handler($identity);
-    $api->setDi($di);
-
-    return $api;
+    return new FOSSBilling\Api\Identity($identity);
 });
 
 $di['api_dispatcher'] = function () use ($di): FOSSBilling\Api\Dispatcher {
@@ -479,8 +476,8 @@ $di['api_dispatcher'] = function () use ($di): FOSSBilling\Api\Dispatcher {
 };
 
 $di['api_proxy'] = $di->protect(function (string $role) use ($di): FOSSBilling\Api\Proxy {
-    $handler = $di['api']($role);
-    $api = new FOSSBilling\Api\Proxy($handler->getIdentity());
+    $identity = $di['api']($role);
+    $api = new FOSSBilling\Api\Proxy($identity->getIdentity());
     $api->setDi($di);
 
     return $api;
