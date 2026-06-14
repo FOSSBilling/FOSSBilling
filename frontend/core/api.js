@@ -400,6 +400,9 @@ const API = {
       'Accept': 'application/json',
       'X-CSRF-Token': Tools.getCSRFToken() || '',
     };
+    if (url.origin === window.location.origin) {
+      headers['X-Requested-With'] = 'XMLHttpRequest';
+    }
     if (body && !isFormData) {
       headers['Content-Type'] = 'application/json';
     }
