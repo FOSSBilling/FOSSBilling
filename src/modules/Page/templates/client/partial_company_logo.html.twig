@@ -8,7 +8,7 @@
 
 <a{% if link_class %} class="{{ link_class }}"{% endif %} href="{{ link_url }}"{% if link_target is defined %} target="{{ link_target }}"{% endif %}{% if link_rel %} rel="{{ link_rel }}"{% endif %}>
     {% if logo_url %}
-        <img{% if image_class %} class="{{ image_class }}"{% endif %} src="{{ logo_url }}" alt="{{ company.name }}" height="{{ image_height }}" title="{{ company.name }}">
+        <img{% if image_class %} class="{{ image_class }}"{% endif %} src="{{ logo_url }}" alt="{{ company.name }}" width="{{ image_width }}" height="{{ image_height }}">
         {% if show_mobile_name %}
             <span class="d-sm-none">{{ company.name }}</span>
         {% endif %}

@@ -331,7 +331,9 @@ class Service implements InjectionAwareInterface
         $orderIds = array_unique(array_filter(array_column($lines, 'order_id')));
 
         // Ensure order IDs are safe integers before using in SQL
-        $orderIds = array_values(array_filter(array_map(intval(...), $orderIds), static fn ($id): bool => $id > 0));
+        $orderIds = array_map(intval(...), $orderIds);
+        $orderIds = array_filter($orderIds, static fn ($id): bool => $id > 0);
+        $orderIds = array_values($orderIds);
 
         if (!empty($orderIds)) {
             // Batch load orders
@@ -345,7 +347,10 @@ class Service implements InjectionAwareInterface
             $orders = $this->di['db']->find('ClientOrder', 'id IN (' . implode(',', $orderIdPlaceholders) . ')', $orderIdParams);
 
             // Batch load related products
-            $productIds = array_unique(array_filter(array_map(static fn ($o): int => isset($o->product_id) ? (int) $o->product_id : 0, $orders)));
+            $rawProductIds = array_map(static fn ($order): int => isset($order->product_id) ? (int) $order->product_id : 0, $orders);
+            $nonEmptyProductIds = array_filter($rawProductIds);
+            $productIds = array_unique($nonEmptyProductIds);
+
             // Ensure product IDs are safe integers before using in SQL
             $productIds = array_values(array_filter($productIds, static fn ($id): bool => $id > 0));
 
@@ -421,7 +426,7 @@ class Service implements InjectionAwareInterface
             $email['to_client'] = $invoiceModel->client_id;
             $email['code'] = 'mod_invoice_created';
             $email['invoice'] = $invoice;
-            $emailService = $di['mod_service']('Email');
+            $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             $di['logger']->setChannel('email')->error('Failed to send email for invoice creation', ['exception' => $exc->getMessage()]);
@@ -855,8 +860,9 @@ class Service implements InjectionAwareInterface
         $balance = $cbrepo->getClientBalance($client);
         $required = $this->getTotalWithTax($invoice);
         $epsilon = 0.01;
+        $difference = $balance - $required;
 
-        if (abs($balance - $required) < $epsilon || $balance - $required > 0.00001) {
+        if ($difference >= -$epsilon) {
             // @phpstan-ignore if.alwaysFalse
             if (DEBUG) {
                 $this->di['logger']->setChannel('billing')->info("Setting invoice {$invoice->id} as paid with credits for the amount of {$required}.");
@@ -867,7 +873,7 @@ class Service implements InjectionAwareInterface
             $balanceTransaction->type = 'invoice';
             $balanceTransaction->rel_id = $invoice->id;
 
-            $invoice_identifier = $invoice->serie_nr ?: $invoice->id;
+            $invoice_identifier = $invoice->nr ?: $invoice->id;
             $balanceTransaction->description = "Payment for invoice #{$invoice_identifier} using account credit.";
 
             $balanceTransaction->amount = -$required;
