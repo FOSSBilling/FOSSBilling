@@ -5,7 +5,7 @@
 {% set active_menu = 'security' %}
 {% set has_filter_panel = true %}
 {% set filter_panel_id = 'page-search-filters' %}
-{% set filter_panel_open = request.ip or request.status or rate_limit_invalid_ip %}
+{% set filter_panel_open = request.ip or rate_limit_invalid_ip %}
 {% set status = rate_limit_status %}
 {% set counters = rate_limit_counters %}
 
@@ -60,7 +60,7 @@
     </div>
     {{ include('partial_search.html.twig', {
         search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
-        search_hidden_fields: { 'ip': request.ip, 'status': request.status }
+        search_hidden_fields: { 'ip': request.ip }
     }) }}
     <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
         <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
@@ -71,17 +71,9 @@
                 <div class="alert alert-danger" role="alert">{{ 'Enter a valid IPv4 or IPv6 address to filter rate limit counters.'|trans }}</div>
             {% endif %}
             <div class="row g-3">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     <label class="form-label text-muted small mb-1" for="rate-limit-ip-filter">{{ 'IP Address'|trans }}</label>
                     <input class="form-control" id="rate-limit-ip-filter" type="text" name="ip" value="{{ request.ip }}" placeholder="{{ 'Filter by IP address'|trans }}">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label text-muted small mb-1" for="rate-limit-status-filter">{{ 'Status'|trans }}</label>
-                    <select class="form-select" id="rate-limit-status-filter" name="status">
-                        <option value="">{{ 'All Statuses'|trans }}</option>
-                        <option value="active"{% if request.status == 'active' %} selected{% endif %}>{{ 'Active'|trans }}</option>
-                        <option value="limited"{% if request.status == 'limited' %} selected{% endif %}>{{ 'Limited'|trans }}</option>
-                    </select>
                 </div>
             </div>
             <div class="d-flex justify-content-end gap-2 mt-3">
@@ -114,11 +106,7 @@
                         <td class="text-nowrap">{{ counter.ip }}</td>
                         <td><code>{{ counter.policy }}</code></td>
                         <td>
-                            {% if counter.limited %}
-                                <span class="badge bg-danger-lt text-danger">{{ 'Limited'|trans }}</span>
-                            {% else %}
-                                <span class="badge bg-warning-lt text-warning">{{ 'Active'|trans }}</span>
-                            {% endif %}
+                            <span class="badge bg-danger-lt text-danger">{{ 'Limited'|trans }}</span>
                         </td>
                         <td>{{ counter.remaining }}/{{ counter.limit }}</td>
                         <td>
@@ -139,14 +127,14 @@
                     </tr>
                 {% else %}
                     <tr>
-                        <td class="text-center text-secondary py-4" colspan="7">{{ 'No active IP-based rate limiter counters were found.'|trans }}</td>
+                        <td class="text-center text-secondary py-4" colspan="7">{{ 'No rate-limited IP counters were found.'|trans }}</td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
     <div class="card-footer d-flex align-items-center justify-content-between gap-3">
-        <div class="text-secondary">{{ 'Only IP-based counters are shown here. Reset all also clears account, email, token, and hash-based counters.'|trans }}</div>
+        <div class="text-secondary">{{ 'Only rate-limited IP-based counters are shown here. Reset all also clears account, email, token, and hash-based counters.'|trans }}</div>
         {{ include('partial_pagination.html.twig', { 'list': counters, 'url': 'security/rate-limits' }) }}
     </div>
 </div>

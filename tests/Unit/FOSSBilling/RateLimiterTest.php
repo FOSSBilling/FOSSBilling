@@ -124,19 +124,12 @@ test('non-whitelisted request IP limits authenticated subject', function (): voi
     expect($second->getReason())->toBe(RateLimitResult::REASON_LIMITED);
 });
 
-test('tracks active IP counters', function (): void {
+test('does not track IP counters before they are limited', function (): void {
     $limiter = createRateLimiter(requestIp: '1.1.1.1');
 
     $limiter->consume('api_guest', '1.1.1.1');
 
-    $counters = $limiter->listIpCounters();
-    expect($counters)->toHaveCount(1);
-    expect($counters[0]['ip'])->toBe('1.1.1.1');
-    expect($counters[0]['policy'])->toBe('api_guest');
-    expect($counters[0]['limit'])->toBe(100);
-    expect($counters[0]['remaining'])->toBe(99);
-    expect($counters[0]['limited'])->toBeFalse();
-    expect($counters[0]['last_seen'])->toBeString();
+    expect($limiter->listIpCounters())->toBe([]);
 });
 
 test('lists limited IP counters with retry information', function (): void {
@@ -170,6 +163,7 @@ test('reset all clears tracked counters and limiter state', function (): void {
     $limiter = createRateLimiter(requestIp: '1.1.1.1');
 
     $limiter->consume('client_password_reset_ip', '1.1.1.1', 10);
+    $limiter->consume('client_password_reset_ip', '1.1.1.1');
     expect($limiter->listIpCounters())->toHaveCount(1);
 
     expect($limiter->resetAll())->toBeTrue();

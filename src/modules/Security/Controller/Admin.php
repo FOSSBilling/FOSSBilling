@@ -110,11 +110,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             $counters = array_values(array_filter($counters, static fn (array $counter): bool => str_contains(strtolower((string) $counter['ip']), $search) || str_contains(strtolower((string) $counter['policy']), $search)));
         }
 
-        $status = $_GET['status'] ?? null;
-        if (in_array($status, ['active', 'limited'], true)) {
-            $counters = array_values(array_filter($counters, static fn (array $counter): bool => $status === 'limited' ? (bool) $counter['limited'] : !(bool) $counter['limited']));
-        }
-
         $page = filter_var($_GET['page'] ?? 1, FILTER_VALIDATE_INT, ['options' => ['default' => 1, 'min_range' => 1]]);
         $perPage = filter_var($_GET['per_page'] ?? 25, FILTER_VALIDATE_INT, ['options' => ['default' => 25, 'min_range' => 1, 'max_range' => 100]]);
         $total = count($counters);
