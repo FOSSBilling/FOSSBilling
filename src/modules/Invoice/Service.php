@@ -628,7 +628,7 @@ class Service implements InjectionAwareInterface
                 $this->di['db']->store($transaction);
             }
 
-            return (bool) $result;
+            return $result;
         }
 
         return $this->markAsPaid($invoice, false, $execute);
