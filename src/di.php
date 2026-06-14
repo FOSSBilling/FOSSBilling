@@ -439,7 +439,7 @@ $di['set_return_uri'] = function () use ($di): void {
  *
  * @param string $role The role to create the API object for. Can be 'guest', 'client', or 'admin'.
  *
- * @return \Api_Handler The new API object that was just created.
+ * @return \Api_Handler The new API identity wrapper that was just created.
  *
  * @throws \Exception If the specified role is not recognized or if a client is trying to use the API while their email is not valid.
  */
@@ -471,46 +471,54 @@ $di['api'] = $di->protect(function ($role) use ($di) {
     return $api;
 });
 
-$di['api_dispatcher'] = function () use ($di): Api_Dispatcher {
-    $dispatcher = new Api_Dispatcher();
+$di['api_dispatcher'] = function () use ($di): FOSSBilling\Api\Dispatcher {
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
     $dispatcher->setDi($di);
 
     return $dispatcher;
 };
 
-/*
- *
- * @param void
- *
- * @return \Api_Handler
- */
-$di['api_guest'] = fn () => $di['api']('guest');
+$di['api_proxy'] = $di->protect(function (string $role) use ($di): FOSSBilling\Api\Proxy {
+    $handler = $di['api']($role);
+    $api = new FOSSBilling\Api\Proxy($handler->getIdentity());
+    $api->setDi($di);
+
+    return $api;
+});
 
 /*
  *
  * @param void
  *
- * @return \Api_Handler
+ * @return \FOSSBilling\Api\Proxy
  */
-$di['api_client'] = fn () => $di['api']('client');
+$di['api_guest'] = fn () => $di['api_proxy']('guest');
 
 /*
  *
  * @param void
  *
- * @return \Api_Handler
+ * @return \FOSSBilling\Api\Proxy
  */
-$di['api_admin'] = fn () => $di['api']('admin');
+$di['api_client'] = fn () => $di['api_proxy']('client');
 
 /*
  *
  * @param void
  *
- * @return \Api_Handler Internal-only system API handler used for cron/background processing.
+ * @return \FOSSBilling\Api\Proxy
+ */
+$di['api_admin'] = fn () => $di['api_proxy']('admin');
+
+/*
+ *
+ * @param void
+ *
+ * @return \FOSSBilling\Api\Proxy Internal-only system API proxy used for cron/background processing.
  */
 $di['api_system'] = function () use ($di) {
     $identity = $di['mod_service']('staff')->getCronAdmin();
-    $api = new Api_Handler($identity);
+    $api = new FOSSBilling\Api\Proxy($identity);
     $api->setDi($di);
 
     return $api;

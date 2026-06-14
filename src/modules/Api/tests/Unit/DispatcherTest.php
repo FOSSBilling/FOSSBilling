@@ -71,9 +71,9 @@ function createApiDispatcherDi(bool $extensionActive = true, bool $moduleHasServ
     return $di;
 }
 
-function createApiDispatcher(Pimple\Container $di): Api_Dispatcher
+function createApiDispatcher(Pimple\Container $di): FOSSBilling\Api\Dispatcher
 {
-    $dispatcher = new Api_Dispatcher();
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
     $dispatcher->setDi($di);
 
     return $dispatcher;
@@ -137,9 +137,9 @@ test('does not pass empty HTTP data into optional scalar API parameters', functi
         ->toBeString();
 });
 
-test('api handler requires the dispatcher service instead of creating one itself', function (): void {
-    $handler = new Api_Handler(new Model_Guest());
+test('api proxy requires the dispatcher service instead of creating one itself', function (): void {
+    $proxy = new FOSSBilling\Api\Proxy(new Model_Guest());
 
-    expect(fn (): mixed => $handler->call('system_period_title', ['code' => '1M']))
-        ->toThrow(LogicException::class, 'API handler requires the api_dispatcher service');
+    expect(fn (): mixed => $proxy->call('system_period_title', ['code' => '1M']))
+        ->toThrow(LogicException::class, 'API proxy requires the api_dispatcher service');
 });

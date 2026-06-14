@@ -417,7 +417,7 @@ test('delete exception', function (): void {
     $service = Mockery::mock(Box\Mod\Currency\Service::class);
     $service->shouldReceive('removeCurrency')->never();
 
-    $dispatcher = new Api_Dispatcher();
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
     $this->expectException(FOSSBilling\InformationException::class);
     $dispatcher->validateRequiredParams($adminApi, 'delete', []);
 

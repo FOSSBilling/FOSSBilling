@@ -1467,7 +1467,7 @@ test('kb category get id not set exception', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
     $adminApi = new Box\Mod\Support\Api\Admin();
 
-    $dispatcher = new Api_Dispatcher();
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
 
     expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'kb_category_get', []))
         ->toThrow(FOSSBilling\InformationException::class);
@@ -1563,7 +1563,7 @@ test('kb category update id not set', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
     $adminApi = new Box\Mod\Support\Api\Admin();
 
-    $dispatcher = new Api_Dispatcher();
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
 
     expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'kb_category_update', []))
         ->toThrow(FOSSBilling\InformationException::class);
@@ -1634,7 +1634,7 @@ test('kb category delete id not set', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
     $adminApi = new Box\Mod\Support\Api\Admin();
 
-    $dispatcher = new Api_Dispatcher();
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
 
     expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'kb_category_delete', []))
         ->toThrow(FOSSBilling\InformationException::class);

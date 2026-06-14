@@ -2,25 +2,36 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2026 FOSSBilling
+ * Copyright 2022-2025 FOSSBilling
+ * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+namespace FOSSBilling\Api;
+
+use Api_Abstract;
+use FOSSBilling\Exception;
+use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Validation\Api\RequiredParams;
+use Pimple\Container;
+use ReflectionClass;
+use ReflectionException;
+use ReflectionMethod;
 
-final class Api_Dispatcher implements InjectionAwareInterface
+final class Dispatcher implements InjectionAwareInterface
 {
-    protected ?Pimple\Container $di = null;
+    protected ?Container $di = null;
 
-    public function setDi(Pimple\Container $di): void
+    public function setDi(Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?Pimple\Container
+    public function getDi(): ?Container
     {
         return $this->di;
     }
@@ -33,7 +44,7 @@ final class Api_Dispatcher implements InjectionAwareInterface
     public function dispatchWithArguments(object $identity, string $method, array $arguments = []): mixed
     {
         if (!str_contains($method, '_')) {
-            throw new FOSSBilling\Exception('Method :method must contain underscore', [':method' => $method], 710);
+            throw new Exception('Method :method must contain underscore', [':method' => $method], 710);
         }
 
         $role = str_replace('model_', '', strtolower($identity::class));
@@ -43,29 +54,29 @@ final class Api_Dispatcher implements InjectionAwareInterface
         $methodName = implode('_', $parts);
 
         if (empty($mod)) {
-            throw new FOSSBilling\Exception('Invalid module name', null, 714);
+            throw new Exception('Invalid module name', null, 714);
         }
 
         $extensionService = $this->getDi()['mod']('extension')->getService();
         if (!$extensionService->isExtensionActive('mod', $mod)) {
-            throw new FOSSBilling\Exception('FOSSBilling module :mod is not installed/activated', [':mod' => $mod], 715);
+            throw new Exception('FOSSBilling module :mod is not installed/activated', [':mod' => $mod], 715);
         }
 
         if ($role === 'admin') {
             $staffService = $this->getDi()['mod_service']('Staff');
             if (!$staffService->hasPermission($identity, $mod)) {
-                throw new FOSSBilling\Exception('You do not have access to the :mod module', [':mod' => $mod], 725);
+                throw new Exception('You do not have access to the :mod module', [':mod' => $mod], 725);
             }
         }
 
         $apiClass = '\Box\Mod\\' . ucfirst($mod) . '\Api\\' . ucfirst($role);
         if (!class_exists($apiClass)) {
-            throw new FOSSBilling\Exception(':type API call :method does not exist in module :module', [':type' => ucfirst($role), ':method' => $methodName, ':module' => $mod], 740);
+            throw new Exception(':type API call :method does not exist in module :module', [':type' => ucfirst($role), ':method' => $methodName, ':module' => $mod], 740);
         }
 
         $api = new $apiClass();
         if (!$api instanceof Api_Abstract) {
-            throw new FOSSBilling\Exception('Api class must be an instance of Api_Abstract', null, 730);
+            throw new Exception('Api class must be an instance of Api_Abstract', null, 730);
         }
 
         $module = $this->getDi()['mod']($mod);
@@ -80,7 +91,7 @@ final class Api_Dispatcher implements InjectionAwareInterface
         if (!method_exists($api, $methodName) || !is_callable([$api, $methodName])) {
             $reflector = new ReflectionClass($api);
             if (!$reflector->hasMethod('__call')) {
-                throw new FOSSBilling\Exception(':type API call :method does not exist in module :module', [':type' => ucfirst($role), ':method' => $methodName, ':module' => $mod], 740);
+                throw new Exception(':type API call :method does not exist in module :module', [':type' => ucfirst($role), ':method' => $methodName, ':module' => $mod], 740);
             }
         }
 
@@ -97,7 +108,7 @@ final class Api_Dispatcher implements InjectionAwareInterface
      * @param string       $methodName The method name
      * @param array        $data       The data array passed to the method
      *
-     * @throws FOSSBilling\InformationException If required parameters are missing
+     * @throws InformationException If required parameters are missing
      */
     public function validateRequiredParams(Api_Abstract $api, string $methodName, array $data): void
     {
@@ -107,7 +118,7 @@ final class Api_Dispatcher implements InjectionAwareInterface
             return;
         }
 
-        $attributes = $reflection->getAttributes(FOSSBilling\Validation\Api\RequiredParams::class);
+        $attributes = $reflection->getAttributes(RequiredParams::class);
 
         if (empty($attributes)) {
             return;
@@ -118,15 +129,15 @@ final class Api_Dispatcher implements InjectionAwareInterface
 
             foreach ($instance->params as $paramName => $errorMessage) {
                 if (!isset($data[$paramName])) {
-                    throw new FOSSBilling\InformationException($errorMessage);
+                    throw new InformationException($errorMessage);
                 }
 
                 if (is_string($data[$paramName]) && strlen(trim($data[$paramName])) === 0) {
-                    throw new FOSSBilling\InformationException($errorMessage);
+                    throw new InformationException($errorMessage);
                 }
 
                 if (!is_numeric($data[$paramName]) && empty($data[$paramName])) {
-                    throw new FOSSBilling\InformationException($errorMessage);
+                    throw new InformationException($errorMessage);
                 }
             }
         }

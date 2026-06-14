@@ -545,7 +545,7 @@ test('throws exception when installing unavailable registrar', function (): void
 test('throws exception when deleting registrar without id', function (): void {
     $adminApi = new Admin();
     $api = new Admin();
-    $dispatcher = new Api_Dispatcher();
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
 
     expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'registrar_delete', []))
         ->toThrow(FOSSBilling\InformationException::class);
@@ -585,7 +585,7 @@ test('copies registrar', function (): void {
 test('throws exception when copying registrar without id', function (): void {
     $adminApi = new Admin();
     $api = new Admin();
-    $dispatcher = new Api_Dispatcher();
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
 
     expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'registrar_copy', []))
         ->toThrow(FOSSBilling\InformationException::class);
@@ -645,7 +645,7 @@ test('throws exception when getting registrar without id', function (): void {
 
     $data = [];
 
-    $dispatcher = new Api_Dispatcher();
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
 
     expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'registrar_get', []))
         ->toThrow(FOSSBilling\InformationException::class);
@@ -720,7 +720,7 @@ test('throws exception when updating registrar without id', function (): void {
 
     $data = [];
 
-    $dispatcher = new Api_Dispatcher();
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
 
     expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'registrar_update', []))
         ->toThrow(FOSSBilling\InformationException::class);
@@ -794,7 +794,7 @@ test('throws exception when getting service without order_id', function (): void
 
     $data = [];
 
-    $dispatcher = new Api_Dispatcher();
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
 
     expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'update', []))
         ->toThrow(FOSSBilling\InformationException::class);

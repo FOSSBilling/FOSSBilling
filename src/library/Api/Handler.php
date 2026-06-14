@@ -43,29 +43,4 @@ final class Api_Handler implements InjectionAwareInterface
     {
         return $this->type;
     }
-
-    public function call(string $method, array $data = []): mixed
-    {
-        return $this->getDispatcher()->dispatch($this->identity, $method, $data);
-    }
-
-    public function __call($method, $arguments)
-    {
-        return $this->getDispatcher()->dispatchWithArguments($this->identity, (string) $method, $arguments);
-    }
-
-    private function getDispatcher(): Api_Dispatcher
-    {
-        $di = $this->getDi();
-        if ($di === null || !$di->offsetExists('api_dispatcher')) {
-            throw new LogicException('API handler requires the api_dispatcher service');
-        }
-
-        $dispatcher = $di['api_dispatcher'];
-        if (!$dispatcher instanceof Api_Dispatcher) {
-            throw new LogicException('API dispatcher service must resolve to an Api_Dispatcher instance');
-        }
-
-        return $dispatcher;
-    }
 }

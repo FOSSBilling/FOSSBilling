@@ -25,7 +25,7 @@ test('login without email', function (): void {
     $api = new Box\Mod\Staff\Api\Guest();
     $guestApi = new Box\Mod\Staff\Api\Guest();
 
-    $dispatcher = new Api_Dispatcher();
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
 
     expect(fn () => $dispatcher->validateRequiredParams($guestApi, 'login', ['email' => null, 'password' => 'pass']))
         ->toThrow(FOSSBilling\InformationException::class);
