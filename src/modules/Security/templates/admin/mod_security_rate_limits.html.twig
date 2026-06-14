@@ -14,10 +14,10 @@
     <div class="card-header">
         <div>
             <h3 class="card-title">{{ 'Rate Limits'|trans }}</h3>
-            <p class="card-subtitle">{{ 'Review and reset active IP-based rate limiter counters.'|trans }}</p>
+            <p class="card-subtitle">{{ 'Review IP addresses that are currently rate-limited and reset counters when legitimate users are blocked.'|trans }}</p>
         </div>
         <div class="card-actions">
-            <a class="btn btn-danger" href="{{ 'security/rate_limit_reset_all'|api_url }}" {{ fb_api_link({ modal: {type: 'danger', title: 'Reset all rate limits?'|trans, content: 'This will clear every current rate limiter counter, including counters that are not shown in this IP-focused view.'|trans, button: 'Reset All'|trans}, reload: true, message: 'Rate limiter counters reset'|trans }) }}>
+            <a class="btn btn-danger" href="{{ 'security/rate_limit_reset_all'|api_url }}" {{ fb_api_link({ modal: {type: 'danger', title: 'Reset all rate limits?'|trans, content: 'This will clear every current rate limiter counter, including account, email, token, and hash-based counters that are not listed here.'|trans, button: 'Reset All'|trans}, reload: true, message: 'Rate limiter counters reset'|trans }) }}>
                 <svg class="icon">
                     <use xlink:href="#trash" />
                 </svg>
@@ -40,7 +40,7 @@
         <div class="row g-3 align-items-end">
             <div class="col-xl">
                 <h4 class="card-title mb-2">{{ 'Rate Limit Actions'|trans }}</h4>
-                <p class="text-secondary mb-0">{{ 'Reset counters when a legitimate user is blocked, or clear all counters during maintenance and testing.'|trans }}</p>
+                <p class="text-secondary mb-0">{{ 'Reset counters for a known IP, even if the IP is not listed below.'|trans }}</p>
             </div>
             <div class="col-xl-auto">
                 <form method="post" action="{{ 'security/rate_limit_reset_ip'|api_url }}" {{ fb_api_form({ message: 'Rate limiter counters reset'|trans, reload: true }) }}>
@@ -68,7 +68,7 @@
                 <input type="hidden" name="search" value="{{ request.search }}">
             {% endif %}
             {% if rate_limit_invalid_ip %}
-                <div class="alert alert-danger" role="alert">{{ 'Enter a valid IPv4 or IPv6 address to filter rate limit counters.'|trans }}</div>
+                <div class="alert alert-danger" role="alert">{{ 'Enter a valid IPv4 or IPv6 address to filter rate-limited IP counters.'|trans }}</div>
             {% endif %}
             <div class="row g-3">
                 <div class="col-md-12">
@@ -93,10 +93,8 @@
                 <tr>
                     <th scope="col">{{ 'IP Address'|trans }}</th>
                     <th scope="col">{{ 'Policy'|trans }}</th>
-                    <th scope="col">{{ 'Status'|trans }}</th>
-                    <th scope="col">{{ 'Remaining'|trans }}</th>
                     <th scope="col">{{ 'Retry After'|trans }}</th>
-                    <th scope="col">{{ 'Last Seen'|trans }}</th>
+                    <th scope="col">{{ 'Last Limited At'|trans }}</th>
                     <th scope="col" class="w-1"></th>
                 </tr>
             </thead>
@@ -105,10 +103,6 @@
                     <tr>
                         <td class="text-nowrap">{{ counter.ip }}</td>
                         <td><code>{{ counter.policy }}</code></td>
-                        <td>
-                            <span class="badge bg-danger-lt text-danger">{{ 'Limited'|trans }}</span>
-                        </td>
-                        <td>{{ counter.remaining }}/{{ counter.limit }}</td>
                         <td>
                             {% if counter.retry_after %}
                                 {{ counter.retry_after|format_datetime }}
@@ -127,14 +121,14 @@
                     </tr>
                 {% else %}
                     <tr>
-                        <td class="text-center text-secondary py-4" colspan="7">{{ 'No rate-limited IP counters were found.'|trans }}</td>
+                        <td class="text-center text-secondary py-4" colspan="5">{{ 'No rate-limited IP counters were found.'|trans }}</td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
     <div class="card-footer d-flex align-items-center justify-content-between gap-3">
-        <div class="text-secondary">{{ 'Only rate-limited IP-based counters are shown here. Reset all also clears account, email, token, and hash-based counters.'|trans }}</div>
+        <div class="text-secondary">{{ 'Only currently rate-limited IP counters are shown here. Reset all clears every limiter counter.'|trans }}</div>
         {{ include('partial_pagination.html.twig', { 'list': counters, 'url': 'security/rate-limits' }) }}
     </div>
 </div>
