@@ -74,11 +74,6 @@ set_include_path(implode(PATH_SEPARATOR, [
     get_include_path(),
 ]));
 
-// Set up custom autoloader.
-require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Autoloader.php');
-$loader = new FOSSBilling\AutoLoader();
-$loader->register();
-
 $preConfigProxyCandidate = RequestFactory::getPreConfigProxyCandidate($_SERVER);
 $request = RequestFactory::createFromGlobals();
 $url = $request->getSchemeAndHttpHost() . $request->getRequestUri();

@@ -289,11 +289,6 @@ function init(): void
     // Set the default interface.
     define('BIND_TO', Tools::getDefaultInterface());
 
-    // Initial setup and checks passed, now we setup our custom autoloader.
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Autoloader.php');
-    $loader = new FOSSBilling\AutoLoader();
-    $loader->register();
-
     // Load the DI container.
     global $di;
     $di = require Path::join(PATH_ROOT, 'di.php');
