@@ -517,7 +517,7 @@ test('admin mark as paid with custom gateway records transaction and marks invoi
     $transactionModel->loadBean(new Tests\Helpers\DummyBean());
     $transactionModel->invoice_id = 10;
 
-    $transactionServiceMock = Mockery::mock(\Box\Mod\Invoice\ServiceTransaction::class);
+    $transactionServiceMock = Mockery::mock(Box\Mod\Invoice\ServiceTransaction::class);
     $transactionServiceMock->shouldReceive('create')
         ->once()
         ->with(Mockery::on(fn (array $data): bool => $data['invoice_id'] === 10
@@ -588,7 +588,7 @@ test('admin mark as paid with custom gateway rejects transaction linked to anoth
     $transactionModel->loadBean(new Tests\Helpers\DummyBean());
     $transactionModel->invoice_id = 99;
 
-    $transactionServiceMock = Mockery::mock(\Box\Mod\Invoice\ServiceTransaction::class);
+    $transactionServiceMock = Mockery::mock(Box\Mod\Invoice\ServiceTransaction::class);
     $transactionServiceMock->shouldReceive('create')
         ->once()
         ->andReturn(20);
@@ -614,7 +614,7 @@ test('admin mark as paid with custom gateway rejects transaction linked to anoth
 
     expect(fn () => $serviceMock->markAsPaidByAdmin($invoiceModel, [
         'transactionId' => 'manual-reference-1',
-    ]))->toThrow(\FOSSBilling\InformationException::class, 'Transaction ID is already associated with another invoice.');
+    ]))->toThrow(FOSSBilling\InformationException::class, 'Transaction ID is already associated with another invoice.');
 });
 
 test('counts income', function (): void {
@@ -1143,6 +1143,7 @@ test('returns existing invoice when generating for order with unpaid invoice', f
 
     $invoiceModel = new Model_Invoice();
     $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel->status = Model_Invoice::STATUS_UNPAID;
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('load')
@@ -1155,6 +1156,68 @@ test('returns existing invoice when generating for order with unpaid invoice', f
     $service->setDi($di);
     $result = $service->generateForOrder($clientOrder);
     expect($result)->toBeInstanceOf(Model_Invoice::class);
+});
+
+test('clears stale paid invoice reference when generating for order', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('setInvoiceDefaults')
+        ->once();
+
+    $clientOrder = new Model_ClientOrder();
+    $clientOrder->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrder->unpaid_invoice_id = 2;
+    $clientOrder->price = 10;
+    $clientOrder->quantity = 1;
+
+    $paidInvoice = new Model_Invoice();
+    $paidInvoice->loadBean(new Tests\Helpers\DummyBean());
+    $paidInvoice->status = Model_Invoice::STATUS_PAID;
+
+    $clientModel = new Model_Client();
+    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $newInvoice = new Model_Invoice();
+    $newInvoice->loadBean(new Tests\Helpers\DummyBean());
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('load')
+        ->with('Invoice', 2)
+        ->once()
+        ->andReturn($paidInvoice);
+    $dbMock->shouldReceive('getExistingModelById')
+        ->atLeast()->once()
+        ->andReturn($clientModel);
+    $dbMock->shouldReceive('dispense')
+        ->atLeast()->once()
+        ->andReturn($newInvoice);
+    $dbMock->shouldReceive('store')
+        ->atLeast()->once();
+
+    $orderServiceMock = Mockery::mock(OrderService::class);
+    $orderServiceMock->shouldReceive('unsetUnpaidInvoice')
+        ->with($clientOrder)
+        ->once();
+
+    $invoiceItemServiceMock = Mockery::mock(ServiceInvoiceItem::class);
+    $invoiceItemServiceMock->shouldReceive('generateFromOrder')
+        ->with($newInvoice, $clientOrder, Model_InvoiceItem::TASK_RENEW, 10, Mockery::type('array'))
+        ->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(function (string $module, ?string $submodule = null) use ($orderServiceMock, $invoiceItemServiceMock): Mockery\MockInterface {
+        if ($module === 'Order') {
+            return $orderServiceMock;
+        }
+
+        return $invoiceItemServiceMock;
+    });
+
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->generateForOrder($clientOrder);
+
+    expect($result)->toBe($newInvoice);
 });
 
 test('generates invoice for order', function (): void {

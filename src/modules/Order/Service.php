@@ -324,19 +324,20 @@ class Service implements InjectionAwareInterface
 
         $client_id = $data['client_id'] ?? null;
 
-        $query = 'SELECT *
-                FROM client_order
-                WHERE status = :status
-                AND invoice_option = :invoice_option
-                AND period IS NOT NULL
-                AND expires_at IS NOT NULL
-                AND unpaid_invoice_id IS NULL';
+        $query = 'SELECT co.*
+                FROM client_order co
+                LEFT JOIN invoice i ON i.id = co.unpaid_invoice_id AND i.status = :unpaid_invoice_status
+                WHERE co.status = :status
+                AND co.invoice_option = :invoice_option
+                AND co.period IS NOT NULL
+                AND co.expires_at IS NOT NULL
+                AND i.id IS NULL';
 
         $where = [];
         $bindings = [];
 
         if ($client_id !== null) {
-            $where[] = 'client_id = :client_id';
+            $where[] = 'co.client_id = :client_id';
             $bindings[':client_id'] = $client_id;
         }
 
@@ -344,9 +345,10 @@ class Service implements InjectionAwareInterface
             $query = $query . ' AND ' . implode(' AND ', $where);
         }
 
-        $query .= ' HAVING DATEDIFF(expires_at, NOW()) <= :days_until_expiration ORDER BY client_id DESC';
+        $query .= ' HAVING DATEDIFF(co.expires_at, NOW()) <= :days_until_expiration ORDER BY co.client_id DESC';
         $bindings[':status'] = \Model_ClientOrder::STATUS_ACTIVE;
         $bindings[':invoice_option'] = 'issue-invoice';
+        $bindings[':unpaid_invoice_status'] = \Model_Invoice::STATUS_UNPAID;
         $bindings[':days_until_expiration'] = $days_until_expiration;
 
         return [$query, $bindings];
