@@ -167,11 +167,7 @@ export async function purgeCssFile(cssFilePath, options = {}) {
       console.log(`PurgeCSS applied to ${cssFilePath.split('/').pop()}`);
     }
   } catch (error) {
-    if (enabled) {
-      throw new Error(`PurgeCSS failed for ${cssFilePath.split('/').pop()}: ${error.message}`);
-    }
-
-    console.warn(`PurgeCSS failed for ${cssFilePath.split('/').pop()}:`, error.message);
+    throw new Error(`PurgeCSS failed for ${cssFilePath.split('/').pop()}: ${error.message}`);
   }
 }
 
