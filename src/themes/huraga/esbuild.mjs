@@ -10,7 +10,7 @@ import {
   sassPlugin,
   sharedLoaders,
 } from '../../../frontend/tools/esbuild-helpers.mjs';
-import { generateIconSprite, resolveIconFiles } from '../../../frontend/tools/icon-sprite.mjs';
+import { buildIconSprite } from '../../../frontend/tools/icon-sprite.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
@@ -43,19 +43,14 @@ async function build() {
     await ensureDir(symbolDir);
 
     console.log('Generating icon sprite...');
-    const { iconFiles, report } = await resolveIconFiles({
+    await buildIconSprite({
       manifestPath: resolve(__dirname, 'icon-manifest.json'),
+      outputDir: symbolDir,
       sources: [
         { name: 'custom', dir: resolve(__dirname, 'custom-icons'), variant: 'custom' },
         { name: '@tabler/icons', dir: resolve(nodeModulesDir, '@tabler/icons/icons') },
       ],
     });
-
-    await generateIconSprite({
-      outputDir: symbolDir,
-      iconFiles,
-    });
-    console.log(`  Icon sources: ${Object.entries(report.sources).map(([source, count]) => `${source}=${count}`).join(', ')}`);
 
     await esbuild.build({
       entryPoints: [resolve(__dirname, 'assets/huraga.js')],

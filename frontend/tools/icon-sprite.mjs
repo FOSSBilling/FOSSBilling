@@ -136,3 +136,34 @@ export async function generateIconSprite(options) {
 
   console.log(`  Generated sprite with ${svgFiles.length} icons`);
 }
+
+function formatSourceReport(sources) {
+  return Object.entries(sources)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([source, count]) => `${source}=${count}`)
+    .join(', ');
+}
+
+export async function buildIconSprite(options) {
+  const {
+    manifestPath,
+    outputDir,
+    sources,
+    sprite,
+  } = options;
+
+  const { iconFiles, report } = await resolveIconFiles({
+    manifestPath,
+    sources,
+  });
+
+  await generateIconSprite({
+    outputDir,
+    iconFiles,
+    sprite,
+  });
+
+  console.log(`  Icon sources: ${formatSourceReport(report.sources)}`);
+
+  return report;
+}
