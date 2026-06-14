@@ -218,7 +218,7 @@ class FOSSBillingExtension
     }
 
     #[AsTwigFilter('hash')]
-    public function hash(string $value, string $algo = 'xxh128'): string
+    public function hash(mixed $value, string $algo = 'xxh128'): string
     {
         if (!in_array($algo, hash_algos(), true)) {
             throw new \InvalidArgumentException(sprintf('Hash algorithm "%s" is not supported.', $algo));
