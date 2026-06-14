@@ -45,6 +45,11 @@ class Service
                 'display_name' => __trans('Run security checks'),
                 'description' => __trans('Allows the staff member to run security checks on the FOSSBilling installation.'),
             ],
+            'manage_rate_limits' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage rate limits'),
+                'description' => __trans('Allows the staff member to review and reset IP-based rate limiter counters.'),
+            ],
         ];
     }
 
@@ -164,6 +169,42 @@ class Service
             ],
             'country' => json_decode(json_encode($countryInfo), true),
             'asn' => json_decode(json_encode($asnInfo), true),
+        ];
+    }
+
+    public function getRateLimitStatus(): array
+    {
+        return [
+            'enabled' => $this->di['rate_limiter']->isEnabled(),
+        ];
+    }
+
+    public function getRateLimitList(?string $ip = null): array
+    {
+        return $this->di['rate_limiter']->listIpCounters($ip);
+    }
+
+    public function resetRateLimitIp(string $ip, ?string $policy = null): array
+    {
+        $removed = $this->di['rate_limiter']->resetIp($ip, $policy);
+
+        $this->di['logger']->setChannel('security')->info('Rate limiter counters reset for IP %s%s', $ip, $policy ? " and policy {$policy}" : '');
+
+        return [
+            'ip' => $ip,
+            'policy' => $policy,
+            'removed' => $removed,
+        ];
+    }
+
+    public function resetAllRateLimits(): array
+    {
+        $cleared = $this->di['rate_limiter']->resetAll();
+
+        $this->di['logger']->setChannel('security')->warning('All rate limiter counters were reset');
+
+        return [
+            'cleared' => $cleared,
         ];
     }
 }

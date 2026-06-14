@@ -49,6 +49,13 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                     'uri' => $this->di['url']->adminLink('security/iplookup'),
                     'class' => '',
                 ],
+                [
+                    'location' => 'security',
+                    'label' => __trans('Rate Limits'),
+                    'index' => 300,
+                    'uri' => $this->di['url']->adminLink('security/rate-limits'),
+                    'class' => '',
+                ],
             ],
         ];
     }
@@ -58,6 +65,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $app->get('/security', 'get_index', [], static::class);
         $app->get('/security/', 'get_index', [], static::class);
         $app->get('/security/iplookup', 'ip_lookup', [], static::class);
+        $app->get('/security/rate-limits', 'rate_limits', [], static::class);
     }
 
     public function get_index(\Box_App $app): string
@@ -81,5 +89,36 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         }
 
         return $app->render('mod_security_iplookup', ['record' => $record]);
+    }
+
+    public function rate_limits(\Box_App $app): string
+    {
+        $this->di['is_admin_logged'];
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'view');
+
+        $ip = $_GET['ip'] ?? null;
+        $invalidIp = false;
+        if (is_string($ip) && $ip !== '' && !filter_var($ip, FILTER_VALIDATE_IP)) {
+            $invalidIp = true;
+            $ip = null;
+        }
+
+        $counters = $invalidIp ? [] : $this->di['mod_service']('Security')->getRateLimitList(is_string($ip) && $ip !== '' ? $ip : null);
+        $search = $_GET['search'] ?? null;
+        if (is_string($search) && $search !== '') {
+            $search = strtolower($search);
+            $counters = array_values(array_filter($counters, static fn (array $counter): bool => str_contains(strtolower((string) $counter['ip']), $search) || str_contains(strtolower((string) $counter['policy']), $search)));
+        }
+
+        $status = $_GET['status'] ?? null;
+        if (in_array($status, ['active', 'limited'], true)) {
+            $counters = array_values(array_filter($counters, static fn (array $counter): bool => $status === 'limited' ? (bool) $counter['limited'] : !(bool) $counter['limited']));
+        }
+
+        return $app->render('mod_security_rate_limits', [
+            'rate_limit_status' => $this->di['mod_service']('Security')->getRateLimitStatus(),
+            'rate_limit_counters' => $counters,
+            'rate_limit_invalid_ip' => $invalidIp,
+        ]);
     }
 }

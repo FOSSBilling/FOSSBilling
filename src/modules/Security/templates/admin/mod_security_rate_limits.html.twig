@@ -1,0 +1,152 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% block meta_title %}{{ 'Rate Limits'|trans }}{% endblock %}
+
+{% set active_menu = 'security' %}
+{% set has_filter_panel = true %}
+{% set filter_panel_id = 'page-search-filters' %}
+{% set filter_panel_open = request.ip or request.status or rate_limit_invalid_ip %}
+{% set status = rate_limit_status %}
+{% set counters = rate_limit_counters %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div>
+            <h3 class="card-title">{{ 'Rate Limits'|trans }}</h3>
+            <p class="card-subtitle">{{ 'Review and reset active IP-based rate limiter counters.'|trans }}</p>
+        </div>
+        <div class="card-actions">
+            <a class="btn btn-danger" href="{{ 'security/rate_limit_reset_all'|api_url }}" {{ fb_api_link({ modal: {type: 'danger', title: 'Reset all rate limits?'|trans, content: 'This will clear every current rate limiter counter, including counters that are not shown in this IP-focused view.'|trans, button: 'Reset All'|trans}, reload: true, message: 'Rate limiter counters reset'|trans }) }}>
+                <svg class="icon">
+                    <use xlink:href="#trash" />
+                </svg>
+                {{ 'Reset All'|trans }}
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if status.enabled is defined and not status.enabled %}
+            <div class="alert alert-warning" role="alert">
+                <div class="alert-icon">
+                    <svg class="icon alert-icon icon-2" aria-hidden="true">
+                        <use xlink:href="{{ 'build/symbol/icons-sprite.svg'|asset_url }}#alert-triangle" />
+                    </svg>
+                </div>
+                <strong>{{ 'Warning'|trans }}</strong>
+                {{ 'Rate limiting is currently disabled in configuration.'|trans }}
+            </div>
+        {% endif %}
+        <div class="row g-3 align-items-end">
+            <div class="col-xl">
+                <h4 class="card-title mb-2">{{ 'Rate Limit Actions'|trans }}</h4>
+                <p class="text-secondary mb-0">{{ 'Reset counters when a legitimate user is blocked, or clear all counters during maintenance and testing.'|trans }}</p>
+            </div>
+            <div class="col-xl-auto">
+                <form method="post" action="{{ 'security/rate_limit_reset_ip'|api_url }}" {{ fb_api_form({ message: 'Rate limiter counters reset'|trans, reload: true }) }}>
+                    <label class="form-label text-muted small mb-1" for="rate-limit-reset-ip">{{ 'Reset counters for IP address'|trans }}</label>
+                    <div class="input-group">
+                        <input class="form-control" id="rate-limit-reset-ip" type="text" name="ip" value="{{ request.ip }}" placeholder="{{ 'Enter an IPv4 or IPv6 address'|trans }}" required>
+                        <button class="btn btn-warning" type="submit">
+                            <svg class="icon">
+                                <use xlink:href="#refresh" />
+                            </svg>
+                            {{ 'Reset IP'|trans }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {{ include('partial_search.html.twig', {
+        search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
+        search_hidden_fields: { 'ip': request.ip, 'status': request.status }
+    }) }}
+    <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
+        <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
+            {% if request.search %}
+                <input type="hidden" name="search" value="{{ request.search }}">
+            {% endif %}
+            {% if rate_limit_invalid_ip %}
+                <div class="alert alert-danger" role="alert">{{ 'Enter a valid IPv4 or IPv6 address to filter rate limit counters.'|trans }}</div>
+            {% endif %}
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label text-muted small mb-1" for="rate-limit-ip-filter">{{ 'IP Address'|trans }}</label>
+                    <input class="form-control" id="rate-limit-ip-filter" type="text" name="ip" value="{{ request.ip }}" placeholder="{{ 'Filter by IP address'|trans }}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted small mb-1" for="rate-limit-status-filter">{{ 'Status'|trans }}</label>
+                    <select class="form-select" id="rate-limit-status-filter" name="status">
+                        <option value="">{{ 'All Statuses'|trans }}</option>
+                        <option value="active"{% if request.status == 'active' %} selected{% endif %}>{{ 'Active'|trans }}</option>
+                        <option value="limited"{% if request.status == 'limited' %} selected{% endif %}>{{ 'Limited'|trans }}</option>
+                    </select>
+                </div>
+            </div>
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <a class="btn btn-outline-secondary" href="{{ 'security/rate-limits'|url }}">{{ 'Reset'|trans }}</a>
+                <button class="btn btn-primary" type="submit">
+                    <svg class="icon">
+                        <use xlink:href="#filter" />
+                    </svg>
+                    {{ 'Apply Filters'|trans }}
+                </button>
+            </div>
+        </form>
+    </section>
+    <div class="table-responsive">
+        <table class="table card-table table-vcenter table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">{{ 'IP Address'|trans }}</th>
+                    <th scope="col">{{ 'Policy'|trans }}</th>
+                    <th scope="col">{{ 'Status'|trans }}</th>
+                    <th scope="col">{{ 'Remaining'|trans }}</th>
+                    <th scope="col">{{ 'Retry After'|trans }}</th>
+                    <th scope="col">{{ 'Last Seen'|trans }}</th>
+                    <th scope="col" class="w-1"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for counter in counters %}
+                    <tr>
+                        <td class="text-nowrap">{{ counter.ip }}</td>
+                        <td><code>{{ counter.policy }}</code></td>
+                        <td>
+                            {% if counter.limited %}
+                                <span class="badge bg-danger-lt text-danger">{{ 'Limited'|trans }}</span>
+                            {% else %}
+                                <span class="badge bg-warning-lt text-warning">{{ 'Active'|trans }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ counter.remaining }}/{{ counter.limit }}</td>
+                        <td>
+                            {% if counter.retry_after %}
+                                {{ counter.retry_after|format_datetime }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ counter.last_seen|format_datetime }}</td>
+                        <td class="text-end">
+                            <a class="btn btn-icon" href="{{ 'security/rate_limit_reset_ip'|api_url(query: { 'ip': counter.ip, 'policy': counter.policy }) }}" {{ fb_api_link({ modal: {type: 'confirm', title: 'Reset rate limit?'|trans, content: ('Reset %policy% for %ip%?'|trans({'%policy%': counter.policy, '%ip%': counter.ip}))}, reload: true, message: 'Rate limiter counters reset'|trans }) }} title="{{ 'Reset'|trans }}">
+                                <svg class="icon">
+                                    <use xlink:href="#refresh" />
+                                </svg>
+                            </a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td class="text-center text-secondary py-4" colspan="7">{{ 'No active IP-based rate limiter counters were found.'|trans }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer text-secondary">
+        {{ 'Only IP-based counters are shown here. Reset all also clears account, email, token, and hash-based counters.'|trans }}
+    </div>
+</div>
+{% endblock %}
