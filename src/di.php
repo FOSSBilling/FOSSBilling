@@ -471,6 +471,13 @@ $di['api'] = $di->protect(function ($role) use ($di) {
     return $api;
 });
 
+$di['api_dispatcher'] = function () use ($di): Api_Dispatcher {
+    $dispatcher = new Api_Dispatcher();
+    $dispatcher->setDi($di);
+
+    return $dispatcher;
+};
+
 /*
  *
  * @param void

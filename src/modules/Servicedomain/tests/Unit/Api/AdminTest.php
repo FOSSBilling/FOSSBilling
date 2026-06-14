@@ -545,11 +545,9 @@ test('throws exception when installing unavailable registrar', function (): void
 test('throws exception when deleting registrar without id', function (): void {
     $adminApi = new Admin();
     $api = new Admin();
-    $apiHandler = new Api_Handler(new Model_Admin());
-    $reflection = new ReflectionClass($apiHandler);
-    $method = $reflection->getMethod('validateRequiredParams');
+    $dispatcher = new Api_Dispatcher();
 
-    expect(fn (): mixed => $method->invokeArgs($apiHandler, [$adminApi, 'registrar_delete', []]))
+    expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'registrar_delete', []))
         ->toThrow(FOSSBilling\InformationException::class);
 });
 
@@ -587,11 +585,9 @@ test('copies registrar', function (): void {
 test('throws exception when copying registrar without id', function (): void {
     $adminApi = new Admin();
     $api = new Admin();
-    $apiHandler = new Api_Handler(new Model_Admin());
-    $reflection = new ReflectionClass($apiHandler);
-    $method = $reflection->getMethod('validateRequiredParams');
+    $dispatcher = new Api_Dispatcher();
 
-    expect(fn (): mixed => $method->invokeArgs($apiHandler, [$adminApi, 'registrar_copy', []]))
+    expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'registrar_copy', []))
         ->toThrow(FOSSBilling\InformationException::class);
 });
 
@@ -649,11 +645,9 @@ test('throws exception when getting registrar without id', function (): void {
 
     $data = [];
 
-    $apiHandler = new Api_Handler(new Model_Admin());
-    $reflection = new ReflectionClass($apiHandler);
-    $method = $reflection->getMethod('validateRequiredParams');
+    $dispatcher = new Api_Dispatcher();
 
-    expect(fn (): mixed => $method->invokeArgs($apiHandler, [$adminApi, 'registrar_get', []]))
+    expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'registrar_get', []))
         ->toThrow(FOSSBilling\InformationException::class);
 });
 
@@ -726,11 +720,9 @@ test('throws exception when updating registrar without id', function (): void {
 
     $data = [];
 
-    $apiHandler = new Api_Handler(new Model_Admin());
-    $reflection = new ReflectionClass($apiHandler);
-    $method = $reflection->getMethod('validateRequiredParams');
+    $dispatcher = new Api_Dispatcher();
 
-    expect(fn (): mixed => $method->invokeArgs($apiHandler, [$adminApi, 'registrar_update', []]))
+    expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'registrar_update', []))
         ->toThrow(FOSSBilling\InformationException::class);
 });
 
@@ -802,11 +794,9 @@ test('throws exception when getting service without order_id', function (): void
 
     $data = [];
 
-    $apiHandler = new Api_Handler(new Model_Admin());
-    $reflection = new ReflectionClass($apiHandler);
-    $method = $reflection->getMethod('validateRequiredParams');
+    $dispatcher = new Api_Dispatcher();
 
-    expect(fn (): mixed => $method->invokeArgs($apiHandler, [$adminApi, 'update', []]))
+    expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'update', []))
         ->toThrow(FOSSBilling\InformationException::class);
 });
 

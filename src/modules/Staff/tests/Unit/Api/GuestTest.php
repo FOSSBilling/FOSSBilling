@@ -25,11 +25,9 @@ test('login without email', function (): void {
     $api = new Box\Mod\Staff\Api\Guest();
     $guestApi = new Box\Mod\Staff\Api\Guest();
 
-    $apiHandler = new Api_Handler(new Model_Admin());
-    $reflection = new ReflectionClass($apiHandler);
-    $method = $reflection->getMethod('validateRequiredParams');
+    $dispatcher = new Api_Dispatcher();
 
-    expect(fn (): mixed => $method->invokeArgs($apiHandler, [$guestApi, 'login', ['email' => null, 'password' => 'pass']]))
+    expect(fn () => $dispatcher->validateRequiredParams($guestApi, 'login', ['email' => null, 'password' => 'pass']))
         ->toThrow(FOSSBilling\InformationException::class);
 });
 
