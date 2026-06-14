@@ -107,7 +107,7 @@ class RateLimiter implements InjectionAwareInterface
             $limited ? RateLimitResult::REASON_LIMITED : RateLimitResult::REASON_ALLOWED,
         );
 
-        if ($tokens > 0 && $this->isIpAddress($subject)) {
+        if ($tokens > 0 && $result->isLimited() && $this->isIpAddress($subject)) {
             $this->trackIpSubject($policyName, $subject, $result);
         }
 
@@ -170,7 +170,7 @@ class RateLimiter implements InjectionAwareInterface
                 continue;
             }
 
-            if (!$state['active']) {
+            if (!$state['limited']) {
                 unset($index[$key]);
                 $changed = true;
                 continue;
