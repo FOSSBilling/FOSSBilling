@@ -13,7 +13,6 @@
     "chevron-left",
     "chevron-right",
     "circle-check",
-    "clock",
     "x",
     "settings",
     "settings-bolt",
@@ -47,14 +46,12 @@
     "photo",
     "player-play",
     "plus",
-    "question-mark",
     "receipt-refund",
     "refresh",
     "search",
     "server",
     "headset",
     "sun",
-    "message",
     "wifi"
   ]
 }

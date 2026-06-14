@@ -53,10 +53,14 @@
                        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="{{ 'Toggle navigation'|trans }}">
                            <span class="navbar-toggler-icon"></span>
                        </button>
-                       <h1 class="d-none d-sm-flex navbar-brand d-none-navbar-horizontal pe-0 pe-md-3 a">
+                       <h1 class="d-none d-sm-flex navbar-brand d-none-navbar-horizontal pe-0 pe-md-3">
                            <a href="{{ '/'|url }}">
-                               <img class="navbar-brand-image hide-theme-light" src="{{ company.logo_url_dark }}" alt="{{ company.name }}">
-                               <img class="navbar-brand-image hide-theme-dark" src="{{ company.logo_url }}" alt="{{ company.name }}">
+                               {% if company.logo_url %}
+                                   <img class="navbar-brand-image hide-theme-light" src="{{ company.logo_url_dark }}" alt="{{ company.name }}">
+                                   <img class="navbar-brand-image hide-theme-dark" src="{{ company.logo_url }}" alt="{{ company.name }}">
+                               {% else %}
+                                   <span>{{ company.name }}</span>
+                               {% endif %}
                            </a>
                        </h1>
                    </div>

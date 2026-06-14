@@ -22,7 +22,7 @@
     <div class="alert alert-{{ alert.type }} {{ alert.dismissible ? "alert-dismissible" : "" }} fade show mb-3" role="alert">
         <div class="alert-icon">
             <svg class="icon alert-icon icon-2" aria-hidden="true">
-                <use xlink:href="{{ 'build/symbol/icons-sprite.svg'|asset_url }}#{{ alertIcon }}" />
+                <use xlink:href="#{{ alertIcon }}" />
             </svg>
         </div>
         {% if alert.title %}

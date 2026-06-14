@@ -1,13 +1,5 @@
 {% extends "layout_public.html.twig" %}
 
-{% set company = guest.system_company %}
-
-{% if settings.theme == 'dark' %}
-    {% set logo_url =  company.logo_url_dark %}
-{% else %}
-    {% set logo_url =  company.logo_url %}
-{% endif %}
-
 {% block meta_title %}{{ 'Login'|trans }}{% endblock %}
 {% block meta_description %}{{ 'Log in to manage your services, invoices, support tickets, and account details.'|trans }}{% endblock %}
 
@@ -16,10 +8,10 @@
 <div class="container h-100">
     <div class="row h-75 justify-content-center align-items-center">
         <div class="col-md-6 col-lg-4">
-            {% if settings.login_page_show_logo %}
+            {% if public_logo_url and settings.login_page_show_logo %}
                 <div class="d-flex justify-content-center">
                     <a href="{{ settings.login_page_logo_url|default('/') }}" target="_blank" rel="noopener noreferrer">
-                        <img class="my-4" height="50px" src="{{ logo_url }}" alt="{{ company.name }}"/>
+                        <img class="my-4" height="50px" src="{{ public_logo_url }}" alt="{{ company.name }}"/>
                     </a>
                 </div>
             {% endif %}

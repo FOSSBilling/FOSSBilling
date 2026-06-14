@@ -8,10 +8,10 @@
     <div>
         <div class="row h-75 justify-content-center align-items-center">
             <div class="col-md-6 col-lg-4">
-                {% if settings.login_page_show_logo %}
+                {% if public_logo_url and settings.login_page_show_logo %}
                     <div class="d-flex justify-content-center">
-                        <a href="{{ settings.login_page_logo_url|default('/') }}" target="_blank">
-                            <img class="my-4" height="50px" src="{{ guest.system_company.logo_url }}" alt="{{ guest.system_company.name }}"/>
+                        <a href="{{ settings.login_page_logo_url|default('/') }}" target="_blank" rel="noopener noreferrer">
+                            <img class="my-4" height="50px" src="{{ public_logo_url }}" alt="{{ company.name }}"/>
                         </a>
                     </div>
                 {% endif %}
@@ -19,7 +19,6 @@
         </div>
     </div>
 
-    {% set company = guest.system_company %}
     <div style="margin: 50px 40px; font-size: 16px; text-align: center;">
         <h1>{{ 'System Undergoing Maintenance'|trans }}</h1>
         <p>{{ "Our systems are undergoing maintenance. We'll be back soon."|trans }}</p>
