@@ -109,6 +109,88 @@ test('converts product to api array', function (): void {
     expect($result)->toBeArray();
 });
 
+test('converts public product to api array with addons', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getStartingFromPrice')
+        ->atLeast()
+        ->once();
+
+    $product = new Model_Product();
+    $product->loadBean(new Tests\Helpers\DummyBean());
+    $product->id = 1;
+    $product->product_payment_id = 2;
+    $product->addons = '[3]';
+    $product->config = json_encode([
+        'allow_domain_register' => true,
+        'registrar' => 'hidden',
+    ]);
+
+    $addon = new Model_Product();
+    $addon->loadBean(new Tests\Helpers\DummyBean());
+    $addon->id = 3;
+    $addon->product_payment_id = 4;
+    $addon->config = json_encode([
+        'allow_domain_own' => true,
+        'registrar' => 'hidden',
+    ]);
+
+    $productPayment = new Model_ProductPayment();
+    $productPayment->loadBean(new Tests\Helpers\DummyBean());
+    $addonProductPayment = new Model_ProductPayment();
+    $addonProductPayment->loadBean(new Tests\Helpers\DummyBean());
+
+    $productPricing = [
+        'type' => 'free',
+        Model_ProductPayment::FREE => ['price' => 0, 'setup' => 0],
+        Model_ProductPayment::ONCE => ['price' => 0, 'setup' => 0],
+    ];
+    $addonPricing = [
+        'type' => 'once',
+        Model_ProductPayment::ONCE => ['price' => 5, 'setup' => 1],
+        'registrar' => 'hidden',
+    ];
+
+    $serviceMock->shouldReceive('getProductAddons')
+        ->once()
+        ->with($product, true)
+        ->andReturn([$addon]);
+    $serviceMock->shouldReceive('toProductPaymentApiArray')
+        ->once()
+        ->with($productPayment)
+        ->andReturn($productPricing);
+    $serviceMock->shouldReceive('toProductPaymentApiArray')
+        ->once()
+        ->with($addonProductPayment)
+        ->andReturn($addonPricing);
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('load')
+        ->once()
+        ->with('ProductPayment', 2)
+        ->andReturn($productPayment);
+    $dbMock->shouldReceive('load')
+        ->once()
+        ->with('ProductPayment', 4)
+        ->andReturn($addonProductPayment);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceMock);
+
+    $product->setDi($di);
+    $addon->setDi($di);
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->toApiArray($product);
+
+    expect($result['addons'])->toHaveCount(1)
+        ->and($result['addons'][0]['id'])->toBe(3)
+        ->and($result['addons'][0]['pricing'])->not->toHaveKey('registrar')
+        ->and($result['addons'][0]['config'])->toBe(['allow_domain_own' => true])
+        ->and($result['addons'][0])->not->toHaveKeys(['plugin', 'created_at', 'updated_at'])
+        ->and($result['config'])->toBe(['allow_domain_register' => true]);
+});
+
 test('gets product types', function (): void {
     $service = new Service();
     $modArray = [
