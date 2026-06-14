@@ -1213,9 +1213,12 @@ class Service implements InjectionAwareInterface
         // check if we do have invoice prepared already
         if ($order->unpaid_invoice_id !== null) {
             $p = $this->di['db']->load('Invoice', $order->unpaid_invoice_id);
-            if ($p instanceof \Model_Invoice) {
+            if ($p instanceof \Model_Invoice && $p->status === \Model_Invoice::STATUS_UNPAID) {
                 return $p;
             }
+
+            $orderService = $this->di['mod_service']('Order');
+            $orderService->unsetUnpaidInvoice($order);
         }
 
         $price = $order->price;

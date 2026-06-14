@@ -458,6 +458,7 @@ class UpdatePatcher implements InjectionAwareInterface
             67 => 'patch67',
             68 => 'patch68',
             69 => 'patch69',
+            70 => 'patch70',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1513,6 +1514,17 @@ class UpdatePatcher implements InjectionAwareInterface
         if (!$this->tableHasColumn('email_template', 'error_checked_at')) {
             $this->executeSql('ALTER TABLE `email_template` ADD COLUMN `error_checked_at` DATETIME DEFAULT NULL');
         }
+    }
+
+    private function patch70(): void
+    {
+        $this->executeSql(
+            "UPDATE client_order co
+             LEFT JOIN invoice i ON i.id = co.unpaid_invoice_id AND i.status = 'unpaid'
+             SET co.unpaid_invoice_id = NULL
+             WHERE co.unpaid_invoice_id IS NOT NULL
+               AND i.id IS NULL"
+        );
     }
 
     private function generateDownloadableStoredFilename(): string

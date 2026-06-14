@@ -930,18 +930,20 @@ test('gets soon expiring active orders query', function (): void {
     $data = ['client_id' => $randId];
     $result = $orderService->getSoonExpiringActiveOrdersQuery($data);
 
-    $expectedQuery = 'SELECT *
-                FROM client_order
-                WHERE status = :status
-                AND invoice_option = :invoice_option
-                AND period IS NOT NULL
-                AND expires_at IS NOT NULL
-                AND unpaid_invoice_id IS NULL AND client_id = :client_id HAVING DATEDIFF(expires_at, NOW()) <= :days_until_expiration ORDER BY client_id DESC';
+    $expectedQuery = 'SELECT co.*
+                FROM client_order co
+                LEFT JOIN invoice i ON i.id = co.unpaid_invoice_id AND i.status = :unpaid_invoice_status
+                WHERE co.status = :status
+                AND co.invoice_option = :invoice_option
+                AND co.period IS NOT NULL
+                AND co.expires_at IS NOT NULL
+                AND i.id IS NULL AND co.client_id = :client_id HAVING DATEDIFF(co.expires_at, NOW()) <= :days_until_expiration ORDER BY co.client_id DESC';
 
     $expectedBindings = [
         ':client_id' => $randId,
         ':status' => 'active',
         ':invoice_option' => 'issue-invoice',
+        ':unpaid_invoice_status' => Model_Invoice::STATUS_UNPAID,
         ':days_until_expiration' => $randId,
     ];
 
