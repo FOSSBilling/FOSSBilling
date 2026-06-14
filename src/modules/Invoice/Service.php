@@ -616,7 +616,7 @@ class Service implements InjectionAwareInterface
             if ($result) {
                 $transaction = $this->di['db']->getExistingModelById('Transaction', $newtx, 'Transaction not found');
                 $transaction->status = \Model_Transaction::STATUS_PROCESSED;
-                $gatewayTitle = $payGateway->title ?: ($payGateway->gateway ?: 'Payment gateway');
+                $gatewayTitle = $payGateway->title ?: $payGateway->gateway;
                 $transaction->note = sprintf('%s transaction No: %s', $gatewayTitle, $transactionId);
                 $transaction->updated_at = date('Y-m-d H:i:s');
                 $this->di['db']->store($transaction);
