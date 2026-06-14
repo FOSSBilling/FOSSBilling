@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Api;
 
-use Api_Abstract;
 use FOSSBilling\Exception;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
@@ -75,8 +74,8 @@ final class Dispatcher implements InjectionAwareInterface
         }
 
         $api = new $apiClass();
-        if (!$api instanceof Api_Abstract) {
-            throw new Exception('Api class must be an instance of Api_Abstract', null, 730);
+        if (!$api instanceof AbstractApi) {
+            throw new Exception('Api class must be an instance of FOSSBilling\Api\AbstractApi', null, 730);
         }
 
         $module = $this->getDi()['mod']($mod);
@@ -104,13 +103,13 @@ final class Dispatcher implements InjectionAwareInterface
     /**
      * Validate required parameters for an API method using attributes.
      *
-     * @param Api_Abstract $api        The API instance
+     * @param AbstractApi $api        The API instance
      * @param string       $methodName The method name
      * @param array        $data       The data array passed to the method
      *
      * @throws InformationException If required parameters are missing
      */
-    public function validateRequiredParams(Api_Abstract $api, string $methodName, array $data): void
+    public function validateRequiredParams(AbstractApi $api, string $methodName, array $data): void
     {
         try {
             $reflection = new ReflectionMethod($api, $methodName);
@@ -143,7 +142,7 @@ final class Dispatcher implements InjectionAwareInterface
         }
     }
 
-    private function normalizeArguments(Api_Abstract $api, string $methodName, array $arguments): array
+    private function normalizeArguments(AbstractApi $api, string $methodName, array $arguments): array
     {
         try {
             $reflection = new ReflectionMethod($api, $methodName);

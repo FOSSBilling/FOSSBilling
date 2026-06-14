@@ -17,7 +17,7 @@ use FOSSBilling\Validation\Api\RequiredParams;
 /**
  * Domain service management.
  */
-class Guest extends \Api_Abstract
+class Guest extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get configured TLDs which can be ordered. Shows only enabled TLDs.

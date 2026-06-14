@@ -19,7 +19,7 @@ namespace Box\Mod\Staff\Api;
 use FOSSBilling\Security\RandomizedTimeFloor;
 use FOSSBilling\Validation\Api\RequiredParams;
 
-class Guest extends \Api_Abstract
+class Guest extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Login to admin area and save information to session.

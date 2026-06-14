@@ -19,7 +19,7 @@ namespace Box\Mod\Invoice\Api;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
-class Client extends \Api_Abstract
+class Client extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get paginated list of invoices.

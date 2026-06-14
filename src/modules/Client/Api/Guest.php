@@ -20,7 +20,7 @@ use FOSSBilling\Security\RandomizedTimeFloor;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
-class Guest extends \Api_Abstract
+class Guest extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Client signup action.

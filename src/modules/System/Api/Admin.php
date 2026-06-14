@@ -20,7 +20,7 @@ use FOSSBilling\Config;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get all defined system params.

@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Serviceapikey\Api;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Update an API key. Can be used to change the config, but not to reset / regenerate the key itself.

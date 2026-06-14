@@ -17,7 +17,7 @@ use FOSSBilling\Validation\Api\RequiredParams;
 /**
  * Custom product management.
  */
-class Client extends \Api_Abstract
+class Client extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Call a method from the service's plugin.

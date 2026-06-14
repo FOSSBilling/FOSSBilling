@@ -18,7 +18,7 @@ namespace Box\Mod\Profile\Api;
 
 use FOSSBilling\Validation\Api\RequiredParams;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Returns currently logged in staff member profile information.

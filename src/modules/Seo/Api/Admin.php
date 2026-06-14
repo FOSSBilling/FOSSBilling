@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Seo\Api;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Returns SEO information. When the pings were was last sent.

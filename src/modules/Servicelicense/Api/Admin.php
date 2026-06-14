@@ -15,7 +15,7 @@ namespace Box\Mod\Servicelicense\Api;
 /**
  *Service license management.
  */
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get available licensing plugins.

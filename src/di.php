@@ -443,7 +443,7 @@ $di['set_return_uri'] = function () use ($di): void {
  *
  * @throws \Exception If the specified role is not recognized or if a client is trying to use the API while their email is not valid.
  */
-$di['api'] = $di->protect(function ($role) use ($di) {
+$di['api_identity'] = $di->protect(function ($role) use ($di) {
     $identity = match ($role) {
         'guest' => new Model_Guest(),
         'client' => $di['loggedin_client'],
@@ -476,7 +476,7 @@ $di['api_dispatcher'] = function () use ($di): FOSSBilling\Api\Dispatcher {
 };
 
 $di['api_proxy'] = $di->protect(function (string $role) use ($di): FOSSBilling\Api\Proxy {
-    $identity = $di['api']($role);
+    $identity = $di['api_identity']($role);
     $api = new FOSSBilling\Api\Proxy($identity->getIdentity());
     $api->setDi($di);
 

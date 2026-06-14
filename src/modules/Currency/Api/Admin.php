@@ -17,7 +17,7 @@ use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 use Symfony\Component\Intl\Currencies;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get a list of available currencies on the system.

@@ -19,7 +19,7 @@ namespace Box\Mod\Invoice\Api;
 use Box\Mod\Invoice\InvoiceOperation;
 use FOSSBilling\Validation\Api\RequiredParams;
 
-class Guest extends \Api_Abstract
+class Guest extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get invoice details.

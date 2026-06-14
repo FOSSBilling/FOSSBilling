@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Serviceapikey\Api;
 
-class Guest extends \Api_Abstract
+class Guest extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Checks if an API key is valid or not.

@@ -18,7 +18,7 @@ namespace Box\Mod\Client\Api;
 
 use FOSSBilling\PaginationOptions;
 
-class Client extends \Api_Abstract
+class Client extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get payments information.

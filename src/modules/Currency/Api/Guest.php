@@ -17,7 +17,7 @@ use FOSSBilling\i18n;
 use FOSSBilling\Tools;
 use Symfony\Component\Intl\Currencies;
 
-class Guest extends \Api_Abstract
+class Guest extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get a list of available currencies.

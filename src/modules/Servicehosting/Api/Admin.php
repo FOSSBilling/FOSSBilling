@@ -19,7 +19,7 @@ use FOSSBilling\Validation\Api\RequiredParams;
 /**
  * Hosting service management.
  */
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Change hosting account plan.

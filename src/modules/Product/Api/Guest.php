@@ -18,7 +18,7 @@ namespace Box\Mod\Product\Api;
 
 use FOSSBilling\PaginationOptions;
 
-class Guest extends \Api_Abstract
+class Guest extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get paginated list of products.

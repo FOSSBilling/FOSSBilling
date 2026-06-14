@@ -18,7 +18,7 @@ namespace Box\Mod\Profile\Api;
 
 use FOSSBilling\Validation\Api\RequiredParams;
 
-class Client extends \Api_Abstract
+class Client extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get currently logged in client details.

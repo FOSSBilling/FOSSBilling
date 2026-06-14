@@ -165,7 +165,7 @@ function createTestController(array $sessionData = [], ?object $api = null, mixe
     $di['rate_limiter'] = $rateLimiter;
     $di['session'] = new ClientTestSessionDouble($sessionData);
     $di['update_finalization'] = new ClientTestUpdateFinalizationDouble();
-    $di['api'] = $di->protect(fn (string $role): object => $api);
+    $di['api_identity'] = $di->protect(fn (string $role): object => $api);
     $di['api_dispatcher'] = new ClientTestApiDispatcherDouble($dispatcherResult);
 
     $controller = new TestableClient();

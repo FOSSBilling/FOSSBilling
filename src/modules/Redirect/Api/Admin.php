@@ -17,7 +17,7 @@ use FOSSBilling\Validation\Api\RequiredParams;
 /**
  * Redirects management.
  */
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get list of redirects.

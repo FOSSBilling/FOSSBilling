@@ -215,7 +215,7 @@ class Client implements InjectionAwareInterface
         $this->checkUpdateFinalization($role, $class, $method);
         $this->checkRateLimit($role, $method);
 
-        $api = $this->di['api']($role);
+        $api = $this->di['api_identity']($role);
         unset($params['CSRFToken']);
         $result = $this->di['api_dispatcher']->dispatch($api->getIdentity(), $method, $params);
 

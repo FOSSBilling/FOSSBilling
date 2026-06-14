@@ -18,7 +18,7 @@ namespace Box\Mod\Hook\Api;
 
 use FOSSBilling\PaginationOptions;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get paginated list of hooks.
