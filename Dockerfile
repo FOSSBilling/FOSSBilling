@@ -57,6 +57,8 @@ RUN apt-get update \
 FROM composer-base AS php-vendor
 
 COPY composer.json composer.lock ./
+COPY src/library ./src/library
+COPY src/modules ./src/modules
 
 RUN --mount=type=cache,target=/tmp/composer-cache,id=composer-prod \
   COMPOSER_CACHE_DIR=/tmp/composer-cache \
@@ -64,6 +66,8 @@ RUN --mount=type=cache,target=/tmp/composer-cache,id=composer-prod \
 
 FROM composer-base AS php-dev-vendor
 COPY composer.json composer.lock ./
+COPY src/library ./src/library
+COPY src/modules ./src/modules
 
 RUN --mount=type=cache,target=/tmp/composer-cache,id=composer-dev \
   COMPOSER_CACHE_DIR=/tmp/composer-cache \
