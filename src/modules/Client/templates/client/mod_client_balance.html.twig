@@ -38,7 +38,7 @@
                             <tr>
                                 <td>{{ tx.description }}</td>
                                 <td>{{ tx.created_at|format_date }}</td>
-                                <td>{{ tx.amount|format_currency(tx.currency ?? default_currency) }}</td>
+                                <td>{{ (tx.amount ?? 0)|format_currency(tx.currency ?? default_currency) }}</td>
                             </tr>
                         {% else %}
                             <tr>

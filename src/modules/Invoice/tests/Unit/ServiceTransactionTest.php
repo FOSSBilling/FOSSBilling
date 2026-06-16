@@ -135,7 +135,7 @@ test('converts to api array', function (): void {
         'txn_status' => null,
         'gateway_id' => 1,
         'gateway' => null,
-        'amount' => null,
+        'amount' => 0.0,
         'currency' => null,
         'type' => null,
         'status' => null,

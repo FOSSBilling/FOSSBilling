@@ -364,7 +364,7 @@
                             <td>{{ tx.txn_id }}</td>
                             <td>{{ tx.type }}</td>
                             <td>{{ tx.gateway }}</td>
-                            <td>{{ tx.amount|format_currency(tx.currency ?? default_currency) }}</td>
+                            <td>{{ (tx.amount ?? 0)|format_currency(tx.currency ?? default_currency) }}</td>
                             <td>{{ mf.status_badge(tx.status, 'transaction') }}</td>
                             <td>{{ tx.created_at|format_datetime }}</td>
                             <td>
