@@ -748,7 +748,7 @@ test('gets service', function (): void {
     $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class)->shouldIgnoreMissing();
     $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
         ->atLeast()->once()
-        ->with('servicedomain', 'manage_domains');
+        ->with('servicedomain', 'manage_domains', Mockery::any(), Mockery::any());
 
     $di = container();
     $di['db'] = $dbMock;
@@ -821,7 +821,7 @@ test('throws exception when getting service for not activated order', function (
     $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class)->shouldIgnoreMissing();
     $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
         ->atLeast()->once()
-        ->with('servicedomain', 'manage_domains');
+        ->with('servicedomain', 'manage_domains', Mockery::any(), Mockery::any());
 
     $di = container();
     $di['db'] = $dbMock;

@@ -26,7 +26,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_list()
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'view');
+        $this->checkPermissions('redirect', 'view');
 
         return $this->getService()->getRedirects();
     }
@@ -37,7 +37,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Redirect ID was not passed'])]
     public function get($data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'view');
+        $this->checkPermissions('redirect', 'view');
 
         return $this->getService()->toApiArray($this->getService()->get((int) $data['id']));
     }
@@ -50,7 +50,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['path' => 'Redirect path was not passed', 'target' => 'Redirect target was not passed'])]
     public function create($data): int
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'create_and_edit');
+        $this->checkPermissions('redirect', 'create_and_edit');
 
         $id = $this->getService()->create(
             (string) $data['path'],
@@ -73,7 +73,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Redirect ID was not passed'])]
     public function update($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'create_and_edit');
+        $this->checkPermissions('redirect', 'create_and_edit');
 
         $this->getService()->update($this->getService()->get((int) $data['id']), $data);
 
@@ -90,7 +90,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Redirect ID was not passed'])]
     public function delete($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('redirect', 'delete');
+        $this->checkPermissions('redirect', 'delete');
 
         $this->getService()->delete($this->getService()->get((int) $data['id']));
 

@@ -29,7 +29,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function log_get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('activity', 'view');
+        $this->checkPermissions('activity', 'view');
 
         $data['min_priority'] ??= 6;
         [$sql, $params] = $this->getService()->getSearchQuery($data);
@@ -58,7 +58,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function log($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('activity', 'manage');
+        $this->checkPermissions('activity', 'manage');
 
         if (!isset($data['m'])) {
             return false;
@@ -83,7 +83,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function log_email($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('activity', 'manage');
+        $this->checkPermissions('activity', 'manage');
 
         if (!isset($data['subject'])) {
             return false;

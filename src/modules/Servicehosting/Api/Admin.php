@@ -27,7 +27,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['plan_id' => 'plan_id is missing'])]
     public function change_plan($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_accounts');
+        $this->checkPermissions('servicehosting', 'manage_accounts');
 
         if (!isset($data['plan_id'])) {
             throw new \FOSSBilling\Exception('plan_id is missing');
@@ -46,7 +46,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function change_username($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_accounts');
+        $this->checkPermissions('servicehosting', 'manage_accounts');
 
         [$order, $s] = $this->_getService($data);
         $service = $this->getService();
@@ -59,7 +59,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function change_ip($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_accounts');
+        $this->checkPermissions('servicehosting', 'manage_accounts');
 
         [$order, $s] = $this->_getService($data);
         $service = $this->getService();
@@ -72,7 +72,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function change_domain($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_accounts');
+        $this->checkPermissions('servicehosting', 'manage_accounts');
 
         [$order, $s] = $this->_getService($data);
         $service = $this->getService();
@@ -85,7 +85,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function change_password($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_accounts');
+        $this->checkPermissions('servicehosting', 'manage_accounts');
 
         [$order, $s] = $this->_getService($data);
         $service = $this->getService();
@@ -98,7 +98,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function sync($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_accounts');
+        $this->checkPermissions('servicehosting', 'manage_accounts');
 
         [$order, $s] = $this->_getService($data);
         $service = $this->getService();
@@ -115,7 +115,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function update($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_accounts');
+        $this->checkPermissions('servicehosting', 'manage_accounts');
 
         [, $s] = $this->_getService($data);
         $service = $this->getService();
@@ -130,7 +130,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function manager_get_pairs($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'view_servers');
+        $this->checkPermissions('servicehosting', 'view_servers');
 
         return $this->getService()->getServerManagers();
     }
@@ -142,7 +142,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function server_get_pairs($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'view_servers');
+        $this->checkPermissions('servicehosting', 'view_servers');
 
         return $this->getService()->getServerPairs();
     }
@@ -154,7 +154,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function server_get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'view_servers');
+        $this->checkPermissions('servicehosting', 'view_servers');
         [$sql, $params] = $this->getService()->getServersSearchQuery($data);
         $result = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
@@ -178,7 +178,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function account_get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'view_servers');
+        $this->checkPermissions('servicehosting', 'view_servers');
         [$sql, $params] = $this->getService()->getAccountsSearchQuery($data);
         $result = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
         $orderService = $this->getDi()['mod_service']('order');
@@ -233,7 +233,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     ])]
     public function server_create($data): int
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_servers');
+        $this->checkPermissions('servicehosting', 'manage_servers');
 
         $service = $this->getService();
 
@@ -255,7 +255,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Server ID was not passed'])]
     public function server_get($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'view_servers');
+        $this->checkPermissions('servicehosting', 'view_servers');
 
         $model = $this->getDi()['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
         $service = $this->getService();
@@ -271,7 +271,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Server ID was not passed'])]
     public function server_delete($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_servers');
+        $this->checkPermissions('servicehosting', 'manage_servers');
 
         $model = $this->getDi()['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
 
@@ -309,7 +309,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Server ID was not passed'])]
     public function server_update($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_servers');
+        $this->checkPermissions('servicehosting', 'manage_servers');
 
         $model = $this->getDi()['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
         $service = $this->getService();
@@ -331,7 +331,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Server ID was not passed'])]
     public function server_test_connection($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_servers');
+        $this->checkPermissions('servicehosting', 'manage_servers');
 
         $model = $this->getDi()['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
 
@@ -345,7 +345,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function hp_get_pairs($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_plans');
+        $this->checkPermissions('servicehosting', 'manage_plans');
 
         return $this->getService()->getHpPairs();
     }
@@ -357,7 +357,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function hp_get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_plans');
+        $this->checkPermissions('servicehosting', 'manage_plans');
         [$sql, $params] = $this->getService()->getHpSearchQuery($data);
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
@@ -377,7 +377,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Hosting plan ID was not passed'])]
     public function hp_delete($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_plans');
+        $this->checkPermissions('servicehosting', 'manage_plans');
 
         $model = $this->getDi()['db']->getExistingModelById('ServiceHostingHp', $data['id'], 'Hosting plan not found');
 
@@ -403,7 +403,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Hosting plan ID was not passed'])]
     public function hp_get($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_plans');
+        $this->checkPermissions('servicehosting', 'manage_plans');
 
         $model = $this->getDi()['db']->getExistingModelById('ServiceHostingHp', $data['id'], 'Hosting plan not found');
 
@@ -420,7 +420,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Hosting plan ID was not passed'])]
     public function hp_update($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_plans');
+        $this->checkPermissions('servicehosting', 'manage_plans');
 
         $model = $this->getDi()['db']->getExistingModelById('ServiceHostingHp', $data['id'], 'Hosting plan not found');
 
@@ -439,7 +439,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['name' => 'Hosting plan name was not passed'])]
     public function hp_create($data): int
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicehosting', 'manage_plans');
+        $this->checkPermissions('servicehosting', 'manage_plans');
 
         $service = $this->getService();
 

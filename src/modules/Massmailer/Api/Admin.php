@@ -26,7 +26,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_list(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'view');
+        $this->checkPermissions('massmailer', 'view');
 
         $qb = $this->getService()->getSearchQueryBuilder($data);
         $pager = $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
@@ -44,7 +44,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'view');
+        $this->checkPermissions('massmailer', 'view');
 
         $model = $this->_getMessage($data);
 
@@ -63,7 +63,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function update(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'create_and_edit');
+        $this->checkPermissions('massmailer', 'create_and_edit');
 
         $model = $this->_getMessage($data);
 
@@ -102,7 +102,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['subject' => 'Message subject was not passed'])]
     public function create(array $data): int
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'create_and_edit');
+        $this->checkPermissions('massmailer', 'create_and_edit');
 
         $default_content = '{% apply markdown_to_html %}
 Hi {{ c.first_name }} {{ c.last_name }},
@@ -154,7 +154,7 @@ Order our services at {{ "order"|url }}
      */
     public function send_test(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'send');
+        $this->checkPermissions('massmailer', 'send');
 
         $model = $this->_getMessage($data);
         $client_id = $this->_getTestClientId();
@@ -175,7 +175,7 @@ Order our services at {{ "order"|url }}
      */
     public function send(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'send');
+        $this->checkPermissions('massmailer', 'send');
 
         $model = $this->_getMessage($data);
 
@@ -202,7 +202,7 @@ Order our services at {{ "order"|url }}
      */
     public function copy(array $data): int
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'create_and_edit');
+        $this->checkPermissions('massmailer', 'create_and_edit');
 
         $model = $this->_getMessage($data);
 
@@ -234,7 +234,7 @@ Order our services at {{ "order"|url }}
      */
     public function receivers(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'view');
+        $this->checkPermissions('massmailer', 'view');
 
         $model = $this->_getMessage($data);
 
@@ -246,7 +246,7 @@ Order our services at {{ "order"|url }}
      */
     public function delete(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'delete');
+        $this->checkPermissions('massmailer', 'delete');
 
         $model = $this->_getMessage($data);
         $id = $model->getId();
@@ -266,7 +266,7 @@ Order our services at {{ "order"|url }}
      */
     public function preview(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'view');
+        $this->checkPermissions('massmailer', 'view');
 
         $model = $this->_getMessage($data);
         $client_id = $this->_getTestClientId();
@@ -299,7 +299,7 @@ Order our services at {{ "order"|url }}
      */
     public function get_test_client(): string
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('massmailer', 'view');
+        $this->checkPermissions('massmailer', 'view');
 
         try {
             $client = $this->getDi()['mod_service']('client')->get(['id' => $this->_getTestClientId()]);

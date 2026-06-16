@@ -29,7 +29,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function upload($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedownloadable', 'manage');
+        $this->checkPermissions('servicedownloadable', 'manage');
 
         $model = $this->getDi()['db']->getExistingModelById('Product', $data['id'], 'Product not found');
 
@@ -55,7 +55,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['order_id' => 'Order ID (order_id) was not passed'])]
     public function update($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedownloadable', 'manage');
+        $this->checkPermissions('servicedownloadable', 'manage');
 
         $order = $this->getDi()['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
 
@@ -77,7 +77,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function config_save($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedownloadable', 'manage');
+        $this->checkPermissions('servicedownloadable', 'manage');
 
         $model = $this->getDi()['db']->getExistingModelById('Product', $data['id'], 'Product not found');
 
@@ -98,7 +98,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function send_file($data): Response
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedownloadable', 'manage');
+        $this->checkPermissions('servicedownloadable', 'manage');
 
         $model = $this->getDi()['db']->getExistingModelById('Product', $data['id'], 'Product not found');
 

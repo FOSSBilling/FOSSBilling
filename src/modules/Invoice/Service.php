@@ -246,7 +246,7 @@ class Service implements InjectionAwareInterface
 
         $result['hash'] = $row['hash'];
         $result['hash_expires_at'] = $row['hash_expires_at'] ?? null;
-        $result['gateway_id'] = $row['gateway_id'];
+        $result['gateway_id'] = $row['gateway_id'] ?? null;
         $result['taxname'] = $row['taxname'];
         $result['taxrate'] = $row['taxrate'];
         $result['currency'] = $row['currency'];
@@ -256,8 +256,8 @@ class Service implements InjectionAwareInterface
         $result['total'] = $total + $tax;
         $result['status'] = $row['status'];
         $result['notes'] = $row['notes'];
-        $result['text_1'] = $row['text_1'];
-        $result['text_2'] = $row['text_2'];
+        $result['text_1'] = $row['text_1'] ?? null;
+        $result['text_2'] = $row['text_2'] ?? null;
         $result['due_at'] = $row['due_at'];
         $result['paid_at'] = $row['paid_at'] ?? null;
         $result['created_at'] = $row['created_at'];

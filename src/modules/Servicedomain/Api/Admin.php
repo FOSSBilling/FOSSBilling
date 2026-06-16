@@ -39,7 +39,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['order_id' => 'Order ID is missing'])]
     public function update($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedomain', 'manage_domains');
+        $this->checkPermissions('servicedomain', 'manage_domains');
 
         $s = $this->_getService($data);
 
@@ -56,7 +56,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function update_nameservers($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedomain', 'manage_domains');
+        $this->checkPermissions('servicedomain', 'manage_domains');
 
         $s = $this->_getService($data);
 
@@ -70,7 +70,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function update_contacts($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedomain', 'manage_domains');
+        $this->checkPermissions('servicedomain', 'manage_domains');
 
         $s = $this->_getService($data);
 
@@ -84,7 +84,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function enable_privacy_protection($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedomain', 'manage_domains');
+        $this->checkPermissions('servicedomain', 'manage_domains');
 
         $s = $this->_getService($data);
 
@@ -98,7 +98,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function disable_privacy_protection($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedomain', 'manage_domains');
+        $this->checkPermissions('servicedomain', 'manage_domains');
 
         $s = $this->_getService($data);
 
@@ -112,7 +112,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_transfer_code($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedomain', 'manage_domains');
+        $this->checkPermissions('servicedomain', 'manage_domains');
 
         $s = $this->_getService($data);
 
@@ -126,7 +126,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function lock($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedomain', 'manage_domains');
+        $this->checkPermissions('servicedomain', 'manage_domains');
 
         $s = $this->_getService($data);
 
@@ -140,7 +140,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function unlock($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedomain', 'manage_domains');
+        $this->checkPermissions('servicedomain', 'manage_domains');
 
         $s = $this->_getService($data);
 
@@ -154,7 +154,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function tld_get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedomain', 'manage_tlds');
+        $this->checkPermissions('servicedomain', 'manage_tlds');
         [$sql, $params] = $this->getService()->tldGetSearchQuery($data);
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
@@ -176,7 +176,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['tld' => 'TLD is missing'])]
     public function tld_get($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedomain', 'manage_tlds');
+        $this->checkPermissions('servicedomain', 'manage_tlds');
 
         $tld = $data['tld'];
         if ($tld[0] != '.') {
@@ -201,7 +201,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'ID is missing'])]
     public function tld_get_id($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedomain', 'manage_tlds');
+        $this->checkPermissions('servicedomain', 'manage_tlds');
 
         $model = $this->getService()->tldFindOneById($data['id']);
         if (!$model instanceof \Model_Tld) {
@@ -221,7 +221,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['tld' => 'TLD is missing'])]
     public function tld_delete($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedomain', 'manage_tlds');
+        $this->checkPermissions('servicedomain', 'manage_tlds');
 
         $model = $this->getService()->tldFindOneByTld($data['tld']);
 
@@ -254,7 +254,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     ])]
     public function tld_create($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedomain', 'manage_tlds');
+        $this->checkPermissions('servicedomain', 'manage_tlds');
 
         if ($this->getService()->tldAlreadyRegistered($data['tld'])) {
             throw new \FOSSBilling\InformationException('TLD already registered');
@@ -278,7 +278,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['tld' => 'TLD is missing'])]
     public function tld_update($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedomain', 'manage_tlds');
+        $this->checkPermissions('servicedomain', 'manage_tlds');
 
         $model = $this->getService()->tldFindOneByTld($data['tld']);
         if (!$model instanceof \Model_Tld) {
@@ -295,7 +295,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function registrar_get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedomain', 'manage_registrars');
+        $this->checkPermissions('servicedomain', 'manage_registrars');
         [$sql, $params] = $this->getService()->registrarGetSearchQuery($data);
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
@@ -318,7 +318,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function registrar_get_pairs($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedomain', 'manage_registrars');
+        $this->checkPermissions('servicedomain', 'manage_registrars');
 
         return $this->getService()->registrarGetPairs();
     }
@@ -330,7 +330,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function registrar_get_available($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedomain', 'manage_registrars');
+        $this->checkPermissions('servicedomain', 'manage_registrars');
 
         return $this->getService()->registrarGetAvailable();
     }
@@ -343,7 +343,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['code' => 'Registrar code is missing'])]
     public function registrar_install($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedomain', 'manage_registrars');
+        $this->checkPermissions('servicedomain', 'manage_registrars');
 
         $code = $data['code'];
         if (!in_array($code, $this->getService()->registrarGetAvailable())) {
@@ -361,7 +361,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Registrar ID is missing'])]
     public function registrar_delete($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedomain', 'manage_registrars');
+        $this->checkPermissions('servicedomain', 'manage_registrars');
 
         $model = $this->getDi()['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
 
@@ -376,7 +376,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Registrar ID is missing'])]
     public function registrar_copy($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedomain', 'manage_registrars');
+        $this->checkPermissions('servicedomain', 'manage_registrars');
 
         $model = $this->getDi()['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
 
@@ -391,7 +391,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Registrar ID is missing'])]
     public function registrar_get($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedomain', 'manage_registrars');
+        $this->checkPermissions('servicedomain', 'manage_registrars');
 
         $registrar = $this->getDi()['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
 
@@ -406,7 +406,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function batch_sync_expiration_dates($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedomain', 'manage_domains');
+        $this->checkPermissions('servicedomain', 'manage_domains');
 
         return $this->getService()->batchSyncExpirationDates();
     }
@@ -422,7 +422,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Registrar ID is missing'])]
     public function registrar_update($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicedomain', 'manage_registrars');
+        $this->checkPermissions('servicedomain', 'manage_registrars');
 
         $model = $this->getDi()['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
 

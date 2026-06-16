@@ -27,7 +27,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('hook', 'view');
+        $this->checkPermissions('hook', 'view');
 
         $service = $this->getService();
         [$sql, $params] = $service->getSearchQuery($data);
@@ -44,7 +44,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function call($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('hook', 'trigger_hooks');
+        $this->checkPermissions('hook', 'trigger_hooks');
 
         if (!isset($data['event']) || empty($data['event'])) {
             $this->getDi()['logger']->warning('Invoked event call without providing event name');
@@ -76,7 +76,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function batch_connect($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('hook', 'manage_hooks', null, $this->identity);
+        $this->checkPermissions('hook', 'manage_hooks');
 
         $mod = $data['mod'] ?? null;
         $service = $this->getService();

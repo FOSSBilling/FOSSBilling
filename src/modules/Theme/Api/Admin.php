@@ -22,7 +22,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_list($data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'view');
+        $this->checkPermissions('theme', 'view');
 
         $themes = $this->getService()->getThemes();
 
@@ -34,7 +34,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_admin_list($data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'view');
+        $this->checkPermissions('theme', 'view');
 
         $themes = $this->getService()->getThemes(false);
 
@@ -46,7 +46,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_current(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'view');
+        $this->checkPermissions('theme', 'view');
 
         if ($this->isInvalidClientParameter($data['client'] ?? null)) {
             throw new \FOSSBilling\InformationException('Invalid "client" parameter.');
@@ -81,7 +81,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['code' => 'Theme code was not passed'])]
     public function get($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'view');
+        $this->checkPermissions('theme', 'view');
 
         return $this->getService()->loadTheme($data['code']);
     }
@@ -92,7 +92,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['code' => 'Theme code was not passed'])]
     public function select($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'manage');
+        $this->checkPermissions('theme', 'manage');
 
         $theme = $this->getService()->getTheme($data['code']);
 
@@ -117,7 +117,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['code' => 'Theme code was not passed', 'preset' => 'Preset name is missing'])]
     public function preset_delete($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'manage');
+        $this->checkPermissions('theme', 'manage');
 
         $service = $this->getService();
 
@@ -133,7 +133,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['code' => 'Theme code was not passed', 'preset' => 'Preset name is missing'])]
     public function preset_select($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'manage');
+        $this->checkPermissions('theme', 'manage');
 
         $service = $this->getService();
         $theme = $service->getTheme($data['code']);

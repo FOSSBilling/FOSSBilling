@@ -140,7 +140,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Client ID was not passed'])]
     public function api_key_reset($data): string
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_api_keys');
+        $this->checkPermissions('client', 'manage_api_keys');
 
         $client = $this->getDi()['db']->getExistingModelById('Client', $data['id']);
 

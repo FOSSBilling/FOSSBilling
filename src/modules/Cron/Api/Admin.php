@@ -26,7 +26,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function info($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('cron', 'view');
+        $this->checkPermissions('cron', 'view');
 
         return $this->getService()->getCronInfo();
     }
@@ -38,7 +38,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function run($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('cron', 'manage');
+        $this->checkPermissions('cron', 'manage');
 
         return $this->getService()->runCrons();
     }
@@ -53,7 +53,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function save_settings($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('cron', 'manage');
+        $this->checkPermissions('cron', 'manage');
 
         $guestCron = !empty($data['guest_cron']);
 
@@ -79,7 +79,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function regenerate_cron_hash($data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('cron', 'manage');
+        $this->checkPermissions('cron', 'manage');
 
         $config = $this->getMod()->getConfig();
         $config['cron_hash'] = bin2hex(random_bytes(32));

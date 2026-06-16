@@ -33,7 +33,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('notification', 'view');
+        $this->checkPermissions('notification', 'view');
 
         $queryBuilder = $this->getService()->getSearchQueryBuilder($data);
 
@@ -50,7 +50,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Notification ID was not passed'])]
     public function get($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('notification', 'view');
+        $this->checkPermissions('notification', 'view');
 
         return $this->getService()->toApiArray($this->getService()->get((int) $data['id']));
     }
@@ -62,7 +62,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function add($data): int|false
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('notification', 'manage');
+        $this->checkPermissions('notification', 'manage');
 
         if (!isset($data['message'])) {
             return false;
@@ -81,7 +81,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Notification ID was not passed'])]
     public function delete($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('notification', 'manage');
+        $this->checkPermissions('notification', 'manage');
 
         return $this->getService()->delete((int) $data['id']);
     }
@@ -93,7 +93,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function delete_all(): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('notification', 'manage');
+        $this->checkPermissions('notification', 'manage');
 
         return $this->getService()->deleteAll();
     }

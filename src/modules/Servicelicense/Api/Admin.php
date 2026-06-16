@@ -22,7 +22,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function plugin_get_pairs(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicelicense', 'manage');
+        $this->checkPermissions('servicelicense', 'manage');
 
         $plugins = $this->getService()->getLicensePlugins();
         $result = [];
@@ -52,7 +52,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function update($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicelicense', 'manage');
+        $this->checkPermissions('servicelicense', 'manage');
 
         $s = $this->_getService($data);
 
@@ -66,7 +66,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function reset($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('servicelicense', 'manage');
+        $this->checkPermissions('servicelicense', 'manage');
 
         $s = $this->_getService($data);
 

@@ -16,7 +16,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 {
     public function get_config($data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('antispam', 'view');
+        $this->checkPermissions('antispam', 'view');
 
         $config = $this->getDi()['mod_config']('Antispam');
 
@@ -79,7 +79,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     public function block_ip($data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('antispam', 'manage');
+        $this->checkPermissions('antispam', 'manage');
 
         $ip = $this->normalizeIp($data['ip'] ?? null);
 
@@ -102,7 +102,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     public function unblock_ip($data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('antispam', 'manage');
+        $this->checkPermissions('antispam', 'manage');
 
         $ip = $this->normalizeIp($data['ip'] ?? null);
 
@@ -122,7 +122,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     public function get_blocked_ips($data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('antispam', 'view');
+        $this->checkPermissions('antispam', 'view');
 
         $config = $this->getDi()['mod_config']('Antispam');
         $blocked_ips = $this->getBlockedIpsFromConfig($config);

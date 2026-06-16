@@ -23,7 +23,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function update($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('serviceapikey', 'manage');
+        $this->checkPermissions('serviceapikey', 'manage');
 
         return $this->getService()->updateApiKey($data);
     }
@@ -37,7 +37,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function reset($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('serviceapikey', 'manage');
+        $this->checkPermissions('serviceapikey', 'manage');
 
         return $this->getService()->resetApiKey($data);
     }
