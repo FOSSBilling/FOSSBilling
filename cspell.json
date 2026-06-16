@@ -507,7 +507,8 @@
         "elseifs",
         "CLOUDFLARENET",
         "baselined",
-        "endverbatim"
+        "endverbatim",
+        "missingmodule"
     ],
     "ignorePaths": [
         "node_modules/**",

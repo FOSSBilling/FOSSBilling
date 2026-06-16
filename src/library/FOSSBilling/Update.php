@@ -276,7 +276,7 @@ class Update implements InjectionAwareInterface
 
             $fileHandler = fopen($archiveFile, 'w');
             foreach ($httpClient->stream($response) as $chunk) {
-                fwrite($fileHandler, $chunk->getContent());
+                fwrite($fileHandler, (string) $chunk->getContent());
             }
             fclose($fileHandler);
         } catch (TransportExceptionInterface|HttpExceptionInterface $e) {
