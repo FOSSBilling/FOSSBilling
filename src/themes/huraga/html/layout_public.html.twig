@@ -52,7 +52,7 @@
 <body class="{% block body_class %}{% endblock %}">
     {{ render_widgets('client.theme.body.start') }}
     {% block body %}{% endblock %}
-    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;" aria-live="polite" aria-atomic="false"></div>
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;" aria-live="polite" aria-atomic="true"></div>
     {{ include('partial_pending_messages.html.twig', ignore_missing: true) }}
     {{ render_widgets('client.theme.body.end') }}
 </body>
