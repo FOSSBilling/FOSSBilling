@@ -1989,3 +1989,229 @@ test('returns false when checking deposit with empty items', function (): void {
     $result = $service->isInvoiceTypeDeposit($modelInvoice);
     expect($result)->toBeFalse();
 });
+
+test('validatePaymentAmount passes for exact match', function (): void {
+    $service = new Service();
+    $di = container();
+    $service->setDi($di);
+
+    $service->validatePaymentAmount(50.00, 50.00);
+    expect(true)->toBeTrue();
+});
+
+test('validatePaymentAmount passes within epsilon tolerance', function (): void {
+    $service = new Service();
+    $di = container();
+    $service->setDi($di);
+
+    $service->validatePaymentAmount(49.99, 50.00);
+    expect(true)->toBeTrue();
+});
+
+test('validatePaymentAmount throws on underpayment', function (): void {
+    $service = new Service();
+    $di = container();
+    $service->setDi($di);
+
+    expect(fn () => $service->validatePaymentAmount(40.00, 50.00))
+        ->toThrow(FOSSBilling\Exception::class);
+});
+
+test('validatePaymentAmount logs warning on significant overpayment', function (): void {
+    $service = new Service();
+    $logger = new Tests\Helpers\TestLogger();
+    $di = container();
+    $di['logger'] = $logger;
+    $service->setDi($di);
+
+    $service->validatePaymentAmount(60.00, 50.00);
+
+    $warnings = array_filter($logger->calls, fn ($c) => $c['method'] === 'warning');
+    expect($warnings)->not->toBeEmpty();
+});
+
+test('validatePaymentAmount does not warn for minor overpayment within tolerance', function (): void {
+    $service = new Service();
+    $logger = new Tests\Helpers\TestLogger();
+    $di = container();
+    $di['logger'] = $logger;
+    $service->setDi($di);
+
+    $service->validatePaymentAmount(50.50, 50.00);
+
+    $warnings = array_filter($logger->calls, fn ($c) => $c['method'] === 'warning');
+    expect($warnings)->toBeEmpty();
+});
+
+test('generateRenewalInvoiceForSubscriptionPayment returns null when subscription not found', function (): void {
+    $service = new Service();
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('findOne')
+        ->with('Subscription', 'sid = :sid', Mockery::any())
+        ->andReturn(null);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $result = $service->generateRenewalInvoiceForSubscriptionPayment('I-TEST123', 1);
+    expect($result)->toBeNull();
+});
+
+test('generateRenewalInvoiceForSubscriptionPayment returns null when original order is not active', function (): void {
+    $service = new Service();
+
+    $subscription = new Model_Subscription();
+    $subscription->loadBean(new Tests\Helpers\DummyBean());
+    $subscription->rel_type = 'invoice';
+    $subscription->rel_id = 82;
+
+    $invoiceItem = new Model_InvoiceItem();
+    $invoiceItem->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceItem->rel_id = 82;
+
+    $originalOrder = new Model_ClientOrder();
+    $originalOrder->loadBean(new Tests\Helpers\DummyBean());
+    $originalOrder->status = Model_ClientOrder::STATUS_PENDING_SETUP;
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('findOne')
+        ->with('Subscription', 'sid = :sid', Mockery::any())
+        ->andReturn($subscription);
+    $dbMock->shouldReceive('findOne')
+        ->with('InvoiceItem', Mockery::any(), Mockery::any())
+        ->andReturn($invoiceItem);
+    $dbMock->shouldReceive('load')
+        ->with('ClientOrder', 82)
+        ->andReturn($originalOrder);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $result = $service->generateRenewalInvoiceForSubscriptionPayment('I-TEST123', 1);
+    expect($result)->toBeNull();
+});
+
+test('generateRenewalInvoiceForSubscriptionPayment uses the original order and not a product_id lookup', function (): void {
+    $subscription = new Model_Subscription();
+    $subscription->loadBean(new Tests\Helpers\DummyBean());
+    $subscription->rel_type = 'invoice';
+    $subscription->rel_id = 82;
+
+    $invoiceItem = new Model_InvoiceItem();
+    $invoiceItem->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceItem->rel_id = 82;
+
+    $originalOrder = new Model_ClientOrder();
+    $originalOrder->loadBean(new Tests\Helpers\DummyBean());
+    $originalOrder->status = Model_ClientOrder::STATUS_ACTIVE;
+    $originalOrder->product_id = 1;
+
+    $renewalInvoice = new Model_Invoice();
+    $renewalInvoice->loadBean(new Tests\Helpers\DummyBean());
+    $renewalInvoice->id = 99;
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('findOne')
+        ->with('Subscription', 'sid = :sid', Mockery::any())
+        ->andReturn($subscription);
+    $dbMock->shouldReceive('findOne')
+        ->with('InvoiceItem', Mockery::any(), Mockery::any())
+        ->andReturn($invoiceItem);
+    $dbMock->shouldReceive('load')
+        ->with('ClientOrder', 82)
+        ->andReturn($originalOrder);
+
+    $serviceMock = Mockery::mock(Service::class . '[generateForOrder, approveInvoice]');
+    $serviceMock->shouldReceive('generateForOrder')
+        ->with(Mockery::on(function ($order) use ($originalOrder): bool {
+            return $order === $originalOrder;
+        }))
+        ->once()
+        ->andReturn($renewalInvoice);
+    $serviceMock->shouldReceive('approveInvoice')
+        ->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->generateRenewalInvoiceForSubscriptionPayment('I-TEST123', 1);
+
+    expect($result)->toBeInstanceOf(Model_Invoice::class);
+    expect($result->id)->toBe(99);
+});
+
+test('markAsPaid transitions a deposit invoice to paid status', function (): void {
+    $service = new Service();
+
+    $depositInvoice = new Model_Invoice();
+    $depositInvoice->loadBean(new Tests\Helpers\DummyBean());
+    $depositInvoice->id = 89;
+    $depositInvoice->status = Model_Invoice::STATUS_UNPAID;
+    $depositInvoice->approved = true;
+    $depositInvoice->currency = 'USD';
+
+    $depositItem = new Model_InvoiceItem();
+    $depositItem->loadBean(new Tests\Helpers\DummyBean());
+    $depositItem->id = 96;
+    $depositItem->type = Model_InvoiceItem::TYPE_DEPOSIT;
+    $depositItem->task = 'void';
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('find')
+        ->with('InvoiceItem', 'invoice_id = ?', [89])
+        ->andReturn([$depositItem]);
+    $dbMock->shouldReceive('store')
+        ->atLeast()->once();
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_series_paid')
+        ->andReturn('FOSS');
+
+    $currencyService = Mockery::mock(CurrencyService::class);
+    $currencyService->shouldReceive('toBaseCurrency')
+        ->andReturn(30.0);
+    $currencyRepo = Mockery::mock(CurrencyRepository::class);
+    $currencyRepo->shouldReceive('getRateByCode')
+        ->with('USD')
+        ->andReturn(1.0);
+    $currencyService->shouldReceive('getCurrencyRepository')
+        ->andReturn($currencyRepo);
+
+    $invoiceItemService = Mockery::mock(ServiceInvoiceItem::class);
+    $invoiceItemService->shouldReceive('markAsPaid')
+        ->atLeast()->once();
+    $invoiceItemService->shouldReceive('getTotal')
+        ->andReturn(30.0);
+
+    $eventsManager = Mockery::mock('\Box_EventManager');
+    $eventsManager->shouldReceive('fire')
+        ->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(function ($name, $sub = '') use ($systemService, $currencyService, $invoiceItemService) {
+        return match ([$name, $sub]) {
+            ['system', ''] => $systemService,
+            ['currency', ''] => $currencyService,
+            ['Invoice', 'InvoiceItem'] => $invoiceItemService,
+            default => throw new RuntimeException("Unexpected service: {$name}/{$sub}"),
+        };
+    });
+    $di['events_manager'] = $eventsManager;
+    $service->setDi($di);
+
+    $result = $service->markAsPaid($depositInvoice);
+
+    expect($result)->toBeTrue();
+    expect($depositInvoice->status)->toBe(Model_Invoice::STATUS_PAID);
+    expect($depositInvoice->paid_at)->not->toBeNull();
+});

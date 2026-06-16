@@ -20,7 +20,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function list(): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('widgets', 'view');
+        $this->checkPermissions('widgets', 'view');
 
         return $this->getService()->getWidgetList();
     }
@@ -31,7 +31,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function rebuild(): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('widgets', 'manage');
+        $this->checkPermissions('widgets', 'manage');
 
         $service = $this->getService();
         $service->invalidateCache();

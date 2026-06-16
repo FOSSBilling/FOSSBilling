@@ -30,7 +30,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'view');
+        $this->checkPermissions('extension', 'view');
 
         $service = $this->getService();
 
@@ -45,7 +45,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_latest($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'view');
+        $this->checkPermissions('extension', 'view');
 
         $type = $data['type'] ?? null;
 
@@ -66,7 +66,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['extension_id' => 'Extension ID was not passed'])]
     public function get_extension_readme($data): string
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'view');
+        $this->checkPermissions('extension', 'view');
 
         $extensionInfo = $this->getDi()['extension_manager']->getExtension($data['extension_id']);
         $markdown = new \FOSSBilling\Twig\Markdown\FOSSBillingMarkdown($this->di);
@@ -95,7 +95,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function languages(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'view');
+        $this->checkPermissions('extension', 'view');
 
         $data['disabled'] = Tools::normalizeBoolean($data['disabled'] ?? false);
         $data['details'] = Tools::normalizeBoolean($data['details'] ?? true, true);
@@ -113,7 +113,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['locale_id' => 'Locale ID was not passed'])]
     public function toggle_language(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
+        $this->checkPermissions('extension', 'manage_extensions');
 
         return \FOSSBilling\i18n::toggleLocale($data['locale_id']);
     }
@@ -126,7 +126,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['locale_id' => 'Locale ID was not passed'])]
     public function locale_completion(array $data): int
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'view');
+        $this->checkPermissions('extension', 'view');
 
         return \FOSSBilling\i18n::getLocaleCompletionPercent($data['locale_id']);
     }
@@ -140,7 +140,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function update($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
+        $this->checkPermissions('extension', 'manage_extensions');
 
         $ext = $this->_getExtension($data);
         $service = $this->getService();
@@ -162,7 +162,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Extension ID was not passed', 'type' => 'Extension type was not passed'])]
     public function activate($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
+        $this->checkPermissions('extension', 'manage_extensions');
 
         $service = $this->getService();
 
@@ -178,7 +178,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function deactivate($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
+        $this->checkPermissions('extension', 'manage_extensions');
 
         $ext = $this->_getExtension($data);
 
@@ -200,7 +200,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Extension ID was not passed', 'type' => 'Extension type was not passed'])]
     public function uninstall($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'uninstall_extensions');
+        $this->checkPermissions('extension', 'uninstall_extensions');
 
         $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminUninstallExtension', 'params' => ['type' => $data['type'], 'id' => $data['id']]]);
 
@@ -219,7 +219,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Extension ID was not passed', 'type' => 'Extension type was not passed'])]
     public function install($data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
+        $this->checkPermissions('extension', 'manage_extensions');
 
         $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminInstallExtension', 'params' => $data]);
 

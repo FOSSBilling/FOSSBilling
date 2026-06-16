@@ -457,6 +457,7 @@ class UpdatePatcher implements InjectionAwareInterface
             68 => 'patch68',
             69 => 'patch69',
             70 => 'patch70',
+            71 => 'patch71',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1548,6 +1549,26 @@ class UpdatePatcher implements InjectionAwareInterface
              WHERE co.unpaid_invoice_id IS NOT NULL
                AND i.id IS NULL"
         );
+    }
+
+    private function patch71(): void
+    {
+        // Ensure the invoice table has the gateway_id, text_1, and text_2
+        // columns. These have been part of structure.sql for a long time, but
+        // databases upgraded from very old installations (e.g. BoxBilling era)
+        // may be missing them, which produces PHP "Undefined array key"
+        // warnings in Invoice\Service::toApiArray().
+        if (!$this->tableHasColumn('invoice', 'gateway_id')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD COLUMN `gateway_id` int(11) DEFAULT NULL');
+        }
+
+        if (!$this->tableHasColumn('invoice', 'text_1')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD COLUMN `text_1` text');
+        }
+
+        if (!$this->tableHasColumn('invoice', 'text_2')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD COLUMN `text_2` text');
+        }
     }
 
     private function generateDownloadableStoredFilename(): string

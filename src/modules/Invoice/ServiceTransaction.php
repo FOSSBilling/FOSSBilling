@@ -229,7 +229,7 @@ class ServiceTransaction implements InjectionAwareInterface
             'txn_status' => $model->txn_status,
             'gateway_id' => $model->gateway_id,
             'gateway' => $gateway,
-            'amount' => $model->amount,
+            'amount' => (float) ($model->amount ?? 0),
             'currency' => $model->currency,
             'type' => $model->type,
             'status' => $model->status,

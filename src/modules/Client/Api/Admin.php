@@ -35,7 +35,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
+        $this->checkPermissions('client', 'view');
 
         [$sql, $params] = $this->getService()->getSearchQuery($data);
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
@@ -57,7 +57,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_pairs($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
+        $this->checkPermissions('client', 'view');
 
         $service = $this->getDi()['mod_service']('client');
 
@@ -73,7 +73,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
+        $this->checkPermissions('client', 'view');
 
         $service = $this->getService();
         $client = $service->get($data);
@@ -90,7 +90,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'ID required'])]
     public function login($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'impersonate_login');
+        $this->checkPermissions('client', 'impersonate_login');
 
         $client = $this->getDi()['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
@@ -148,7 +148,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['email' => 'Email required', 'first_name' => 'First name is required'])]
     public function create($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'create');
+        $this->checkPermissions('client', 'create');
 
         $validator = $this->getDi()['validator'];
         $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
@@ -186,7 +186,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Client ID is missing'])]
     public function delete($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'delete');
+        $this->checkPermissions('client', 'delete');
 
         $model = $this->getDi()['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
@@ -241,7 +241,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Client ID was not passed'])]
     public function update($data = []): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'edit_profile');
+        $this->checkPermissions('client', 'edit_profile');
 
         $client = $this->getDi()['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
@@ -332,7 +332,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'ID required', 'password' => 'Password required', 'password_confirm' => 'Password confirmation required'])]
     public function change_password(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'change_password');
+        $this->checkPermissions('client', 'change_password');
 
         $this->getDi()['validator']->passwordsMatch($data);
 
@@ -363,7 +363,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function balance_get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_balance');
+        $this->checkPermissions('client', 'manage_balance');
 
         $service = $this->getDi()['mod_service']('Client', 'Balance');
         [$q, $params] = $service->getSearchQuery($data);
@@ -388,7 +388,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Client ID was not passed'])]
     public function balance_delete($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_balance');
+        $this->checkPermissions('client', 'manage_balance');
 
         $model = $this->getDi()['db']->getExistingModelById('ClientBalance', $data['id'], 'Balance line not found');
 
@@ -412,7 +412,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Client ID required', 'amount' => 'Amount is required', 'description' => 'Description is required'])]
     public function balance_add_funds($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_balance');
+        $this->checkPermissions('client', 'manage_balance');
 
         $client = $this->getDi()['db']->getExistingModelById('Client', $data['id'], 'Client not found');
 
@@ -427,7 +427,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function batch_expire_password_reminders(): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'delete', null, $this->identity);
+        $this->checkPermissions('client', 'delete');
 
         $service = $this->getDi()['mod_service']('client');
         $expired = $service->getExpiredPasswordReminders();
@@ -449,7 +449,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function login_history_get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view_login_history');
+        $this->checkPermissions('client', 'view_login_history');
 
         [$q, $params] = $this->getService()->getHistorySearchQuery($data);
         $pager = $this->getDi()['pager']->getPaginatedResultSet($q, $params, PaginationOptions::fromArray($data));
@@ -478,7 +478,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_statuses($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
+        $this->checkPermissions('client', 'view');
 
         $service = $this->getDi()['mod_service']('client');
 
@@ -492,7 +492,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function group_get_pairs($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'view');
+        $this->checkPermissions('client', 'view');
 
         $service = $this->getDi()['mod_service']('client');
 
@@ -507,7 +507,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['title' => 'Group title is missing'])]
     public function group_create($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_groups');
+        $this->checkPermissions('client', 'manage_groups');
 
         return $this->getService()->createGroup($data);
     }
@@ -520,7 +520,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Group ID is missing'])]
     public function group_update($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_groups');
+        $this->checkPermissions('client', 'manage_groups');
 
         $model = $this->getDi()['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
 
@@ -539,7 +539,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Group ID is missing'])]
     public function group_delete($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_groups');
+        $this->checkPermissions('client', 'manage_groups');
 
         $model = $this->getDi()['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
 
@@ -560,7 +560,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Group ID is missing'])]
     public function group_get($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_groups');
+        $this->checkPermissions('client', 'manage_groups');
 
         $model = $this->getDi()['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
 
@@ -573,7 +573,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'bulk_delete');
+        $this->checkPermissions('client', 'bulk_delete');
 
         foreach ($data['ids'] as $id) {
             $this->delete(['id' => $id]);
@@ -584,7 +584,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     public function export_csv($data): Response
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'export');
+        $this->checkPermissions('client', 'export');
 
         $data['headers'] ??= [];
 

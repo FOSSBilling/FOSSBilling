@@ -25,7 +25,7 @@ test('create delegates to service', function (): void {
     $service->shouldReceive('create')->with('/old-page/', '/new-page/')->once()->andReturn(7);
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
-    $staffService->shouldReceive('checkPermissionsAndThrowException')->with('redirect', 'create_and_edit')->once();
+    $staffService->shouldReceive('checkPermissionsAndThrowException')->with('redirect', 'create_and_edit', Mockery::any(), Mockery::any())->once();
 
     $di = new Pimple\Container();
     $di['logger'] = new Box_Log();
@@ -52,7 +52,7 @@ test('delete delegates to service entity', function (): void {
     $service->shouldReceive('delete')->with($redirect)->once()->andReturn(true);
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
-    $staffService->shouldReceive('checkPermissionsAndThrowException')->with('redirect', 'delete')->once();
+    $staffService->shouldReceive('checkPermissionsAndThrowException')->with('redirect', 'delete', Mockery::any(), Mockery::any())->once();
 
     $di = new Pimple\Container();
     $di['logger'] = new Box_Log();

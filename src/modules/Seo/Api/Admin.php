@@ -24,7 +24,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function info($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('seo', 'view');
+        $this->checkPermissions('seo', 'view');
 
         return $this->getService()->getInfo();
     }
@@ -36,7 +36,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function ping_all()
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('seo', 'manage');
+        $this->checkPermissions('seo', 'manage');
 
         $extensionService = $this->getDi()['mod_service']('extension');
         $config = $extensionService->getConfig('mod_seo');

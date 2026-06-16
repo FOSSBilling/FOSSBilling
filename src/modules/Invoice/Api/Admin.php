@@ -30,7 +30,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'view');
+        $this->checkPermissions('invoice', 'view');
 
         $service = $this->getService();
         [$sql, $params] = $service->getSearchQuery($data);
@@ -50,7 +50,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'view');
+        $this->checkPermissions('invoice', 'view');
 
         $model = $this->_getInvoice($data);
 
@@ -69,7 +69,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function mark_as_paid($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices');
+        $this->checkPermissions('invoice', 'manage_invoices');
 
         $invoice = $this->_getInvoice($data);
 
@@ -92,7 +92,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['client_id' => 'Client ID is missing'])]
     public function prepare($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices');
+        $this->checkPermissions('invoice', 'manage_invoices');
 
         $client = $this->getDi()['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
 
@@ -108,7 +108,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function approve($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices');
+        $this->checkPermissions('invoice', 'manage_invoices');
 
         $model = $this->_getInvoice($data);
 
@@ -124,7 +124,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function refund($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices');
+        $this->checkPermissions('invoice', 'manage_invoices');
 
         $model = $this->_getInvoice($data);
         $note = $data['note'] ?? null;
@@ -172,7 +172,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function update($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices');
+        $this->checkPermissions('invoice', 'manage_invoices');
 
         $model = $this->_getInvoice($data);
 
@@ -187,7 +187,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Invoice item ID was not passed'])]
     public function item_delete($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices');
+        $this->checkPermissions('invoice', 'manage_invoices');
 
         $model = $this->getDi()['db']->getExistingModelById('InvoiceItem', $data['id'], 'Invoice item was not found');
         $invoiceItemService = $this->getDi()['mod_service']('Invoice', 'InvoiceItem');
@@ -202,7 +202,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function delete($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices');
+        $this->checkPermissions('invoice', 'manage_invoices');
 
         $model = $this->_getInvoice($data);
 
@@ -223,7 +223,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Order ID was not passed'])]
     public function renewal_invoice($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices');
+        $this->checkPermissions('invoice', 'manage_invoices');
 
         $model = $this->getDi()['db']->getExistingModelById('ClientOrder', $data['id'], 'Order not found');
         if ($model->price <= 0) {
@@ -243,7 +243,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function batch_pay_with_credits($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices', null, $this->identity);
+        $this->checkPermissions('invoice', 'manage_invoices');
 
         return $this->getService()->doBatchPayWithCredits($data);
     }
@@ -255,7 +255,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function pay_with_credits($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices');
+        $this->checkPermissions('invoice', 'manage_invoices');
 
         $invoice = $this->_getInvoice($data);
 
@@ -269,7 +269,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function batch_generate()
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices', null, $this->identity);
+        $this->checkPermissions('invoice', 'manage_invoices');
 
         return $this->getService()->generateInvoicesForExpiringOrders();
     }
@@ -281,7 +281,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function batch_activate_paid()
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices', null, $this->identity);
+        $this->checkPermissions('invoice', 'manage_invoices');
 
         return $this->getService()->doBatchPaidInvoiceActivation();
     }
@@ -293,7 +293,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function batch_send_reminders($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices', null, $this->identity);
+        $this->checkPermissions('invoice', 'manage_invoices');
 
         return $this->getService()->doBatchRemindersSend();
     }
@@ -311,7 +311,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function batch_invoke_due_event($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices', null, $this->identity);
+        $this->checkPermissions('invoice', 'manage_invoices');
 
         return $this->getService()->doBatchInvokeDueEvent($data);
     }
@@ -324,7 +324,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function send_reminder($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices');
+        $this->checkPermissions('invoice', 'manage_invoices');
 
         $invoice = $this->_getInvoice($data);
 
@@ -338,7 +338,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_statuses($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'view');
+        $this->checkPermissions('invoice', 'view');
 
         return $this->getService()->counter();
     }
@@ -350,7 +350,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function transaction_process_all($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_transactions');
+        $this->checkPermissions('invoice', 'manage_transactions');
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
@@ -363,7 +363,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Transaction ID is missing'])]
     public function transaction_process($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_transactions');
+        $this->checkPermissions('invoice', 'manage_transactions');
 
         $model = $this->getDi()['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
 
@@ -394,7 +394,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Transaction ID is missing'])]
     public function transaction_update($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_transactions');
+        $this->checkPermissions('invoice', 'manage_transactions');
 
         $model = $this->getDi()['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
 
@@ -417,7 +417,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function transaction_create($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_transactions');
+        $this->checkPermissions('invoice', 'manage_transactions');
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
         $data['source'] ??= 'admin';
@@ -433,7 +433,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Transaction ID is missing'])]
     public function transaction_delete($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_transactions');
+        $this->checkPermissions('invoice', 'manage_transactions');
 
         $model = $this->getDi()['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
 
@@ -450,7 +450,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Transaction ID is missing'])]
     public function transaction_get($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_transactions');
+        $this->checkPermissions('invoice', 'manage_transactions');
 
         $model = $this->getDi()['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
 
@@ -468,7 +468,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function transaction_get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_transactions');
+        $this->checkPermissions('invoice', 'manage_transactions');
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
         [$sql, $params] = $transactionService->getSearchQuery($data);
@@ -490,7 +490,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function transaction_get_statuses($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'view');
+        $this->checkPermissions('invoice', 'view');
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
@@ -504,7 +504,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function transaction_get_statuses_pairs($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'view');
+        $this->checkPermissions('invoice', 'view');
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
@@ -518,7 +518,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function transaction_statuses($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'view');
+        $this->checkPermissions('invoice', 'view');
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
@@ -532,7 +532,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function transaction_gateway_statuses($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'view');
+        $this->checkPermissions('invoice', 'view');
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
@@ -546,7 +546,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function transaction_types($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'view');
+        $this->checkPermissions('invoice', 'view');
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
@@ -566,7 +566,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function transaction_claim_for_processing($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_transactions');
+        $this->checkPermissions('invoice', 'manage_transactions');
 
         $required = [
             'id' => 'Transaction ID is required',
@@ -585,7 +585,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function gateway_get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_gateways');
+        $this->checkPermissions('invoice', 'manage_gateways');
 
         $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
         [$sql, $params] = $gatewayService->getSearchQuery($data);
@@ -607,7 +607,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function gateway_get_pairs($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_gateways');
+        $this->checkPermissions('invoice', 'manage_gateways');
 
         $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
 
@@ -621,7 +621,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function gateway_get_available(array $data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_gateways');
+        $this->checkPermissions('invoice', 'manage_gateways');
 
         $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
 
@@ -636,7 +636,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['code' => 'Payment gateway code is missing'])]
     public function gateway_install(array $data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_gateways');
+        $this->checkPermissions('invoice', 'manage_gateways');
 
         $code = $data['code'];
         $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
@@ -654,7 +654,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Gateway ID was not passed'])]
     public function gateway_get($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_gateways');
+        $this->checkPermissions('invoice', 'manage_gateways');
 
         $model = $this->getDi()['db']->getExistingModelById('PayGateway', $data['id'], 'Gateway not found');
 
@@ -671,7 +671,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Gateway ID was not passed'])]
     public function gateway_copy($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_gateways');
+        $this->checkPermissions('invoice', 'manage_gateways');
 
         $model = $this->getDi()['db']->getExistingModelById('PayGateway', $data['id'], 'Gateway not found');
         $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
@@ -697,7 +697,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Gateway ID was not passed'])]
     public function gateway_update($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_gateways');
+        $this->checkPermissions('invoice', 'manage_gateways');
 
         $model = $this->getDi()['db']->getExistingModelById('PayGateway', $data['id'], 'Gateway not found');
         $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
@@ -715,7 +715,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Gateway ID was not passed'])]
     public function gateway_delete($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_gateways');
+        $this->checkPermissions('invoice', 'manage_gateways');
 
         $model = $this->getDi()['db']->getExistingModelById('PayGateway', $data['id'], 'Gateway not found');
         $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
@@ -730,7 +730,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function subscription_get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_subscriptions');
+        $this->checkPermissions('invoice', 'manage_subscriptions');
 
         $subscriptionService = $this->getDi()['mod_service']('Invoice', 'Subscription');
 
@@ -768,7 +768,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     ])]
     public function subscription_create($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_subscriptions');
+        $this->checkPermissions('invoice', 'manage_subscriptions');
 
         $client = $this->getDi()['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
         $payGateway = $this->getDi()['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Payment gateway not found');
@@ -797,7 +797,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Subscription ID was not passed'])]
     public function subscription_update($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_subscriptions');
+        $this->checkPermissions('invoice', 'manage_subscriptions');
 
         $model = $this->getDi()['db']->getExistingModelById('Subscription', $data['id'], 'Subscription not found');
         $subscriptionService = $this->getDi()['mod_service']('Invoice', 'Subscription');
@@ -814,7 +814,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function subscription_get($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_subscriptions');
+        $this->checkPermissions('invoice', 'manage_subscriptions');
 
         if (!isset($data['id']) && !isset($data['sid'])) {
             $required = [
@@ -851,7 +851,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Subscription ID was not passed'])]
     public function subscription_delete($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_subscriptions');
+        $this->checkPermissions('invoice', 'manage_subscriptions');
 
         $model = $this->getDi()['db']->getExistingModelById('Subscription', $data['id'], 'Subscription not found');
         $subscriptionService = $this->getDi()['mod_service']('Invoice', 'Subscription');
@@ -869,7 +869,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Tax ID was not passed'])]
     public function tax_delete($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_tax');
+        $this->checkPermissions('invoice', 'manage_tax');
 
         $model = $this->getDi()['db']->getExistingModelById('Tax', $data['id'], 'Tax rule not found');
         $taxService = $this->getDi()['mod_service']('Invoice', 'Tax');
@@ -888,7 +888,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     ])]
     public function tax_create($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_tax');
+        $this->checkPermissions('invoice', 'manage_tax');
 
         $taxService = $this->getDi()['mod_service']('Invoice', 'Tax');
 
@@ -903,7 +903,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Tax ID was not passed'])]
     public function tax_get($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_tax');
+        $this->checkPermissions('invoice', 'manage_tax');
 
         $tax = $this->getDi()['db']->getExistingModelById('Tax', $data['id'], 'Tax rule not found');
 
@@ -924,7 +924,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     ])]
     public function tax_update($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_tax');
+        $this->checkPermissions('invoice', 'manage_tax');
 
         $tax = $this->getDi()['db']->getExistingModelById('Tax', $data['id'], 'Tax rule not found');
 
@@ -940,7 +940,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function tax_get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_tax');
+        $this->checkPermissions('invoice', 'manage_tax');
 
         $taxService = $this->getDi()['mod_service']('Invoice', 'Tax');
         [$sql, $params] = $taxService->getSearchQuery($data);
@@ -957,7 +957,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function tax_setup_eu($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_tax');
+        $this->checkPermissions('invoice', 'manage_tax');
 
         $taxService = $this->getDi()['mod_service']('Invoice', 'Tax');
 
@@ -976,7 +976,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_invoices');
+        $this->checkPermissions('invoice', 'manage_invoices');
 
         foreach ($data['ids'] as $id) {
             $this->delete(['id' => $id]);
@@ -991,7 +991,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete_subscription($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_subscriptions');
+        $this->checkPermissions('invoice', 'manage_subscriptions');
 
         foreach ($data['ids'] as $id) {
             $this->subscription_delete(['id' => $id]);
@@ -1006,7 +1006,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete_transaction($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_transactions');
+        $this->checkPermissions('invoice', 'manage_transactions');
 
         foreach ($data['ids'] as $id) {
             $this->transaction_delete(['id' => $id]);
@@ -1021,7 +1021,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete_tax($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'manage_tax');
+        $this->checkPermissions('invoice', 'manage_tax');
 
         foreach ($data['ids'] as $id) {
             $this->tax_delete(['id' => $id]);
@@ -1032,7 +1032,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     public function export_csv($data): Response
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('invoice', 'export');
+        $this->checkPermissions('invoice', 'export');
 
         $data['headers'] ??= [];
 

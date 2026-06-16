@@ -124,4 +124,10 @@ class AbstractApi implements InjectionAwareInterface
     {
         return $this->ip;
     }
+
+    // Wraps checkPermissionsAndThrowException, always forwarding $this->identity so cron/IPN contexts work without an active session.
+    protected function checkPermissions(string $module, ?string $key = null, mixed $constraint = null): void
+    {
+        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException($module, $key, $constraint, $this->identity);
+    }
 }

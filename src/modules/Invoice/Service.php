@@ -246,7 +246,7 @@ class Service implements InjectionAwareInterface
 
         $result['hash'] = $row['hash'];
         $result['hash_expires_at'] = $row['hash_expires_at'] ?? null;
-        $result['gateway_id'] = $row['gateway_id'];
+        $result['gateway_id'] = $row['gateway_id'] ?? null;
         $result['taxname'] = $row['taxname'];
         $result['taxrate'] = $row['taxrate'];
         $result['currency'] = $row['currency'];
@@ -256,8 +256,8 @@ class Service implements InjectionAwareInterface
         $result['total'] = $total + $tax;
         $result['status'] = $row['status'];
         $result['notes'] = $row['notes'];
-        $result['text_1'] = $row['text_1'];
-        $result['text_2'] = $row['text_2'];
+        $result['text_1'] = $row['text_1'] ?? null;
+        $result['text_2'] = $row['text_2'] ?? null;
         $result['due_at'] = $row['due_at'];
         $result['paid_at'] = $row['paid_at'] ?? null;
         $result['created_at'] = $row['created_at'];
@@ -839,6 +839,16 @@ class Service implements InjectionAwareInterface
         $epsilon = 0.01;
         if ($received < $expected - $epsilon) {
             throw new \FOSSBilling\Exception('Payment amount does not match the expected invoice total. Expected :expected, received :received.', [':expected' => number_format($expected, 2, '.', ''), ':received' => number_format($received, 2, '.', '')]);
+        }
+
+        // Warn on significant overpayments — this can indicate a misdirected
+        // payment applied to the wrong invoice.
+        $overpaymentTolerance = 1.00;
+        if ($received > $expected + $overpaymentTolerance) {
+            $this->di['logger']->warning(
+                'Payment amount significantly exceeds the expected invoice total. Expected :expected, received :received.',
+                [':expected' => number_format($expected, 2, '.', ''), ':received' => number_format($received, 2, '.', '')]
+            );
         }
     }
 
@@ -2106,25 +2116,16 @@ class Service implements InjectionAwareInterface
                 return null;
             }
 
-            $activeOrder = $this->di['db']->findOne(
-                'ClientOrder',
-                'client_id = :client_id AND product_id = :product_id AND status = :status',
-                [
-                    'client_id' => $clientId,
-                    'product_id' => $originalOrder->product_id,
-                    'status' => \Model_ClientOrder::STATUS_ACTIVE,
-                ]
-            );
-
-            if (!$activeOrder instanceof \Model_ClientOrder) {
-                $activeOrder = $originalOrder;
-            }
-
-            if ($activeOrder->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+            // Use the original order directly. A previous approach searched for
+            // any active order with the same product_id, but that is broken for
+            // products like domain registrations where multiple orders share
+            // the same product — it would find an unrelated order and generate
+            // a renewal invoice for the wrong service.
+            if ($originalOrder->status !== \Model_ClientOrder::STATUS_ACTIVE) {
                 return null;
             }
 
-            $invoice = $this->generateForOrder($activeOrder);
+            $invoice = $this->generateForOrder($originalOrder);
             $this->approveInvoice($invoice, ['use_credits' => false]);
 
             $this->di['logger']->info("Generated renewal invoice #{$invoice->id} for subscription payment (SID: {$subscriptionSid}).");

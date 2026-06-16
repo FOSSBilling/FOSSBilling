@@ -32,7 +32,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['name' => 'Form name was not provided'])]
     public function create_form($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'manage');
+        $this->checkPermissions('formbuilder', 'manage');
 
         if (isset($data['type']) && !in_array(strtolower($data['type']), ['horizontal', 'default'])) {
             throw new \FOSSBilling\Exception('Form style was not found in predefined list', null, 3657);
@@ -71,7 +71,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['type' => 'Form field type is invalid', 'form_id' => 'Form id was not passed'])]
     public function add_field($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'manage');
+        $this->checkPermissions('formbuilder', 'manage');
 
         $service = $this->getService();
         if (!isset($data['type']) || !$service->isValidFieldType($data['type'])) {
@@ -96,7 +96,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_form($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'view');
+        $this->checkPermissions('formbuilder', 'view');
 
         $required = [
             'id' => 'Form id was not passed',
@@ -117,7 +117,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_form_fields($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'view');
+        $this->checkPermissions('formbuilder', 'view');
 
         $required = [
             'form_id' => 'Form id was not passed',
@@ -138,7 +138,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_field($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'view');
+        $this->checkPermissions('formbuilder', 'view');
 
         $required = [
             'id' => 'Field id was not passed',
@@ -159,7 +159,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_forms()
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'view');
+        $this->checkPermissions('formbuilder', 'view');
 
         $service = $this->getService();
 
@@ -173,7 +173,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function delete_form($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'manage');
+        $this->checkPermissions('formbuilder', 'manage');
 
         $required = [
             'id' => 'Form id was not passed',
@@ -193,7 +193,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function delete_field($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'manage');
+        $this->checkPermissions('formbuilder', 'manage');
 
         $required = [
             'id' => 'Field id was not passed',
@@ -234,7 +234,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function update_field($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'manage');
+        $this->checkPermissions('formbuilder', 'manage');
 
         $required = [
             'id' => 'Field id was not passed',
@@ -254,7 +254,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_pairs($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'view');
+        $this->checkPermissions('formbuilder', 'view');
 
         $service = $this->getService();
 
@@ -271,7 +271,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['form_id' => 'Form id was not passed', 'name' => 'Form name was not passed'])]
     public function copy_form($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'manage');
+        $this->checkPermissions('formbuilder', 'manage');
 
         $required = [
             'form_id' => 'Form id was not passed',
@@ -292,7 +292,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['form_id' => 'Form id was not passed', 'form_name' => 'Form name was not passed', 'type' => 'Form type was not passed'])]
     public function update_form_settings($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('formbuilder', 'manage');
+        $this->checkPermissions('formbuilder', 'manage');
 
         $required = [
             'form_id' => 'Form id was not passed',

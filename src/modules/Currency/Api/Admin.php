@@ -28,7 +28,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_list(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'view');
+        $this->checkPermissions('currency', 'view');
 
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
         $repo = $this->getService()->getCurrencyRepository();
@@ -45,7 +45,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_pairs(): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'view');
+        $this->checkPermissions('currency', 'view');
 
         $currencies = Currencies::getNames();
         foreach ($currencies as $currencyCode => $currencyName) {
@@ -68,7 +68,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['code' => 'Currency code is missing'])]
     public function get($data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'view');
+        $this->checkPermissions('currency', 'view');
 
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
         $repo = $this->getService()->getCurrencyRepository();
@@ -87,7 +87,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_default(): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'view');
+        $this->checkPermissions('currency', 'view');
 
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $repo */
         $repo = $this->getService()->getCurrencyRepository();
@@ -111,7 +111,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['code' => 'Currency code is missing'])]
     public function create($data = []): string
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'create');
+        $this->checkPermissions('currency', 'create');
 
         $service = $this->getService();
 
@@ -141,7 +141,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['code' => 'Currency code is missing'])]
     public function update($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'edit');
+        $this->checkPermissions('currency', 'edit');
 
         $conversionRate = $data['conversion_rate'] ?? null;
 
@@ -153,7 +153,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function is_cron_enabled(): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'view');
+        $this->checkPermissions('currency', 'view');
 
         return $this->getService()->isCronEnabled();
     }
@@ -163,7 +163,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function update_rates(): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'update_rates');
+        $this->checkPermissions('currency', 'update_rates');
 
         return $this->service->updateCurrencyRates();
     }
@@ -176,7 +176,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['code' => 'Currency code is missing'])]
     public function delete($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'delete');
+        $this->checkPermissions('currency', 'delete');
 
         return $this->getService()->removeCurrency($data['code']);
     }
@@ -190,7 +190,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['code' => 'Currency code is missing'])]
     public function set_default($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('currency', 'set_default');
+        $this->checkPermissions('currency', 'set_default');
 
         $service = $this->getService();
 

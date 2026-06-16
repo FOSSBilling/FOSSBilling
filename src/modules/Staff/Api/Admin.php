@@ -28,7 +28,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'view');
+        $this->checkPermissions('staff', 'view');
 
         $data['no_cron'] = true;
 
@@ -52,7 +52,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_pairs(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'view');
+        $this->checkPermissions('staff', 'view');
 
         return $this->getService()->getPairs($data);
     }
@@ -67,7 +67,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'ID was not passed'])]
     public function get($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'view');
+        $this->checkPermissions('staff', 'view');
 
         $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
 
@@ -92,7 +92,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
         $role = $model->role === 'admin' ? 'admin' : 'staff';
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', $role === 'admin' ? 'create_and_edit_admin' : 'create_and_edit_staff');
+        $this->checkPermissions('staff', $role === 'admin' ? 'create_and_edit_admin' : 'create_and_edit_staff');
 
         if (isset($data['email'])) {
             $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
@@ -113,7 +113,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
         $role = $model->role === 'admin' ? 'admin' : 'staff';
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', $role === 'admin' ? 'delete_admin' : 'delete_staff');
+        $this->checkPermissions('staff', $role === 'admin' ? 'delete_admin' : 'delete_staff');
 
         return $this->getService()->delete($model);
     }
@@ -138,7 +138,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
         $role = $model->role === 'admin' ? 'admin' : 'staff';
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', $role === 'admin' ? 'reset_admin_password' : 'reset_staff_password');
+        $this->checkPermissions('staff', $role === 'admin' ? 'reset_admin_password' : 'reset_staff_password');
 
         return $this->getService()->changePassword($model, $data['password']);
     }
@@ -161,7 +161,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     public function create($data)
     {
         $role = $data['role'] ?? 'staff';
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', $role === 'admin' ? 'create_and_edit_admin' : 'create_and_edit_staff');
+        $this->checkPermissions('staff', $role === 'admin' ? 'create_and_edit_admin' : 'create_and_edit_staff');
 
         $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
 
@@ -178,7 +178,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'ID was not passed'])]
     public function permissions_get($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
+        $this->checkPermissions('staff', 'create_and_edit_staff');
 
         $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
 
@@ -191,7 +191,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'ID was not passed', 'permissions' => 'Missing "permissions" parameter'])]
     public function permissions_update($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_settings');
+        $this->checkPermissions('staff', 'manage_settings');
 
         $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
 
@@ -213,7 +213,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function group_get_pairs($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'view');
+        $this->checkPermissions('staff', 'view');
 
         return $this->getService()->getAdminGroupPair();
     }
@@ -225,7 +225,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function group_get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_groups');
+        $this->checkPermissions('staff', 'manage_groups');
 
         [$sql, $params] = $this->getService()->getAdminGroupSearchQuery($data);
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
@@ -248,7 +248,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['name' => 'Group name was not passed'])]
     public function group_create($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_groups');
+        $this->checkPermissions('staff', 'manage_groups');
 
         return $this->getService()->createGroup($data['name']);
     }
@@ -263,7 +263,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Group ID was not passed'])]
     public function group_get($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_groups');
+        $this->checkPermissions('staff', 'manage_groups');
 
         $model = $this->getDi()['db']->getExistingModelById('AdminGroup', $data['id'], 'Group not found');
 
@@ -280,7 +280,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Group ID was not passed'])]
     public function group_delete($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_groups');
+        $this->checkPermissions('staff', 'manage_groups');
 
         $model = $this->getDi()['db']->getExistingModelById('AdminGroup', $data['id'], 'Group not found');
 
@@ -299,7 +299,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Group ID was not passed'])]
     public function group_update($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_groups');
+        $this->checkPermissions('staff', 'manage_groups');
 
         $model = $this->getDi()['db']->getExistingModelById('AdminGroup', $data['id'], 'Group not found');
 
@@ -313,7 +313,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function login_history_get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_settings');
+        $this->checkPermissions('staff', 'manage_settings');
 
         [$sql, $params] = $this->getService()->getActivityAdminHistorySearchQuery($data);
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
@@ -336,7 +336,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Event ID was not passed'])]
     public function login_history_get($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('staff', 'manage_settings');
+        $this->checkPermissions('staff', 'manage_settings');
 
         $model = $this->getDi()['db']->getExistingModelById('ActivityAdminHistory', $data['id'], 'Event not found');
 

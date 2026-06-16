@@ -672,7 +672,7 @@
                                 {% set payments = admin.client_balance_get_list({ 'per_page': 20, 'client_id': client.id }) %}
                                 {% for i, tx in payments.list %}
                                 <tr>
-                                    <td>{{ tx.amount|format_currency(tx.currency ?? default_currency) }}</td>
+                                    <td>{{ (tx.amount ?? 0)|format_currency(tx.currency ?? default_currency) }}</td>
                                     <td>{{ tx.description }}</td>
                                     <td>{{ tx.created_at|format_datetime }}</td>
                                     <td>

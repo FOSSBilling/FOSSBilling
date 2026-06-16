@@ -29,7 +29,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function email_get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'view_email_history');
+        $this->checkPermissions('email', 'view_email_history');
 
         [$sql, $params] = $this->getService()->getSearchQuery($data);
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
@@ -62,7 +62,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function email_get($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'view_email_history');
+        $this->checkPermissions('email', 'view_email_history');
 
         $service = $this->getService();
         $model = $service->getEmailById($data['id']);
@@ -85,7 +85,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     ])]
     public function send(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'send_emails');
+        $this->checkPermissions('email', 'send_emails');
 
         $client_id = $data['client_id'] ?? null;
         $emailService = $this->getService();
@@ -111,7 +111,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function email_resend($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'send_emails');
+        $this->checkPermissions('email', 'send_emails');
 
         $model = $this->getDi()['db']->findOne('ActivityClientEmail', 'id = ?', [$data['id']]);
 
@@ -130,7 +130,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function email_delete($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'delete_email_history');
+        $this->checkPermissions('email', 'delete_email_history');
 
         $model = $this->getDi()['db']->findOne('ActivityClientEmail', 'id = ?', [$data['id']]);
 
@@ -153,7 +153,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function template_get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'view_templates');
+        $this->checkPermissions('email', 'view_templates');
 
         $pager = $this->getService()->getTemplateList($data);
 
@@ -186,7 +186,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function template_get($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'view_templates');
+        $this->checkPermissions('email', 'view_templates');
 
         $model = $this->getService()->getTemplate((int) $data['id']);
 
@@ -201,7 +201,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function template_delete($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'manage_templates');
+        $this->checkPermissions('email', 'manage_templates');
 
         $service = $this->getService();
         $template = $service->getTemplate((int) $data['id']);
@@ -233,7 +233,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     ])]
     public function template_create($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'manage_templates');
+        $this->checkPermissions('email', 'manage_templates');
 
         $enabled = $data['enabled'] ?? 0;
         $category = $data['category'] ?? null;
@@ -253,7 +253,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function template_update($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'manage_templates');
+        $this->checkPermissions('email', 'manage_templates');
 
         $enabled = $data['enabled'] ?? null;
         $category = $data['category'] ?? null;
@@ -273,7 +273,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['code' => 'Email template code was not passed'])]
     public function template_reset($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'manage_templates');
+        $this->checkPermissions('email', 'manage_templates');
 
         return $this->getService()->resetTemplateByCode($data['code']);
     }
@@ -287,7 +287,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function template_render($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'manage_templates');
+        $this->checkPermissions('email', 'manage_templates');
 
         $model = $this->getService()->getTemplate((int) $data['id']);
         $t = $this->getService()->templateToApiArray($model, true);
@@ -305,7 +305,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function batch_template_generate()
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'manage_templates');
+        $this->checkPermissions('email', 'manage_templates');
 
         return $this->getService()->templateBatchGenerate();
     }
@@ -317,7 +317,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function batch_template_disable($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'manage_templates');
+        $this->checkPermissions('email', 'manage_templates');
 
         return $this->getService()->templateBatchDisable();
     }
@@ -329,7 +329,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function batch_template_enable($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'manage_templates');
+        $this->checkPermissions('email', 'manage_templates');
 
         return $this->getService()->templateBatchEnable();
     }
@@ -342,7 +342,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function template_validate_all()
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'manage_templates');
+        $this->checkPermissions('email', 'manage_templates');
 
         return $this->getService()->validateAllTemplates();
     }
@@ -352,7 +352,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function send_test(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'send_emails');
+        $this->checkPermissions('email', 'send_emails');
 
         $currentUser = $this->getDi()['loggedin_admin'] ?? null;
 
@@ -370,7 +370,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     public function batch_sendmail()
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'send_emails', null, $this->identity);
+        $this->checkPermissions('email', 'send_emails');
 
         $extensionService = $this->getDi()['mod_service']('extension');
         if ($extensionService->isExtensionActive('mod', 'demo')) {
@@ -399,7 +399,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['code' => 'Template code not passed'])]
     public function template_send($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'send_emails');
+        $this->checkPermissions('email', 'send_emails');
 
         if (!isset($data['to']) && !isset($data['to_staff']) && !isset($data['to_client'])) {
             throw new \FOSSBilling\InformationException('Receiver is not defined. Define to or to_client or to_staff parameter');
@@ -414,7 +414,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_template_delete($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'manage_templates');
+        $this->checkPermissions('email', 'manage_templates');
 
         foreach ($data['ids'] as $id) {
             $template = $this->getService()->getTemplate((int) $id);
@@ -434,7 +434,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'delete_email_history');
+        $this->checkPermissions('email', 'delete_email_history');
 
         foreach ($data['ids'] as $id) {
             $this->email_delete(['id' => $id]);
@@ -445,7 +445,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     public function get_queue(array $data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('email', 'view_email_history');
+        $this->checkPermissions('email', 'view_email_history');
 
         [$sql, $params] = $this->getService()->queueGetSearchQuery($data);
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));

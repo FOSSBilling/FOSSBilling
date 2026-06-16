@@ -81,7 +81,7 @@ test('testSelectNotAdminTheme', function (): void {
     $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
         ->atLeast()
         ->once()
-        ->with('theme', 'manage');
+        ->with('theme', 'manage', Mockery::any(), Mockery::any());
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (string $name = ''): Mockery\MockInterface => strtolower($name) === 'staff' ? $staffServiceMock : $systemServiceMock);
@@ -117,7 +117,7 @@ test('testSelectAdminTheme', function (): void {
     $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
         ->atLeast()
         ->once()
-        ->with('theme', 'manage');
+        ->with('theme', 'manage', Mockery::any(), Mockery::any());
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (string $name = ''): Mockery\MockInterface => strtolower($name) === 'staff' ? $staffServiceMock : $systemServiceMock);

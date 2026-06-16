@@ -30,7 +30,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function ticket_get_list(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+        $this->checkPermissions('support', 'view');
 
         [$sql, $bindings] = $this->getService()->getSearchQuery($data);
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
@@ -49,7 +49,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function ticket_get(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+        $this->checkPermissions('support', 'view');
 
         $model = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
 
@@ -67,7 +67,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function ticket_update(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+        $this->checkPermissions('support', 'manage_tickets');
 
         $model = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
 
@@ -85,7 +85,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Ticket message ID is missing', 'content' => 'Ticket message content is missing'])]
     public function ticket_message_update(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+        $this->checkPermissions('support', 'manage_tickets');
 
         $model = $this->getDi()['db']->getExistingModelById('SupportTicketMessage', $data['id'], 'Ticket message not found');
 
@@ -98,7 +98,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function ticket_delete(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+        $this->checkPermissions('support', 'manage_tickets');
 
         $model = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
 
@@ -113,7 +113,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Ticket ID is missing', 'content' => 'Ticket message content is missing'])]
     public function ticket_reply(array $data): int
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+        $this->checkPermissions('support', 'manage_tickets');
 
         // Sanitize content to prevent XSS attacks
         $data['content'] = \FOSSBilling\Tools::sanitizeContent($data['content'], true);
@@ -129,7 +129,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function ticket_close(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+        $this->checkPermissions('support', 'manage_tickets');
 
         $ticket = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
 
@@ -151,7 +151,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['client_id' => 'Client ID is missing', 'content' => 'Ticket content required', 'subject' => 'Ticket subject required', 'support_helpdesk_id' => 'Ticket support_helpdesk_id is required'])]
     public function ticket_create(array $data): int
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+        $this->checkPermissions('support', 'manage_tickets');
 
         // Sanitize content to prevent XSS attacks
         $data['content'] = \FOSSBilling\Tools::sanitizeContent($data['content'], true);
@@ -170,7 +170,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function batch_ticket_auto_close($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets', null, $this->identity);
+        $this->checkPermissions('support', 'manage_tickets');
 
         // Auto close support tickets
         $expiredArr = $this->getService()->getExpired();
@@ -193,7 +193,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function batch_public_ticket_auto_close($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets', null, $this->identity);
+        $this->checkPermissions('support', 'manage_tickets');
 
         // Auto close public tickets
         $expired = $this->getService()->publicGetExpired();
@@ -211,7 +211,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function ticket_get_statuses(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+        $this->checkPermissions('support', 'view');
 
         if (isset($data['titles'])) {
             return $this->getService()->getStatuses();
@@ -225,7 +225,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function public_ticket_get_list(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+        $this->checkPermissions('support', 'view');
 
         [$sql, $bindings] = $this->getService()->publicGetSearchQuery($data);
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
@@ -246,7 +246,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['name' => 'Name is required', 'email' => 'Email is required', 'subject' => 'Subject is required', 'message' => 'Message is required'])]
     public function public_ticket_create(array $data): int
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+        $this->checkPermissions('support', 'manage_tickets');
 
         $data['subject'] = \FOSSBilling\Tools::sanitizeContent($data['subject'], false);
         $data['message'] = \FOSSBilling\Tools::sanitizeContent($data['message'], true);
@@ -262,7 +262,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function public_ticket_get(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+        $this->checkPermissions('support', 'view');
 
         $model = $this->getDi()['db']->getExistingModelById('SupportPTicket', $data['id'], 'Ticket not found');
 
@@ -277,7 +277,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function public_ticket_delete(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+        $this->checkPermissions('support', 'manage_tickets');
 
         $model = $this->getDi()['db']->getExistingModelById('SupportPTicket', $data['id'], 'Ticket not found');
 
@@ -292,7 +292,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function public_ticket_close(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+        $this->checkPermissions('support', 'manage_tickets');
 
         $ticket = $this->getDi()['db']->getExistingModelById('SupportPTicket', $data['id'], 'Ticket not found');
 
@@ -310,7 +310,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function public_ticket_update(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+        $this->checkPermissions('support', 'manage_tickets');
 
         $model = $this->getDi()['db']->getExistingModelById('SupportPTicket', $data['id'], 'Ticket not found');
 
@@ -325,7 +325,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Ticket ID is missing', 'content' => 'Ticket content required'])]
     public function public_ticket_reply(array $data): int
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+        $this->checkPermissions('support', 'manage_tickets');
 
         $data['content'] = \FOSSBilling\Tools::sanitizeContent($data['content'], true);
 
@@ -339,7 +339,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function public_ticket_get_statuses(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+        $this->checkPermissions('support', 'view');
 
         if (isset($data['titles'])) {
             return $this->getService()->publicGetStatuses();
@@ -353,7 +353,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function helpdesk_get_list(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+        $this->checkPermissions('support', 'view');
 
         [$sql, $bindings] = $this->getService()->helpdeskGetSearchQuery($data);
 
@@ -365,7 +365,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function helpdesk_get_pairs(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+        $this->checkPermissions('support', 'view');
 
         return $this->getService()->helpdeskGetPairs();
     }
@@ -378,7 +378,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Help desk ID is missing'])]
     public function helpdesk_get(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+        $this->checkPermissions('support', 'view');
 
         $model = $this->getDi()['db']->getExistingModelById('SupportHelpdesk', $data['id'], 'Help desk not found');
 
@@ -399,7 +399,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Help desk ID is missing'])]
     public function helpdesk_update(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_helpdesk');
+        $this->checkPermissions('support', 'manage_helpdesk');
 
         $model = $this->getDi()['db']->getExistingModelById('SupportHelpdesk', $data['id'], 'Help desk not found');
 
@@ -421,7 +421,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['name' => 'Help desk title is missing'])]
     public function helpdesk_create(array $data): int
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_helpdesk');
+        $this->checkPermissions('support', 'manage_helpdesk');
 
         return $this->getService()->helpdeskCreate($data);
     }
@@ -434,7 +434,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Help desk ID is missing'])]
     public function helpdesk_delete(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_helpdesk');
+        $this->checkPermissions('support', 'manage_helpdesk');
 
         $model = $this->getDi()['db']->getExistingModelById('SupportHelpdesk', $data['id'], 'Help desk not found');
 
@@ -446,7 +446,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function canned_get_list(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+        $this->checkPermissions('support', 'view');
 
         [$sql, $bindings] = $this->getService()->cannedGetSearchQuery($data);
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
@@ -464,7 +464,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function canned_pairs(): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+        $this->checkPermissions('support', 'view');
 
         $res = $this->getDi()['db']->getAssoc('SELECT id, title FROM support_pr_category WHERE 1');
         $list = [];
@@ -483,7 +483,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Canned reply ID is missing'])]
     public function canned_get(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+        $this->checkPermissions('support', 'view');
 
         $model = $this->getDi()['db']->getExistingModelById('SupportPr', $data['id'], 'Canned reply not found');
 
@@ -498,7 +498,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Canned reply ID is missing'])]
     public function canned_delete(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_canned');
+        $this->checkPermissions('support', 'manage_canned');
 
         $model = $this->getDi()['db']->getExistingModelById('SupportPr', $data['id'], 'Canned reply not found');
 
@@ -515,7 +515,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['title' => 'Canned reply title is missing', 'category_id' => 'Canned reply category ID is missing'])]
     public function canned_create(array $data): int
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_canned');
+        $this->checkPermissions('support', 'manage_canned');
 
         $content = $data['content'] ?? null;
 
@@ -534,7 +534,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Canned reply ID is missing'])]
     public function canned_update(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_canned');
+        $this->checkPermissions('support', 'manage_canned');
 
         $model = $this->getDi()['db']->getExistingModelById('SupportPr', $data['id'], 'Canned reply not found');
 
@@ -546,7 +546,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function canned_category_pairs(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+        $this->checkPermissions('support', 'view');
 
         return $this->getDi()['db']->getAssoc('SELECT id, title FROM support_pr_category WHERE 1');
     }
@@ -559,7 +559,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Canned category ID is missing'])]
     public function canned_category_get(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+        $this->checkPermissions('support', 'view');
 
         $model = $this->getDi()['db']->getExistingModelById('SupportPrCategory', $data['id'], 'Canned category not found');
 
@@ -576,7 +576,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Canned category ID is missing'])]
     public function canned_category_update(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_canned');
+        $this->checkPermissions('support', 'manage_canned');
 
         $model = $this->getDi()['db']->getExistingModelById('SupportPrCategory', $data['id'], 'Canned category not found');
 
@@ -593,7 +593,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Canned category ID is missing'])]
     public function canned_category_delete(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_canned');
+        $this->checkPermissions('support', 'manage_canned');
 
         $model = $this->getDi()['db']->getExistingModelById('SupportPrCategory', $data['id'], 'Canned category not found');
 
@@ -610,7 +610,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['title' => 'Canned category title is missing'])]
     public function canned_category_create(array $data): int
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_canned');
+        $this->checkPermissions('support', 'manage_canned');
 
         return $this->getService()->cannedCategoryCreate($data['title']);
     }
@@ -625,7 +625,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['ticket_id' => 'ticket_ID is missing', 'note' => 'Note is missing'])]
     public function note_create(array $data): int
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+        $this->checkPermissions('support', 'manage_tickets');
 
         $ticket = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['ticket_id'], 'Ticket not found');
 
@@ -640,7 +640,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Note ID is missing'])]
     public function note_delete(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+        $this->checkPermissions('support', 'manage_tickets');
 
         $model = $this->getDi()['db']->getExistingModelById('SupportTicketNote', $data['id'], 'Note not found');
 
@@ -655,7 +655,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function task_complete(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+        $this->checkPermissions('support', 'manage_tickets');
 
         $model = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
 
@@ -668,7 +668,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+        $this->checkPermissions('support', 'manage_tickets');
 
         foreach ($data['ids'] as $id) {
             $this->ticket_delete(['id' => $id]);
@@ -683,7 +683,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete_public($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_tickets');
+        $this->checkPermissions('support', 'manage_tickets');
 
         foreach ($data['ids'] as $id) {
             $this->public_ticket_delete(['id' => $id]);
@@ -700,7 +700,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function kb_article_get_list(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+        $this->checkPermissions('support', 'view');
 
         $status = $data['status'] ?? null;
         $search = $data['search'] ?? null;
@@ -722,7 +722,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Article ID was not passed'])]
     public function kb_article_get(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+        $this->checkPermissions('support', 'view');
 
         $model = $this->getDi()['db']->findOne('SupportKbArticle', 'id = ?', [$data['id']]);
 
@@ -742,7 +742,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['kb_article_category_id' => 'Article category ID was not passed', 'title' => 'Article title not passed'])]
     public function kb_article_create(array $data): int
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_kb');
+        $this->checkPermissions('support', 'manage_kb');
 
         $articleCategoryId = (int) $data['kb_article_category_id'];
         // Sanitize title and content to prevent XSS attacks
@@ -766,7 +766,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Article ID was not passed'])]
     public function kb_article_update(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_kb');
+        $this->checkPermissions('support', 'manage_kb');
 
         $articleCategoryId = isset($data['kb_article_category_id']) ? (int) $data['kb_article_category_id'] : null;
         // Sanitize title and content to prevent XSS attacks
@@ -785,7 +785,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Article ID was not passed'])]
     public function kb_article_delete($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_kb');
+        $this->checkPermissions('support', 'manage_kb');
 
         $model = $this->getDi()['db']->findOne('SupportKbArticle', 'id = ?', [$data['id']]);
 
@@ -803,7 +803,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function kb_category_get_list(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+        $this->checkPermissions('support', 'view');
 
         [$sql, $bindings] = $this->getService()->kbCategoryGetSearchQuery($data);
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
@@ -822,7 +822,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function kb_category_get(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+        $this->checkPermissions('support', 'view');
 
         $model = $this->getDi()['db']->findOne('SupportKbArticleCategory', 'id = ?', [$data['id']]);
 
@@ -841,7 +841,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['title' => 'Category title not passed'])]
     public function kb_category_create(array $data): int
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_kb');
+        $this->checkPermissions('support', 'manage_kb');
 
         $title = $data['title'];
         $description = $data['description'] ?? null;
@@ -859,7 +859,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function kb_category_update(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_kb');
+        $this->checkPermissions('support', 'manage_kb');
 
         $model = $this->getDi()['db']->findOne('SupportKbArticleCategory', 'id = ?', [$data['id']]);
 
@@ -880,7 +880,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function kb_category_delete(array $data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'manage_kb');
+        $this->checkPermissions('support', 'manage_kb');
 
         $model = $this->getDi()['db']->findOne('SupportKbArticleCategory', 'id = ?', [$data['id']]);
 
@@ -896,7 +896,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function kb_category_get_pairs(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('support', 'view');
+        $this->checkPermissions('support', 'view');
 
         return $this->getService()->kbCategoryGetPairs();
     }

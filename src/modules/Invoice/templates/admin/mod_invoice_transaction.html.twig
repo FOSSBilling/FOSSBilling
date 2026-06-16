@@ -74,7 +74,7 @@
                                 </tr>
                                 <tr>
                                     <td class="text-end">{{ 'Amount'|trans }}</td>
-                                    <td>{{ transaction.amount|format_currency(transaction.currency ?? default_currency) }}</td>
+                                    <td>{{ (transaction.amount ?? 0)|format_currency(transaction.currency ?? default_currency) }}</td>
                                 </tr>
                                 <tr>
                                     <td class="text-end">{{ 'Payment Gateway'|trans }}</td>

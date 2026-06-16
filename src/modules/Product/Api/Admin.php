@@ -28,7 +28,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'view');
+        $this->checkPermissions('product', 'view');
 
         $service = $this->getService();
 
@@ -50,7 +50,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_pairs($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'view');
+        $this->checkPermissions('product', 'view');
 
         $service = $this->getService();
 
@@ -64,7 +64,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'view');
+        $this->checkPermissions('product', 'view');
 
         $model = $this->_getProduct($data);
         $service = $this->getService();
@@ -79,7 +79,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_types()
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'view');
+        $this->checkPermissions('product', 'view');
 
         return $this->getService()->getTypes();
     }
@@ -96,7 +96,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['title' => 'You must specify a title', 'type' => 'Type was not passed'])]
     public function prepare($data): int
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_products');
+        $this->checkPermissions('product', 'manage_products');
 
         $service = $this->getService();
         // allow having only one domain product
@@ -142,7 +142,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function update($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_products');
+        $this->checkPermissions('product', 'manage_products');
 
         $model = $this->_getProduct($data);
         $service = $this->getService();
@@ -160,7 +160,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['priority' => 'priority params is missing'])]
     public function update_priority($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_products');
+        $this->checkPermissions('product', 'manage_products');
 
         if (!is_array($data['priority'] ?? null)) {
             throw new \FOSSBilling\Exception('priority params is missing');
@@ -180,7 +180,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function update_config($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_products');
+        $this->checkPermissions('product', 'manage_products');
 
         $model = $this->_getProduct($data);
 
@@ -196,7 +196,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function addon_get_pairs($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'view');
+        $this->checkPermissions('product', 'view');
 
         return $this->getService()->getAddons();
     }
@@ -211,7 +211,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['title' => 'You must specify a title'])]
     public function addon_create($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_products');
+        $this->checkPermissions('product', 'manage_products');
 
         $title = $data['title'];
         $status = $data['status'] ?? null;
@@ -234,7 +234,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Addon ID was not passed'])]
     public function addon_get($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'view');
+        $this->checkPermissions('product', 'view');
 
         $model = $this->getDi()['db']->load('Product', $data['id']);
         if (!$model instanceof \Model_Product || !$model->is_addon) {
@@ -271,7 +271,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Addon ID was not passed'])]
     public function addon_update($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_products');
+        $this->checkPermissions('product', 'manage_products');
 
         $model = $this->getDi()['db']->load('Product', $data['id']);
         if (!$model instanceof \Model_Product || !$model->is_addon) {
@@ -289,7 +289,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function addon_delete($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_products');
+        $this->checkPermissions('product', 'manage_products');
 
         return $this->delete($data);
     }
@@ -301,7 +301,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function delete($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_products');
+        $this->checkPermissions('product', 'manage_products');
 
         $model = $this->_getProduct($data);
         $service = $this->getService();
@@ -316,7 +316,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function category_get_pairs($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'view');
+        $this->checkPermissions('product', 'view');
 
         return $this->getService()->getProductCategoryPairs($data);
     }
@@ -335,7 +335,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function category_update($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_categories');
+        $this->checkPermissions('product', 'manage_categories');
 
         $model = $this->getDi()['db']->getExistingModelById('ProductCategory', $data['id'], 'Category not found');
 
@@ -358,7 +358,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function category_get($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'view');
+        $this->checkPermissions('product', 'view');
 
         $model = $this->getDi()['db']->getExistingModelById('ProductCategory', $data['id'], 'Category not found');
 
@@ -378,7 +378,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['title' => 'Category title is required'])]
     public function category_create($data): int
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_categories');
+        $this->checkPermissions('product', 'manage_categories');
 
         $service = $this->getService();
 
@@ -399,7 +399,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function category_delete($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_categories');
+        $this->checkPermissions('product', 'manage_categories');
 
         $model = $this->getDi()['db']->getExistingModelById('ProductCategory', $data['id'], 'Category not found');
         $service = $this->getService();
@@ -414,7 +414,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function promo_get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'view');
+        $this->checkPermissions('product', 'view');
 
         $service = $this->getService();
 
@@ -453,7 +453,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     ])]
     public function promo_create($data): int
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_promos');
+        $this->checkPermissions('product', 'manage_promos');
 
         $products = [];
         if (isset($data['products']) && is_array($data['products'])) {
@@ -483,7 +483,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Promo ID was not passed'])]
     public function promo_get($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'view');
+        $this->checkPermissions('product', 'view');
 
         $id = $data['id'] ?? null;
         $model = $this->getDi()['db']->getExistingModelById('Promo', $id, 'Promo not found');
@@ -515,7 +515,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Promo ID was not passed'])]
     public function promo_update($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_promos');
+        $this->checkPermissions('product', 'manage_promos');
 
         $model = $this->getDi()['db']->getExistingModelById('Promo', $data['id'], 'Promo not found');
 
@@ -534,7 +534,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Promo ID was not passed'])]
     public function promo_delete($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('product', 'manage_promos');
+        $this->checkPermissions('product', 'manage_promos');
 
         $model = $this->getDi()['db']->getExistingModelById('Promo', $data['id'], 'Promo not found');
 

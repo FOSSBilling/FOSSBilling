@@ -30,7 +30,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'view');
+        $this->checkPermissions('order', 'view');
 
         $deep = isset($data['deep']) ? (bool) $data['deep'] : true;
         $order = $this->_getOrder($data);
@@ -48,7 +48,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'view');
+        $this->checkPermissions('order', 'view');
 
         $orderConfig = $this->getDi()['mod']('order')->getConfig();
         $data['hide_addons'] = (isset($orderConfig['show_addons']) && $orderConfig['show_addons']) ? 0 : 1;
@@ -89,14 +89,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     ])]
     public function create($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+        $this->checkPermissions('order', 'manage');
 
         $markInvoicePaid = Tools::normalizeBoolean($data['mark_invoice_paid'] ?? false);
         $data['mark_invoice_paid'] = $markInvoicePaid;
 
         if ($markInvoicePaid) {
-            $staffService = $this->getDi()['mod_service']('Staff');
-            $staffService->checkPermissionsAndThrowException('invoice');
+            $this->checkPermissions('invoice');
 
             if (($data['invoice_option'] ?? 'no-invoice') !== 'issue-invoice') {
                 throw new \FOSSBilling\InformationException('Marking an invoice as paid requires the order to issue an invoice.');
@@ -128,7 +127,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function update($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+        $this->checkPermissions('order', 'manage');
 
         $order = $this->_getOrder($data);
 
@@ -144,7 +143,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function activate($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+        $this->checkPermissions('order', 'manage');
 
         $order = $this->_getOrder($data);
 
@@ -158,7 +157,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function renew($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+        $this->checkPermissions('order', 'manage');
 
         $order = $this->_getOrder($data);
 
@@ -179,7 +178,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function suspend($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+        $this->checkPermissions('order', 'manage');
 
         $order = $this->_getOrder($data);
         $skip_event = Tools::normalizeBoolean($data['skip_event'] ?? false);
@@ -196,7 +195,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function unsuspend($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+        $this->checkPermissions('order', 'manage');
 
         $order = $this->_getOrder($data);
         if ($order->status != \Model_ClientOrder::STATUS_SUSPENDED) {
@@ -215,7 +214,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function cancel($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+        $this->checkPermissions('order', 'manage');
 
         $order = $this->_getOrder($data);
         $skip_event = Tools::normalizeBoolean($data['skip_event'] ?? false);
@@ -232,7 +231,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function uncancel($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+        $this->checkPermissions('order', 'manage');
 
         $order = $this->_getOrder($data);
         if ($order->status != \Model_ClientOrder::STATUS_CANCELED) {
@@ -251,7 +250,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function delete($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+        $this->checkPermissions('order', 'manage');
 
         $order = $this->_getOrder($data);
         $delete_addons = Tools::normalizeBoolean($data['delete_addons'] ?? false);
@@ -274,7 +273,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function batch_suspend_expired($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage', null, $this->identity);
+        $this->checkPermissions('order', 'manage');
 
         return $this->getService()->batchSuspendExpired();
     }
@@ -287,7 +286,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function batch_cancel_suspended($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage', null, $this->identity);
+        $this->checkPermissions('order', 'manage');
 
         return $this->getService()->batchCancelSuspended();
     }
@@ -300,7 +299,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['config' => 'Order config not passed'])]
     public function update_config($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+        $this->checkPermissions('order', 'manage');
 
         $order = $this->_getOrder($data);
 
@@ -320,7 +319,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function service($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'view');
+        $this->checkPermissions('order', 'view');
 
         $order = $this->_getOrder($data);
 
@@ -334,7 +333,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function status_history_get_list($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'view');
+        $this->checkPermissions('order', 'view');
 
         $order = $this->_getOrder($data);
 
@@ -353,7 +352,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['status' => 'Order status was not passed'])]
     public function status_history_add($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+        $this->checkPermissions('order', 'manage');
 
         $order = $this->_getOrder($data);
 
@@ -370,7 +369,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Order history line ID was not passed'])]
     public function status_history_delete($data)
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+        $this->checkPermissions('order', 'manage');
 
         return $this->getService()->orderStatusRm($data['id']);
     }
@@ -382,7 +381,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_statuses()
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'view');
+        $this->checkPermissions('order', 'view');
 
         return $this->getService()->counter();
     }
@@ -392,7 +391,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_invoice_options($data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'view');
+        $this->checkPermissions('order', 'view');
 
         return [
             'issue-invoice' => __trans('Automatically Issue Renewal Invoices'),
@@ -405,7 +404,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get_status_pairs($data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'view');
+        $this->checkPermissions('order', 'view');
 
         return [
             \Model_ClientOrder::STATUS_PENDING_SETUP => 'Pending Setup',
@@ -421,7 +420,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function addons($data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'view');
+        $this->checkPermissions('order', 'view');
 
         $model = $this->_getOrder($data);
         $list = $this->getService()->getOrderAddonsList($model);
@@ -451,7 +450,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['ids' => 'Order IDs were not passed'])]
     public function batch_delete($data): bool
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'manage');
+        $this->checkPermissions('order', 'manage');
 
         $delete_addons = Tools::normalizeBoolean($data['delete_addons'] ?? false);
 
@@ -464,7 +463,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     public function export_csv($data): Response
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('order', 'export');
+        $this->checkPermissions('order', 'export');
 
         $data['headers'] ??= [];
 
