@@ -238,6 +238,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                         $invoiceService->approveInvoice($invoice, ['use_credits' => false]);
                     }
                     $invoiceService->payInvoiceWithCredits($invoice);
+                } elseif ($tx->invoice_id && $invoice && $invoiceService->isInvoiceTypeDeposit($invoice)) {
+                    $invoiceService->markAsPaid($invoice);
                 } elseif (!$tx->invoice_id) {
                     $invoiceService->doBatchPayWithCredits(['client_id' => $client->id]);
                 }

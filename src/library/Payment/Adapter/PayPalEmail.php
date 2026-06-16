@@ -195,6 +195,8 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                             $invoiceService->approveInvoice($invoiceDbModel, ['use_credits' => false]);
                         }
                         $api_admin->invoice_pay_with_credits(['id' => $tx['invoice_id']]);
+                    } elseif (!empty($tx['invoice_id']) && $invoiceDbModel instanceof Model_Invoice && $invoiceService->isInvoiceTypeDeposit($invoiceDbModel)) {
+                        $invoiceService->markAsPaid($invoiceDbModel);
                     } elseif (empty($tx['invoice_id'])) {
                         $api_admin->invoice_batch_pay_with_credits(['client_id' => $client_id]);
                     }
