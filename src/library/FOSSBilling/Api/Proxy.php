@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace FOSSBilling\Api;
 
 use FOSSBilling\InjectionAwareInterface;
-use LogicException;
 use Pimple\Container;
 
 final class Proxy implements InjectionAwareInterface
@@ -54,12 +53,12 @@ final class Proxy implements InjectionAwareInterface
     private function getDispatcher(): Dispatcher
     {
         if ($this->di === null || !$this->di->offsetExists('api_dispatcher')) {
-            throw new LogicException('API proxy requires the api_dispatcher service');
+            throw new \LogicException('API proxy requires the api_dispatcher service');
         }
 
         $dispatcher = $this->di['api_dispatcher'];
         if (!$dispatcher instanceof Dispatcher) {
-            throw new LogicException('API dispatcher service must resolve to a FOSSBilling\Api\Dispatcher instance');
+            throw new \LogicException('API dispatcher service must resolve to a FOSSBilling\Api\Dispatcher instance');
         }
 
         return $dispatcher;

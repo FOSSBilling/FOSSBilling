@@ -319,8 +319,16 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 <script>
                     const stripe = Stripe(\':pub_key\');
 
+                    var stripeAppearance = {
+                        theme: (document.documentElement.getAttribute(\'data-bs-theme\') === \'dark\'
+                                || localStorage.getItem(\'theme\') === \'dark\')
+                            ? \'night\'
+                            : \'stripe\'
+                    };
+
                     var elements = stripe.elements({
                         clientSecret: \':intent_secret\',
+                        appearance: stripeAppearance,
                       });
 
                     var paymentElement = elements.create(\'payment\', {

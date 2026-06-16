@@ -17,9 +17,6 @@ use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Validation\Api\RequiredParams;
 use Pimple\Container;
-use ReflectionClass;
-use ReflectionException;
-use ReflectionMethod;
 
 final class Dispatcher implements InjectionAwareInterface
 {
@@ -88,7 +85,7 @@ final class Dispatcher implements InjectionAwareInterface
         }
 
         if (!method_exists($api, $methodName) || !is_callable([$api, $methodName])) {
-            $reflector = new ReflectionClass($api);
+            $reflector = new \ReflectionClass($api);
             if (!$reflector->hasMethod('__call')) {
                 throw new Exception(':type API call :method does not exist in module :module', [':type' => ucfirst($role), ':method' => $methodName, ':module' => $mod], 740);
             }
@@ -104,16 +101,16 @@ final class Dispatcher implements InjectionAwareInterface
      * Validate required parameters for an API method using attributes.
      *
      * @param AbstractApi $api        The API instance
-     * @param string       $methodName The method name
-     * @param array        $data       The data array passed to the method
+     * @param string      $methodName The method name
+     * @param array       $data       The data array passed to the method
      *
      * @throws InformationException If required parameters are missing
      */
     public function validateRequiredParams(AbstractApi $api, string $methodName, array $data): void
     {
         try {
-            $reflection = new ReflectionMethod($api, $methodName);
-        } catch (ReflectionException) {
+            $reflection = new \ReflectionMethod($api, $methodName);
+        } catch (\ReflectionException) {
             return;
         }
 
@@ -145,8 +142,8 @@ final class Dispatcher implements InjectionAwareInterface
     private function normalizeArguments(AbstractApi $api, string $methodName, array $arguments): array
     {
         try {
-            $reflection = new ReflectionMethod($api, $methodName);
-        } catch (ReflectionException) {
+            $reflection = new \ReflectionMethod($api, $methodName);
+        } catch (\ReflectionException) {
             return $arguments;
         }
 

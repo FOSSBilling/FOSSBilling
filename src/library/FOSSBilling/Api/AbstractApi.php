@@ -15,9 +15,6 @@ namespace FOSSBilling\Api;
 use FOSSBilling\Exception;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Module;
-use Model_Admin;
-use Model_Client;
-use Model_Guest;
 use Pimple\Container;
 
 class AbstractApi implements InjectionAwareInterface
@@ -36,7 +33,7 @@ class AbstractApi implements InjectionAwareInterface
     protected $service;
 
     /**
-     * @var Model_Admin|Model_Client|Model_Guest
+     * @var \Model_Admin|\Model_Client|\Model_Guest
      */
     protected $identity;
 
@@ -85,7 +82,7 @@ class AbstractApi implements InjectionAwareInterface
     }
 
     /**
-     * @param Model_Admin|Model_Client|Model_Guest $identity
+     * @param \Model_Admin|\Model_Client|\Model_Guest $identity
      */
     public function setIdentity($identity): void
     {
@@ -93,7 +90,7 @@ class AbstractApi implements InjectionAwareInterface
     }
 
     /**
-     * @return Model_Admin|Model_Client|Model_Guest
+     * @return \Model_Admin|\Model_Client|\Model_Guest
      */
     public function getIdentity()
     {
