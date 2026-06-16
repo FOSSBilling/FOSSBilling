@@ -234,7 +234,8 @@
                                     {% set enabled_key = 'footer_link_' ~ i ~ '_enabled' %}
                                     {% set page_key = 'footer_link_' ~ i ~ '_page' %}
                                     {% set title_key = 'footer_link_' ~ i ~ '_title' %}
-                                    {% if attribute(settings, enabled_key) %}
+                                    {% set link_enabled = attribute(settings, enabled_key) is defined ? attribute(settings, enabled_key) : false %}
+                                    {% if link_enabled %}
                                         {% if first_link_rendered %}&nbsp;&#x2022;&nbsp;{% endif %}
                                         {% set link_page = attribute(settings, page_key)|default('') %}
                                         {% set link_title = attribute(settings, title_key)|default('') %}
