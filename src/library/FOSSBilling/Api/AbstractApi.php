@@ -125,16 +125,7 @@ class AbstractApi implements InjectionAwareInterface
         return $this->ip;
     }
 
-    /**
-     * Convenience wrapper around Staff::checkPermissionsAndThrowException that
-     * automatically forwards the identity dispatched with this API call
-     * ($this->identity). This is critical for background processing (IPN
-     * callbacks, cron jobs) where the request has no admin session but the
-     * API is dispatched via api_system with a cron-admin identity.
-     *
-     * If the identity were not forwarded, hasPermission() would fall back to
-     * $di['loggedin_admin'] (session-based) and throw "Admin is not logged in".
-     */
+    // Wraps checkPermissionsAndThrowException, always forwarding $this->identity so cron/IPN contexts work without an active session.
     protected function checkPermissions(string $module, ?string $key = null, mixed $constraint = null): void
     {
         $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException($module, $key, $constraint, $this->identity);
