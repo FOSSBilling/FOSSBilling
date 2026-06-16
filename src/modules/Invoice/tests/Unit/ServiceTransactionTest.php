@@ -200,10 +200,10 @@ test('gets search query with various parameters', function (array $data, array $
         ['txn_id' => 'longTxn_id'], ['txn_id' => 'longTxn_id'], 'AND m.txn_id = :txn_id',
     ],
     [
-        ['date_from' => '2012-12-12'], ['date_from' => 1_355_270_400], 'AND UNIX_TIMESTAMP(m.created_at) >= :date_from',
+        ['date_from' => '2012-12-12'], ['date_from' => strtotime('2012-12-12 00:00:00 UTC')], 'AND UNIX_TIMESTAMP(m.created_at) >= :date_from',
     ],
     [
-        ['date_to' => '2012-12-12'], ['date_to' => 1_355_270_400], 'AND UNIX_TIMESTAMP(m.created_at) <= :date_to',
+        ['date_to' => '2012-12-12'], ['date_to' => strtotime('2012-12-12 00:00:00 UTC')], 'AND UNIX_TIMESTAMP(m.created_at) <= :date_to',
     ],
 ]);
 
@@ -249,7 +249,7 @@ test('createAndProcess marks transaction as error when processing throws', funct
     $service->shouldReceive('processTransaction')
         ->with(1)
         ->once()
-        ->andThrow(new RuntimeException('Processing failed'));
+        ->andThrow(new RuntimeException('Processing failed', 1234));
     $service->setDi($di);
 
     $thrown = null;
@@ -263,7 +263,8 @@ test('createAndProcess marks transaction as error when processing throws', funct
     expect($thrown)->toBeInstanceOf(RuntimeException::class)
         ->and($thrown->getMessage())->toBe('Processing failed')
         ->and($transactionModel->status)->toBe(Model_Transaction::STATUS_ERROR)
-        ->and($transactionModel->error)->toBe('Processing failed');
+        ->and($transactionModel->error)->toBe('Processing failed')
+        ->and($transactionModel->error_code)->toBe(1234);
 });
 
 test('createAndProcess skips processing when transaction is already processed', function (): void {

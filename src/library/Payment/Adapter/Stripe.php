@@ -91,7 +91,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function getHtml($api_admin, $invoice_id, $subscription): string
+    public function getHtml(FOSSBilling\Api\Proxy $api_admin, int $invoice_id, bool $subscription): string
     {
         $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
 
@@ -161,7 +161,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         throw new Exception($tx->error);
     }
 
-    public function processTransaction($api_admin, $id, $data, $gateway_id): void
+    public function processTransaction(FOSSBilling\Api\Proxy $api_admin, int $id, array $data, int $gateway_id): void
     {
         $tx = $this->di['db']->getExistingModelById('Transaction', $id);
         $invoiceService = $this->di['mod_service']('Invoice');
