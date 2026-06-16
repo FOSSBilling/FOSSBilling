@@ -116,10 +116,6 @@ final class Dispatcher implements InjectionAwareInterface
 
         $attributes = $reflection->getAttributes(RequiredParams::class);
 
-        if (empty($attributes)) {
-            return;
-        }
-
         foreach ($attributes as $attribute) {
             $instance = $attribute->newInstance();
 

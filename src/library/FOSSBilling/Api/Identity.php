@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Api;
 
-final class Identity
+final readonly class Identity
 {
     private string $type;
 

@@ -555,7 +555,7 @@ class Service implements InjectionAwareInterface
 
         $fileHandler = fopen($zipPath, 'w');
         foreach ($client->stream($response) as $chunk) {
-            fwrite($fileHandler, $chunk->getContent());
+            fwrite($fileHandler, (string) $chunk->getContent());
         }
         fclose($fileHandler);
 
