@@ -2017,6 +2017,32 @@ test('validatePaymentAmount throws on underpayment', function (): void {
         ->toThrow(FOSSBilling\Exception::class);
 });
 
+test('validatePaymentAmount logs warning on significant overpayment', function (): void {
+    $service = new Service();
+    $logger = new Tests\Helpers\TestLogger();
+    $di = container();
+    $di['logger'] = $logger;
+    $service->setDi($di);
+
+    $service->validatePaymentAmount(60.00, 50.00);
+
+    $warnings = array_filter($logger->calls, fn ($c) => $c['method'] === 'warning');
+    expect($warnings)->not->toBeEmpty();
+});
+
+test('validatePaymentAmount does not warn for minor overpayment within tolerance', function (): void {
+    $service = new Service();
+    $logger = new Tests\Helpers\TestLogger();
+    $di = container();
+    $di['logger'] = $logger;
+    $service->setDi($di);
+
+    $service->validatePaymentAmount(50.50, 50.00);
+
+    $warnings = array_filter($logger->calls, fn ($c) => $c['method'] === 'warning');
+    expect($warnings)->toBeEmpty();
+});
+
 test('generateRenewalInvoiceForSubscriptionPayment returns null when subscription not found', function (): void {
     $service = new Service();
 
