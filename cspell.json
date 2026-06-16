@@ -509,7 +509,8 @@
         "CLOUDFLARENET",
         "baselined",
         "endverbatim",
-        "missingmodule"
+        "missingmodule",
+        "FOUC"
     ],
     "ignorePaths": [
         "node_modules/**",

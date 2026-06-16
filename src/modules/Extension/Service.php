@@ -24,8 +24,9 @@ class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
-    public function __construct(private readonly ?Filesystem $filesystem = new Filesystem())
+    public function __construct(private ?Filesystem $filesystem = null)
     {
+        $this->filesystem ??= new Filesystem();
     }
 
     public function setDi(\Pimple\Container $di): void
@@ -99,7 +100,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function removeNotExistingModules(): bool|int
+    public function removeNotExistingModules(): int
     {
         $list = $this->di['db']->find('Extension', "type = 'mod'");
         $removedItems = 0;
@@ -113,7 +114,7 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        return $removedItems == 0 ? true : $removedItems;
+        return $removedItems;
     }
 
     public function getSearchQuery($filter): array
@@ -382,9 +383,6 @@ class Service implements InjectionAwareInterface
         return $this->di['url']->adminLink(ltrim($uri, '/'));
     }
 
-    /**
-     * @return \Model_Extension
-     */
     /**
      * @return \Model_Extension|null
      */
@@ -835,7 +833,7 @@ class Service implements InjectionAwareInterface
         return $modules;
     }
 
-    public function getSpecificModulePermissions(string $module): array|false
+    public function getSpecificModulePermissions(string $module): array
     {
         $class = 'Box\Mod\\' . ucfirst($module) . '\Service';
         if (class_exists($class) && method_exists($class, 'getModulePermissions')) {
