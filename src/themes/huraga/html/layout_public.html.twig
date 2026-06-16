@@ -2,6 +2,7 @@
 {% set active_locale = guest.system_locale|default('en')|replace({'_': '-'}) %}
 {% set canonical_url = guest.system_current_url|url %}
 {% set company = guest.system_company %}
+{% set public_logo_url = settings.theme == 'dark' ? company.logo_url_dark : company.logo_url %}
 <html class="no-js" lang="{{ active_locale }}" data-bs-theme="{{ settings.theme|default('light') }}">
 <head>
     <meta charset="utf-8">
