@@ -46,7 +46,8 @@
         "grecaptcha",
         "resends",
         "Parenthesise",
-        "yagiz"
+        "yagiz",
+        "overpayments"
     ],
 
     "ignoreWords": [
