@@ -37,7 +37,7 @@ class ClientTestDefaultApiDouble
 
 class ClientTestApiDispatcherDouble
 {
-    public function __construct(private mixed $result = ['ok' => true])
+    public function __construct(private readonly mixed $result = ['ok' => true])
     {
     }
 

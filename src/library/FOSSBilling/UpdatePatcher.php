@@ -1276,7 +1276,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function refreshComposerAutoloader(): void
     {
-        $uuidClass = 'Symfony\\Component\\Uid\\Uuid';
+        $uuidClass = Uuid::class;
 
         if (!class_exists($uuidClass)) {
             $autoloadPath = Path::join(PATH_VENDOR, 'autoload.php');

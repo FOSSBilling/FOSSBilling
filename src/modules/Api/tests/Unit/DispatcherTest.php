@@ -6,8 +6,8 @@ use Symfony\Component\HttpFoundation\Request;
 
 function createApiDispatcherDi(bool $extensionActive = true, bool $moduleHasService = true): Pimple\Container
 {
-    $extensionService = new class($extensionActive) {
-        public function __construct(private readonly bool $extensionActive)
+    $extensionService = new readonly class($extensionActive) {
+        public function __construct(private bool $extensionActive)
         {
         }
 
@@ -17,8 +17,8 @@ function createApiDispatcherDi(bool $extensionActive = true, bool $moduleHasServ
         }
     };
 
-    $extensionModule = new class($extensionService) {
-        public function __construct(private readonly object $extensionService)
+    $extensionModule = new readonly class($extensionService) {
+        public function __construct(private object $extensionService)
         {
         }
 
@@ -33,8 +33,8 @@ function createApiDispatcherDi(bool $extensionActive = true, bool $moduleHasServ
         }
     };
 
-    $module = new class($moduleHasService) {
-        public function __construct(private readonly bool $moduleHasService)
+    $module = new readonly class($moduleHasService) {
+        public function __construct(private bool $moduleHasService)
         {
         }
 
