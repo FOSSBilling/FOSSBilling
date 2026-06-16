@@ -430,7 +430,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $query = 'SELECT COUNT(id) as counter FROM support_ticket
                 WHERE status = :status GROUP BY status LIMIT 1';
 
-        return $this->di['db']->getCell($query, [':status' => $status]);
+        return (int) $this->di['db']->getCell($query, [':status' => $status]);
     }
 
     public function getActiveTicketsCountForOrder(\Model_ClientOrder $model): int
@@ -902,7 +902,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             ':support_ticket_id' => $model->id,
         ];
 
-        return $this->di['db']->getCell($query, $bindings);
+        return (int) $this->di['db']->getCell($query, $bindings);
     }
 
     public function messageGetAuthorDetails(\Model_SupportTicketMessage $model, \Model_Admin|\Model_Client|null $identity = null): array
@@ -1374,7 +1374,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 WHERE status = :status
                 GROUP BY status';
 
-        return $this->di['db']->getCell($query, [':status' => $status]);
+        return (int) $this->di['db']->getCell($query, [':status' => $status]);
     }
 
     public function publicGetExpired(): array

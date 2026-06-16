@@ -597,7 +597,7 @@ test('counts by status', function (): void {
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getCell')
         ->atLeast()->once()
-        ->andReturn(1);
+        ->andReturn('1');
 
     $di = container();
     $di['db'] = $dbMock;
@@ -612,7 +612,7 @@ test('gets active tickets count for order', function (): void {
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getCell')
         ->atLeast()->once()
-        ->andReturn(1);
+        ->andReturn('1');
 
     $di = container();
     $di['db'] = $dbMock;
@@ -2043,7 +2043,7 @@ test('public count by status', function (): void {
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getCell')
         ->atLeast()->once()
-        ->andReturn(1);
+        ->andReturn('1');
 
     $di = container();
     $di['db'] = $dbMock;
@@ -2721,7 +2721,7 @@ test('message get replies count', function (): void {
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getCell')
         ->atLeast()->once()
-        ->andReturn(1);
+        ->andReturn('1');
 
     $di = container();
     $di['db'] = $dbMock;
