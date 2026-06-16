@@ -222,3 +222,164 @@ test('counts transactions', function (): void {
     $result = $service->counter();
     expect($result)->toBeArray();
 });
+
+test('createAndProcess marks transaction as error when processing throws', function (): void {
+    $transactionModel = new Model_Transaction();
+    $transactionModel->loadBean(new Tests\Helpers\DummyBean());
+    $transactionModel->id = 1;
+    $transactionModel->status = Model_Transaction::STATUS_RECEIVED;
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')
+        ->with('Transaction', 1)
+        ->andReturn($transactionModel);
+    $dbMock->shouldReceive('load')
+        ->with('Transaction', 1)
+        ->andReturn($transactionModel);
+    $dbMock->shouldReceive('store')
+        ->with($transactionModel)
+        ->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+
+    $service = Mockery::mock(ServiceTransaction::class)->makePartial();
+    $service->shouldReceive('create')->once()->andReturn(1);
+    $service->shouldReceive('processTransaction')
+        ->with(1)
+        ->once()
+        ->andThrow(new RuntimeException('Processing failed'));
+    $service->setDi($di);
+
+    $thrown = null;
+
+    try {
+        $service->createAndProcess([]);
+    } catch (Throwable $e) {
+        $thrown = $e;
+    }
+
+    expect($thrown)->toBeInstanceOf(RuntimeException::class)
+        ->and($thrown->getMessage())->toBe('Processing failed')
+        ->and($transactionModel->status)->toBe(Model_Transaction::STATUS_ERROR)
+        ->and($transactionModel->error)->toBe('Processing failed');
+});
+
+test('createAndProcess skips processing when transaction is already processed', function (): void {
+    $transactionModel = new Model_Transaction();
+    $transactionModel->loadBean(new Tests\Helpers\DummyBean());
+    $transactionModel->id = 1;
+    $transactionModel->status = Model_Transaction::STATUS_PROCESSED;
+    $transactionModel->error = null;
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')
+        ->with('Transaction', 1)
+        ->andReturn($transactionModel);
+    $dbMock->shouldNotReceive('store');
+
+    $di = container();
+    $di['db'] = $dbMock;
+
+    $service = Mockery::mock(ServiceTransaction::class)->makePartial();
+    $service->shouldReceive('create')->once()->andReturn(1);
+    $service->shouldNotReceive('processTransaction');
+    $service->setDi($di);
+
+    $result = $service->createAndProcess([]);
+
+    expect($result)->toBe(1);
+});
+
+test('preProcessTransaction marks error on a generic exception', function (): void {
+    $transactionModel = new Model_Transaction();
+    $transactionModel->loadBean(new Tests\Helpers\DummyBean());
+    $transactionModel->id = 5;
+    $transactionModel->status = Model_Transaction::STATUS_PROCESSING;
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('load')
+        ->with('Transaction', 5)
+        ->andReturn($transactionModel);
+    $dbMock->shouldReceive('store')
+        ->with($transactionModel)
+        ->once();
+
+    $eventsMock = Mockery::mock('\Box_EventManager');
+    $eventsMock->shouldNotReceive('fire');
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['events_manager'] = $eventsMock;
+
+    $service = Mockery::mock(ServiceTransaction::class)->makePartial();
+    $service->shouldReceive('processTransaction')
+        ->with(5)
+        ->once()
+        ->andThrow(new RuntimeException('Unexpected DB error'));
+    $service->setDi($di);
+
+    $thrown = null;
+
+    try {
+        $service->preProcessTransaction($transactionModel);
+    } catch (Throwable $e) {
+        $thrown = $e;
+    }
+
+    expect($thrown)->toBeInstanceOf(RuntimeException::class)
+        ->and($transactionModel->status)->toBe(Model_Transaction::STATUS_ERROR)
+        ->and($transactionModel->error)->toBe('Unexpected DB error');
+});
+
+test('claimForProcessing includes error status in claim query', function (): void {
+    $service = new ServiceTransaction();
+
+    $execArgs = [];
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('exec')
+        ->withArgs(function (string $sql, array $bindings) use (&$execArgs): bool {
+            $execArgs = ['sql' => $sql, 'bindings' => $bindings];
+
+            return true;
+        })
+        ->once()
+        ->andReturn(1);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $service->setDi($di);
+
+    $result = $service->claimForProcessing(7);
+
+    expect($result)->toBeTrue()
+        ->and($execArgs['bindings'])->toContain(Model_Transaction::STATUS_ERROR)
+        ->and($execArgs['bindings'])->toContain(Model_Transaction::STATUS_RECEIVED)
+        ->and($execArgs['bindings'])->toContain(Model_Transaction::STATUS_PROCESSING)
+        ->and($execArgs['sql'])->toContain('OR status = ?');
+});
+
+test('markTransactionError does not clobber an already processed transaction', function (): void {
+    $transactionModel = new Model_Transaction();
+    $transactionModel->loadBean(new Tests\Helpers\DummyBean());
+    $transactionModel->id = 3;
+    $transactionModel->status = Model_Transaction::STATUS_PROCESSED;
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('load')
+        ->with('Transaction', 3)
+        ->andReturn($transactionModel);
+    $dbMock->shouldNotReceive('store');
+
+    $di = container();
+    $di['db'] = $dbMock;
+
+    $service = new ServiceTransaction();
+    $service->setDi($di);
+
+    $refl = new ReflectionClass($service);
+    $method = $refl->getMethod('markTransactionError');
+    $method->invoke($service, 3, new RuntimeException('late error'));
+
+    expect($transactionModel->status)->toBe(Model_Transaction::STATUS_PROCESSED);
+});
