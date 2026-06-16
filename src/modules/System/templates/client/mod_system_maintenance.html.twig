@@ -8,10 +8,11 @@
     <div>
         <div class="row h-75 justify-content-center align-items-center">
             <div class="col-md-6 col-lg-4">
-                {% if public_logo_url and settings.login_page_show_logo %}
+                {% if (public_logo_url or public_dark_logo_url) and settings.login_page_show_logo %}
                     <div class="d-flex justify-content-center">
                         {{ include('partial_company_logo.html.twig', {
                             logo_url: public_logo_url,
+                            dark_logo_url: public_dark_logo_url,
                             link_url: settings.login_page_logo_url|default('/'),
                             link_target: '_blank',
                             link_rel: 'noopener noreferrer',

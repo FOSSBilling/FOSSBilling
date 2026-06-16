@@ -2,7 +2,8 @@
 {% set active_locale = guest.system_locale|default('en')|replace({'_': '-'}) %}
 {% set canonical_url = guest.system_current_url|url %}
 {% set company = guest.system_company %}
-{% set public_logo_url = settings.theme == 'dark' ? company.logo_url_dark : company.logo_url %}
+{% set public_logo_url = company.logo_url %}
+{% set public_dark_logo_url = company.logo_url_dark %}
 {% set page_title = (settings.meta_title_prefix ~ ' ' ~ block('meta_title') ~ ' ' ~ settings.meta_title_suffix)|trim %}
 {% set meta_description = block('meta_description')|default(settings.meta_description) %}
 <html lang="{{ active_locale }}" data-bs-theme="{{ settings.theme|default('light') }}">

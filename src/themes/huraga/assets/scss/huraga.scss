@@ -383,12 +383,6 @@ body {
     padding: 0.5rem 0.75rem;
 }
 
-@media (max-width: 320px) {
-    .js-theme-toggler {
-        display: none;
-    }
-}
-
 .db-avatar {
     display: inline-block;
     flex-shrink: 0;
