@@ -840,6 +840,16 @@ class Service implements InjectionAwareInterface
         if ($received < $expected - $epsilon) {
             throw new \FOSSBilling\Exception('Payment amount does not match the expected invoice total. Expected :expected, received :received.', [':expected' => number_format($expected, 2, '.', ''), ':received' => number_format($received, 2, '.', '')]);
         }
+
+        // Warn on significant overpayments — this can indicate a misdirected
+        // payment applied to the wrong invoice.
+        $overpaymentTolerance = 1.00;
+        if ($received > $expected + $overpaymentTolerance) {
+            $this->di['logger']->warning(
+                'Payment amount significantly exceeds the expected invoice total. Expected :expected, received :received.',
+                [':expected' => number_format($expected, 2, '.', ''), ':received' => number_format($received, 2, '.', '')]
+            );
+        }
     }
 
     public function tryPayWithCredits(\Model_Invoice $invoice)
@@ -2106,25 +2116,16 @@ class Service implements InjectionAwareInterface
                 return null;
             }
 
-            $activeOrder = $this->di['db']->findOne(
-                'ClientOrder',
-                'client_id = :client_id AND product_id = :product_id AND status = :status',
-                [
-                    'client_id' => $clientId,
-                    'product_id' => $originalOrder->product_id,
-                    'status' => \Model_ClientOrder::STATUS_ACTIVE,
-                ]
-            );
-
-            if (!$activeOrder instanceof \Model_ClientOrder) {
-                $activeOrder = $originalOrder;
-            }
-
-            if ($activeOrder->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+            // Use the original order directly. A previous approach searched for
+            // any active order with the same product_id, but that is broken for
+            // products like domain registrations where multiple orders share
+            // the same product — it would find an unrelated order and generate
+            // a renewal invoice for the wrong service.
+            if ($originalOrder->status !== \Model_ClientOrder::STATUS_ACTIVE) {
                 return null;
             }
 
-            $invoice = $this->generateForOrder($activeOrder);
+            $invoice = $this->generateForOrder($originalOrder);
             $this->approveInvoice($invoice, ['use_credits' => false]);
 
             $this->di['logger']->info("Generated renewal invoice #{$invoice->id} for subscription payment (SID: {$subscriptionSid}).");

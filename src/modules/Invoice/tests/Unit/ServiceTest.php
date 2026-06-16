@@ -1989,3 +1989,134 @@ test('returns false when checking deposit with empty items', function (): void {
     $result = $service->isInvoiceTypeDeposit($modelInvoice);
     expect($result)->toBeFalse();
 });
+
+test('validatePaymentAmount passes for exact match', function (): void {
+    $service = new Service();
+    $di = container();
+    $service->setDi($di);
+
+    $service->validatePaymentAmount(50.00, 50.00);
+    expect(true)->toBeTrue();
+});
+
+test('validatePaymentAmount passes within epsilon tolerance', function (): void {
+    $service = new Service();
+    $di = container();
+    $service->setDi($di);
+
+    $service->validatePaymentAmount(49.99, 50.00);
+    expect(true)->toBeTrue();
+});
+
+test('validatePaymentAmount throws on underpayment', function (): void {
+    $service = new Service();
+    $di = container();
+    $service->setDi($di);
+
+    expect(fn () => $service->validatePaymentAmount(40.00, 50.00))
+        ->toThrow(FOSSBilling\Exception::class);
+});
+
+test('generateRenewalInvoiceForSubscriptionPayment returns null when subscription not found', function (): void {
+    $service = new Service();
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('findOne')
+        ->with('Subscription', 'sid = :sid', Mockery::any())
+        ->andReturn(null);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $result = $service->generateRenewalInvoiceForSubscriptionPayment('I-TEST123', 1);
+    expect($result)->toBeNull();
+});
+
+test('generateRenewalInvoiceForSubscriptionPayment returns null when original order is not active', function (): void {
+    $service = new Service();
+
+    $subscription = new Model_Subscription();
+    $subscription->loadBean(new Tests\Helpers\DummyBean());
+    $subscription->rel_type = 'invoice';
+    $subscription->rel_id = 82;
+
+    $invoiceItem = new Model_InvoiceItem();
+    $invoiceItem->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceItem->rel_id = 82;
+
+    $originalOrder = new Model_ClientOrder();
+    $originalOrder->loadBean(new Tests\Helpers\DummyBean());
+    $originalOrder->status = Model_ClientOrder::STATUS_PENDING_SETUP;
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('findOne')
+        ->with('Subscription', 'sid = :sid', Mockery::any())
+        ->andReturn($subscription);
+    $dbMock->shouldReceive('findOne')
+        ->with('InvoiceItem', Mockery::any(), Mockery::any())
+        ->andReturn($invoiceItem);
+    $dbMock->shouldReceive('load')
+        ->with('ClientOrder', 82)
+        ->andReturn($originalOrder);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $result = $service->generateRenewalInvoiceForSubscriptionPayment('I-TEST123', 1);
+    expect($result)->toBeNull();
+});
+
+test('generateRenewalInvoiceForSubscriptionPayment uses the original order and not a product_id lookup', function (): void {
+    $subscription = new Model_Subscription();
+    $subscription->loadBean(new Tests\Helpers\DummyBean());
+    $subscription->rel_type = 'invoice';
+    $subscription->rel_id = 82;
+
+    $invoiceItem = new Model_InvoiceItem();
+    $invoiceItem->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceItem->rel_id = 82;
+
+    $originalOrder = new Model_ClientOrder();
+    $originalOrder->loadBean(new Tests\Helpers\DummyBean());
+    $originalOrder->status = Model_ClientOrder::STATUS_ACTIVE;
+    $originalOrder->product_id = 1;
+
+    $renewalInvoice = new Model_Invoice();
+    $renewalInvoice->loadBean(new Tests\Helpers\DummyBean());
+    $renewalInvoice->id = 99;
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('findOne')
+        ->with('Subscription', 'sid = :sid', Mockery::any())
+        ->andReturn($subscription);
+    $dbMock->shouldReceive('findOne')
+        ->with('InvoiceItem', Mockery::any(), Mockery::any())
+        ->andReturn($invoiceItem);
+    $dbMock->shouldReceive('load')
+        ->with('ClientOrder', 82)
+        ->andReturn($originalOrder);
+
+    $serviceMock = Mockery::mock(Service::class . '[generateForOrder, approveInvoice]');
+    $serviceMock->shouldReceive('generateForOrder')
+        ->with(Mockery::on(function ($order) use ($originalOrder): bool {
+            return $order === $originalOrder;
+        }))
+        ->once()
+        ->andReturn($renewalInvoice);
+    $serviceMock->shouldReceive('approveInvoice')
+        ->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->generateRenewalInvoiceForSubscriptionPayment('I-TEST123', 1);
+
+    expect($result)->toBeInstanceOf(Model_Invoice::class);
+    expect($result->id)->toBe(99);
+});

@@ -157,14 +157,21 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                         $invoiceDbModel = $this->di['db']->load('Invoice', $tx['invoice_id']);
                     }
 
-                    // For subscription payments, find or generate the correct renewal invoice first
-                    // so that we validate payment amount against the renewal invoice, not the original.
+                    // For subscription renewals, generate a renewal invoice so
+                    // we validate against the correct amount. Skip this for the
+                    // initial payment (original invoice still unpaid) — that
+                    // payment should go to the original invoice.
                     if ($ipn['txn_type'] === 'subscr_payment' && isset($ipn['subscr_id'])) {
-                        $renewalInvoice = $invoiceService->generateRenewalInvoiceForSubscriptionPayment($ipn['subscr_id'], $client_id);
-                        if ($renewalInvoice instanceof Model_Invoice) {
-                            $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $renewalInvoice->id]);
-                            $tx['invoice_id'] = $renewalInvoice->id;
-                            $invoiceDbModel = $renewalInvoice;
+                        $originalAlreadyPaid = $invoiceDbModel instanceof Model_Invoice
+                            && $invoiceDbModel->status === Model_Invoice::STATUS_PAID;
+
+                        if ($originalAlreadyPaid) {
+                            $renewalInvoice = $invoiceService->generateRenewalInvoiceForSubscriptionPayment($ipn['subscr_id'], $client_id);
+                            if ($renewalInvoice instanceof Model_Invoice) {
+                                $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $renewalInvoice->id]);
+                                $tx['invoice_id'] = $renewalInvoice->id;
+                                $invoiceDbModel = $renewalInvoice;
+                            }
                         }
                     }
 
