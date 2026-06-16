@@ -438,15 +438,15 @@ class ServiceTransaction implements InjectionAwareInterface
     public function claimForProcessing(int $id): bool
     {
         $affectedRows = $this->di['db']->exec(
-            'UPDATE transaction SET status = ?, updated_at = ? WHERE id = ? AND (status = ? OR (status = ? AND (updated_at IS NULL OR updated_at <= ?)) OR status = ?)',
+            'UPDATE transaction SET status = ?, updated_at = ? WHERE id = ? AND (status IN (?, ?) OR (status = ? AND (updated_at IS NULL OR updated_at <= ?)))',
             [
                 \Model_Transaction::STATUS_PROCESSING,
                 date('Y-m-d H:i:s'),
                 $id,
                 \Model_Transaction::STATUS_RECEIVED,
+                \Model_Transaction::STATUS_ERROR,
                 \Model_Transaction::STATUS_PROCESSING,
                 $this->getProcessingRecoveryThreshold(),
-                \Model_Transaction::STATUS_ERROR,
             ]
         );
 
@@ -489,7 +489,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
 
-        $this->di['logger']->error('Failed to process transaction #%s: %s', [$id, $e->getMessage()]);
+        $this->di['logger']->error('Failed to process transaction #%s: %s', $id, $e->getMessage());
     }
 
     /**

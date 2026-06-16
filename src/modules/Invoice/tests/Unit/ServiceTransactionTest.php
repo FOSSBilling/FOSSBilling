@@ -242,6 +242,7 @@ test('createAndProcess marks transaction as error when processing throws', funct
 
     $di = container();
     $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service = Mockery::mock(ServiceTransaction::class)->makePartial();
     $service->shouldReceive('create')->once()->andReturn(1);
@@ -311,6 +312,7 @@ test('preProcessTransaction marks error on a generic exception', function (): vo
     $di = container();
     $di['db'] = $dbMock;
     $di['events_manager'] = $eventsMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service = Mockery::mock(ServiceTransaction::class)->makePartial();
     $service->shouldReceive('processTransaction')
@@ -356,7 +358,7 @@ test('claimForProcessing includes error status in claim query', function (): voi
         ->and($execArgs['bindings'])->toContain(Model_Transaction::STATUS_ERROR)
         ->and($execArgs['bindings'])->toContain(Model_Transaction::STATUS_RECEIVED)
         ->and($execArgs['bindings'])->toContain(Model_Transaction::STATUS_PROCESSING)
-        ->and($execArgs['sql'])->toContain('OR status = ?');
+        ->and($execArgs['sql'])->toContain('IN (?, ?)');
 });
 
 test('markTransactionError does not clobber an already processed transaction', function (): void {
