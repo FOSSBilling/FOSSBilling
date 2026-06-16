@@ -26,14 +26,14 @@ body {
 }
 
 .offcanvas-item {
-    border-bottom: 1px rgba(#000, .1) solid;
+    border-bottom: 1px solid var(--bs-border-color);
 
     &:first-child {
-        border-top: 1px rgba(#000, .1) solid;
+        border-top: 1px solid var(--bs-border-color);
     }
 
     &:hover {
-        background: #fafafa;
+        background: var(--bs-tertiary-bg);
     }
 
     >a {
@@ -231,7 +231,7 @@ body {
 }
 
 .nav-link {
-    color: #000000 !important;
+    color: var(--bs-body-color);
 }
 
 .nav-link:hover {
@@ -281,17 +281,6 @@ body {
     .dropdown-item {
         padding: 0.5rem 1rem;
     }
-}
-
-// Sidebar balance and note styling
-.sidebar-balance-title {
-    color: var(--bs-secondary);
-    font-size: 0.875rem;
-    font-weight: 500;
-}
-
-.sidebar-note-content {
-    font-size: 0.875rem;
 }
 
 // Alert styling - use Bootstrap's native alert colors
@@ -382,6 +371,23 @@ body {
 
 // Dark mode support uses Bootstrap's native color mode system via data-bs-theme attribute in HTML tag.
 // Bootstrap 5.3+ automatically handles dark mode colors through CSS variables.
+
+// Dual logo: show only the logo matching the current color mode.
+[data-bs-theme="light"] .hide-theme-light,
+[data-bs-theme="dark"]  .hide-theme-dark { display: none !important; }
+
+// Theme toggler links share the navbar's icon style.
+.js-theme-toggler {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+}
+
+@media (max-width: 320px) {
+    .js-theme-toggler {
+        display: none;
+    }
+}
 
 .db-avatar {
     display: inline-block;

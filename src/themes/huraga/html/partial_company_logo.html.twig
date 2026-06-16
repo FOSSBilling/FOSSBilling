@@ -1,4 +1,5 @@
 {% set logo_url = logo_url|default(null) %}
+{% set dark_logo_url = dark_logo_url|default(null) %}
 {% set link_url = link_url|default('/'|url) %}
 {% set link_class = link_class|default('') %}
 {% set link_rel = link_rel|default(null) %}
@@ -7,8 +8,9 @@
 {% set show_mobile_name = show_mobile_name|default(false) %}
 
 <a{% if link_class %} class="{{ link_class }}"{% endif %} href="{{ link_url }}"{% if link_target is defined %} target="{{ link_target }}"{% endif %}{% if link_rel %} rel="{{ link_rel }}"{% endif %}>
-    {% if logo_url %}
-        <img{% if image_class %} class="{{ image_class }}"{% endif %} src="{{ logo_url }}" alt="{{ company.name }}" height="{{ image_height }}" title="{{ company.name }}">
+    {% if logo_url or dark_logo_url %}
+        <img class="hide-theme-light{% if image_class %} {{ image_class }}{% endif %}" src="{{ dark_logo_url|default(logo_url) }}" alt="{{ company.name }}" height="{{ image_height }}" title="{{ company.name }}">
+        <img class="hide-theme-dark{% if image_class %} {{ image_class }}{% endif %}" src="{{ logo_url|default(dark_logo_url) }}" alt="{{ company.name }}" height="{{ image_height }}" title="{{ company.name }}">
         {% if show_mobile_name %}
             <span class="d-sm-none">{{ company.name }}</span>
         {% endif %}

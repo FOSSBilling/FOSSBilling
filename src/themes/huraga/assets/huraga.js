@@ -1,5 +1,6 @@
 import { Tooltip, Toast, Modal, Collapse, Tab } from 'bootstrap/dist/js/bootstrap.esm.js';
 import './js/utils';
+import initTheme from './js/ui/theme.js';
 
 globalThis.bootstrap = { Tooltip, Toast, Modal, Collapse, Tab };
 
@@ -28,6 +29,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     FOSSBilling.message(displayMessage, 'error');
   };
+
+  /**
+   * Wire up the light/dark theme controller. Runs on every page that
+   * includes the Huraga layout so user toggles are persisted in localStorage
+   * and the data-bs-theme attribute is kept in sync.
+   */
+  initTheme();
 
   /**
    * Enable Bootstrap Tooltip

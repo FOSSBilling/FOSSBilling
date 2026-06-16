@@ -13,6 +13,7 @@
     <meta name="author" content="{{ settings.meta_author }}">
     <meta name="generator" content="FOSSBilling">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
 
     {% block canonical %}
         <link rel="canonical" href="{{ canonical_url }}">
@@ -25,6 +26,9 @@
         <meta property="og:url" content="{{ canonical_url }}" />
         <meta property="og:site_name" content="{{ guest.system_company.name }}" />
     {% endblock %}
+
+    {{ include('partials/theme_init.html.twig') }}
+
     <link rel="stylesheet" href="{{ 'build/css/vendor.css' | asset_url }}">
     <link rel="stylesheet" href="{{ 'build/css/huraga.css' | asset_url }}">
     <link rel="shortcut icon" href="{{ guest.system_company.favicon_url }}">
@@ -75,18 +79,14 @@
 {% set guest_support_url = guest.support_public_tickets_enabled() ? 'support/contact-us'|url : 'login'|url %}
 {% set support_url = client ? 'support'|url : guest_support_url %}
 
-{% if settings.theme == 'dark' %}
-    {% set logo_url =  company.logo_url_dark %}
-{% else %}
-    {% set logo_url =  company.logo_url %}
-{% endif %}
 <div class="container">
     <header>
         {{ render_widgets('client.theme.header.start') }}
         <nav class="navbar navbar-expand-md py-4">
             <div class="container-fluid">
                 {{ include('partial_company_logo.html.twig', {
-                    logo_url: settings.show_company_logo ? logo_url : null,
+                    logo_url: settings.show_company_logo ? company.logo_url : null,
+                    dark_logo_url: settings.show_company_logo ? company.logo_url_dark : null,
                     link_class: 'navbar-brand',
                     image_class: 'd-none d-sm-block',
                     show_mobile_name: true
@@ -108,6 +108,23 @@
                                 </select>
                             </li>
                         {% endif %}
+
+                        <li class="nav-item d-md-flex">
+                            <a class="nav-link px-0 hide-theme-dark js-theme-toggler"
+                               href="?theme=dark"
+                               data-bs-toggle="tooltip"
+                               data-bs-placement="bottom"
+                               data-bs-original-title="{{ 'Enable dark mode'|trans }}">
+                                <svg class="icon text-dark"><use href="#moon" /></svg>
+                            </a>
+                            <a class="nav-link px-0 hide-theme-light js-theme-toggler"
+                               href="?theme=light"
+                               data-bs-toggle="tooltip"
+                               data-bs-placement="bottom"
+                               data-bs-original-title="{{ 'Enable light mode'|trans }}">
+                                <svg class="icon text-white"><use href="#sun" /></svg>
+                            </a>
+                        </li>
 
                         {% if settings.top_menu_dashboard %}
                             <li class="nav-item d-md-flex">
@@ -219,8 +236,8 @@
                                     {% set title_key = 'footer_link_' ~ i ~ '_title' %}
                                     {% if attribute(settings, enabled_key) %}
                                         {% if first_link_rendered %}&nbsp;&#x2022;&nbsp;{% endif %}
-                                        {% set link_page = attribute(settings, page_key) %}
-                                        {% set link_title = attribute(settings, title_key) %}
+                                        {% set link_page = attribute(settings, page_key)|default('') %}
+                                        {% set link_title = attribute(settings, title_key)|default('') %}
                                         {% if 'http://' in link_page or 'https://' in link_page %}
                                             <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
                                                href="{{ link_page }}">{{ link_title }}</a>
