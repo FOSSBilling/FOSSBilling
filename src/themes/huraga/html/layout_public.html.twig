@@ -3,10 +3,11 @@
 {% set canonical_url = guest.system_current_url|url %}
 {% set company = guest.system_company %}
 {% set public_logo_url = settings.theme == 'dark' ? company.logo_url_dark : company.logo_url %}
+{% set page_title = (settings.meta_title_prefix ~ ' ' ~ block('meta_title') ~ ' ' ~ settings.meta_title_suffix)|trim %}
 <html class="no-js" lang="{{ active_locale }}" data-bs-theme="{{ settings.theme|default('light') }}">
 <head>
     <meta charset="utf-8">
-    <title>{{ (settings.meta_title_prefix ~ ' ' ~ block('meta_title') ~ ' ' ~ settings.meta_title_suffix)|trim }}</title>
+    <title>{{ page_title }}</title>
 
     <meta name="description" content="{% block meta_description %}{{ settings.meta_description }}{% endblock %}">
     <meta name="keywords" content="{{ settings.meta_keywords }}">
@@ -20,7 +21,7 @@
     {% endblock %}
 
     {% block opengraph %}
-        <meta property="og:title" content="{{ (settings.meta_title_prefix ~ ' ' ~ block('meta_title') ~ ' ' ~ settings.meta_title_suffix)|trim }}" />
+        <meta property="og:title" content="{{ page_title }}" />
         <meta property="og:type" content="website" />
         <meta property="og:description" content="{{ block('meta_description') }}" />
         <meta property="og:url" content="{{ canonical_url }}" />
@@ -51,7 +52,7 @@
 <body class="{% block body_class %}{% endblock %}">
     {{ render_widgets('client.theme.body.start') }}
     {% block body %}{% endblock %}
-    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;" aria-live="polite" aria-atomic="true"></div>
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;" aria-live="polite" aria-atomic="false"></div>
     {{ include('partial_pending_messages.html.twig', ignore_missing: true) }}
     {{ render_widgets('client.theme.body.end') }}
 </body>
