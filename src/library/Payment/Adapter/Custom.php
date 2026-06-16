@@ -73,10 +73,10 @@ class Payment_Adapter_Custom
     /**
      * Processes a transaction using a custom payment adapter.
      *
-     * @param FOSSBilling\Api\Proxy   $api_admin  the API admin object
-     * @param int         $id         the ID of the transaction to process
-     * @param array       $data       the data associated with the transaction
-     * @param int         $gateway_id the ID of the payment gateway to use
+     * @param FOSSBilling\Api\Proxy $api_admin  the API admin object
+     * @param int                   $id         the ID of the transaction to process
+     * @param array                 $data       the data associated with the transaction
+     * @param int                   $gateway_id the ID of the payment gateway to use
      *
      * @return bool returns true if the transaction was processed successfully, false otherwise
      */
