@@ -42,8 +42,8 @@ class Server_Manager_Whm extends Server_Manager
                         [
                             'name' => 'accesshash',
                             'type' => 'text',
-                            'label' => 'Access Hash',
-                            'placeholder' => 'Access hash to connect to the server',
+                            'label' => 'Access Hash or API Token',
+                            'placeholder' => 'Access hash or WHM API token to connect to the server',
                             'required' => true,
                         ],
                     ],
