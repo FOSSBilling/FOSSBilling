@@ -1,5 +1,14 @@
 {% if product.type != 'domain' %}
 {% set currency_code = admin.currency_get_default.code %}
+{% set recurrent_periods = {
+    '1W': 'Weekly',
+    '1M': 'Monthly',
+    '3M': 'Every 3 Months',
+    '6M': 'Every 6 Months',
+    '1Y': 'Every Year',
+    '2Y': 'Every 2 Years',
+    '3Y': 'Every 3 Years'
+} %}
 
 <div class="d-flex flex-column gap-1 mb-4">
     <h6 class="card-title mb-0">{{ 'Billing Model'|trans }}</h6>
@@ -71,55 +80,15 @@
                 </tr>
             </thead>
             <tbody>
+                {% for period, label in recurrent_periods %}
                 <tr>
-                    <td class="fw-medium">{{ 'Weekly'|trans }}</td>
-                    <td><input class="form-control price setup_price" type="text" name="pricing[recurrent][1W][setup]" value="{{ product.pricing.recurrent['1W'].setup }}"></td>
-                    <td><input class="form-control price bill_price" type="text" name="pricing[recurrent][1W][price]" value="{{ product.pricing.recurrent['1W'].price }}"></td>
+                    <td class="fw-medium">{{ label|trans }}</td>
+                    <td><input class="form-control price setup_price" type="text" name="pricing[recurrent][{{ period }}][setup]" value="{{ product.pricing.recurrent[period].setup }}"></td>
+                    <td><input class="form-control price bill_price" type="text" name="pricing[recurrent][{{ period }}][price]" value="{{ product.pricing.recurrent[period].price }}"></td>
                     <td><input class="form-control total price" type="text" readonly disabled></td>
-                    <td class="text-center"><input class="form-check-input" type="checkbox" name="pricing[recurrent][1W][enabled]" value="1"{% if (product.pricing.type == 'recurrent') and (product.pricing.recurrent['1W'].enabled) %} checked{% endif %}></td>
+                    <td class="text-center"><input class="form-check-input" type="checkbox" name="pricing[recurrent][{{ period }}][enabled]" value="1"{% if (product.pricing.type == 'recurrent') and (product.pricing.recurrent[period].enabled) %} checked{% endif %}></td>
                 </tr>
-                <tr>
-                    <td class="fw-medium">{{ 'Monthly'|trans }}</td>
-                    <td><input type="text" class="form-control price setup_price" name="pricing[recurrent][1M][setup]" value="{{ product.pricing.recurrent['1M'].setup }}"></td>
-                    <td><input type="text" class="form-control price bill_price" name="pricing[recurrent][1M][price]" value="{{ product.pricing.recurrent['1M'].price }}"></td>
-                    <td><input type="text" class="form-control total price" readonly disabled></td>
-                    <td class="text-center"><input class="form-check-input" type="checkbox" name="pricing[recurrent][1M][enabled]" value="1"{% if (product.pricing.type == 'recurrent') and (product.pricing.recurrent['1M'].enabled) %} checked{% endif %}></td>
-                </tr>
-                <tr>
-                    <td class="fw-medium">{{ 'Every 3 Months'|trans }}</td>
-                    <td><input type="text" class="form-control price setup_price" name="pricing[recurrent][3M][setup]" value="{{ product.pricing.recurrent['3M'].setup }}"></td>
-                    <td><input type="text" class="form-control price bill_price" name="pricing[recurrent][3M][price]" value="{{ product.pricing.recurrent['3M'].price }}"></td>
-                    <td><input type="text" class="form-control total price" readonly disabled></td>
-                    <td class="text-center"><input class="form-check-input" type="checkbox" name="pricing[recurrent][3M][enabled]" value="1"{% if (product.pricing.type == 'recurrent') and (product.pricing.recurrent['3M'].enabled) %} checked{% endif %}></td>
-                </tr>
-                <tr>
-                    <td class="fw-medium">{{ 'Every 6 Months'|trans }}</td>
-                    <td><input type="text" class="form-control price setup_price" name="pricing[recurrent][6M][setup]" value="{{ product.pricing.recurrent['6M'].setup }}"></td>
-                    <td><input type="text" class="form-control price bill_price" name="pricing[recurrent][6M][price]" value="{{ product.pricing.recurrent['6M'].price }}"></td>
-                    <td><input type="text" class="form-control total price" readonly disabled></td>
-                    <td class="text-center"><input class="form-check-input" type="checkbox" name="pricing[recurrent][6M][enabled]" value="1"{% if (product.pricing.type == 'recurrent') and (product.pricing.recurrent['6M'].enabled) %} checked{% endif %}></td>
-                </tr>
-                <tr>
-                    <td class="fw-medium">{{ 'Every Year'|trans }}</td>
-                    <td><input type="text" class="form-control price setup_price" name="pricing[recurrent][1Y][setup]" value="{{ product.pricing.recurrent['1Y'].setup }}"></td>
-                    <td><input type="text" class="form-control price bill_price" name="pricing[recurrent][1Y][price]" value="{{ product.pricing.recurrent['1Y'].price }}"></td>
-                    <td><input type="text" class="form-control total price" readonly disabled></td>
-                    <td class="text-center"><input class="form-check-input" type="checkbox" name="pricing[recurrent][1Y][enabled]" value="1"{% if (product.pricing.type == 'recurrent') and (product.pricing.recurrent['1Y'].enabled) %} checked{% endif %}></td>
-                </tr>
-                <tr>
-                    <td class="fw-medium">{{ 'Every 2 Years'|trans }}</td>
-                    <td><input type="text" class="form-control price setup_price" name="pricing[recurrent][2Y][setup]" value="{{ product.pricing.recurrent['2Y'].setup }}"></td>
-                    <td><input type="text" class="form-control price bill_price" name="pricing[recurrent][2Y][price]" value="{{ product.pricing.recurrent['2Y'].price }}"></td>
-                    <td><input type="text" class="form-control total price" readonly disabled></td>
-                    <td class="text-center"><input class="form-check-input" type="checkbox" name="pricing[recurrent][2Y][enabled]" value="1"{% if (product.pricing.type == 'recurrent') and (product.pricing.recurrent['2Y'].enabled) %} checked{% endif %}></td>
-                </tr>
-                <tr>
-                    <td class="fw-medium">{{ 'Every 3 Years'|trans }}</td>
-                    <td><input type="text" class="form-control price setup_price" name="pricing[recurrent][3Y][setup]" value="{{ product.pricing.recurrent['3Y'].setup }}"></td>
-                    <td><input type="text" class="form-control price bill_price" name="pricing[recurrent][3Y][price]" value="{{ product.pricing.recurrent['3Y'].price }}"></td>
-                    <td><input type="text" class="form-control total price" readonly disabled></td>
-                    <td class="text-center"><input class="form-check-input" type="checkbox" name="pricing[recurrent][3Y][enabled]" value="1"{% if (product.pricing.type == 'recurrent') and (product.pricing.recurrent['3Y'].enabled) %} checked{% endif %}></td>
-                </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
