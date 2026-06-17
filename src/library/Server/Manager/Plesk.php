@@ -338,15 +338,6 @@ class Server_Manager_Plesk extends Server_Manager
     }
 
     /**
-     * This is not implemented for Plesk.
-     *
-     * @param Server_Account $account the account for which the service plan should be created
-     */
-    public function createServicePlan(Server_Account $account)
-    {
-    }
-
-    /**
      * Deletes a subscription for a given account.
      * Sends a request to the Plesk API to delete the webspace associated with the account's domain.
      *
