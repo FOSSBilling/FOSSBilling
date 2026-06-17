@@ -103,9 +103,13 @@
                                 <p class="text-secondary mb-4">{{ 'Adjust the color and opacity of the page overlay behind the popup.'|trans }}</p>
                                 <div class="row g-3">
                                     <div class="col-lg-4">
-                                        <label class="form-label" for="coloris-picker">{{ 'Color'|trans }}</label>
-                                                <input type="text" class="form-control" name="background_color"
-                                                       id="coloris-picker" value="{{ params.background_color|default('#000000') }}">
+                                        <label class="form-label" for="background_color">{{ 'Color'|trans }}</label>
+                                        <div class="input-group">
+                                            <input type="color" class="form-control form-control-color flex-grow-0" style="width: 4rem;" name="background_color"
+                                                   id="background_color" value="{{ params.background_color|default('#000000') }}">
+                                            <input type="text" class="form-control" id="background_color_hex"
+                                                   value="{{ params.background_color|default('#000000') }}" pattern="#[0-9a-fA-F]{6}" aria-label="{{ 'Hex color value'|trans }}">
+                                        </div>
                                     </div>
                                     <div class="col-lg-4">
                                         <label class="form-label" for="background_opacity">{{ 'Opacity'|trans }}</label>
@@ -285,7 +289,7 @@
                 const options = {
                     'width': document.getElementById('popup_width').value,
                     'theme_color': document.getElementById('theme_color').value,
-                    'background_color': document.getElementById('coloris-picker').value,
+                    'background_color': document.getElementById('background_color').value,
                     'background_opacity': document.getElementById('background_opacity').value,
                     'background_close': document.getElementById('background-close').checked ? 'on' : undefined,
                     'show_custom_form_values': document.getElementById('show-custom-form-values')?.checked ? 'on' : undefined,
@@ -332,6 +336,20 @@
                 show_link();
             });
 
+            const backgroundColor = document.getElementById('background_color');
+            const backgroundColorHex = document.getElementById('background_color_hex');
+
+            backgroundColor.addEventListener('input', function() {
+                backgroundColorHex.value = this.value;
+            });
+
+            backgroundColorHex.addEventListener('input', function() {
+                if (/^#[0-9a-fA-F]{6}$/.test(this.value)) {
+                    backgroundColor.value = this.value;
+                    show_link();
+                }
+            });
+
             document.querySelectorAll('input').forEach(function(input) {
                 input.addEventListener('input', function() {
                     changed = true;
@@ -339,7 +357,7 @@
                 });
             });
 
-            document.querySelectorAll('select, #background-color, input[type="radio"]').forEach(function(element) {
+            document.querySelectorAll('select, input[type="radio"]').forEach(function(element) {
                 element.addEventListener('change', function() {
                     changed = true;
                     show_link();
