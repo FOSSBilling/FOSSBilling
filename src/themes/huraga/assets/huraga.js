@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const showLinkedTab = () => {
     const id = window.location.hash.slice(1);
-    const trigger = [...document.querySelectorAll('[data-bs-toggle="tab"]')]
+    const trigger = [...document.querySelectorAll('[data-bs-toggle="tab"], [data-bs-toggle="pill"], [data-bs-toggle="list"]')]
       .find((tab) => (tab.getAttribute('data-bs-target') || tab.getAttribute('href')) === `#${id}`);
     if (trigger) {
       bootstrap.Tab.getOrCreateInstance(trigger).show();
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   showLinkedTab();
   window.addEventListener('hashchange', showLinkedTab);
-  document.querySelectorAll('[data-bs-toggle="tab"]').forEach((trigger) => {
+  document.querySelectorAll('[data-bs-toggle="tab"], [data-bs-toggle="pill"], [data-bs-toggle="list"]').forEach((trigger) => {
     trigger.addEventListener('shown.bs.tab', function() {
       const target = this.getAttribute('data-bs-target') || this.getAttribute('href');
       if (target?.startsWith('#')) {
