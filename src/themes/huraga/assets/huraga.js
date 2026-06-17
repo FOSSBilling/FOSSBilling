@@ -43,6 +43,26 @@ document.addEventListener('DOMContentLoaded', () => {
   const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
   [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
 
+  const showLinkedTab = () => {
+    const id = window.location.hash.slice(1);
+    const trigger = [...document.querySelectorAll('[data-bs-toggle="tab"]')]
+      .find((tab) => (tab.getAttribute('data-bs-target') || tab.getAttribute('href')) === `#${id}`);
+    if (trigger) {
+      bootstrap.Tab.getOrCreateInstance(trigger).show();
+    }
+  };
+
+  showLinkedTab();
+  window.addEventListener('hashchange', showLinkedTab);
+  document.querySelectorAll('[data-bs-toggle="tab"]').forEach((trigger) => {
+    trigger.addEventListener('shown.bs.tab', function() {
+      const target = this.getAttribute('data-bs-target') || this.getAttribute('href');
+      if (target?.startsWith('#')) {
+        history.replaceState({}, '', `${window.location.pathname}${window.location.search}${target}`);
+      }
+    });
+  });
+
   /**
    * Manage flash message to show after page reload
    */
