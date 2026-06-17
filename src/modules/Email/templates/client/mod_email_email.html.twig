@@ -24,7 +24,8 @@
                             <a class="btn btn-sm btn-outline-secondary email-resend" href="#" data-id="{{ email.id }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Resend'|trans }}">
                                 <svg class="icon"><use href="#arrows-exchange" /></svg>
                             </a>
-                            <a class="btn btn-sm btn-outline-danger border-start-0 email-delete" href="#" data-id="{{ email.id }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}">
+                            <a class="btn btn-sm btn-outline-danger border-start-0" data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
+                               {{ fb_api_link({href: 'email/delete'|api_url(query: {id: email.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, message: 'Email deleted'|trans, redirect: 'email'|url}) }}>
                                 <svg class="icon"><use href="#trash" /></svg>
                             </a>
                         </div>
@@ -51,7 +52,6 @@
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         const resendEmailBtn = document.querySelectorAll('.email-resend');
-        const deleteEmailBtn = document.querySelectorAll('.email-delete');
 
         resendEmailBtn.forEach((resendBtn) => {
             resendBtn.addEventListener('click', (e) => {
@@ -70,28 +70,6 @@
                         toggleLoader();
                     }
                 )
-            });
-        });
-
-        deleteEmailBtn.forEach((deleteBtn) => {
-            deleteBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (confirm('Are you sure?')) {
-                    toggleLoader();
-                    FOSSBilling.api.client.post('email/delete',
-                        {id: deleteBtn.dataset.id },
-                        () => {
-                            flashMessage({
-                                message: 'Email #'+ deleteBtn.dataset.id +' deleted',
-                                reload: '{{ 'email'|url }}'
-                            });
-                        },
-                        (res) => {
-                            FOSSBilling.message(`${res.message} (${res.code})`, 'error');
-                            toggleLoader();
-                        }
-                    )
-                }
             });
         });
 
