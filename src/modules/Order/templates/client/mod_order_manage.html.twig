@@ -107,7 +107,9 @@
                 </div>
                 <div class="card-footer">
                     {% if order.period and order.status != 'failed_renew' %}
-                        <button class="btn btn-primary btn-sm" type="button" id="renewal-button">{{ 'Renew Now'|trans }}</button>
+                        <a class="btn btn-primary btn-sm"
+                           {{ fb_api_link({href: 'invoice/renewal_invoice'|api_url(query: {order_id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans, content: 'This will generate new invoice. Are you sure you want to continue?'|trans}, callback: 'onRenewalInvoiceCreated'}) }}>{{ 'Renew Now'|trans }}</a>
+                        <script>window.onRenewalInvoiceCreated = (hash) => { window.location = "{{ 'invoice'|url }}/" + hash; };</script>
                     {% endif %}
                     {% if upgradables %}
                         <button class="btn btn-success btn-sm" type="button" id="request-upgrade" data-bs-toggle="modal" data-bs-target="#upgrade-request-modal">{{ 'Request Upgrade'|trans }}</button>
@@ -330,19 +332,6 @@
 
         });
 
-        const renewalButton = document.getElementById('renewal-button');
-        if (renewalButton) {
-            renewalButton.addEventListener('click', function (event) {
-                event.preventDefault();
-
-                if (confirm("This will generate new invoice. Are you sure you want to continue?")) {
-                    FOSSBilling.api.client.post('invoice/renewal_invoice', { order_id: {{ order.id }} },
-                        (result) => {
-                            window.location = "{{ 'invoice'|url }}" + '/' + result;
-                        });
-                }
-            });
-        }
     </script>
 {% endautoescape %}
 {% endblock %}

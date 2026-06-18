@@ -18,21 +18,8 @@
 
         <h4>{{ 'Reset API Key'|trans }}</h4>
         <div class="block">
-            <button class="btn btn-primary" type="button" id="license-apikey">{{ 'Reset'|trans }}</button>
+            <a class="btn btn-primary" {{ fb_api_link({href: 'serviceapikey/reset'|api_url(query: {order_id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>{{ 'Reset'|trans }}</a>
         </div>
     </div>
 </div>
-
-<script>
-    document.querySelector('#license-apikey').addEventListener('click', (event) => {
-        event.preventDefault();
-
-        if (confirm("{{ 'Are you sure?'|trans }}")) {
-            FOSSBilling.api.client.post('serviceapikey/reset', { order_id: {{ order.id }} },
-                (result) => {
-                    window.location.reload();
-                });
-        }
-    });
-</script>
 {% endif %}

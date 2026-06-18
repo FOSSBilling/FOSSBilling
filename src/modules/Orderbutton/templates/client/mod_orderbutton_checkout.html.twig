@@ -40,7 +40,12 @@
                                     {{ (item.total * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}
                                 {% endif %}
                             </td>
-                            <td><button data-cart-item-id="{{ item.id }}" class="btn btn-dark btn-sm remove-cart-item" title="{{ 'Remove item'|trans }}"><svg class="icon"><use href="#x" /></svg></button></td>
+                            <td>
+                                <a class="btn btn-dark btn-sm" title="{{ 'Remove item'|trans }}"
+                                   {{ fb_api_link({href: 'cart/remove_item'|api_url(query: {id: item.id}, role: 'guest'), modal: {type: 'confirm', title: 'Are you sure?'|trans, content: 'Are you sure you want to remove this item from cart?'|trans}, reload: true}) }}>
+                                    <svg class="icon"><use href="#x" /></svg>
+                                </a>
+                            </td>
                         </tr>
 
                         {% if request.show_custom_form_values %}
