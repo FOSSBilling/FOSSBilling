@@ -800,7 +800,7 @@ const API = {
             );
           };
 
-          if (apiData.hasOwnProperty('modal') && typeof Modals === 'undefined') {
+          if (apiData.hasOwnProperty('modal') && (typeof Modals === 'undefined' || typeof Modals.create !== 'function')) {
             if (apiData.modal.type === 'prompt') {
               const value = window.prompt(apiData.modal.label ?? apiData.modal.title ?? '', apiData.modal.value ?? '');
               if (value) {
