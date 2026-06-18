@@ -61,7 +61,7 @@
                                                             <svg class="icon"><use href="#arrows-exchange" /></svg>
                                                         </a>
                                                         <a class="btn btn-sm btn-outline-danger border-start-0" data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
-                                                           {{ fb_api_link({href: 'email/delete'|api_url(query: {id: email.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, message: 'Email deleted'|trans, redirect: 'email'|url}) }}>
+                                                           {{ fb_api_link({href: 'email/delete'|api_url(query: {id: email.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'email'|url}) }}>
                                                             <svg class="icon"><use href="#trash" /></svg>
                                                         </a>
                                                     </div>
