@@ -309,7 +309,7 @@
         subscriptionBtn.hidden = true;
         genericBtn.hidden = true;
 
-        {% if settings.prompt_subscription %}
+        {% if settings.prompt_subscription|default('0') %}
             if(supportsSubscription && supportsOneTime && invoiceSubscribable){
                 document.getElementById('bodyText').textContent = `{{ 'The invoice you are paying and your chosen payment gateway both support subscription payments. What type of payment would you like to continue with?'|trans }}`;
                 subscriptionBtn.hidden = false;
