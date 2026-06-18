@@ -464,6 +464,7 @@ class UpdatePatcher implements InjectionAwareInterface
             70 => 'patch70',
             71 => 'patch71',
             72 => 'patch72',
+            73 => 'patch73',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1572,6 +1573,160 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch72(): void
     {
+        $this->executeFileActions([
+            Path::join(PATH_LIBRARY, 'Model', 'Product.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ProductCategory.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ProductCustom.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ProductDomain.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ProductDomainTable.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ProductDownloadable.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ProductHosting.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ProductLicense.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ProductPayment.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ProductTable.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'Promo.php') => 'unlink',
+            Path::join(PATH_CACHE, 'classMap.php') => 'unlink',
+            Path::join(PATH_CACHE, 'fallbackClassMap.php') => 'unlink',
+        ]);
+
+        $schemaManager = $this->di['dbal']->createSchemaManager();
+        if (!$schemaManager->tablesExist(['promo_redemption'])) {
+            $this->executeSql(
+                "CREATE TABLE `promo_redemption` (
+                    `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                    `promo_id` bigint(20) DEFAULT NULL,
+                    `client_id` bigint(20) DEFAULT NULL,
+                    `client_order_id` bigint(20) DEFAULT NULL,
+                    `invoice_id` bigint(20) DEFAULT NULL,
+                    `phase` varchar(30) NOT NULL DEFAULT 'checkout',
+                    `status` varchar(30) NOT NULL DEFAULT 'reserved',
+                    `discount_amount` decimal(18,2) DEFAULT NULL,
+                    `currency` varchar(20) DEFAULT NULL,
+                    `committed_at` datetime DEFAULT NULL,
+                    `released_at` datetime DEFAULT NULL,
+                    `release_reason` varchar(100) DEFAULT NULL,
+                    `created_at` datetime DEFAULT NULL,
+                    `updated_at` datetime DEFAULT NULL,
+                    PRIMARY KEY (`id`),
+                    KEY `promo_id_idx` (`promo_id`),
+                    KEY `client_id_idx` (`client_id`),
+                    KEY `client_order_id_idx` (`client_order_id`),
+                    KEY `invoice_id_idx` (`invoice_id`),
+                    KEY `phase_idx` (`phase`),
+                    KEY `status_idx` (`status`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;"
+            );
+        }
+
+        $table = $schemaManager->introspectTable('promo_redemption');
+        $columns = [];
+
+        if (!$table->hasColumn('status')) {
+            $columns[] = "ADD COLUMN `status` varchar(30) NOT NULL DEFAULT 'reserved' AFTER `phase`";
+        }
+
+        if (!$table->hasColumn('committed_at')) {
+            $columns[] = 'ADD COLUMN `committed_at` datetime DEFAULT NULL AFTER `currency`';
+        }
+
+        if (!$table->hasColumn('released_at')) {
+            $columns[] = 'ADD COLUMN `released_at` datetime DEFAULT NULL AFTER `committed_at`';
+        }
+
+        if (!$table->hasColumn('release_reason')) {
+            $columns[] = 'ADD COLUMN `release_reason` varchar(100) DEFAULT NULL AFTER `released_at`';
+        }
+
+        if ($columns !== []) {
+            $this->executeSql('ALTER TABLE promo_redemption ' . implode(', ', $columns));
+        }
+
+        $table = $schemaManager->introspectTable('promo_redemption');
+        $expectedIndexes = [
+            'promo_id_idx' => 'promo_id',
+            'client_id_idx' => 'client_id',
+            'client_order_id_idx' => 'client_order_id',
+            'invoice_id_idx' => 'invoice_id',
+            'phase_idx' => 'phase',
+            'status_idx' => 'status',
+        ];
+
+        foreach ($expectedIndexes as $indexName => $columnName) {
+            if (!$table->hasIndex($indexName)) {
+                $this->executeSql(sprintf(
+                    'ALTER TABLE promo_redemption ADD INDEX `%s` (`%s`)',
+                    $indexName,
+                    $columnName
+                ));
+            }
+        }
+
+        $existingRedemptions = (int) $this->di['dbal']->executeQuery('SELECT COUNT(id) FROM promo_redemption')->fetchOne();
+        if ($existingRedemptions === 0) {
+            $orders = $this->di['dbal']->executeQuery(
+                'SELECT id, promo_id, client_id, promo_used, discount, currency, created_at, updated_at
+                 FROM client_order
+                 WHERE promo_id IS NOT NULL'
+            )->fetchAllAssociative();
+
+            foreach ($orders as $order) {
+                $checkoutCreatedAt = $order['created_at'] ?? date('Y-m-d H:i:s');
+                $renewalCreatedAt = $order['updated_at'] ?: $checkoutCreatedAt;
+                $discountAmount = $order['discount'] !== null ? (float) $order['discount'] : null;
+
+                $this->di['dbal']->insert('promo_redemption', [
+                    'promo_id' => $order['promo_id'],
+                    'client_id' => $order['client_id'],
+                    'client_order_id' => $order['id'],
+                    'invoice_id' => null,
+                    'phase' => 'checkout',
+                    'status' => 'committed',
+                    'discount_amount' => $discountAmount,
+                    'currency' => $order['currency'],
+                    'committed_at' => $checkoutCreatedAt,
+                    'released_at' => null,
+                    'release_reason' => null,
+                    'created_at' => $checkoutCreatedAt,
+                    'updated_at' => $checkoutCreatedAt,
+                ]);
+
+                $renewalCount = max(0, ((int) ($order['promo_used'] ?? 1)) - 1);
+                for ($i = 0; $i < $renewalCount; ++$i) {
+                    $this->di['dbal']->insert('promo_redemption', [
+                        'promo_id' => $order['promo_id'],
+                        'client_id' => $order['client_id'],
+                        'client_order_id' => $order['id'],
+                        'invoice_id' => null,
+                        'phase' => 'renewal',
+                        'status' => 'committed',
+                        'discount_amount' => $discountAmount,
+                        'currency' => $order['currency'],
+                        'committed_at' => $renewalCreatedAt,
+                        'released_at' => null,
+                        'release_reason' => null,
+                        'created_at' => $renewalCreatedAt,
+                        'updated_at' => $renewalCreatedAt,
+                    ]);
+                }
+            }
+        }
+
+        // Normalize rows written by a previous partial migration run that pre-dated the
+        // status column; those rows have a NULL/empty status.  Legitimate 'reserved'
+        // rows created by concurrent checkouts are left untouched so the payment flow
+        // can commit or release them normally.
+        $this->executeSql("
+            UPDATE promo_redemption
+            SET
+                status = 'committed',
+                committed_at = COALESCE(committed_at, created_at),
+                release_reason = NULL
+            WHERE status IS NULL OR status = ''
+        ");
+    }
+
+    private function patch73(): void
+    {
         if (!$this->tableHasColumn('support_ticket', 'access_hash')) {
             $this->executeSql('ALTER TABLE `support_ticket` ADD COLUMN `access_hash` VARCHAR(255) DEFAULT NULL AFTER `client_id`;');
         }
@@ -1839,159 +1994,5 @@ class UpdatePatcher implements InjectionAwareInterface
                 $oldGatewayAssetsPath => 'unlink',
             ]);
         }
-    }
-
-    private function patch72(): void
-    {
-        $this->executeFileActions([
-            Path::join(PATH_LIBRARY, 'Model', 'Product.php') => 'unlink',
-            Path::join(PATH_LIBRARY, 'Model', 'ProductCategory.php') => 'unlink',
-            Path::join(PATH_LIBRARY, 'Model', 'ProductCustom.php') => 'unlink',
-            Path::join(PATH_LIBRARY, 'Model', 'ProductDomain.php') => 'unlink',
-            Path::join(PATH_LIBRARY, 'Model', 'ProductDomainTable.php') => 'unlink',
-            Path::join(PATH_LIBRARY, 'Model', 'ProductDownloadable.php') => 'unlink',
-            Path::join(PATH_LIBRARY, 'Model', 'ProductHosting.php') => 'unlink',
-            Path::join(PATH_LIBRARY, 'Model', 'ProductLicense.php') => 'unlink',
-            Path::join(PATH_LIBRARY, 'Model', 'ProductPayment.php') => 'unlink',
-            Path::join(PATH_LIBRARY, 'Model', 'ProductTable.php') => 'unlink',
-            Path::join(PATH_LIBRARY, 'Model', 'Promo.php') => 'unlink',
-            Path::join(PATH_CACHE, 'classMap.php') => 'unlink',
-            Path::join(PATH_CACHE, 'fallbackClassMap.php') => 'unlink',
-        ]);
-
-        $schemaManager = $this->di['dbal']->createSchemaManager();
-        if (!$schemaManager->tablesExist(['promo_redemption'])) {
-            $this->executeSql(
-                "CREATE TABLE `promo_redemption` (
-                    `id` bigint(20) NOT NULL AUTO_INCREMENT,
-                    `promo_id` bigint(20) DEFAULT NULL,
-                    `client_id` bigint(20) DEFAULT NULL,
-                    `client_order_id` bigint(20) DEFAULT NULL,
-                    `invoice_id` bigint(20) DEFAULT NULL,
-                    `phase` varchar(30) NOT NULL DEFAULT 'checkout',
-                    `status` varchar(30) NOT NULL DEFAULT 'reserved',
-                    `discount_amount` decimal(18,2) DEFAULT NULL,
-                    `currency` varchar(20) DEFAULT NULL,
-                    `committed_at` datetime DEFAULT NULL,
-                    `released_at` datetime DEFAULT NULL,
-                    `release_reason` varchar(100) DEFAULT NULL,
-                    `created_at` datetime DEFAULT NULL,
-                    `updated_at` datetime DEFAULT NULL,
-                    PRIMARY KEY (`id`),
-                    KEY `promo_id_idx` (`promo_id`),
-                    KEY `client_id_idx` (`client_id`),
-                    KEY `client_order_id_idx` (`client_order_id`),
-                    KEY `invoice_id_idx` (`invoice_id`),
-                    KEY `phase_idx` (`phase`),
-                    KEY `status_idx` (`status`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;"
-            );
-        }
-
-        $table = $schemaManager->introspectTable('promo_redemption');
-        $columns = [];
-
-        if (!$table->hasColumn('status')) {
-            $columns[] = "ADD COLUMN `status` varchar(30) NOT NULL DEFAULT 'reserved' AFTER `phase`";
-        }
-
-        if (!$table->hasColumn('committed_at')) {
-            $columns[] = 'ADD COLUMN `committed_at` datetime DEFAULT NULL AFTER `currency`';
-        }
-
-        if (!$table->hasColumn('released_at')) {
-            $columns[] = 'ADD COLUMN `released_at` datetime DEFAULT NULL AFTER `committed_at`';
-        }
-
-        if (!$table->hasColumn('release_reason')) {
-            $columns[] = 'ADD COLUMN `release_reason` varchar(100) DEFAULT NULL AFTER `released_at`';
-        }
-
-        if ($columns !== []) {
-            $this->executeSql('ALTER TABLE promo_redemption ' . implode(', ', $columns));
-        }
-
-        $table = $schemaManager->introspectTable('promo_redemption');
-        $expectedIndexes = [
-            'promo_id_idx' => 'promo_id',
-            'client_id_idx' => 'client_id',
-            'client_order_id_idx' => 'client_order_id',
-            'invoice_id_idx' => 'invoice_id',
-            'phase_idx' => 'phase',
-            'status_idx' => 'status',
-        ];
-
-        foreach ($expectedIndexes as $indexName => $columnName) {
-            if (!$table->hasIndex($indexName)) {
-                $this->executeSql(sprintf(
-                    'ALTER TABLE promo_redemption ADD INDEX `%s` (`%s`)',
-                    $indexName,
-                    $columnName
-                ));
-            }
-        }
-
-        $existingRedemptions = (int) $this->di['dbal']->executeQuery('SELECT COUNT(id) FROM promo_redemption')->fetchOne();
-        if ($existingRedemptions === 0) {
-            $orders = $this->di['dbal']->executeQuery(
-                'SELECT id, promo_id, client_id, promo_used, discount, currency, created_at, updated_at
-                 FROM client_order
-                 WHERE promo_id IS NOT NULL'
-            )->fetchAllAssociative();
-
-            foreach ($orders as $order) {
-                $checkoutCreatedAt = $order['created_at'] ?? date('Y-m-d H:i:s');
-                $renewalCreatedAt = $order['updated_at'] ?: $checkoutCreatedAt;
-                $discountAmount = $order['discount'] !== null ? (float) $order['discount'] : null;
-
-                $this->di['dbal']->insert('promo_redemption', [
-                    'promo_id' => $order['promo_id'],
-                    'client_id' => $order['client_id'],
-                    'client_order_id' => $order['id'],
-                    'invoice_id' => null,
-                    'phase' => 'checkout',
-                    'status' => 'committed',
-                    'discount_amount' => $discountAmount,
-                    'currency' => $order['currency'],
-                    'committed_at' => $checkoutCreatedAt,
-                    'released_at' => null,
-                    'release_reason' => null,
-                    'created_at' => $checkoutCreatedAt,
-                    'updated_at' => $checkoutCreatedAt,
-                ]);
-
-                $renewalCount = max(0, ((int) ($order['promo_used'] ?? 1)) - 1);
-                for ($i = 0; $i < $renewalCount; ++$i) {
-                    $this->di['dbal']->insert('promo_redemption', [
-                        'promo_id' => $order['promo_id'],
-                        'client_id' => $order['client_id'],
-                        'client_order_id' => $order['id'],
-                        'invoice_id' => null,
-                        'phase' => 'renewal',
-                        'status' => 'committed',
-                        'discount_amount' => $discountAmount,
-                        'currency' => $order['currency'],
-                        'committed_at' => $renewalCreatedAt,
-                        'released_at' => null,
-                        'release_reason' => null,
-                        'created_at' => $renewalCreatedAt,
-                        'updated_at' => $renewalCreatedAt,
-                    ]);
-                }
-            }
-        }
-
-        // Normalize rows written by a previous partial migration run that pre-dated the
-        // status column; those rows have a NULL/empty status.  Legitimate 'reserved'
-        // rows created by concurrent checkouts are left untouched so the payment flow
-        // can commit or release them normally.
-        $this->executeSql("
-            UPDATE promo_redemption
-            SET
-                status = 'committed',
-                committed_at = COALESCE(committed_at, created_at),
-                release_reason = NULL
-            WHERE status IS NULL OR status = ''
-        ");
     }
 }

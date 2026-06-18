@@ -35,11 +35,10 @@
 	</style>
 </head>
 <body>
-	{% set author_name = ticket.author.name|default('') %}
 	<h1>Ticket Opened</h1>
 	<p>Hello {{ staff.name|default('') }},</p>
 
-    <p><strong>{{ author_name }}</strong> opened a new support ticket #{{ ticket.id|default('') }}</p>
+    <p><strong>{{ ticket.author.name|default('') }}</strong> opened a new support ticket #{{ ticket.id|default('') }}</p>
 	<a href='{{ "support/ticket/#{ticket.id|default('')}"|url(area: 'admin') }}' target="_blank">Review the ticket</a>
 
     <h2>Ticket contents</h2>

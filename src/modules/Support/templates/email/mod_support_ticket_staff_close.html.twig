@@ -36,10 +36,9 @@
 </head>
 <body>
 	{% set is_guest_ticket = ticket.hash|default('') %}
-	{% set author_name = ticket.author.name|default('') %}
 	<h1>Ticket Closed</h1>
 
-    <p>Hi {{ author_name }},</p>
+    <p>Hello, {{ ticket.author.name|default('') }}.</p>
 
     <p>This a notification message to inform you that ticket <strong>{{ticket.subject|default('')}}</strong> is now closed.</p>
 
