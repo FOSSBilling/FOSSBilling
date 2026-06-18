@@ -752,4 +752,38 @@ class Service
 
         return true;
     }
+
+    /**
+     * Enforce a per-entity-type record-count limit.
+     *
+     * The configured limit for the given entity class is read from the system
+     * setting `check_limits_<basename>` (where <basename> is the FQCN's class
+     * name). If no override is configured, the caller-supplied default is
+     * used. When the current count of persisted entities of that type meets
+     * or exceeds the limit, an InformationException is thrown so the caller
+     * (typically a Service::create* method) can abort before persisting.
+     *
+     * @param class-string $entityClass the Doctrine entity class to count
+     * @param int          $defaultMax  fallback maximum when no override is set
+     *
+     * @throws \FOSSBilling\InformationException when the limit would be exceeded
+     */
+    public function checkLimits(string $entityClass, int $defaultMax): void
+    {
+        $shortName = (new \ReflectionClass($entityClass))->getShortName();
+        $paramKey = 'check_limits_' . $shortName;
+        $configured = $this->getParamValue($paramKey);
+        $max = is_numeric($configured) ? (int) $configured : $defaultMax;
+
+        $count = (int) $this->di['em']
+            ->createQueryBuilder()
+            ->select('COUNT(e.id)')
+            ->from($entityClass, 'e')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        if ($count >= $max) {
+            throw new \FOSSBilling\InformationException(sprintf('Limit of %d %s record(s) reached. Please contact the administrator to increase the limit.', $max, $shortName));
+        }
+    }
 }
