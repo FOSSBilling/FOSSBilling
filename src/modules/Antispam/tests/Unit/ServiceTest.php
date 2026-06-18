@@ -44,7 +44,7 @@ test('on before client sign up', function (): void {
     $service->onBeforeClientSignUp($boxEventMock);
 });
 
-test('on before guest public ticket open', function (): void {
+test('on before client open ticket checks guest submissions', function (): void {
     $service = new Box\Mod\Antispam\Service();
     $spamCheckerService = Mockery::mock(Box\Mod\Antispam\Service::class);
     $spamCheckerService->shouldReceive('isBlockedIp')
@@ -60,8 +60,11 @@ test('on before guest public ticket open', function (): void {
     $boxEventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);
+    $boxEventMock->shouldReceive('getParameters')
+        ->atLeast()->once()
+        ->andReturn(['email' => 'guest@example.com']);
 
-    $service->onBeforeGuestPublicTicketOpen($boxEventMock);
+    $service->onBeforeClientOpenTicket($boxEventMock);
 });
 
 test('is blocked ip ip not blocked', function (): void {

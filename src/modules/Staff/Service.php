@@ -369,9 +369,9 @@ class Service implements InjectionAwareInterface
             $ticketModel = $supportTicketService->getTicketById((int) $params['id']);
             $ticket = $supportTicketService->toApiArray($ticketModel, true);
 
-            $helpdeskModel = $di['db']->load('SupportHelpdesk', $ticketModel->support_helpdesk_id);
+            $helpdeskModel = isset($ticketModel->support_helpdesk_id) && $ticketModel->support_helpdesk_id ? $di['db']->load('SupportHelpdesk', $ticketModel->support_helpdesk_id) : null;
             $emailService = $di['mod_service']('email');
-            if (!empty($helpdeskModel->email)) {
+            if ($helpdeskModel instanceof \Model_SupportHelpdesk && !empty($helpdeskModel->email)) {
                 $email = [];
                 $email['to'] = $helpdeskModel->email;
                 $email['code'] = 'mod_support_helpdesk_ticket_open';
@@ -434,26 +434,6 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterGuestPublicTicketOpen(\Box_Event $event): void
-    {
-        $params = $event->getParameters();
-        $di = $event->getDi();
-
-        try {
-            $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getPublicTicketById((int) $params['id']);
-            $ticket = $supportTicketService->publicToApiArray($ticketModel, true);
-            $email = [];
-            $email['to_staff'] = true;
-            $email['code'] = 'mod_staff_ticket_open';
-            $email['ticket'] = $ticket;
-            $emailService = $di['mod_service']('email');
-            $emailService->sendTemplate($email);
-        } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send staff public ticket notification email', ['exception' => $exc->getMessage()]);
-        }
-    }
-
     public static function onAfterClientSignUp(\Box_Event $event): bool
     {
         $params = $event->getParameters();
@@ -473,46 +453,6 @@ class Service implements InjectionAwareInterface
         }
 
         return true;
-    }
-
-    public static function onAfterGuestPublicTicketReply(\Box_Event $event): void
-    {
-        $params = $event->getParameters();
-        $di = $event->getDi();
-
-        try {
-            $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getPublicTicketById((int) $params['id']);
-            $ticket = $supportTicketService->publicToApiArray($ticketModel, true);
-            $email = [];
-            $email['to_staff'] = true;
-            $email['code'] = 'mod_staff_ticket_reply';
-            $email['ticket'] = $ticket;
-            $emailService = $di['mod_service']('email');
-            $emailService->sendTemplate($email);
-        } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send staff public ticket reply notification email', ['exception' => $exc->getMessage()]);
-        }
-    }
-
-    public static function onAfterGuestPublicTicketClose(\Box_Event $event): void
-    {
-        $params = $event->getParameters();
-        $di = $event->getDi();
-
-        try {
-            $supportService = $di['mod_service']('support');
-            $publicTicket = $supportService->getPublicTicketById((int) $params['id']);
-            $ticket = $supportService->publicToApiArray($publicTicket);
-            $email = [];
-            $email['to_staff'] = true;
-            $email['code'] = 'mod_staff_ticket_close';
-            $email['ticket'] = $ticket;
-            $emailService = $di['mod_service']('email');
-            $emailService->sendTemplate($email);
-        } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send staff public ticket close notification email', ['exception' => $exc->getMessage()]);
-        }
     }
 
     public function getList($data)
