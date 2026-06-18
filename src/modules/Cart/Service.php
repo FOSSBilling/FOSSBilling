@@ -540,193 +540,213 @@ class Service implements InjectionAwareInterface
         $promoProductService = $cart->promo_id ? $this->getProductService() : null;
         $promo = $cart->promo_id ? $promoProductService?->findPromoById((int) $cart->promo_id) : null;
 
-        return $this->di['db']->transaction(function () use ($ca, $cart, $client, $currency, $currencyCode, $gateway_id, $taxed, $promo, $promoProductService) {
-            // Set default client currency.
-            if (!$client->currency) {
-                $client->currency = $currencyCode;
-                $this->di['db']->store($client);
-            }
+        $reservedOrderIds = [];
+        $reservedCount = 0;
 
-            if ($client->currency != $currencyCode) {
-                throw new \FOSSBilling\InformationException('Selected currency :selected does not match your profile currency :code. Please change cart currency to continue.', [':selected' => $currencyCode, ':code' => $client->currency]);
-            }
-
-            $orders = [];
-            $invoice_items = [];
-            $invoiceModel = null;
-            $master_order = null;
-            $requestedProductQuantities = [];
-            $i = 0;
-
-            foreach ($this->getCartProducts($cart) as $p) {
-                $item = $this->cartProductToApiArray($p);
-
-                $product = $this->getProductService()->findProductById((int) $item['product_id']);
-                if ($product->getStatus() !== 'enabled') {
-                    throw new \FOSSBilling\InformationException('Unable to complete order. One or more of the selected products are invalid.');
+        try {
+            return $this->di['db']->transaction(function () use ($ca, $cart, $client, $currency, $currencyCode, $gateway_id, $taxed, $promo, $promoProductService, &$reservedOrderIds, &$reservedCount) {
+                // Set default client currency.
+                if (!$client->currency) {
+                    $client->currency = $currencyCode;
+                    $this->di['db']->store($client);
                 }
 
-                $requestedQty = $this->getRequestedQuantity($item);
-                $productId = (int) $product->getId();
-                $requestedProductQuantities[$productId] = ($requestedProductQuantities[$productId] ?? 0) + $requestedQty;
-                if (!$this->isStockAvailable($product, $requestedProductQuantities[$productId])) {
-                    throw new \FOSSBilling\InformationException('Unable to complete order. One or more selected products are out of stock.');
+                if ($client->currency != $currencyCode) {
+                    throw new \FOSSBilling\InformationException('Selected currency :selected does not match your profile currency :code. Please change cart currency to continue.', [':selected' => $currencyCode, ':code' => $client->currency]);
                 }
 
-                /*
-                 * Convert the domain name to lowercase letters.
-                 * Using a capital letter in a domain name still points to the same name, so this isn't going to break anything
-                 * It will, however, avoid instances like this when a domain name is entered with a capital letter:
-                 * https://github.com/boxbilling/boxbilling/discussions/1022#discussioncomment-1311819
-                 */
-                if ($item['type'] === 'domain' || $item['type'] === 'hosting') {
-                    $item['register_sld'] = (isset($item['register_sld'])) ? strtolower($item['register_sld']) : null;
-                    $item['transfer_sld'] = (isset($item['transfer_sld'])) ? strtolower($item['transfer_sld']) : null;
-                    $item['sld'] = (isset($item['sld'])) ? strtolower($item['sld']) : null;
-                    $item['domain']['owndomain_sld'] = (isset($item['domain']['owndomain_sld'])) ? strtolower($item['domain']['owndomain_sld']) : null;
-                    $item['domain']['register_sld'] = (isset($item['domain']['register_sld'])) ? strtolower($item['domain']['register_sld']) : null;
-                    $item['domain']['transfer_sld'] = (isset($item['domain']['transfer_sld'])) ? strtolower($item['domain']['transfer_sld']) : null;
+                $orders = [];
+                $invoice_items = [];
+                $invoiceModel = null;
+                $master_order = null;
+                $requestedProductQuantities = [];
+                $i = 0;
 
-                    // Domain TLD must begin with a period - add if not present for owndomain.
-                    $item['domain']['owndomain_tld'] = (isset($item['domain']['owndomain_tld'])) ? (str_contains($item['domain']['owndomain_tld'], '.') ? $item['domain']['owndomain_tld'] : '.' . $item['domain']['owndomain_tld']) : null;
-                }
+                foreach ($this->getCartProducts($cart) as $p) {
+                    $item = $this->cartProductToApiArray($p);
 
-                $order = $this->di['db']->dispense('ClientOrder');
-                $order->client_id = $client->id;
-                $order->promo_id = $cart->promo_id;
-                $order->product_id = $item['product_id'];
-                $order->form_id = $item['form_id'];
+                    $product = $this->getProductService()->findProductById((int) $item['product_id']);
+                    if ($product->getStatus() !== 'enabled') {
+                        throw new \FOSSBilling\InformationException('Unable to complete order. One or more of the selected products are invalid.');
+                    }
 
-                $order->group_id = $cart->id;
-                $order->group_master = ($i == 0);
-                $order->invoice_option = 'issue-invoice';
-                $order->title = $item['title'];
-                $order->currency = $currencyCode;
-                $order->service_type = $item['type'];
-                $order->unit = $item['unit'] ?? null;
-                $order->period = $item['period'] ?? null;
-                $order->quantity = $item['quantity'] ?? null;
-                $order->price = $item['price'] * $currency->getConversionRate();
-                $order->discount = $item['discount_price'] * $currency->getConversionRate();
-                $order->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
-                $order->notes = $item['notes'] ?? null;
-                $order->config = json_encode($item);
-                $order->created_at = date('Y-m-d H:i:s');
-                $order->updated_at = date('Y-m-d H:i:s');
-                $this->di['db']->store($order);
+                    $requestedQty = $this->getRequestedQuantity($item);
+                    $productId = (int) $product->getId();
+                    $requestedProductQuantities[$productId] = ($requestedProductQuantities[$productId] ?? 0) + $requestedQty;
+                    if (!$this->isStockAvailable($product, $requestedProductQuantities[$productId])) {
+                        throw new \FOSSBilling\InformationException('Unable to complete order. One or more selected products are out of stock.');
+                    }
 
-                $orders[] = $order;
+                    /*
+                     * Convert the domain name to lowercase letters.
+                     * Using a capital letter in a domain name still points to the same name, so this isn't going to break anything
+                     * It will, however, avoid instances like this when a domain name is entered with a capital letter:
+                     * https://github.com/boxbilling/boxbilling/discussions/1022#discussioncomment-1311819
+                     */
+                    if ($item['type'] === 'domain' || $item['type'] === 'hosting') {
+                        $item['register_sld'] = (isset($item['register_sld'])) ? strtolower($item['register_sld']) : null;
+                        $item['transfer_sld'] = (isset($item['transfer_sld'])) ? strtolower($item['transfer_sld']) : null;
+                        $item['sld'] = (isset($item['sld'])) ? strtolower($item['sld']) : null;
+                        $item['domain']['owndomain_sld'] = (isset($item['domain']['owndomain_sld'])) ? strtolower($item['domain']['owndomain_sld']) : null;
+                        $item['domain']['register_sld'] = (isset($item['domain']['register_sld'])) ? strtolower($item['domain']['register_sld']) : null;
+                        $item['domain']['transfer_sld'] = (isset($item['domain']['transfer_sld'])) ? strtolower($item['domain']['transfer_sld']) : null;
 
-                // Reserve promo capacity at order creation time.
-                if ($promo instanceof Promo && $promoProductService !== null) {
-                    $promoProductService->reservePromoForOrder($promo, $order);
-                }
+                        // Domain TLD must begin with a period - add if not present for owndomain.
+                        $item['domain']['owndomain_tld'] = (isset($item['domain']['owndomain_tld'])) ? (str_contains($item['domain']['owndomain_tld'], '.') ? $item['domain']['owndomain_tld'] : '.' . $item['domain']['owndomain_tld']) : null;
+                    }
 
-                $orderService = $this->di['mod_service']('order');
-                $orderService->saveStatusChange($order, 'Order Created');
+                    $order = $this->di['db']->dispense('ClientOrder');
+                    $order->client_id = $client->id;
+                    $order->promo_id = $cart->promo_id;
+                    $order->product_id = $item['product_id'];
+                    $order->form_id = $item['form_id'];
 
-                $invoice_items[] = [
-                    'title' => $order->title,
-                    'price' => $order->price,
-                    'quantity' => $order->quantity,
-                    'unit' => $order->unit,
-                    'period' => $order->period,
-                    'taxed' => $taxed,
-                    'type' => \Model_InvoiceItem::TYPE_ORDER,
-                    'rel_id' => $order->id,
-                    'task' => \Model_InvoiceItem::TASK_ACTIVATE,
-                ];
+                    $order->group_id = $cart->id;
+                    $order->group_master = ($i == 0);
+                    $order->invoice_option = 'issue-invoice';
+                    $order->title = $item['title'];
+                    $order->currency = $currencyCode;
+                    $order->service_type = $item['type'];
+                    $order->unit = $item['unit'] ?? null;
+                    $order->period = $item['period'] ?? null;
+                    $order->quantity = $item['quantity'] ?? null;
+                    $order->price = $item['price'] * $currency->getConversionRate();
+                    $order->discount = $item['discount_price'] * $currency->getConversionRate();
+                    $order->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
+                    $order->notes = $item['notes'] ?? null;
+                    $order->config = json_encode($item);
+                    $order->created_at = date('Y-m-d H:i:s');
+                    $order->updated_at = date('Y-m-d H:i:s');
+                    $this->di['db']->store($order);
 
-                if ($order->discount > 0) {
+                    $orders[] = $order;
+
+                    // Reserve promo capacity at order creation time.
+                    if ($promo instanceof Promo && $promoProductService !== null) {
+                        $promoProductService->reservePromoForOrder($promo, $order);
+                        $reservedOrderIds[] = (int) $order->id;
+                        ++$reservedCount;
+                    }
+
+                    $orderService = $this->di['mod_service']('order');
+                    $orderService->saveStatusChange($order, 'Order Created');
+
                     $invoice_items[] = [
-                        'title' => __trans('Discount: :product', [':product' => $order->title]),
-                        'price' => $order->discount * -1,
-                        'quantity' => 1,
-                        'unit' => 'discount',
+                        'title' => $order->title,
+                        'price' => $order->price,
+                        'quantity' => $order->quantity,
+                        'unit' => $order->unit,
+                        'period' => $order->period,
+                        'taxed' => $taxed,
+                        'type' => \Model_InvoiceItem::TYPE_ORDER,
                         'rel_id' => $order->id,
-                        'taxed' => $taxed,
+                        'task' => \Model_InvoiceItem::TASK_ACTIVATE,
                     ];
+
+                    if ($order->discount > 0) {
+                        $invoice_items[] = [
+                            'title' => __trans('Discount: :product', [':product' => $order->title]),
+                            'price' => $order->discount * -1,
+                            'quantity' => 1,
+                            'unit' => 'discount',
+                            'rel_id' => $order->id,
+                            'taxed' => $taxed,
+                        ];
+                    }
+
+                    if ($item['setup_price'] > 0) {
+                        $setup_price = ($item['setup_price'] * $currency->getConversionRate()) - ($item['discount_setup'] * $currency->getConversionRate());
+                        $invoice_items[] = [
+                            'title' => __trans(':product setup', [':product' => $order->title]),
+                            'price' => $setup_price,
+                            'quantity' => 1,
+                            'unit' => 'service',
+                            'taxed' => $taxed,
+                        ];
+                    }
+
+                    if ($master_order === null) {
+                        $master_order = $order;
+                    }
+
+                    ++$i;
                 }
 
-                if ($item['setup_price'] > 0) {
-                    $setup_price = ($item['setup_price'] * $currency->getConversionRate()) - ($item['discount_setup'] * $currency->getConversionRate());
-                    $invoice_items[] = [
-                        'title' => __trans(':product setup', [':product' => $order->title]),
-                        'price' => $setup_price,
-                        'quantity' => 1,
-                        'unit' => 'service',
-                        'taxed' => $taxed,
-                    ];
-                }
+                if ($ca['total'] > 0) { // crete invoice if order total > 0
+                    $invoiceService = $this->di['mod_service']('Invoice');
+                    $invoiceModel = $invoiceService->prepareInvoice($client, ['client_id' => $client->id, 'items' => $invoice_items, 'gateway_id' => $gateway_id]);
 
-                if ($master_order === null) {
-                    $master_order = $order;
-                }
+                    $clientBalanceService = $this->di['mod_service']('Client', 'Balance');
+                    $balanceAmount = $clientBalanceService->getClientBalance($client);
+                    $useCredits = $balanceAmount >= $ca['total'];
 
-                ++$i;
-            }
+                    $invoiceService->approveInvoice($invoiceModel, ['id' => $invoiceModel->id, 'use_credits' => $useCredits]);
 
-            if ($ca['total'] > 0) { // crete invoice if order total > 0
-                $invoiceService = $this->di['mod_service']('Invoice');
-                $invoiceModel = $invoiceService->prepareInvoice($client, ['client_id' => $client->id, 'items' => $invoice_items, 'gateway_id' => $gateway_id]);
-
-                $clientBalanceService = $this->di['mod_service']('Client', 'Balance');
-                $balanceAmount = $clientBalanceService->getClientBalance($client);
-                $useCredits = $balanceAmount >= $ca['total'];
-
-                $invoiceService->approveInvoice($invoiceModel, ['id' => $invoiceModel->id, 'use_credits' => $useCredits]);
-
-                if ($invoiceModel->status == \Model_Invoice::STATUS_UNPAID) {
-                    foreach ($orders as $order) {
-                        $order->unpaid_invoice_id = $invoiceModel->id;
-                        $this->di['db']->store($order);
+                    if ($invoiceModel->status == \Model_Invoice::STATUS_UNPAID) {
+                        foreach ($orders as $order) {
+                            $order->unpaid_invoice_id = $invoiceModel->id;
+                            $this->di['db']->store($order);
+                        }
                     }
                 }
-            }
 
-            if ($promo instanceof Promo && $promoProductService !== null) {
-                $redemptionStatus = isset($invoiceModel) && $invoiceModel instanceof \Model_Invoice && $invoiceModel->status === \Model_Invoice::STATUS_UNPAID
-                    ? \Box\Mod\Product\Entity\PromoRedemption::STATUS_RESERVED
-                    : \Box\Mod\Product\Entity\PromoRedemption::STATUS_COMMITTED;
-                $checkoutInvoice = $invoiceModel instanceof \Model_Invoice ? $invoiceModel : null;
+                if ($promo instanceof Promo && $promoProductService !== null) {
+                    $redemptionStatus = isset($invoiceModel) && $invoiceModel instanceof \Model_Invoice && $invoiceModel->status === \Model_Invoice::STATUS_UNPAID
+                        ? \Box\Mod\Product\Entity\PromoRedemption::STATUS_RESERVED
+                        : \Box\Mod\Product\Entity\PromoRedemption::STATUS_COMMITTED;
+                    $checkoutInvoice = $invoiceModel instanceof \Model_Invoice ? $invoiceModel : null;
 
-                $promoProductService->createCheckoutPromoRedemptions($promo, $client, $orders, $checkoutInvoice, $redemptionStatus);
-            }
+                    $promoProductService->createCheckoutPromoRedemptions($promo, $client, $orders, $checkoutInvoice, $redemptionStatus);
+                }
 
-            // Activate orders after the checkout state is durably persisted.
-            $orderService = $this->di['mod_service']('Order');
-            $ids = [];
-            foreach ($orders as $order) {
-                $ids[] = $order->id;
-                $oa = $orderService->toApiArray($order, false, $client);
-                $product = $this->getProductService()->findProductById((int) $oa['product_id']);
+                // Activate orders after the checkout state is durably persisted.
+                $orderService = $this->di['mod_service']('Order');
+                $ids = [];
+                foreach ($orders as $order) {
+                    $ids[] = $order->id;
+                    $oa = $orderService->toApiArray($order, false, $client);
+                    $product = $this->getProductService()->findProductById((int) $oa['product_id']);
 
+                    try {
+                        if ($product->getSetup() == \Box\Mod\Product\Service::SETUP_AFTER_ORDER) {
+                            $orderService->activateOrder($order);
+                        }
+
+                        if ($ca['total'] <= 0 && $product->getSetup() == \Box\Mod\Product\Service::SETUP_AFTER_PAYMENT && $oa['total'] - $oa['discount'] <= 0) {
+                            $orderService->activateOrder($order);
+                        }
+
+                        if ($ca['total'] > 0 && $product->getSetup() == \Box\Mod\Product\Service::SETUP_AFTER_PAYMENT && $invoiceModel->status == \Model_Invoice::STATUS_PAID) {
+                            $orderService->activateOrder($order);
+                        }
+                    } catch (\Exception $e) {
+                        error_log($e->getMessage());
+                        $status = 'error';
+                        $notes = "Order could not be activated after checkout due to error: {$e->getMessage()}.";
+                        $orderService->orderStatusAdd($order, $status, $notes);
+                    }
+                }
+
+                return [
+                    $master_order,
+                    $invoiceModel ?? null,
+                    $ids,
+                ];
+            });
+        } catch (\Throwable $e) {
+            if ($promo instanceof Promo && $reservedCount > 0) {
                 try {
-                    if ($product->getSetup() == \Box\Mod\Product\Service::SETUP_AFTER_ORDER) {
-                        $orderService->activateOrder($order);
-                    }
-
-                    if ($ca['total'] <= 0 && $product->getSetup() == \Box\Mod\Product\Service::SETUP_AFTER_PAYMENT && $oa['total'] - $oa['discount'] <= 0) {
-                        $orderService->activateOrder($order);
-                    }
-
-                    if ($ca['total'] > 0 && $product->getSetup() == \Box\Mod\Product\Service::SETUP_AFTER_PAYMENT && $invoiceModel->status == \Model_Invoice::STATUS_PAID) {
-                        $orderService->activateOrder($order);
-                    }
-                } catch (\Exception $e) {
-                    error_log($e->getMessage());
-                    $status = 'error';
-                    $notes = "Order could not be activated after checkout due to error: {$e->getMessage()}.";
-                    $orderService->orderStatusAdd($order, $status, $notes);
+                    $promoProductService->compensateCheckoutPromoFailure($promo, $reservedOrderIds, $reservedCount);
+                } catch (\Throwable $compensationError) {
+                    $this->di['logger']->error('Failed to compensate promo checkout failure', [
+                        'exception' => $compensationError->getMessage(),
+                        'promo_id' => $promo->getId(),
+                    ]);
                 }
             }
 
-            return [
-                $master_order,
-                $invoiceModel ?? null,
-                $ids,
-            ];
-        });
+            throw $e;
+        }
     }
 
     public function usePromo(Promo $promo): void

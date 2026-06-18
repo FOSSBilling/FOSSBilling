@@ -1572,6 +1572,60 @@ test('release reserved promo redemptions for invoice releases reservations and d
     expect($di['em']->flushCalls)->toBe(1);
 });
 
+test('compensateCheckoutPromoFailure deletes orphaned redemptions and decrements usage', function (): void {
+    $service = new Service();
+
+    $promo = productTestCreatePromoEntity(7)->setCode('COMPENSATE');
+
+    $redemption = new PromoRedemption();
+    $redemption->setPromoId(7);
+    $redemption->setClientOrderId(42);
+    $redemption->setStatus(PromoRedemption::STATUS_COMMITTED);
+
+    $redemptionRepo = Mockery::mock(PromoRedemptionRepository::class);
+    $redemptionRepo->shouldReceive('findBy')
+        ->once()
+        ->with(['promoId' => 7, 'clientOrderId' => [42, 43]])
+        ->andReturn([$redemption]);
+
+    $promoRepo = Mockery::mock(PromoRepository::class);
+    $promoRepo->shouldReceive('decrementUsage')
+        ->once()
+        ->with(7, 2, Mockery::type(DateTimeInterface::class));
+
+    $emMock = new class($promoRepo, $redemptionRepo) {
+        public int $removeCalls = 0;
+
+        public function __construct(
+            private object $promoRepo,
+            private object $redemptionRepo,
+        ) {
+        }
+
+        public function getRepository(string $class): object
+        {
+            return $class === Promo::class ? $this->promoRepo : $this->redemptionRepo;
+        }
+
+        public function remove(object $entity): void
+        {
+            ++$this->removeCalls;
+        }
+
+        public function flush(): void
+        {
+        }
+    };
+
+    $di = container();
+    $di['em'] = $emMock;
+
+    $service->setDi($di);
+    $service->compensateCheckoutPromoFailure($promo, [42, 43], 2);
+
+    expect($emMock->removeCalls)->toBe(1);
+});
+
 test('update promo', function (): void {
     $service = new Service();
     $data = [

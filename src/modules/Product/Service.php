@@ -182,7 +182,6 @@ class Service implements InjectionAwareInterface
 
     public function toApiArray(Product $model, $deep = true, $identity = null): array
     {
-        $addons = $this->getAddonsApiArray($model);
         $config = json_decode($this->getProductConfigJson($model) ?? '', true) ?? [];
         $pricing = $this->getProductPricingArray($model);
         $starting_from = $this->getStartingFromPrice($model);
@@ -1334,6 +1333,45 @@ class Service implements InjectionAwareInterface
         }
 
         $this->di['em']->flush();
+    }
+
+    /**
+     * Compensate for a failed checkout by removing orphaned promo redemption
+     * rows and decrementing the promo usage counter.
+     *
+     * Needed because RedBean's transaction (orders/invoices) operates on a
+     * separate database connection from Doctrine (promo redemptions, promo.used).
+     * When the RedBean transaction rolls back, Doctrine-side changes persist
+     * orphaned unless explicitly cleaned up.
+     *
+     * @param int[] $orderIds      Order IDs from the rolled-back RedBean transaction
+     * @param int   $reservedCount Number of successful reservePromoForOrder() calls
+     */
+    public function compensateCheckoutPromoFailure(Promo $promo, array $orderIds, int $reservedCount): void
+    {
+        if ($reservedCount <= 0) {
+            return;
+        }
+
+        $promoId = (int) ($this->getPromoSourceArray($promo)['id'] ?? 0);
+        if ($promoId <= 0) {
+            return;
+        }
+
+        if ($orderIds !== []) {
+            $redemptions = $this->getPromoRedemptionRepository()->findBy([
+                'promoId' => $promoId,
+                'clientOrderId' => $orderIds,
+            ]);
+            foreach ($redemptions as $redemption) {
+                $this->di['em']->remove($redemption);
+            }
+            if ($redemptions !== []) {
+                $this->di['em']->flush();
+            }
+        }
+
+        $this->getPromoRepository()->decrementUsage($promoId, $reservedCount, new \DateTimeImmutable());
     }
 
     /**

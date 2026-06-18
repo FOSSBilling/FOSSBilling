@@ -680,7 +680,6 @@ class Service implements InjectionAwareInterface
             $config['period'] = $period;
         }
         $se = $this->di['mod_service']('service' . $this->getProductType($product));
-        $se = $this->di['mod_service']('service' . $this->getProductType($product));
         if (method_exists($se, 'attachOrderConfig')) {
             $config = $se->attachOrderConfig($product, $config);
         }
