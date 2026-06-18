@@ -490,6 +490,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['promo_id' => 'Promo ID is missing'])]
     public function promo_redemption_get_list($data)
     {
+        $this->checkPermissions('product', 'view');
+
         /** @var \Box\Mod\Product\Repository\PromoRedemptionRepository $repo */
         $repo = $this->getService()->getPromoRedemptionRepository();
 

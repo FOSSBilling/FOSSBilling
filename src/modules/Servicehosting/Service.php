@@ -79,7 +79,7 @@ class Service implements InjectionAwareInterface
     public function getCartProductTitle(Product $product, array $data)
     {
         try {
-            $data = array_merge(json_decode($product->config ?? '', true) ?? [], $data);
+            $data = array_merge(json_decode($product->getConfig() ?? '', true) ?? [], $data);
             [$sld, $tld] = $this->_getDomainTuple($data);
 
             return __trans(':hosting for :domain', [':hosting' => $product->getTitle(), ':domain' => $sld . $tld]);

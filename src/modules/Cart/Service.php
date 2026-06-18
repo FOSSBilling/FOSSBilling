@@ -121,7 +121,7 @@ class Service implements InjectionAwareInterface
         unset($data['id']);
         unset($data['addons']);
 
-        $productConfig = json_decode($product->config ?? '', true) ?? [];
+        $productConfig = json_decode($product->getConfig() ?? '', true) ?? [];
 
         // Collect all domains that will be added: top-level (direct domain product) and
         // nested under $data['domain'] (domain bundled with a hosting product).
