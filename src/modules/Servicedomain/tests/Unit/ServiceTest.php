@@ -16,6 +16,14 @@ use Box\Mod\System\Service as SystemService;
 
 use function Tests\Helpers\container;
 
+class ServicedomainServiceSyncProbe extends Service
+{
+    public function syncWhoisPublic(Model_ServiceDomain $model, Model_ClientOrder $order): void
+    {
+        $this->syncWhois($model, $order);
+    }
+}
+
 afterEach(function (): void {
     Mockery::close();
 });
@@ -955,6 +963,53 @@ test('syncs expiration date', function (): void {
     $result = $service->syncExpirationDate($model);
 
     expect($result)->toBeNull();
+});
+
+test('syncWhois stores null dates when registrar dates are unavailable', function (): void {
+    $whois = new Registrar_Domain();
+    $contact = new Registrar_Domain_Contact();
+    $contact->setName('Test User')
+        ->setEmail('test@example.com')
+        ->setCompany('Example')
+        ->setAddress1('Address 1')
+        ->setAddress2('Address 2')
+        ->setCountry('US')
+        ->setCity('City')
+        ->setState('State')
+        ->setZip('12345')
+        ->setTelCc('1')
+        ->setTel('5551234567');
+    $whois->setContactRegistrar($contact);
+
+    $adapter = Mockery::mock(Registrar_Adapter_Custom::class);
+    $adapter->shouldReceive('getDomainDetails')
+        ->once()
+        ->andReturn($whois);
+
+    $service = Mockery::mock(ServicedomainServiceSyncProbe::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('_getD')
+        ->once()
+        ->andReturn([new Registrar_Domain(), $adapter]);
+
+    $model = new Model_ServiceDomain();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+
+    $db = Mockery::mock(Box_Database::class);
+    $db->shouldReceive('store')
+        ->once()
+        ->with($model);
+
+    $di = container();
+    $di['db'] = $db;
+    $service->setDi($di);
+
+    $service->syncWhoisPublic($model, $order);
+
+    expect($model->expires_at)->toBeNull()
+        ->and($model->registered_at)->toBeNull();
 });
 
 test('converts to api array', function (?Model_Admin $identity, string $dbLoadCalled): void {

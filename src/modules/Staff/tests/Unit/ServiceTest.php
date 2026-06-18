@@ -191,6 +191,28 @@ test('hasPermission returns true for admin role', function (): void {
     expect($result)->toBeTrue();
 });
 
+test('hasPermission falls back to cron admin when no admin is logged in', function (): void {
+    $cronAdmin = new Model_Admin();
+    $cronAdmin->loadBean(new Tests\Helpers\DummyBean());
+    $cronAdmin->role = Model_Admin::ROLE_CRON;
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('getCronAdmin')
+        ->once()
+        ->andReturn($cronAdmin);
+
+    $auth = Mockery::mock(Box_Authorization::class);
+    $auth->shouldReceive('isAdminLoggedIn')
+        ->once()
+        ->andReturn(false);
+
+    $di = new Pimple\Container();
+    $di['auth'] = $auth;
+    $service->setDi($di);
+
+    expect($service->hasPermission(null, 'order'))->toBeTrue();
+});
+
 test('hasPermission returns false for staff with empty permissions', function (): void {
     $member = new Model_Admin();
     $member->loadBean(new Tests\Helpers\DummyBean());

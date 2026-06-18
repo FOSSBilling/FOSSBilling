@@ -143,6 +143,8 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
             $params[$contactType . '_Language'] = 'en';
         }
 
+        $params['transferauthinfo'] = $domain->getEpp();
+
         $result = $this->_process('/Domain/Transfer/Initiate', $params);
 
         return $result['status'] == 'SUCCESS';
@@ -454,9 +456,11 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
                         || ($result['privatewhois'] == 'PARTIAL');
         }
 
-        $domain->setExpirationTime(strtotime((string) $result['expirationdate']));
+        $expirationTime = isset($result['expirationdate']) ? strtotime((string) $result['expirationdate']) : false;
+
+        $domain->setExpirationTime($expirationTime === false ? null : $expirationTime);
         $domain->setPrivacyEnabled($privacy);
-        $domain->setEpp($result['transferauthinfo']);
+        $domain->setEpp($result['transferauthinfo'] ?? '');
         $domain->setContactRegistrar($c);
 
         return $domain;

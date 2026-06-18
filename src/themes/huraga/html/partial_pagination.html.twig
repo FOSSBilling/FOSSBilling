@@ -1,4 +1,5 @@
-{% if list.pages > 1 and (url is defined and url is not null) %}
+{% if list.pages > 1 %}
+    {% set url = url|default(guest.system_current_url|split('?')|first) %}
     {% set pageParam = page_param|default('page') %}
     {% set hash = hash|default('') %}
     {% set currentPageRaw = request.(pageParam)|default(1) %}

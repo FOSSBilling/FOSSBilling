@@ -423,6 +423,11 @@
                                     <input class="form-control" id="email-from-address" type="email" name="from_email" value="{{ params.from_email|default('') }}" placeholder="{{ company.email }}">
                                     <small class="form-hint">{{ 'Leave blank to use company public email'|trans }}</small>
                                 </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="email-reply-to">{{ 'Reply-To Email'|trans }}</label>
+                                    <input class="form-control" id="email-reply-to" type="email" name="reply_to" value="{{ params.reply_to|default('') }}" placeholder="{{ company.email }}">
+                                    <small class="form-hint">{{ 'Leave blank to omit the Reply-To header.'|trans }}</small>
+                                </div>
                                 <div class="col-12">
                                     <label class="form-label" for="email-signature">{{ 'Email Signature'|trans }}</label>
                                     <textarea class="form-control" id="email-signature" name="signature" rows="4" placeholder="{{ company.signature }}">{{ params.signature|default('') }}</textarea>
