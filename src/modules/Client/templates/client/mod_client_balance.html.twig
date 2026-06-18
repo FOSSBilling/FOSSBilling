@@ -1,6 +1,5 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
-
-{% import "macro_functions.html.twig" as mf %}
+{% set active_menu = 'payments' %}
 
 {% block meta_title %}{{ 'Wallet'|trans }}{% endblock %}
 {% block breadcrumb %} <li class="breadcrumb-item active" aria-current="page">{{ 'Wallet'|trans }}</li>{% endblock %}
@@ -39,7 +38,7 @@
                             <tr>
                                 <td>{{ tx.description }}</td>
                                 <td>{{ tx.created_at|format_date }}</td>
-                                <td>{{ tx.amount|format_currency(tx.currency ?? default_currency) }}</td>
+                                <td>{{ (tx.amount ?? 0)|format_currency(tx.currency ?? default_currency) }}</td>
                             </tr>
                         {% else %}
                             <tr>
@@ -54,7 +53,7 @@
                         </tr>
                         </tfoot>
                     </table>
-                    {{ include('partial_pagination.html.twig', { 'list': transactions }) }}
+                    {{ include('partial_pagination.html.twig', { 'list': transactions, 'url': 'client/balance' }) }}
                 </div>
             </div>
         </div>

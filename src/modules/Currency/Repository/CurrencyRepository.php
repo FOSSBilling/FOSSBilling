@@ -15,6 +15,7 @@ namespace Box\Mod\Currency\Repository;
 use Box\Mod\Currency\Entity\Currency;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use Symfony\Component\Intl\Currencies;
 
 class CurrencyRepository extends EntityRepository
 {
@@ -27,9 +28,8 @@ class CurrencyRepository extends EntityRepository
     {
         $qb = $this->createQueryBuilder('c');
 
-        // Apply search filter if provided
         if (!empty($data['search'])) {
-            $qb->andWhere('(c.code LIKE :search OR c.title LIKE :search)')
+            $qb->andWhere('c.code LIKE :search')
                ->setParameter('search', '%' . $data['search'] . '%');
         }
 
@@ -61,20 +61,18 @@ class CurrencyRepository extends EntityRepository
         return $this->findOneBy(['isDefault' => true]);
     }
 
-    /**
-     * Get all currency code/title pairs.
-     */
     public function getPairs(): array
     {
         $qb = $this->createQueryBuilder('c')
-            ->select('c.code', 'c.title')
+            ->select('c.code')
             ->orderBy('c.code', 'ASC');
 
         $results = $qb->getQuery()->getResult();
 
         $pairs = [];
         foreach ($results as $result) {
-            $pairs[$result['code']] = $result['title'];
+            $code = $result['code'];
+            $pairs[$code] = Currencies::getName($code);
         }
 
         return $pairs;

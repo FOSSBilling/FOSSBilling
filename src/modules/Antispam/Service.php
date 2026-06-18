@@ -17,7 +17,6 @@ use EmailChecker\Utilities;
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
-use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\Cache\ItemInterface;
 
 class Service implements InjectionAwareInterface
@@ -38,6 +37,22 @@ class Service implements InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View antispam settings'),
+                'description' => __trans('Allows the staff member to view antispam configuration and blocked IPs.'),
+            ],
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage antispam settings'),
+                'description' => __trans('Allows the staff member to block and unblock IP addresses.'),
+            ],
+        ];
     }
 
     public static function onBeforeClientSignUp(\Box_Event $event): void
@@ -111,13 +126,10 @@ class Service implements InjectionAwareInterface
     {
         $di = $event->getDi();
         $params = $event->getParameters();
-        $params = is_array($params) ? $params : [];
 
         $data = [
             'ip' => $params['ip'] ?? null,
             'email' => $params['email'] ?? null,
-            'recaptcha_challenge_field' => $params['recaptcha_challenge_field'] ?? null,
-            'recaptcha_response_field' => $params['recaptcha_response_field'] ?? null,
         ];
 
         $config = $di['mod_config']('Antispam');
@@ -138,7 +150,7 @@ class Service implements InjectionAwareInterface
         if (isset($config['captcha_enabled']) && $config['captcha_enabled']) {
             $provider = $config['captcha_provider'] ?? 'recaptcha_v2';
 
-            if ($provider === 'recaptcha_v2') {
+            if ($provider === 'recaptcha_v2' || $provider === 'recaptcha_v3') {
                 if (!isset($config['captcha_recaptcha_privatekey']) || $config['captcha_recaptcha_privatekey'] == '') {
                     throw new \FOSSBilling\InformationException("To use reCAPTCHA you must get an API key from <a href='https://www.google.com/recaptcha/admin/create'>here</a>");
                 }
@@ -147,7 +159,7 @@ class Service implements InjectionAwareInterface
                     throw new \FOSSBilling\InformationException('You have to complete the CAPTCHA to continue');
                 }
 
-                $client = HttpClient::create(['bindto' => BIND_TO]);
+                $client = $di['http_client'];
                 $response = $client->request('POST', 'https://google.com/recaptcha/api/siteverify', [
                     'body' => [
                         'secret' => $config['captcha_recaptcha_privatekey'],
@@ -160,6 +172,26 @@ class Service implements InjectionAwareInterface
                 if (!isset($content['success']) || $content['success'] !== true) {
                     throw new \FOSSBilling\InformationException('reCAPTCHA verification failed.');
                 }
+
+                if ($provider === 'recaptcha_v3') {
+                    $threshold = (float) ($config['captcha_recaptcha_v3_threshold'] ?? 0.5);
+                    if (!is_finite($threshold)) {
+                        $threshold = 0.5;
+                    }
+                    $threshold = min(1.0, max(0.0, $threshold));
+                    $score = isset($content['score']) ? (float) $content['score'] : 0.0;
+
+                    if ($score < $threshold) {
+                        throw new \FOSSBilling\InformationException('reCAPTCHA verification failed.');
+                    }
+
+                    $expectedAction = 'fossbilling_submit';
+                    $action = $params['g-recaptcha-action'] ?? $expectedAction;
+
+                    if ($action !== $expectedAction || ($content['action'] ?? null) !== $expectedAction) {
+                        throw new \FOSSBilling\InformationException('reCAPTCHA verification failed.');
+                    }
+                }
             } elseif ($provider === 'turnstile') {
                 if (empty($config['turnstile_secret_key'])) {
                     throw new \FOSSBilling\InformationException('Cloudflare Turnstile secret key is not configured.');
@@ -170,7 +202,7 @@ class Service implements InjectionAwareInterface
                     throw new \FOSSBilling\InformationException('Please complete the CAPTCHA verification.');
                 }
 
-                $client = HttpClient::create(['bindto' => BIND_TO]);
+                $client = $di['http_client'];
                 $response = $client->request('POST', 'https://challenges.cloudflare.com/turnstile/v0/siteverify', [
                     'body' => [
                         'secret' => $config['turnstile_secret_key'],
@@ -193,7 +225,7 @@ class Service implements InjectionAwareInterface
                     throw new \FOSSBilling\InformationException('Please complete the CAPTCHA verification.');
                 }
 
-                $client = HttpClient::create(['bindto' => BIND_TO]);
+                $client = $di['http_client'];
                 $response = $client->request('POST', 'https://hcaptcha.com/siteverify', [
                     'body' => [
                         'secret' => $config['hcaptcha_secret_key'],
@@ -236,7 +268,8 @@ class Service implements InjectionAwareInterface
             $honeypotField = $config['honeypot_field'] ?? 'bio';
 
             if (!empty($params[$honeypotField])) {
-                $this->di['logger']->info("Potential spam registration blocked. Reason: honeypot field was not empty.");
+                $this->di['logger']->info('Potential spam registration blocked. Reason: honeypot field was not empty.');
+
                 throw new \FOSSBilling\InformationException('Registration failed.');
             }
         }
@@ -251,7 +284,7 @@ class Service implements InjectionAwareInterface
     public function isInStopForumSpamDatabase(array $data): bool
     {
         $url = 'https://www.stopforumspam.com/api';
-        $client = HttpClient::create(['bindto' => BIND_TO]);
+        $client = $this->di['http_client'];
         $queryParams = array_merge($data, ['f' => 'json']);
         $response = $client->request(
             'GET',
@@ -275,7 +308,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Your IP address is blacklisted in the Stop Forum Spam database');
         }
 
-        return false;
+        return true;
     }
 
     /**
@@ -321,7 +354,7 @@ class Service implements InjectionAwareInterface
         return $this->di['cache']->get('tempMailDB', function (ItemInterface $item) {
             $item->expiresAfter(86400); // The list is updated once every 24 hours, so we will cache it for that long
 
-            $client = HttpClient::create(['bindto' => BIND_TO]);
+            $client = $this->di['http_client'];
             $response = $client->request('GET', 'https://raw.githubusercontent.com/7c/fakefilter/main/txt/data.txt');
             $dbPath = Path::join(PATH_CACHE, 'tempEmailDB.txt');
 
@@ -333,7 +366,7 @@ class Service implements InjectionAwareInterface
                 return [];
             }
 
-            @$database = file($dbPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            $database = file($dbPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
             $this->filesystem->remove($dbPath);
             if (!$database) {
                 $item->expiresAfter(3600);

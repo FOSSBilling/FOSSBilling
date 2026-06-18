@@ -18,7 +18,7 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Downloadable service management.
  */
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Upload file to product. Uses $_FILES array so make sure your form is
@@ -29,9 +29,11 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function upload($data)
     {
+        $this->checkPermissions('servicedownloadable', 'manage');
+
         $model = $this->di['mod_service']('product')->findProductById((int) $data['id']);
 
-        $request = $this->di['request'];
+        $request = $this->getDi()['request'];
         if (!$request->files->has('file_data')) {
             throw new \FOSSBilling\Exception('File was not uploaded.');
         }
@@ -53,9 +55,11 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['order_id' => 'Order ID (order_id) was not passed'])]
     public function update($data)
     {
-        $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
+        $this->checkPermissions('servicedownloadable', 'manage');
 
-        $orderService = $this->di['mod_service']('order');
+        $order = $this->getDi()['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
+
+        $orderService = $this->getDi()['mod_service']('order');
         $serviceDownloadable = $orderService->getOrderService($order);
         if (!$serviceDownloadable instanceof \Model_ServiceDownloadable) {
             throw new \FOSSBilling\Exception('Order is not activated');
@@ -73,6 +77,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function config_save($data)
     {
+        $this->checkPermissions('servicedownloadable', 'manage');
+
         $model = $this->di['mod_service']('product')->findProductById((int) $data['id']);
 
         $service = $this->getService();
@@ -92,6 +98,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function send_file($data): Response
     {
+        $this->checkPermissions('servicedownloadable', 'manage');
+
         $model = $this->di['mod_service']('product')->findProductById((int) $data['id']);
 
         $service = $this->getService();

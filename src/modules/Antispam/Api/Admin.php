@@ -12,11 +12,13 @@ declare(strict_types=1);
 
 namespace Box\Mod\Antispam\Api;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     public function get_config($data): array
     {
-        $config = $this->di['mod_config']('Antispam');
+        $this->checkPermissions('antispam', 'view');
+
+        $config = $this->getDi()['mod_config']('Antispam');
 
         return [
             'block_ips' => $config['block_ips'] ?? false,
@@ -25,6 +27,7 @@ class Admin extends \Api_Abstract
             'captcha_provider' => $config['captcha_provider'] ?? 'recaptcha_v2',
             'captcha_recaptcha_publickey' => $config['captcha_recaptcha_publickey'] ?? null,
             'captcha_recaptcha_privatekey' => $config['captcha_recaptcha_privatekey'] ?? null,
+            'captcha_recaptcha_v3_threshold' => $config['captcha_recaptcha_v3_threshold'] ?? 0.5,
             'turnstile_site_key' => $config['turnstile_site_key'] ?? null,
             'turnstile_secret_key' => $config['turnstile_secret_key'] ?? null,
             'hcaptcha_site_key' => $config['hcaptcha_site_key'] ?? null,
@@ -67,25 +70,27 @@ class Admin extends \Api_Abstract
 
     private function saveBlockedIpsConfig(array $blocked_ips, bool $enabled): void
     {
-        $config = $this->di['mod_config']('Antispam');
+        $config = $this->getDi()['mod_config']('Antispam');
         $config['block_ips'] = $enabled;
         $config['blocked_ips'] = implode(PHP_EOL, $blocked_ips);
         $config['ext'] = 'mod_antispam';
-        $this->di['mod_service']('extension')->setConfig($config);
+        $this->getDi()['mod_service']('extension')->setConfig($config);
     }
 
     public function block_ip($data): array
     {
+        $this->checkPermissions('antispam', 'manage');
+
         $ip = $this->normalizeIp($data['ip'] ?? null);
 
-        $config = $this->di['mod_config']('Antispam');
+        $config = $this->getDi()['mod_config']('Antispam');
         $blocked_ips = $this->getBlockedIpsFromConfig($config);
 
         if (in_array($ip, $blocked_ips, true)) {
             throw new \FOSSBilling\InformationException(':ip is already blocked.', [':ip' => $ip]);
         }
 
-        if ((string) $this->di['request']->getClientIp() === $ip) {
+        if ((string) $this->getDi()['request']->getClientIp() === $ip) {
             throw new \FOSSBilling\InformationException('You cannot block :ip as it is the IP you are making requests from.', [':ip' => $ip]);
         }
 
@@ -97,9 +102,11 @@ class Admin extends \Api_Abstract
 
     public function unblock_ip($data): array
     {
+        $this->checkPermissions('antispam', 'manage');
+
         $ip = $this->normalizeIp($data['ip'] ?? null);
 
-        $config = $this->di['mod_config']('Antispam');
+        $config = $this->getDi()['mod_config']('Antispam');
         $blocked_ips = $this->getBlockedIpsFromConfig($config);
 
         $key = array_search($ip, $blocked_ips, true);
@@ -115,7 +122,9 @@ class Admin extends \Api_Abstract
 
     public function get_blocked_ips($data): array
     {
-        $config = $this->di['mod_config']('Antispam');
+        $this->checkPermissions('antispam', 'view');
+
+        $config = $this->getDi()['mod_config']('Antispam');
         $blocked_ips = $this->getBlockedIpsFromConfig($config);
 
         return [

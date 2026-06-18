@@ -104,20 +104,14 @@ class Server_Manager_Directadmin extends Server_Manager
 
     /**
      * Returns the port number for the DirectAdmin server.
-     * If the port is set in the configuration, verify that it's a valid port number (0 - 65535).
-     * If a valid port is not set in the configuration, it defaults to '2222'.
+     * If the port is set in the configuration, verify that it's a valid port number (1 - 65535).
+     * If a valid port is not set in the configuration, it defaults to 2222.
      *
-     * @return int|string the port number
+     * @return int the port number
      */
-    public function getPort(): int|string
+    public function getPort(): int
     {
-        $port = $this->_config['port'];
-
-        if (filter_var($port, FILTER_VALIDATE_INT) !== false && $port >= 0 && $port <= 65535) {
-            return $this->_config['port'];
-        }
-
-        return 2222;
+        return FOSSBilling\Tools::normalizePort($this->_config['port'] ?? null, 2222);
     }
 
     /**
@@ -756,18 +750,18 @@ class Server_Manager_Directadmin extends Server_Manager
         } catch (TransportExceptionInterface|HttpExceptionInterface $error) {
             // If there is an error while sending the request, throw an exception
             $exception = new Server_Exception('HttpClientException: :error', [':error' => $error->getMessage()]);
-            $this->getLog()->err($exception->getMessage());
+            $this->getLog()->error($exception->getMessage());
 
             throw $exception;
         }
 
         // Check if the response data contains HTML, as some endpoints return HTML if the request fails (such as auth requests)
-        if (strlen(strstr($data, '<!doctype html>')) > 0 || strlen(strstr($data, 'DirectAdmin Login')) > 0) {
+        if (str_contains($data, '<!doctype html>') || str_contains($data, 'DirectAdmin Login')) {
             throw new Server_Exception('Failed to connect to the :type: server. Please verify your credentials and configuration', [':type:' => 'DirectAdmin']);
         }
 
         // Check if the response data contains an error message indicating that the request cannot be executed
-        if (strlen(strstr($data, "The request you've made cannot be executed because it does not exist in your authority level")) > 0) {
+        if (str_contains($data, "The request you've made cannot be executed because it does not exist in your authority level")) {
             throw new Server_Exception('Server Manager DirectAdmin Error: "The request you have made cannot be executed because it does not exist in your authority level"');
         }
 
@@ -777,7 +771,7 @@ class Server_Manager_Directadmin extends Server_Manager
         // If the response contains an error, log the error and throw an exception
         if (isset($response['error']) && $response['error'] == 1) {
             $placeholders = [':action:' => $command, ':type:' => 'DirectAdmin'];
-            $this->getLog()->err('Failed to ' . $command . ' on the DirectAdmin server: ' . $response['text'] . ': ' . $response['details']);
+            $this->getLog()->error('Failed to ' . $command . ' on the DirectAdmin server: ' . $response['text'] . ': ' . $response['details']);
 
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }

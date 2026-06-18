@@ -19,7 +19,7 @@ namespace Box\Mod\Support\Api;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
-class Client extends \Api_Abstract
+class Client extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get client tickets list.
@@ -34,10 +34,10 @@ class Client extends \Api_Abstract
         $data['client_id'] = $identity->id;
 
         [$sql, $bindings] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $ticketArr) {
-            $ticket = $this->di['db']->getExistingModelById('SupportTicket', $ticketArr['id'], 'Ticket not found');
+            $ticket = $this->getDi()['db']->getExistingModelById('SupportTicket', $ticketArr['id'], 'Ticket not found');
             $pager['list'][$key] = $this->getService()->toApiArray($ticket, true, $this->getIdentity());
         }
 
@@ -85,7 +85,7 @@ class Client extends \Api_Abstract
         // Sanitize content to prevent XSS attacks
         $data['content'] = \FOSSBilling\Tools::sanitizeContent($data['content'], true);
 
-        $helpdesk = $this->di['db']->getExistingModelById('SupportHelpdesk', $data['support_helpdesk_id'], 'Helpdesk invalid');
+        $helpdesk = $this->getDi()['db']->getExistingModelById('SupportHelpdesk', $data['support_helpdesk_id'], 'Helpdesk invalid');
 
         $client = $this->getIdentity();
 
@@ -107,7 +107,7 @@ class Client extends \Api_Abstract
             ':id' => $data['id'],
             ':client_id' => $client->id,
         ];
-        $ticket = $this->di['db']->findOne('SupportTicket', 'id = :id AND client_id = :client_id', $bindings);
+        $ticket = $this->getDi()['db']->findOne('SupportTicket', 'id = :id AND client_id = :client_id', $bindings);
 
         if (!$ticket instanceof \Model_SupportTicket) {
             throw new \FOSSBilling\InformationException('Ticket not found');

@@ -38,15 +38,68 @@ class ProductCategory
     #[ORM\Column(name: 'updated_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTime $updatedAt = null;
 
-    public function getId(): ?int { return $this->id; }
-    public function getTitle(): ?string { return $this->title; }
-    public function setTitle(?string $title): self { $this->title = $title; return $this; }
-    public function getDescription(): ?string { return $this->description; }
-    public function setDescription(?string $description): self { $this->description = $description; return $this; }
-    public function getIconUrl(): ?string { return $this->iconUrl; }
-    public function setIconUrl(?string $iconUrl): self { $this->iconUrl = $iconUrl; return $this; }
-    public function getCreatedAt(): ?\DateTime { return $this->createdAt; }
-    public function setCreatedAt(?\DateTime $createdAt): self { $this->createdAt = $createdAt; return $this; }
-    public function getUpdatedAt(): ?\DateTime { return $this->updatedAt; }
-    public function setUpdatedAt(?\DateTime $updatedAt): self { $this->updatedAt = $updatedAt; return $this; }
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function getTitle(): ?string
+    {
+        return $this->title;
+    }
+
+    public function setTitle(?string $title): self
+    {
+        $this->title = $title;
+
+        return $this;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(?string $description): self
+    {
+        $this->description = $description;
+
+        return $this;
+    }
+
+    public function getIconUrl(): ?string
+    {
+        return $this->iconUrl;
+    }
+
+    public function setIconUrl(?string $iconUrl): self
+    {
+        $this->iconUrl = $iconUrl;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTime
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(?\DateTime $createdAt): self
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getUpdatedAt(): ?\DateTime
+    {
+        return $this->updatedAt;
+    }
+
+    public function setUpdatedAt(?\DateTime $updatedAt): self
+    {
+        $this->updatedAt = $updatedAt;
+
+        return $this;
+    }
 }

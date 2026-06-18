@@ -80,7 +80,13 @@ class ServiceTransaction implements InjectionAwareInterface
             return $id;
         }
 
-        $this->processTransaction($id);
+        try {
+            $this->processTransaction($id);
+        } catch (\Throwable $e) {
+            $this->markTransactionError($id, $e);
+
+            throw $e;
+        }
 
         return $id;
     }
@@ -186,7 +192,7 @@ class ServiceTransaction implements InjectionAwareInterface
             $supported = in_array('ipn_hash', $columns, true) && in_array('transaction_ipn_hash_idx', $indexes, true);
         } catch (\Throwable $e) {
             if (isset($this->di['logger'])) {
-                $this->di['logger']->warn('Could not determine whether transaction.ipn_hash exists; disabling IPN hash dedupe: %s', $e->getMessage());
+                $this->di['logger']->warning('Could not determine whether transaction.ipn_hash exists; disabling IPN hash dedupe: %s', $e->getMessage());
             }
 
             return false;
@@ -223,7 +229,7 @@ class ServiceTransaction implements InjectionAwareInterface
             'txn_status' => $model->txn_status,
             'gateway_id' => $model->gateway_id,
             'gateway' => $gateway,
-            'amount' => $model->amount,
+            'amount' => (float) ($model->amount ?? 0),
             'currency' => $model->currency,
             'type' => $model->type,
             'status' => $model->status,
@@ -420,8 +426,10 @@ class ServiceTransaction implements InjectionAwareInterface
      * Uses conditional UPDATE to prevent race conditions when multiple
      * workers attempt to process the same transaction simultaneously.
      *
-     * Accepts 'received' status immediately, and allows stale 'processing'
-     * transactions to be reclaimed after the recovery timeout.
+     * Accepts 'received' status immediately, allows stale 'processing'
+     * transactions to be reclaimed after the recovery timeout, and allows
+     * 'error' transactions to be retried (e.g. via the admin Process button
+     * or PayPal IPN retries).
      *
      * @param int $id Transaction ID
      *
@@ -430,12 +438,13 @@ class ServiceTransaction implements InjectionAwareInterface
     public function claimForProcessing(int $id): bool
     {
         $affectedRows = $this->di['db']->exec(
-            'UPDATE transaction SET status = ?, updated_at = ? WHERE id = ? AND (status = ? OR (status = ? AND (updated_at IS NULL OR updated_at <= ?)))',
+            'UPDATE transaction SET status = ?, updated_at = ? WHERE id = ? AND (status IN (?, ?) OR (status = ? AND (updated_at IS NULL OR updated_at <= ?)))',
             [
                 \Model_Transaction::STATUS_PROCESSING,
                 date('Y-m-d H:i:s'),
                 $id,
                 \Model_Transaction::STATUS_RECEIVED,
+                \Model_Transaction::STATUS_ERROR,
                 \Model_Transaction::STATUS_PROCESSING,
                 $this->getProcessingRecoveryThreshold(),
             ]
@@ -448,12 +457,8 @@ class ServiceTransaction implements InjectionAwareInterface
     {
         try {
             $output = $this->processTransaction($model->id);
-        } catch (\FOSSBilling\Exception $e) {
-            $model->status = \Model_Transaction::STATUS_ERROR;
-            $model->error = $e->getMessage();
-            $model->error_code = $e->getCode();
-            $model->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($model);
+        } catch (\Throwable $e) {
+            $this->markTransactionError((int) $model->id, $e);
 
             throw $e;
         }
@@ -462,6 +467,29 @@ class ServiceTransaction implements InjectionAwareInterface
         $this->di['logger']->info('Processed transaction #%s', $model->id);
 
         return !empty($output) ? $output : true;
+    }
+
+    /**
+     * Mark a transaction as errored due to a processing failure.
+     *
+     * Reloads the transaction from the database so the status is current, and
+     * only marks it as errored if it has not already been processed, ensuring
+     * a successful processing is never clobbered by a stale exception.
+     */
+    private function markTransactionError(int $id, \Throwable $e): void
+    {
+        $tx = $this->di['db']->load('Transaction', $id);
+        if (!$tx instanceof \Model_Transaction || $tx->status === \Model_Transaction::STATUS_PROCESSED) {
+            return;
+        }
+
+        $tx->status = \Model_Transaction::STATUS_ERROR;
+        $tx->error = $e->getMessage();
+        $tx->error_code = $e->getCode();
+        $tx->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($tx);
+
+        $this->di['logger']->error('Failed to process transaction #%s: %s', $id, $e->getMessage());
     }
 
     /**

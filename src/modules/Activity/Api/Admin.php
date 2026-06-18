@@ -18,7 +18,7 @@ namespace Box\Mod\Activity\Api;
 
 use FOSSBilling\PaginationOptions;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get a list of activity messages.
@@ -29,9 +29,11 @@ class Admin extends \Api_Abstract
      */
     public function log_get_list($data)
     {
+        $this->checkPermissions('activity', 'view');
+
         $data['min_priority'] ??= 6;
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             if (isset($item['staff_id'])) {
@@ -56,6 +58,8 @@ class Admin extends \Api_Abstract
      */
     public function log($data): bool
     {
+        $this->checkPermissions('activity', 'manage');
+
         if (!isset($data['m'])) {
             return false;
         }
@@ -79,9 +83,9 @@ class Admin extends \Api_Abstract
      */
     public function log_email($data)
     {
-        if (!isset($data['subject'])) {
-            error_log('Email was not logged. Subject not passed');
+        $this->checkPermissions('activity', 'manage');
 
+        if (!isset($data['subject'])) {
             return false;
         }
 

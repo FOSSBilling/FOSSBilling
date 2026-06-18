@@ -18,7 +18,7 @@ namespace Box\Mod\Formbuilder\Api;
 
 use FOSSBilling\Validation\Api\RequiredParams;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Create custom order form for product.
@@ -32,6 +32,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['name' => 'Form name was not provided'])]
     public function create_form($data)
     {
+        $this->checkPermissions('formbuilder', 'manage');
+
         if (isset($data['type']) && !in_array(strtolower($data['type']), ['horizontal', 'default'])) {
             throw new \FOSSBilling\Exception('Form style was not found in predefined list', null, 3657);
         }
@@ -69,9 +71,14 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['type' => 'Form field type is invalid', 'form_id' => 'Form id was not passed'])]
     public function add_field($data)
     {
+        $this->checkPermissions('formbuilder', 'manage');
+
         $service = $this->getService();
         if (!isset($data['type']) || !$service->isValidFieldType($data['type'])) {
             throw new \FOSSBilling\Exception('Form field type is invalid', null, 2684);
+        }
+        if (!isset($data['form_id'])) {
+            throw new \FOSSBilling\InformationException('Form id was not passed', null, 1822);
         }
         if (isset($data['options']) && is_array($data['options']) && !$service->isArrayUnique($data['options'])) {
             throw new \FOSSBilling\InformationException('This input type must have unique values', null, 3658);
@@ -89,10 +96,12 @@ class Admin extends \Api_Abstract
      */
     public function get_form($data)
     {
+        $this->checkPermissions('formbuilder', 'view');
+
         $required = [
             'id' => 'Form id was not passed',
         ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data, null, 2391);
+        $this->getDi()['validator']->checkRequiredParamsForArray($required, $data, null, 2391);
 
         $service = $this->getService();
 
@@ -108,10 +117,12 @@ class Admin extends \Api_Abstract
      */
     public function get_form_fields($data)
     {
+        $this->checkPermissions('formbuilder', 'view');
+
         $required = [
             'form_id' => 'Form id was not passed',
         ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data, null, 1822);
+        $this->getDi()['validator']->checkRequiredParamsForArray($required, $data, null, 1822);
 
         $service = $this->getService();
 
@@ -127,10 +138,12 @@ class Admin extends \Api_Abstract
      */
     public function get_field($data)
     {
+        $this->checkPermissions('formbuilder', 'view');
+
         $required = [
             'id' => 'Field id was not passed',
         ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data, null, 3547);
+        $this->getDi()['validator']->checkRequiredParamsForArray($required, $data, null, 3547);
 
         $service = $this->getService();
 
@@ -146,6 +159,8 @@ class Admin extends \Api_Abstract
      */
     public function get_forms()
     {
+        $this->checkPermissions('formbuilder', 'view');
+
         $service = $this->getService();
 
         return $service->getForms();
@@ -158,10 +173,12 @@ class Admin extends \Api_Abstract
      */
     public function delete_form($data): bool
     {
+        $this->checkPermissions('formbuilder', 'manage');
+
         $required = [
             'id' => 'Form id was not passed',
         ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data, null, 9958);
+        $this->getDi()['validator']->checkRequiredParamsForArray($required, $data, null, 9958);
 
         $service = $this->getService();
         $service->removeForm($data['id']);
@@ -176,10 +193,12 @@ class Admin extends \Api_Abstract
      */
     public function delete_field($data): bool
     {
+        $this->checkPermissions('formbuilder', 'manage');
+
         $required = [
             'id' => 'Field id was not passed',
         ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data, null, 9959);
+        $this->getDi()['validator']->checkRequiredParamsForArray($required, $data, null, 9959);
 
         $service = $this->getService();
         $service->removeField($data);
@@ -215,10 +234,12 @@ class Admin extends \Api_Abstract
      */
     public function update_field($data)
     {
+        $this->checkPermissions('formbuilder', 'manage');
+
         $required = [
             'id' => 'Field id was not passed',
         ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data, null, 9958);
+        $this->getDi()['validator']->checkRequiredParamsForArray($required, $data, null, 9958);
 
         $service = $this->getService();
         if (isset($data['options']) && !$service->isArrayUnique($data['options'])) {
@@ -233,6 +254,8 @@ class Admin extends \Api_Abstract
      */
     public function get_pairs($data)
     {
+        $this->checkPermissions('formbuilder', 'view');
+
         $service = $this->getService();
 
         return $service->getFormPairs();
@@ -248,6 +271,14 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['form_id' => 'Form id was not passed', 'name' => 'Form name was not passed'])]
     public function copy_form($data)
     {
+        $this->checkPermissions('formbuilder', 'manage');
+
+        $required = [
+            'form_id' => 'Form id was not passed',
+            'name' => 'Form name was not passed',
+        ];
+        $this->getDi()['validator']->checkRequiredParamsForArray($required, $data, null, 1822);
+
         $service = $this->getService();
 
         return $service->duplicateForm($data);
@@ -261,6 +292,15 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['form_id' => 'Form id was not passed', 'form_name' => 'Form name was not passed', 'type' => 'Form type was not passed'])]
     public function update_form_settings($data)
     {
+        $this->checkPermissions('formbuilder', 'manage');
+
+        $required = [
+            'form_id' => 'Form id was not passed',
+            'form_name' => 'Form name was not passed',
+            'type' => 'Form type was not passed',
+        ];
+        $this->getDi()['validator']->checkRequiredParamsForArray($required, $data, null, 1822);
+
         $type = $data['type'] ?? null;
         if ($type !== 'horizontal' && $type !== 'default') {
             throw new \FOSSBilling\Exception('Field type not supported', null, 3207);

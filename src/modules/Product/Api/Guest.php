@@ -18,7 +18,7 @@ namespace Box\Mod\Product\Api;
 
 use Box\Mod\Product\Entity\Product;
 
-class Guest extends \Api_Abstract
+class Guest extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get paginated list of products.

@@ -18,7 +18,7 @@ namespace Box\Mod\Hook\Api;
 
 use FOSSBilling\PaginationOptions;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get paginated list of hooks.
@@ -27,12 +27,12 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('hook', 'manage_hooks');
+        $this->checkPermissions('hook', 'view');
 
         $service = $this->getService();
         [$sql, $params] = $service->getSearchQuery($data);
 
-        return $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        return $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
     }
 
     /**
@@ -44,25 +44,26 @@ class Admin extends \Api_Abstract
      */
     public function call($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('hook', 'trigger_hooks');
+        $this->checkPermissions('hook', 'trigger_hooks');
 
         if (!isset($data['event']) || empty($data['event'])) {
-            error_log('Invoked event call without providing event name');
+            $this->getDi()['logger']->warning('Invoked event call without providing event name');
 
             return false;
         }
 
         $event = $data['event'];
         $params = $data['params'] ?? null;
+        // @phpstan-ignore if.alwaysFalse
         if (DEBUG) {
             try {
-                $this->di['logger']->info($event . ': ' . var_export($params, true));
+                $this->getDi()['logger']->info($event . ': ' . var_export($params, true));
             } catch (\Exception $e) {
                 error_log($e->getMessage());
             }
         }
 
-        return $this->di['events_manager']->fire($data);
+        return $this->getDi()['events_manager']->fire($data);
     }
 
     /**
@@ -75,7 +76,7 @@ class Admin extends \Api_Abstract
      */
     public function batch_connect($data)
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('hook', 'manage_hooks');
+        $this->checkPermissions('hook', 'manage_hooks');
 
         $mod = $data['mod'] ?? null;
         $service = $this->getService();

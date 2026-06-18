@@ -1,4 +1,5 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% set active_menu = 'dashboard' %}
 
 {% block meta_title %}{{ 'Client Area'|trans }}{% endblock %}
 {% block page_header %}{{ 'Dashboard'|trans }}{% endblock %}
@@ -16,6 +17,8 @@
 {% import "macro_functions.html.twig" as mf %}
 
 {% block content %}
+    {{ render_widgets('client.index.dashboard.content.before') }}
+
     {% if settings.showcase_enabled %}
         <div class="alert alert-info" role="alert">
             <p>{{ (settings.showcase_text ?? '')|markdown_to_html }}</p>
@@ -31,10 +34,12 @@
         {% set dashboard = client.index_get_dashboard %}
         {% set profile = dashboard.profile %}
 
+        {{ render_widgets('client.index.dashboard.client.before', { 'dashboard': dashboard, 'profile': profile }) }}
+
         {% if dashboard.tickets.on_hold > 0 %}
             <div class="row">
                 <div class="col-md-12">
-                    {% for i, ticket in dashboard.recent_tickets %}
+                    {% for ticket in dashboard.recent_tickets %}
                         {% if ticket.status == 'on_hold' %}
                             <div class="alert alert-info d-flex justify-content-between" role="alert">
                                 <span>Ticket <strong>#{{ ticket.id }}</strong> was replied to {{ ticket.updated_at|timeago }} {{ 'ago'|trans }}.</span>
@@ -66,7 +71,7 @@
                                 <dd class="col-sm-8">{{ profile.email }}</dd>
                                 <dt class="col-sm-4 text-muted small fw-normal">{{ 'Balance'|trans }}</dt>
                                 {% if profile.currency is not null %}
-                                    <dd class="col-sm-8">{{ profile.balance|format_currency(profile.currency ?? default_currency) }}</dd>
+                                    <dd class="col-sm-8">{{ profile.balance|format_currency(profile.currency) }}</dd>
                                 {% else %}
                                     <dd class="col-sm-8">-</dd>
                                 {% endif %}
@@ -154,7 +159,7 @@
                         <div class="card-body p-1">
                             {% if dashboard.recent_orders %}
                                 <div class="list-group list-group-flush">
-                                    {% for i, order in dashboard.recent_orders %}
+                                    {% for order in dashboard.recent_orders %}
                                         <a href='{{ "order/service/manage/#{order.id}"|url }}'
                                            class="list-group-item d-flex justify-content-between align-items-center" aria-current="true">
                                             <div>
@@ -186,7 +191,7 @@
                         <div class="card-body p-1">
                             {% if dashboard.recent_tickets %}
                                 <div class="list-group list-group-flush">
-                                    {% for i, ticket in dashboard.recent_tickets %}
+                                    {% for ticket in dashboard.recent_tickets %}
                                         <a href='{{ "support/ticket/#{ticket.id}"|url }}'
                                            class="list-group-item d-flex justify-content-between align-items-center" aria-current="true">
                                             <div>
@@ -211,7 +216,11 @@
                 </div>
             </div>
         </div>
+
+        {{ render_widgets('client.index.dashboard.client.after', { 'dashboard': dashboard, 'profile': profile }) }}
     {% else %}
+        {{ render_widgets('client.index.dashboard.guest.before') }}
+
         <div class="row">
             <div class="col-md-6">
                 <div class="card mb-4">
@@ -219,7 +228,7 @@
                     <div class="card-body">
                         <p>{{ 'You are currently logged out'|trans }}</p>
                         <div class="d-flex gap-2">
-                            <a class="btn btn-sm  btn-primary" href="{{ 'login'|url }}">{{ 'Login'|trans }}</a>
+                            <a class="btn btn-sm btn-primary" href="{{ 'login'|url }}">{{ 'Login'|trans }}</a>
                             <a class="btn btn-sm btn-dark" href="{{ 'signup'|url }}">{{ 'Register'|trans }}</a>
                         </div>
                     </div>
@@ -266,5 +275,9 @@
                 </div>
             {% endif %}
         </div>
+
+        {{ render_widgets('client.index.dashboard.guest.after') }}
     {% endif %}
+
+    {{ render_widgets('client.index.dashboard.content.after') }}
 {% endblock %}

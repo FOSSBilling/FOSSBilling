@@ -15,13 +15,15 @@ namespace Box\Mod\Servicelicense\Api;
 /**
  *Service license management.
  */
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get available licensing plugins.
      */
     public function plugin_get_pairs(array $data): array
     {
+        $this->checkPermissions('servicelicense', 'manage');
+
         $plugins = $this->getService()->getLicensePlugins();
         $result = [];
         foreach ($plugins as $plugin) {
@@ -50,6 +52,8 @@ class Admin extends \Api_Abstract
      */
     public function update($data)
     {
+        $this->checkPermissions('servicelicense', 'manage');
+
         $s = $this->_getService($data);
 
         return $this->getService()->update($s, $data);
@@ -62,6 +66,8 @@ class Admin extends \Api_Abstract
      */
     public function reset($data)
     {
+        $this->checkPermissions('servicelicense', 'manage');
+
         $s = $this->_getService($data);
 
         return $this->getService()->reset($s);
@@ -75,11 +81,11 @@ class Admin extends \Api_Abstract
     public function _getService(array $data)
     {
         $required = ['order_id' => 'Order ID is required'];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+        $this->getDi()['validator']->checkRequiredParamsForArray($required, $data);
 
-        $order = $this->di['db']->getExistingModelById('clientOrder', $data['order_id'], 'Order not found');
+        $order = $this->getDi()['db']->getExistingModelById('clientOrder', $data['order_id'], 'Order not found');
 
-        $orderService = $this->di['mod_service']('order');
+        $orderService = $this->getDi()['mod_service']('order');
         $s = $orderService->getOrderService($order);
         if (!$s instanceof \Model_ServiceLicense) {
             throw new \FOSSBilling\Exception('Order is not activated');

@@ -47,7 +47,7 @@ FROM php-base AS composer-base
 
 WORKDIR /app
 
-COPY --from=composer:2@sha256:b09bccd91a78fe8a9ab4b33d707b862e8fe54fec17782e32683ad2a69c46867d /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2@sha256:e8fdff913656c23e90ebbe0d7c55ab078c2aefdbb53ff79a73af5cc0921d5b81 /usr/bin/composer /usr/bin/composer
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends git \
@@ -57,15 +57,19 @@ RUN apt-get update \
 FROM composer-base AS php-vendor
 
 COPY composer.json composer.lock ./
+COPY src/library ./src/library
+COPY src/modules ./src/modules
 
-RUN --mount=type=cache,target=/tmp/composer-cache \
+RUN --mount=type=cache,target=/tmp/composer-cache,id=composer-prod \
   COMPOSER_CACHE_DIR=/tmp/composer-cache \
   composer install --prefer-dist --no-dev --optimize-autoloader --no-interaction --no-progress
 
 FROM composer-base AS php-dev-vendor
 COPY composer.json composer.lock ./
+COPY src/library ./src/library
+COPY src/modules ./src/modules
 
-RUN --mount=type=cache,target=/tmp/composer-cache \
+RUN --mount=type=cache,target=/tmp/composer-cache,id=composer-dev \
   COMPOSER_CACHE_DIR=/tmp/composer-cache \
   composer install --prefer-dist --optimize-autoloader --no-interaction --no-progress
 
@@ -77,11 +81,12 @@ COPY package.json package-lock.json ./
 COPY src/themes/admin_default/package.json src/themes/admin_default/package.json
 COPY src/themes/huraga/package.json src/themes/huraga/package.json
 
-RUN --mount=type=cache,target=/root/.npm npm ci
+RUN --mount=type=cache,target=/root/.npm CYPRESS_INSTALL_BINARY=0 npm ci
 
 COPY src/themes/admin_default ./src/themes/admin_default
 COPY src/themes/huraga ./src/themes/huraga
 COPY src/modules ./src/modules
+COPY frontend ./frontend
 
 RUN NODE_ENV=production npm run build
 
@@ -96,9 +101,12 @@ ARG INSTALL_TRANSLATIONS=true
 ARG TRANSLATIONS_URL=https://github.com/FOSSBilling/locale/releases/latest/download/translations.zip
 ARG TRANSLATIONS_SHA256=
 
+COPY --from=composer:2@sha256:e8fdff913656c23e90ebbe0d7c55ab078c2aefdbb53ff79a73af5cc0921d5b81 /usr/bin/composer /usr/bin/composer
+COPY composer.json ./composer.json
 COPY src ./src
 COPY README.md LICENSE ./src/
 COPY --from=php-vendor /app/src/vendor ./src/vendor
+COPY --from=frontend-assets /app/src/public/assets ./src/public/assets
 COPY --from=frontend-assets /app/src/themes/admin_default/assets/build ./src/themes/admin_default/assets/build
 COPY --from=frontend-assets /app/src/themes/huraga/assets/build ./src/themes/huraga/assets/build
 
@@ -115,7 +123,10 @@ RUN set -eux; \
   FOSSBILLING_VERSION="${FOSSBILLING_VERSION}" \
   FOSSBILLING_VERSION_TRUNCATE="${FOSSBILLING_VERSION_TRUNCATE}" \
   SENTRY_DSN="${SENTRY_DSN}" \
-  php -r '$version = getenv("FOSSBILLING_VERSION") ?: "0.0.1"; $truncate = (int) (getenv("FOSSBILLING_VERSION_TRUNCATE") ?: 0); if ($truncate > 0) { $version = substr($version, 0, $truncate); } $versionFile = "./src/library/FOSSBilling/Version.php"; file_put_contents($versionFile, str_replace("0.0.1", $version, file_get_contents($versionFile))); $dsn = getenv("SENTRY_DSN"); if ($dsn !== false && $dsn !== "") { $sentryFile = "./src/library/FOSSBilling/SentryHelper.php"; file_put_contents($sentryFile, str_replace("--replace--this--during--release--process--", $dsn, file_get_contents($sentryFile))); }'; \
+  php -r '$version = getenv("FOSSBILLING_VERSION") ?: "0.0.1"; $truncate = (int) (getenv("FOSSBILLING_VERSION_TRUNCATE") ?: 0); if ($truncate > 0) { $version = substr($version, 0, $truncate); } $versionFile = "./src/library/FOSSBilling/Version.php"; $contents = file_get_contents($versionFile); $quote = chr(39); $pattern = "/public const string VERSION = " . $quote . "[^" . $quote . "]+" . $quote . ";/"; $replacement = "public const string VERSION = " . var_export($version, true) . ";"; $contents = preg_replace($pattern, $replacement, $contents, 1, $count); if ($contents === null || $count !== 1) { fwrite(STDERR, "Failed to replace FOSSBilling version.\n"); exit(1); } file_put_contents($versionFile, $contents); $dsn = getenv("SENTRY_DSN"); if ($dsn !== false && $dsn !== "") { $sentryFile = "./src/library/FOSSBilling/SentryHelper.php"; file_put_contents($sentryFile, str_replace("--replace--this--during--release--process--", $dsn, file_get_contents($sentryFile))); }'; \
+  php -r '$composer = json_decode(file_get_contents("./composer.json"), true, 512, JSON_THROW_ON_ERROR); $composer["autoload"]["psr-4"]["Box\\Mod\\"] = "modules/"; $composer["autoload"]["classmap"] = ["library/"]; $composer["config"]["vendor-dir"] = "vendor"; file_put_contents("./src/composer.json", json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . PHP_EOL);'; \
+  composer --no-plugins dump-autoload --working-dir=./src --no-dev --optimize --no-interaction; \
+  rm ./composer.json ./src/composer.json; \
   chmod -R u=rwX,go=rX ./src
 
 FROM scratch AS release-artifact
@@ -130,8 +141,8 @@ COPY --from=release-tree --chown=www-data:www-data /app/src/ ./
 
 RUN set -eux; \
   mkdir -p data/cache data/log data/uploads; \
-  touch config.php /var/log/cron.log; \
-  chown -R www-data:www-data data config.php /var/log/cron.log; \
+  touch /var/log/cron.log; \
+  chown -R www-data:www-data data /var/log/cron.log; \
   echo '*/5 * * * * /usr/local/bin/php /var/www/html/cron.php >> /var/log/cron.log 2>&1' > /tmp/www-data.cron; \
   crontab -u www-data /tmp/www-data.cron; \
   rm /tmp/www-data.cron
@@ -144,9 +155,8 @@ WORKDIR /workspace
 
 COPY --from=release-tree /app/src ./src
 COPY --from=php-dev-vendor /app/src/vendor ./src/vendor
-COPY composer.json composer.lock phpstan.neon phpstan-baseline.neon phpunit.xml.dist phpunit-live.xml ./
+COPY composer.json composer.lock phpstan.neon phpstan-baseline.neon phpunit.xml.dist ./
 COPY tests ./tests
-COPY tests-legacy ./tests-legacy
 
 RUN set -eux; \
   php -r '$config = require "./src/config-sample.php"; file_put_contents("./src/config.php", "<?php\nreturn " . var_export($config, true) . ";\n");'; \

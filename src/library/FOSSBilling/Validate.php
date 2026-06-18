@@ -14,7 +14,6 @@ namespace FOSSBilling;
 
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
-use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\Cache\ItemInterface;
 
 class Validate
@@ -43,6 +42,9 @@ class Validate
     public function isSldValid(string $sld): bool
     {
         $sld = ltrim($sld, '.');
+        if ($sld === '') {
+            return false;
+        }
         $sld = idn_to_ascii($sld);
         if ($sld === false) {
             return false;
@@ -68,6 +70,9 @@ class Validate
     public function isTldValid(string $tld): bool
     {
         $tld = ltrim($tld, '.');
+        if ($tld === '') {
+            return false;
+        }
         $tld = idn_to_ascii($tld);
         if ($tld === false) {
             return false;
@@ -77,7 +82,7 @@ class Validate
         $validTlds = $this->di['cache']->get('validTlds', function (ItemInterface $item): array {
             $item->expiresAfter(86400);
 
-            $client = HttpClient::create(['bindto' => BIND_TO]);
+            $client = $this->di['http_client'];
             $response = $client->request('GET', 'https://publicsuffix.org/list/public_suffix_list.dat');
             $dbPath = Path::join(PATH_CACHE, 'tlds.txt');
 
@@ -200,6 +205,14 @@ class Validate
                 throw new InformationException($msg, $variables, $code);
             }
         }
+    }
+
+    /**
+     * Check if an email address is valid.
+     */
+    public function isEmailValid(string $email): bool
+    {
+        return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
     }
 
     public function isBirthdayValid($birthday = ''): bool

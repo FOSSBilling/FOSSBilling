@@ -36,7 +36,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 'location' => 'invoice',
                 'label' => __trans('Invoices'),
                 'uri' => $this->di['url']->adminLink('invoice'),
-                'class' => 'invoices',
+                'class' => 'receipt',
             ],
             'subpages' => [
                 [
@@ -55,7 +55,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 ],
                 [
                     'location' => 'invoice',
-                    'label' => __trans('Transaction Overview'),
+                    'label' => __trans('Transactions'),
                     'uri' => $this->di['url']->adminLink('invoice/transactions'),
                     'index' => 400,
                     'class' => '',

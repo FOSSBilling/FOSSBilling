@@ -1,4 +1,5 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% set active_menu = 'support' %}
 
 {% import "macro_functions.html.twig" as mf %}
 
@@ -11,7 +12,7 @@
 {% endblock %}
 
 {% block head %}
-    {{ mf.wysiwyg('.editor-textarea') }}
+    {{ wysiwyg('.editor-textarea') }}
 {% endblock %}
 
 {% block content %}
@@ -64,7 +65,7 @@
                             {{ message.author.name }}
                         </span>
                         <br/>
-                        {{ mf.avatar(message.author.email, 60, 'db-avatar img-thumbnail d-none d-md-block') }}
+                        {{ avatar(message.author.email, 60, 'img-thumbnail d-none d-md-block', null, 'div') }}
                     </div>
                     <div class="col-10">
                         <header>#{{ i+1 }} | {{ message.created_at|format_date }}
@@ -111,7 +112,7 @@
                     const quote = this.getAttribute('message-quote');
                     if (replyTextarea.editor) {
                         replyTextarea.editor.setData(quote);
-                        replyTextarea.editor.editing.view.focus();
+                        replyTextarea.editor.focus();
                     } else {
                         replyTextarea.value = quote;
                         replyTextarea.focus();
@@ -123,7 +124,7 @@
         document.getElementById('new-ticket-button').addEventListener('click', function(event) {
             event.preventDefault();
 
-            API.guest.post("support/ticket_close", { hash: '{{ ticket.hash }}' },
+            FOSSBilling.api.guest.post("support/ticket_close", { hash: '{{ ticket.hash }}' },
                 () => {
                     FOSSBilling.message("Ticket was closed");
                     window.location.reload();

@@ -9,7 +9,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
@@ -21,10 +21,22 @@
 {% endblock %}
 
 {% set active_menu = 'support' %}
+{% set has_filter_panel = true %}
+{% set filter_panel_id = 'page-search-filters' %}
+{% set filter_panel_open = request_has_filters %}
+{% set public_ticket_toolbar_actions %}
+    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newPublicTicketModal">
+        <svg class="icon">
+            <use href="#plus" />
+        </svg>
+        {{ 'New Public Ticket'|trans }}
+    </button>
+{% endset %}
 
 {% block content %}
+    {% if not filter_panel_open %}
     {% set statuses = admin.support_public_ticket_get_statuses %}
-    <section class="row row-cards mb-3">
+    <section class="row row-cards mb-3 filter-panel-summary">
         <div class="col-sm-6 col-lg-3">
             <a class="card card-sm card-link" href="{{ 'support/public-tickets'|url(query: { 'status': 'open' }) }}">
                 <div class="card-body">
@@ -82,13 +94,85 @@
             </a>
         </div>
     </section>
+    {% endif %}
 
     <div class="card">
-        <div class="card-body">
-            <h3>{{ 'Public Tickets'|trans }}</h3>
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'Public Tickets'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Review support tickets submitted without a client account and manage public conversations.'|trans }}</p>
+            </div>
         </div>
 
-        {{ include('partial_search.html.twig') }}
+        {{ include('partial_search.html.twig', {
+            search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
+            search_toolbar_actions: public_ticket_toolbar_actions
+        }) }}
+        <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
+            <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
+                {% if request.search %}
+                    <input type="hidden" name="search" value="{{ request.search }}">
+                {% endif %}
+                <div class="row g-3">
+                    <div class="col-md-6 col-xl-3">
+                        <div>
+                            <label class="form-label text-muted small mb-1" for="filter-public-ticket-id">{{ 'Ticket ID'|trans }}</label>
+                            <input class="form-control" type="text" id="filter-public-ticket-id" name="id" value="{{ request.id }}" placeholder="{{ 'Ticket ID'|trans }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xl-3">
+                        <div>
+                            <label class="form-label text-muted small mb-1" for="filter-public-ticket-name">{{ 'Name'|trans }}</label>
+                            <input class="form-control" type="text" id="filter-public-ticket-name" name="name" value="{{ request.name }}" placeholder="{{ 'Author Name'|trans }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xl-3">
+                        <div>
+                            <label class="form-label text-muted small mb-1" for="filter-public-ticket-email">{{ 'Email'|trans }}</label>
+                            <input class="form-control" type="text" id="filter-public-ticket-email" name="email" value="{{ request.email }}" placeholder="{{ 'Author Email'|trans }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xl-3">
+                        <label class="form-label text-muted small mb-1">{{ 'Status'|trans }}</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <input class="btn-check" id="publicTicketStatusAll" type="radio" name="status" value=""{% if not request.status %} checked{% endif %}>
+                            <label class="btn btn-outline-primary" for="publicTicketStatusAll">{{ 'All'|trans }}</label>
+
+                            <input class="btn-check" id="publicTicketStatusOpen" type="radio" name="status" value="open"{% if request.status == 'open' %} checked{% endif %}>
+                            <label class="btn btn-outline-primary" for="publicTicketStatusOpen">{{ 'Open'|trans }}</label>
+
+                            <input class="btn-check" id="publicTicketStatusHold" type="radio" name="status" value="on_hold"{% if request.status == 'on_hold' %} checked{% endif %}>
+                            <label class="btn btn-outline-primary" for="publicTicketStatusHold">{{ 'On Hold'|trans }}</label>
+
+                            <input class="btn-check" id="publicTicketStatusClosed" type="radio" name="status" value="closed"{% if request.status == 'closed' %} checked{% endif %}>
+                            <label class="btn btn-outline-primary" for="publicTicketStatusClosed">{{ 'Closed'|trans }}</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xl-6">
+                        <div>
+                            <label class="form-label text-muted small mb-1" for="filter-public-ticket-subject">{{ 'Subject'|trans }}</label>
+                            <input class="form-control" type="text" id="filter-public-ticket-subject" name="subject" value="{{ request.subject }}" placeholder="{{ 'Ticket Subject'|trans }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xl-6">
+                        <div>
+                            <label class="form-label text-muted small mb-1" for="filter-public-ticket-content">{{ 'Message Content'|trans }}</label>
+                            <input class="form-control" type="text" id="filter-public-ticket-content" name="content" value="{{ request.content }}" placeholder="{{ 'Search Ticket Messages'|trans }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end gap-2 mt-3">
+                    <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
+                    <button class="btn btn-primary" type="submit">
+                        <svg class="icon">
+                            <use href="#filter" />
+                        </svg>
+                        {{ 'Apply Filters'|trans }}
+                    </button>
+                </div>
+            </form>
+        </section>
+        <div class="table-responsive">
         <table class="table card-table table-vcenter table-striped text-nowrap sortable">
             <thead>
                 <tr>
@@ -99,11 +183,11 @@
                     <th>{{ 'Email'|trans }}</th>
                     <th>{{ 'Status'|trans }}</th>
                     <th>{{ 'Date'|trans }}</th>
-                    <th class="w-1"></th>
+                    <th class="w-1 no-sort"></th>
                 </tr>
             </thead>
             <tbody>
-            {% set tickets = admin.support_public_ticket_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+            {% set tickets = admin.support_public_ticket_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
             {% for i, ticket in tickets.list %}
             <tr>
                 <td>
@@ -113,23 +197,12 @@
                     <a href='{{ "support/public-ticket/#{ticket.id}"|url }}'>#{{ ticket.id }} - {{ ticket.subject }} ({{ ticket.messages|length }})</a>
                 </td>
                 <td>{{ ticket.author_email }}</td>
-                <td>
-                    {% if ticket.status == 'open' %}
-                        <span class="badge bg-success me-1"></span>
-                    {% endif %}
-                    {% if ticket.status == 'on_hold' %}
-                        <span class="badge bg-warning me-1"></span>
-                    {% endif %}
-                    {% if ticket.status == 'closed' %}
-                        <span class="badge bg-secondary me-1"></span>
-                    {% endif %}
-                    {{ mf.status_name(ticket.status) }}
-                </td>
+                <td>{{ mf.status_badge(ticket.status, 'ticket') }}</td>
                 <td>{{ ticket.updated_at|format_date }}</td>
                 <td>
                     <a class="btn btn-icon" href='{{ "support/public-ticket/#{ticket.id}"|url }}'>
                         <svg class="icon">
-                            <use xlink:href="#edit" />
+                            <use href="#edit" />
                         </svg>
                     </a>
                 </td>
@@ -141,10 +214,86 @@
             {% endfor %}
             </tbody>
         </table>
-    </div>
+        </div>
 
-    <div class="card-footer d-flex align-items-center justify-content-between">
-        {% include 'partial_batch_delete.html.twig' with { 'action': 'support/batch_delete_public' } %}
-        {% include 'partial_pagination.html.twig' with { 'list': tickets, 'url': 'support/public-tickets' } %}
+        <div class="card-footer d-flex align-items-center justify-content-between">
+            {% include 'partial_batch_delete.html.twig' with { 'action': 'support/batch_delete_public' } %}
+            {% include 'partial_pagination.html.twig' with { 'list': tickets, 'url': 'support/public-tickets' } %}
+        </div>
+
+        <div class="modal modal-blur fade" id="newPublicTicketModal" tabindex="-1" aria-labelledby="newPublicTicketModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-md-down modal-lg">
+                <form class="modal-content fb-modal-form" method="post" action="{{ 'support/public_ticket_create'|api_url }}" {{ fb_api_form({ callback: 'onAfterPublicTicketCreate' }) }}>
+                    <div class="modal-header">
+                        <h3 class="modal-title" id="newPublicTicketModalLabel">{{ 'Open Public Ticket for Non-Client'|trans }}</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <section class="fb-modal-section">
+                            <div class="fb-modal-section-header">
+                                <div class="fb-modal-section-heading-row">
+                                    <h4 class="fb-modal-section-title">{{ 'Ticket Details'|trans }}</h4>
+                                </div>
+                                <p class="fb-modal-section-description">{{ 'Capture the sender details and compose the opening public support message.'|trans }}</p>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="new-public-ticket-name">{{ 'Receiver Name'|trans }}</label>
+                                    <input class="form-control" type="text" id="new-public-ticket-name" name="name" required placeholder="{{ 'John Smith'|trans }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="new-public-ticket-email">{{ 'Email'|trans }}</label>
+                                    <input class="form-control" type="email" id="new-public-ticket-email" name="email" required placeholder="{{ 'user@domain.com'|trans }}">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="new-public-ticket-subject">{{ 'Subject'|trans }}</label>
+                                    <input class="form-control" type="text" id="new-public-ticket-subject" name="subject" value="{{ request.subject|default('') }}" required placeholder="{{ 'Email Subject'|trans }}">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="new-public-ticket-message">{{ 'Message'|trans }}</label>
+                                    <textarea class="form-control editor-textarea" id="new-public-ticket-message" name="message" rows="10" required>{{ profile.signature }}</textarea>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                        <button type="submit" class="btn btn-primary">{{ 'Create'|trans }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 {% endblock %}
+
+{% block js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalElement = document.getElementById('newPublicTicketModal');
+    if (!modalElement) {
+        return;
+    }
+
+    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+    if (window.location.hash === '#tab-new') {
+        modal.show();
+    }
+
+    modalElement.addEventListener('hidden.bs.modal', function () {
+        if (window.location.hash !== '#tab-new') {
+            return;
+        }
+
+        const url = new URL(window.location.href);
+        url.hash = '';
+        window.history.replaceState({}, '', url);
+    });
+});
+
+function onAfterPublicTicketCreate(result) {
+    window.location = "{{ 'support/public-ticket'|url }}/" + result;
+}
+</script>
+{% endblock %}
+
+{% block head %}{{ wysiwyg('.editor-textarea') }}{% endblock %}

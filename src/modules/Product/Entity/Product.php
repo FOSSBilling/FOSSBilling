@@ -98,55 +98,308 @@ class Product
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 255, nullable: true)]
     private ?string $type = null;
 
-    public function getId(): ?int { return $this->id; }
-    public function getProductCategoryId(): ?int { return $this->productCategoryId; }
-    public function setProductCategoryId(?int $productCategoryId): self { $this->productCategoryId = $productCategoryId; return $this; }
-    public function getProductPaymentId(): ?int { return $this->productPaymentId; }
-    public function setProductPaymentId(?int $productPaymentId): self { $this->productPaymentId = $productPaymentId; return $this; }
-    public function getFormId(): ?int { return $this->formId; }
-    public function setFormId(?int $formId): self { $this->formId = $formId; return $this; }
-    public function getTitle(): ?string { return $this->title; }
-    public function setTitle(?string $title): self { $this->title = $title; return $this; }
-    public function getSlug(): ?string { return $this->slug; }
-    public function setSlug(?string $slug): self { $this->slug = $slug; return $this; }
-    public function getDescription(): ?string { return $this->description; }
-    public function setDescription(?string $description): self { $this->description = $description; return $this; }
-    public function getUnit(): string { return $this->unit; }
-    public function setUnit(string $unit): self { $this->unit = $unit; return $this; }
-    public function isActive(): bool { return $this->active; }
-    public function setActive(bool $active): self { $this->active = $active; return $this; }
-    public function getStatus(): string { return $this->status; }
-    public function setStatus(string $status): self { $this->status = $status; return $this; }
-    public function isHidden(): bool { return $this->hidden; }
-    public function setHidden(bool $hidden): self { $this->hidden = $hidden; return $this; }
-    public function isAddon(): bool { return $this->isAddon; }
-    public function setIsAddon(bool $isAddon): self { $this->isAddon = $isAddon; return $this; }
-    public function getSetup(): string { return $this->setup; }
-    public function setSetup(string $setup): self { $this->setup = $setup; return $this; }
-    public function getAddons(): ?string { return $this->addons; }
-    public function setAddons(?string $addons): self { $this->addons = $addons; return $this; }
-    public function getIconUrl(): ?string { return $this->iconUrl; }
-    public function setIconUrl(?string $iconUrl): self { $this->iconUrl = $iconUrl; return $this; }
-    public function isAllowQuantitySelect(): bool { return $this->allowQuantitySelect; }
-    public function setAllowQuantitySelect(bool $allowQuantitySelect): self { $this->allowQuantitySelect = $allowQuantitySelect; return $this; }
-    public function isStockControl(): bool { return $this->stockControl; }
-    public function setStockControl(bool $stockControl): self { $this->stockControl = $stockControl; return $this; }
-    public function getQuantityInStock(): int { return $this->quantityInStock; }
-    public function setQuantityInStock(int $quantityInStock): self { $this->quantityInStock = $quantityInStock; return $this; }
-    public function getPlugin(): ?string { return $this->plugin; }
-    public function setPlugin(?string $plugin): self { $this->plugin = $plugin; return $this; }
-    public function getPluginConfig(): ?string { return $this->pluginConfig; }
-    public function setPluginConfig(?string $pluginConfig): self { $this->pluginConfig = $pluginConfig; return $this; }
-    public function getUpgrades(): ?string { return $this->upgrades; }
-    public function setUpgrades(?string $upgrades): self { $this->upgrades = $upgrades; return $this; }
-    public function getPriority(): ?int { return $this->priority; }
-    public function setPriority(?int $priority): self { $this->priority = $priority; return $this; }
-    public function getConfig(): ?string { return $this->config; }
-    public function setConfig(?string $config): self { $this->config = $config; return $this; }
-    public function getCreatedAt(): ?\DateTime { return $this->createdAt; }
-    public function setCreatedAt(?\DateTime $createdAt): self { $this->createdAt = $createdAt; return $this; }
-    public function getUpdatedAt(): ?\DateTime { return $this->updatedAt; }
-    public function setUpdatedAt(?\DateTime $updatedAt): self { $this->updatedAt = $updatedAt; return $this; }
-    public function getType(): ?string { return $this->type; }
-    public function setType(?string $type): self { $this->type = $type; return $this; }
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function getProductCategoryId(): ?int
+    {
+        return $this->productCategoryId;
+    }
+
+    public function setProductCategoryId(?int $productCategoryId): self
+    {
+        $this->productCategoryId = $productCategoryId;
+
+        return $this;
+    }
+
+    public function getProductPaymentId(): ?int
+    {
+        return $this->productPaymentId;
+    }
+
+    public function setProductPaymentId(?int $productPaymentId): self
+    {
+        $this->productPaymentId = $productPaymentId;
+
+        return $this;
+    }
+
+    public function getFormId(): ?int
+    {
+        return $this->formId;
+    }
+
+    public function setFormId(?int $formId): self
+    {
+        $this->formId = $formId;
+
+        return $this;
+    }
+
+    public function getTitle(): ?string
+    {
+        return $this->title;
+    }
+
+    public function setTitle(?string $title): self
+    {
+        $this->title = $title;
+
+        return $this;
+    }
+
+    public function getSlug(): ?string
+    {
+        return $this->slug;
+    }
+
+    public function setSlug(?string $slug): self
+    {
+        $this->slug = $slug;
+
+        return $this;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(?string $description): self
+    {
+        $this->description = $description;
+
+        return $this;
+    }
+
+    public function getUnit(): string
+    {
+        return $this->unit;
+    }
+
+    public function setUnit(string $unit): self
+    {
+        $this->unit = $unit;
+
+        return $this;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->active;
+    }
+
+    public function setActive(bool $active): self
+    {
+        $this->active = $active;
+
+        return $this;
+    }
+
+    public function getStatus(): string
+    {
+        return $this->status;
+    }
+
+    public function setStatus(string $status): self
+    {
+        $this->status = $status;
+
+        return $this;
+    }
+
+    public function isHidden(): bool
+    {
+        return $this->hidden;
+    }
+
+    public function setHidden(bool $hidden): self
+    {
+        $this->hidden = $hidden;
+
+        return $this;
+    }
+
+    public function isAddon(): bool
+    {
+        return $this->isAddon;
+    }
+
+    public function setIsAddon(bool $isAddon): self
+    {
+        $this->isAddon = $isAddon;
+
+        return $this;
+    }
+
+    public function getSetup(): string
+    {
+        return $this->setup;
+    }
+
+    public function setSetup(string $setup): self
+    {
+        $this->setup = $setup;
+
+        return $this;
+    }
+
+    public function getAddons(): ?string
+    {
+        return $this->addons;
+    }
+
+    public function setAddons(?string $addons): self
+    {
+        $this->addons = $addons;
+
+        return $this;
+    }
+
+    public function getIconUrl(): ?string
+    {
+        return $this->iconUrl;
+    }
+
+    public function setIconUrl(?string $iconUrl): self
+    {
+        $this->iconUrl = $iconUrl;
+
+        return $this;
+    }
+
+    public function isAllowQuantitySelect(): bool
+    {
+        return $this->allowQuantitySelect;
+    }
+
+    public function setAllowQuantitySelect(bool $allowQuantitySelect): self
+    {
+        $this->allowQuantitySelect = $allowQuantitySelect;
+
+        return $this;
+    }
+
+    public function isStockControl(): bool
+    {
+        return $this->stockControl;
+    }
+
+    public function setStockControl(bool $stockControl): self
+    {
+        $this->stockControl = $stockControl;
+
+        return $this;
+    }
+
+    public function getQuantityInStock(): int
+    {
+        return $this->quantityInStock;
+    }
+
+    public function setQuantityInStock(int $quantityInStock): self
+    {
+        $this->quantityInStock = $quantityInStock;
+
+        return $this;
+    }
+
+    public function getPlugin(): ?string
+    {
+        return $this->plugin;
+    }
+
+    public function setPlugin(?string $plugin): self
+    {
+        $this->plugin = $plugin;
+
+        return $this;
+    }
+
+    public function getPluginConfig(): ?string
+    {
+        return $this->pluginConfig;
+    }
+
+    public function setPluginConfig(?string $pluginConfig): self
+    {
+        $this->pluginConfig = $pluginConfig;
+
+        return $this;
+    }
+
+    public function getUpgrades(): ?string
+    {
+        return $this->upgrades;
+    }
+
+    public function setUpgrades(?string $upgrades): self
+    {
+        $this->upgrades = $upgrades;
+
+        return $this;
+    }
+
+    public function getPriority(): ?int
+    {
+        return $this->priority;
+    }
+
+    public function setPriority(?int $priority): self
+    {
+        $this->priority = $priority;
+
+        return $this;
+    }
+
+    public function getConfig(): ?string
+    {
+        return $this->config;
+    }
+
+    public function setConfig(?string $config): self
+    {
+        $this->config = $config;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTime
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(?\DateTime $createdAt): self
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getUpdatedAt(): ?\DateTime
+    {
+        return $this->updatedAt;
+    }
+
+    public function setUpdatedAt(?\DateTime $updatedAt): self
+    {
+        $this->updatedAt = $updatedAt;
+
+        return $this;
+    }
+
+    public function getType(): ?string
+    {
+        return $this->type;
+    }
+
+    public function setType(?string $type): self
+    {
+        $this->type = $type;
+
+        return $this;
+    }
 }

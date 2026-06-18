@@ -15,7 +15,7 @@ namespace Box\Mod\Extension\Api;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get list of active and inactive extensions on system.
@@ -30,6 +30,8 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
+        $this->checkPermissions('extension', 'view');
+
         $service = $this->getService();
 
         return $service->getExtensionsList($data);
@@ -43,12 +45,14 @@ class Admin extends \Api_Abstract
      */
     public function get_latest($data)
     {
+        $this->checkPermissions('extension', 'view');
+
         $type = $data['type'] ?? null;
 
         try {
-            $list = $this->di['extension_manager']->getExtensionList($type);
+            $list = $this->getDi()['extension_manager']->getExtensionList($type);
         } catch (\Exception $e) {
-            $this->di['logger']->warn(sprintf('Failed to fetch extension list for type "%s": %s', $type ?? 'all', $e->getMessage()));
+            $this->getDi()['logger']->warning(sprintf('Failed to fetch extension list for type "%s": %s', $type ?? 'all', $e->getMessage()));
 
             $list = [];
         }
@@ -62,7 +66,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['extension_id' => 'Extension ID was not passed'])]
     public function get_extension_readme($data): string
     {
-        $extensionInfo = $this->di['extension_manager']->getExtension($data['extension_id']);
+        $this->checkPermissions('extension', 'view');
+
+        $extensionInfo = $this->getDi()['extension_manager']->getExtension($data['extension_id']);
         $markdown = new \FOSSBilling\Twig\Markdown\FOSSBillingMarkdown($this->di);
 
         return $markdown->convert($extensionInfo['readme']);
@@ -89,6 +95,8 @@ class Admin extends \Api_Abstract
      */
     public function languages(array $data): array
     {
+        $this->checkPermissions('extension', 'view');
+
         $data['disabled'] = Tools::normalizeBoolean($data['disabled'] ?? false);
         $data['details'] = Tools::normalizeBoolean($data['details'] ?? true, true);
 
@@ -105,7 +113,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['locale_id' => 'Locale ID was not passed'])]
     public function toggle_language(array $data): bool
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
+        $this->checkPermissions('extension', 'manage_extensions');
 
         return \FOSSBilling\i18n::toggleLocale($data['locale_id']);
     }
@@ -118,6 +126,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['locale_id' => 'Locale ID was not passed'])]
     public function locale_completion(array $data): int
     {
+        $this->checkPermissions('extension', 'view');
+
         return \FOSSBilling\i18n::getLocaleCompletionPercent($data['locale_id']);
     }
 
@@ -130,12 +140,14 @@ class Admin extends \Api_Abstract
      */
     public function update($data)
     {
+        $this->checkPermissions('extension', 'manage_extensions');
+
         $ext = $this->_getExtension($data);
         $service = $this->getService();
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminUpdateExtension', 'params' => $ext]);
+        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminUpdateExtension', 'params' => $ext]);
         $ext2 = $service->update($ext);
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminUpdateExtension', 'params' => $ext2]);
+        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminUpdateExtension', 'params' => $ext2]);
 
         return $ext2;
     }
@@ -150,6 +162,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Extension ID was not passed', 'type' => 'Extension type was not passed'])]
     public function activate($data)
     {
+        $this->checkPermissions('extension', 'manage_extensions');
+
         $service = $this->getService();
 
         return $service->activateExistingExtension($data);
@@ -164,16 +178,18 @@ class Admin extends \Api_Abstract
      */
     public function deactivate($data): bool
     {
+        $this->checkPermissions('extension', 'manage_extensions');
+
         $ext = $this->_getExtension($data);
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminDeactivateExtension', 'params' => ['id' => $ext->id]]);
+        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminDeactivateExtension', 'params' => ['id' => $ext->id]]);
 
         $service = $this->getService();
         $service->deactivate($ext);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminDeactivateExtension', 'params' => ['id' => $data['id'], 'type' => $data['type']]]);
+        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminDeactivateExtension', 'params' => ['id' => $data['id'], 'type' => $data['type']]]);
 
-        $this->di['logger']->info('Deactivated extension "%s"', $data['type'] . ' ' . $data['id']);
+        $this->getDi()['logger']->info('Deactivated extension "%s"', $data['type'] . ' ' . $data['id']);
 
         return true;
     }
@@ -181,14 +197,16 @@ class Admin extends \Api_Abstract
     /**
      * Completely remove extension from FOSSBilling.
      */
+    #[RequiredParams(['id' => 'Extension ID was not passed', 'type' => 'Extension type was not passed'])]
     public function uninstall($data): bool
     {
-        $ext = $this->_getExtension($data);
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminUninstallExtension', 'params' => ['id' => $ext->id]]);
+        $this->checkPermissions('extension', 'uninstall_extensions');
+
+        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminUninstallExtension', 'params' => ['type' => $data['type'], 'id' => $data['id']]]);
 
         $this->getService()->uninstall($data['type'], $data['id']);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminUninstallExtension', 'params' => ['type' => $data['type'], 'id' => $data['id']]]);
+        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminUninstallExtension', 'params' => ['type' => $data['type'], 'id' => $data['id']]]);
 
         return true;
     }
@@ -201,12 +219,14 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Extension ID was not passed', 'type' => 'Extension type was not passed'])]
     public function install($data): array
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminInstallExtension', 'params' => $data]);
+        $this->checkPermissions('extension', 'manage_extensions');
+
+        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminInstallExtension', 'params' => $data]);
 
         $service = $this->getService();
         $service->downloadAndExtract($data['type'], $data['id']);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminInstallExtension', 'params' => $data]);
+        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminInstallExtension', 'params' => $data]);
 
         return [
             'success' => true,

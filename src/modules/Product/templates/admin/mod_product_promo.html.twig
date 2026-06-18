@@ -9,7 +9,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
@@ -123,275 +123,116 @@
                 </div>
             </div>
         </div>
-        <form method="post" action="{{ 'product/promo_update'|api_url }}" {{ fb_api_form({redirect: 'product/promos'|url}) }}>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Promo Code'|trans }}</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="code" value="{{ promo.code }}" required>
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Discount Type'|trans }}</label>
-                <div class="col">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioTypeAbsolute" type="radio" name="type" value="absolute"{% if promo.type == 'absolute' %} checked{% endif %}>
-                        <label class="form-check-label" for="radioTypeAbsolute">{{ 'Absolute'|trans }}</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioTypePercentage" type="radio" name="type" value="percentage"{% if promo.type == 'percentage' %} checked{% endif %}>
-                        <label class="form-check-label" for="radioTypePercentage">{{ 'Percentage'|trans }}</label>
-                    </div>
-                    <input class="form-control" type="text" name="value" value="{{ promo.value }}" required>
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Recurring'|trans }}</label>
-                <div class="col">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioApplyAll" type="radio" name="recurring" value="0"{% if not promo.recurring %} checked{% endif %}>
-                        <label class="form-check-label" for="radioApplyAll">{{ 'Apply to First Order Only'|trans }}</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioApplyFirst" type="radio" name="recurring" value="1"{% if promo.recurring %} checked{% endif %}>
-                        <label class="form-check-label" for="radioApplyFirst">{{ 'Apply to First Order and Renewals'|trans }}</label>
-                    </div>
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Active'|trans }}</label>
-                <div class="col">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioActiveYes" type="radio" name="active" value="1"{% if promo.active %} checked{% endif %}>
-                        <label class="form-check-label" for="radioActiveYes">{{ 'Yes'|trans }}</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioActiveNo" type="radio" name="active" value="0"{% if not promo.active %} checked{% endif %}>
-                        <label class="form-check-label" for="radioActiveNo">{{ 'No'|trans }}</label>
-                    </div>
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Free Setup'|trans }}</label>
-                <div class="col">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioFreeSetupYes" type="radio" name="freesetup" value="1"{% if promo.freesetup %} checked{% endif %}>
-                        <label class="form-check-label" for="radioFreeSetupYes">{{ 'Yes'|trans }}</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioFreeSetupNo" type="radio" name="freesetup" value="0"{% if not promo.freesetup %} checked{% endif %}>
-                        <label class="form-check-label" for="radioFreeSetupNo">{{ 'No'|trans }}</label>
-                    </div>
-                </div>
-            </div>
-
-            <h5>{{ 'Promotion Limitations'|trans }}</h5>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Once per Client'|trans }}</label>
-                <div class="col">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioOncePerClientYes" type="radio" name="once_per_client" value="1"{% if promo.once_per_client %} checked{% endif %}>
-                        <label class="form-check-label" for="radioOncePerClientYes">{{ 'Yes'|trans }}</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioOncePerClientNo" type="radio" name="once_per_client" value="0"{% if not promo.once_per_client %} checked{% endif %}>
-                        <label class="form-check-label" for="radioOncePerClientNo">{{ 'No'|trans }}</label>
-                    </div>
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Max Uses (Zero for Unlimited)'|trans }}</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="maxuses" value="{{ promo.maxuses }}" class="dirRight" title="{{ 'Leave blank for unlimited uses'|trans }}" placeholder="0">
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label" for="validity">{{ 'Validity Period (Blank for Indefinite)'|trans }}</label>
-                <div class="col">
-                    <div class="input-icon w-100">
-                        <input class="form-control datepicker"
-                               id="validity"
-                               value="{% if promo.start_at %}{{ promo.start_at|date('Y-m-d') }}{% endif %}{% if promo.end_at %} to {{ promo.end_at|date('Y-m-d') }}{% endif %}"
-                               data-name-from="start_at"
-                               data-name-to="end_at">
-                        <span class="input-icon-addon">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
-                                <path d="M16 3l0 4"></path>
-                                <path d="M8 3l0 4"></path>
-                                <path d="M4 11l16 0"></path>
-                                <path d="M11 15l1 0"></path>
-                                <path d="M12 15l0 3"></path>
-                            </svg>
-                        </span>
-                    </div>
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Applicable Products (Select None to Apply to All)'|trans }}</label>
-                <div class="col">
-                    <input type="hidden" name="products[]" value=""/>
-                    <table class="table card-table table-vcenter table-striped text-nowrap">
-                        <tbody>
-                            {% set products = admin.product_get_pairs %}
-                            {% for id,product in products %}
-                            <tr><td class="w-1"><input type="checkbox" name="products[]" value="{{ id }}" {% if id in promo.products %} checked{% endif %} /></td><td>{{ product }}</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Applicable Periods (Select None to Apply to All)'|trans }}</label>
-                <div class="col">
-                    <input type="hidden" name="periods[]" value=""/>
-                    <table class="table card-table table-vcenter table-striped text-nowrap">
-                        <tbody>
-                            {% set periods = guest.system_periods %}
-                            {% for id, period in periods %}
-                            <tr><td class="w-1"><input type="checkbox" name="periods[]" value="{{ id }}" {% if id in promo.periods %} checked{% endif %} /></td><td>{{ period }}</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Applicable Client Groups (Select None to Apply to All)'|trans }}</label>
-                <div class="col">
-                    <input type="hidden" name="client_groups[]" value="{{ id }}"/>
-                    <table class="table card-table table-vcenter table-striped text-nowrap">
-                        <tbody>
-                            {% set client_groups = admin.client_group_get_pairs %}
-                            {% for id, client_group in client_groups %}
-                            <tr><td class="w-1"><input type="checkbox" name="client_groups[]" value="{{ id }}" {% if id in promo.client_groups %} checked{% endif %} /></td><td>{{ client_group }}</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <input type="hidden" name="id" value="{{ promo.id }}">
-            <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
-        </form>
     </div>
 </div>
 
-{% set redemption_filters = {
-    'promo_id': promo.id,
-    'per_page': 20,
-    'page': request.page,
-    'phase': request.phase,
-    'status': request.status,
-} %}
-{% set redemptions = admin.product_promo_redemption_get_list(redemption_filters) %}
-<div class="card mt-3" id="promo-redemptions">
-    <div class="card-header">
-        <h3 class="card-title">{{ 'Redemptions'|trans }}</h3>
-        <div class="card-actions">
-            <a class="btn btn-outline-secondary btn-sm" href="{{ 'order'|url(query: { 'promo_id': promo.id }) }}">{{ 'View Orders'|trans }}</a>
-            <span class="badge bg-secondary-lt">{{ redemptions.total }}</span>
-        </div>
-    </div>
-    <div class="card-body border-bottom">
-        <form method="get" class="row g-3 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label" for="redemption-phase">{{ 'Phase'|trans }}</label>
-                <select class="form-select" id="redemption-phase" name="phase">
-                    <option value="">{{ 'All Phases'|trans }}</option>
-                    <option value="checkout"{% if request.phase == 'checkout' %} selected{% endif %}>{{ 'Checkout'|trans }}</option>
-                    <option value="renewal"{% if request.phase == 'renewal' %} selected{% endif %}>{{ 'Renewal'|trans }}</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label" for="redemption-status">{{ 'Status'|trans }}</label>
-                <select class="form-select" id="redemption-status" name="status">
-                    <option value="">{{ 'All Statuses'|trans }}</option>
-                    <option value="reserved"{% if request.status == 'reserved' %} selected{% endif %}>{{ 'Reserved'|trans }}</option>
-                    <option value="committed"{% if request.status == 'committed' %} selected{% endif %}>{{ 'Committed'|trans }}</option>
-                    <option value="released"{% if request.status == 'released' %} selected{% endif %}>{{ 'Released'|trans }}</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <div class="d-flex gap-2">
-                    <button class="btn btn-primary" type="submit">{{ 'Apply Filters'|trans }}</button>
-                    <a class="btn btn-secondary" href="{{ "product/promo/#{promo.id}"|url }}#promo-redemptions">{{ 'Clear'|trans }}</a>
+<div class="card">
+    <form method="post" action="{{ 'product/promo_update'|api_url }}" {{ fb_api_form({redirect: 'product/promos'|url}) }}>
+        {% embed 'partial_admin_form_card.html.twig' with {
+            title: 'Manage Promotion'|trans,
+            subtitle: 'Update the offer, recurring behavior, eligibility rules, and applicability of this promotion.'|trans,
+            body_class: 'pt-4'
+        } %}
+            {% block form_content %}
+                <div class="row g-3">
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Promo Code'|trans }}</label>
+                        <input class="form-control" type="text" name="code" value="{{ promo.code }}" required>
+                    </div>
+                    <div class="col-lg-3">
+                        <label class="form-label d-block">{{ 'Discount Type'|trans }}</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <label class="form-check"><input class="form-check-input" id="radioTypeAbsolute" type="radio" name="type" value="absolute"{% if promo.type == 'absolute' %} checked{% endif %}><span class="form-check-label">{{ 'Absolute'|trans }}</span></label>
+                            <label class="form-check"><input class="form-check-input" id="radioTypePercentage" type="radio" name="type" value="percentage"{% if promo.type == 'percentage' %} checked{% endif %}><span class="form-check-label">{{ 'Percentage'|trans }}</span></label>
+                        </div>
+                    </div>
+                    <div class="col-lg-3">
+                        <label class="form-label">{{ 'Discount Value'|trans }}</label>
+                        <input class="form-control" type="text" name="value" value="{{ promo.value }}" required>
+                    </div>
+                    <div class="col-lg-6">
+                        <label class="form-label d-block">{{ 'Recurring'|trans }}</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <label class="form-check"><input class="form-check-input" id="radioApplyAll" type="radio" name="recurring" value="0"{% if not promo.recurring %} checked{% endif %}><span class="form-check-label">{{ 'Apply to First Order Only'|trans }}</span></label>
+                            <label class="form-check"><input class="form-check-input" id="radioApplyFirst" type="radio" name="recurring" value="1"{% if promo.recurring %} checked{% endif %}><span class="form-check-label">{{ 'Apply to First Order and Renewals'|trans }}</span></label>
+                        </div>
+                    </div>
+                    <div class="col-lg-3">
+                        <label class="form-label d-block">{{ 'Active'|trans }}</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <label class="form-check"><input class="form-check-input" id="radioActiveYes" type="radio" name="active" value="1"{% if promo.active %} checked{% endif %}><span class="form-check-label">{{ 'Yes'|trans }}</span></label>
+                            <label class="form-check"><input class="form-check-input" id="radioActiveNo" type="radio" name="active" value="0"{% if not promo.active %} checked{% endif %}><span class="form-check-label">{{ 'No'|trans }}</span></label>
+                        </div>
+                    </div>
+                    <div class="col-lg-3">
+                        <label class="form-label d-block">{{ 'Free Setup'|trans }}</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <label class="form-check"><input class="form-check-input" id="radioFreeSetupYes" type="radio" name="freesetup" value="1"{% if promo.freesetup %} checked{% endif %}><span class="form-check-label">{{ 'Yes'|trans }}</span></label>
+                            <label class="form-check"><input class="form-check-input" id="radioFreeSetupNo" type="radio" name="freesetup" value="0"{% if not promo.freesetup %} checked{% endif %}><span class="form-check-label">{{ 'No'|trans }}</span></label>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </form>
-    </div>
-    <div class="table-responsive">
-        <table class="table card-table table-vcenter table-striped text-nowrap">
-            <thead>
-                <tr>
-                    <th>{{ 'Date'|trans }}</th>
-                    <th>{{ 'Phase'|trans }}</th>
-                    <th>{{ 'Status'|trans }}</th>
-                    <th>{{ 'Client'|trans }}</th>
-                    <th>{{ 'Order'|trans }}</th>
-                    <th>{{ 'Invoice'|trans }}</th>
-                    <th class="text-end">{{ 'Discount'|trans }}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for redemption in redemptions.list %}
-                    <tr>
-                        <td>{{ redemption.created_at|format_date }}</td>
-                        <td>{{ redemption.phase|title }}</td>
-                        <td>
-                            {% if redemption.status == 'committed' %}
-                                <span class="badge bg-success-lt">{{ redemption.status|title }}</span>
-                            {% elseif redemption.status == 'released' %}
-                                <span class="badge bg-secondary-lt">{{ redemption.status|title }}</span>
-                            {% else %}
-                                <span class="badge bg-warning-lt">{{ redemption.status|title }}</span>
-                            {% endif %}
-                            {% if redemption.release_reason %}
-                                <div class="text-secondary small">{{ redemption.release_reason|replace({'_': ' '})|title }}</div>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if redemption.client %}
-                                <a href='{{ "client/manage/#{redemption.client.id}"|url }}'>
-                                    {{ redemption.client.first_name }} {{ redemption.client.last_name }}
-                                </a>
-                                <div class="text-secondary small">{{ redemption.client.email }}</div>
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if redemption.order %}
-                                <a href='{{ "order/manage/#{redemption.order.id}"|url }}'>#{{ redemption.order.id }}</a>
-                                <div class="text-secondary small">{{ redemption.order.title }}</div>
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if redemption.invoice %}
-                                <a href='{{ "invoice/#{redemption.invoice.id}"|url }}'>#{{ redemption.invoice.serie_nr ?: redemption.invoice.id }}</a>
-                                <div class="text-secondary small">{{ redemption.invoice.status|capitalize }}</div>
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                        <td class="text-end">
-                            {% if redemption.discount_amount is not null %}
-                                {{ redemption.discount_amount|format_currency(redemption.currency) }}
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% else %}
-                    <tr>
-                        <td class="text-muted" colspan="7">{{ 'No redemption history has been recorded for this promotion yet.'|trans }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    <div class="card-footer">
-        {{ include('partial_pagination.html.twig', { 'list': redemptions, 'url': "product/promo/#{promo.id}" }) }}
-    </div>
+
+                <hr class="my-4">
+                <h6 class="card-title text-secondary mb-3">{{ 'Promotion Limitations'|trans }}</h6>
+                <div class="row g-3">
+                    <div class="col-lg-4">
+                        <label class="form-label d-block">{{ 'Once per Client'|trans }}</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <label class="form-check"><input class="form-check-input" id="radioOncePerClientYes" type="radio" name="once_per_client" value="1"{% if promo.once_per_client %} checked{% endif %}><span class="form-check-label">{{ 'Yes'|trans }}</span></label>
+                            <label class="form-check"><input class="form-check-input" id="radioOncePerClientNo" type="radio" name="once_per_client" value="0"{% if not promo.once_per_client %} checked{% endif %}><span class="form-check-label">{{ 'No'|trans }}</span></label>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <label class="form-label">{{ 'Max Uses (Zero for Unlimited)'|trans }}</label>
+                        <input class="form-control" type="text" name="maxuses" value="{{ promo.maxuses }}" title="{{ 'Leave blank for unlimited uses'|trans }}" placeholder="0">
+                    </div>
+                    <div class="col-lg-4">
+                        <label class="form-label" for="validity">{{ 'Validity Period (Blank for Indefinite)'|trans }}</label>
+                        <div class="input-icon w-100">
+                            <input class="form-control datepicker"
+                                   id="validity"
+                                   value="{% if promo.start_at %}{{ promo.start_at|date('Y-m-d') }}{% endif %}{% if promo.end_at %} to {{ promo.end_at|date('Y-m-d') }}{% endif %}"
+                                   data-name-from="start_at"
+                                   data-name-to="end_at">
+                            <span class="input-icon-addon">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path><path d="M16 3l0 4"></path><path d="M8 3l0 4"></path><path d="M4 11l16 0"></path><path d="M11 15l1 0"></path><path d="M12 15l0 3"></path></svg>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+                <div class="row g-4">
+                    <div class="col-lg-4">
+                        <label class="form-label">{{ 'Applicable Products (Select None to Apply to All)'|trans }}</label>
+                        <input type="hidden" name="products[]" value=""/>
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <tbody>{% set products = admin.product_get_pairs %}{% for id,product in products %}<tr><td class="w-1"><input type="checkbox" name="products[]" value="{{ id }}" {% if id in promo.products %} checked{% endif %} /></td><td>{{ product }}</td></tr>{% endfor %}</tbody>
+                        </table>
+                    </div>
+                    <div class="col-lg-4">
+                        <label class="form-label">{{ 'Applicable Periods (Select None to Apply to All)'|trans }}</label>
+                        <input type="hidden" name="periods[]" value=""/>
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <tbody>{% set periods = guest.system_periods %}{% for id, period in periods %}<tr><td class="w-1"><input type="checkbox" name="periods[]" value="{{ id }}" {% if id in promo.periods %} checked{% endif %} /></td><td>{{ period }}</td></tr>{% endfor %}</tbody>
+                        </table>
+                    </div>
+                    <div class="col-lg-4">
+                        <label class="form-label">{{ 'Applicable Client Groups (Select None to Apply to All)'|trans }}</label>
+                        <input type="hidden" name="client_groups[]" value=""/>
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <tbody>{% set client_groups = admin.client_group_get_pairs %}{% for id, client_group in client_groups %}<tr><td class="w-1"><input type="checkbox" name="client_groups[]" value="{{ id }}" {% if id in promo.client_groups %} checked{% endif %} /></td><td>{{ client_group }}</td></tr>{% endfor %}</tbody>
+                        </table>
+                    </div>
+                </div>
+                <input type="hidden" name="id" value="{{ promo.id }}">
+            {% endblock %}
+
+            {% block form_actions %}
+                <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
+            {% endblock %}
+        {% endembed %}
+    </form>
 </div>
 {% endblock %}

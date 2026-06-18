@@ -9,13 +9,6 @@
  */
 
 /**
- * Module-scoped registries to avoid polluting the global window object.
- * These are optionally exposed via window for backward compatibility.
- */
-const fossBillingEditors = {};
-const editorsRegistry = {};
-
-/**
  * Get CSRF token from cookie
  * @returns {string|null} CSRF token or null if not found
  */
@@ -188,85 +181,4 @@ export function deepMerge(...objects) {
   }
 
   return result;
-}
-
-/**
- * Register a CKEditor instance for canned response functionality
- * @param {HTMLElement} element - The editor container element
- * @param {Object} editor - The CKEditor instance
- */
-export function registerEditor(element, editor) {
-  if (!element || !editor) {
-    console.warn('Invalid editor registration:', { element, editor });
-    return;
-  }
-
-  element.editor = editor;
-  element.setAttribute('data-editor', 'true');
-
-  const syncEditorData = () => {
-    if ('value' in element) {
-      element.value = editor.getData();
-    } else {
-      element.textContent = editor.getData();
-    }
-  };
-
-  syncEditorData();
-  editor.model.document.on('change:data', syncEditorData);
-
-  const editorName = element.getAttribute('name') || element.id;
-  const isRequired = element.dataset.editorRequired === 'true';
-
-  // Store editor instances in module-scoped registries first
-  if (element.id) {
-    // Store canonical editor instance keyed by element ID
-    fossBillingEditors[element.id] = editor;
-  }
-
-  if (editorName) {
-    // Ensure a single global registry interface that mirrors FOSSBilling.editors
-    // Expose a normalized entry that always reflects the canonical editor instance
-    editorsRegistry[editorName] = {
-      editor: editor,
-      required: isRequired,
-    };
-  }
-
-  // Expose registries via window for backward compatibility
-  if (typeof window !== 'undefined') {
-    window.FOSSBilling = window.FOSSBilling || {};
-    window.FOSSBilling.editors = fossBillingEditors;
-    window.editors = editorsRegistry;
-  }
-
-  console.debug('Editor registered:', element.id || 'unnamed', editor);
-}
-
-/**
- * Unregister a CKEditor instance
- * @param {HTMLElement} element - The editor container element
- */
-export function unregisterEditor(element) {
-  if (!element) return;
-
-  delete element.editor;
-  element.removeAttribute('data-editor');
-
-  if (element.id) {
-    delete fossBillingEditors[element.id];
-    if (typeof window !== 'undefined' && window.FOSSBilling?.editors) {
-      delete window.FOSSBilling.editors[element.id];
-    }
-  }
-
-  const editorName = element.getAttribute('name') || element.id;
-  if (editorName) {
-    delete editorsRegistry[editorName];
-    if (typeof window !== 'undefined' && window.editors) {
-      delete window.editors[editorName];
-    }
-  }
-
-  console.debug('Editor unregistered:', element.id || 'unnamed');
 }

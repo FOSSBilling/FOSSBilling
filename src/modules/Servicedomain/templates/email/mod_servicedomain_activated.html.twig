@@ -1,5 +1,7 @@
-{% block subject %}[{{ guest.system_company.name }}] {{ order.title }}{% endblock %}
+{% block subject %}[{{ guest.system_company.name }}] {{ order.title|default('') }}{% endblock %}
 {% block content %}
+{% set order = order|default({}) %}
+{% set service = service|default({}) %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -36,31 +38,31 @@
 </head>
 <body>
 	<h1>Order Activated</h1>
-	<p>Hello {{ c.first_name }} {{ c.last_name }},</p>
-	<p>Your <strong>{{ order.title }}</strong> is now activated.</p>
+	<p>Hello {{ c.first_name|default('') }} {{ c.last_name|default('') }},</p>
+	<p>Your <strong>{{ order.title|default('') }}</strong> is now activated.</p>
     <p>Please keep in mind that your domain name may not be visible on the internet instantly due to the propagation process which may take up to 48 hours.</p>
     <p>Your website and email will not function until the domain has propagated.</p>
 
     <p>Domain details:</p>
     <ul>
-        <li><strong>Domain:</strong> {{ service.domain }}</li>
-        <li><strong>Registration Date:</strong> {{order.created_at|format_date}}</li>
-        <li><strong>Registration Period:</strong> {{service.period}} Year(s)</li>
-        {% if order.expires_at %}<li><strong>Expires On:</strong> {{ order.expires_at|format_date }}</li>{% endif %}
-        {% if order.period %}<li><strong>Billing Period:</strong> {{ order.total|format_currency(order.currency ?? default_currency) }} every {{ order.period|period_title }}</li>{% endif %}
+        <li><strong>Domain:</strong> {{ service.domain|default('') }}</li>
+        <li><strong>Registration Date:</strong> {{order.created_at|default('')|format_date}}</li>
+        <li><strong>Registration Period:</strong> {{service.period|default('')}} Year(s)</li>
+        {% if order.expires_at|default(false) %}<li><strong>Expires On:</strong> {{ order.expires_at|format_date }}</li>{% endif %}
+        {% if order.period|default(false) %}<li><strong>Billing Period:</strong> {{ order.total|default(0)|format_currency(order.currency|default(default_currency)) }} every {{ order.period|default('')|period_title }}</li>{% endif %}
     </ul>
 
     <p>Nameserver details:</p>
     <ul>
-        <li><strong>Nameserver 1:</strong> {{ service.server.ns1 }}</li>
-        <li><strong>Nameserver 2:</strong> {{ service.server.ns2 }}</li>
-        {% if  service.server.ns3 %}<li><strong>Nameserver 3:</strong> {{ service.server.ns3 }}</li>{% endif %}
-        {% if  service.server.ns4 %}<li><strong>Nameserver 4:</strong> {{ service.server.ns4 }}</li>{% endif %}
+        <li><strong>Nameserver 1:</strong> {{ service.server.ns1|default('') }}</li>
+        <li><strong>Nameserver 2:</strong> {{ service.server.ns2|default('') }}</li>
+        {% if  service.server.ns3|default('') %}<li><strong>Nameserver 3:</strong> {{ service.server.ns3|default('') }}</li>{% endif %}
+        {% if  service.server.ns4|default('') %}<li><strong>Nameserver 4:</strong> {{ service.server.ns4|default('') }}</li>{% endif %}
     </ul>
 
-    <p>You may <a href="{{ 'login'|url(query: { 'email': c.email }, area: 'client') }}" target="_blank">login</a> or <a href='{{ "order/service/manage/#{order.id}"|url(area: 'client') }}' target="_blank">manage your order.</a>
+    <p>You may <a href="{{ 'login'|url(query: { 'email': c.email|default('') }, area: 'client') }}" target="_blank">login</a> or <a href='{{ "order/service/manage/#{order.id|default('')}"|url(area: 'client') }}' target="_blank">manage your order.</a>
 
-	<p class="signature">{{ guest.system_company.signature }}</p>
+	<div class="signature">{{ guest.system_email.signature }}</div>
 </body>
 </html>
 {% endblock %}

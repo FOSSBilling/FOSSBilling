@@ -12,23 +12,23 @@ declare(strict_types=1);
 
 namespace Box\Mod\Product;
 
-use Box\Mod\Product\Entity\Promo;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\ProductCategory;
 use Box\Mod\Product\Entity\ProductPayment;
+use Box\Mod\Product\Entity\Promo;
 use Box\Mod\Product\Entity\PromoRedemption;
 use Box\Mod\Product\Repository\DomainPricingRepository;
 use Box\Mod\Product\Repository\ProductCategoryRepository;
 use Box\Mod\Product\Repository\ProductOrderRepository;
-use Box\Mod\Product\Repository\ProductRepository;
 use Box\Mod\Product\Repository\ProductPaymentRepository;
-use Box\Mod\Product\Repository\PromoRepository;
+use Box\Mod\Product\Repository\ProductRepository;
 use Box\Mod\Product\Repository\PromoRedemptionRepository;
+use Box\Mod\Product\Repository\PromoRepository;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
-use FOSSBilling\PaginationOptions;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\PaginationOptions;
 
 class Service implements InjectionAwareInterface
 {
@@ -149,6 +149,32 @@ class Service implements InjectionAwareInterface
     /**
      * @return mixed[]
      */
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View products'),
+                'description' => __trans('Allows the staff member to view products, categories, and promotions.'),
+            ],
+            'manage_products' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage products'),
+                'description' => __trans('Allows the staff member to create, update, and delete products.'),
+            ],
+            'manage_categories' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage product categories'),
+                'description' => __trans('Allows the staff member to create, update, and delete product categories.'),
+            ],
+            'manage_promos' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage promotions'),
+                'description' => __trans('Allows the staff member to create, update, and delete promotional codes.'),
+            ],
+        ];
+    }
+
     public function getPairs($data): array
     {
         return $this->getProductRepository()->getPairs($data);
@@ -161,6 +187,7 @@ class Service implements InjectionAwareInterface
         $pricing = $this->getProductPricingArray($model);
         $starting_from = $this->getStartingFromPrice($model);
         $isAdmin = $identity instanceof \Model_Admin;
+        $addons = $this->getAddonsApiArray($model, $isAdmin);
 
         $result = [
             'id' => $this->getProductId($model),
@@ -173,6 +200,7 @@ class Service implements InjectionAwareInterface
             'priority' => $this->getProductPriority($model),
             'pricing' => $isAdmin ? $pricing : $this->getPublicPricing($pricing),
             'config' => $isAdmin ? $config : $this->getPublicConfig($config),
+            'addons' => $addons,
 
             'price_starting_from' => $starting_from,
             'icon_url' => $this->getProductIconUrl($model),
@@ -210,6 +238,8 @@ class Service implements InjectionAwareInterface
             'allow_domain_register',
             'allow_domain_transfer',
             'allow_domain_own',
+            'allow_subdomain',
+            'subdomain_base_domain',
         ];
 
         return array_intersect_key($config, array_flip($publicConfigKeys));
@@ -768,10 +798,7 @@ class Service implements InjectionAwareInterface
 
         $upgrade = $this->findProductById($upgradeProductId);
 
-        throw new \FOSSBilling\InformationException('Sorry, but ":product" is not allowed to be upgraded to ":upgrade"', [
-            ':product' => $product->getTitle() ?? 'unknown',
-            ':upgrade' => $upgrade->getTitle() ?? 'unknown',
-        ]);
+        throw new \FOSSBilling\InformationException('Sorry, but ":product" is not allowed to be upgraded to ":upgrade"', [':product' => $product->getTitle() ?? 'unknown', ':upgrade' => $upgrade->getTitle() ?? 'unknown']);
     }
 
     /**
@@ -985,8 +1012,8 @@ class Service implements InjectionAwareInterface
     private function getAddonsApiArray(Product $model): array
     {
         $addons = [];
-        foreach ($this->getProductAddons($model) as $addon) {
-            $d = $this->toAddonArray($addon);
+        foreach ($this->getProductAddons($model, !$isAdmin) as $addon) {
+            $d = $this->toAddonArray($addon, true, $isAdmin);
             $addons[] = $d;
         }
 
@@ -1115,9 +1142,15 @@ class Service implements InjectionAwareInterface
             'updated_at' => $this->formatDateTimeValue($this->getProductUpdatedAt($model)),
             'icon_url' => $this->getProductIconUrl($model),
 
-            'pricing' => $pricing,
-            'config' => $config,
+            'pricing' => $isAdmin ? $pricing : $this->getPublicPricing($pricing),
+            'config' => $isAdmin ? $config : $this->getPublicConfig($config),
         ];
+
+        if (!$isAdmin) {
+            unset($result['plugin'], $result['created_at'], $result['updated_at']);
+        }
+
+        return $result;
     }
 
     /*

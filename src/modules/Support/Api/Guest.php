@@ -19,7 +19,7 @@ namespace Box\Mod\Support\Api;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
-class Guest extends \Api_Abstract
+class Guest extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Submit new public ticket.
@@ -34,7 +34,7 @@ class Guest extends \Api_Abstract
     ])]
     public function ticket_create(array $data): string
     {
-        $this->di['rate_limiter']->consumeOrThrow('guest_ticket_create', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('guest_ticket_create', (string) $this->getIp());
 
         if (!is_string($data['message']) || strlen($data['message']) < 4) {
             throw new \FOSSBilling\InformationException('Please enter your message');
@@ -121,7 +121,7 @@ class Guest extends \Api_Abstract
         $pager = $this->getService()->kbSearchArticles('active', $search, $cat, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
-            $article = $this->di['db']->getExistingModelById('SupportKbArticle', $item['id'], 'KB Article not found');
+            $article = $this->getDi()['db']->getExistingModelById('SupportKbArticle', $item['id'], 'KB Article not found');
             $pager['list'][$key] = $this->getService()->kbToApiArray($article);
         }
 
@@ -163,12 +163,12 @@ class Guest extends \Api_Abstract
         $data['article_status'] = \Model_SupportKbArticle::ACTIVE;
         [$query, $bindings] = $this->getService()->kbCategoryGetSearchQuery($data);
 
-        $pager = $this->di['pager']->getPaginatedResultSet($query, $bindings, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($query, $bindings, PaginationOptions::fromArray($data));
 
         $q = $data['q'] ?? null;
 
         foreach ($pager['list'] as $key => $item) {
-            $category = $this->di['db']->getExistingModelById('SupportKbArticleCategory', $item['id'], 'KB Article not found');
+            $category = $this->getDi()['db']->getExistingModelById('SupportKbArticleCategory', $item['id'], 'KB Article not found');
             $pager['list'][$key] = $this->getService()->kbCategoryToApiArray($category, $this->getIdentity(), $q);
         }
 

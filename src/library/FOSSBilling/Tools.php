@@ -248,6 +248,26 @@ class Tools
         return $default;
     }
 
+    /**
+     * Normalizes mixed input into a valid TCP/UDP port number.
+     */
+    public static function normalizePort(mixed $value, ?int $default = null): ?int
+    {
+        if (!is_int($value) && !is_string($value)) {
+            return $default;
+        }
+
+        if (is_string($value)) {
+            $value = trim($value);
+        }
+
+        $port = filter_var($value, FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1, 'max_range' => 65535],
+        ]);
+
+        return $port === false ? $default : $port;
+    }
+
     public static function isHTTPS(): bool
     {
         $protocol = $_SERVER['HTTPS'] ?? $_SERVER['REQUEST_SCHEME'] ?? '';
@@ -326,7 +346,7 @@ class Tools
             $knownInterfaces = [];
         }
 
-        if ($interface && $interface !== '0' && in_array($interface, $knownInterfaces)) {
+        if ($interface !== '0' && in_array($interface, $knownInterfaces)) {
             return $interface;
         }
 

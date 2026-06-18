@@ -71,6 +71,32 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->messageRepository;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View mass mail messages'),
+                'description' => __trans('Allows the staff member to view mass mail messages and recipients.'),
+            ],
+            'create_and_edit' => [
+                'type' => 'bool',
+                'display_name' => __trans('Create and edit mass mail messages'),
+                'description' => __trans('Allows the staff member to create and edit mass mail messages.'),
+            ],
+            'send' => [
+                'type' => 'bool',
+                'display_name' => __trans('Send mass mail'),
+                'description' => __trans('Allows the staff member to send mass mail messages to clients.'),
+            ],
+            'delete' => [
+                'type' => 'bool',
+                'display_name' => __trans('Delete mass mail messages'),
+                'description' => __trans('Allows the staff member to delete mass mail messages.'),
+            ],
+        ];
+    }
+
     public function install(): void
     {
         $extensionService = $this->di['mod_service']('extension');
@@ -221,6 +247,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         if (!Environment::isProduction()) {
+            // @phpstan-ignore if.alwaysFalse
             if (DEBUG) {
                 error_log('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
             }
@@ -316,10 +343,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $normalized = array_values($normalized);
         sort($normalized);
-
-        if ($normalized === []) {
-            return [];
-        }
 
         $existingIds = $this->getExistingIds($table, $normalized);
         if (count($existingIds) !== count($normalized)) {

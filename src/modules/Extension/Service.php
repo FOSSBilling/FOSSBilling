@@ -24,8 +24,9 @@ class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
-    public function __construct(private readonly ?Filesystem $filesystem = new Filesystem())
+    public function __construct(private ?Filesystem $filesystem = null)
     {
+        $this->filesystem ??= new Filesystem();
     }
 
     public function setDi(\Pimple\Container $di): void
@@ -41,7 +42,11 @@ class Service implements InjectionAwareInterface
     public function getModulePermissions(): array
     {
         return [
-            'can_always_access' => true,
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View extensions'),
+                'description' => __trans('Allows the staff member to view installed and available extensions, languages, and extension details.'),
+            ],
             'manage_extensions' => [
                 'type' => 'bool',
                 'display_name' => __trans('Manage extensions'),
@@ -57,9 +62,9 @@ class Service implements InjectionAwareInterface
 
     public function isCoreModule(string $mod): bool
     {
-        $core = $this->di['mod']('extension')->getCoreModules();
+        $core = array_map(strtolower(...), $this->di['mod']('extension')->getCoreModules());
 
-        return in_array($mod, $core);
+        return in_array(strtolower($mod), $core, true);
     }
 
     public function isExtensionActive(string $type, string $id): bool
@@ -95,7 +100,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function removeNotExistingModules(): bool|int
+    public function removeNotExistingModules(): int
     {
         $list = $this->di['db']->find('Extension', "type = 'mod'");
         $removedItems = 0;
@@ -109,7 +114,7 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        return $removedItems == 0 ? true : $removedItems;
+        return $removedItems;
     }
 
     public function getSearchQuery($filter): array
@@ -379,9 +384,6 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @return \Model_Extension
-     */
-    /**
      * @return \Model_Extension|null
      */
     public function findExtension($type, $id)
@@ -509,7 +511,7 @@ class Service implements InjectionAwareInterface
                 $this->filesystem->remove($path);
                 $this->di['logger']->info('Removed extension files for "%s" from %s', $id, $path);
             } catch (IOException $e) {
-                $this->di['logger']->warn('Failed to remove extension files for "%s": %s', $id, $e->getMessage());
+                $this->di['logger']->warning('Failed to remove extension files for "%s": %s', $id, $e->getMessage());
 
                 throw new \FOSSBilling\Exception('Failed to remove extension files. Please check file permissions and try again or manually remove the files from :path', [':path' => $path]);
             }
@@ -541,7 +543,7 @@ class Service implements InjectionAwareInterface
         $this->filesystem->mkdir($extractedPath, 0o755);
 
         // Download the extension archive and save it to the cache folder
-        $client = \Symfony\Component\HttpClient\HttpClient::create(['bindto' => BIND_TO]);
+        $client = $this->di['http_client'];
         $response = $client->request('GET', $latest['download_url']);
 
         $code = $response->getStatusCode();
@@ -551,7 +553,7 @@ class Service implements InjectionAwareInterface
 
         $fileHandler = fopen($zipPath, 'w');
         foreach ($client->stream($response) as $chunk) {
-            fwrite($fileHandler, $chunk->getContent());
+            fwrite($fileHandler, (string) $chunk->getContent());
         }
         fclose($fileHandler);
 
@@ -728,19 +730,54 @@ class Service implements InjectionAwareInterface
      *
      * @return string The filesystem path for the extension
      *
-     * @throws \FOSSBilling\Exception If the extension type is not supported
+     * @throws \FOSSBilling\InformationException If the extension type is not supported
      */
     public function getExtensionPath(string $type, string $id, bool $includeMessagesSubdir = false): string
     {
-        return match ($type) {
-            \FOSSBilling\ExtensionManager::TYPE_MOD => Path::join(PATH_MODS, ucfirst($id)),
-            \FOSSBilling\ExtensionManager::TYPE_THEME => Path::join(PATH_THEMES, $id),
+        $this->assertValidExtensionIdentifier($id);
+
+        $basePath = $this->getExtensionBasePath($type);
+        $path = match ($type) {
+            \FOSSBilling\ExtensionManager::TYPE_MOD,
+            \FOSSBilling\ExtensionManager::TYPE_PG => Path::join($basePath, ucfirst($id)),
+            \FOSSBilling\ExtensionManager::TYPE_THEME => Path::join($basePath, $id),
             \FOSSBilling\ExtensionManager::TYPE_TRANSLATION => $includeMessagesSubdir
-                ? Path::join(PATH_LANGS, $id, 'LC_MESSAGES')
-                : Path::join(PATH_LANGS, $id),
-            \FOSSBilling\ExtensionManager::TYPE_PG => Path::join(PATH_LIBRARY, 'Payment', 'Adapter', ucfirst($id)),
+                ? Path::join($basePath, $id, 'LC_MESSAGES')
+                : Path::join($basePath, $id),
             default => throw new \FOSSBilling\InformationException('Extension type (:type) is not supported for automatic path determination.', [':type' => $type]),
         };
+
+        $this->assertPathWithinBasePath($path, $basePath);
+
+        return $path;
+    }
+
+    private function getExtensionBasePath(string $type): string
+    {
+        return match ($type) {
+            \FOSSBilling\ExtensionManager::TYPE_MOD => PATH_MODS,
+            \FOSSBilling\ExtensionManager::TYPE_THEME => PATH_THEMES,
+            \FOSSBilling\ExtensionManager::TYPE_TRANSLATION => PATH_LANGS,
+            \FOSSBilling\ExtensionManager::TYPE_PG => Path::join(PATH_LIBRARY, 'Payment', 'Adapter'),
+            default => throw new \FOSSBilling\InformationException('Extension type (:type) is not supported for automatic path determination.', [':type' => $type]),
+        };
+    }
+
+    private function assertValidExtensionIdentifier(string $id): void
+    {
+        if (preg_match('/\A[A-Za-z0-9_-]+\z/', $id) !== 1) {
+            throw new \FOSSBilling\InformationException('Extension ID contains invalid characters.');
+        }
+    }
+
+    private function assertPathWithinBasePath(string $path, string $basePath): void
+    {
+        $canonicalBasePath = Path::canonicalize($basePath);
+        $canonicalPath = Path::canonicalize($path);
+
+        if (!Path::isBasePath($canonicalBasePath, $canonicalPath)) {
+            throw new \FOSSBilling\InformationException('Extension path resolved outside the expected extension directory.');
+        }
     }
 
     private function _getSalt(): ?string
@@ -796,7 +833,7 @@ class Service implements InjectionAwareInterface
         return $modules;
     }
 
-    public function getSpecificModulePermissions(string $module): array|false
+    public function getSpecificModulePermissions(string $module): array
     {
         $class = 'Box\Mod\\' . ucfirst($module) . '\Service';
         if (class_exists($class) && method_exists($class, 'getModulePermissions')) {

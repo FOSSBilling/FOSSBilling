@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://docs.fossbilling.org/
+    about: Check the documentation before opening an issue.
+  - name: Community Support
+    url: https://fossbilling.org/discord
+    about: Ask installation, configuration, and troubleshooting questions on Discord.
+  - name: Security Vulnerabilities
+    url: https://github.com/FOSSBilling/FOSSBilling/security/policy
+    about: Report possible security vulnerabilities privately.

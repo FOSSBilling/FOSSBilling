@@ -1,66 +1,110 @@
-{% if list.pages > 1 %}
-    {% set pageParam = page_param|default('page') %}
-    {% set currentPageRaw = request.(pageParam)|default(1) %}
-    {% if currentPageRaw matches '/^\\d+$/' %}
-        {% set currentPage = currentPageRaw %}
-    {% else %}
-        {% set currentPage = 1 %}
+{% set pageParam = page_param|default('page') %}
+{% set perPageParam = per_page_param|default('per_page') %}
+{% set defaultPerPage = default_per_page|default(list.per_page) %}
+{% set currentPageRaw = request.(pageParam)|default(1) %}
+{% if currentPageRaw matches '/^\\d+$/' %}
+    {% set currentPage = currentPageRaw + 0 %}
+{% else %}
+    {% set currentPage = 1 %}
+{% endif %}
+
+{% set currentPerPageRaw = request.(perPageParam)|default(defaultPerPage) %}
+{% if currentPerPageRaw matches '/^\\d+$/' %}
+    {% set currentPerPage = currentPerPageRaw + 0 %}
+{% else %}
+    {% set currentPerPage = defaultPerPage %}
+{% endif %}
+
+{% set paginator = guest.system_paginator({ 'total': list.total, 'page_param': pageParam, (pageParam): currentPage, 'per_page': list.per_page }) %}
+{% set enablePerPageSelector = app_area == 'admin' and (show_per_page_selector|default(true)) %}
+{% set perPageOptions = per_page_options|default([10, 25, 50, 100]) %}
+{% set splitFooterControls = split_footer_controls|default(false) %}
+{% set hasUrl = url is defined and url is not null %}
+{% set hash = hash|default('') %}
+{% if list.per_page not in perPageOptions %}
+    {% set perPageOptions = perPageOptions|merge([list.per_page])|sort %}
+{% endif %}
+{% if currentPerPage not in perPageOptions %}
+    {% set perPageOptions = perPageOptions|merge([currentPerPage])|sort %}
+{% endif %}
+{% set minPerPageOption = (perPageOptions|first)|default(list.per_page) %}
+{% set showPerPageSelector = enablePerPageSelector and list.total > minPerPageOption and hasUrl %}
+{% set showPaginator = list.pages > 1 and hasUrl %}
+
+{% if showPerPageSelector or showPaginator %}
+    {# Removing pagination parameters from the request to avoid duplication #}
+    {% set safeRequest = request|merge({ (pageParam): null, (perPageParam): null }) %}
+    {% set filteredRequest = safeRequest|filter(v => v is not null) %}
+    {% set recordSelectorOptions = [] %}
+    {% if showPerPageSelector %}
+        {% for pageSize in perPageOptions %}
+            {% set recordSelectorOptions = recordSelectorOptions|merge([{
+                value: pageSize,
+                active: pageSize == currentPerPage,
+                href: url|url(filteredRequest|merge({ (pageParam): 1, (perPageParam): pageSize })) ~ hash
+            }]) %}
+        {% endfor %}
     {% endif %}
 
-    {% set paginator = guest.system_paginator({ 'total': list.total, 'page_param': pageParam, (pageParam): currentPage, 'per_page': list.per_page }) %}
+    <div class="{{ splitFooterControls ? 'd-flex align-items-center justify-content-between gap-2 w-100 flex-wrap' : 'd-flex align-items-center gap-2' }}">
+        {% if showPerPageSelector %}
+            {{ include('partial_record_selector.html.twig', {
+                record_selector_current: currentPerPage,
+                record_selector_options: recordSelectorOptions
+            }) }}
+        {% endif %}
 
-    {# Removing current page parameter from the request to avoid duplication #}
-    {% set safeRequest = request|merge({ (pageParam): null }) %}
-    {% set filteredRequest = safeRequest|filter(v => v is not null) %}
-
-    <nav aria-label="{{ 'Pagination'|trans }}">
-        <ul class="pagination m-0">
-            {% if paginator.currentpage != 1 %}
-            <li class="page-item">
-                <a class="page-link" href="{{ url|url(filteredRequest|merge({ (pageParam): currentPage - 1 })) }}">
-                    <svg class="icon">
-                        <use xlink:href="#chevron-left" />
-                    </svg>
-                </a>
-            </li>
-            {% endif %}
-            {% if (paginator.range.0 != 1) %}
-                <li class="page-item">
-                    <a class="page-link" href="{{ url|url(filteredRequest|merge({ (pageParam): 1 })) }}">1</a>
-                </li>
-            {% endif %}
-            {% for i in paginator.start..paginator.end %}
-                {% if paginator.range.0 > 2 and i == paginator.range.0 %}
-                    ...
-                {% endif %}
-
-                {% if i == paginator.currentpage %}
-                    <li class="page-item active">
-                        <span class="page-link" aria-current="page">{{ i }}</span>
-                    </li>
-                {% else %}
+        {% if showPaginator %}
+            <nav aria-label="{{ 'Pagination'|trans }}" class="{{ splitFooterControls ? 'ms-auto' : '' }}">
+                <ul class="pagination m-0">
+                    {% if paginator.currentpage != 1 %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url|url(filteredRequest|merge({ (pageParam): i })) }}"> {{ i }}</a>
+                        <a class="page-link" href="{{ url|url(filteredRequest|merge({ (pageParam): currentPage - 1, (perPageParam): currentPerPage })) ~ hash }}">
+                            <svg class="icon">
+                                <use href="#chevron-left" />
+                            </svg>
+                        </a>
                     </li>
-                {% endif %}
-            {% endfor %}
+                    {% endif %}
+                    {% if (paginator.range.0 != 1) %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url|url(filteredRequest|merge({ (pageParam): 1, (perPageParam): currentPerPage })) ~ hash }}">1</a>
+                        </li>
+                    {% endif %}
+                    {% for i in paginator.start..paginator.end %}
+                        {% if paginator.range.0 > 2 and i == paginator.range.0 %}
+                            ...
+                        {% endif %}
 
-            {% if paginator.range[paginator.midrange -1] < paginator.numpages -1 and paginator.end == paginator.range[paginator.midrange-1] %}
-                ...
-                <li class="page-item">
-                    <a class="page-link" href="{{ url|url(filteredRequest|merge({ (pageParam): paginator.numpages })) }}"> {{ paginator.numpages }}</a>
-                </li>
-            {% endif %}
+                        {% if i == paginator.currentpage %}
+                            <li class="page-item active">
+                                <span class="page-link" aria-current="page">{{ i }}</span>
+                            </li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url|url(filteredRequest|merge({ (pageParam): i, (perPageParam): currentPerPage })) ~ hash }}"> {{ i }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
 
-            {% if paginator.currentpage != paginator.numpages %}
-            <li class="page-item">
-                <a class="page-link" href="{{ url|url(filteredRequest|merge({ (pageParam): currentPage + 1 })) }}">
-                    <svg class="icon">
-                        <use xlink:href="#chevron-right" />
-                    </svg>
-                </a>
-            </li>
-            {% endif %}
-        </ul>
-    </nav>
+                    {% if paginator.range|length > 0 and paginator.range|last < paginator.numpages and paginator.end == paginator.range|last %}
+                        ...
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url|url(filteredRequest|merge({ (pageParam): paginator.numpages, (perPageParam): currentPerPage })) ~ hash }}"> {{ paginator.numpages }}</a>
+                        </li>
+                    {% endif %}
+
+                    {% if paginator.currentpage != paginator.numpages %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url|url(filteredRequest|merge({ (pageParam): currentPage + 1, (perPageParam): currentPerPage })) ~ hash }}">
+                            <svg class="icon">
+                                <use href="#chevron-right" />
+                            </svg>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    </div>
 {% endif %}

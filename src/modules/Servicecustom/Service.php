@@ -37,20 +37,31 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage custom services'),
+                'description' => __trans('Allows the staff member to update custom service configurations and call custom service methods.'),
+            ],
+        ];
+    }
+
     public function validateCustomForm(array &$data, array $product): void
     {
         if ($product['form_id']) {
             $formbuilderService = $this->di['mod_service']('formbuilder');
             $form = $formbuilderService->getForm((int) $product['form_id']);
             foreach ($form['fields'] as $field) {
-                if ($field['required'] == 1) {
+                if (($field['required'] ?? 0) == 1) {
                     $field_name = $field['name'];
                     if (!isset($data[$field_name]) || empty($data[$field_name])) {
                         throw new \FOSSBilling\InformationException('You must fill in all required fields. ' . $field['label'] . ' is missing', null, 9684);
                     }
                 }
 
-                if ($field['readonly'] == 1) {
+                if (($field['readonly'] ?? 0) == 1) {
                     $field_name = $field['name'];
                     if ($data[$field_name] != $field['default_value']) {
                         throw new \FOSSBilling\InformationException('Field ' . $field['label'] . ' is read only. You cannot change its value', null, 5468);
@@ -104,7 +115,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             throw new \FOSSBilling\Exception('Could not activate order. Service was not created', null, 7456);
         }
 
-        /* @var \Model_ServiceCustom $model */
+        // @phpstan-ignore argument.type (Model is guaranteed to be Model_ServiceCustom by getOrderService)
         $this->callOnAdapter($model, 'activate');
 
         return true;
@@ -252,6 +263,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             if (!$order instanceof \Model_ClientOrder) {
                 throw new \FOSSBilling\Exception('Order not found');
             }
+
+            if ($order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+                throw new \FOSSBilling\InformationException('Order is not activated');
+            }
         } else {
             $order = $this->di['db']->getExistingModelById('ClientOrder', $orderId, 'Order not found');
         }
@@ -278,7 +293,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $file = Path::join('Plugin', $plugin, "{$plugin}.php");
         if (!Environment::isTesting() && !$this->filesystem->exists(Path::join(PATH_LIBRARY, $file))) {
             $e = new \FOSSBilling\Exception('Plugin class file :file was not found', [':file' => $file], 3124);
-
+            // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
             if (DEBUG) {
                 error_log($e->getMessage());
             }

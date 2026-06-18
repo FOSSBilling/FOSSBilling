@@ -1,12 +1,13 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% set active_menu = 'support' %}
 
 {% import "macro_functions.html.twig" as mf %}
 
 {% block meta_title %}{{ ticket.subject }}{% endblock %}
 
 {% block head %}
-    <link rel="stylesheet" href="{{ 'build/css/markdown.css' | asset_url }}">
-    {{ mf.wysiwyg('.editor-textarea') }}
+    {{ 'css/markdown.css' | public_asset_url | stylesheet_tag }}
+    {{ wysiwyg('.editor-textarea') }}
 {% endblock %}
 
 {% block body_class %}support-ticket{% endblock %}
@@ -56,7 +57,7 @@
                             <td>{{ ticket.created_at|format_date }}</td>
                         </tr>
 
-                        {% if ticket.rel_type == 'order' and ticket.rel_id %}
+                        {% if ticket.rel_type|default('') == 'order' and ticket.rel_id %}
                             <tr>
                                 <td>{{ 'Related To'|trans }}</td>
                                 <td>
@@ -76,7 +77,7 @@
                         <div class="card {% if message.author.role == 'admin' %}border-primary{% endif %}">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <div class="d-flex align-items-center gap-2">
-                                    {{ mf.avatar(message.author.email, 40, 'db-avatar img-thumbnail d-none d-md-block') }}
+                                    {{ avatar(message.author.email|default(''), 40, 'img-thumbnail d-none d-md-block', null, 'div') }}
                                     <div class="d-flex flex-column">
                                         <span class="text-muted">
                                             {{ message.author.name }}
@@ -99,10 +100,7 @@
                                         <button class="btn btn-outline-secondary btn-quote-reply"
                                                 message-quote="{{ mf.markdown_quote(message.content) }}"
                                                 data-bs-toggle="tooltip" data-bs-title="{{ 'Quote Reply'|trans }}">
-                                            <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg"
-                                                 viewBox="0 0 24 24">
-                                                <path d="M11 18V10H9.12L11.12 6H5.38L3 10.76V18M9 16H5V11.24L6.62 8H7.88L5.88 12H9M21 18V10H19.12L21.12 6H15.38L13 10.76V18M19 16H15V11.24L16.62 8H17.88L15.88 12H19Z"/>
-                                            </svg>
+                                            <svg class="icon"><use href="#quote" /></svg>
                                         </button>
                                     </div>
                                 {% endif %}
@@ -160,7 +158,7 @@
 
             ticketReplyForm?.addEventListener('submit', (e) => {
                 e.preventDefault();
-                API.client.post('support/ticket_reply', Tools.serializeFormDataToObject(new FormData(ticketReplyForm)),
+                FOSSBilling.api.client.post('support/ticket_reply', FOSSBilling.tools.serializeFormDataToObject(new FormData(ticketReplyForm)),
                     () => {
                         flashMessage({
                             message: 'Posted reply',
@@ -171,10 +169,10 @@
                 )
             });
 
-            closeTicketBtn.addEventListener('click', (e) => {
+            closeTicketBtn?.addEventListener('click', (e) => {
                 e.preventDefault();
                 toggleLoader();
-                API.client.post('support/ticket_close', Tools.serializeFormDataToObject(new FormData(ticketReplyForm)),
+                FOSSBilling.api.client.post('support/ticket_close', FOSSBilling.tools.serializeFormDataToObject(new FormData(ticketReplyForm)),
                     () => {
                         flashMessage({
                             message: 'Closed ticket #{{ ticket.id }}',
@@ -185,7 +183,7 @@
                 )
             });
 
-            postReplyBtn.addEventListener('click', () => {
+            postReplyBtn?.addEventListener('click', () => {
                 if (document.getElementById('ticket-reply-text').value.length > 0) {
                     toggleLoader();
                 }
@@ -198,7 +196,7 @@
                     quote = quote.replace(/^\s*$(?:\r\n?|\n)/gm, '');
                     if (ticketReplyTextArea.editor) {
                         ticketReplyTextArea.editor.setData(quote);
-                        ticketReplyTextArea.editor.editing.view.focus();
+                        ticketReplyTextArea.editor.focus();
                     } else {
                         ticketReplyTextArea.textContent = quote;
                         ticketReplyTextArea.focus();
@@ -206,9 +204,9 @@
                 });
             })
 
-            document.getElementById('reply-to-btn').addEventListener('click', () => {
+            document.getElementById('reply-to-btn')?.addEventListener('click', () => {
                 if (ticketReplyTextArea.editor) {
-                    ticketReplyTextArea.editor.editing.view.focus();
+                    ticketReplyTextArea.editor.focus();
                 } else {
                     ticketReplyTextArea.focus();
                 }
@@ -216,6 +214,9 @@
 
             const toggleLoader = () => {
                 let loader = document.querySelector('.wait');
+                if (!loader) {
+                    return;
+                }
                 if (loader.style.display === 'none') {
                     loader.style.display = 'block';
                 } else {

@@ -1,6 +1,6 @@
 import Litepicker from 'litepicker';
 
-document.addEventListener('DOMContentLoaded', () => {
+export default function initDatepickers() {
   document.querySelectorAll('.datepicker').forEach(element => {
     element.autocomplete = 'off';
     new Litepicker({
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
   });
-});
+}
 
 function isRanger(element) {
   return element.dataset.nameFrom && element.dataset.nameTo;

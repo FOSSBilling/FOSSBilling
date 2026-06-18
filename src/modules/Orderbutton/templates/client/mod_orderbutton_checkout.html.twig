@@ -2,7 +2,7 @@
 <div class="accordion-item">
     <h3 class="accordion-header">
         <button class="accordion-button {% if not request.checkout %}collapsed{%endif%}" type="button" data-bs-toggle="collapse" data-bs-target="#checkout" aria-expanded="false" aria-controls="checkout">
-            <svg class="svg-icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17,18A2,2 0 0,1 19,20A2,2 0 0,1 17,22C15.89,22 15,21.1 15,20C15,18.89 15.89,18 17,18M1,2H4.27L5.21,4H20A1,1 0 0,1 21,5C21,5.17 20.95,5.34 20.88,5.5L17.3,11.97C16.96,12.58 16.3,13 15.55,13H8.1L7.2,14.63L7.17,14.75A0.25,0.25 0 0,0 7.42,15H19V17H7C5.89,17 5,16.1 5,15C5,14.65 5.09,14.32 5.24,14.04L6.6,11.59L3,4H1V2M7,18A2,2 0 0,1 9,20A2,2 0 0,1 7,22C5.89,22 5,21.1 5,20C5,18.89 5.89,18 7,18M16,11L18.78,6H6.14L8.5,11H16Z" /></svg>
+            <svg class="icon me-2"><use href="#shopping-cart" /></svg>
             <span>{{ 'Cart'|trans }}</span>&nbsp;<span class="badge text-bg-success">{{ cart.items | length }}</span>
         </button>
     </h3>
@@ -40,7 +40,7 @@
                                     {{ (item.total * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}
                                 {% endif %}
                             </td>
-                            <td><button data-cart-item-id="{{ item.id }}" class="btn btn-dark btn-sm remove-cart-item" title="{{ 'Remove item'|trans }}"><svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></td>
+                            <td><button data-cart-item-id="{{ item.id }}" class="btn btn-dark btn-sm remove-cart-item" title="{{ 'Remove item'|trans }}"><svg class="icon"><use href="#x" /></svg></button></td>
                         </tr>
 
                         {% if request.show_custom_form_values %}
@@ -117,7 +117,7 @@
                             <div class="control-group">
                                 <div class="form-controls">
                                     <div class="input-append">
-                                        <input class="span8" type="text" name="promocode" id="promocode" value="{{ request.promocode|default(cart.promocode) }}" {% if promo.required %}required="required"{% endif %} placeholder="{{ 'Enter code'|trans }}">
+                                        <input class="span8" type="text" name="promocode" id="promocode" value="{{ request.promocode|default(cart.promocode) }}" {% if promo|default({}).required|default(false) %}required="required"{% endif %} placeholder="{{ 'Enter code'|trans }}">
                                         {% if cart.promocode %}
                                             <a class="btn btn-warning btn-sm mb-1" href="{{ 'cart/remove_promo'|api_url(role: 'guest') }}" type="button" {{ fb_api_link({reload: true}) }}>{{ 'Remove'|trans }}</a>
                                         {% else %}
@@ -143,7 +143,7 @@
                             {% endif %}
 
                             {% set tax_amount = 0 %}
-                            {% if client.client_is_taxable %}
+                            {% if client and client.client_is_taxable %}
                                 {% set tax_rate = client.invoice_get_tax_rate %}
                                 {% set tax_amount = cart.total * tax_rate / 100 %}
                                 <tr>
@@ -160,13 +160,13 @@
 
                         <form method="post" action="{{ 'cart/checkout'|api_url }}" {{ fb_api_form({callback: 'onOrderCheckout'}) }}>
                             <fieldset>
-                                {% set enough_in_balance = client.client_balance_get_total >= cart.total %}
+                                {% set enough_in_balance = client ? client.client_balance_get_total >= cart.total : false %}
                                 {% if cart.total and not enough_in_balance %}
                                     <div class="control-group">
                                         <p class="small text-muted mb-2">{{ 'Choose a payment method to continue with your order.'|trans }}</p>
                                         <div class="d-flex flex-wrap gap-3">
                                         {% for gtw in guest.invoice_gateways %}
-                                            {% if cart.currency.code in gtw.accepted_currencies %}
+                                            {% if cart.currency.code in gtw.accepted_currencies and gtw.allow_single %}
                                                 {% set gateway_input_id = 'order-gateway-' ~ gtw.id %}
                                                 <div class="invoice-gateway rounded-2 p-2">
                                                     <input type="radio" class="btn-check border-0" name="gateway_id" id="{{ gateway_input_id }}" value="{{ gtw.id }}" autocomplete="off" {{ loop.first ? 'checked' : '' }}/>

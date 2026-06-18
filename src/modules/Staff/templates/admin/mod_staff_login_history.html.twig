@@ -5,14 +5,87 @@
 {% block meta_title %}{{ 'Staff Members Login History'|trans }}{% endblock %}
 
 {% set active_menu = 'activity' %}
+{% set has_filter_panel = true %}
+{% set filter_panel_id = 'page-search-filters' %}
+{% set filter_panel_open = request_has_filters %}
 
 {% block content %}
 <div class="card">
-    <div class="card-body">
-        <h5>{{ 'Staff Members Login History'|trans }}</h5>
+    <div class="card-header">
+        <div>
+            <h3 class="card-title">{{ 'Staff Members Login History'|trans }}</h3>
+            <p class="card-subtitle">{{ 'Review staff login events, related IP addresses, and origin countries.'|trans }}</p>
+        </div>
     </div>
 
-    {{ include('partial_search.html.twig') }}
+    {{ include('partial_search.html.twig', {
+        search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : ''
+    }) }}
+    <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
+        <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
+            {% if request.search %}
+                <input type="hidden" name="search" value="{{ request.search }}">
+            {% endif %}
+            <div class="row g-3">
+                <div class="col-md-6 col-xl-3">
+                    <div>
+                        <label class="form-label text-muted small mb-1" for="staff-login-history-id">{{ 'Event ID'|trans }}</label>
+                        <input class="form-control" type="text" id="staff-login-history-id" name="id" value="{{ request.id }}" placeholder="{{ 'Login Event ID'|trans }}">
+                    </div>
+                </div>
+                <div class="col-md-6 col-xl-5">
+                    <div>
+                        <label class="form-label text-muted small mb-1" for="staff-login-history-admin">{{ 'Staff Member'|trans }}</label>
+                        <select class="form-control autocomplete-selector"
+                                placeholder="{{ 'Start Typing the Admin Name or ID'|trans }}"
+                                id="staff-login-history-admin"
+                                name="admin_id"
+                                data-resturl="/api/admin/staff/get_pairs">
+                        {% if request.admin_id %}
+                            {% set admin = admin.staff_get({ 'id': request.admin_id }) %}
+                            <option value="{{ request.admin_id }}" selected>{{ admin.name }} ({{ admin.email }})</option>
+                        {% endif %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6 col-xl-4">
+                    <div>
+                        <label class="form-label text-muted small mb-1" for="staff-login-history-ip">{{ 'IP Address'|trans }}</label>
+                        <input class="form-control" type="text" id="staff-login-history-ip" name="ip" value="{{ request.ip }}" placeholder="{{ 'Filter by IP Address'|trans }}">
+                    </div>
+                </div>
+                <div class="col-md-6 col-xl-4">
+                    <div>
+                        <label class="form-label text-muted small mb-1" for="staff-login-history-date-range">{{ 'Date Range'|trans }}</label>
+                        <div class="input-group">
+                            <div class="input-icon w-100">
+                                <input class="form-control datepicker"
+                                       id="staff-login-history-date-range"
+                                       placeholder="{{ 'Select Date Range'|trans }}"
+                                       value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
+                                       data-name-from="date_from"
+                                       data-name-to="date_to">
+                                <span class="input-icon-addon">
+                                    <svg class="icon">
+                                        <use href="#calendar" />
+                                    </svg>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
+                <button class="btn btn-primary" type="submit">
+                    <svg class="icon">
+                        <use href="#filter" />
+                    </svg>
+                    {{ 'Apply Filters'|trans }}
+                </button>
+            </div>
+        </form>
+    </section>
     <div class="table-responsive">
         <table class="table card-table table-vcenter table-striped text-nowrap">
             <thead>
@@ -27,35 +100,57 @@
             </thead>
 
             <tbody>
-            {% set history = admin.staff_login_history_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+            {% set history = admin.staff_login_history_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
             {% for i, event in history.list %}
             <tr>
                 <td>{{ event.id }}</td>
                 <td>
                     <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>
-                        {{ mf.avatar(event.staff.email, 24, 'db-avatar avatar avatar-xs d-none d-md-inline-block') }}
+                        {{ avatar(event.staff.email, 24, 'avatar avatar-xs d-none d-md-inline-block') }}
                     </a>
                 </td>
                 <td>
                     <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>
                         {{ event.staff.name }}
                     </a>
+                    <a href="{{ request_path|url(request_query|merge({ 'admin_id': event.staff.id, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all login events for this staff member'|trans }}">
+                        <svg class="icon icon-sm text-muted">
+                            <use href="#filter" />
+                        </svg>
+                    </a>
                 </td>
-                <td>{{ mf.ip_lookup_link(event.ip) }}</td>
+                <td class="text-nowrap">
+                    <div class="d-inline-flex align-items-center gap-1 flex-nowrap">
+                        {{ mf.ip_lookup_link(event.ip) }}
+                        {% if event.ip %}
+                        <a href="{{ request_path|url(request_query|merge({ 'ip': event.ip, 'page': null })) }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all login events from this IP address'|trans }}">
+                            <svg class="icon icon-sm text-muted">
+                                <use href="#filter" />
+                            </svg>
+                        </a>
+                        <a href="{{ 'antispam/block_ip'|api_url(query: { 'ip': event.ip }) }}" {{ fb_api_link({ modal: {type: 'confirm', title: 'Block IP'|trans, content: ('Are you sure you want to block IP address %ip%?'|trans({'%ip%': event.ip}))}, reload: true }) }} data-bs-toggle="tooltip" data-bs-title="{{ 'Block IP'|trans }}">
+                            <svg class="icon icon-sm text-danger" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                            </svg>
+                        </a>
+                        {% endif %}
+                    </div>
+                </td>
                 <td>{{ event.ip|ip_country_name|default('Unknown'|trans) }}</td>
                 <td>{{ event.created_at|format_datetime }}</td>
             </tr>
             {% else %}
             <tr>
-                <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
+                <td class="text-muted text-center py-3" colspan="6">{{ 'The list is empty'|trans }}</td>
             </tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
 
-    <div class="card-footer d-flex align-items-center justify-content-between">
-        {{ include('partial_pagination.html.twig', { 'list': history, 'url': 'staff/logins' }) }}
+    <div class="card-footer d-flex align-items-center">
+        {{ include('partial_pagination.html.twig', { 'list': history, 'url': 'staff/logins', 'split_footer_controls': true }) }}
     </div>
 </div>
 {% endblock %}

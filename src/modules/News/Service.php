@@ -26,6 +26,22 @@ class Service
         $this->postRepository = $this->di['em']->getRepository(Post::class);
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View news'),
+                'description' => __trans('Allows the staff member to view news items.'),
+            ],
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage news'),
+                'description' => __trans('Allows the staff member to create, update, and delete news items.'),
+            ],
+        ];
+    }
+
     public function getPostRepository(): PostRepository
     {
         return $this->postRepository;

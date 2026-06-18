@@ -67,6 +67,7 @@ class Box_AppClient extends Box_App
 
             return new Response($content);
         } catch (Exception $e) {
+            // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
             if (DEBUG) {
                 error_log($e->getMessage());
             }

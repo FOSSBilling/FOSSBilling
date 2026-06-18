@@ -18,7 +18,7 @@ namespace Box\Mod\Profile\Api;
 
 use FOSSBilling\Validation\Api\RequiredParams;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Returns currently logged in staff member profile information.
@@ -53,8 +53,8 @@ class Admin extends \Api_Abstract
      */
     public function logout(): bool
     {
-        $this->di['session']->destroy('admin');
-        $this->di['logger']->info('Admin logged out');
+        $this->getDi()['session']->destroy('admin');
+        $this->getDi()['logger']->info('Admin logged out');
 
         return true;
     }
@@ -73,7 +73,7 @@ class Admin extends \Api_Abstract
     public function update($data)
     {
         if (!is_null($data['email'] ?? null)) {
-            $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+            $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
         }
 
         return $this->getService()->updateAdmin($this->getIdentity(), $data);
@@ -104,7 +104,7 @@ class Admin extends \Api_Abstract
     public function change_password($data)
     {
         $newPassword = $data['new_password'] ?? null;
-        $this->di['validator']->isPasswordStrong($newPassword);
+        $this->getDi()['validator']->isPasswordStrong($newPassword);
 
         if ($newPassword != $data['confirm_password']) {
             throw new \FOSSBilling\InformationException('Passwords do not match');
@@ -112,10 +112,10 @@ class Admin extends \Api_Abstract
 
         $staff = $this->getIdentity();
 
-        $this->di['rate_limiter']->consumeOrThrow('profile_password_change_ip', (string) $this->getIp());
-        $this->di['rate_limiter']->consumeOrThrow('profile_password_change_account', 'admin:' . $staff->id);
+        $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_account', 'admin:' . $staff->id);
 
-        if (!$this->di['password']->verify($data['current_password'], $staff->pass)) {
+        if (!$this->getDi()['password']->verify($data['current_password'], $staff->pass)) {
             throw new \FOSSBilling\InformationException('Current password incorrect');
         }
 
@@ -140,9 +140,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Client ID was not passed'])]
     public function api_key_reset($data): string
     {
-        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('client', 'manage_api_keys');
+        $this->checkPermissions('client', 'manage_api_keys');
 
-        $client = $this->di['db']->getExistingModelById('Client', $data['id']);
+        $client = $this->getDi()['db']->getExistingModelById('Client', $data['id']);
 
         return $this->getService()->resetApiKey($client);
     }

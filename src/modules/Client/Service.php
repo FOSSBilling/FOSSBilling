@@ -16,6 +16,8 @@ use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Intl\Countries;
+use Symfony\Component\Intl\Locales;
 
 class Service implements InjectionAwareInterface
 {
@@ -152,9 +154,7 @@ class Service implements InjectionAwareInterface
 
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            if (!\FOSSBilling\Environment::isTesting()) {
-                error_log($exc->getMessage());
-            }
+            $di['logger']->setChannel('email')->error('Failed to send client signup email', ['exception' => $exc->getMessage()]);
         }
 
         return true;
@@ -351,21 +351,47 @@ class Service implements InjectionAwareInterface
               FROM activity_client_history as ach
                 LEFT JOIN client as c on ach.client_id = c.id ';
 
+        $id = $data['id'] ?? null;
         $search = $data['search'] ?? null;
         $client_id = $data['client_id'] ?? null;
+        $ip = $data['ip'] ?? null;
+        $date_from = $data['date_from'] ?? null;
+        $date_to = $data['date_to'] ?? null;
 
         $where = [];
         $params = [];
+
+        if ($id !== null && $id !== '') {
+            $where[] = 'ach.id = :event_id';
+            $params[':event_id'] = (int) $id;
+        }
+
         if ($search) {
-            $where[] = '(c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR c.id LIKE :id)';
+            $where[] = '(c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR c.email LIKE :email OR c.id LIKE :id)';
             $params[':first_name'] = '%' . $search . '%';
             $params[':last_name'] = '%' . $search . '%';
+            $params[':email'] = '%' . $search . '%';
             $params[':id'] = $search;
         }
 
         if ($client_id) {
             $where[] = 'ach.client_id = :client_id';
             $params[':client_id'] = $client_id;
+        }
+
+        if ($ip !== null && $ip !== '') {
+            $where[] = 'ach.ip LIKE :ip';
+            $params[':ip'] = '%' . $ip . '%';
+        }
+
+        if ($date_from !== null && $date_from !== '') {
+            $where[] = 'ach.created_at >= :date_from';
+            $params[':date_from'] = date('Y-m-d 00:00:00', strtotime((string) $date_from));
+        }
+
+        if ($date_to !== null && $date_to !== '') {
+            $where[] = 'ach.created_at <= :date_to';
+            $params[':date_to'] = date('Y-m-d 23:59:59', strtotime((string) $date_to));
         }
 
         if (!empty($where)) {
@@ -533,9 +559,6 @@ class Service implements InjectionAwareInterface
 
     public function createGroup(array $data)
     {
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_ClientGroup', 2);
-
         $model = $this->di['db']->dispense('ClientGroup');
 
         $model->title = $data['title'];
@@ -604,10 +627,16 @@ class Service implements InjectionAwareInterface
         $client->state = $data['state'] ?? null;
         $client->postcode = $data['postcode'] ?? null;
         $client->country = !empty($data['country']) ? $data['country'] : (!empty($systemCfg['default_country']) ? $systemCfg['default_country'] : null);
+        if ($client->country !== null && !Countries::exists($client->country)) {
+            throw new InformationException('Invalid country code: :code', [':code' => $client->country]);
+        }
         $client->document_type = $data['document_type'] ?? null;
         $client->document_nr = $data['document_nr'] ?? null;
         $client->notes = $data['notes'] ?? null;
         $client->lang = $data['lang'] ?? null;
+        if ($client->lang !== null && $client->lang !== '' && !Locales::exists($client->lang)) {
+            throw new InformationException('Invalid locale code: :code', [':code' => $client->lang]);
+        }
         $client->currency = $data['currency'] ?? null;
 
         $client->custom_1 = $data['custom_1'] ?? null;
@@ -744,9 +773,7 @@ class Service implements InjectionAwareInterface
             $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            if (!\FOSSBilling\Environment::isTesting()) {
-                error_log($exc->getMessage());
-            }
+            $this->di['logger']->setChannel('email')->error('Failed to send client welcome email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -804,9 +831,7 @@ class Service implements InjectionAwareInterface
             $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            if (!\FOSSBilling\Environment::isTesting()) {
-                error_log($exc->getMessage());
-            }
+            $this->di['logger']->setChannel('email')->error('Failed to send email confirmation email', ['exception' => $exc->getMessage()]);
         }
     }
 

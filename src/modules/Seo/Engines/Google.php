@@ -11,8 +11,6 @@ declare(strict_types=1);
 
 namespace Box\Mod\Seo\Engines;
 
-use Symfony\Component\HttpClient\HttpClient;
-
 class Google implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
@@ -38,7 +36,7 @@ class Google implements \FOSSBilling\InjectionAwareInterface
     public function pingSitemap(string $url): bool
     {
         $link = 'https://www.google.com/ping';
-        $httpClient = HttpClient::create(['bindto' => BIND_TO]);
+        $httpClient = $this->di['http_client'];
 
         $request = $httpClient->request('GET', $link, [
             'query' => [

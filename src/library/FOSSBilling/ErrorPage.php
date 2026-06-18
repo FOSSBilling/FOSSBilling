@@ -28,29 +28,12 @@ class ErrorPage
                 ],
                 'report' => false,
             ],
-            '2' => [
-                'message' => 'For security reasons, you must delete the installation directory before you can use FOSSBilling. (<code>/install</code>)',
-                'link' => [
-                    'label' => 'View more info on the Getting Started guide',
-                    'href' => 'https://fossbilling.org/docs/getting-started/shared#remove-the-installer',
-                ],
-                'report' => false,
-            ],
             '3' => [
                 'title' => 'Your Configuration is Empty',
                 'message' => 'Your FOSSBilling configuration seems to either be empty or non-existent. You may need to re-install FOSSBilling, or re-create the <code>config.php</code> file based on the example config.',
                 'link' => [
                     'label' => 'See the example config.',
                     'href' => 'https://github.com/FOSSBilling/FOSSBilling/blob/main/src/config-sample.php',
-                ],
-                'report' => false,
-            ],
-            '4' => [
-                'title' => 'Migration is required',
-                'message' => 'Legacy BoxBilling or FOSSBilling preview files have been found. The file structure within FOSSBilling, along with the configuration format, has since changed. <br> See the migration guide for assistance in migrating to the latest version of FOSSBilling.',
-                'link' => [
-                    'label' => 'Check the migration guide.',
-                    'href' => 'https://fossbilling.org/docs/getting-started/migrate-from-boxbilling',
                 ],
                 'report' => false,
             ],

@@ -9,7 +9,7 @@
         <li class="breadcrumb-item">
             <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
@@ -29,40 +29,40 @@
 {% block content %}
 <div class="card">
     <form method="post" action="{{ 'support/kb_category_update'|api_url }}" {{ fb_api_form({ message: 'Category Updated'|trans }) }}>
-        <div class="card-body">
-            <h3>{{ category.title}}</h3>
-
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="title" value="{{ category.title }}" required>
+        {% embed 'partial_admin_form_card.html.twig' with {
+            title: category.title,
+            subtitle: 'Update the category details used to organize knowledge base articles.'|trans,
+            body_class: 'pt-4',
+            footer_align: 'between'
+        } %}
+            {% block form_content %}
+                <div class="row g-3">
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Title'|trans }}</label>
+                        <input class="form-control" type="text" name="title" value="{{ category.title }}" required>
+                    </div>
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Slug'|trans }}</label>
+                        <input class="form-control" type="text" name="slug" value="{{ category.slug }}" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">{{ 'Description'|trans }}</label>
+                        <textarea class="form-control" name="description" rows="10">{{ category.description }}</textarea>
+                    </div>
                 </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Slug'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="slug" value="{{ category.slug }}" required>
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Description'|trans }}:</label>
-                <div class="col">
-                    <textarea class="form-control" name="description" rows="10">{{ category.description }}</textarea>
-                </div>
-            </div>
-        </div>
+                <input type="hidden" name="id" value="{{ category.id }}">
+            {% endblock %}
 
-        <input type="hidden" name="id" value="{{ category.id }}">
-
-        <div class="card-footer d-flex gap-2">
-            <a href="{{ 'support/kb'|url }}" class="btn btn-secondary w-25">
-                <svg class="icon">
-                    <use xlink:href="#arrow-sm-left" />
-                </svg>
-                {{ 'Go Back'|trans }}
-            </a>
-            <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
-        </div>
+            {% block form_actions %}
+                <a href="{{ 'support/kb'|url }}" class="btn btn-secondary">
+                    <svg class="icon">
+                        <use href="#arrow-left" />
+                    </svg>
+                    {{ 'Go Back'|trans }}
+                </a>
+                <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
+            {% endblock %}
+        {% endembed %}
     </form>
 </div>
 

@@ -6,6 +6,7 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${script_dir}/../.." && pwd)"
 compose_file="${repo_root}/.github/docker/live-tests.compose.yml"
 project="fossbilling-live-${GITHUB_RUN_ID:-local}-$$"
+app_url="http://fossbilling-app/"
 
 db_name="fossbilling"
 db_user="root"
@@ -75,7 +76,6 @@ install_payload=(
   -F "admin_email=${test_email}"
   -F "admin_password=${test_pass}"
   -F currency_code=USD
-  -F 'currency_title=US Dollar'
   -F "admin_api_token=${test_api_key}"
   -X POST
   "http://127.0.0.1/install/install.php?a=install"
@@ -85,10 +85,10 @@ compose exec -T app curl -fsS "${install_payload[@]}" >/dev/null
 
 compose run --rm --no-deps \
   --env APP_ENV=test \
-  --env APP_URL="http://app/" \
+  --env APP_URL="${app_url}" \
   --env TEST_API_KEY="${test_api_key}" \
   app \
   sh -euxc "
     cd /workspace
-    ./src/vendor/bin/phpunit --configuration phpunit-live.xml
+    ./src/vendor/bin/pest --test-directory ../tests --testsuite=E2E --ci
   "

@@ -38,146 +38,133 @@
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title">{{ 'System Activity'|trans }}</h3>
+        <div>
+            <h3 class="card-title">{{ 'System Activity'|trans }}</h3>
+            <p class="card-subtitle">{{ 'Review staff, client, and guest activity across the platform with detailed filtering.'|trans }}</p>
+        </div>
     </div>
-    {{ include('partial_search.html.twig') }}
-    <section id="{{ filter_panel_id }}" class="card-body border-bottom activity-log-filters collapse{% if filter_panel_open %} show{% endif %}">
-        <h5>{{ 'Filter Activity Logs'|trans }}</h5>
-        <form method="get">
-            <div class="mb-3 row">
-                <label class="form-label col-lg-3 col-form-label">{{ 'Search'|trans }}</label>
-                <div class="col-lg-9">
-                    <input class="form-control" type="text" name="search" value="{{ request.search }}" placeholder="{{ 'Search in Message'|trans }}">
-                </div>
-            </div>
-
-            <div class="mb-3 row">
-                <label class="form-label col-lg-3 col-form-label" for="ip">{{ 'IP Address'|trans }}</label>
-                <div class="col-lg-9">
-                    <input class="form-control" type="text" id="ip" name="ip" value="{{ request.ip }}" placeholder="{{ 'Filter by IP Address'|trans }}">
-                    <small class="form-hint">{{ 'Show logs from a specific IP address'|trans }}</small>
-                </div>
-            </div>
-
-            <div class="mb-3 row">
-                <label class="form-label col-lg-3 col-form-label">{{ 'User Type'|trans }}</label>
-                <div class="col-lg-9">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="userTypeAll" type="radio" name="user_filter" value=""{% if not request.user_filter %} checked{% endif %}>
-                        <label class="form-check-label" for="userTypeAll">{{ 'All Users'|trans }}</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="userTypeStaff" type="radio" name="user_filter" value="only_staff"{% if request.user_filter == 'only_staff' %} checked{% endif %}>
-                        <label class="form-check-label" for="userTypeStaff">{{ 'Staff Only'|trans }}</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="userTypeClients" type="radio" name="user_filter" value="only_clients"{% if request.user_filter == 'only_clients' %} checked{% endif %}>
-                        <label class="form-check-label" for="userTypeClients">{{ 'Clients Only'|trans }}</label>
+    {{ include('partial_search.html.twig', {
+        search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : ''
+    }) }}
+    <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom activity-log-filters collapse{% if filter_panel_open %} show{% endif %}">
+        <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
+            {% if request.search %}
+                <input type="hidden" name="search" value="{{ request.search }}">
+            {% endif %}
+            <div class="row g-3">
+                <div class="col-md-6 col-xl-3">
+                    <div>
+                        <label class="form-label text-muted small mb-1" for="activity-ip">{{ 'IP Address'|trans }}</label>
+                        <input class="form-control" type="text" id="activity-ip" name="ip" value="{{ request.ip }}" placeholder="{{ 'Filter by IP Address'|trans }}">
                     </div>
                 </div>
-            </div>
-
-            <div class="mb-3 row">
-                <label class="form-label col-lg-3 col-form-label" for="admin_id">{{ 'Specific Admin'|trans }}</label>
-                <div class="col-lg-9">
-                    <select class="form-control autocomplete-selector"
-                            placeholder="{{ 'Start Typing the Admin Name or ID'|trans }}"
-                            id="admin_id"
-                            name="admin_id"
-                            data-resturl="/api/admin/staff/get_pairs">
-                    {% if not request.admin_id %}
-                    {% else %}
-                        {% set admin = admin.staff_get({ 'id': request.admin_id }) %}
-                        <option value="{{ request.admin_id }}" selected>{{ admin.name }} ({{ admin.email }})</option>
-                    {% endif %}
-                    </select>
-                    <small class="form-hint">{{ 'Leave empty to show all staff members'|trans }}</small>
+                <div class="col-md-6 col-xl-3">
+                    <div>
+                        <label class="form-label text-muted small mb-1" for="admin_id">{{ 'Specific Admin'|trans }}</label>
+                        <select class="form-control autocomplete-selector"
+                                placeholder="{{ 'Start Typing the Admin Name or ID'|trans }}"
+                                id="admin_id"
+                                name="admin_id"
+                                data-resturl="/api/admin/staff/get_pairs">
+                        {% if not request.admin_id %}
+                        {% else %}
+                            {% set admin = admin.staff_get({ 'id': request.admin_id }) %}
+                            <option value="{{ request.admin_id }}" selected>{{ admin.name }} ({{ admin.email }})</option>
+                        {% endif %}
+                        </select>
+                    </div>
                 </div>
-            </div>
-
-            <div class="mb-3 row">
-                <label class="form-label col-lg-3 col-form-label" for="client_id">{{ 'Specific Client'|trans }}</label>
-                <div class="col-lg-9">
-                    <select class="form-control autocomplete-selector"
-                            placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
-                            id="client_id"
-                            name="client_id"
-                            data-resturl="/api/admin/client/get_pairs">
-                    {% if not request.client_id %}
-                    {% else %}
-                        {% set client = admin.client_get({ 'id': request.client_id }) %}
-                        <option value="{{ request.client_id }}" selected>{{ client.first_name }} {{ client.last_name }} ({{ client.email }})</option>
-                    {% endif %}
-                    </select>
-                    <small class="form-hint">{{ 'Leave empty to show all clients'|trans }}</small>
+                <div class="col-md-6 col-xl-3">
+                    <div>
+                        <label class="form-label text-muted small mb-1" for="client_id">{{ 'Specific Client'|trans }}</label>
+                        <select class="form-control autocomplete-selector"
+                                placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
+                                id="client_id"
+                                name="client_id"
+                                data-resturl="/api/admin/client/get_pairs">
+                        {% if not request.client_id %}
+                        {% else %}
+                            {% set client = admin.client_get({ 'id': request.client_id }) %}
+                            <option value="{{ request.client_id }}" selected>{{ client.first_name }} {{ client.last_name }} ({{ client.email }})</option>
+                        {% endif %}
+                        </select>
+                    </div>
                 </div>
-            </div>
-
-            <div class="mb-3 row">
-                <label class="form-label col-lg-3 col-form-label" for="date_range">{{ 'Date Range'|trans }}</label>
-                <div class="col-lg-9">
-                    <div class="input-group">
-                        <div class="input-icon w-100">
-                            <input class="form-control datepicker"
-                                   id="date_range"
-                                   value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
-                                   data-name-from="date_from"
-                                   data-name-to="date_to"
-                            >
-                            <span class="input-icon-addon">
-                                <svg class="icon">
-                                    <use xlink:href="#calendar" />
-                                </svg>
-                            </span>
+                <div class="col-md-6 col-xl-3">
+                    <div>
+                        <label class="form-label text-muted small mb-1" for="date_range">{{ 'Date Range'|trans }}</label>
+                        <div class="input-group">
+                            <div class="input-icon w-100">
+                                <input class="form-control datepicker"
+                                       id="date_range"
+                                       placeholder="{{ 'Select Date Range'|trans }}"
+                                       value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
+                                       data-name-from="date_from"
+                                       data-name-to="date_to"
+                                >
+                                <span class="input-icon-addon">
+                                    <svg class="icon">
+                                        <use href="#calendar" />
+                                    </svg>
+                                </span>
+                            </div>
                         </div>
                     </div>
-                    <small class="form-hint">{{ 'Filter activity logs by date range'|trans }}</small>
+                </div>
+                <div class="col-xl-4">
+                    <label class="form-label text-muted small mb-1">{{ 'User Type'|trans }}</label>
+                    <div class="d-flex flex-wrap gap-2">
+                        <input class="btn-check" id="userTypeAll" type="radio" name="user_filter" value=""{% if not request.user_filter %} checked{% endif %}>
+                        <label class="btn btn-outline-primary" for="userTypeAll">{{ 'All Users'|trans }}</label>
+
+                        <input class="btn-check" id="userTypeStaff" type="radio" name="user_filter" value="only_staff"{% if request.user_filter == 'only_staff' %} checked{% endif %}>
+                        <label class="btn btn-outline-primary" for="userTypeStaff">{{ 'Staff Only'|trans }}</label>
+
+                        <input class="btn-check" id="userTypeClients" type="radio" name="user_filter" value="only_clients"{% if request.user_filter == 'only_clients' %} checked{% endif %}>
+                        <label class="btn btn-outline-primary" for="userTypeClients">{{ 'Clients Only'|trans }}</label>
+                    </div>
+                </div>
+                <div class="col-md-6 col-xl-4">
+                    <div>
+                        <label class="form-label text-muted small mb-1" for="min_priority">{{ 'Minimum Priority'|trans }}</label>
+                        <select class="form-select" id="min_priority" name="min_priority">
+                            <option value="0"{% if request.min_priority == '0' %} selected{% endif %}>{{ 'Emergency and above'|trans }}</option>
+                            <option value="1"{% if request.min_priority == '1' %} selected{% endif %}>{{ 'Alert and above'|trans }}</option>
+                            <option value="2"{% if request.min_priority == '2' %} selected{% endif %}>{{ 'Critical and above'|trans }}</option>
+                            <option value="3"{% if request.min_priority == '3' %} selected{% endif %}>{{ 'Error and above'|trans }}</option>
+                            <option value="4"{% if request.min_priority == '4' %} selected{% endif %}>{{ 'Warning and above'|trans }}</option>
+                            <option value="5"{% if request.min_priority == '5' %} selected{% endif %}>{{ 'Notice and above'|trans }}</option>
+                            <option value="6"{% if request.min_priority == '6' or request.min_priority == '' %} selected{% endif %}>{{ 'Info and above'|trans }}</option>
+                            <option value="7"{% if request.min_priority == '7' %} selected{% endif %}>{{ 'Debug and above'|trans }}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6 col-xl-4">
+                    <div>
+                        <label class="form-label text-muted small mb-1" for="priority">{{ 'Exact Priority'|trans }}</label>
+                        <select class="form-select" id="priority" name="priority">
+                            <option value="">{{ 'All Priorities'|trans }}</option>
+                            <option value="0"{% if request.priority == '0' %} selected{% endif %}>{{ 'Emergency'|trans }}</option>
+                            <option value="1"{% if request.priority == '1' %} selected{% endif %}>{{ 'Alert'|trans }}</option>
+                            <option value="2"{% if request.priority == '2' %} selected{% endif %}>{{ 'Critical'|trans }}</option>
+                            <option value="3"{% if request.priority == '3' %} selected{% endif %}>{{ 'Error'|trans }}</option>
+                            <option value="4"{% if request.priority == '4' %} selected{% endif %}>{{ 'Warning'|trans }}</option>
+                            <option value="5"{% if request.priority == '5' %} selected{% endif %}>{{ 'Notice'|trans }}</option>
+                            <option value="6"{% if request.priority == '6' %} selected{% endif %}>{{ 'Info'|trans }}</option>
+                            <option value="7"{% if request.priority == '7' %} selected{% endif %}>{{ 'Debug'|trans }}</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
-            <div class="mb-3 row">
-                <label class="form-label col-lg-3 col-form-label" for="min_priority">{{ 'Minimum Priority'|trans }}</label>
-                <div class="col-lg-9">
-                    <select class="form-select" id="min_priority" name="min_priority">
-                        <option value="0"{% if request.min_priority == '0' %} selected{% endif %}>{{ 'Emergency and above'|trans }}</option>
-                        <option value="1"{% if request.min_priority == '1' %} selected{% endif %}>{{ 'Alert and above'|trans }}</option>
-                        <option value="2"{% if request.min_priority == '2' %} selected{% endif %}>{{ 'Critical and above'|trans }}</option>
-                        <option value="3"{% if request.min_priority == '3' %} selected{% endif %}>{{ 'Error and above'|trans }}</option>
-                        <option value="4"{% if request.min_priority == '4' %} selected{% endif %}>{{ 'Warning and above'|trans }}</option>
-                        <option value="5"{% if request.min_priority == '5' %} selected{% endif %}>{{ 'Notice and above'|trans }}</option>
-                        <option value="6"{% if request.min_priority == '6' or request.min_priority == '' %} selected{% endif %}>{{ 'Info and above'|trans }}</option>
-                        <option value="7"{% if request.min_priority == '7' %} selected{% endif %}>{{ 'Debug and above'|trans }}</option>
-                    </select>
-                    <small class="form-hint">{{ 'Show logs with minimum priority level (disabled when exact priority is selected)'|trans }}</small>
-                </div>
-            </div>
-
-            <div class="mb-3 row">
-                <label class="form-label col-lg-3 col-form-label" for="priority">{{ 'Exact Priority'|trans }}</label>
-                <div class="col-lg-9">
-                    <select class="form-select" id="priority" name="priority">
-                        <option value="">{{ 'All Priorities'|trans }}</option>
-                        <option value="0"{% if request.priority == '0' %} selected{% endif %}>{{ 'Emergency'|trans }}</option>
-                        <option value="1"{% if request.priority == '1' %} selected{% endif %}>{{ 'Alert'|trans }}</option>
-                        <option value="2"{% if request.priority == '2' %} selected{% endif %}>{{ 'Critical'|trans }}</option>
-                        <option value="3"{% if request.priority == '3' %} selected{% endif %}>{{ 'Error'|trans }}</option>
-                        <option value="4"{% if request.priority == '4' %} selected{% endif %}>{{ 'Warning'|trans }}</option>
-                        <option value="5"{% if request.priority == '5' %} selected{% endif %}>{{ 'Notice'|trans }}</option>
-                        <option value="6"{% if request.priority == '6' %} selected{% endif %}>{{ 'Info'|trans }}</option>
-                        <option value="7"{% if request.priority == '7' %} selected{% endif %}>{{ 'Debug'|trans }}</option>
-                    </select>
-                    <small class="form-hint">{{ 'Show only logs with this exact priority level (takes precedence over minimum priority)'|trans }}</small>
-                </div>
-            </div>
-
-            <div class="d-flex gap-2">
-                <button class="btn btn-primary w-75" type="submit">
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
+                <button class="btn btn-primary" type="submit">
                     <svg class="icon">
-                        <use xlink:href="#filter" />
+                        <use href="#filter" />
                     </svg>
-                    {{ 'Filter'|trans }}
+                    {{ 'Apply Filters'|trans }}
                 </button>
-                <a class="btn btn-danger w-25" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
             </div>
         </form>
     </section>
@@ -196,36 +183,36 @@
                 </tr>
             </thead>
             <tbody>
-            {% set events = admin.activity_log_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+            {% set events = admin.activity_log_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
             {% for i, event in events.list %}
             <tr>
                 <td class="text-nowrap">{{ event.id }}</td>
                 <td class="d-none d-lg-table-cell">
-                    {% if event.client %}
-                    <a href='{{ "client/manage/#{event.client.id}"|url }}'>
-                        {{ mf.avatar(event.client.email, 20, 'db-avatar avatar avatar-sm d-none d-md-inline-block') }}
+                    {% if event.client_id %}
+                    <a href='{{ "client/manage/#{event.client_id}"|url }}'>
+                        {{ avatar(event.client.email|default(''), 20, 'avatar avatar-sm d-none d-md-inline-block') }}
                     </a>
-                    {% elseif event.staff %}
-                    <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>
-                        {{ mf.avatar(event.staff.email, 24, 'db-avatar avatar avatar-sm d-none d-md-inline-block') }}
+                    {% elseif event.staff_id %}
+                    <a href='{{ "staff/manage/#{event.staff_id}"|url }}'>
+                        {{ avatar(event.staff.email|default(''), 24, 'avatar avatar-sm d-none d-md-inline-block') }}
                     </a>
                     {% else %}
-                    {{ mf.avatar('guest@fossbilling.org', 24, 'db-avatar avatar avatar-sm d-none d-md-inline-block') }}
+                    {{ avatar('guest@fossbilling.org', 24, 'avatar avatar-sm d-none d-md-inline-block') }}
                     {% endif %}
                 </td>
                 <td>
-                    {% if event.client %}
-                        <a href='{{ "client/manage/#{event.client.id}"|url }}'>{{ event.client.name }}</a>
-                        <a href="{{ request_path|url(request_query|merge({ 'client_id': event.client.id, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this client'|trans }}">
+                    {% if event.client_id %}
+                        <a href='{{ "client/manage/#{event.client_id}"|url }}'>{{ event.client.name|default('') }}</a>
+                        <a href="{{ request_path|url(request_query|merge({ 'client_id': event.client_id, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this client'|trans }}">
                             <svg class="icon icon-sm text-muted">
-                                <use xlink:href="#filter" />
+                                <use href="#filter" />
                             </svg>
                         </a>
-                    {% elseif event.staff %}
-                        <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>{{ event.staff.name }}</a>
-                        <a href="{{ request_path|url(request_query|merge({ 'admin_id': event.staff.id, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this admin'|trans }}">
+                    {% elseif event.staff_id %}
+                        <a href='{{ "staff/manage/#{event.staff_id}"|url }}'>{{ event.staff.name|default('') }}</a>
+                        <a href="{{ request_path|url(request_query|merge({ 'admin_id': event.staff_id, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this admin'|trans }}">
                             <svg class="icon icon-sm text-muted">
-                                <use xlink:href="#filter" />
+                                <use href="#filter" />
                             </svg>
                         </a>
                     {% else %}
@@ -254,36 +241,38 @@
                     {% endif %}
                 </td>
                 <td class="activity-message-cell">{{ event.message }}</td>
-                <td>
-                    {{ mf.ip_lookup_link(event.ip) }}
-                    {% if event.ip %}
-                    <a href="{{ request_path|url(request_query|merge({ 'ip': event.ip, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this IP address'|trans }}">
-                        <svg class="icon icon-sm text-muted">
-                            <use xlink:href="#filter" />
-                        </svg>
-                    </a>
-                    <a href="{{ 'antispam/block_ip'|api_url(query: { 'ip': event.ip }) }}" class="ms-1" {{ fb_api_link({ modal: {type: 'confirm', title: 'Block IP'|trans, content: ('Are you sure you want to block IP address %ip%?'|trans({'%ip%': event.ip}))}, reload: true }) }} data-bs-toggle="tooltip" data-bs-title="{{ 'Block IP'|trans }}">
-                        <svg class="icon icon-sm text-danger" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
-                        </svg>
-                    </a>
-                    {% endif %}
+                <td class="text-nowrap">
+                    <div class="d-inline-flex align-items-center gap-1 flex-nowrap">
+                        {{ mf.ip_lookup_link(event.ip) }}
+                        {% if event.ip %}
+                        <a href="{{ request_path|url(request_query|merge({ 'ip': event.ip, 'page': null })) }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this IP address'|trans }}">
+                            <svg class="icon icon-sm text-muted">
+                                <use href="#filter" />
+                            </svg>
+                        </a>
+                        <a href="{{ 'antispam/block_ip'|api_url(query: { 'ip': event.ip }) }}" {{ fb_api_link({ modal: {type: 'confirm', title: 'Block IP'|trans, content: ('Are you sure you want to block IP address %ip%?'|trans({'%ip%': event.ip}))}, reload: true }) }} data-bs-toggle="tooltip" data-bs-title="{{ 'Block IP'|trans }}">
+                            <svg class="icon icon-sm text-danger" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                            </svg>
+                        </a>
+                        {% endif %}
+                    </div>
                 </td>
                 <td class="d-none d-xl-table-cell">{{ event.ip|ip_country_name|default('Unknown'|trans) }}</td>
                 <td title="{{ event.created_at|timeago }} ago">{{ event.created_at|format_datetime }}</td>
             </tr>
             {% else %}
             <tr>
-                <td colspan="8">{{ 'The list is empty'|trans }}</td>
+                <td class="text-muted text-center py-3" colspan="8">{{ 'The list is empty'|trans }}</td>
             </tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
 
-    <div class="card-footer d-flex align-items-center justify-content-between">
-        {{ include('partial_pagination.html.twig', { 'list': events, 'url': 'activity' }) }}
+    <div class="card-footer d-flex align-items-center">
+        {{ include('partial_pagination.html.twig', { 'list': events, 'url': 'activity', 'split_footer_controls': true }) }}
     </div>
 </div>
 {% endblock %}

@@ -24,7 +24,7 @@ namespace Box\Mod\Notification\Api;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get paginated list of notifications.
@@ -33,9 +33,11 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
+        $this->checkPermissions('notification', 'view');
+
         $queryBuilder = $this->getService()->getSearchQueryBuilder($data);
 
-        return $this->di['pager']->paginateDoctrineQuery($queryBuilder, PaginationOptions::fromArray($data));
+        return $this->getDi()['pager']->paginateDoctrineQuery($queryBuilder, PaginationOptions::fromArray($data));
     }
 
     /**
@@ -48,6 +50,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Notification ID was not passed'])]
     public function get($data)
     {
+        $this->checkPermissions('notification', 'view');
+
         return $this->getService()->toApiArray($this->getService()->get((int) $data['id']));
     }
 
@@ -58,6 +62,8 @@ class Admin extends \Api_Abstract
      */
     public function add($data): int|false
     {
+        $this->checkPermissions('notification', 'manage');
+
         if (!isset($data['message'])) {
             return false;
         }
@@ -75,6 +81,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Notification ID was not passed'])]
     public function delete($data): bool
     {
+        $this->checkPermissions('notification', 'manage');
+
         return $this->getService()->delete((int) $data['id']);
     }
 
@@ -85,6 +93,8 @@ class Admin extends \Api_Abstract
      */
     public function delete_all(): bool
     {
+        $this->checkPermissions('notification', 'manage');
+
         return $this->getService()->deleteAll();
     }
 }

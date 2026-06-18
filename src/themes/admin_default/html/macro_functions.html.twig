@@ -1,65 +1,76 @@
-{% macro build_form(elements, values) %}
+{% macro compute_field_required(element, context) %}
+    {% set result = false %}
+    {% if element[1].required_when is defined and element[1].required_when is iterable %}
+        {% set result = true %}
+        {% for cond_key, cond_value in element[1].required_when %}
+            {% if attribute(context, cond_key) is null or attribute(context, cond_key) != cond_value %}
+                {% set result = false %}
+            {% endif %}
+        {% endfor %}
+    {% elseif element[1].required is defined %}
+        {% set result = element[1].required != 'false' %}
+    {% else %}
+        {% set result = false %}
+    {% endif %}
+    {{ result ? 'true' : 'false' }}
+{% endmacro %}
+
+{% macro build_form(elements, values, context) %}
+    {% set ctx = context|default({}) %}
+    <div class="row g-3">
     {% for name, element in elements %}
-    <div class="mb-3 row">
+    {% set field_class = element[0] == 'textarea' ? 'col-12' : 'col-lg-6' %}
+    {% set field_required = _self.compute_field_required(element, ctx) == 'true' %}
+    <div class="{{ field_class }}">
         {% if element[0] == 'select' %}
-        <div class="col-3">
-            <label class="form-label col-form-label">{{ element[1].label }}</label>
-            {% if element[1].description %}<div class="form-text mt-0">{{ element[1].description | markdown_to_html }}</div>{% endif %}
-        </div>
-        <div class="col">
+            <label class="form-label">{{ element[1].label }}</label>
+            {% if element[1].description is defined and element[1].description %}<div class="form-text mt-0 mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
             <select class="form-select" name="config[{{ name }}]">
             {% for k, v in element[1].multiOptions %}
-                <option value="{{ k }}"{% if k == values[name] %} selected{% endif %}>{{ v }}</option>
+                <option value="{{ k }}"{% if k == values[name]|default('') %} selected{% endif %}>{{ v }}</option>
             {% endfor %}
             </select>
-        </div>
         {% elseif element[0] == 'multiselect' %}
-        <div class="col-3">
-            <label class="form-label col-form-label">{{ element[1].label }}</label>
-            {% if element[1].description %}<div class="form-text mt-0">{{ (element[1].description ?? '')|markdown_to_html }}</div>{% endif %}
-        </div>
-        <div class="col">
+            <label class="form-label">{{ element[1].label }}</label>
+            {% if element[1].description is defined and element[1].description %}<div class="form-text mt-0 mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
             <select class="form-select" name="config[{{ name }}]" multiple>
             {% for k, v in element[1].multiOptions %}
-                <option value="{{ k }}"{% if values[name] is iterable and k in values[name] %} selected{% endif %}>{{ v }}</option>
+                <option value="{{ k }}"{% if k in values[name]|default([]) %} selected{% endif %}>{{ v }}</option>
             {% endfor %}
             </select>
-        </div>
         {% elseif element[0] == 'radio' %}
-        <div class="col-3">
-            <label class="form-label col-form-label">{{ element[1].label }}</label>
-            {% if element[1].description %}<div class="form-text mt-0">{{ (element[1].description ?? '')|markdown_to_html }}</div>{% endif %}
-        </div>
-        <div class="col">
+            <label class="form-label d-block">{{ element[1].label }}</label>
+            {% if element[1].description is defined and element[1].description %}<div class="form-text mt-0 mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
+            <div class="d-flex flex-wrap gap-3">
             {% for k, v in element[1].multiOptions %}
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" id="el-{{ name ~ k }}" type="radio" name="config[{{ name }}]" value="{{ k }}"{% if k == values[name] %}checked{% endif %}>
-                    <label class="form-check-label" for="el-{{ name ~ k }}">{{ v }}</label>
-                </div>
+                <label class="form-check">
+                    <input class="form-check-input" id="el-{{ name ~ k }}" type="radio" name="config[{{ name }}]" value="{{ k }}"{% if k == values[name]|default('') %}checked{% endif %}>
+                    <span class="form-check-label">{{ v }}</span>
+                </label>
             {% endfor %}
-        </div>
+            </div>
         {% elseif element[0] == 'textarea' %}
-        <div class="col-3">
-            <label class="form-label col-form-label" for="el-{{ name }}">{{ element[1].label }}</label>
-            {% if element[1].description %}<div class="form-text mt-0">{{ (element[1].description ?? '')|markdown_to_html }}</div>{% endif %}
-        </div>
-        <div class="col">
-            <textarea class="form-control" id="el-{{ name }}" name="config[{{ name }}]" rows="20"{% if element[1].required is defined and element[1].required != 'false' %} required{% endif %}>{{ values[name] }}</textarea>
-        </div>
+            <label class="form-label" for="el-{{ name }}">{{ element[1].label }}</label>
+            {% if element[1].description is defined and element[1].description %}<div class="form-text mt-0 mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
+            <textarea class="form-control" id="el-{{ name }}" name="config[{{ name }}]" rows="20"
+                {% if field_required %} required{% endif %}
+                {% if element[1].required_when is defined and element[1].required_when.test_mode is defined %} data-required-when-test-mode="{{ element[1].required_when.test_mode ? 'true' : 'false' }}"{% endif %}>{{ values[name]|default('') }}</textarea>
         {% else %}
-        <div class="col-3">
-            <label class="form-label col-form-label" for="el-{{ name }}">{{ element[1].label }}</label>
-            {% if element[1].description %}<div class="form-text mt-0">{{ (element[1].description ?? '')|markdown_to_html }}</div>{% endif %}
-        </div>
-        <div class="col">
-            <input class="form-control" id="el-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ values[name] }}"{% if element[1].required is defined and element[1].required != 'false' %}required{% endif %}>
-        </div>
+            <label class="form-label" for="el-{{ name }}">{{ element[1].label }}</label>
+            {% if element[1].description is defined and element[1].description %}<div class="form-text mt-0 mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
+            <input class="form-control" id="el-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ values[name]|default('') }}"
+                {% if field_required %} required{% endif %}
+                {% if element[1].required_when is defined and element[1].required_when.test_mode is defined %} data-required-when-test-mode="{{ element[1].required_when.test_mode ? 'true' : 'false' }}"{% endif %}>
         {% endif %}
     </div>
     {% endfor %}
+    </div>
 {% endmacro build_form %}
 
 {% macro status_name(status) %}
+    {% if status is same as(null) or (status is empty and status != '0') %}
+        -
+    {% else %}
     {% set status = status|replace({'_': " "})|title|trim %}
     {% if status == 'Active' %}
         {{ 'Active'|trans }}
@@ -73,14 +84,47 @@
         {{ 'Suspended'|trans }}
     {% elseif status == 'Canceled' %}
         {{ 'Canceled'|trans }}
+    {% elseif status == 'Inactive' %}
+        {{ 'Inactive'|trans }}
+    {% elseif status == 'Enabled' %}
+        {{ 'Enabled'|trans }}
+    {% elseif status == 'Disabled' %}
+        {{ 'Disabled'|trans }}
+    {% elseif status == 'Draft' %}
+        {{ 'Draft'|trans }}
+    {% elseif status == 'Sent' %}
+        {{ 'Sent'|trans }}
+    {% elseif status == 'Sending' %}
+        {{ 'Sending'|trans }}
+    {% elseif status == 'Unsent' %}
+        {{ 'Unsent'|trans }}
     {% elseif status == 'Paid' %}
         {{ 'Paid'|trans }}
     {% elseif status == 'Unpaid' %}
         {{ 'Unpaid'|trans }}
     {% elseif status == 'Refunded' %}
         {{ 'Refunded'|trans }}
+    {% elseif status == 'Approved' %}
+        {{ 'Approved'|trans }}
+    {% elseif status == 'Processed' %}
+        {{ 'Processed'|trans }}
+    {% elseif status == 'Received' %}
+        {{ 'Received'|trans }}
+    {% elseif status == 'Error' %}
+        {{ 'Error'|trans }}
+    {% elseif status == 'Unknown' %}
+        {{ 'Unknown'|trans }}
+    {% elseif status == 'Complete' %}
+        {{ 'Complete'|trans }}
+    {% elseif status == 'Completed' %}
+        {{ 'Completed'|trans }}
+    {% elseif status == 'Success' %}
+        {{ 'Success'|trans }}
+    {% elseif status == 'Failed' %}
+        {{ 'Failed'|trans }}
     {% else %}
         {{ status|trans }}
+    {% endif %}
     {% endif %}
 {% endmacro status_name %}
 
@@ -102,7 +146,7 @@
 
 {% macro selectbox(name, options, selected, required, nullOption) %}
     <select class="form-select" name="{{ name }}" id="{{ name }}"{% if required %}required{% endif%}>
-        {% if nullOption %}<option value="">-- {{ nullOption }} --</option>{% endif %}
+        {% if nullOption %}<option value="">{{ nullOption }}</option>{% endif %}
         {% for val, label in options %}
             <option value="{{ val }}" label="{{ label|e }}" {% if selected == val %}selected="selected"{% endif %}>{{ label|e }}</option>
         {% endfor %}
@@ -140,6 +184,50 @@
                         <div class="g-recaptcha" data-sitekey="{{ config.publickey }}"></div>
                     </div>
                 {% endif %}
+            {% elseif provider == 'recaptcha_v3' %}
+                {% if config.publickey %}
+                    <script src="https://www.google.com/recaptcha/api.js?render={{ config.publickey }}" async defer></script>
+                    <input type="hidden" name="g-recaptcha-response" value="">
+                    <input type="hidden" name="g-recaptcha-action" value="fossbilling_submit">
+                    <script>
+                    (function () {
+                        const script = document.currentScript;
+                        const form = script.closest('form');
+                        if (!form) {
+                            return;
+                        }
+
+                        form.addEventListener('submit', function (event) {
+                            if (form.dataset.recaptchaV3Verified === 'true') {
+                                form.dataset.recaptchaV3Verified = '';
+                                return;
+                            }
+
+                            event.preventDefault();
+                            event.stopImmediatePropagation();
+
+                            if (!window.grecaptcha) {
+                                form.dataset.recaptchaV3Verified = 'true';
+                                form.requestSubmit();
+                                return;
+                            }
+
+                            const tokenField = form.querySelector('input[name="g-recaptcha-response"]');
+                            const actionField = form.querySelector('input[name="g-recaptcha-action"]');
+                            window.grecaptcha.ready(function () {
+                                window.grecaptcha.execute('{{ config.publickey|e('js') }}', { action: actionField.value }).then(function (token) {
+                                    tokenField.value = token;
+                                    form.dataset.recaptchaV3Verified = 'true';
+                                    form.requestSubmit();
+                                }).catch(function () {
+                                    form.dataset.recaptchaV3Verified = 'true';
+                                    form.requestSubmit();
+                                });
+                            });
+                        }, true);
+                    }());
+                    </script>
+                {% endif %}
             {% elseif provider == 'hcaptcha' %}
                 {% if config.hcaptcha_site_key %}
                     <div class="mb-3">
@@ -161,70 +249,105 @@
 </div>
 {% endmacro table_search %}
 
-{% macro wysiwyg(selector) %}
-    {% include "mod_wysiwyg_js.html.twig" with {"class":selector|trim('.#')} %}
+{% macro text_badge(label, badge_class) %}
+    <span class="badge {{ badge_class }}">{{ label }}</span>
 {% endmacro %}
 
-{% macro avatar(email, size, classes, fallback) %}
-    {% if email %}
-        <span class="db-avatar {{ classes|default('avatar') }}" data-avatar-seed="{{ email|hash('xxh128') }}" data-avatar-size="{{ size|default(40) }}"></span>
-    {% elseif fallback %}
-        {{ fallback }}
+{% macro boolean_badge(value, true_label, false_label, true_class, false_class) %}
+    {% if value %}
+        {{ _self.text_badge(true_label, true_class|default('text-bg-success')) }}
+    {% else %}
+        {{ _self.text_badge(false_label, false_class|default('text-bg-secondary')) }}
     {% endif %}
 {% endmacro %}
 
 {% macro status_badge(status, type) %}
+    {% set status_key = status|default('')|lower %}
     {% if type == 'order' %}
-        {% if status == 'active' %}{% set badge_class = 'text-bg-success' %}
-        {% elseif status == 'pending_setup' %}{% set badge_class = 'text-bg-warning' %}
-        {% elseif status == 'failed_setup' or status == 'suspended' or status == 'failed_renew' %}{% set badge_class = 'text-bg-danger' %}
-        {% elseif status == 'canceled' %}{% set badge_class = 'text-bg-secondary' %}
+        {% if status_key == 'active' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status_key == 'pending_setup' %}{% set badge_class = 'text-bg-warning' %}
+        {% elseif status_key == 'failed_setup' or status_key == 'suspended' or status_key == 'failed_renew' %}{% set badge_class = 'text-bg-danger' %}
+        {% elseif status_key == 'canceled' %}{% set badge_class = 'text-bg-secondary' %}
         {% else %}{% set badge_class = 'text-bg-primary' %}
         {% endif %}
     {% elseif type == 'ticket' %}
-        {% if status == 'open' %}{% set badge_class = 'text-bg-success' %}
-        {% elseif status == 'on_hold' %}{% set badge_class = 'text-bg-warning' %}
-        {% elseif status == 'closed' %}{% set badge_class = 'text-bg-secondary' %}
+        {% if status_key == 'open' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status_key == 'on_hold' %}{% set badge_class = 'text-bg-warning' %}
+        {% elseif status_key == 'closed' %}{% set badge_class = 'text-bg-secondary' %}
         {% else %}{% set badge_class = 'text-bg-primary' %}
         {% endif %}
     {% elseif type == 'invoice' %}
-        {% if status == 'paid' %}{% set badge_class = 'text-bg-success' %}
-        {% elseif status == 'unpaid' %}{% set badge_class = 'text-bg-warning' %}
-        {% elseif status == 'refunded' %}{% set badge_class = 'text-bg-info' %}
+        {% if status_key == 'paid' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status_key == 'unpaid' %}{% set badge_class = 'text-bg-warning' %}
+        {% elseif status_key == 'refunded' %}{% set badge_class = 'text-bg-info' %}
+        {% elseif status_key == 'canceled' %}{% set badge_class = 'text-bg-secondary' %}
         {% else %}{% set badge_class = 'text-bg-primary' %}
         {% endif %}
     {% elseif type == 'client' %}
-        {% if status == 'active' %}{% set badge_class = 'text-bg-success' %}
-        {% elseif status == 'suspended' %}{% set badge_class = 'text-bg-danger' %}
-        {% elseif status == 'canceled' %}{% set badge_class = 'text-bg-secondary' %}
+        {% if status_key == 'active' %}{% set badge_class = 'bg-green text-green-fg' %}
+        {% elseif status_key == 'suspended' %}{% set badge_class = 'bg-red text-red-fg' %}
+        {% elseif status_key == 'canceled' %}{% set badge_class = 'bg-secondary text-secondary-fg' %}
+        {% else %}{% set badge_class = 'text-bg-primary' %}
+        {% endif %}
+    {% elseif type == 'admin' %}
+        {% if status_key == 'active' %}{% set badge_class = 'bg-green text-green-fg' %}
+        {% elseif status_key == 'inactive' %}{% set badge_class = 'bg-secondary text-secondary-fg' %}
         {% else %}{% set badge_class = 'text-bg-primary' %}
         {% endif %}
     {% elseif type == 'subscription' %}
-        {% if status == 'active' %}{% set badge_class = 'text-bg-success' %}
-        {% elseif status == 'canceled' %}{% set badge_class = 'text-bg-secondary' %}
-        {% elseif status == 'past_due' %}{% set badge_class = 'text-bg-danger' %}
+        {% if status_key == 'active' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status_key == 'canceled' %}{% set badge_class = 'text-bg-secondary' %}
+        {% elseif status_key == 'past_due' %}{% set badge_class = 'text-bg-danger' %}
         {% else %}{% set badge_class = 'text-bg-primary' %}
         {% endif %}
     {% elseif type == 'post' %}
-        {% if status == 'published' %}{% set badge_class = 'text-bg-success' %}
-        {% elseif status == 'draft' %}{% set badge_class = 'text-bg-secondary' %}
+        {% if status_key == 'published' or status_key == 'active' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status_key == 'draft' %}{% set badge_class = 'text-bg-secondary' %}
+        {% else %}{% set badge_class = 'text-bg-primary' %}
+        {% endif %}
+    {% elseif type == 'product' %}
+        {% if status_key == 'enabled' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status_key == 'disabled' %}{% set badge_class = 'text-bg-secondary' %}
+        {% else %}{% set badge_class = 'text-bg-primary' %}
+        {% endif %}
+    {% elseif type == 'massmailer' %}
+        {% if status_key == 'sent' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status_key == 'draft' %}{% set badge_class = 'text-bg-secondary' %}
+        {% else %}{% set badge_class = 'text-bg-primary' %}
+        {% endif %}
+    {% elseif type == 'transaction' %}
+        {% if status_key == 'approved' or status_key == 'processed' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status_key == 'received' or status_key == 'processing' %}{% set badge_class = 'text-bg-warning' %}
+        {% elseif status_key == 'error' %}{% set badge_class = 'text-bg-danger' %}
+        {% else %}{% set badge_class = 'text-bg-primary' %}
+        {% endif %}
+    {% elseif type == 'gateway_tx' %}
+        {% if status_key == 'approved' or status_key == 'complete' or status_key == 'completed' or status_key == 'processed' or status_key == 'success' or status_key == 'succeeded' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status_key == 'pending' or status_key == 'processing' or status_key == 'received' or status_key == 'requires_action' or status_key == 'requires_capture' or status_key == 'requires_confirmation' %}{% set badge_class = 'text-bg-warning' %}
+        {% elseif status_key == 'canceled' or status_key == 'cancelled' or status_key == 'error' or status_key == 'failed' or status_key == 'requires_payment_method' or status_key == 'unknown' %}{% set badge_class = 'text-bg-danger' %}
+        {% else %}{% set badge_class = 'text-bg-primary' %}
+        {% endif %}
+    {% elseif type == 'mail_queue' %}
+        {% if status_key == 'sent' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status_key == 'sending' %}{% set badge_class = 'text-bg-warning' %}
+        {% elseif status_key == 'unsent' %}{% set badge_class = 'text-bg-danger' %}
         {% else %}{% set badge_class = 'text-bg-primary' %}
         {% endif %}
     {% elseif type == 'tx' %}
-        {% if status == 'success' %}{% set badge_class = 'text-bg-success' %}
-        {% elseif status == 'failed' %}{% set badge_class = 'text-bg-danger' %}
-        {% elseif status == 'pending' %}{% set badge_class = 'text-bg-warning' %}
-        {% elseif status == 'refunded' %}{% set badge_class = 'text-bg-info' %}
+        {% if status_key == 'success' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status_key == 'failed' %}{% set badge_class = 'text-bg-danger' %}
+        {% elseif status_key == 'pending' %}{% set badge_class = 'text-bg-warning' %}
+        {% elseif status_key == 'refunded' %}{% set badge_class = 'text-bg-info' %}
         {% else %}{% set badge_class = 'text-bg-primary' %}
         {% endif %}
     {% else %}
-        {% if status == 'active' or status == 'open' or status == 'paid' or status == 'published' %}{% set badge_class = 'text-bg-success' %}
-        {% elseif status == 'pending_setup' or status == 'on_hold' or status == 'unpaid' or status == 'pending' %}{% set badge_class = 'text-bg-warning' %}
-        {% elseif status == 'failed_setup' or status == 'suspended' or status == 'failed_renew' or status == 'canceled' or status == 'closed' or status == 'failed' %}{% set badge_class = 'text-bg-danger' %}
+        {% if status_key == 'active' or status_key == 'open' or status_key == 'paid' or status_key == 'published' %}{% set badge_class = 'text-bg-success' %}
+        {% elseif status_key == 'pending_setup' or status_key == 'on_hold' or status_key == 'unpaid' or status_key == 'pending' %}{% set badge_class = 'text-bg-warning' %}
+        {% elseif status_key == 'failed_setup' or status_key == 'suspended' or status_key == 'failed_renew' or status_key == 'canceled' or status_key == 'closed' or status_key == 'failed' %}{% set badge_class = 'text-bg-danger' %}
         {% else %}{% set badge_class = 'text-bg-primary' %}
         {% endif %}
     {% endif %}
-    <span class="badge {{ badge_class }}">{{ _self.status_name(status) }}</span>
+    {{ _self.text_badge(_self.status_name(status), badge_class) }}
 {% endmacro %}
 
 {% macro empty_list(colspan, message) %}

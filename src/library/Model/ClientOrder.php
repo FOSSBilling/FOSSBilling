@@ -26,4 +26,16 @@ class Model_ClientOrder extends RedBeanPHP\SimpleModel
     final public const string ACTION_CANCEL = 'cancel';
     final public const string ACTION_UNCANCEL = 'uncancel';
     final public const string ACTION_DELETE = 'delete';
+
+    public static function getValidStatuses(): array
+    {
+        return [
+            self::STATUS_PENDING_SETUP,
+            self::STATUS_FAILED_SETUP,
+            self::STATUS_FAILED_RENEW,
+            self::STATUS_ACTIVE,
+            self::STATUS_CANCELED,
+            self::STATUS_SUSPENDED,
+        ];
+    }
 }

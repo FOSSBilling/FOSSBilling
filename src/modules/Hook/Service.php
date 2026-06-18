@@ -31,10 +31,15 @@ class Service implements InjectionAwareInterface
     public function getModulePermissions(): array
     {
         return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View hooks'),
+                'description' => __trans('Allows the staff member to view registered event hooks.'),
+            ],
             'manage_hooks' => [
                 'type' => 'bool',
                 'display_name' => __trans('Manage hooks'),
-                'description' => __trans('Allows the staff member to view and reconnect registered event hooks.'),
+                'description' => __trans('Allows the staff member to reconnect registered event hooks.'),
             ],
             'trigger_hooks' => [
                 'type' => 'bool',

@@ -28,7 +28,7 @@
         event.preventDefault();
 
         if (confirm("{{ 'Are you sure?'|trans }}")) {
-            API.client.post('serviceapikey/reset', { order_id: {{ order.id }} },
+            FOSSBilling.api.client.post('serviceapikey/reset', { order_id: {{ order.id }} },
                 (result) => {
                     window.location.reload();
                 });

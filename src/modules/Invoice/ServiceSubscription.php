@@ -128,6 +128,7 @@ class ServiceSubscription implements InjectionAwareInterface
         $date_from = $data['date_from'] ?? null;
         $date_to = $data['date_to'] ?? null;
         $params = [];
+
         if ($status) {
             $sql .= ' AND status = :status';
             $params[':status'] = $status;
@@ -135,7 +136,7 @@ class ServiceSubscription implements InjectionAwareInterface
 
         if ($invoice_id) {
             $sql .= ' AND invoice_id = :invoice_id';
-            $params['invoice_id'] = $invoice_id;
+            $params[':invoice_id'] = $invoice_id;
         }
 
         if ($gateway_id) {
@@ -155,12 +156,12 @@ class ServiceSubscription implements InjectionAwareInterface
 
         if ($date_from) {
             $sql .= ' AND UNIX_TIMESTAMP(created_at) >= :date_from';
-            $params[':date_from'] = $date_from;
+            $params[':date_from'] = ctype_digit((string) $date_from) ? $date_from : strtotime($date_from . ' 00:00:00');
         }
 
         if ($date_to) {
             $sql .= ' AND UNIX_TIMESTAMP(created_at) <= :date_to';
-            $params[':date_to'] = $date_to;
+            $params[':date_to'] = ctype_digit((string) $date_to) ? $date_to : strtotime($date_to . ' 23:59:59');
         }
 
         if ($search) {

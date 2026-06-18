@@ -1,21 +1,65 @@
 {% if guest.extension_is_on({"mod":"antispam"}) %}
 {% set rc = guest.antispam_recaptcha %}
-{% if rc.enabled %}
+{% if rc.enabled|default(false) %}
 {% set provider = rc.captcha_provider|default('recaptcha_v2') %}
 {% if provider == 'turnstile' %}
-{% if rc.turnstile_site_key %}
+{% if rc.turnstile_site_key|default(false) %}
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer loading="lazy"></script>
-<div class="cf-turnstile" data-sitekey="{{ rc.turnstile_site_key }}"></div>
+<div class="cf-turnstile" data-sitekey="{{ rc.turnstile_site_key|default('') }}"></div>
 {% endif %}
 {% elseif provider == 'recaptcha_v2' %}
-{% if rc.publickey %}
+{% if rc.publickey|default(false) %}
 <script src='https://www.google.com/recaptcha/api.js' async defer loading="lazy"></script>
-<div class="g-recaptcha" data-sitekey="{{ rc.publickey }}"></div>
+<div class="g-recaptcha" data-sitekey="{{ rc.publickey|default('') }}"></div>
+{% endif %}
+{% elseif provider == 'recaptcha_v3' %}
+{% if rc.publickey|default(false) %}
+<script src="https://www.google.com/recaptcha/api.js?render={{ rc.publickey|default('') }}" async defer loading="lazy"></script>
+<input type="hidden" name="g-recaptcha-response" value="">
+<input type="hidden" name="g-recaptcha-action" value="fossbilling_submit">
+<script>
+(function () {
+    const script = document.currentScript;
+    const form = script.closest('form');
+    if (!form) {
+        return;
+    }
+
+    form.addEventListener('submit', function (event) {
+        if (form.dataset.recaptchaV3Verified === 'true') {
+            form.dataset.recaptchaV3Verified = '';
+            return;
+        }
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        if (!window.grecaptcha) {
+            form.dataset.recaptchaV3Verified = 'true';
+            form.requestSubmit();
+            return;
+        }
+
+        const tokenField = form.querySelector('input[name="g-recaptcha-response"]');
+        const actionField = form.querySelector('input[name="g-recaptcha-action"]');
+        window.grecaptcha.ready(function () {
+            window.grecaptcha.execute('{{ rc.publickey|default('')|e('js') }}', { action: actionField.value }).then(function (token) {
+                tokenField.value = token;
+                form.dataset.recaptchaV3Verified = 'true';
+                form.requestSubmit();
+            }).catch(function () {
+                form.dataset.recaptchaV3Verified = 'true';
+                form.requestSubmit();
+            });
+        });
+    }, true);
+}());
+</script>
 {% endif %}
 {% elseif provider == 'hcaptcha' %}
-{% if rc.hcaptcha_site_key %}
+{% if rc.hcaptcha_site_key|default(false) %}
 <script src='https://js.hcaptcha.com/1/api.js' async defer loading="lazy"></script>
-<div class="h-captcha" data-sitekey="{{ rc.hcaptcha_site_key }}"></div>
+<div class="h-captcha" data-sitekey="{{ rc.hcaptcha_site_key|default('') }}"></div>
 {% endif %}
 {% endif %}
 {% endif %}

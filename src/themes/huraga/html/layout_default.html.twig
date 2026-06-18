@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-{% import "macro_functions.html.twig" as mf %}
 {% set active_locale = guest.system_locale|default('en')|replace({'_': '-'}) %}
 {% set canonical_url = guest.system_current_url|url %}
+{% set current_active_menu = active_menu|default('') %}
 <html lang="{{ active_locale }}" data-bs-theme="{{ settings.theme|default('light') }}">
 <head>
     <meta charset="utf-8">
-    <title>{{ (settings.meta_title_prefix ~ ' ' ~ block('meta_title') ~ ' ' ~ settings.meta_title_suffix)|trim }}</title>
+    <title>{{ (settings.meta_title_prefix|default('') ~ ' ' ~ block('meta_title') ~ ' ' ~ settings.meta_title_suffix|default(''))|trim }}</title>
 
     <meta name="description" content="{% block meta_description %}{{ settings.meta_description }}{% endblock %}">
     <meta name="keywords" content="{{ settings.meta_keywords }}">
@@ -13,24 +13,29 @@
     <meta name="author" content="{{ settings.meta_author }}">
     <meta name="generator" content="FOSSBilling">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
 
     {% block canonical %}
         <link rel="canonical" href="{{ canonical_url }}">
     {% endblock %}
 
     {% block opengraph %}
-        <meta property="og:title" content="{{ (settings.meta_title_prefix ~ ' ' ~ block('meta_title') ~ ' ' ~ settings.meta_title_suffix)|trim }}" />
+        <meta property="og:title" content="{{ (settings.meta_title_prefix|default('') ~ ' ' ~ block('meta_title') ~ ' ' ~ settings.meta_title_suffix|default(''))|trim }}" />
         <meta property="og:type" content="website" />
         <meta property="og:description" content="{{ block('meta_description') }}" />
         <meta property="og:url" content="{{ canonical_url }}" />
         <meta property="og:site_name" content="{{ guest.system_company.name }}" />
     {% endblock %}
+
+    {{ include('partials/theme_init.html.twig') }}
+
     <link rel="stylesheet" href="{{ 'build/css/vendor.css' | asset_url }}">
     <link rel="stylesheet" href="{{ 'build/css/huraga.css' | asset_url }}">
     <link rel="shortcut icon" href="{{ guest.system_company.favicon_url }}">
 
-    {{ "Api/API.js" | library_url | script_tag }}
-    <script src="{{ 'build/js/huraga.js' | asset_url }}"></script>
+    {{ 'js/fossbilling.js' | public_asset_url | script_tag }}
+    {{ 'js/api.js' | public_asset_url | script_tag }}
+    <script type="module" src="{{ 'build/js/huraga.js' | asset_url }}"></script>
 
     {{ debug_bar_render_head() }}
 
@@ -39,6 +44,8 @@
 </head>
 
 <body class="{% block body_class %}{% endblock %}">
+
+<div class="d-none">{{ svg_sprite() }}</div>
 
 {{ render_widgets('client.theme.body.start') }}
 
@@ -72,27 +79,18 @@
 {% set guest_support_url = guest.support_public_tickets_enabled() ? 'support/contact-us'|url : 'login'|url %}
 {% set support_url = client ? 'support'|url : guest_support_url %}
 
-{% if settings.theme == 'dark' %}
-    {% set logo_url =  company.logo_url_dark %}
-{% else %}
-    {% set logo_url =  company.logo_url %}
-{% endif %}
 <div class="container">
     <header>
         {{ render_widgets('client.theme.header.start') }}
         <nav class="navbar navbar-expand-md py-4">
             <div class="container-fluid">
-                {% if logo_url and settings.show_company_logo %}
-                    <a class="navbar-brand" href="{{ '/'|url }}">
-                        <img class="d-none d-sm-block" src="{{ logo_url }}" alt="{{ company.name }}" height="45px"
-                             title="{{ company.name }}">
-                        <span class="d-sm-none">{{ company.name }}</span>
-                    </a>
-                {% else %}
-                    <a class="navbar-brand" href="{{ '/'|url }}">
-                        <span>{{ company.name }}</span>
-                    </a>
-                {% endif %}
+                {{ include('partial_company_logo.html.twig', {
+                    logo_url: settings.show_company_logo ? company.logo_url : null,
+                    dark_logo_url: settings.show_company_logo ? company.logo_url_dark : null,
+                    link_class: 'navbar-brand',
+                    image_class: 'd-none d-sm-block',
+                    show_mobile_name: true
+                }) }}
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                         data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="{{ 'Toggle navigation'|trans }}">
@@ -103,29 +101,46 @@
                         {% set languages = guest.extension_languages(true) %}
                         {% if languages|length > 1 %}
                             <li class="nav-item">
-                                <select name="lang" class="form-select js-language-selector">
+                                <select name="lang" class="form-select js-locale-selector">
                                     {% for lang in languages %}
-                                        <option value="{{ lang.locale }}" data-custom-properties="&lt;span class=&quot;fi fi-{{ lang.locale|split('_')[1]|lower }}&quot;&gt;&lt;/span&gt;">&nbsp;{{ lang.title }}</option>
+                                        <option value="{{ lang.locale }}" data-custom-properties="&lt;span class=&quot;fi fi-{{ lang.locale|split('_')[1]|lower }}&quot;&gt;&lt;/span&gt;"{% if lang.locale == guest.system_locale %} selected{% endif %}>{{ lang.title }}</option>
                                     {% endfor %}
                                 </select>
                             </li>
                         {% endif %}
 
+                        <li class="nav-item d-md-flex">
+                            <a class="nav-link px-0 hide-theme-dark js-theme-toggler"
+                               href="?theme=dark"
+                               data-bs-toggle="tooltip"
+                               data-bs-placement="bottom"
+                               data-bs-original-title="{{ 'Enable dark mode'|trans }}">
+                                <svg class="icon text-dark"><use href="#moon" /></svg>
+                            </a>
+                            <a class="nav-link px-0 hide-theme-light js-theme-toggler"
+                               href="?theme=light"
+                               data-bs-toggle="tooltip"
+                               data-bs-placement="bottom"
+                               data-bs-original-title="{{ 'Enable light mode'|trans }}">
+                                <svg class="icon text-white"><use href="#sun" /></svg>
+                            </a>
+                        </li>
+
                         {% if settings.top_menu_dashboard %}
                             <li class="nav-item d-md-flex">
-                                <a class="nav-link" href="{{ ''|url }}">{{ 'Dashboard'|trans }}</a>
+                                <a class="nav-link{% if current_active_menu == 'dashboard' %} active{% endif %}" href="{{ ''|url }}"{% if current_active_menu == 'dashboard' %} aria-current="page"{% endif %}>{{ 'Dashboard'|trans }}</a>
                             </li>
                         {% endif %}
 
                         {% if settings.top_menu_order %}
                             <li class="nav-item d-md-flex">
-                                <a class="nav-link" href="{{ 'order'|url }}">{{ 'Order'|trans }}</a>
+                                <a class="nav-link{% if current_active_menu == 'order' %} active{% endif %}" href="{{ 'order'|url }}"{% if current_active_menu == 'order' %} aria-current="page"{% endif %}>{{ 'Order'|trans }}</a>
                             </li>
                         {% endif %}
 
                         {% if settings.top_menu_profile and not client %}
                             <li class="nav-item d-md-flex">
-                                <a class="nav-link" href="{{ 'login'|url }}">{{ 'Login'|trans }}</a>
+                                <a class="nav-link{% if current_active_menu == 'login' %} active{% endif %}" href="{{ 'login'|url }}"{% if current_active_menu == 'login' %} aria-current="page"{% endif %}>{{ 'Login'|trans }}</a>
                             </li>
                         {% endif %}
 
@@ -135,7 +150,7 @@
                                     <div class="dropdown client-dropdown">
                                         <button class="nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                             {% set avatar_size = 25 %}
-                                            <div class="db-avatar rounded-circle" data-avatar-seed="{{ profile.email|hash('xxh128') }}" data-avatar-size="{{ avatar_size }}" style="width: {{ avatar_size }}px; height: {{ avatar_size }}px; display: inline-block;"></div>
+                                            {{ avatar(profile.email, avatar_size, 'rounded-circle d-inline-block', null, 'div') }}
                                             <span class="ms-1">{% if profile.company %}{{ profile.first_name }} {{ profile.last_name }} ({{ profile.company }}){% else %}{{ profile.first_name }} {{ profile.last_name }}{% endif %}</span>
                                         </button>
                                         <ul class="dropdown-menu">
@@ -206,7 +221,7 @@
                         <div class="d-flex flex-column">
                             {{ render_widgets('client.theme.footer.start') }}
                             <div class="d-flex justify-content-center">
-                                <span>&copy; {{ now|format_date(pattern='yyyy') }} {{ settings.footer_signature|default(company.signature) }}
+                                <span>&copy; {{ 'now'|date('Y') }} {{ settings.footer_signature|default(company.signature) }}
                                     {% if company.bank_info_pagebottom == 1 %}
                                         <br/>
                                         <b>{{'Payment Information'|trans}}</b> - {{'Bank Name'|trans}}: {{ company.bank_name }} | {{'BIC / SWIFT Code'|trans}}: {{ company.bic }} | {{'Account Number'|trans}}: {{ company.account_number }}
@@ -219,10 +234,11 @@
                                     {% set enabled_key = 'footer_link_' ~ i ~ '_enabled' %}
                                     {% set page_key = 'footer_link_' ~ i ~ '_page' %}
                                     {% set title_key = 'footer_link_' ~ i ~ '_title' %}
-                                    {% if attribute(settings, enabled_key) %}
+                                    {% set link_enabled = attribute(settings, enabled_key) is defined ? attribute(settings, enabled_key) : false %}
+                                    {% if link_enabled %}
                                         {% if first_link_rendered %}&nbsp;&#x2022;&nbsp;{% endif %}
-                                        {% set link_page = attribute(settings, page_key) %}
-                                        {% set link_title = attribute(settings, title_key) %}
+                                        {% set link_page = attribute(settings, page_key)|default('') %}
+                                        {% set link_title = attribute(settings, title_key)|default('') %}
                                         {% if 'http://' in link_page or 'https://' in link_page %}
                                             <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
                                                href="{{ link_page }}">{{ link_title }}</a>
@@ -244,9 +260,7 @@
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;"></div>
     {% if settings.footer_to_top_enabled %}
         <a href="#top" class="position-fixed btn btn-primary bottom-0 end-0 m-3">
-            <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path d="M12 19V5M5 12l7-7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg> {{ 'Top'|trans }}</a>
+            <svg class="icon"><use href="#arrow-up" /></svg> {{ 'Top'|trans }}</a>
     {% endif %}
     <div class="wait" style="display:none" onclick="this.style.display='none'">
         <div class="spinner-border"

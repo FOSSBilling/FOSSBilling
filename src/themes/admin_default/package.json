@@ -5,8 +5,6 @@
     "dev": "node ./esbuild.mjs"
   },
   "dependencies": {
-    "@dicebear/core": "^9.4.1",
-    "@dicebear/identicon": "^9.0.0",
     "@melloware/coloris": "^0.25.0",
     "@tabler/core": "^1.2.0",
     "chart.js": "^4.5.1",
@@ -16,12 +14,6 @@
     "tom-select": "^2.3.1"
   },
   "devDependencies": {
-    "ckeditor5": "48.1.0",
-    "autoprefixer": "10.5.0",
-    "esbuild": "0.28.0",
-    "postcss": "8.5.14",
-    "purgecss": "8.0.0",
-    "sass": "1.99.0",
-    "svg-sprite": "2.0.4"
+    "@tabler/icons": "3.44.0"
   }
 }

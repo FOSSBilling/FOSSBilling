@@ -30,6 +30,17 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage API keys'),
+                'description' => __trans('Allows the staff member to update and reset API keys.'),
+            ],
+        ];
+    }
+
     public function attachOrderConfig(Product $product, array $data): array
     {
         $config = json_decode($product->getConfig() ?? '', true) ?? [];
@@ -162,6 +173,10 @@ class Service implements InjectionAwareInterface
 
         if (!is_null($client) && $client->id !== $model->client_id) {
             throw new \FOSSBilling\Exception('API key does not exist');
+        }
+
+        if (!$this->isActive($model)) {
+            throw new \FOSSBilling\InformationException('Order is not active');
         }
 
         $config = json_decode($model->config ?? '', true);

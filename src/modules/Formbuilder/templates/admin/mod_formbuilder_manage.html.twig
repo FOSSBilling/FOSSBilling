@@ -15,17 +15,21 @@
     <input type="hidden" name="id" value="{{ order.id }}"/>
 
     <div class="card-body">
-        <div class="row">
+        <div class="mb-3">
+            <h3 class="card-title mb-1">{{ form.title }}</h3>
+            <p class="text-secondary mb-0">{{ 'Update the values captured by this form for the current order.'|trans }}</p>
+        </div>
+        <div class="row g-4">
             <div class="col-12">
                 {% for field in form.fields %}
-                    <div class="mb-3 row">
-                        <div class="col-md-3">
-                            {% if field.hide_label!=1 %}
-                                <label class="col-form-label {% if field.required == 1 %}required{% endif %}"
-                                       for="{{ field.name }}">{{ field.label }}</label>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-6">
+                    <div class="border-bottom pb-4 mb-4">
+                        <div class="row g-3">
+                            <div class="col-lg-4">
+                                {% if field.hide_label != 1 %}
+                                    <label class="form-label {% if field.required == 1 %}required{% endif %}" for="{{ field.name }}">{{ field.label }}</label>
+                                {% endif %}
+                            </div>
+                            <div class="col-lg-8">
                             {% if field.type == "text" %}
                                 <div class="input-group">
                                     {% if field.prefix %}
@@ -88,6 +92,7 @@
                                           {% if field.required==1 %}required="required"{% endif %}
                                     {% if field.readonly==1 %}readonly="readonly"{% endif %}>{{ order.config.(field.name) }}</textarea>
                             {% endif %}
+                            </div>
                         </div>
                     </div>
                 {% endfor %}

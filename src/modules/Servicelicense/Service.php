@@ -31,6 +31,17 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage licenses'),
+                'description' => __trans('Allows the staff member to update and reset license validation rules.'),
+            ],
+        ];
+    }
+
     /**
      * Method called before adding product to cart.
      */
@@ -412,7 +423,7 @@ class Service implements InjectionAwareInterface
     {
         $result = [];
         $log = $this->di['logger']->setChannel('license');
-
+        // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
         if (DEBUG) {
             $log->debug(print_r($data, true));
         }

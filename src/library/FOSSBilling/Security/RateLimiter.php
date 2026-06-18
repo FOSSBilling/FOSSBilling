@@ -61,6 +61,8 @@ class RateLimiter implements InjectionAwareInterface
                 'invoice_payment_hash' => ['policy' => 'fixed_window', 'limit' => 10, 'interval' => '1 hour'],
                 'invoice_pdf_ip' => ['policy' => 'fixed_window', 'limit' => 10, 'interval' => '1 hour'],
                 'invoice_pdf_hash' => ['policy' => 'fixed_window', 'limit' => 10, 'interval' => '1 hour'],
+                'invoice_get_ip' => ['policy' => 'fixed_window', 'limit' => 10, 'interval' => '1 hour'],
+                'invoice_get_hash' => ['policy' => 'fixed_window', 'limit' => 30, 'interval' => '1 hour'],
                 'cart_promo_apply_ip' => ['policy' => 'fixed_window', 'limit' => 10, 'interval' => '1 hour'],
                 'client_email_verification_resend_ip' => ['policy' => 'fixed_window', 'limit' => 30, 'interval' => '1 hour'],
                 'client_email_verification_resend_account' => ['policy' => 'fixed_window', 'limit' => 3, 'interval' => '1 hour'],
@@ -138,12 +140,12 @@ class RateLimiter implements InjectionAwareInterface
             'limit' => (int) ($policy['limit'] ?? 60),
         ];
 
-        if (($factoryConfig['policy'] ?? null) === 'token_bucket') {
+        if ($factoryConfig['policy'] === 'token_bucket') {
             $factoryConfig['rate'] = [
                 'amount' => (int) ($policy['limit'] ?? 60),
                 'interval' => (string) ($policy['interval'] ?? '1 minute'),
             ];
-        } elseif (($factoryConfig['policy'] ?? null) !== 'no_limit') {
+        } elseif ($factoryConfig['policy'] !== 'no_limit') {
             $factoryConfig['interval'] = (string) ($policy['interval'] ?? '1 minute');
         }
 

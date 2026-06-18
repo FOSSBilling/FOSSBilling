@@ -19,7 +19,7 @@ use FOSSBilling\Validation\Api\RequiredParams;
 /**
  * Shopping cart management.
  */
-class Guest extends \Api_Abstract
+class Guest extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get the contents of the current shopping cart.
@@ -53,7 +53,7 @@ class Guest extends \Api_Abstract
     #[RequiredParams(['currency' => 'Currency code was not passed'])]
     public function set_currency($data)
     {
-        $currencyService = $this->di['mod_service']('currency');
+        $currencyService = $this->getDi()['mod_service']('currency');
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
         $currencyRepository = $currencyService->getCurrencyRepository();
         $currency = $currencyRepository->findOneByCode($data['currency']);
@@ -74,7 +74,7 @@ class Guest extends \Api_Abstract
     {
         $cart = $this->getService()->getSessionCart();
 
-        $currencyService = $this->di['mod_service']('currency');
+        $currencyService = $this->getDi()['mod_service']('currency');
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
         $currencyRepository = $currencyService->getCurrencyRepository();
         $currency = $currencyRepository->find($cart->currency_id);
@@ -96,7 +96,7 @@ class Guest extends \Api_Abstract
     #[RequiredParams(['promocode' => 'Promo code was not passed'])]
     public function apply_promo($data)
     {
-        $this->di['rate_limiter']->consumeOrThrow('cart_promo_apply_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('cart_promo_apply_ip', (string) $this->getIp());
 
         $promo = $this->getService()->findActivePromoByCode($data['promocode']);
         if (!$promo instanceof Promo) {

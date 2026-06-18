@@ -5,24 +5,22 @@
 {% block meta_title %}{{ 'Register'|trans }}{% endblock %}
 {% block meta_description %}{{ 'Create an account to order services, manage billing, and track support requests online.'|trans }}{% endblock %}
 
-{% set company = guest.system_company %}
-
-{% if settings.theme == 'dark' %}
-    {% set logo_url =  company.logo_url_dark %}
-{% else %}
-    {% set logo_url =  company.logo_url %}
-{% endif %}
-
 {% block body_class %}page-signup{% endblock %}
 {% block body %}
     <div class="container h-100">
         <div class="row h-75 justify-content-center align-items-center">
             <div class="col-md-6 col-lg-4">
-                {% if settings.login_page_show_logo %}
+                {% if (public_logo_url or public_dark_logo_url) and settings.login_page_show_logo %}
                     <div class="d-flex justify-content-center">
-                        <a href="{{ settings.login_page_logo_url|default('/') }}" target="_blank">
-                            <img class="my-4" height="50px" src="{{ logo_url }}" alt="{{ company.name }}"/>
-                        </a>
+                        {{ include('partial_company_logo.html.twig', {
+                            logo_url: public_logo_url,
+                            dark_logo_url: public_dark_logo_url,
+                            link_url: settings.login_page_logo_url|default('/'),
+                            link_target: '_blank',
+                            link_rel: 'noopener noreferrer',
+                            image_class: 'my-4',
+                            image_height: '50px'
+                        }) }}
                     </div>
                 {% endif %}
                 <div class="card">
@@ -31,19 +29,19 @@
                         <form method="post" action="{{ 'client/create'|api_url(role: 'guest') }}" class="auth" {{ fb_api_form({redirect: '/'|url}) }}>
                             {% set r = guest.client_required %}
 
-                            <div class="mb-3">
-                                <label class="form-label" for="first-name">{{ 'First Name'|trans }}</label>
-                                <input class="form-control" id="first-name" type="text" name="first_name"
-                                       value="{{ request.first_name }}" required="required"/>
-                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label" for="first-name">{{ 'First Name'|trans }}</label>
+                                    <input class="form-control" id="first-name" type="text" name="first_name"
+                                           value="{{ request.first_name }}" required="required"/>
+                                </div>
 
-                            {% if 'last_name' in r %}
-                                <div class="mb-3">
+                                <div class="col-md-6 mb-3">
                                     <label class="form-label" for="last_name">{{ 'Last Name'|trans }}</label>
                                     <input class="form-control" id="last_name" type="text" name="last_name"
-                                           value="{{ request.last_name }}" required="required"/>
+                                           value="{{ request.last_name }}"{% if 'last_name' in r %} required="required"{% endif %}/>
                                 </div>
-                            {% endif %}
+                            </div>
 
                             <div class="mb-3">
                                 <label class="form-label" for="reg-email">{{ 'Email Address'|trans }}</label>
@@ -73,7 +71,7 @@
                                         <option value="male">{{ 'Male'|trans }}</option>
                                         <option value="female">{{ 'Female'|trans }}</option>
                                         <option value="nonbinary">{{ 'Non-binary'|trans }}</option>
-                                        <option value="other">{{ 'Other'|trans }}Other</option>
+                                        <option value="other">{{ 'Other'|trans }}</option>
                                     </select>
                                 </div>
                             {% endif %}
@@ -106,9 +104,9 @@
                                 <div class="mb-3">
                                     <label class="form-label" for="country">{{ 'Country'|trans }}</label>
                                     <select class="form-select" id="country" name="country" required="required">
-                                        <option value="">{{ '-- Select country --'|trans }}</option>
+                                        <option value="">{{ '-- Select Country --'|trans }}</option>
                                         {% for val,label in guest.system_countries %}
-                                            <option value="{{ val }}" label="{{ label|e }}" {% if guest.system_default_country == val %}selected{% endif %}>{{ label|e }}</option>
+                                            <option value="{{ val }}" label="{{ label|e }}" {% if request.country|default(guest.system_default_country) == val %}selected{% endif %}>{{ label|e }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
@@ -134,10 +132,9 @@
                                 <div class="mb-3">
                                     <label class="form-label" for="phone">{{ 'Phone Number'|trans }}</label>
                                     <div class="input-group">
-                                        <input class="form-control" id="phone" type="text" name="phone_cc" value=""
-                                               style="width: 20%"/>
-                                        <input class="form-control" id="phone" type="text" name="phone"
-                                               value="{{ request.phone }}" style="width: 70%"/>
+                                        <span class="input-group-text">+</span>
+                                        <input class="form-control fb-phone-country-code" id="phone_cc" type="text" name="phone_cc" value="{{ request.phone_cc }}" inputmode="numeric" maxlength="3" pattern="[0-9]{1,3}" autocomplete="tel-country-code"/>
+                                        <input class="form-control" id="phone" type="text" name="phone" value="{{ request.phone }}"/>
                                     </div>
                                 </div>
                             {% endif %}
@@ -182,7 +179,7 @@
                                     <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" required>
                                     <label class="form-check-label" for="flexCheckDefault">
                                         {# TODO: Make this translatable once support for placeholders is implemented #}
-                                        <span>I agree to the <a href="{{ 'tos'|url }}" target="_blank">{{ 'Terms of Service'|trans }}</a> and <a href="{{ 'privacy-policy'|url }}" target="_blank">{{ 'Privacy Policy'|trans }}.</span>
+                                        <span>I agree to the <a href="{{ 'tos'|url }}" target="_blank">{{ 'Terms of Service'|trans }}</a> and <a href="{{ 'privacy-policy'|url }}" target="_blank">{{ 'Privacy Policy'|trans }}</a>.</span>
                                     </label>
                                 </div>
                             {% endif %}

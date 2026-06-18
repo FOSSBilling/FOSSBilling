@@ -5,26 +5,131 @@
 {% block meta_title %}{{ 'Subscriptions'|trans }}{% endblock %}
 
 {% set active_menu = 'invoice' %}
+{% set has_filter_panel = true %}
+{% set filter_panel_id = 'page-search-filters' %}
+{% set filter_panel_open = request_has_filters %}
+{% set new_subscription_action %}
+    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newSubscriptionModal">
+        <svg class="icon">
+            <use href="#plus" />
+        </svg>
+        {{ 'New Subscription'|trans }}
+    </button>
+{% endset %}
 
 {% block content %}
-    <ul class="nav nav-tabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Subscriptions'|trans }}</a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
-                <svg class="icon">
-                    <use xlink:href="#plus" />
-                </svg>
-                <span class="ms-2">{{ 'New Subscription'|trans }}</span>
-            </a>
-        </li>
-    </ul>
-
-<div class="card">
-    <div class="tab-content">
-        <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-            {{ include('partial_search.html.twig') }}
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'Subscriptions'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Manage recurring billing subscriptions and create new subscription records.'|trans }}</p>
+            </div>
+        </div>
+        <div class="card-body pt-3 pb-0 px-0">
+            {{ include('partial_search.html.twig', {
+                search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
+                search_toolbar_actions: new_subscription_action
+            }) }}
+            <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
+                <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
+                    {% if request.search %}
+                        <input type="hidden" name="search" value="{{ request.search }}">
+                    {% endif %}
+                    <div class="row g-3">
+                        <div class="col-md-6 col-xl-3">
+                            <div>
+                                <label class="form-label text-muted small mb-1" for="subscription-id">{{ 'ID'|trans }}</label>
+                                <input class="form-control" type="text" id="subscription-id" name="id" value="{{ request.id }}" placeholder="{{ 'Subscription Record ID'|trans }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-xl-3">
+                            <div>
+                                <label class="form-label text-muted small mb-1" for="subscription-sid">{{ 'Gateway Subscription ID'|trans }}</label>
+                                <input class="form-control" type="text" id="subscription-sid" name="sid" value="{{ request.sid }}" placeholder="{{ 'Subscription ID on Payment Gateway'|trans }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-xl-3">
+                            <div>
+                                <label class="form-label text-muted small mb-1" for="subscription-invoice-id">{{ 'Invoice ID'|trans }}</label>
+                                <input class="form-control" type="text" id="subscription-invoice-id" name="invoice_id" value="{{ request.invoice_id }}" placeholder="{{ 'Invoice ID'|trans }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-xl-3">
+                            <div>
+                                <label class="form-label text-muted small mb-1" for="subscription-currency">{{ 'Currency'|trans }}</label>
+                                {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 0, 'All Currencies'|trans) }}
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-xl-4">
+                            <div>
+                                <label class="form-label text-muted small mb-1" for="subscription-client">{{ 'Client'|trans }}</label>
+                                <select class="form-control autocomplete-selector"
+                                        placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
+                                        id="subscription-client"
+                                        name="client_id"
+                                        data-resturl="/api/admin/client/get_pairs">
+                                {% if request.client_id %}
+                                    {% set client = admin.client_get({ 'id': request.client_id }) %}
+                                    <option value="{{ request.client_id }}" selected>{{ client.first_name }} {{ client.last_name }} ({{ client.email }})</option>
+                                {% endif %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-xl-4">
+                            <div>
+                                <label class="form-label text-muted small mb-1" for="subscription-gateway">{{ 'Payment Gateway'|trans }}</label>
+                                {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, request.gateway_id, 0, 'All Payment Gateways'|trans) }}
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-xl-4">
+                            <div>
+                                <label class="form-label text-muted small mb-1" for="subscription-status">{{ 'Status'|trans }}</label>
+                                <select class="form-select" id="subscription-status" name="status">
+                                    <option value="">{{ 'All Statuses'|trans }}</option>
+                                    <option value="active"{% if request.status == 'active' %} selected{% endif %}>{{ 'Active'|trans }}</option>
+                                    <option value="canceled"{% if request.status == 'canceled' %} selected{% endif %}>{{ 'Canceled'|trans }}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-xl-4">
+                            <div>
+                                <label class="form-label text-muted small mb-1" for="subscription-date-range">{{ 'Created At'|trans }}</label>
+                                <div class="input-group">
+                                    <div class="input-icon w-100">
+                                        <input class="form-control datepicker"
+                                               id="subscription-date-range"
+                                               placeholder="{{ 'Select Date Range'|trans }}"
+                                               value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
+                                               data-name-from="date_from"
+                                               data-name-to="date_to">
+                                        <span class="input-icon-addon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                                                <path d="M16 3l0 4"></path>
+                                                <path d="M8 3l0 4"></path>
+                                                <path d="M4 11l16 0"></path>
+                                                <path d="M11 15l1 0"></path>
+                                                <path d="M12 15l0 3"></path>
+                                            </svg>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-3">
+                        <a class="btn btn-outline-secondary" href="{{ request_path|url }}">{{ 'Reset'|trans }}</a>
+                        <button class="btn btn-primary" type="submit">
+                            <svg class="icon">
+                                <use href="#filter" />
+                            </svg>
+                            {{ 'Apply Filters'|trans }}
+                        </button>
+                    </div>
+                </form>
+            </section>
+            <div class="table-responsive">
             <table class="table card-table table-vcenter table-striped text-nowrap">
                 <thead>
                     <tr>
@@ -41,7 +146,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% set subscriptions = admin.invoice_subscription_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+                    {% set subscriptions = admin.invoice_subscription_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
                     {% for i, subscription in subscriptions.list %}
                     <tr>
                         <td>
@@ -49,7 +154,7 @@
                         </td>
                         <td>
                             <a href='{{ "client/manage/#{subscription.client.id}"|url }}'>
-                                {{ mf.avatar(subscription.client.email, 24, 'db-avatar avatar avatar-xs') }}
+                                {{ avatar(subscription.client.email, 24, 'avatar avatar-xs') }}
                             </a>
                         </td>
                         <td>
@@ -58,36 +163,29 @@
                         <td>{{ subscription.sid }}</td>
                         <td>{{ subscription.amount|format_currency(subscription.currency ?? default_currency) }} {{ subscription.period|period_title }}</td>
                         <td>{{ subscription.gateway.title }}</td>
-                        <td>
-                            {% if subscription.status == 'active' %}
-                                <span class="badge bg-success me-1"></span>
-                            {% endif %}
-                            {% if subscription.status == 'canceled' %}
-                                <span class="badge bg-secondary me-1"></span>
-                            {% endif %}
-                            {{ mf.status_name(subscription.status) }}
-                        </td>
+                        <td>{{ mf.status_badge(subscription.status, 'subscription') }}</td>
                         <td>
                             <a class="btn btn-icon" href='{{ "invoice/subscription/#{subscription.id}"|url }}'>
                                 <svg class="icon">
-                                    <use xlink:href="#edit" />
+                                    <use href="#edit" />
                                 </svg>
                             </a>
                             <a class="btn btn-icon" href="{{ 'invoice/subscription_delete'|api_url(query: { 'id': subscription.id }) }}"
                                 {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                                 <svg class="icon">
-                                    <use xlink:href="#delete" />
+                                    <use href="#trash" />
                                 </svg>
                             </a>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
+                        <td class="text-muted" colspan="8">{{ 'The list is empty'|trans }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
 
             <div class="card-footer d-flex align-items-center justify-content-between">
                 {% include 'partial_batch_delete.html.twig' with { 'action': 'invoice/batch_delete_subscription' } %}
@@ -95,18 +193,23 @@
             </div>
         </div>
 
-        <div class="tab-pane fade" id="tab-new" role="tabpanel">
-            <div class="card-body">
-                <form method="post" action="{{ 'invoice/subscription_create'|api_url }}" {{ fb_api_form({reload: true}) }}>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label" for="client_id">{{ 'Client'|trans }}</label>
-                        <div class="col">
+        <div class="modal modal-blur fade" id="newSubscriptionModal" tabindex="-1" aria-labelledby="newSubscriptionModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <form class="modal-content" method="post" action="{{ 'invoice/subscription_create'|api_url }}" {{ fb_api_form({reload: true}) }}>
+                    <div class="modal-header">
+                        <h3 class="modal-title" id="newSubscriptionModalLabel">{{ 'Create New Subscription'|trans }}</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label" for="client_id">{{ 'Client'|trans }}</label>
                             {% if not request.client_id %}
                                 <select class="form-control autocomplete-selector"
-                                        placeholder="{{ 'Start Typing the Client Name or ID'|trans }}"
+                                        placeholder="{{ 'Start typing the client name or ID'|trans }}"
                                         id="client_id"
                                         name="client_id"
-                                        data-resturl="/api/admin/client/get_pairs">
+                                        data-resturl="/api/admin/client/get_pairs"
+                                        required aria-required="true">
                                 </select>
                             {% else %}
                                 {% set client = admin.client_get({ 'id': request.client_id }) %}
@@ -114,22 +217,16 @@
                                 <input type="hidden" name="client_id" value="{{ request.client_id }}" />
                             {% endif %}
                         </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Payment Gateway'|trans }}:</label>
-                        <div class="col">
-                            {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, request.gateway_id, 0, 'Select payment gateway'|trans) }}
+                        <div class="mb-3">
+                            <label class="form-label">{{ 'Payment Gateway'|trans }}</label>
+                            {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, request.gateway_id, 0, 'Select Payment Gateway'|trans) }}
                         </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Subscription ID on payment gateway'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="sid" value="{{ request.sid }}" required>
+                        <div class="mb-3">
+                            <label class="form-label" for="subscription-sid-new">{{ 'Subscription ID on Payment Gateway'|trans }}</label>
+                            <input class="form-control" type="text" id="subscription-sid-new" name="sid" value="{{ request.sid }}" required>
                         </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}:</label>
-                        <div class="col">
+                        <div class="mb-3">
+                            <label class="form-label">{{ 'Status'|trans }}</label>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" id="radioStatusActive" type="radio" name="status" value="active" checked>
                                 <label class="form-check-label" for="radioStatusActive">{{ 'Active'|trans }}</label>
@@ -139,30 +236,58 @@
                                 <label class="form-check-label" for="radioStatusCanceled">{{ 'Canceled'|trans }}</label>
                             </div>
                         </div>
-                    </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Period'|trans }}:</label>
-                        <div class="col">
-                            {{ mf.selectbox('period', guest.system_periods, request.period, 1, 'Select period'|trans) }}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div>
+                                    <label class="form-label">{{ 'Period'|trans }}</label>
+                                    {{ mf.selectbox('period', guest.system_periods, request.period, 1, 'Select Period'|trans) }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div>
+                                    <label class="form-label">{{ 'Currency'|trans }}</label>
+                                    {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 1, 'Select Currency'|trans) }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <label class="form-label" for="subscription-amount">{{ 'Amount'|trans }}</label>
+                            <input class="form-control" type="text" id="subscription-amount" name="amount" value="{{ request.amount }}" required>
                         </div>
                     </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Amount'|trans }}:</label>
-                        <div class="col">
-                            <input class="form-control" type="text" name="amount" value="{{ request.amount }}" required>
-                        </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                        <button type="submit" class="btn btn-primary">{{ 'Create'|trans }}</button>
                     </div>
-                    <div class="mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Currency'|trans }}</label>
-                        <div class="col">
-                            {{ mf.selectbox('currency', guest.currency_get_pairs, request.currency, 1, 'Select currency'|trans) }}
-                        </div>
-                    </div>
-
-                    <input type="submit" value="{{ 'Create'|trans }}" class="btn btn-primary w-100">
                 </form>
             </div>
         </div>
     </div>
-</div>
+{% endblock %}
+
+{% block js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalElement = document.getElementById('newSubscriptionModal');
+    if (!modalElement) {
+        return;
+    }
+
+    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+
+    if (window.location.hash === '#tab-new') {
+        modal.show();
+    }
+
+    modalElement.addEventListener('hidden.bs.modal', function () {
+        if (window.location.hash !== '#tab-new') {
+            return;
+        }
+
+        const url = new URL(window.location.href);
+        url.hash = '';
+        window.history.replaceState({}, '', url);
+    });
+});
+</script>
 {% endblock %}

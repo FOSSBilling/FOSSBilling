@@ -21,7 +21,9 @@ use FOSSBilling\Security\AuthenticationRequiredException;
 use FOSSBilling\Security\EmailValidationRequiredException;
 use RedBeanPHP\Facade;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 $di = new Pimple\Container();
 
@@ -82,7 +84,7 @@ $di['crypt'] = function () use ($di) {
  */
 $di['pdo'] = function () {
     $debugConfig = Config::getProperty('debug_and_monitoring', []);
-    $dbConfig = Config::getProperty('db');
+    $dbConfig = DriverManagerFactory::getDatabaseConfig();
     $driverOptions = [
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ];
@@ -117,8 +119,20 @@ $di['pdo'] = function () {
  * @return \Box_Database The new Box_Database object that was just created.
  */
 $di['db'] = function () use ($di) {
-    RedBeanPHP\R::setup($di['pdo']);
+    $pdo = $di->offsetGet('pdo');
+    if (!$pdo instanceof PDO) {
+        throw new RuntimeException('PDO service must resolve to a PDO instance');
+    }
+
+    RedBeanPHP\R::setup($pdo);
     RedBeanPHP\Util\DispenseHelper::setEnforceNamingPolicy(false);
+
+    // SECURITY: bind string literals as PARAM_STR, not PARAM_INT. Without
+    // this, ?hash=107 in /api/guest/invoice/get resolves to the invoice
+    // whose hash starts with '107' because MySQL coerces VARCHAR against
+    // int to a leading-digits match. Do not remove; see RedBeanBindingTest.
+    /* @phpstan-ignore-next-line Adapter::getDatabase() returns the abstract Driver; the concrete RPDO implements setUseStringOnlyBinding. */
+    Facade::getDatabaseAdapter()->getDatabase()->setUseStringOnlyBinding(true);
 
     $helper = new Box_BeanHelper();
     $helper->setDi($di);
@@ -231,7 +245,12 @@ $di['events_manager'] = function () use ($di) {
  * @var \FOSSBilling\Session $di['session']
  */
 $di['session'] = function () use ($di) {
-    $handler = new PdoSessionHandler($di['pdo']);
+    $pdo = $di->offsetGet('pdo');
+    if (!$pdo instanceof PDO) {
+        throw new RuntimeException('PDO service must resolve to a PDO instance');
+    }
+
+    $handler = new PdoSessionHandler($pdo);
     $session = new FOSSBilling\Session($handler);
     $session->setDi($di);
     $session->setupSession();
@@ -260,6 +279,8 @@ $di['request'] = $request;
 $di['cache'] = fn (): FilesystemAdapter => new FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
 
 $di['rate_limit_cache'] = fn (): FilesystemAdapter => new FilesystemAdapter('rate_limit', 24 * 60 * 60, PATH_CACHE);
+
+$di['http_client'] = fn (): HttpClientInterface => HttpClient::create(['bindto' => BIND_TO]);
 
 $di['rate_limiter'] = function () use ($di) {
     $rateLimiter = new FOSSBilling\Security\RateLimiter();
@@ -418,11 +439,11 @@ $di['set_return_uri'] = function () use ($di): void {
  *
  * @param string $role The role to create the API object for. Can be 'guest', 'client', or 'admin'.
  *
- * @return \Api_Handler The new API object that was just created.
+ * @return \FOSSBilling\Api\Identity The new API identity wrapper that was just created.
  *
  * @throws \Exception If the specified role is not recognized or if a client is trying to use the API while their email is not valid.
  */
-$di['api'] = $di->protect(function ($role) use ($di) {
+$di['api_identity'] = $di->protect(function ($role) use ($di) {
     $identity = match ($role) {
         'guest' => new Model_Guest(),
         'client' => $di['loggedin_client'],
@@ -436,13 +457,27 @@ $di['api'] = $di->protect(function ($role) use ($di) {
         $isApiRequest = str_starts_with($routePath, '/api/');
         $isAllowedClientApi = str_starts_with($routePath, '/api/client/client/')
             || str_starts_with($routePath, '/api/client/profile/');
+        $isAllowedClientPage = str_starts_with($routePath, '/client/profile')
+            || str_starts_with($routePath, '/client/logout');
 
-        if (($isApiRequest && !$isAllowedClientApi) || (!$isApiRequest && !str_starts_with($routePath, '/client'))) {
+        if (($isApiRequest && !$isAllowedClientApi) || (!$isApiRequest && !$isAllowedClientPage)) {
             throw new EmailValidationRequiredException();
         }
     }
 
-    $api = new Api_Handler($identity);
+    return new FOSSBilling\Api\Identity($identity);
+});
+
+$di['api_dispatcher'] = function () use ($di): FOSSBilling\Api\Dispatcher {
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
+    $dispatcher->setDi($di);
+
+    return $dispatcher;
+};
+
+$di['api_proxy'] = $di->protect(function (string $role) use ($di): FOSSBilling\Api\Proxy {
+    $identity = $di['api_identity']($role);
+    $api = new FOSSBilling\Api\Proxy($identity->getIdentity());
     $api->setDi($di);
 
     return $api;
@@ -452,35 +487,35 @@ $di['api'] = $di->protect(function ($role) use ($di) {
  *
  * @param void
  *
- * @return \Api_Handler
+ * @return \FOSSBilling\Api\Proxy
  */
-$di['api_guest'] = fn () => $di['api']('guest');
+$di['api_guest'] = fn () => $di['api_proxy']('guest');
 
 /*
  *
  * @param void
  *
- * @return \Api_Handler
+ * @return \FOSSBilling\Api\Proxy
  */
-$di['api_client'] = fn () => $di['api']('client');
+$di['api_client'] = fn () => $di['api_proxy']('client');
 
 /*
  *
  * @param void
  *
- * @return \Api_Handler
+ * @return \FOSSBilling\Api\Proxy
  */
-$di['api_admin'] = fn () => $di['api']('admin');
+$di['api_admin'] = fn () => $di['api_proxy']('admin');
 
 /*
  *
  * @param void
  *
- * @return \Api_Handler Internal-only system API handler used for cron/background processing.
+ * @return \FOSSBilling\Api\Proxy Internal-only system API proxy used for cron/background processing.
  */
 $di['api_system'] = function () use ($di) {
     $identity = $di['mod_service']('staff')->getCronAdmin();
-    $api = new Api_Handler($identity);
+    $api = new FOSSBilling\Api\Proxy($identity);
     $api->setDi($di);
 
     return $api;
@@ -544,6 +579,19 @@ $di['updater'] = function () use ($di) {
 
     return $updater;
 };
+
+$di['update_finalization'] = function () use ($di) {
+    $finalization = new FOSSBilling\UpdateFinalization();
+    $finalization->setDi($di);
+
+    return $finalization;
+};
+
+$di['update_readiness'] = new FOSSBilling\UpdateReadinessCheck(
+    \PATH_ROOT,
+    \PATH_DATA,
+    \PATH_CONFIG,
+);
 
 /*
  * Creates a new server manager object and returns it.
@@ -619,7 +667,7 @@ $di['table'] = $di->protect(function ($name) use ($di) {
  * @return \Box\Mod\Servicelicense\Server
  */
 $di['license_server'] = function () use ($di) {
-    $server = new Box\Mod\Servicelicense\Server($di['logger']);
+    $server = new Box\Mod\Servicelicense\Server();
     $server->setDi($di);
 
     return $server;
@@ -661,7 +709,14 @@ $di['translate'] = $di->protect(function ($textDomain = '') {
     return $tr;
 });
 
-$di['csv_response_factory'] = fn (): FOSSBilling\Http\CsvResponseFactory => new FOSSBilling\Http\CsvResponseFactory($di['db']);
+$di['csv_response_factory'] = function () use ($di): FOSSBilling\Http\CsvResponseFactory {
+    $database = $di->offsetGet('db');
+    if (!$database instanceof Box_Database) {
+        throw new RuntimeException('Database service must resolve to a Box_Database instance');
+    }
+
+    return new FOSSBilling\Http\CsvResponseFactory($database);
+};
 
 $di['twig_factory'] = fn (): FOSSBilling\Twig\TwigFactory => new FOSSBilling\Twig\TwigFactory($di);
 

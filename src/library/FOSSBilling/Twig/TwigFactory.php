@@ -17,6 +17,7 @@ use DebugBar\StandardDebugBar;
 use FOSSBilling\Config;
 use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\i18n;
+use FOSSBilling\Tools;
 use FOSSBilling\Twig\Enum\AppArea;
 use FOSSBilling\Twig\Extension\ApiExtension;
 use FOSSBilling\Twig\Extension\DebugBarExtension;
@@ -25,6 +26,7 @@ use FOSSBilling\Twig\Extension\LegacyExtension;
 use FOSSBilling\Twig\Markdown\FOSSBillingMarkdown;
 use FOSSBilling\Version;
 use Symfony\Component\Filesystem\Path;
+use Symfony\Component\Intl\Currencies;
 use Twig\Environment;
 use Twig\Extension\AttributeExtension;
 use Twig\Extension\CoreExtension;
@@ -36,6 +38,7 @@ use Twig\Extra\Intl\IntlExtension;
 use Twig\Extra\Markdown\MarkdownExtension;
 use Twig\Extra\Markdown\MarkdownRuntime;
 use Twig\Loader\ArrayLoader;
+use Twig\Markup;
 use Twig\Profiler\Profile;
 use Twig\RuntimeLoader\FactoryRuntimeLoader;
 use Twig\RuntimeLoader\RuntimeLoaderInterface;
@@ -69,8 +72,9 @@ class TwigFactory
         $loader = new ArrayLoader();
         $twig = new Environment($loader, $this->baseConfig);
 
-        // Configure core and register bundled Twig extensions.
-        $twig->getExtension(CoreExtension::class)->setNumberFormat(2, '.', '');
+        $decimalDigits = $this->getDefaultCurrencyFractionDigits();
+
+        $twig->getExtension(CoreExtension::class)->setNumberFormat($decimalDigits, '.', '');
         $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
         $twig->addExtension(new DebugExtension());
         $twig->addExtension(new MarkdownExtension());
@@ -119,10 +123,8 @@ class TwigFactory
         $twig->addGlobal('theme', $theme);
         $twig->addGlobal('current_theme', $theme['code']);
         $twig->addGlobal('app_area', AppArea::ADMIN->value);
-
-        if ($this->di['auth']->isAdminLoggedIn()) {
-            $twig->addGlobal('admin', $this->di['api_admin']);
-        }
+        $twig->addGlobal('admin', $this->di['auth']->isAdminLoggedIn() ? $this->di['api_admin'] : null);
+        $twig->addGlobal('client', $this->di['auth']->isClientLoggedIn() ? $this->di['api_client'] : null);
 
         $this->configureDebugging($twig, $debugBar);
 
@@ -152,14 +154,8 @@ class TwigFactory
         $twig->addGlobal('current_theme', $code);
         $twig->addGlobal('settings', $settings);
         $twig->addGlobal('app_area', AppArea::CLIENT->value);
-
-        if ($this->di['auth']->isClientLoggedIn()) {
-            $twig->addGlobal('client', $this->di['api_client']);
-        }
-
-        if ($this->di['auth']->isAdminLoggedIn()) {
-            $twig->addGlobal('admin', $this->di['api_admin']);
-        }
+        $twig->addGlobal('client', $this->di['auth']->isClientLoggedIn() ? $this->di['api_client'] : null);
+        $twig->addGlobal('admin', $this->di['auth']->isAdminLoggedIn() ? $this->di['api_admin'] : null);
 
         $this->configureDebugging($twig, $debugBar);
 
@@ -190,8 +186,9 @@ class TwigFactory
         $loader = new ArrayLoader();
         $twig = new Environment($loader, $this->baseConfig);
 
-        // Configure core settings
-        $twig->getExtension(CoreExtension::class)->setNumberFormat(2, '.', '');
+        $decimalDigits = $this->getDefaultCurrencyFractionDigits();
+
+        $twig->getExtension(CoreExtension::class)->setNumberFormat($decimalDigits, '.', '');
         $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
 
         // Add only essential extensions for email templates
@@ -241,6 +238,7 @@ class TwigFactory
         $apiGuest = $this->di['api_guest'];
         $twig->addGlobal('guest', [
             'system_company' => $apiGuest->system_company(),
+            'system_email' => $this->getEmailSettingsForTemplates(),
         ]);
         $twig->addGlobal('default_currency', $this->getDefaultCurrencyCode());
         $twig->addGlobal('FOSSBillingVersion', Version::VERSION);
@@ -248,6 +246,23 @@ class TwigFactory
         $this->emailEnvironment = $twig;
 
         return $twig;
+    }
+
+    /**
+     * @return array{signature: Markup}
+     */
+    private function getEmailSettingsForTemplates(): array
+    {
+        $emailConfig = $this->di['mod']('email')->getConfig();
+        $signature = trim((string) ($emailConfig['signature'] ?? ''));
+
+        if ($signature === '') {
+            $signature = (string) ($this->di['api_guest']->system_company()['signature'] ?? '');
+        }
+
+        return [
+            'signature' => new Markup(Tools::sanitizeContent($signature), 'UTF-8'),
+        ];
     }
 
     public function createAdapterEnvironment(): Environment
@@ -291,7 +306,9 @@ class TwigFactory
 
         $twig = new Environment(new ArrayLoader(), $this->baseConfig);
 
-        $twig->getExtension(CoreExtension::class)->setNumberFormat(2, '.', '');
+        $decimalDigits = $this->getDefaultCurrencyFractionDigits();
+
+        $twig->getExtension(CoreExtension::class)->setNumberFormat($decimalDigits, '.', '');
         $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
         $twig->addExtension(new StringLoaderExtension());
 
@@ -384,7 +401,8 @@ class TwigFactory
         $twig->addGlobal('default_currency', $this->getDefaultCurrencyCode());
 
         $twig->addGlobal('CSRFToken', $csrfToken);
-        $twig->addGlobal('request', $requestData);
+        $twig->addGlobal('flashes', $session->get('flashes') ?? []);
+        $twig->addGlobal('request', new RequestDataView($requestData));
         $twig->addGlobal('request_query', $requestQuery);
         $twig->addGlobal('request_path', $requestPath);
         $twig->addGlobal('request_has_filters', $requestHasFilters);
@@ -402,6 +420,17 @@ class TwigFactory
         $currency = $repository->findDefault();
 
         return $currency instanceof Currency ? $currency->getCode() : null;
+    }
+
+    private function getDefaultCurrencyFractionDigits(): int
+    {
+        $code = $this->getDefaultCurrencyCode();
+
+        if ($code !== null && Currencies::exists($code)) {
+            return Currencies::getFractionDigits($code);
+        }
+
+        return 2;
     }
 
     /**

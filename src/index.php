@@ -73,7 +73,7 @@ if ($request->query->has('restore_token')) {
     }
 }
 
-$di['session'];
+$di['session']->getId();
 $timeCollector?->stopMeasure('session_start');
 
 if (strncasecmp($url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {

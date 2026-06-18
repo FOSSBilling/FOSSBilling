@@ -43,6 +43,32 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'manage_accounts' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage hosting accounts'),
+                'description' => __trans('Allows the staff member to manage hosting accounts (change plan, password, domain, etc.).'),
+            ],
+            'view_servers' => [
+                'type' => 'bool',
+                'display_name' => __trans('View hosting servers'),
+                'description' => __trans('Allows the staff member to view hosting server details.'),
+            ],
+            'manage_servers' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage hosting servers'),
+                'description' => __trans('Allows the staff member to create, update, and delete hosting servers.'),
+            ],
+            'manage_plans' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage hosting plans'),
+                'description' => __trans('Allows the staff member to create, update, and delete hosting plans.'),
+            ],
+        ];
+    }
+
     private function logInfo(string $message): void
     {
         if ($this->di !== null && isset($this->di['logger'])) {
@@ -53,6 +79,7 @@ class Service implements InjectionAwareInterface
     public function getCartProductTitle(Product $product, array $data)
     {
         try {
+            $data = array_merge(json_decode($product->config ?? '', true) ?? [], $data);
             [$sld, $tld] = $this->_getDomainTuple($data);
 
             return __trans(':hosting for :domain', [':hosting' => $product->getTitle(), ':domain' => $sld . $tld]);
@@ -77,6 +104,31 @@ class Service implements InjectionAwareInterface
         }
         if (!isset($data['tld']) || empty($data['tld'])) {
             throw new InformationException('Domain extension is invalid.', null, 704);
+        }
+
+        if (($data['domain']['action'] ?? null) === 'subdomain') {
+            $this->assertSubdomainAvailable($data['sld'], $data['tld']);
+        }
+    }
+
+    private function assertSubdomainAvailable(string $sld, string $tld): void
+    {
+        $query = 'SELECT COUNT(*)
+            FROM service_hosting sh
+            INNER JOIN client_order co ON co.service_id = sh.id AND co.service_type = :service_type
+            WHERE LOWER(sh.sld) = LOWER(:sld)
+                AND LOWER(sh.tld) = LOWER(:tld)
+                AND co.status != :canceled_status';
+
+        $count = (int) $this->di['db']->getCell($query, [
+            ':service_type' => \Box\Mod\Product\Service::HOSTING,
+            ':sld' => $sld,
+            ':tld' => $tld,
+            ':canceled_status' => \Model_ClientOrder::STATUS_CANCELED,
+        ]);
+
+        if ($count > 0) {
+            throw new InformationException('This free subdomain is already in use.');
         }
     }
 
@@ -554,7 +606,7 @@ class Service implements InjectionAwareInterface
             $result['username'] = $model->username;
             $result['password'] = $model->password;
             $result['accesshash'] = $model->accesshash;
-            $result['port'] = $model->port;
+            $result['port'] = Tools::normalizePort($model->port);
             $result['passwordLength'] = $model->passwordLength;
             $result['created_at'] = $model->created_at;
             $result['updated_at'] = $model->updated_at;
@@ -602,6 +654,28 @@ class Service implements InjectionAwareInterface
         if ($data['domain']['action'] == 'owndomain') {
             $sld = $data['domain']['owndomain_sld'];
             $tld = str_contains((string) $data['domain']['owndomain_tld'], '.') ? $data['domain']['owndomain_tld'] : '.' . $data['domain']['owndomain_tld'];
+        }
+
+        if ($data['domain']['action'] == 'subdomain') {
+            $required = [
+                'subdomain_sld' => 'Subdomain name is required.',
+                'subdomain_base_domain' => 'Hosting product must have a subdomain base domain configured',
+            ];
+            $this->di['validator']->checkRequiredParamsForArray($required, $data['domain'] + $data);
+
+            $subdomain = strtolower(trim((string) $data['domain']['subdomain_sld']));
+            $baseDomain = strtolower(trim(trim((string) $data['subdomain_base_domain']), '.'));
+
+            if (!$this->di['validator']->isSldValid($subdomain)) {
+                throw new InformationException('Subdomain name is invalid.');
+            }
+
+            if (!preg_match('/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])$/i', $baseDomain)) {
+                throw new InformationException('Subdomain base domain is invalid.');
+            }
+
+            $sld = $subdomain;
+            $tld = '.' . $baseDomain;
         }
 
         if ($data['domain']['action'] == 'register') {
@@ -756,7 +830,7 @@ class Service implements InjectionAwareInterface
         $model->username = $data['username'] ?? null;
         $model->password = $data['password'] ?? null;
         $model->accesshash = $data['accesshash'] ?? null;
-        $model->port = $data['port'] ?? null;
+        $model->port = Tools::normalizePort($data['port'] ?? null);
         $model->config = isset($data['config']) ? json_encode($data['config']) : null;
         $model->passwordLength = is_numeric($data['passwordLength'] ?? '') ? intval($data['passwordLength']) : null;
         $model->secure = $data['secure'] ?? 1;
@@ -798,8 +872,8 @@ class Service implements InjectionAwareInterface
         $model->ns3 = $data['ns3'] ?? $model->ns3;
         $model->ns4 = $data['ns4'] ?? $model->ns4;
         $model->manager = $data['manager'] ?? $model->manager;
-        $port = $data['port'] ?? null;
-        $model->port = is_numeric($port) ? $port : $model->port;
+        $port = Tools::normalizePort($data['port'] ?? null);
+        $model->port = $port ?? $model->port;
         $model->config = isset($data['config']) ? json_encode($data['config']) : $model->config;
         $model->secure = $data['secure'] ?? $model->secure;
         $model->username = $data['username'] ?? $model->username;
@@ -827,7 +901,7 @@ class Service implements InjectionAwareInterface
         $config = [];
         $config['ip'] = $model->ip;
         $config['host'] = $model->hostname;
-        $config['port'] = $model->port;
+        $config['port'] = Tools::normalizePort($model->port);
         $config['config'] = [];
         $config['config'] = json_decode($model->config ?? '', true) ?? [];
         $config['secure'] = $model->secure;
@@ -1060,6 +1134,12 @@ class Service implements InjectionAwareInterface
     {
         $c = json_decode($product instanceof Product ? $product->getConfig() ?? '' : $product->config ?? '', true) ?? [];
 
+        $data = array_merge($c, $data);
+
+        if (($data['domain']['action'] ?? null) === 'subdomain' && array_key_exists('subdomain_base_domain', $c)) {
+            $data['subdomain_base_domain'] = $c['subdomain_base_domain'];
+        }
+
         if (isset($data['domain']['action'])) {
             $this->validateDomainAction($data, $c);
         }
@@ -1068,7 +1148,7 @@ class Service implements InjectionAwareInterface
         $data['sld'] = $sld;
         $data['tld'] = $tld;
 
-        return array_merge($c, $data);
+        return $data;
     }
 
     /**
@@ -1087,11 +1167,14 @@ class Service implements InjectionAwareInterface
         $allowRegister = $productConfig['allow_domain_register'] ?? true;
         $allowTransfer = $productConfig['allow_domain_transfer'] ?? true;
         $allowOwn = $productConfig['allow_domain_own'] ?? true;
+        $allowSubdomain = $productConfig['allow_subdomain'] ?? false;
 
         match ($action) {
             'register' => $allowRegister || throw new InformationException('Domain registration is not available for this product.'),
             'transfer' => $allowTransfer || throw new InformationException('Domain transfer is not available for this product.'),
             'owndomain' => $allowOwn || throw new InformationException('Using your own domain is not allowed for this product.'),
+            'subdomain' => ($allowSubdomain && !empty($productConfig['subdomain_base_domain']))
+                || throw new InformationException('Subdomain ordering is not available for this product.'),
             default => throw new InformationException('Invalid domain action specified.'),
         };
     }
@@ -1105,6 +1188,10 @@ class Service implements InjectionAwareInterface
 
         $dc = $data['domain'];
         $action = $dc['action'];
+
+        if ($action == 'subdomain') {
+            return false;
+        }
 
         $drepo = $this->di['mod_service']('servicedomain');
         $drepo->validateOrderData($dc);

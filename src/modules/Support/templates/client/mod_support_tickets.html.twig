@@ -1,4 +1,5 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% set active_menu = 'support' %}
 
 {% import "macro_functions.html.twig" as mf %}
 
@@ -9,7 +10,7 @@
 {% block breadcrumb %}<li class="breadcrumb-item active" aria-current="page">{{ 'Support Tickets'|trans }}</li>{% endblock %}
 
 {% block head %}
-    {{ mf.wysiwyg('.editor-textarea') }}
+    {{ wysiwyg('.editor-textarea') }}
 {% endblock %}
 
 {% block content %}
@@ -62,7 +63,7 @@
                     {% endfor %}
                     </tbody>
                 </table>
-                {{ include('partial_pagination.html.twig', { 'list': tickets }) }}
+                {{ include('partial_pagination.html.twig', { 'list': tickets, 'url': 'support' }) }}
                 {% else %}
                     <div class="d-flex justify-content-center my-2 py-4">
                         <span class="blockquote m-0">{{ 'No Support Tickets'|trans }}</span>
@@ -113,7 +114,7 @@
             let submitTicket = document.getElementById('ticket-submit');
             submitTicket.addEventListener('submit', (event) => {
                 event.preventDefault();
-                API.client.post('support/ticket_create', Tools.serializeFormDataToObject(new FormData(submitTicket)),
+                FOSSBilling.api.client.post('support/ticket_create', FOSSBilling.tools.serializeFormDataToObject(new FormData(submitTicket)),
                     (res) => {
                         window.location = "{{ 'support/ticket'|url }}" + '/' + res
                     },

@@ -2,7 +2,6 @@ import TomSelect from 'tom-select';
 import { getCSRFToken, getBaseURL } from './utils';
 globalThis.TomSelect = TomSelect;
 
-// Unified template function for TomSelect options
 const createTomSelectTemplate = (data, escape, options = {}) => {
   const { showIndicator = false, indicatorField = 'customProperties', labelField = 'text' } = options;
 
@@ -15,20 +14,17 @@ const createTomSelectTemplate = (data, escape, options = {}) => {
   return `<div>${content}</div>`;
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-
-  /**
-   * Locale Selector
-   */
-  const localeSelectorEl = document.querySelector('.js-language-selector');
+export default function initTomSelectControls() {
+  const localeSelectorEl = document.querySelector('.js-locale-selector');
   if (localeSelectorEl !== null) {
-    const localeSelector = new TomSelect(".js-language-selector", {
+    const selectedLang = FOSSBilling.cookieRead("fb_locale") || localeSelectorEl.value;
+    const localeSelector = new TomSelect(".js-locale-selector", {
       copyClassesToDropdown: false,
       controlClass: "ts-control locale",
       dropdownClass: "dropdown-menu ts-dropdown locale-selector-dropdown",
       optionClass: "dropdown-item",
       controlInput: false,
-      items: [FOSSBilling.cookieRead("fb_locale")],
+      items: selectedLang ? [selectedLang] : [],
       render: {
         item: (data, escape) => createTomSelectTemplate(data, escape, { showIndicator: true }),
         option: (data, escape) => createTomSelectTemplate(data, escape, { showIndicator: true }),
@@ -42,15 +38,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
-  /**
-   * Autocomplete selector
-   */
   const autocompleteTemplate = (item, escape) => {
     return `<div class="py-2 d-flex align-items-center text-body">
                 <span>${escape(item.label)}</span>
                 <small class="text-body-secondary ms-1 lh-1">#${escape(item.value)}</small>
              </div>`;
-  }
+  };
 
   const autocompleteSelectorEls = document.querySelectorAll('.autocomplete-selector');
   if (autocompleteSelectorEls.length > 0) {
@@ -61,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      new TomSelect(autocompleteSelectorEl, {
+      const autocompleteSelector = new TomSelect(autocompleteSelectorEl, {
         copyClassesToDropdown: false,
         dropdownClass: "dropdown-menu ts-dropdown",
         optionClass: "dropdown-item",
@@ -104,13 +97,12 @@ document.addEventListener('DOMContentLoaded', () => {
           item: (item, escape) => `<span>${escape(item.label)}</span>`,
         },
       });
+
+      autocompleteSelector.wrapper.classList.add('autocomplete-selector-wrapper');
     });
   }
 
 
-  /**
-   * Canned Ticket Response selector
-   */
   const cannedResponseSelectorEl = document.querySelector('.canned_ticket_response');
   if (cannedResponseSelectorEl !== null && cannedResponseSelectorEl.dataset.resturl) {
     const cannedResponseSelector = new TomSelect('.canned_ticket_response', {
@@ -166,16 +158,13 @@ document.addEventListener('DOMContentLoaded', () => {
               return;
             }
 
-            // Fallback to registry approach
-            if (window.FOSSBilling?.editors) {
-              Object.values(window.FOSSBilling.editors).forEach(editor => {
-                if (editor?.setData) {
-                  editor.setData(content);
-                }
+            if (window.FOSSBilling?.editor) {
+              window.FOSSBilling.editor.all().forEach(editor => {
+                editor.setData(content);
               });
+              return;
             }
 
-            // Last fallback: try to find any editor in the document
             document.querySelectorAll('[data-editor]').forEach(el => {
               if (el.editor?.setData) {
                 el.editor.setData(content);
@@ -190,4 +179,4 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-});
+}

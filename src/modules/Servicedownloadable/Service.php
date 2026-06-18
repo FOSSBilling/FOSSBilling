@@ -17,11 +17,14 @@ use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Response;
 
 class Service implements InjectionAwareInterface
 {
+    private const string STORED_FILENAME_CONFIG_KEY = 'stored_filename';
+
     private const array DEFAULT_ALLOWED_EXTENSIONS = [
         'zip', 'tar', 'gz', 'tgz', 'bz2', 'xz', 'rar', '7z',
         'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
@@ -91,6 +94,17 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage downloadable products'),
+                'description' => __trans('Allows the staff member to upload, update, and manage downloadable product files.'),
+            ],
+        ];
+    }
+
     private function getAllowedFileTypes(): array
     {
         return [
@@ -111,7 +125,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!$this->isAllowedMimeType($mimeType, $allowedTypes['mime_types']) && $this->di->offsetExists('logger')) {
-            $this->di['logger']->warn(
+            $this->di['logger']->warning(
                 'Accepting downloadable upload %s with unexpected MIME type %s because the extension %s is allowed',
                 $file->getClientOriginalName(),
                 $mimeType,
@@ -135,10 +149,12 @@ class Service implements InjectionAwareInterface
         $config = json_decode($product->getConfig() ?? '', true) ?? [];
         $required = [
             'filename' => 'Product is not configured completely.',
+            self::STORED_FILENAME_CONFIG_KEY => 'Product is not configured completely.',
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $config);
 
         $data['filename'] = $config['filename'];
+        $data[self::STORED_FILENAME_CONFIG_KEY] = $this->validateStoredFilename($config[self::STORED_FILENAME_CONFIG_KEY] ?? null);
 
         return array_merge($config, $data);
     }
@@ -147,8 +163,10 @@ class Service implements InjectionAwareInterface
     {
         $required = [
             'filename' => 'Filename is missing in product config',
+            self::STORED_FILENAME_CONFIG_KEY => 'Stored filename is missing in product config',
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
+        $data[self::STORED_FILENAME_CONFIG_KEY] = $this->validateStoredFilename($data[self::STORED_FILENAME_CONFIG_KEY] ?? null);
     }
 
     /**
@@ -165,6 +183,7 @@ class Service implements InjectionAwareInterface
         $model = $this->di['db']->dispense('ServiceDownloadable');
         $model->client_id = $order->client_id;
         $model->filename = $c['filename'];
+        $model->stored_filename = $c[self::STORED_FILENAME_CONFIG_KEY];
         $model->downloads = 0;
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
@@ -237,11 +256,84 @@ class Service implements InjectionAwareInterface
         ];
 
         if ($identity instanceof \Model_Admin) {
-            $result['path'] = Path::join(PATH_UPLOADS, md5($model->filename));
+            $result['path'] = $this->getStoredFilePath($model->stored_filename);
             $result['downloads'] = $model->downloads;
         }
 
         return $result;
+    }
+
+    private function validateStoredFilename(mixed $storedFilename): string
+    {
+        if (!is_string($storedFilename) || preg_match('/\A[a-f0-9]{64}\z/', $storedFilename) !== 1) {
+            throw new \FOSSBilling\Exception('File is not available at the moment. Please contact support.', null, 404);
+        }
+
+        return $storedFilename;
+    }
+
+    private function getStoredFilePath(mixed $storedFilename): string
+    {
+        return Path::join(PATH_UPLOADS, $this->validateStoredFilename($storedFilename));
+    }
+
+    private function generateStoredFilename(): string
+    {
+        do {
+            $storedFilename = bin2hex(random_bytes(32));
+            $filePath = $this->getStoredFilePath($storedFilename);
+        } while ($this->filesystem->exists($filePath));
+
+        return $storedFilename;
+    }
+
+    private function storeUploadedFile(\Symfony\Component\HttpFoundation\File\UploadedFile $file): string
+    {
+        $storedFilename = $this->generateStoredFilename();
+        $file->move(PATH_UPLOADS, $storedFilename);
+
+        return $storedFilename;
+    }
+
+    private function isStoredFilenameReferenced(string $storedFilename): bool
+    {
+        $count = (int) $this->di['db']->getCell(
+            'SELECT COUNT(*) FROM service_downloadable WHERE stored_filename = :stored_filename',
+            [':stored_filename' => $storedFilename]
+        );
+        if ($count > 0) {
+            return true;
+        }
+
+        $count = (int) $this->di['db']->getCell(
+            'SELECT COUNT(*) FROM product WHERE config LIKE :pattern',
+            [':pattern' => '%' . $storedFilename . '%']
+        );
+        if ($count > 0) {
+            return true;
+        }
+
+        $count = (int) $this->di['db']->getCell(
+            'SELECT COUNT(*) FROM client_order WHERE config LIKE :pattern',
+            [':pattern' => '%' . $storedFilename . '%']
+        );
+
+        return $count > 0;
+    }
+
+    private function isValidStoredFilename(mixed $storedFilename): bool
+    {
+        return is_string($storedFilename) && preg_match('/\A[a-f0-9]{64}\z/', $storedFilename) === 1;
+    }
+
+    private function removeStoredFileIfOrphaned(string $storedFilename): void
+    {
+        if ($this->isValidStoredFilename($storedFilename) && !$this->isStoredFilenameReferenced($storedFilename)) {
+            $filePath = $this->getStoredFilePath($storedFilename);
+            if ($this->filesystem->exists($filePath)) {
+                $this->filesystem->remove($filePath);
+            }
+        }
     }
 
     public function uploadProductFile(Product $productModel): bool
@@ -262,19 +354,10 @@ class Service implements InjectionAwareInterface
 
         $this->validateFileUpload($file);
 
-        $fileNameHash = md5((string) $fileName);
-        $fileSavePath = PATH_UPLOADS;
-        $file->move($fileSavePath, $fileNameHash);
+        $storedFilename = $this->storeUploadedFile($file);
 
         $config = json_decode($productModel->getConfig() ?? '', true) ?? [];
-
-        // Remove old file.
-        if (isset($config['filename'])) {
-            $oldFilePath = Path::join(PATH_UPLOADS, md5((string) $config['filename']));
-            if ($this->filesystem->exists($oldFilePath)) {
-                $this->filesystem->remove($oldFilePath);
-            }
-        }
+        $oldStoredFilename = $config[self::STORED_FILENAME_CONFIG_KEY] ?? null;
 
         // Check if update_orders is true and update all orders
         if (isset($config['update_orders']) && $config['update_orders']) {
@@ -287,20 +370,18 @@ class Service implements InjectionAwareInterface
                 $serviceDownloadable = $orderService->getOrderService($ordermodel);
 
                 // Update the filename
-                $oldconfig = json_decode($order['config'] ?? '', true);
+                $oldconfig = json_decode($order['config'] ?? '', true) ?: [];
                 $oldconfig['filename'] = $fileName;
-
-                // Save the change to the DB
+                $oldconfig[self::STORED_FILENAME_CONFIG_KEY] = $storedFilename;
                 $ordermodel->config = json_encode($oldconfig);
-                $ordermodel->updated_at = date('Y-m-d H:i:s');
-                $this->di['db']->store($ordermodel);
 
                 // Pass the filename since the file was already uploaded and moved
-                $this->updateProductFile($serviceDownloadable, $ordermodel, $fileName);
+                $this->updateProductFile($serviceDownloadable, $ordermodel, $fileName, $storedFilename);
             }
         }
 
         $config['filename'] = $fileName;
+        $config[self::STORED_FILENAME_CONFIG_KEY] = $storedFilename;
         $updatedAt = new \DateTime();
         $productModel->setConfig(json_encode($config));
         $productModel->setUpdatedAt($updatedAt);
@@ -308,19 +389,27 @@ class Service implements InjectionAwareInterface
 
         $this->di['logger']->info('Uploaded new file for product %s', $productModel->getId());
 
+        if ($oldStoredFilename !== null && $oldStoredFilename !== $storedFilename) {
+            $this->removeStoredFileIfOrphaned($oldStoredFilename);
+        }
+
         return true;
     }
 
     /**
      * @throws \FOSSBilling\Exception
      */
-    public function updateProductFile(\Model_ServiceDownloadable $serviceDownloadable, \Model_ClientOrder $order, ?string $filename = null): bool
+    public function updateProductFile(\Model_ServiceDownloadable $serviceDownloadable, \Model_ClientOrder $order, ?string $filename = null, ?string $storedFilename = null): bool
     {
         $request = $this->di['request'];
+        $oldStoredFilename = $serviceDownloadable->stored_filename ?? null;
 
         // If filename is provided, use it directly (file was already uploaded in uploadProductFile)
         if ($filename !== null) {
             $fileName = $filename;
+            if ($storedFilename === null) {
+                throw new \FOSSBilling\Exception('No stored filename available for order file update');
+            }
         } elseif ($request->files->count() > 0) {
             $file = $request->files->get('file_data');
             $fileName = $file->getClientOriginalName();
@@ -331,15 +420,13 @@ class Service implements InjectionAwareInterface
             }
 
             $this->validateFileUpload($file);
-
-            $fileNameHash = md5((string) $fileName);
-            $fileSavePath = PATH_UPLOADS;
-            $file->move($fileSavePath, $fileNameHash);
+            $storedFilename = $this->storeUploadedFile($file);
         } else {
             $fileName = null;
             if (isset($order->config)) {
                 $config = json_decode($order->config, true);
                 $fileName = $config['filename'] ?? null;
+                $storedFilename = $config[self::STORED_FILENAME_CONFIG_KEY] ?? null;
             }
             if (!$fileName && isset($serviceDownloadable->filename)) {
                 $fileName = $serviceDownloadable->filename;
@@ -347,13 +434,33 @@ class Service implements InjectionAwareInterface
             if (!$fileName) {
                 throw new \FOSSBilling\Exception('No filename available for order file update');
             }
+            if (!$storedFilename && isset($serviceDownloadable->stored_filename)) {
+                $storedFilename = $serviceDownloadable->stored_filename;
+            }
+            if (!$storedFilename) {
+                throw new \FOSSBilling\Exception('No stored filename available for order file update');
+            }
         }
 
+        $storedFilename = $this->validateStoredFilename($storedFilename);
+
         $serviceDownloadable->filename = $fileName;
+        $serviceDownloadable->stored_filename = $storedFilename;
         $serviceDownloadable->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($serviceDownloadable);
 
+        $config = json_decode($order->config ?? '', true) ?: [];
+        $config['filename'] = $fileName;
+        $config[self::STORED_FILENAME_CONFIG_KEY] = $storedFilename;
+        $order->config = json_encode($config);
+        $order->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($order);
+
         $this->di['logger']->info('Uploaded new file for order %s', $order->id);
+
+        if (isset($oldStoredFilename) && $oldStoredFilename !== $storedFilename) {
+            $this->removeStoredFileIfOrphaned($oldStoredFilename);
+        }
 
         return true;
     }
@@ -375,7 +482,12 @@ class Service implements InjectionAwareInterface
     public function sendFile(\Model_ServiceDownloadable $serviceDownloadable): Response
     {
         $fileName = $serviceDownloadable->filename;
-        $filePath = Path::join(PATH_UPLOADS, md5($fileName));
+        $storedFilename = $serviceDownloadable->stored_filename;
+        if (!$storedFilename) {
+            throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
+        }
+
+        $filePath = $this->getStoredFilePath($storedFilename);
         if (!$this->filesystem->exists($filePath)) {
             throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
         }
@@ -385,7 +497,7 @@ class Service implements InjectionAwareInterface
         $serviceDownloadable->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($serviceDownloadable);
 
-        $response = new Response($this->filesystem->readFile($filePath));
+        $response = new BinaryFileResponse($filePath);
 
         $disposition = $response->headers->makeDisposition(
             HeaderUtils::DISPOSITION_ATTACHMENT,
@@ -421,18 +533,18 @@ class Service implements InjectionAwareInterface
     {
         $config = json_decode($product->getConfig() ?? '', true) ?: [];
 
-        if (!isset($config['filename'])) {
+        if (!isset($config['filename'], $config[self::STORED_FILENAME_CONFIG_KEY])) {
             throw new \FOSSBilling\Exception('No file associated with this product.', null, 404);
         }
 
         $fileName = $config['filename'];
-        $filePath = Path::join(PATH_UPLOADS, md5((string) $fileName));
+        $filePath = $this->getStoredFilePath($config[self::STORED_FILENAME_CONFIG_KEY]);
 
         if (!$this->filesystem->exists($filePath)) {
             throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
         }
 
-        $response = new Response($this->filesystem->readFile($filePath));
+        $response = new BinaryFileResponse($filePath);
 
         $disposition = $response->headers->makeDisposition(
             HeaderUtils::DISPOSITION_ATTACHMENT,

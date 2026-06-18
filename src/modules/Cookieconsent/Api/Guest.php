@@ -18,7 +18,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Cookieconsent\Api;
 
-class Guest extends \Api_Abstract
+class Guest extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get message which should be shown in notification bar.

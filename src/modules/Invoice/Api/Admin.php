@@ -21,7 +21,7 @@ use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 use Symfony\Component\HttpFoundation\Response;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Returns paginated list of invoices.
@@ -30,11 +30,13 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
+        $this->checkPermissions('invoice', 'view');
+
         $service = $this->getService();
         [$sql, $params] = $service->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
         foreach ($pager['list'] as $key => $item) {
-            $invoice = $this->di['db']->getExistingModelById('Invoice', $item['id'], 'Invoice not found');
+            $invoice = $this->getDi()['db']->getExistingModelById('Invoice', $item['id'], 'Invoice not found');
             $pager['list'][$key] = $this->getService()->toApiArray($invoice, true, $this->getIdentity());
         }
 
@@ -48,6 +50,8 @@ class Admin extends \Api_Abstract
      */
     public function get($data)
     {
+        $this->checkPermissions('invoice', 'view');
+
         $model = $this->_getInvoice($data);
 
         return $this->getService()->toApiArray($model, true, $this->getIdentity());
@@ -65,6 +69,8 @@ class Admin extends \Api_Abstract
      */
     public function mark_as_paid($data)
     {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
         $invoice = $this->_getInvoice($data);
 
         return $this->getService()->markAsPaidByAdmin($invoice, $data);
@@ -86,7 +92,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['client_id' => 'Client ID is missing'])]
     public function prepare($data)
     {
-        $client = $this->di['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
+        $this->checkPermissions('invoice', 'manage_invoices');
+
+        $client = $this->getDi()['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
 
         $invoice = $this->getService()->prepareInvoice($client, $data);
 
@@ -100,6 +108,8 @@ class Admin extends \Api_Abstract
      */
     public function approve($data)
     {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
         $model = $this->_getInvoice($data);
 
         return $this->getService()->approveInvoice($model, $data);
@@ -114,6 +124,8 @@ class Admin extends \Api_Abstract
      */
     public function refund($data)
     {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
         $model = $this->_getInvoice($data);
         $note = $data['note'] ?? null;
 
@@ -160,6 +172,8 @@ class Admin extends \Api_Abstract
      */
     public function update($data)
     {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
         $model = $this->_getInvoice($data);
 
         return $this->getService()->updateInvoice($model, $data);
@@ -173,8 +187,10 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Invoice item ID was not passed'])]
     public function item_delete($data)
     {
-        $model = $this->di['db']->getExistingModelById('InvoiceItem', $data['id'], 'Invoice item was not found');
-        $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
+        $this->checkPermissions('invoice', 'manage_invoices');
+
+        $model = $this->getDi()['db']->getExistingModelById('InvoiceItem', $data['id'], 'Invoice item was not found');
+        $invoiceItemService = $this->getDi()['mod_service']('Invoice', 'InvoiceItem');
 
         return $invoiceItemService->remove($model);
     }
@@ -186,6 +202,8 @@ class Admin extends \Api_Abstract
      */
     public function delete($data)
     {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
         $model = $this->_getInvoice($data);
 
         return $this->getService()->deleteInvoiceByAdmin($model);
@@ -205,7 +223,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Order ID was not passed'])]
     public function renewal_invoice($data)
     {
-        $model = $this->di['db']->getExistingModelById('ClientOrder', $data['id'], 'Order not found');
+        $this->checkPermissions('invoice', 'manage_invoices');
+
+        $model = $this->getDi()['db']->getExistingModelById('ClientOrder', $data['id'], 'Order not found');
         if ($model->price <= 0) {
             throw new InformationException('Order :id is free. No need to generate invoice.', [':id' => $model->id]);
         }
@@ -223,6 +243,8 @@ class Admin extends \Api_Abstract
      */
     public function batch_pay_with_credits($data)
     {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
         return $this->getService()->doBatchPayWithCredits($data);
     }
 
@@ -233,6 +255,8 @@ class Admin extends \Api_Abstract
      */
     public function pay_with_credits($data)
     {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
         $invoice = $this->_getInvoice($data);
 
         return $this->getService()->payInvoiceWithCredits($invoice);
@@ -245,6 +269,8 @@ class Admin extends \Api_Abstract
      */
     public function batch_generate()
     {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
         return $this->getService()->generateInvoicesForExpiringOrders();
     }
 
@@ -255,6 +281,8 @@ class Admin extends \Api_Abstract
      */
     public function batch_activate_paid()
     {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
         return $this->getService()->doBatchPaidInvoiceActivation();
     }
 
@@ -265,6 +293,8 @@ class Admin extends \Api_Abstract
      */
     public function batch_send_reminders($data)
     {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
         return $this->getService()->doBatchRemindersSend();
     }
 
@@ -281,6 +311,8 @@ class Admin extends \Api_Abstract
      */
     public function batch_invoke_due_event($data)
     {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
         return $this->getService()->doBatchInvokeDueEvent($data);
     }
 
@@ -292,6 +324,8 @@ class Admin extends \Api_Abstract
      */
     public function send_reminder($data)
     {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
         $invoice = $this->_getInvoice($data);
 
         return $this->getService()->sendInvoiceReminder($invoice);
@@ -304,6 +338,8 @@ class Admin extends \Api_Abstract
      */
     public function get_statuses($data)
     {
+        $this->checkPermissions('invoice', 'view');
+
         return $this->getService()->counter();
     }
 
@@ -314,7 +350,9 @@ class Admin extends \Api_Abstract
      */
     public function transaction_process_all($data)
     {
-        $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+        $this->checkPermissions('invoice', 'manage_transactions');
+
+        $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
         return $transactionService->processReceivedATransactions();
     }
@@ -325,12 +363,14 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Transaction ID is missing'])]
     public function transaction_process($data): bool
     {
-        $model = $this->di['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
+        $this->checkPermissions('invoice', 'manage_transactions');
+
+        $model = $this->getDi()['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
 
         $output = null;
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionProcess', 'params' => ['id' => $model->id]]);
+        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminTransactionProcess', 'params' => ['id' => $model->id]]);
 
-        $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+        $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
         return $transactionService->preProcessTransaction($model);
     }
@@ -354,9 +394,11 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Transaction ID is missing'])]
     public function transaction_update($data)
     {
-        $model = $this->di['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
+        $this->checkPermissions('invoice', 'manage_transactions');
 
-        $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+        $model = $this->getDi()['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
+
+        $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
         return $transactionService->update($model, $data);
     }
@@ -375,7 +417,9 @@ class Admin extends \Api_Abstract
      */
     public function transaction_create($data)
     {
-        $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+        $this->checkPermissions('invoice', 'manage_transactions');
+
+        $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
         $data['source'] ??= 'admin';
 
         return $transactionService->create($data);
@@ -389,9 +433,11 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Transaction ID is missing'])]
     public function transaction_delete($data)
     {
-        $model = $this->di['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
+        $this->checkPermissions('invoice', 'manage_transactions');
 
-        $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+        $model = $this->getDi()['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
+
+        $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
         return $transactionService->delete($model);
     }
@@ -404,9 +450,11 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Transaction ID is missing'])]
     public function transaction_get($data)
     {
-        $model = $this->di['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
+        $this->checkPermissions('invoice', 'manage_transactions');
 
-        $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+        $model = $this->getDi()['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
+
+        $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
         return $transactionService->toApiArray($model, true);
     }
@@ -420,13 +468,15 @@ class Admin extends \Api_Abstract
      */
     public function transaction_get_list($data)
     {
-        $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+        $this->checkPermissions('invoice', 'manage_transactions');
+
+        $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
         [$sql, $params] = $transactionService->getSearchQuery($data);
 
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
-            $transaction = $this->di['db']->getExistingModelById('Transaction', $item['id'], 'Transaction not found');
+            $transaction = $this->getDi()['db']->getExistingModelById('Transaction', $item['id'], 'Transaction not found');
             $pager['list'][$key] = $transactionService->toApiArray($transaction);
         }
 
@@ -440,7 +490,9 @@ class Admin extends \Api_Abstract
      */
     public function transaction_get_statuses($data)
     {
-        $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+        $this->checkPermissions('invoice', 'view');
+
+        $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
         return $transactionService->counter();
     }
@@ -452,7 +504,9 @@ class Admin extends \Api_Abstract
      */
     public function transaction_get_statuses_pairs($data)
     {
-        $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+        $this->checkPermissions('invoice', 'view');
+
+        $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
         return $transactionService->getStatusPairs();
     }
@@ -464,7 +518,9 @@ class Admin extends \Api_Abstract
      */
     public function transaction_statuses($data)
     {
-        $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+        $this->checkPermissions('invoice', 'view');
+
+        $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
         return $transactionService->getStatuses();
     }
@@ -476,7 +532,9 @@ class Admin extends \Api_Abstract
      */
     public function transaction_gateway_statuses($data)
     {
-        $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+        $this->checkPermissions('invoice', 'view');
+
+        $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
         return $transactionService->getGatewayStatuses();
     }
@@ -488,7 +546,9 @@ class Admin extends \Api_Abstract
      */
     public function transaction_types($data)
     {
-        $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+        $this->checkPermissions('invoice', 'view');
+
+        $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
         return $transactionService->getTypes();
     }
@@ -506,12 +566,14 @@ class Admin extends \Api_Abstract
      */
     public function transaction_claim_for_processing($data)
     {
+        $this->checkPermissions('invoice', 'manage_transactions');
+
         $required = [
             'id' => 'Transaction ID is required',
         ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+        $this->getDi()['validator']->checkRequiredParamsForArray($required, $data);
 
-        $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+        $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
         return $transactionService->claimForProcessing((int) $data['id']);
     }
@@ -523,13 +585,15 @@ class Admin extends \Api_Abstract
      */
     public function gateway_get_list($data)
     {
-        $gatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
+        $this->checkPermissions('invoice', 'manage_gateways');
+
+        $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
         [$sql, $params] = $gatewayService->getSearchQuery($data);
 
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
-            $gateway = $this->di['db']->getExistingModelById('PayGateway', $item['id'], 'Gateway not found');
+            $gateway = $this->getDi()['db']->getExistingModelById('PayGateway', $item['id'], 'Gateway not found');
             $pager['list'][$key] = $gatewayService->toApiArray($gateway, false, $this->getIdentity());
         }
 
@@ -543,7 +607,9 @@ class Admin extends \Api_Abstract
      */
     public function gateway_get_pairs($data)
     {
-        $gatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
+        $this->checkPermissions('invoice', 'manage_gateways');
+
+        $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
 
         return $gatewayService->getPairs();
     }
@@ -555,7 +621,9 @@ class Admin extends \Api_Abstract
      */
     public function gateway_get_available(array $data)
     {
-        $gatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
+        $this->checkPermissions('invoice', 'manage_gateways');
+
+        $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
 
         return $gatewayService->getAvailable();
     }
@@ -568,8 +636,10 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['code' => 'Payment gateway code is missing'])]
     public function gateway_install(array $data)
     {
+        $this->checkPermissions('invoice', 'manage_gateways');
+
         $code = $data['code'];
-        $gatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
+        $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
 
         return $gatewayService->install($code);
     }
@@ -584,9 +654,11 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Gateway ID was not passed'])]
     public function gateway_get($data)
     {
-        $model = $this->di['db']->getExistingModelById('PayGateway', $data['id'], 'Gateway not found');
+        $this->checkPermissions('invoice', 'manage_gateways');
 
-        $gatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
+        $model = $this->getDi()['db']->getExistingModelById('PayGateway', $data['id'], 'Gateway not found');
+
+        $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
 
         return $gatewayService->toApiArray($model, true, $this->getIdentity());
     }
@@ -599,8 +671,10 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Gateway ID was not passed'])]
     public function gateway_copy($data)
     {
-        $model = $this->di['db']->getExistingModelById('PayGateway', $data['id'], 'Gateway not found');
-        $gatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
+        $this->checkPermissions('invoice', 'manage_gateways');
+
+        $model = $this->getDi()['db']->getExistingModelById('PayGateway', $data['id'], 'Gateway not found');
+        $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
 
         return $gatewayService->copy($model);
     }
@@ -623,8 +697,10 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Gateway ID was not passed'])]
     public function gateway_update($data)
     {
-        $model = $this->di['db']->getExistingModelById('PayGateway', $data['id'], 'Gateway not found');
-        $gatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
+        $this->checkPermissions('invoice', 'manage_gateways');
+
+        $model = $this->getDi()['db']->getExistingModelById('PayGateway', $data['id'], 'Gateway not found');
+        $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
 
         return $gatewayService->update($model, $data);
     }
@@ -639,8 +715,10 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Gateway ID was not passed'])]
     public function gateway_delete($data)
     {
-        $model = $this->di['db']->getExistingModelById('PayGateway', $data['id'], 'Gateway not found');
-        $gatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
+        $this->checkPermissions('invoice', 'manage_gateways');
+
+        $model = $this->getDi()['db']->getExistingModelById('PayGateway', $data['id'], 'Gateway not found');
+        $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
 
         return $gatewayService->delete($model);
     }
@@ -652,14 +730,16 @@ class Admin extends \Api_Abstract
      */
     public function subscription_get_list($data)
     {
-        $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
+        $this->checkPermissions('invoice', 'manage_subscriptions');
+
+        $subscriptionService = $this->getDi()['mod_service']('Invoice', 'Subscription');
 
         [$sql, $params] = $subscriptionService->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         if (isset($pager['list']) && is_array($pager['list'])) {
             foreach ($pager['list'] as $key => $item) {
-                $subscription = $this->di['db']->getExistingModelById('Subscription', $item['id'], 'Subscription not found');
+                $subscription = $this->getDi()['db']->getExistingModelById('Subscription', $item['id'], 'Subscription not found');
                 $pager['list'][$key] = $subscriptionService->toApiArray($subscription);
             }
         }
@@ -688,13 +768,15 @@ class Admin extends \Api_Abstract
     ])]
     public function subscription_create($data)
     {
-        $client = $this->di['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
-        $payGateway = $this->di['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Payment gateway not found');
+        $this->checkPermissions('invoice', 'manage_subscriptions');
+
+        $client = $this->getDi()['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
+        $payGateway = $this->getDi()['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Payment gateway not found');
 
         if ($client->currency != $data['currency']) {
             throw new InformationException('Client currency must match subscription currency. Check if clients currency is defined.');
         }
-        $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
+        $subscriptionService = $this->getDi()['mod_service']('Invoice', 'Subscription');
 
         return $subscriptionService->create($client, $payGateway, $data);
     }
@@ -715,8 +797,10 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Subscription ID was not passed'])]
     public function subscription_update($data)
     {
-        $model = $this->di['db']->getExistingModelById('Subscription', $data['id'], 'Subscription not found');
-        $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
+        $this->checkPermissions('invoice', 'manage_subscriptions');
+
+        $model = $this->getDi()['db']->getExistingModelById('Subscription', $data['id'], 'Subscription not found');
+        $subscriptionService = $this->getDi()['mod_service']('Invoice', 'Subscription');
 
         return $subscriptionService->update($model, $data);
     }
@@ -730,27 +814,29 @@ class Admin extends \Api_Abstract
      */
     public function subscription_get($data)
     {
+        $this->checkPermissions('invoice', 'manage_subscriptions');
+
         if (!isset($data['id']) && !isset($data['sid'])) {
             $required = [
                 'id' => 'Subscription ID was not passed',
                 'sid' => 'Subscription sID was not passed',
             ];
-            $this->di['validator']->checkRequiredParamsForArray($required, $data);
+            $this->getDi()['validator']->checkRequiredParamsForArray($required, $data);
         }
         $model = null;
         if (isset($data['id'])) {
-            $model = $this->di['db']->load('Subscription', $data['id']);
+            $model = $this->getDi()['db']->load('Subscription', $data['id']);
         }
 
         if (!$model && isset($data['sid'])) {
-            $model = $this->di['db']->findOne('Subscription', 'sid = ?', [$data['sid']]);
+            $model = $this->getDi()['db']->findOne('Subscription', 'sid = ?', [$data['sid']]);
         }
 
         if (!$model instanceof \Model_Subscription) {
             throw new \FOSSBilling\Exception('Subscription not found');
         }
 
-        $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
+        $subscriptionService = $this->getDi()['mod_service']('Invoice', 'Subscription');
 
         return $subscriptionService->toApiArray($model, true, $this->getIdentity());
     }
@@ -765,8 +851,10 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Subscription ID was not passed'])]
     public function subscription_delete($data)
     {
-        $model = $this->di['db']->getExistingModelById('Subscription', $data['id'], 'Subscription not found');
-        $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
+        $this->checkPermissions('invoice', 'manage_subscriptions');
+
+        $model = $this->getDi()['db']->getExistingModelById('Subscription', $data['id'], 'Subscription not found');
+        $subscriptionService = $this->getDi()['mod_service']('Invoice', 'Subscription');
 
         return $subscriptionService->delete($model);
     }
@@ -781,8 +869,10 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Tax ID was not passed'])]
     public function tax_delete($data)
     {
-        $model = $this->di['db']->getExistingModelById('Tax', $data['id'], 'Tax rule not found');
-        $taxService = $this->di['mod_service']('Invoice', 'Tax');
+        $this->checkPermissions('invoice', 'manage_tax');
+
+        $model = $this->getDi()['db']->getExistingModelById('Tax', $data['id'], 'Tax rule not found');
+        $taxService = $this->getDi()['mod_service']('Invoice', 'Tax');
 
         return $taxService->delete($model);
     }
@@ -798,7 +888,9 @@ class Admin extends \Api_Abstract
     ])]
     public function tax_create($data)
     {
-        $taxService = $this->di['mod_service']('Invoice', 'Tax');
+        $this->checkPermissions('invoice', 'manage_tax');
+
+        $taxService = $this->getDi()['mod_service']('Invoice', 'Tax');
 
         return $taxService->create($data);
     }
@@ -811,9 +903,11 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Tax ID was not passed'])]
     public function tax_get($data)
     {
-        $tax = $this->di['db']->getExistingModelById('Tax', $data['id'], 'Tax rule not found');
+        $this->checkPermissions('invoice', 'manage_tax');
 
-        $taxService = $this->di['mod_service']('Invoice', 'Tax');
+        $tax = $this->getDi()['db']->getExistingModelById('Tax', $data['id'], 'Tax rule not found');
+
+        $taxService = $this->getDi()['mod_service']('Invoice', 'Tax');
 
         return $taxService->toApiArray($tax);
     }
@@ -830,9 +924,11 @@ class Admin extends \Api_Abstract
     ])]
     public function tax_update($data)
     {
-        $tax = $this->di['db']->getExistingModelById('Tax', $data['id'], 'Tax rule not found');
+        $this->checkPermissions('invoice', 'manage_tax');
 
-        $taxService = $this->di['mod_service']('Invoice', 'Tax');
+        $tax = $this->getDi()['db']->getExistingModelById('Tax', $data['id'], 'Tax rule not found');
+
+        $taxService = $this->getDi()['mod_service']('Invoice', 'Tax');
 
         return $taxService->update($tax, $data);
     }
@@ -844,10 +940,12 @@ class Admin extends \Api_Abstract
      */
     public function tax_get_list($data)
     {
-        $taxService = $this->di['mod_service']('Invoice', 'Tax');
+        $this->checkPermissions('invoice', 'manage_tax');
+
+        $taxService = $this->getDi()['mod_service']('Invoice', 'Tax');
         [$sql, $params] = $taxService->getSearchQuery($data);
 
-        return $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        return $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
     }
 
     /**
@@ -859,7 +957,9 @@ class Admin extends \Api_Abstract
      */
     public function tax_setup_eu($data)
     {
-        $taxService = $this->di['mod_service']('Invoice', 'Tax');
+        $this->checkPermissions('invoice', 'manage_tax');
+
+        $taxService = $this->getDi()['mod_service']('Invoice', 'Tax');
 
         return $taxService->setupEUTaxes($data);
     }
@@ -867,7 +967,7 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Invoice ID was not passed'])]
     private function _getInvoice($data)
     {
-        return $this->di['db']->getExistingModelById('Invoice', $data['id'], 'Invoice was not found');
+        return $this->getDi()['db']->getExistingModelById('Invoice', $data['id'], 'Invoice was not found');
     }
 
     /**
@@ -876,6 +976,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete($data): bool
     {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
         foreach ($data['ids'] as $id) {
             $this->delete(['id' => $id]);
         }
@@ -889,6 +991,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete_subscription($data): bool
     {
+        $this->checkPermissions('invoice', 'manage_subscriptions');
+
         foreach ($data['ids'] as $id) {
             $this->subscription_delete(['id' => $id]);
         }
@@ -902,6 +1006,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete_transaction($data): bool
     {
+        $this->checkPermissions('invoice', 'manage_transactions');
+
         foreach ($data['ids'] as $id) {
             $this->transaction_delete(['id' => $id]);
         }
@@ -915,6 +1021,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete_tax($data): bool
     {
+        $this->checkPermissions('invoice', 'manage_tax');
+
         foreach ($data['ids'] as $id) {
             $this->tax_delete(['id' => $id]);
         }
@@ -924,6 +1032,8 @@ class Admin extends \Api_Abstract
 
     public function export_csv($data): Response
     {
+        $this->checkPermissions('invoice', 'export');
+
         $data['headers'] ??= [];
 
         return $this->getService()->exportCSV($data['headers']);

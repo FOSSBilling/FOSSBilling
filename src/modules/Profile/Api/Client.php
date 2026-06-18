@@ -18,14 +18,14 @@ namespace Box\Mod\Profile\Api;
 
 use FOSSBilling\Validation\Api\RequiredParams;
 
-class Client extends \Api_Abstract
+class Client extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get currently logged in client details.
      */
     public function get()
     {
-        $clientService = $this->di['mod_service']('client');
+        $clientService = $this->getDi()['mod_service']('client');
 
         return $clientService->toApiArray($this->getIdentity(), true, $this->getIdentity());
     }
@@ -72,7 +72,7 @@ class Client extends \Api_Abstract
     public function update($data)
     {
         if (!is_null($data['email'] ?? null)) {
-            $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+            $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
         }
 
         return $this->getService()->updateClient($this->getIdentity(), $data);
@@ -110,15 +110,15 @@ class Client extends \Api_Abstract
     ])]
     public function change_password($data)
     {
-        $this->di['validator']->isPasswordStrong($data['new_password']);
-        $this->di['validator']->passwordsMatch($data, 'new_password', 'confirm_password');
+        $this->getDi()['validator']->isPasswordStrong($data['new_password']);
+        $this->getDi()['validator']->passwordsMatch($data, 'new_password', 'confirm_password');
 
         $client = $this->getIdentity();
 
-        $this->di['rate_limiter']->consumeOrThrow('profile_password_change_ip', (string) $this->getIp());
-        $this->di['rate_limiter']->consumeOrThrow('profile_password_change_account', 'client:' . $client->id);
+        $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_account', 'client:' . $client->id);
 
-        if (!$this->di['password']->verify($data['current_password'], $client->pass)) {
+        if (!$this->getDi()['password']->verify($data['current_password'], $client->pass)) {
             throw new \FOSSBilling\InformationException('Current password incorrect');
         }
 

@@ -33,7 +33,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 'location' => 'support',
                 'index' => 500,
                 'label' => __trans('Support'),
-                'class' => 'support',
+                'class' => 'headset',
             ],
             'subpages' => [
                 [
@@ -124,7 +124,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 }
             }
         } catch (\Exception $e) {
-            $this->di['logger']->err($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
 
         return $app->render('mod_support_ticket', ['ticket' => $ticket, 'canned_delay_message' => $cdm, 'request_message' => $messageid]);
@@ -142,7 +142,26 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $api = $this->di['api_admin'];
         $ticket = $api->support_public_ticket_get(['id' => $id]);
 
-        return $app->render('mod_support_public_ticket', ['ticket' => $ticket]);
+        $cdm = '';
+        $mod = $this->di['mod']('support');
+        $config = $mod->getConfig();
+
+        try {
+            if (isset($config['delay_enable']) && $config['delay_enable'] && isset($config['delay_hours']) && $config['delay_hours'] >= 0) {
+                $last_message = end($ticket['messages']);
+                reset($ticket);
+
+                $hours_passed = (round((time() - strtotime((string) $last_message['created_at'])) / 3600) > $config['delay_hours']);
+                if ($hours_passed) {
+                    $delay_canned = $api->support_canned_get(['id' => $config['delay_message_id']]);
+                    $cdm = $delay_canned['content'];
+                }
+            }
+        } catch (\Exception $e) {
+            $this->di['logger']->error($e->getMessage());
+        }
+
+        return $app->render('mod_support_public_ticket', ['ticket' => $ticket, 'canned_delay_message' => $cdm]);
     }
 
     public function get_helpdesk(\Box_App $app, $id): string

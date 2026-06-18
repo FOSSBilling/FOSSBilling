@@ -23,9 +23,29 @@ class EmailTemplateRepository extends EntityRepository
             ->orderBy('t.category', 'ASC')
             ->addOrderBy('t.actionCode', 'ASC');
 
+        if (!empty($data['id'])) {
+            $qb->andWhere('t.id = :id')
+                ->setParameter('id', (int) $data['id']);
+        }
+
         if (!empty($data['code'])) {
             $qb->andWhere('t.actionCode LIKE :code')
                ->setParameter('code', '%' . $data['code'] . '%');
+        }
+
+        if (!empty($data['category'])) {
+            $qb->andWhere('COALESCE(t.category, \'\') LIKE :category')
+                ->setParameter('category', '%' . $data['category'] . '%');
+        }
+
+        if (array_key_exists('enabled', $data) && $data['enabled'] !== '' && $data['enabled'] !== null) {
+            $qb->andWhere('t.enabled = :enabled')
+                ->setParameter('enabled', (bool) $data['enabled']);
+        }
+
+        if (!empty($data['type'])) {
+            $qb->andWhere('t.isCustom = :is_custom')
+                ->setParameter('is_custom', $data['type'] === 'custom');
         }
 
         if (!empty($data['search'])) {
@@ -55,5 +75,14 @@ class EmailTemplateRepository extends EntityRepository
             ->setParameter('enabled', $enabled)
             ->getQuery()
             ->execute();
+    }
+
+    public function countBroken(): int
+    {
+        return (int) $this->createQueryBuilder('t')
+            ->select('COUNT(t.id)')
+            ->where('t.lastError IS NOT NULL')
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 }

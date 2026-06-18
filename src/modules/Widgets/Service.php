@@ -32,6 +32,22 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View widgets'),
+                'description' => __trans('Allows the staff member to view widgets.'),
+            ],
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage widgets'),
+                'description' => __trans('Allows the staff member to rebuild the widget cache.'),
+            ],
+        ];
+    }
+
     /**
      * Get the widget registry from cache, rebuild if necessary.
      *
@@ -80,7 +96,7 @@ class Service implements InjectionAwareInterface
                 }
             } catch (\Throwable $e) {
                 // Log the error but continue with other modules
-                $this->di['logger']->err("Error loading widgets from module '{$modName}': " . $e->getMessage());
+                $this->di['logger']->error("Error loading widgets from module '{$modName}': " . $e->getMessage());
             }
         }
 

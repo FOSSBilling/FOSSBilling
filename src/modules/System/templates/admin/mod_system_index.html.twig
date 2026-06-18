@@ -1,39 +1,51 @@
 {% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
 
-{% import 'macro_functions.html.twig' as mf %}
-
 {% block meta_title %}{{ 'Settings'|trans }}{% endblock %}
 
 {% set active_menu = 'system' %}
-{% set params = admin.system_get_params %}
+{% set settings_extensions = admin.extension_get_list({ 'active': true, 'has_settings': 1 }|merge(request)) %}
 
 {% block content %}
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">{{ 'Settings'|trans }}</h3>
+            <div>
+                <h3 class="card-title">{{ 'Settings'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Open module-level configuration screens for billing, support, localization, themes, and other system features.'|trans }}</p>
+            </div>
         </div>
         <div class="card-body">
-            <div class="datagrid">
-                {% for ext in admin.extension_get_list({ 'active': true, 'has_settings': 1 }|merge(request)) %}
-                    <div class="datagrid-item">
-                        <div class="datagrid-title">
-                            <a href='{{ "extension/settings/#{ext.id}"|url }}'>
-                                {% set icon_filename = ext.icon_url|split('/')|last %}
-                                {% if (icon_filename != 'cog.svg') and (icon_filename|split('.')|last == 'svg' and ext.icon_path) %}
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div class="text-primary" style="width: 24px; height: 24px;">
-                                            {{ source (ext.icon_path, ignore_missing = true) }}
+            <div class="row row-cards">
+                {% for ext in settings_extensions %}
+                    <div class="col-md-6 col-xl-4">
+                        <a class="card card-sm card-link h-100 text-reset" href='{{ "extension/settings/#{ext.id}"|url }}'>
+                            <div class="card-body">
+                                <div class="d-flex align-items-start gap-3">
+                                    {% set icon_filename = ext.icon_url|split('/')|last %}
+                                    {% if (icon_filename != 'cog.svg') and (icon_filename|split('.')|last == 'svg' and ext.icon_path) %}
+                                        <div class="text-primary flex-shrink-0" style="width: 24px; height: 24px;">
+                                            {{ source(ext.icon_path, ignore_missing = true) }}
                                         </div>
-                                        <span>{{ ext.name }}</span>
+                                    {% else %}
+                                        <img class="flex-shrink-0" src="{{ ext.icon_url }}" alt="{{ ext.name }}" style="width: 32px; height: 32px;">
+                                    {% endif %}
+                                    <div class="flex-fill min-w-0">
+                                        <div class="d-flex align-items-start justify-content-between gap-2">
+                                            <div>
+                                                <div class="fw-semibold">{{ ext.name }}</div>
+                                                <div class="text-secondary small">{{ ext.description ?: 'Manage module settings and operational defaults.'|trans }}</div>
+                                            </div>
+                                            <svg class="icon text-secondary flex-shrink-0">
+                                                <use href="#chevron-right" />
+                                            </svg>
+                                        </div>
                                     </div>
-                                {% else %}
-                                    <div class="d-flex align-items-center gap-2">
-                                        <img src="{{ ext.icon_url }}" alt="{{ ext.name }}" style="width: 32px; height: 32px;">
-                                        <span>{{ ext.name }}</span>
-                                    </div>
-                                {% endif %}
-                            </a>
-                        </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="col-12">
+                        <div class="text-muted text-center py-3">{{ 'No configurable modules were found.'|trans }}</div>
                     </div>
                 {% endfor %}
             </div>

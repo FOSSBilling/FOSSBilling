@@ -17,7 +17,7 @@ use FOSSBilling\Validation\Api\RequiredParams;
 /**
  * Domain service management.
  */
-class Guest extends \Api_Abstract
+class Guest extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get configured TLDs which can be ordered. Shows only enabled TLDs.
@@ -45,7 +45,7 @@ class Guest extends \Api_Abstract
 
         $query = implode(' AND ', $where);
 
-        $tlds = $this->di['db']->find('Tld', $query, []);
+        $tlds = $this->getDi()['db']->find('Tld', $query, []);
         $result = [];
         foreach ($tlds as $model) {
             $result[] = $this->getService()->tldToApiArray($model);
@@ -82,10 +82,10 @@ class Guest extends \Api_Abstract
     ])]
     public function check($data): bool
     {
-        $this->di['rate_limiter']->consumeOrThrow('domain_lookup_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('domain_lookup_ip', (string) $this->getIp());
 
         $sld = htmlspecialchars((string) $data['sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        $validator = $this->di['validator'];
+        $validator = $this->getDi()['validator'];
         if (!$validator->isSldValid($sld)) {
             throw new \FOSSBilling\InformationException('Domain :domain is invalid', [':domain' => $sld]);
         }
@@ -114,7 +114,7 @@ class Guest extends \Api_Abstract
     ])]
     public function can_be_transferred($data): bool
     {
-        $this->di['rate_limiter']->consumeOrThrow('domain_lookup_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('domain_lookup_ip', (string) $this->getIp());
 
         $tld = $this->getService()->tldFindOneByTld($data['tld']);
         if (!$tld instanceof \Model_Tld) {

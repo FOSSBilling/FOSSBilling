@@ -1,5 +1,4 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
-{% import "macro_functions.html.twig" as mf %}
 
 {% block meta_title %}{{ 'Profile Details'|trans }}{% endblock %}
 {% block page_header %}{{ 'User Profile Settings'|trans }}{% endblock %}
@@ -41,10 +40,10 @@
                         <form method="post" action="client/profile/update" id="profile-update" {{ fb_api_form({message: 'Profile Updated'|trans}) }}>
                             <div class="row mb-4 d-flex justify-content-center">
                                 <div class="col-md-2">
-                                    {{ mf.avatar(profile.email, 100, 'db-avatar img-thumbnail') }}
+                                    {{ avatar(profile.email, 100, 'img-thumbnail', null, 'div') }}
                                 </div>
                                 <div class="col-md-10 d-flex align-items-center">
-                                    {{ 'Avatar is generated locally based on your email address.'|trans }}
+                                    {{ 'Avatar is derived deterministically from your email address.'|trans }}
                                 </div>
                             </div>
                             <div class="row">
@@ -107,7 +106,7 @@
                             <div class="row">
                                 <div class="mb-3 col-md-5">
                                     <label class="form-label" for="phone_cc">{{ 'Phone Country Code'|trans }}</label>
-                                    <input type="text" class="form-control" name="phone_cc" id="phone_cc" value="{{ profile.phone_cc }}" {% if "phone" in required %} required {% endif %}>
+                                    <input type="text" class="form-control" name="phone_cc" id="phone_cc" value="{{ profile.phone_cc }}" inputmode="numeric" maxlength="3" pattern="[0-9]{1,3}" autocomplete="tel-country-code" {% if "phone" in required %} required {% endif %}>
                                 </div>
                                 <div class="mb-3 col-md-5">
                                     <label class="form-label" for="phone">{{ 'Phone Number'|trans }}</label>
@@ -132,7 +131,7 @@
                                 <div class="mb-3 col-md-5">
                                     <label class="form-label" for="country">{{ 'Country'|trans }}</label>
                                     <select class="form-select" id="country" name="country" {% if "country" in required %} required {% endif %}>
-                                        <option value="">{{ '-- Select country --'|trans }}</option>
+                                        <option value="">{{ '-- Select Country --'|trans }}</option>
                                         {% for val,label in guest.system_countries %}
                                             <option value="{{ val }}" label="{{ label|e }}"
                                                     {% if val == profile.country %}selected="selected"{% endif %}>{{ label|e }}</option>
@@ -156,8 +155,8 @@
                             </div>
                             {% for i in 1..10 %}
                                 {% set custom = 'custom_' ~ i %}
-                                {% set current = guest.client_custom_fields[custom] %}
-                                {% if current.active %}
+                                {% set current = guest.client_custom_fields|default({})[custom]|default(null) %}
+                                {% if current and current.active %}
                                     <div class="mb-3">
                                         <label class="form-label" for="{{ custom }}">{{ current.title }}</label>
                                         <input type="text" class="form-control" name="{{ custom }}" id="{{ custom }}" value="{{ profile[custom] }}" {% if current.required %} required {% endif %}>
@@ -210,7 +209,7 @@
                         <h5 class="card-title mb-1">{{ 'Currency'|trans }}</h5>
                         <p class="card-text fs-7 text-muted">{{ 'Your profile currency is defined after your first order. Once your currency is set, all your profile accounting will be managed in that currency and cannot be changed.'|trans }}</p>
                         {% if profile.currency %}
-                            <p>{{ 'Your profile currency is'|trans }} <strong>{{ profile.currency }}</strong></p>
+                            <p>{{ 'Your profile currency is'|trans }} <strong>{{ profile.currency|currency_name }}</strong></p>
                             <p>{{ 'You will need to create a new client profile to use an alternative currency.'|trans }}</p>
                         {% else %}
                             <div class="alert alert-info" role="alert">

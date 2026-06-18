@@ -15,7 +15,7 @@ namespace Box\Mod\Servicedomain\Api;
 /**
  * Domain service management.
  */
-class Client extends \Api_Abstract
+class Client extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Change domain nameservers. Method sends action to registrar.
@@ -29,11 +29,11 @@ class Client extends \Api_Abstract
     {
         $s = $this->_getService($data);
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeClientChangeNameservers', 'params' => $data]);
+        $this->getDi()['events_manager']->fire(['event' => 'onBeforeClientChangeNameservers', 'params' => $data]);
 
         $this->getService()->updateNameservers($s, $data);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterClientChangeNameservers', 'params' => $data]);
+        $this->getDi()['events_manager']->fire(['event' => 'onAfterClientChangeNameservers', 'params' => $data]);
 
         return true;
     }
@@ -115,7 +115,7 @@ class Client extends \Api_Abstract
         if (!isset($data['order_id'])) {
             throw new \FOSSBilling\Exception('Order ID is required');
         }
-        $orderService = $this->di['mod_service']('order');
+        $orderService = $this->getDi()['mod_service']('order');
 
         $order = $orderService->findForClientById($this->getIdentity(), $data['order_id']);
         if (!$order instanceof \Model_ClientOrder) {

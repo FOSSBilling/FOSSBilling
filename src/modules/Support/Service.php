@@ -29,6 +29,37 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View support tickets'),
+                'description' => __trans('Allows the staff member to view tickets, inquiries, helpdesks, canned responses, and knowledge base articles.'),
+            ],
+            'manage_tickets' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage tickets'),
+                'description' => __trans('Allows the staff member to create, update, reply to, close, and delete tickets and inquiries.'),
+            ],
+            'manage_helpdesk' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage helpdesks'),
+                'description' => __trans('Allows the staff member to create, update, and delete helpdesks.'),
+            ],
+            'manage_canned' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage canned responses'),
+                'description' => __trans('Allows the staff member to create, update, and delete canned responses and categories.'),
+            ],
+            'manage_kb' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage knowledge base'),
+                'description' => __trans('Allows the staff member to create, update, and delete knowledge base articles and categories.'),
+            ],
+        ];
+    }
+
     public static function onAfterClientOpenTicket(\Box_Event $event): void
     {
         $di = $event->getDi();
@@ -47,7 +78,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->err($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send ticket open email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -69,7 +100,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->err($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send admin ticket open email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -91,7 +122,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->err($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send ticket close email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -113,7 +144,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->err($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send ticket reply email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -135,7 +166,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->err($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send public ticket open email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -158,7 +189,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->err($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send admin public ticket open email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -181,7 +212,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->err($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send admin public ticket reply email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -204,7 +235,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->err($exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send admin public ticket close email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -225,7 +256,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         return [
             \Model_SupportTicket::OPENED => 'Open',
-            \Model_SupportTicket::ONHOLD => 'On hold',
+            \Model_SupportTicket::ONHOLD => 'On Hold',
             \Model_SupportTicket::CLOSED => 'Closed',
         ];
     }
@@ -399,7 +430,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $query = 'SELECT COUNT(id) as counter FROM support_ticket
                 WHERE status = :status GROUP BY status LIMIT 1';
 
-        return $this->di['db']->getCell($query, [':status' => $status]);
+        return (int) $this->di['db']->getCell($query, [':status' => $status]);
     }
 
     public function getActiveTicketsCountForOrder(\Model_ClientOrder $model): int
@@ -415,7 +446,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             ':status2' => \Model_SupportTicket::ONHOLD,
         ];
 
-        return $this->di['db']->getCell($query, $bindings);
+        return (int) $this->di['db']->getCell($query, $bindings);
     }
 
     public function checkIfTaskAlreadyExists(\Model_Client $client, int $rel_id, string $rel_type, string $rel_task): bool
@@ -486,17 +517,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      */
     private function _getRelDetails(\Model_SupportTicket $model): array
     {
-        if (!$model->rel_type || !$model->rel_id) {
-            return [];
-        }
-
         $result = [
-            'id' => $model->rel_id,
-            'type' => $model->rel_type,
-            'task' => $model->rel_task,
-            'new_value' => $model->rel_new_value,
-            'status' => $model->rel_status,
+            'id' => $model->rel_id ?: null,
+            'type' => $model->rel_type ?: null,
+            'task' => $model->rel_task ?: null,
+            'new_value' => $model->rel_new_value ?: null,
+            'status' => $model->rel_status ?: null,
         ];
+
+        if (!$model->rel_type || !$model->rel_id) {
+            return $result;
+        }
 
         $client = $this->di['db']->load('Client', $model->client_id);
 
@@ -561,6 +592,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if ($identity instanceof \Model_Admin) {
             $data['rel'] = $this->_getRelDetails($model);
             $data['priority'] = $model->priority;
+            $data['notes'] = [];
             $supportTicketNotes = $this->di['db']->find('SupportTicketNote', 'support_ticket_id = :support_ticket_id', [':support_ticket_id' => $model->id]);
 
             foreach ($supportTicketNotes as $note) {
@@ -685,7 +717,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $data['helpdesk'] = $helpdesk ? $this->helpdeskToApiArray($helpdesk, $identity) : null;
 
             if (!isset($clients[$ticket['client_id']])) {
-                $this->di['logger']->err('Missing client for ticket ' . $ticket['id']);
+                $this->di['logger']->error('Missing client for ticket ' . $ticket['id']);
                 $data['client'] = [];
             } else {
                 $data['client'] = $clients[$ticket['client_id']];
@@ -749,7 +781,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if ($client instanceof \Model_Client) {
             return $this->clientToTicketApiArray($client, $identity);
         }
-        $this->di['logger']->err('Missing client for ticket ' . $ticket->id);
+        $this->di['logger']->error('Missing client for ticket ' . $ticket->id);
 
         return [];
     }
@@ -870,7 +902,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             ':support_ticket_id' => $model->id,
         ];
 
-        return $this->di['db']->getCell($query, $bindings);
+        return (int) $this->di['db']->getCell($query, $bindings);
     }
 
     public function messageGetAuthorDetails(\Model_SupportTicketMessage $model, \Model_Admin|\Model_Client|null $identity = null): array
@@ -1187,7 +1219,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 $this->ticketReply($ticket, $admin, $canned['content']);
             }
         } catch (\Exception $e) {
-            $this->di['logger']->err($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
     }
 
@@ -1217,7 +1249,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         return [
             \Model_SupportPTicket::OPENED => 'Open',
-            \Model_SupportPTicket::ONHOLD => 'On hold',
+            \Model_SupportPTicket::ONHOLD => 'On Hold',
             \Model_SupportPTicket::CLOSED => 'Closed',
         ];
     }
@@ -1334,7 +1366,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 WHERE status = :status
                 GROUP BY status';
 
-        return $this->di['db']->getCell($query, [':status' => $status]);
+        return (int) $this->di['db']->getCell($query, [':status' => $status]);
     }
 
     public function publicGetExpired(): array
@@ -1595,15 +1627,28 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 ON spc.id = sp.support_pr_category_id';
 
         $search = $data['search'] ?? null;
+        $id = $data['id'] ?? null;
+        $categoryId = $data['category_id'] ?? null;
 
         $where = [];
         $bindings = [];
 
+        if ($id !== null && $id !== '') {
+            $where[] = 'sp.id = :id';
+            $bindings[':id'] = (int) $id;
+        }
+
         if ($search) {
             $search = '%' . $search . '%';
-            $where[] = '(title LIKE :title OR content LIKE :content)';
+            $where[] = '(sp.title LIKE :title OR sp.content LIKE :content OR spc.title LIKE :category_title)';
             $bindings[':title'] = $search;
             $bindings[':content'] = $search;
+            $bindings[':category_title'] = $search;
+        }
+
+        if ($categoryId !== null && $categoryId !== '') {
+            $where[] = 'sp.support_pr_category_id = :category_id';
+            $bindings[':category_id'] = (int) $categoryId;
         }
 
         if (!empty($where)) {
@@ -1681,9 +1726,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function cannedCreate(string $title, int $categoryId, ?string $content = null): int
     {
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_SupportPr', 5);
-
         $model = $this->di['db']->dispense('SupportPr');
         $model->support_pr_category_id = $categoryId;
         $model->title = $title;
@@ -2038,9 +2080,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function kbCreateCategory(string $title, ?string $description = null): int
     {
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits('Model_SupportKbArticleCategory', 2);
-
         $model = $this->di['db']->dispense('SupportKbArticleCategory');
         $model->title = $title;
         $model->description = $description;

@@ -1,11 +1,14 @@
 <div class="card-body">
-    <h2>{{ 'File Information'|trans }}</h2>
+    <div class="mb-3">
+        <h3 class="card-title mb-1">{{ 'File Information'|trans }}</h3>
+        <p class="text-secondary mb-0">{{ 'Review the file currently assigned to this order and upload a replacement when needed.'|trans }}</p>
+    </div>
 
     <table class="table card-table table-vcenter table-striped text-nowrap">
         <tbody>
             <tr class="noborder">
                 <td>{{ 'Filename'|trans }}:</td>
-                <td>{{ service.filename  }}</td>
+                <td>{{ service.filename }}</td>
             </tr>
             <tr>
                 <td>{{ 'Location'|trans }}:</td>
@@ -17,22 +20,26 @@
             </tr>
         </tbody>
     </table>
-    <hr>
 
-    <h3>{{ 'Upload New File for This Order'|trans }}</h3>
-    <p class="text-muted">{{ 'Use this function to update existing order file. Client will be able to download new file from client area'|trans }}</p>
+    <hr class="my-4" />
+
+    <div class="mb-3">
+        <h3 class="card-title mb-1">{{ 'Upload New File for This Order'|trans }}</h3>
+        <p class="text-secondary mb-0">{{ 'Use this function to replace the existing order file. The client will be able to download the new file from the client area.'|trans }}</p>
+    </div>
 
     <form method="post" action="{{ 'servicedownloadable/upload'|api_url }}" enctype="multipart/form-data" id="upload-form">
-        <div class="mb-3 row">
-            <label class="form-label col-3 col-form-label">{{ 'Upload new file'|trans }}:</label>
-            <div class="col">
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <label class="form-label">{{ 'Upload New File'|trans }}</label>
                 <input class="form-control" type="file" name="file_data" id="file_data">
             </div>
         </div>
 
-        <input type="submit" value="{{ 'Upload'|trans }}" class="btn btn-primary submitForm" id="upload-button">
-
         <input type="hidden" name="order_id" value="{{ order.id }}">
+        <div class="d-flex justify-content-end mt-3">
+            <button class="btn btn-primary submitForm" type="submit" id="upload-button">{{ 'Upload'|trans }}</button>
+        </div>
     </form>
 </div>
 
@@ -52,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const formData = new FormData(form);
-        API.admin.post('servicedownloadable/upload', formData,
+        FOSSBilling.api.admin.post('servicedownloadable/upload', formData,
             function () {
                 if (submitButton) {
                     submitButton.disabled = false;

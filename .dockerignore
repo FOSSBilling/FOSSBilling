@@ -15,8 +15,10 @@ output.log
 src/config.php
 src/vendor
 src/**/node_modules
+src/public/assets
 src/**/assets/build
 src/data/cache/*
 !src/data/cache/.gitkeep
 src/data/log/*
 !src/data/log/index.html
+src/data/update-finalization.json

@@ -28,6 +28,17 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View statistics'),
+                'description' => __trans('Allows the staff member to view system statistics and charts.'),
+            ],
+        ];
+    }
+
     public function getSummary(): array
     {
         $stats = [];
@@ -359,9 +370,6 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @param int $time_from
-     * @param int $time_to
-     *
      * @return array<int, array{0:int, 1:int}>
      */
     private function _genFlotArrayInt(array $results, int $time_from, int $time_to): array
@@ -378,9 +386,6 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @param int $time_from
-     * @param int $time_to
-     *
      * @return array<int, array{0:int, 1:float}>
      */
     private function _genFlotArrayFloat(array $results, int $time_from, int $time_to): array

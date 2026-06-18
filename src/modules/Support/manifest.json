@@ -2,7 +2,7 @@
   "id": "support",
   "type": "mod",
   "name": "Support",
-  "description": "FOSSBilling core module",
+  "description": "Provides support ticket departments, helpdesk settings, knowledge base controls, and client support tools.",
   "icon_url": "icon.svg",
   "version": "1.0.0"
 }

@@ -2,7 +2,7 @@
   "id": "staff",
   "type": "mod",
   "name": "Staff",
-  "description": "FOSSBilling core module",
+  "description": "Manages staff accounts, roles, permissions, authentication, and administrative access settings.",
   "icon_url": "icon.svg",
   "version": "1.0.0"
 }

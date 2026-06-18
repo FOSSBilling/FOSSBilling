@@ -32,6 +32,27 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View orders'),
+                'description' => __trans('Allows the staff member to view orders and order details.'),
+            ],
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage orders'),
+                'description' => __trans('Allows the staff member to create, update, delete, and change order statuses.'),
+            ],
+            'export' => [
+                'type' => 'bool',
+                'display_name' => __trans('Export orders'),
+                'description' => __trans('Allows the staff member to export order data as CSV.'),
+            ],
+        ];
+    }
+
     private static function logInfoToContainer(?\Pimple\Container $di, string $message): void
     {
         if ($di !== null && isset($di['logger'])) {
@@ -87,7 +108,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            self::logInfoToContainer($di, $exc->getMessage());
+            self::logInfoToContainer($di, 'Failed to send order activation email: ' . $exc->getMessage());
         }
     }
 
@@ -113,7 +134,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            self::logInfoToContainer($di, $exc->getMessage());
+            self::logInfoToContainer($di, 'Failed to send order renewal email: ' . $exc->getMessage());
         }
     }
 
@@ -139,7 +160,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            self::logInfoToContainer($di, $exc->getMessage());
+            self::logInfoToContainer($di, 'Failed to send order suspension email: ' . $exc->getMessage());
         }
     }
 
@@ -165,7 +186,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            self::logInfoToContainer($di, $exc->getMessage());
+            self::logInfoToContainer($di, 'Failed to send order unsuspension email: ' . $exc->getMessage());
         }
     }
 
@@ -189,7 +210,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            self::logInfoToContainer($di, $exc->getMessage());
+            self::logInfoToContainer($di, 'Failed to send order cancellation email: ' . $exc->getMessage());
         }
     }
 
@@ -215,7 +236,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            self::logInfoToContainer($di, $exc->getMessage());
+            self::logInfoToContainer($di, 'Failed to send order uncancel email: ' . $exc->getMessage());
         }
     }
 
@@ -314,19 +335,20 @@ class Service implements InjectionAwareInterface
 
         $client_id = $data['client_id'] ?? null;
 
-        $query = 'SELECT *
-                FROM client_order
-                WHERE status = :status
-                AND invoice_option = :invoice_option
-                AND period IS NOT NULL
-                AND expires_at IS NOT NULL
-                AND unpaid_invoice_id IS NULL';
+        $query = 'SELECT co.*
+                FROM client_order co
+                LEFT JOIN invoice i ON i.id = co.unpaid_invoice_id AND i.status = :unpaid_invoice_status
+                WHERE co.status = :status
+                AND co.invoice_option = :invoice_option
+                AND co.period IS NOT NULL
+                AND co.expires_at IS NOT NULL
+                AND i.id IS NULL';
 
         $where = [];
         $bindings = [];
 
         if ($client_id !== null) {
-            $where[] = 'client_id = :client_id';
+            $where[] = 'co.client_id = :client_id';
             $bindings[':client_id'] = $client_id;
         }
 
@@ -334,9 +356,10 @@ class Service implements InjectionAwareInterface
             $query = $query . ' AND ' . implode(' AND ', $where);
         }
 
-        $query .= ' HAVING DATEDIFF(expires_at, NOW()) <= :days_until_expiration ORDER BY client_id DESC';
+        $query .= ' HAVING DATEDIFF(co.expires_at, NOW()) <= :days_until_expiration ORDER BY co.client_id DESC';
         $bindings[':status'] = \Model_ClientOrder::STATUS_ACTIVE;
         $bindings[':invoice_option'] = 'issue-invoice';
+        $bindings[':unpaid_invoice_status'] = \Model_Invoice::STATUS_UNPAID;
         $bindings[':days_until_expiration'] = $days_until_expiration;
 
         return [$query, $bindings];
@@ -449,7 +472,7 @@ class Service implements InjectionAwareInterface
             $data['meta'] = $meta[$order['id']] ?? [];
             $data['active_tickets'] = $activeTickets[$order['id']] ?? 0;
             if (!isset($clients[$clientId])) {
-                $this->di['logger']->err('Missing client for order ' . $order['id']);
+                $this->di['logger']->error('Missing client for order ' . $order['id']);
                 $data['client'] = [];
             } else {
                 $data['client'] = $clients[$clientId];
@@ -1057,7 +1080,12 @@ class Service implements InjectionAwareInterface
         $order->invoice_option = $data['invoice_option'] ?? $order->invoice_option;
         $order->title = $data['title'] ?? $order->title;
         $order->price = $data['price'] ?? $order->price;
-        $order->status = $data['status'] ?? $order->status;
+        if (isset($data['status']) && $data['status'] !== $order->status) {
+            if (!in_array($data['status'], \Model_ClientOrder::getValidStatuses(), true)) {
+                throw new InformationException('Invalid order status: :status', [':status:' => $data['status']]);
+            }
+            $order->status = $data['status'];
+        }
         $order->notes = $data['notes'] ?? $order->notes;
         $order->reason = $data['reason'] ?? $order->reason;
 
@@ -1482,6 +1510,10 @@ class Service implements InjectionAwareInterface
 
     public function orderStatusAdd(\Model_ClientOrder $order, $status, $notes = null): bool
     {
+        if (!in_array($status, \Model_ClientOrder::getValidStatuses(), true)) {
+            throw new InformationException('Invalid order status: :status', [':status:' => $status]);
+        }
+
         $bean = $this->di['db']->dispense('ClientOrderStatus');
         $bean->client_order_id = $order->id;
         $bean->status = $status;

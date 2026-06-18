@@ -390,7 +390,6 @@ CREATE TABLE `client_password_reset` (
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `currency` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `title` varchar(50) DEFAULT NULL,
   `code` varchar(3) DEFAULT NULL,
   `is_default` tinyint(1) DEFAULT '0',
   `conversion_rate` decimal(13,6) DEFAULT '1.000000',
@@ -418,6 +417,8 @@ CREATE TABLE `email_template` (
   `content` text,
   `description` text,
   `vars` text,
+  `last_error` text DEFAULT NULL,
+  `error_checked_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `action_code` (`action_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -561,6 +562,7 @@ CREATE TABLE `invoice` (
   `paid_at` datetime DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
+  `hash_expires_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `hash` (`hash`),
   KEY `client_id_idx` (`client_id`)
@@ -970,6 +972,7 @@ CREATE TABLE `service_downloadable` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `client_id` bigint(20) DEFAULT NULL,
   `filename` varchar(100) DEFAULT NULL,
+  `stored_filename` varchar(100) DEFAULT NULL,
   `downloads` int(11) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,

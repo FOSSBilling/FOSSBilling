@@ -11,7 +11,6 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
-use Doctrine\DBAL\ParameterType;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -22,6 +21,7 @@ class UpdatePatcher implements InjectionAwareInterface
 {
     private ?\Pimple\Container $di = null;
     private readonly Filesystem $filesystem;
+    private array $downloadableStorageMigrationMap = [];
 
     public function __construct()
     {
@@ -57,8 +57,15 @@ class UpdatePatcher implements InjectionAwareInterface
     /**
      * Apply configuration file patches.
      */
-    public function applyConfigPatches(): void
+    public function applyConfigPatches(bool $force = false): void
     {
+        // Legacy auto-updaters call this after extracting new files.
+        // Make it no-op unless the request is coming from the new post-update hello screen.
+        // This makes old versions automatically defer to the new hello screen without running the patches.
+        if (!$force) {
+            return;
+        }
+
         $currentConfig = Config::getConfig();
 
         if (empty($currentConfig)) {
@@ -90,7 +97,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['i18n']['date_format'] ??= 'medium';
         $newConfig['i18n']['time_format'] ??= 'short';
         $newConfig['db']['driver'] ??= 'pdo_mysql';
-        $newConfig['db']['port'] ??= '3306';
+        $newConfig['db']['port'] = Tools::normalizePort($newConfig['db']['port'] ?? null, 3306);
         unset(
             $newConfig['api']['rate_span'],
             $newConfig['api']['rate_limit'],
@@ -106,14 +113,12 @@ class UpdatePatcher implements InjectionAwareInterface
         $newConfig['rate_limiter']['whitelist_ips'] = array_values(array_unique(array_merge($newConfig['rate_limiter']['whitelist_ips'], $currentConfig['api']['rate_limit_whitelist'] ?? [])));
         $newConfig['debug_and_monitoring'] ??= [];
         $newConfig['debug_and_monitoring']['debug'] ??= $newConfig['debug'] ?? false;
-        $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'] ?? true;
-        $newConfig['debug_and_monitoring']['stacktrace_length'] ??= $newConfig['stacktrace_length'] ?? 25;
+        $newConfig['debug_and_monitoring']['log_stacktrace'] ??= $newConfig['log_stacktrace'];
+        $newConfig['debug_and_monitoring']['stacktrace_length'] ??= $newConfig['stacktrace_length'];
         $newConfig['debug_and_monitoring']['report_errors'] ??= false;
 
         // Instance ID handling
-        if (!class_exists(Uuid::class)) {
-            $this->registerFallbackAutoloader();
-        }
+        $this->refreshComposerAutoloader();
         $newConfig['info']['instance_id'] ??= Uuid::v4()->toString();
         $newConfig['info']['salt'] ??= $newConfig['salt'];
 
@@ -141,8 +146,13 @@ class UpdatePatcher implements InjectionAwareInterface
     /**
      * Apply all relevant patches to current FOSSBilling instance.
      */
-    public function applyCorePatches(): void
+    public function applyCorePatches(bool $force = false): void
     {
+        // See applyConfigPatches(): no-argument calls are deferred to the new post-update screen.
+        if (!$force) {
+            return;
+        }
+
         $patchLevel = $this->getPatchLevel();
         $patches = $this->getPatches($patchLevel);
         foreach ($patches as $patchLevel => $patch) {
@@ -172,15 +182,27 @@ class UpdatePatcher implements InjectionAwareInterface
         }
     }
 
+    private function getPdo(): \PDO
+    {
+        // The first request after updating from 0.7.x still uses the old Composer autoloader.
+        // Use PDO here because it is available before and after the archive is extracted.
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('pdo')) {
+            throw new Exception('Database connection is not available.');
+        }
+
+        return $this->di['pdo'];
+    }
+
     /**
      * Execute the given SQL statement.
      *
      * @param $sql The SQL statement to execute
      */
-    private function executeSql(string $sql): void
+    private function executeSql(string $sql, array $params = []): void
     {
         try {
-            $this->di['dbal']->executeStatement($sql);
+            $statement = $this->getPdo()->prepare($sql);
+            $statement->execute($params);
         } catch (\Exception $e) {
             // Log the error and then throw a user-friendly exception to prevent further patches from being applied.
             error_log($e->getMessage());
@@ -189,17 +211,138 @@ class UpdatePatcher implements InjectionAwareInterface
         }
     }
 
+    private function fetchAll(string $sql, array $params = []): array
+    {
+        $statement = $this->getPdo()->prepare($sql);
+        $statement->execute($params);
+
+        return $statement->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    private function fetchOne(string $sql, array $params = []): mixed
+    {
+        $statement = $this->getPdo()->prepare($sql);
+        $statement->execute($params);
+
+        return $statement->fetchColumn();
+    }
+
+    private function fetchFirstColumn(string $sql, array $params = []): array
+    {
+        $statement = $this->getPdo()->prepare($sql);
+        $statement->execute($params);
+
+        return $statement->fetchAll(\PDO::FETCH_COLUMN);
+    }
+
+    private function fetchKeyValue(string $sql, array $params = []): array
+    {
+        $statement = $this->getPdo()->prepare($sql);
+        $statement->execute($params);
+
+        return $statement->fetchAll(\PDO::FETCH_KEY_PAIR);
+    }
+
+    private function updateTable(string $table, array $data, array $criteria): void
+    {
+        $set = [];
+        $where = [];
+        $params = [];
+
+        foreach ($data as $column => $value) {
+            $placeholder = "set_{$column}";
+            $set[] = sprintf('`%s` = :%s', $this->quoteIdentifier($column), $placeholder);
+            $params[$placeholder] = $value;
+        }
+
+        foreach ($criteria as $column => $value) {
+            $placeholder = "where_{$column}";
+            $where[] = sprintf('`%s` = :%s', $this->quoteIdentifier($column), $placeholder);
+            $params[$placeholder] = $value;
+        }
+
+        $this->executeSql(
+            sprintf('UPDATE `%s` SET %s WHERE %s', $this->quoteIdentifier($table), implode(', ', $set), implode(' AND ', $where)),
+            $params
+        );
+    }
+
+    private function tableHasColumn(string $table, string $column): bool
+    {
+        return in_array($column, $this->getTableColumns($table), true);
+    }
+
+    private function getTableColumns(string $table): array
+    {
+        $columns = $this->fetchAll(sprintf('SHOW COLUMNS FROM `%s`', $this->quoteIdentifier($table)));
+
+        return array_map(static fn (array $column): string => (string) $column['Field'], $columns);
+    }
+
+    private function getColumnLength(string $table, string $column): ?int
+    {
+        $rows = $this->fetchAll(sprintf('SHOW COLUMNS FROM `%s` LIKE :column', $this->quoteIdentifier($table)), [
+            'column' => $column,
+        ]);
+
+        if ($rows === []) {
+            return null;
+        }
+
+        preg_match('/\((\d+)\)/', (string) $rows[0]['Type'], $matches);
+
+        return isset($matches[1]) ? (int) $matches[1] : null;
+    }
+
+    private function tableHasIndex(string $table, string $indexName): bool
+    {
+        $indexes = $this->fetchAll(sprintf('SHOW INDEX FROM `%s`', $this->quoteIdentifier($table)));
+        foreach ($indexes as $index) {
+            if (($index['Key_name'] ?? null) === $indexName) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function quoteIdentifier(string $identifier): string
+    {
+        if (!preg_match('/^[A-Za-z0-9_]+$/', $identifier)) {
+            throw new Exception('Invalid database identifier: :identifier', [':identifier' => $identifier]);
+        }
+
+        return $identifier;
+    }
+
     private function migrateEncryptedColumn(string $table, string $idColumn, string $valueColumn, string $where, array $params = []): void
     {
-        $rows = $this->di['dbal']
-            ->executeQuery("SELECT {$idColumn} AS id, {$valueColumn} AS encrypted_value FROM {$table} WHERE {$where}", $params)
-            ->fetchAllAssociative();
+        $rawTable = $table;
+        $rawIdColumn = $idColumn;
+        $rawValueColumn = $valueColumn;
+        $quotedTable = $this->quoteIdentifier($table);
+        $idColumn = $this->quoteIdentifier($idColumn);
+        $valueColumn = $this->quoteIdentifier($valueColumn);
+
+        // This method expects a static SQL predicate fragment with bound parameters in $params.
+        if (
+            str_contains($where, ';')
+            || str_contains($where, '--')
+            || str_contains($where, '/*')
+            || str_contains($where, '*/')
+            || str_contains($where, '`')
+            || !preg_match('/^[A-Za-z0-9_:\\s<>=!().,%+-]++$/', $where)
+        ) {
+            throw new Exception('Invalid SQL WHERE clause fragment.');
+        }
+
+        $rows = $this->fetchAll("SELECT {$idColumn} AS id, {$valueColumn} AS encrypted_value FROM {$quotedTable} WHERE {$where}", $params);
 
         /** @var \Box_Crypt $crypt */
         $crypt = $this->di['crypt'];
         $salt = Config::getProperty('info.salt');
 
-        $hasUpdatedAt = $this->di['dbal']->createSchemaManager()->introspectTable($table)->hasColumn('updated_at');
+        $hasUpdatedAt = $this->tableHasColumn($rawTable, 'updated_at');
 
         foreach ($rows as $row) {
             $encryptedValue = $row['encrypted_value'] ?? null;
@@ -212,13 +355,13 @@ class UpdatePatcher implements InjectionAwareInterface
                 continue;
             }
 
-            $updateData = [$valueColumn => $crypt->encrypt($decryptedValue, $salt)];
+            $updateData = [$rawValueColumn => $crypt->encrypt($decryptedValue, $salt)];
             if ($hasUpdatedAt) {
                 $updateData['updated_at'] = date('Y-m-d H:i:s');
             }
 
-            $this->di['dbal']->update($table, $updateData, [
-                $idColumn => $row['id'],
+            $this->updateTable($table, $updateData, [
+                $rawIdColumn => $row['id'],
             ]);
         }
     }
@@ -230,15 +373,9 @@ class UpdatePatcher implements InjectionAwareInterface
      */
     private function getPatchLevel(): ?int
     {
-        $query = $this->di['dbal']->createQueryBuilder();
-        $query
-            ->select('value')
-            ->from('setting')
-            ->where('param = :param')
-            ->setParameter('param', 'last_patch');
-
-        $result = $query->executeQuery();
-        $value = $result->fetchOne();
+        $value = $this->fetchOne('SELECT value FROM setting WHERE param = :param', [
+            'param' => 'last_patch',
+        ]);
 
         return intval($value) ?: null;
     }
@@ -250,34 +387,18 @@ class UpdatePatcher implements InjectionAwareInterface
      */
     private function setPatchLevel(int $patchLevel): void
     {
-        $query = $this->di['dbal']->createQueryBuilder();
+        $now = date('Y-m-d H:i:s');
 
-        if (is_null($this->getPatchLevel())) {
-            $query
-                ->insert('setting')
-                ->values([
-                    'param' => ':param',
-                    'value' => ':value',
-                    'public' => '0',
-                    'created_at' => ':created_at',
-                    'updated_at' => ':updated_at',
-                ])
-                ->setParameter('param', 'last_patch')
-                ->setParameter('value', $patchLevel)
-                ->setParameter('created_at', date('Y-m-d H:i:s'))
-                ->setParameter('updated_at', date('Y-m-d H:i:s'));
-        } else {
-            $query
-                ->update('setting')
-                ->set('value', ':value')
-                ->set('updated_at', ':updated_at')
-                ->where('param = :param')
-                ->setParameter('param', 'last_patch')
-                ->setParameter('value', $patchLevel)
-                ->setParameter('updated_at', date('Y-m-d H:i:s'));
-        }
-
-        $query->executeStatement();
+        $this->executeSql(
+            'INSERT INTO setting (param, value, public, created_at, updated_at) VALUES (:param, :value, 0, :created_at, :updated_at)
+             ON DUPLICATE KEY UPDATE value = :value, updated_at = :updated_at',
+            [
+                'param' => 'last_patch',
+                'value' => $patchLevel,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
     }
 
     /**
@@ -329,6 +450,15 @@ class UpdatePatcher implements InjectionAwareInterface
             61 => 'patch61',
             62 => 'patch62',
             63 => 'patch63',
+            64 => 'patch64',
+            65 => 'patch65',
+            66 => 'patch66',
+            67 => 'patch67',
+            68 => 'patch68',
+            69 => 'patch69',
+            70 => 'patch70',
+            71 => 'patch71',
+            72 => 'patch72',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -339,42 +469,31 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch25(): void
     {
-        $this->di['dbal']->createQueryBuilder()
-            ->update('email_template')
-            ->set('content', 'REPLACE(content, :old_filter, :new_filter)')
-            ->setParameter('old_filter', '{% filter markdown %}')
-            ->setParameter('new_filter', '{% apply markdown_to_html %}')
-            ->executeStatement();
+        $this->executeSql('UPDATE email_template SET content = REPLACE(content, :old_filter, :new_filter)', [
+            'old_filter' => '{% filter markdown %}',
+            'new_filter' => '{% apply markdown_to_html %}',
+        ]);
 
-        $this->di['dbal']->createQueryBuilder()
-            ->update('email_template')
-            ->set('content', 'REPLACE(content, :old_endfilter, :new_endfilter)')
-            ->setParameter('old_endfilter', '{% endfilter %}')
-            ->setParameter('new_endfilter', '{% endapply %}')
-            ->executeStatement();
+        $this->executeSql('UPDATE email_template SET content = REPLACE(content, :old_endfilter, :new_endfilter)', [
+            'old_endfilter' => '{% endfilter %}',
+            'new_endfilter' => '{% endapply %}',
+        ]);
     }
 
     private function patch26(): void
     {
         // Migration steps from BoxBilling to FOSSBilling - added favicon settings.
-        $this->di['dbal']->createQueryBuilder()
-            ->insert('setting')
-            ->values([
-                'param' => ':param',
-                'value' => ':value',
-                'public' => '0',
-                'category' => ':category',
-                'hash' => ':hash',
-                'created_at' => ':created_at',
-                'updated_at' => ':updated_at',
-            ])
-            ->setParameter('param', 'company_favicon')
-            ->setParameter('value', 'themes/huraga/assets/favicon.ico')
-            ->setParameter('category', null)
-            ->setParameter('hash', null)
-            ->setParameter('created_at', '2023-01-08 12:00:00')
-            ->setParameter('updated_at', '2023-01-08 12:00:00')
-            ->executeStatement();
+        $this->executeSql(
+            'INSERT INTO setting (param, value, public, category, hash, created_at, updated_at) VALUES (:param, :value, 0, :category, :hash, :created_at, :updated_at)',
+            [
+                'param' => 'company_favicon',
+                'value' => 'public/branding/favicon.ico',
+                'category' => null,
+                'hash' => null,
+                'created_at' => '2023-01-08 12:00:00',
+                'updated_at' => '2023-01-08 12:00:00',
+            ]
+        );
     }
 
     private function patch27(): void
@@ -388,12 +507,10 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         // Patch to remove .html from email templates action code.
         // @see https://github.com/FOSSBilling/FOSSBilling/issues/863
-        $this->di['dbal']->createQueryBuilder()
-            ->update('email_template')
-            ->set('action_code', 'REPLACE(action_code, :search, :replace)')
-            ->setParameter('search', '.html')
-            ->setParameter('replace', '')
-            ->executeStatement();
+        $this->executeSql('UPDATE email_template SET action_code = REPLACE(action_code, :search, :replace)', [
+            'search' => '.html',
+            'replace' => '',
+        ]);
     }
 
     private function patch29(): void
@@ -401,19 +518,15 @@ class UpdatePatcher implements InjectionAwareInterface
         // Patch to update email templates to use format_date/format_datetime filters
         // instead of removed bb_date/bb_datetime filters.
         // @see https://github.com/FOSSBilling/FOSSBilling/pull/948
-        $this->di['dbal']->createQueryBuilder()
-            ->update('email_template')
-            ->set('content', 'REPLACE(content, :search, :replace)')
-            ->setParameter('search', 'bb_date')
-            ->setParameter('replace', 'format_date')
-            ->executeStatement();
+        $this->executeSql('UPDATE email_template SET content = REPLACE(content, :search, :replace)', [
+            'search' => 'bb_date',
+            'replace' => 'format_date',
+        ]);
 
-        $this->di['dbal']->createQueryBuilder()
-            ->update('email_template')
-            ->set('content', 'REPLACE(content, :search, :replace)')
-            ->setParameter('search', 'bb_datetime')
-            ->setParameter('replace', 'format_datetime')
-            ->executeStatement();
+        $this->executeSql('UPDATE email_template SET content = REPLACE(content, :search, :replace)', [
+            'search' => 'bb_datetime',
+            'replace' => 'format_datetime',
+        ]);
     }
 
     private function patch30(): void
@@ -523,7 +636,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch37(): void
     {
-        // Patch to complete remove the outdated queue module.
+        // Patch to completely remove the outdated queue module.
         // @see https://github.com/FOSSBilling/FOSSBilling/pull/1777
 
         try {
@@ -584,12 +697,7 @@ class UpdatePatcher implements InjectionAwareInterface
         // @see https://github.com/FOSSBilling/FOSSBilling/pull/2189
         $ext_service = $this->di['mod_service']('extension');
 
-        $query = $this->di['dbal']->createQueryBuilder()
-            ->select('param', 'value')
-            ->from('setting')
-            ->executeQuery();
-
-        $pairs = $query->fetchAllKeyValue();
+        $pairs = $this->fetchKeyValue('SELECT param, value FROM setting');
 
         $config = $ext_service->getConfig('mod_currency');
         $config['ext'] = 'mod_currency'; // This should automatically be set, but some appear to be having cache issues that causes it to not be
@@ -687,14 +795,13 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch48(): void
     {
-        $filesystem = new Filesystem();
-        $dbal = $this->di['dbal'];
+        $filesystem = $this->filesystem;
 
         $oldUploadsPath = Path::join(PATH_ROOT, 'uploads');
         $newUploadsPath = Path::join(PATH_ROOT, 'data', 'uploads');
 
         if ($filesystem->exists($oldUploadsPath) && $filesystem->exists($newUploadsPath)) {
-            foreach (glob($oldUploadsPath . '/*') as $oldFile) {
+            foreach (glob($oldUploadsPath . '/*') ?: [] as $oldFile) {
                 if (is_file($oldFile)) {
                     $filename = basename($oldFile);
                     $newFilePath = Path::join($newUploadsPath, $filename);
@@ -705,18 +812,18 @@ class UpdatePatcher implements InjectionAwareInterface
             }
         }
 
-        $products = $dbal->executeQuery("SELECT p.id, p.config FROM product p WHERE p.type = 'downloadable'")->fetchAllAssociative();
+        $products = $this->fetchAll("SELECT p.id, p.config FROM product p WHERE p.type = 'downloadable'");
 
         foreach ($products as $product) {
             $productConfig = json_decode((string) $product['config'], true) ?: [];
 
-            if (isset($productConfig['filename']) && !empty($productConfig['filename'])) {
+            if (!empty($productConfig['filename'])) {
                 continue;
             }
 
             $foundFilename = null;
 
-            $orders = $dbal->executeQuery('SELECT co.id, co.config, co.service_id FROM client_order co WHERE co.product_id = :product_id', ['product_id' => $product['id']])->fetchAllAssociative();
+            $orders = $this->fetchAll('SELECT co.id, co.config, co.service_id FROM client_order co WHERE co.product_id = :product_id', ['product_id' => $product['id']]);
 
             foreach ($orders as $order) {
                 $orderConfig = json_decode($order['config'] ?? '', true);
@@ -733,7 +840,7 @@ class UpdatePatcher implements InjectionAwareInterface
             }
 
             if ($foundFilename === null) {
-                $services = $dbal->executeQuery('SELECT sd.id, sd.filename FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE co.product_id = :product_id AND sd.filename IS NOT NULL AND sd.filename != ""', ['product_id' => $product['id']])->fetchAllAssociative();
+                $services = $this->fetchAll('SELECT sd.id, sd.filename FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE co.product_id = :product_id AND sd.filename IS NOT NULL AND sd.filename != ""', ['product_id' => $product['id']]);
 
                 foreach ($services as $service) {
                     $filePath = Path::join(PATH_UPLOADS, md5((string) $service['filename']));
@@ -747,21 +854,21 @@ class UpdatePatcher implements InjectionAwareInterface
 
             if ($foundFilename !== null) {
                 $productConfig['filename'] = $foundFilename;
-                $dbal->executeStatement('UPDATE product SET config = :config, updated_at = :updated_at WHERE id = :id', [
+                $this->executeSql('UPDATE product SET config = :config, updated_at = :updated_at WHERE id = :id', [
                     'config' => json_encode($productConfig),
                     'updated_at' => date('Y-m-d H:i:s'),
                     'id' => $product['id'],
                 ]);
 
-                $dbal->executeStatement('UPDATE service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id SET sd.filename = :filename WHERE co.product_id = :product_id', ['filename' => $foundFilename, 'product_id' => $product['id']]);
+                $this->executeSql('UPDATE service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id SET sd.filename = :filename WHERE co.product_id = :product_id', ['filename' => $foundFilename, 'product_id' => $product['id']]);
 
-                $ordersToUpdate = $dbal->executeQuery('SELECT id, config FROM client_order WHERE product_id = :product_id AND config LIKE "%filename%"', ['product_id' => $product['id']])->fetchAllAssociative();
+                $ordersToUpdate = $this->fetchAll('SELECT id, config FROM client_order WHERE product_id = :product_id AND config LIKE "%filename%"', ['product_id' => $product['id']]);
 
                 foreach ($ordersToUpdate as $orderToUpdate) {
                     $orderConfig = json_decode($orderToUpdate['config'] ?? '', true);
                     if (is_array($orderConfig) && isset($orderConfig['filename'])) {
                         $orderConfig['filename'] = $foundFilename;
-                        $dbal->executeStatement('UPDATE client_order SET config = :config, updated_at = :updated_at WHERE id = :id', [
+                        $this->executeSql('UPDATE client_order SET config = :config, updated_at = :updated_at WHERE id = :id', [
                             'config' => json_encode($orderConfig),
                             'updated_at' => date('Y-m-d H:i:s'),
                             'id' => $orderToUpdate['id'],
@@ -771,14 +878,14 @@ class UpdatePatcher implements InjectionAwareInterface
             }
         }
 
-        $orphans = $dbal->executeQuery('SELECT sd.id, co.config as order_config FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE sd.filename IS NULL OR sd.filename = ""')->fetchAllAssociative();
+        $orphans = $this->fetchAll('SELECT sd.id, co.config as order_config FROM service_downloadable sd INNER JOIN client_order co ON sd.id = co.service_id WHERE sd.filename IS NULL OR sd.filename = ""');
 
         foreach ($orphans as $orphan) {
             $orderConfig = json_decode($orphan['order_config'] ?? '', true);
             if (isset($orderConfig['filename']) && !empty($orderConfig['filename'])) {
                 $filePath = Path::join(PATH_UPLOADS, md5((string) $orderConfig['filename']));
                 if ($filesystem->exists($filePath)) {
-                    $dbal->executeStatement('UPDATE service_downloadable SET filename = :filename WHERE id = :id', ['filename' => $orderConfig['filename'], 'id' => $orphan['id']]);
+                    $this->executeSql('UPDATE service_downloadable SET filename = :filename WHERE id = :id', ['filename' => $orderConfig['filename'], 'id' => $orphan['id']]);
                 }
             }
         }
@@ -786,21 +893,24 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch49(): void
     {
-        $q = "UPDATE setting SET value = 'themes/huraga/assets/build/img/logo.svg' WHERE param = 'company_logo' AND value = 'themes/huraga/assets/img/logo.svg';";
+        $q = "UPDATE setting SET value = 'public/branding/logo.svg' WHERE param = 'company_logo' AND value = 'themes/huraga/assets/img/logo.svg';";
         $this->executeSql($q);
 
-        $q = "UPDATE setting SET value = 'themes/huraga/assets/build/img/logo_white.svg' WHERE param = 'company_logo_dark' AND value = 'themes/huraga/assets/img/logo_white.svg';";
+        $q = "UPDATE setting SET value = 'public/branding/logo-dark.svg' WHERE param = 'company_logo_dark' AND value = 'themes/huraga/assets/img/logo_white.svg';";
         $this->executeSql($q);
 
-        $q = "UPDATE setting SET value = 'themes/huraga/assets/build/favicon.ico' WHERE param = 'company_favicon' AND value = 'themes/huraga/assets/favicon.ico';";
+        $q = "UPDATE setting SET value = 'public/branding/favicon.ico' WHERE param = 'company_favicon' AND value = 'themes/huraga/assets/favicon.ico';";
         $this->executeSql($q);
     }
 
     private function patch50(): void
     {
-        $this->migrateEncryptedColumn('email_template', 'id', 'vars', "vars IS NOT NULL AND vars != ''");
-        $this->migrateEncryptedColumn('extension_meta', 'id', 'meta_value', "meta_key = :meta_key AND meta_value IS NOT NULL AND meta_value != ''", [
+        $this->migrateEncryptedColumn('email_template', 'id', 'vars', 'vars IS NOT NULL AND vars != :empty', [
+            'empty' => '',
+        ]);
+        $this->migrateEncryptedColumn('extension_meta', 'id', 'meta_value', 'meta_key = :meta_key AND meta_value IS NOT NULL AND meta_value != :empty', [
             'meta_key' => 'config',
+            'empty' => '',
         ]);
     }
 
@@ -829,8 +939,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch52(): void
     {
-        $schemaManager = $this->di['dbal']->createSchemaManager();
-        $columns = array_map(static fn ($column) => $column->getName(), $schemaManager->listTableColumns('email_template'));
+        $columns = $this->getTableColumns('email_template');
 
         if (!in_array('is_custom', $columns, true)) {
             $this->executeSql("ALTER TABLE `email_template` ADD COLUMN `is_custom` TINYINT(1) DEFAULT '0' AFTER `enabled`;");
@@ -840,11 +949,11 @@ class UpdatePatcher implements InjectionAwareInterface
             $this->executeSql("ALTER TABLE `email_template` ADD COLUMN `is_overridden` TINYINT(1) DEFAULT '0' COMMENT 'Whether subject/content have been customized from file defaults' AFTER `is_custom`;");
         }
 
-        $templates = $this->di['dbal']->executeQuery('SELECT id, action_code, subject, content FROM email_template')->fetchAllAssociative();
+        $templates = $this->fetchAll('SELECT id, action_code, subject, content FROM email_template');
         foreach ($templates as $template) {
             $default = $this->getDefaultEmailTemplateData((string) ($template['action_code'] ?? ''));
             if ($default === null) {
-                $this->di['dbal']->executeStatement('UPDATE email_template SET is_custom = :is_custom WHERE id = :id', [
+                $this->executeSql('UPDATE email_template SET is_custom = :is_custom WHERE id = :id', [
                     'is_custom' => 1,
                     'id' => $template['id'],
                 ]);
@@ -862,7 +971,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 $content = $default['content'];
             }
 
-            $this->di['dbal']->executeStatement('UPDATE email_template SET is_custom = :is_custom, is_overridden = :is_overridden, subject = :subject, content = :content WHERE id = :id', [
+            $this->executeSql('UPDATE email_template SET is_custom = :is_custom, is_overridden = :is_overridden, subject = :subject, content = :content WHERE id = :id', [
                 'is_custom' => 0,
                 'is_overridden' => $isOverridden ? 1 : 0,
                 'subject' => $subject,
@@ -874,34 +983,28 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch53(): void
     {
-        $dbal = $this->di['dbal'];
+        $pdo = $this->getPdo();
         $tools = $this->di['tools'];
         $now = date('Y-m-d H:i:s');
 
-        $dbal->beginTransaction();
+        $pdo->beginTransaction();
 
         try {
             $batchSize = 1000;
-            $adminUpdateStmt = $dbal->prepare('UPDATE admin SET api_token = :api_token, updated_at = :updated_at WHERE id = :id');
-            $clientUpdateStmt = $dbal->prepare('UPDATE client SET api_token = :api_token, updated_at = :updated_at WHERE id = :id');
+            $adminUpdateStmt = $pdo->prepare('UPDATE admin SET api_token = :api_token, updated_at = :updated_at WHERE id = :id');
+            $clientUpdateStmt = $pdo->prepare('UPDATE client SET api_token = :api_token, updated_at = :updated_at WHERE id = :id');
 
             $lastAdminId = 0;
             do {
-                $adminIds = $dbal->createQueryBuilder()
-                    ->select('id')
-                    ->from('admin')
-                    ->where('id > :lastId')
-                    ->orderBy('id', 'ASC')
-                    ->setMaxResults($batchSize)
-                    ->setParameter('lastId', $lastAdminId)
-                    ->executeQuery()
-                    ->fetchFirstColumn();
+                $adminIds = $this->fetchFirstColumn("SELECT id FROM admin WHERE id > :lastId ORDER BY id ASC LIMIT {$batchSize}", [
+                    'lastId' => $lastAdminId,
+                ]);
 
                 foreach ($adminIds as $adminId) {
                     $adminUpdateStmt->bindValue('api_token', $tools->generatePassword(32));
                     $adminUpdateStmt->bindValue('updated_at', $now);
-                    $adminUpdateStmt->bindValue('id', (int) $adminId, ParameterType::INTEGER);
-                    $adminUpdateStmt->executeStatement();
+                    $adminUpdateStmt->bindValue('id', (int) $adminId, \PDO::PARAM_INT);
+                    $adminUpdateStmt->execute();
                 }
 
                 if (!empty($adminIds)) {
@@ -911,21 +1014,15 @@ class UpdatePatcher implements InjectionAwareInterface
 
             $lastClientId = 0;
             do {
-                $clientIds = $dbal->createQueryBuilder()
-                    ->select('id')
-                    ->from('client')
-                    ->where('id > :lastId')
-                    ->orderBy('id', 'ASC')
-                    ->setMaxResults($batchSize)
-                    ->setParameter('lastId', $lastClientId)
-                    ->executeQuery()
-                    ->fetchFirstColumn();
+                $clientIds = $this->fetchFirstColumn("SELECT id FROM client WHERE id > :lastId ORDER BY id ASC LIMIT {$batchSize}", [
+                    'lastId' => $lastClientId,
+                ]);
 
                 foreach ($clientIds as $clientId) {
                     $clientUpdateStmt->bindValue('api_token', $tools->generatePassword(32));
                     $clientUpdateStmt->bindValue('updated_at', $now);
-                    $clientUpdateStmt->bindValue('id', (int) $clientId, ParameterType::INTEGER);
-                    $clientUpdateStmt->executeStatement();
+                    $clientUpdateStmt->bindValue('id', (int) $clientId, \PDO::PARAM_INT);
+                    $clientUpdateStmt->execute();
                 }
 
                 if (!empty($clientIds)) {
@@ -933,13 +1030,11 @@ class UpdatePatcher implements InjectionAwareInterface
                 }
             } while (!empty($clientIds));
 
-            $dbal->createQueryBuilder()
-                ->delete('session')
-                ->executeStatement();
+            $this->executeSql('DELETE FROM session');
 
-            $dbal->commit();
+            $pdo->commit();
         } catch (\Throwable $e) {
-            $dbal->rollBack();
+            $pdo->rollBack();
 
             throw $e;
         }
@@ -947,10 +1042,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch54(): void
     {
-        $schemaManager = $this->di['dbal']->createSchemaManager();
-        $indexes = array_map(static fn ($index) => $index->getName(), $schemaManager->listTableIndexes('api_request'));
-
-        if (!in_array('api_request_ip_created', $indexes, true)) {
+        if (!$this->tableHasIndex('api_request', 'api_request_ip_created')) {
             $this->executeSql('ALTER TABLE `api_request` ADD INDEX `api_request_ip_created` (`ip`, `created_at`);');
         }
 
@@ -1009,10 +1101,9 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch56(): void
     {
-        $schemaManager = $this->di['dbal']->createSchemaManager();
-        $column = $schemaManager->introspectTable('tld')->getColumn('tld');
+        $length = $this->getColumnLength('tld', 'tld');
 
-        if ($column->getLength() < 64) {
+        if ($length !== null && $length < 64) {
             $this->executeSql('ALTER TABLE `tld` MODIFY `tld` VARCHAR(64) DEFAULT NULL;');
         }
 
@@ -1106,9 +1197,9 @@ class UpdatePatcher implements InjectionAwareInterface
             'mod_support_ticket_staff_reply' => ['2fb0c49c240c05925211f0bd0e90b3de4ceab4287c1c89be6155f0a3d71d7811', '74aea13a2cbe71aee7b8071480fb4b6767d5690589070d1a06721002618ed29f'],
         ];
 
-        $templates = $this->di['dbal']->executeQuery(
+        $templates = $this->fetchAll(
             'SELECT id, action_code, subject, content FROM email_template WHERE is_overridden = 1 AND is_custom = 0'
-        )->fetchAllAssociative();
+        );
 
         foreach ($templates as $template) {
             $code = (string) ($template['action_code'] ?? '');
@@ -1129,7 +1220,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 continue;
             }
 
-            $this->di['dbal']->executeStatement(
+            $this->executeSql(
                 'UPDATE email_template SET is_overridden = 0, subject = :subject, content = :content WHERE id = :id',
                 [
                     'subject' => $default['subject'],
@@ -1142,9 +1233,9 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch58(): void
     {
-        $gateways = $this->di['dbal']->executeQuery(
+        $gateways = $this->fetchAll(
             "SELECT id, config FROM pay_gateway WHERE gateway = 'Custom'"
-        )->fetchAllAssociative();
+        );
 
         foreach ($gateways as $gateway) {
             $config = json_decode($gateway['config'] ?? '', true);
@@ -1156,16 +1247,14 @@ class UpdatePatcher implements InjectionAwareInterface
             $needsSave = false;
             foreach ($fields as $field) {
                 if (isset($config[$field]) && is_string($config[$field]) && preg_match('/\b(function|include|import|extends|range|max|min|dump|system|guest\.|admin\.|client\.)\b/i', $config[$field])) {
-                    $this->di['logger']->setChannel('update')->warning('Custom payment adapter template for gateway ID {id} contained incompatible Twig syntax and has been cleared. Please re-create it with compatible syntax.', [
-                        'id' => $gateway['id'],
-                    ]);
+                    $this->di['logger']->setChannel('update')->warning('Custom payment adapter template for gateway ID %s contained incompatible Twig syntax and has been cleared. Please re-create it with compatible syntax.', $gateway['id']);
                     unset($config[$field]);
                     $needsSave = true;
                 }
             }
 
             if ($needsSave) {
-                $this->di['dbal']->update('pay_gateway', [
+                $this->updateTable('pay_gateway', [
                     'config' => json_encode($config, JSON_UNESCAPED_SLASHES),
                 ], ['id' => $gateway['id']]);
             }
@@ -1187,20 +1276,45 @@ class UpdatePatcher implements InjectionAwareInterface
         ]);
     }
 
-    /**
-     * If we end up needing a newly introduced package during the update process, composer's autoloader won't have it until the next load.
-     * As a workaround, we can register AntLoader and point it at the Vendor folder which will then act as fallback to find the needed classes.
-     * This isn't particularly fast though as it'll scan the entire vendor, so only use it if we know a needed class is missing.
-     */
-    private function registerFallbackAutoloader(): void
+    private function refreshComposerAutoloader(): void
     {
-        $loader = new \AntCMS\AntLoader([
-            'mode' => 'filesystem',
-            'path' => Path::join(PATH_CACHE, 'fallbackClassMap.php'),
-        ]);
-        $loader->addNamespace('', PATH_VENDOR);
-        $loader->checkClassMap();
-        $loader->register(true);
+        $uuidClass = Uuid::class;
+
+        if (!class_exists($uuidClass)) {
+            $autoloadPath = Path::join(PATH_VENDOR, 'autoload.php');
+            if ($this->filesystem->exists($autoloadPath)) {
+                require $autoloadPath;
+            }
+        }
+
+        if (!class_exists($uuidClass)) {
+            $this->registerSymfonyUidAutoloader();
+        }
+
+        if (!class_exists($uuidClass)) {
+            throw new Exception('Unable to load the Symfony UID package from Composer. Please reinstall dependencies and try again.');
+        }
+    }
+
+    private function registerSymfonyUidAutoloader(): void
+    {
+        $uidPath = Path::join(PATH_VENDOR, 'symfony', 'uid');
+        if (!$this->filesystem->exists($uidPath)) {
+            return;
+        }
+
+        spl_autoload_register(function (string $class) use ($uidPath): void {
+            $prefix = 'Symfony\\Component\\Uid\\';
+            if (!str_starts_with($class, $prefix)) {
+                return;
+            }
+
+            $relativeClass = substr($class, strlen($prefix));
+            $path = Path::join($uidPath, str_replace('\\', DIRECTORY_SEPARATOR, $relativeClass) . '.php');
+            if ($this->filesystem->exists($path)) {
+                require $path;
+            }
+        });
     }
 
     private function getDefaultEmailTemplateData(string $code): ?array
@@ -1213,7 +1327,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $template = $this->filesystem->readFile($path);
 
         $subject = ucwords(str_replace('_', ' ', $code));
-        preg_match('#{%.?block subject.?%}((.*?)+){%.?endblock.?%}#', $template, $subjectMatches);
+        preg_match('#{%\\s*block subject\\s*%}(.*?){%\\s*endblock\\s*%}#s', $template, $subjectMatches);
         if (isset($subjectMatches[1])) {
             $subject = $subjectMatches[1];
         }
@@ -1248,20 +1362,19 @@ class UpdatePatcher implements InjectionAwareInterface
         $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_paidsupport' AND meta_key = 'config'");
 
         if ($this->di !== null && $this->di->offsetExists('cache')) {
-            $this->di['cache']->deleteItem('config_mod_paidsupport');
+            $this->di['cache']->delete('config_mod_paidsupport');
         }
     }
 
     private function patch61(): void
     {
-        $table = $this->di['dbal']->createSchemaManager()->introspectTable('currency');
         $columns = [];
 
-        if ($table->hasColumn('format')) {
+        if ($this->tableHasColumn('currency', 'format')) {
             $columns[] = 'DROP COLUMN format';
         }
 
-        if ($table->hasColumn('price_format')) {
+        if ($this->tableHasColumn('currency', 'price_format')) {
             $columns[] = 'DROP COLUMN price_format';
         }
 
@@ -1279,6 +1392,375 @@ class UpdatePatcher implements InjectionAwareInterface
     }
 
     private function patch63(): void
+    {
+        if ($this->tableHasColumn('currency', 'title')) {
+            $this->executeSql('ALTER TABLE currency DROP COLUMN title');
+        }
+    }
+
+    private function patch64(): void
+    {
+        $this->migrateGatewayAssetsToPublicDirectory();
+        $this->migrateDefaultBrandingAssetsToPublicDirectory();
+
+        $this->executeFileActions([
+            Path::join(PATH_LIBRARY, 'Api', 'API.js') => 'unlink',
+            Path::join(PATH_MODS, 'Wysiwyg') => 'unlink',
+            Path::join(PATH_THEMES, 'admin_default', 'html', 'mod_wysiwyg_js.html.twig') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'html', 'mod_wysiwyg_js.html.twig') => 'unlink',
+            Path::join(PATH_THEMES, 'admin_default', 'assets', 'js', 'wysiwyg.js') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'js', 'wysiwyg.js') => 'unlink',
+            Path::join(PATH_THEMES, 'admin_default', 'assets', 'build', 'js', 'wysiwyg.js') => 'unlink',
+            Path::join(PATH_THEMES, 'admin_default', 'assets', 'build', 'js', 'wysiwyg.js.map') => 'unlink',
+            Path::join(PATH_THEMES, 'admin_default', 'assets', 'build', 'js', 'wysiwyg.css') => 'unlink',
+            Path::join(PATH_THEMES, 'admin_default', 'assets', 'build', 'js', 'wysiwyg.css.map') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'js', 'wysiwyg.js') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'js', 'wysiwyg.js.map') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'js', 'wysiwyg.css') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'js', 'wysiwyg.css.map') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'css', 'markdown.css') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'css', 'markdown.css') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'css', 'markdown.css.map') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'img', 'logo.png') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'img', 'logo.svg') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'img', 'logo_white.svg') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'favicon.ico') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'img', 'logo.png') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'img', 'logo.svg') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'img', 'logo_white.svg') => 'unlink',
+            Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'favicon.ico') => 'unlink',
+        ]);
+    }
+
+    private function patch65(): void
+    {
+        if (!$this->tableHasColumn('service_downloadable', 'stored_filename')) {
+            $this->executeSql('ALTER TABLE `service_downloadable` ADD COLUMN `stored_filename` VARCHAR(100) DEFAULT NULL AFTER `filename`;');
+        }
+
+        $this->downloadableStorageMigrationMap = [];
+        $this->migrateDownloadableProductStorageKeys();
+        $this->migrateDownloadableServiceStorageKeys();
+        $this->migrateDownloadableOrderStorageKeys();
+    }
+
+    private function patch66(): void
+    {
+        // The original removal/migration patches for these modules only handled their data
+        // migrations. Installations that already ran those patches need a new patch level
+        // to clean up stale extension records and module directories left on disk.
+        $this->executeSql("DELETE FROM extension_meta WHERE extension IN ('mod_paidsupport', 'mod_servicemembership') OR (rel_type = 'mod' AND LOWER(rel_id) IN ('paidsupport', 'servicemembership'))");
+        $this->executeSql("DELETE FROM extension WHERE type = 'mod' AND LOWER(name) IN ('paidsupport', 'servicemembership')");
+
+        $this->executeFileActions([
+            Path::join(PATH_MODS, 'Paidsupport') => 'unlink',
+            Path::join(PATH_MODS, 'Servicemembership') => 'unlink',
+        ]);
+    }
+
+    private function patch67(): void
+    {
+        // Add hash_expires_at column to invoice table. New invoices (and resends of
+        // existing ones) get a hash_expires_at value computed from the
+        // invoice_hash_lifetime_days system setting. NULL means "never expires"
+        // and is the default for pre-existing rows.
+        if (!$this->tableHasColumn('invoice', 'hash_expires_at')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD COLUMN `hash_expires_at` DATETIME DEFAULT NULL AFTER `updated_at`');
+        }
+
+        $this->executeSql(
+            'INSERT INTO setting (param, value, public, category, hash, created_at, updated_at)
+             VALUES (:param, :value, 0, :category, :hash, :created_at, :updated_at)
+             ON DUPLICATE KEY UPDATE value = :value, updated_at = :updated_at',
+            [
+                'param' => 'invoice_hash_lifetime_days',
+                'value' => '90',
+                'category' => null,
+                'hash' => null,
+                'created_at' => '2026-06-01 12:00:00',
+                'updated_at' => '2026-06-01 12:00:00',
+            ]
+        );
+
+        // Destructive migration: NULL legacy invoice hashes that fall outside the
+        // modern 30-60 lowercase hex format enforced by the new guest API regex
+        // validation. Hashes that fall within the 30-60 char range (including
+        // 32-char MD5 and 40-char SHA-1) are preserved. Affected rows:
+        //   - 2022-era SHA-256 (64 hex, just over the upper bound)
+        //   - 2023-era 200-254 hex
+        //   - Any hash containing non-lowercase-hex characters
+        // These links would be rejected by the new API anyway, so leaving them
+        // in place creates dead links in customer email archives. The
+        // extendInvoiceHashLifetime() helper regenerates a valid modern hash
+        // automatically when an admin re-sends the invoice, restoring magic-link
+        // access without manual intervention.
+        $this->executeSql(
+            "UPDATE invoice SET hash = NULL
+             WHERE hash IS NOT NULL
+               AND (LENGTH(hash) < 30 OR LENGTH(hash) > 60 OR hash NOT REGEXP '^[a-f0-9]+$')"
+        );
+    }
+
+    private function patch68(): void
+    {
+        $row = $this->fetchOne(
+            "SELECT meta_value FROM extension_meta WHERE extension = 'mod_cron' AND meta_key = 'config'",
+        );
+
+        if (!is_string($row) || $row === '') {
+            return;
+        }
+
+        $configJson = $this->di['crypt']->decrypt($row, Config::getProperty('info.salt'));
+        if (!is_string($configJson)) {
+            return;
+        }
+
+        $config = json_decode($configJson, true);
+        if (!is_array($config) || empty($config['guest_cron']) || !empty($config['cron_hash'])) {
+            return;
+        }
+
+        $config['cron_hash'] = bin2hex(random_bytes(32));
+        $encrypted = $this->di['crypt']->encrypt(json_encode($config, JSON_THROW_ON_ERROR), Config::getProperty('info.salt'));
+
+        $this->executeSql(
+            "UPDATE extension_meta SET meta_value = :config WHERE extension = 'mod_cron' AND meta_key = 'config'",
+            ['config' => $encrypted],
+        );
+    }
+
+    private function patch69(): void
+    {
+        if (!$this->tableHasColumn('email_template', 'last_error')) {
+            $this->executeSql('ALTER TABLE `email_template` ADD COLUMN `last_error` TEXT DEFAULT NULL');
+        }
+
+        if (!$this->tableHasColumn('email_template', 'error_checked_at')) {
+            $this->executeSql('ALTER TABLE `email_template` ADD COLUMN `error_checked_at` DATETIME DEFAULT NULL');
+        }
+    }
+
+    private function patch70(): void
+    {
+        $this->executeSql(
+            "UPDATE client_order co
+             LEFT JOIN invoice i ON i.id = co.unpaid_invoice_id AND i.status = 'unpaid'
+             SET co.unpaid_invoice_id = NULL
+             WHERE co.unpaid_invoice_id IS NOT NULL
+               AND i.id IS NULL"
+        );
+    }
+
+    private function patch71(): void
+    {
+        // Ensure the invoice table has the gateway_id, text_1, and text_2
+        // columns. These have been part of structure.sql for a long time, but
+        // databases upgraded from very old installations (e.g. BoxBilling era)
+        // may be missing them, which produces PHP "Undefined array key"
+        // warnings in Invoice\Service::toApiArray().
+        if (!$this->tableHasColumn('invoice', 'gateway_id')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD COLUMN `gateway_id` int(11) DEFAULT NULL');
+        }
+
+        if (!$this->tableHasColumn('invoice', 'text_1')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD COLUMN `text_1` text');
+        }
+
+        if (!$this->tableHasColumn('invoice', 'text_2')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD COLUMN `text_2` text');
+        }
+    }
+
+    private function generateDownloadableStoredFilename(): string
+    {
+        do {
+            $storedFilename = bin2hex(random_bytes(32));
+            $filePath = Path::join(PATH_UPLOADS, $storedFilename);
+        } while ($this->filesystem->exists($filePath));
+
+        return $storedFilename;
+    }
+
+    private function copyLegacyDownloadableFile(string $filename): ?string
+    {
+        if (isset($this->downloadableStorageMigrationMap[$filename])) {
+            return $this->downloadableStorageMigrationMap[$filename];
+        }
+
+        $legacyPath = Path::join(PATH_UPLOADS, md5($filename));
+        if (!$this->filesystem->exists($legacyPath)) {
+            return null;
+        }
+
+        $storedFilename = $this->generateDownloadableStoredFilename();
+        $this->filesystem->copy($legacyPath, Path::join(PATH_UPLOADS, $storedFilename));
+        $this->downloadableStorageMigrationMap[$filename] = $storedFilename;
+
+        return $storedFilename;
+    }
+
+    private function migrateDownloadableProductStorageKeys(): void
+    {
+        $products = $this->fetchAll("SELECT id, config FROM product WHERE type = 'downloadable'");
+
+        foreach ($products as $product) {
+            $config = json_decode((string) $product['config'], true) ?: [];
+            if (!isset($config['filename']) || isset($config['stored_filename'])) {
+                continue;
+            }
+
+            $storedFilename = $this->copyLegacyDownloadableFile((string) $config['filename']);
+            if ($storedFilename === null) {
+                continue;
+            }
+
+            $config['stored_filename'] = $storedFilename;
+            $this->executeSql('UPDATE product SET config = :config, updated_at = :updated_at WHERE id = :id', [
+                'config' => json_encode($config),
+                'updated_at' => date('Y-m-d H:i:s'),
+                'id' => $product['id'],
+            ]);
+        }
+    }
+
+    private function migrateDownloadableServiceStorageKeys(): void
+    {
+        $services = $this->fetchAll('SELECT sd.id, sd.filename, sd.stored_filename, co.id AS order_id, co.config AS order_config FROM service_downloadable sd LEFT JOIN client_order co ON sd.id = co.service_id AND co.service_type = "downloadable" WHERE sd.filename IS NOT NULL AND sd.filename != ""');
+        $processedServiceUpdates = [];
+
+        foreach ($services as $service) {
+            if (!empty($service['stored_filename'])) {
+                $storedFilename = (string) $service['stored_filename'];
+            } else {
+                $serviceId = (int) $service['id'];
+                if (isset($processedServiceUpdates[$serviceId])) {
+                    $storedFilename = $this->copyLegacyDownloadableFile((string) $service['filename']);
+                } else {
+                    $storedFilename = $this->copyLegacyDownloadableFile((string) $service['filename']);
+                    if ($storedFilename === null) {
+                        continue;
+                    }
+
+                    $this->executeSql('UPDATE service_downloadable SET stored_filename = :stored_filename, updated_at = :updated_at WHERE id = :id', [
+                        'stored_filename' => $storedFilename,
+                        'updated_at' => date('Y-m-d H:i:s'),
+                        'id' => $service['id'],
+                    ]);
+                    $processedServiceUpdates[$serviceId] = true;
+                }
+            }
+
+            if (empty($service['order_id'])) {
+                continue;
+            }
+
+            $orderConfig = json_decode($service['order_config'] ?? '', true) ?: [];
+            if (isset($orderConfig['stored_filename'])) {
+                continue;
+            }
+
+            $orderConfig['filename'] ??= $service['filename'];
+            $orderConfig['stored_filename'] = $storedFilename;
+            $this->executeSql('UPDATE client_order SET config = :config, updated_at = :updated_at WHERE id = :id', [
+                'config' => json_encode($orderConfig),
+                'updated_at' => date('Y-m-d H:i:s'),
+                'id' => $service['order_id'],
+            ]);
+        }
+    }
+
+    private function migrateDownloadableOrderStorageKeys(): void
+    {
+        $orders = $this->fetchAll("SELECT id, config FROM client_order WHERE service_type = 'downloadable' AND config LIKE '%filename%'");
+
+        foreach ($orders as $order) {
+            $config = json_decode($order['config'] ?? '', true) ?: [];
+            if (!isset($config['filename']) || isset($config['stored_filename'])) {
+                continue;
+            }
+
+            $storedFilename = $this->copyLegacyDownloadableFile((string) $config['filename']);
+            if ($storedFilename === null) {
+                continue;
+            }
+
+            $config['stored_filename'] = $storedFilename;
+            $this->executeSql('UPDATE client_order SET config = :config, updated_at = :updated_at WHERE id = :id', [
+                'config' => json_encode($config),
+                'updated_at' => date('Y-m-d H:i:s'),
+                'id' => $order['id'],
+            ]);
+        }
+    }
+
+    private function migrateDefaultBrandingAssetsToPublicDirectory(): void
+    {
+        $settings = [
+            'company_logo' => [
+                'public/branding/logo.svg',
+                'themes/huraga/assets/img/logo.svg',
+                'themes/huraga/assets/build/img/logo.svg',
+            ],
+            'company_logo_dark' => [
+                'public/branding/logo-dark.svg',
+                'themes/huraga/assets/img/logo_white.svg',
+                'themes/huraga/assets/build/img/logo_white.svg',
+            ],
+            'company_favicon' => [
+                'public/branding/favicon.ico',
+                'themes/huraga/assets/favicon.ico',
+                'themes/huraga/assets/build/favicon.ico',
+            ],
+        ];
+
+        foreach ($settings as $param => $values) {
+            $newValue = $values[0];
+            $oldValues = array_slice($values, 1);
+
+            foreach ($oldValues as $oldValue) {
+                $this->executeSql('UPDATE setting SET value = :new_value WHERE param = :param AND value = :old_value', [
+                    'new_value' => $newValue,
+                    'param' => $param,
+                    'old_value' => $oldValue,
+                ]);
+            }
+        }
+    }
+
+    private function migrateGatewayAssetsToPublicDirectory(): void
+    {
+        $publicGatewayAssetsPath = Path::join(PATH_ROOT, 'public', 'gateways');
+        $oldGatewayAssetPaths = array_unique([
+            Path::join(PATH_ROOT, 'data', 'assets', 'gateways'),
+            Path::join(PATH_DATA, 'assets', 'gateways'),
+            Path::join(PATH_ROOT, 'public', 'assets', 'gateways'),
+        ]);
+
+        foreach ($oldGatewayAssetPaths as $oldGatewayAssetsPath) {
+            if (!$this->filesystem->exists($oldGatewayAssetsPath)) {
+                continue;
+            }
+
+            $this->filesystem->mkdir($publicGatewayAssetsPath, 0o755);
+
+            $finder = new Finder();
+            $finder->files()->in($oldGatewayAssetsPath)->depth('== 0');
+
+            foreach ($finder as $file) {
+                $target = Path::join($publicGatewayAssetsPath, $file->getFilename());
+                if (!$this->filesystem->exists($target)) {
+                    $this->filesystem->copy($file->getPathname(), $target);
+                }
+            }
+
+            $this->executeFileActions([
+                $oldGatewayAssetsPath => 'unlink',
+            ]);
+        }
+    }
+
+    private function patch72(): void
     {
         $this->executeFileActions([
             Path::join(PATH_LIBRARY, 'Model', 'Product.php') => 'unlink',

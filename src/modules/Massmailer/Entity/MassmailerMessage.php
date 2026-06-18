@@ -23,10 +23,13 @@ class MassmailerMessage implements ApiArrayInterface
     public const STATUS_DRAFT = 'draft';
     public const STATUS_SENT = 'sent';
 
-    #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::INTEGER)]
-    private ?int $id = null;
+    public function __construct(
+        #[ORM\Id]
+        #[ORM\GeneratedValue]
+        #[ORM\Column(type: \Doctrine\DBAL\Types\Types::INTEGER)]
+        private ?int $id = null,
+    ) {
+    }
 
     #[ORM\Column(name: 'from_email', type: \Doctrine\DBAL\Types\Types::STRING, length: 255, nullable: true)]
     private ?string $fromEmail = null;

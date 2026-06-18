@@ -11,6 +11,7 @@ declare(strict_types=1);
  */
 
 use Stripe\StripeClient;
+use Symfony\Component\Intl\Currencies;
 
 class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 {
@@ -65,44 +66,67 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 'pub_key' => [
                     'text', [
                         'label' => 'Live Publishable Key:',
+                        'required_when' => ['enabled' => true, 'test_mode' => false],
                     ],
                 ],
                 'api_key' => [
                     'text', [
                         'label' => 'Live Secret Key:',
+                        'required_when' => ['enabled' => true, 'test_mode' => false],
                     ],
                 ],
                 'test_pub_key' => [
                     'text', [
                         'label' => 'Test Publishable Key:',
-                        'required' => false,
+                        'required_when' => ['enabled' => true, 'test_mode' => true],
                     ],
                 ],
                 'test_api_key' => [
                     'text', [
                         'label' => 'Test Secret Key:',
-                        'required' => false,
+                        'required_when' => ['enabled' => true, 'test_mode' => true],
                     ],
                 ],
             ],
         ];
     }
 
-    public function getHtml($api_admin, $invoice_id, $subscription): string
+    public function getHtml(FOSSBilling\Api\Proxy $api_admin, int $invoice_id, bool $subscription): string
     {
         $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
 
         return $this->_generateForm($invoiceModel);
     }
 
-    public function getAmountInCents(Model_Invoice $invoice)
+    public function getAmountInCents(Model_Invoice $invoice): int
     {
-        $invoiceService = $this->di['mod_service']('Invoice');
-
-        return $invoiceService->getTotalWithTax($invoice) * 100;
+        return $this->getAmountInMinorUnits($invoice);
     }
 
-    public function getInvoiceTitle(Model_Invoice $invoice)
+    public function getAmountInMinorUnits(Model_Invoice $invoice): int
+    {
+        $invoiceService = $this->di['mod_service']('Invoice');
+        $amount = $invoiceService->getTotalWithTax($invoice);
+        $multiplier = 10 ** $this->getCurrencyFractionDigits($invoice->currency);
+
+        return (int) round($amount * $multiplier);
+    }
+
+    private function getAmountFromMinorUnits(int $amount, string $currency): float
+    {
+        $divisor = 10 ** $this->getCurrencyFractionDigits($currency);
+
+        return $amount / $divisor;
+    }
+
+    private function getCurrencyFractionDigits(string $currency): int
+    {
+        $currency = strtoupper($currency);
+
+        return Currencies::exists($currency) ? Currencies::getFractionDigits($currency) : 2;
+    }
+
+    public function getInvoiceTitle(Model_Invoice $invoice): string
     {
         $invoiceItems = $this->di['db']->getAll('SELECT title from invoice_item WHERE invoice_id = :invoice_id', [':invoice_id' => $invoice->id]);
 
@@ -129,6 +153,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
 
+        // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
         if (DEBUG) {
             error_log(json_encode($e->getJsonBody()));
         }
@@ -136,7 +161,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         throw new Exception($tx->error);
     }
 
-    public function processTransaction($api_admin, $id, $data, $gateway_id): void
+    public function processTransaction(FOSSBilling\Api\Proxy $api_admin, int $id, array $data, int $gateway_id): void
     {
         $tx = $this->di['db']->getExistingModelById('Transaction', $id);
         $invoiceService = $this->di['mod_service']('Invoice');
@@ -158,7 +183,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
             $tx->txn_status = $charge->status;
             $tx->txn_id = $charge->id;
-            $tx->amount = $charge->amount / 100;
+            $tx->amount = $this->getAmountFromMinorUnits($charge->amount, $charge->currency);
             $tx->currency = $charge->currency;
 
             // Prevent duplicate processing for the same successful Stripe payment intent
@@ -213,6 +238,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                         $invoiceService->approveInvoice($invoice, ['use_credits' => false]);
                     }
                     $invoiceService->payInvoiceWithCredits($invoice);
+                } elseif ($tx->invoice_id && $invoice && $invoiceService->isInvoiceTypeDeposit($invoice)) {
+                    $invoiceService->markAsPaid($invoice);
                 } elseif (!$tx->invoice_id) {
                     $invoiceService->doBatchPayWithCredits(['client_id' => $client->id]);
                 }
@@ -259,7 +286,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     protected function _generateForm(Model_Invoice $invoice): string
     {
         $intent = $this->stripe->paymentIntents->create([
-            'amount' => $this->getAmountInCents($invoice),
+            'amount' => $this->getAmountInMinorUnits($invoice),
             'currency' => $invoice->currency,
             'description' => $this->getInvoiceTitle($invoice),
             'automatic_payment_methods' => ['enabled' => true],
@@ -272,7 +299,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         $pubKey = ($this->config['test_mode']) ? $this->config['test_pub_key'] : $this->config['pub_key'];
 
-        $dataAmount = $this->getAmountInCents($invoice);
+        $dataAmount = $this->getAmountInMinorUnits($invoice);
 
         $settingService = $this->di['mod_service']('System');
 
@@ -294,8 +321,16 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 <script>
                     const stripe = Stripe(\':pub_key\');
 
+                    var stripeAppearance = {
+                        theme: (document.documentElement.getAttribute(\'data-bs-theme\') === \'dark\'
+                                || localStorage.getItem(\'theme\') === \'dark\')
+                            ? \'night\'
+                            : \'stripe\'
+                    };
+
                     var elements = stripe.elements({
                         clientSecret: \':intent_secret\',
+                        appearance: stripeAppearance,
                       });
 
                     var paymentElement = elements.create(\'payment\', {

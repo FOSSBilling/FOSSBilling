@@ -1,21 +1,8 @@
 import './js/ui/modals';
-import { initAvatars } from './js/avatar.js';
-import { coloris, init } from '@melloware/coloris';
 import * as tabler from '@tabler/core/js/tabler.js';
-import './js/tomselect';
-import './js/datepicker';
-import './js/ui/theme_settings';
 import './js/fossbilling';
-import 'sortable-tablesort/dist/sortable.min.js';
 
 globalThis.bootstrap = tabler.bootstrap;
-
-init();
-coloris({
-  el: '#coloris-picker',
-  alpha: false
-});
-
 
 /**
  * Extracts text from the clipboard target element referenced by the button.
@@ -97,8 +84,48 @@ function handleClipboardResult(button, success) {
   }
 }
 
+function loadAdminFeature(loader, name) {
+  loader().catch(error => {
+    console.error(`Failed to load ${name}:`, error);
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  initAvatars();
+  if (document.querySelector('#coloris-picker')) {
+    loadAdminFeature(async () => {
+      const { coloris, init } = await import('@melloware/coloris');
+      init();
+      coloris({
+        el: '#coloris-picker',
+        alpha: false
+      });
+    }, 'Coloris');
+  }
+
+  if (document.querySelector('.datepicker')) {
+    loadAdminFeature(async () => {
+      const { default: initDatepickers } = await import('./js/datepicker');
+      initDatepickers();
+    }, 'datepickers');
+  }
+
+  if (document.querySelector('.js-locale-selector, .autocomplete-selector, .canned_ticket_response')) {
+    loadAdminFeature(async () => {
+      const { default: initTomSelectControls } = await import('./js/tomselect');
+      initTomSelectControls();
+    }, 'Tom Select controls');
+  }
+
+  if (document.querySelector('.sortable')) {
+    loadAdminFeature(() => import('sortable-tablesort/dist/sortable.min.js'), 'sortable tables');
+  }
+
+  if (document.querySelector('#theme-settings')) {
+    loadAdminFeature(async () => {
+      const { default: initThemeSettings } = await import('./js/ui/theme_settings');
+      initThemeSettings();
+    }, 'theme settings');
+  }
 
   document.querySelectorAll('.js-theme-toggler').forEach(element => {
     element.addEventListener('click', event => {

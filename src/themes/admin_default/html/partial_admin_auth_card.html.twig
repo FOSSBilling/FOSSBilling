@@ -1,0 +1,30 @@
+{% set _auth_form_fallback %}{% block auth_form %}{% endblock %}{% endset %}
+{% set auth_form = block('auth_form')|trim %}
+{% set _auth_footer_note_fallback %}{% block auth_footer_note %}{% endblock %}{% endset %}
+{% set auth_footer_note = block('auth_footer_note')|trim %}
+
+<div class="page page-center">
+    <div class="container-tight py-4">
+        <div class="text-center mb-4">
+            {{ include('partial_company_logo.html.twig', {
+                link_url: '/'|url(area: 'client'),
+                image_style: 'height: 60px; width: auto;',
+                fallback_class: 'h1'
+            }) }}
+        </div>
+        <div class="card card-md">
+            <div class="card-body">
+                <h2 class="h2 text-center mb-4">{{ title }}</h2>
+                {% if subtitle is defined and subtitle %}
+                    <p class="text-muted mb-4">{{ subtitle }}</p>
+                {% endif %}
+                {{ auth_form|raw }}
+            </div>
+        </div>
+        {% if auth_footer_note %}
+            <div class="text-center text-muted mt-3">
+                {{ auth_footer_note|raw }}
+            </div>
+        {% endif %}
+    </div>
+</div>

@@ -3,7 +3,7 @@
  * Only includes functionality actually used by the Huraga theme
  */
 
-globalThis.FOSSBilling = {
+globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
   message: (message, type = "info") => {
     let color;
     switch (type) {
@@ -66,4 +66,4 @@ globalThis.FOSSBilling = {
     const toast = new bootstrap.Toast(element);
     toast.show();
   }
-};
+});

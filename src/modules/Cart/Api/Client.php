@@ -15,7 +15,7 @@ namespace Box\Mod\Cart\Api;
 /**
  * Shopping cart management.
  */
-class Client extends \Api_Abstract
+class Client extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Checkout a shopping cart that has products in it.
@@ -24,7 +24,7 @@ class Client extends \Api_Abstract
      */
     public function checkout($data)
     {
-        $this->di['rate_limiter']->consumeOrThrow('order_generation_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('order_generation_ip', (string) $this->getIp());
 
         $gateway_id = $data['gateway_id'] ?? null;
         $cart = $this->getService()->getSessionCart();

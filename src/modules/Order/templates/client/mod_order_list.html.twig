@@ -1,4 +1,5 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% set active_menu = 'services' %}
 
 {% import "macro_functions.html.twig" as mf %}
 
@@ -59,7 +60,7 @@
                             <span class="m-0">{{ 'No orders yet'|trans }}</span>
                         </div>
                     {% endif %}
-                    {{ include('partial_pagination.html.twig', { 'list': orders }) }}
+                    {{ include('partial_pagination.html.twig', { 'list': orders, 'url': 'order' }) }}
                 </div>
             </div>
         </div>

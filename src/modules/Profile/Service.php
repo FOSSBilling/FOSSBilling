@@ -12,8 +12,11 @@ declare(strict_types=1);
 
 namespace Box\Mod\Profile;
 
+use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
+use Symfony\Component\Intl\Countries;
+use Symfony\Component\Intl\Locales;
 
 class Service implements InjectionAwareInterface
 {
@@ -123,7 +126,7 @@ class Service implements InjectionAwareInterface
             && isset($config['disable_change_email'])
             && $config['disable_change_email']
         ) {
-            throw new \FOSSBilling\InformationException('Email address cannot be changed');
+            throw new InformationException('Email address cannot be changed');
         }
 
         if (!empty($email)) {
@@ -131,10 +134,19 @@ class Service implements InjectionAwareInterface
 
             $clientService = $this->di['mod_service']('client');
             if ($clientService->emailAlreadyRegistered($email, $client)) {
-                throw new \FOSSBilling\InformationException('This email address is already registered.');
+                throw new InformationException('This email address is already registered.');
             }
 
-            $client->email = $email;
+            if ($client->email !== $email) {
+                $client->email = $email;
+                $client->email_approved = false;
+
+                $clientConfig = $this->di['mod_config']('client');
+                if (isset($clientConfig['require_email_confirmation']) && $clientConfig['require_email_confirmation']) {
+                    $clientService = $this->di['mod_service']('client');
+                    $clientService->sendEmailConfirmationForClient($client);
+                }
+            }
         }
 
         if (isset($data['phone_cc']) && $data['phone_cc'] !== '') {
@@ -155,7 +167,11 @@ class Service implements InjectionAwareInterface
         $client->type = $data['type'] ?? $client->type;
         $client->address_1 = $data['address_1'] ?? $client->address_1;
         $client->address_2 = $data['address_2'] ?? $client->address_2;
-        $client->country = $data['country'] ?? $client->country;
+        $country = $data['country'] ?? $client->country;
+        if (!empty($country) && !Countries::exists($country)) {
+            throw new InformationException('Invalid country code: :code', [':code' => $country]);
+        }
+        $client->country = $country;
         $client->postcode = $data['postcode'] ?? $client->postcode;
         $client->city = $data['city'] ?? $client->city;
         $client->state = $data['state'] ?? $client->state;
@@ -167,7 +183,11 @@ class Service implements InjectionAwareInterface
                 $data['document_type'] ?? \Model_Client::DOC_PASSPORT,
             );
         }
-        $client->lang = $data['lang'] ?? $client->lang;
+        $lang = $data['lang'] ?? $client->lang;
+        if (!empty($lang) && !Locales::exists($lang)) {
+            throw new InformationException('Invalid locale code: :code', [':code' => $lang]);
+        }
+        $client->lang = $lang;
         $client->notes = $data['notes'] ?? $client->notes;
         $client->custom_1 = $data['custom_1'] ?? $client->custom_1;
         $client->custom_2 = $data['custom_2'] ?? $client->custom_2;

@@ -42,6 +42,7 @@ function checkInstaller(): void
     }
 
     // If the config file exists and not install.php, but the install folder does, perform some cleanup.
+    // @phpstan-ignore booleanNot.alwaysTrue (DEBUG is a runtime constant)
     if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::normalize('install')) && !DEBUG) {
         $filesystem->remove('install');
     }
@@ -54,7 +55,7 @@ function checkSSL(): void
 {
     global $request;
 
-    if (!empty(Config::getProperty('security.force_https')) && Config::getProperty('security.force_https') && !Environment::isCLI()) {
+    if (Config::getProperty('security.force_https') && !Environment::isCLI()) {
         if (!$request->isSecure()) {
             (new RedirectResponse('https://' . $request->getHost() . $request->getRequestUri()))->send();
             exit;
@@ -79,6 +80,47 @@ function checkWebServer(): void
 }
 
 /*
+ * Check whether the configured database has existing tables.
+ */
+function hasDatabaseTables(): bool
+{
+    $dbConfig = Config::getProperty('db', []);
+    if (!is_array($dbConfig) || ($dbConfig['driver'] ?? '') !== 'pdo_mysql') {
+        return true;
+    }
+
+    $host = $dbConfig['host'] ?? '';
+    $database = $dbConfig['name'] ?? '';
+    $port = Tools::normalizePort($dbConfig['port'] ?? null, 3306);
+    if ($host === '' || $database === '') {
+        return true;
+    }
+
+    try {
+        $pdo = new PDO(
+            sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $host, $port, $database),
+            $dbConfig['user'] ?? '',
+            $dbConfig['password'] ?? '',
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION],
+        );
+        $statement = $pdo->query('SHOW TABLES');
+
+        return $statement !== false && $statement->fetchColumn() !== false;
+    } catch (Throwable $e) {
+        if ((bool) Config::getProperty('debug', false)) {
+            error_log(sprintf(
+                'hasDatabaseTables() failed to inspect configured database tables: %s in %s on line %d',
+                $e->getMessage(),
+                $e->getFile(),
+                $e->getLine(),
+            ));
+        }
+
+        return true;
+    }
+}
+
+/*
  * Error handler.
  */
 function errorHandler(int $number, string $message, string $file, int $line): bool
@@ -99,7 +141,10 @@ function exceptionHandler(Exception|Error $e)
     global $filesystem;
 
     if (Environment::isTesting()) {
-        echo $e->getMessage() . PHP_EOL;
+        $msg = $e::class . ': ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine() . PHP_EOL;
+        @file_put_contents(Path::join(PATH_LOG, 'exception_handler.log'), date('c') . ' ' . $msg, FILE_APPEND);
+        @file_put_contents(Path::join(PATH_ROOT, 'data', 'log', 'exception_handler.log'), date('c') . ' ' . $msg, FILE_APPEND);
+        echo $msg;
 
         return;
     }
@@ -115,6 +160,7 @@ function exceptionHandler(Exception|Error $e)
         return false;
     }
 
+    // @phpstan-ignore booleanAnd.alwaysFalse, booleanAnd.rightAlwaysFalse (DEBUG is a runtime constant)
     if (defined('DEBUG') && DEBUG && $filesystem->exists(PATH_VENDOR)) {
         /**
          * If advanced debugging is enabled, print Whoops instead of our error page.
@@ -126,6 +172,7 @@ function exceptionHandler(Exception|Error $e)
         $prettyPage->addDataTable('FOSSBilling environment', [
             'PHP Version' => PHP_VERSION,
             'Error code' => $e->getCode(),
+            // @phpstan-ignore nullCoalesce.expr (INSTANCE_ID is a runtime constant that may not be defined during analysis)
             'Instance ID' => INSTANCE_ID ?? 'Unknown',
         ]);
         $whoops->pushHandler($prettyPage);
@@ -159,7 +206,14 @@ function preInit(): void
     define('PATH_THEMES', Path::join(PATH_ROOT, 'themes'));
     define('PATH_MODS', Path::join(PATH_ROOT, 'modules'));
     define('PATH_LANGS', Path::join(PATH_ROOT, 'locale'));
-    define('PATH_UPLOADS', Path::join(PATH_ROOT, 'data', 'uploads'));
+    $pathUploads = Path::join(PATH_ROOT, 'data', 'uploads');
+    if (getenv('APP_ENV') === 'test') {
+        $pathUploads = Path::join(sys_get_temp_dir(), 'fossbilling_test_data', 'uploads');
+        if (!is_dir($pathUploads) && !mkdir($pathUploads, 0o755, true) && !is_dir($pathUploads)) {
+            throw new Exception(sprintf('Unable to create uploads directory for tests: "%s".', $pathUploads));
+        }
+    }
+    define('PATH_UPLOADS', $pathUploads);
     define('PATH_CONFIG', Path::join(PATH_ROOT, 'config.php'));
 
     // Load required FOSSBilling libraries.
@@ -183,16 +237,26 @@ function init(): void
     // Initialize required Symfony components.
     global $filesystem, $request;
     $filesystem = new Filesystem();
-    $request = RequestFactory::createFromGlobals();
+    $request = RequestFactory::createFromGlobals(RequestFactory::getPreConfigProxyConfig($_SERVER));
     RequestFactory::normalizeRoutePath($request);
 
-    // Check config exists, redirecting to installer or throwing an exception if not.
-    if (!$filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::join('install', 'install.php'))) {
-        $response = new RedirectResponse($request->getSchemeAndHttpHost() . $request->getBasePath() . '/install/install.php', 307);
+    // Check config exists and is valid, redirecting to installer or throwing an exception if not.
+    $configExists = $filesystem->exists(PATH_CONFIG);
+    $configIsValid = $configExists && Config::isConfigValid();
+    $installerExists = $filesystem->exists(Path::join('install', 'install.php'));
+
+    if (!$configExists && $installerExists) {
+        $response = new RedirectResponse($request->getBasePath() . '/install/install.php', 307);
         $response->send();
         exit;
-    } elseif (!$filesystem->exists(PATH_CONFIG) && !$filesystem->exists(Path::join('install', 'install.php'))) {
+    } elseif (!$configIsValid) {
         throw new Exception('The FOSSBilling configuration file is empty or invalid.', 3);
+    }
+
+    if (Environment::isDevelopment() && Config::getProperty('debug_and_monitoring.debug', false) && $installerExists && !hasDatabaseTables()) {
+        $response = new RedirectResponse($request->getBasePath() . '/install/install.php', 307);
+        $response->send();
+        exit;
     }
 
     RequestFactory::configureFromConfig($request);
@@ -200,8 +264,17 @@ function init(): void
     // Set globals and relevant settings based on the config.
     date_default_timezone_set(Config::getProperty('i18n.timezone', 'UTC'));
     define('ADMIN_PREFIX', Config::getProperty('admin_area_prefix'));
-    define('DEBUG', (bool) Config::getProperty('debug_and_monitoring.debug', false));
-    define('PATH_DATA', Path::normalize(Config::getProperty('path_data')));
+    if (!defined('DEBUG')) {
+        define('DEBUG', (bool) Config::getProperty('debug_and_monitoring.debug', false));
+    }
+    $pathData = Path::normalize(Config::getProperty('path_data'));
+    if (Environment::isTesting()) {
+        $pathData = Path::join(sys_get_temp_dir(), 'fossbilling_test_data');
+        @mkdir(Path::join($pathData, 'cache'), 0o755, true);
+        @mkdir(Path::join($pathData, 'log'), 0o755, true);
+        @mkdir($pathData, 0o755, true);
+    }
+    define('PATH_DATA', $pathData);
     define('PATH_CACHE', Path::join(PATH_DATA, 'cache'));
     define('PATH_LOG', Path::join(PATH_DATA, 'log'));
     define('INSTANCE_ID', Config::getProperty('info.instance_id', 'Unknown'));
@@ -216,14 +289,13 @@ function init(): void
     // Set the default interface.
     define('BIND_TO', Tools::getDefaultInterface());
 
-    // Initial setup and checks passed, now we setup our custom autoloader.
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Autoloader.php');
-    $loader = new FOSSBilling\AutoLoader();
-    $loader->register();
-
     // Load the DI container.
     global $di;
     $di = require Path::join(PATH_ROOT, 'di.php');
+
+    if (!Environment::isCLI() && !Environment::isTesting()) {
+        $di['update_finalization']->ensureCurrentVersionFinalization();
+    }
 
     // Now that the config file is loaded, we can enable Sentry.
     SentryHelper::registerSentry();
@@ -240,6 +312,7 @@ function postInit(): void
     ini_set('error_log', Path::join(PATH_LOG, 'php_error.log'));
     error_reporting(E_ALL);
 
+    // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
     if (DEBUG) {
         ini_set('display_errors', '1');
         ini_set('display_startup_errors', '1');

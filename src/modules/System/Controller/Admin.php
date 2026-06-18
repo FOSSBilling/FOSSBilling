@@ -61,6 +61,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $app->get('/system/index', 'get_index', [], static::class);
         $app->get('/system/activity', 'get_activity', [], static::class);
         $app->get('/system/update', 'get_update', [], static::class);
+        $app->get('/system/update/finalize', 'get_update_finalize', [], static::class);
     }
 
     public function get_index(\Box_App $app): string
@@ -82,5 +83,12 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $this->di['is_admin_logged'];
 
         return $app->render('mod_system_update');
+    }
+
+    public function get_update_finalize(\Box_App $app): string
+    {
+        $this->di['is_admin_logged'];
+
+        return $app->render('mod_system_update_finalize');
     }
 }

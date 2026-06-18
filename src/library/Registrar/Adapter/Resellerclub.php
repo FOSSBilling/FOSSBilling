@@ -533,11 +533,17 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return $this->_makeRequest('contacts/add', $contact, 'POST');
     }
 
+    /**
+     * @phpstan-ignore method.unused (part of API, reserved for future use)
+     */
     private function getResellerDetails()
     {
         return $this->_makeRequest('resellers/details');
     }
 
+    /**
+     * @phpstan-ignore method.unused (part of API, reserved for future use)
+     */
     private function getPromoPrices()
     {
         return $this->_makeRequest('resellers/promo-details');
@@ -549,6 +555,8 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
      * @param array $params
      *
      * @return stdClass
+     *
+     * @phpstan-ignore method.unused (part of API, reserved for future use)
      */
     private function addSubReseller($params)
     {
@@ -604,6 +612,9 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return $this->_makeRequest('contacts/default', $params, 'POST');
     }
 
+    /**
+     * @phpstan-ignore method.unused (part of API, reserved for future use)
+     */
     private function removeCustomer($params): bool
     {
         $required_params = [
@@ -684,7 +695,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $this->getLog()->info('API RESULT: ' . $result->getContent(false));
         } catch (HttpExceptionInterface $error) {
             $e = new Registrar_Exception("HttpClientException: {$error->getMessage()}.");
-            $this->getLog()->err($e->getMessage());
+            $this->getLog()->error($e->getMessage());
 
             throw $e;
         }
@@ -696,9 +707,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             return $data = $result->getContent(false);
         }
         $json = $result->toArray(false);
-        if (!is_array($json)) {
-            return $data = $result->getContent(false);
-        }
 
         if (isset($json['status']) && $json['status'] == 'ERROR') {
             error_log('ResellerClub error: ' . $json['message']);
@@ -751,8 +759,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
      * @param array $params          - given params
      *
      * @return array
-     *
-     * @throws Registrar_Exception
      */
     private function _checkRequiredParams($required_params, $params)
     {

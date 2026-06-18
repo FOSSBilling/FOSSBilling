@@ -1,147 +1,157 @@
-{% import 'macro_functions.html.twig' as mf %}
-    <div class="card-body">
-        <h1>{{ 'API Key Settings'|trans }}</h1>
-        <form method="post" action="{{ 'product/update_config'|api_url }}" {{ fb_api_form({message: 'API Key Settings Updated'|trans}) }}>
-            <div class="mb-3 row">
-                <P>{{ 'Here you can configure the length of the API keys that will be generated. We recommend making this no less than 16 at a minimum. When in doubt, leave this at 32.'|trans }}</p>
-                <label class="form-label col-3 col-form-label">{{ 'Length'|trans }}:</label>
-                <div class="col">
+<div class="card-body">
+    <form method="post" action="{{ 'product/update_config'|api_url }}" {{ fb_api_form({message: 'API Key Settings Updated'|trans}) }}>
+        <div class="mb-5">
+            <div class="mb-3">
+                <h3 class="card-title mb-1">{{ 'API Key Settings'|trans }}</h3>
+                <p class="text-secondary mb-0">{{ 'Control how API keys are generated for this product, including length, formatting, and any custom parameters your application expects.'|trans }}</p>
+            </div>
+            <div class="row g-3">
+                <div class="col-lg-4">
+                    <label class="form-label">{{ 'Length'|trans }}</label>
                     <input type="number" class="form-control" name="config[length]" value="{{ product.config.length|default(32) }}">
+                    <div class="form-text">{{ 'We recommend no less than 16 characters. When in doubt, leave this at 32.'|trans }}</div>
                 </div>
             </div>
+        </div>
 
-            <hr>
+        <hr class="my-4" />
 
-            <div class="mb-3 row">
-                <P>{{ 'FOSSBilling can split the generated API key with dashes depending on the following options. The dashes will not count towards the API key length. If any API key is generated with dashes, they must be included in order for it to be considered valid.'|trans }}</p>
-                <label class="form-label col-3 col-form-label">{{ 'Split API Key with Dashes'|trans }}:</label>
-                <div class="col">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="config[split]" id="split_yes" value="1" {% if product.config.split is not defined or product.config.split == 1 %} checked {% endif %}>
-                        <label class="form-check-label" for="split_yes">{{ 'Yes'|trans }}</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="radio" name="config[split]" id="split_no" value="0" {% if product.config.split is defined and product.config.split == 0 %} checked {% endif %}>
-                        <label class="form-check-label" for="split_no">{{ 'No'|trans }}</label>
-                    </div>
-                </div>
+        <div class="mb-5">
+            <div class="mb-3">
+                <h3 class="card-title mb-1">{{ 'Formatting'|trans }}</h3>
+                <p class="text-secondary mb-0">{{ 'Choose whether generated keys are split with dashes and how each segment should be cased.'|trans }}</p>
             </div>
-
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Split Interval'|trans }}:</label>
-                <div class="col">
+            <div class="row g-3">
+                <div class="col-lg-4">
+                    <label class="form-label">{{ 'Split API Key with Dashes'|trans }}</label>
+                    <div class="d-flex flex-wrap gap-3 pt-1">
+                        <label class="form-check">
+                            <input class="form-check-input" type="radio" name="config[split]" id="split_yes" value="1"{% if product.config.split is not defined or product.config.split == 1 %} checked{% endif %}>
+                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                        </label>
+                        <label class="form-check">
+                            <input class="form-check-input" type="radio" name="config[split]" id="split_no" value="0"{% if product.config.split is defined and product.config.split == 0 %} checked{% endif %}>
+                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                        </label>
+                    </div>
+                    <div class="form-text">{{ 'Dashes do not count toward the API key length, but generated keys must include them to remain valid.'|trans }}</div>
+                </div>
+                <div class="col-lg-4">
+                    <label class="form-label">{{ 'Split Interval'|trans }}</label>
                     <input type="number" class="form-control" name="config[split_interval]" value="{{ product.config.split_interval|default(8) }}">
                 </div>
-            </div>
-
-            <hr>
-
-            <div class="mb-3 row">
-                <P>{{ 'Here you can configure what case you want the API keys to be generated with. "Uppercase" makes all letters uppercase, "lowercase" makes them all lowercase, and "mixed" does a combination of the two options.'|trans }}</p>
-                <label class="form-label col-3 col-form-label">{{ 'API Key Capitalization'|trans }}:</label>
-                <div class="col">
+                <div class="col-lg-4">
+                    <label class="form-label">{{ 'API Key Capitalization'|trans }}</label>
                     <select class="form-select" aria-label="{{ 'API Key Capitalization Options'|trans }}" name="config[case]">
-                        <option {% if product.config.case is not defined or product.config.case == "upper" %} selected {% endif %} value="upper">{{ 'Uppercase'|trans }}</option>
-                        <option {% if product.config.case == "lower" %} selected {% endif %} value="lower">{{ 'Lowercase'|trans }}</option>
-                        <option {% if product.config.case == "mixed" %} selected {% endif %} value="mixed">{{ 'Mixed'|trans }}</option>
+                        <option{% if product.config.case is not defined or product.config.case == 'upper' %} selected{% endif %} value="upper">{{ 'Uppercase'|trans }}</option>
+                        <option{% if product.config.case == 'lower' %} selected{% endif %} value="lower">{{ 'Lowercase'|trans }}</option>
+                        <option{% if product.config.case == 'mixed' %} selected{% endif %} value="mixed">{{ 'Mixed'|trans }}</option>
                     </select>
+                    <div class="form-text">{{ 'Choose whether generated API keys use uppercase letters, lowercase letters, or a mix of both.'|trans }}</div>
                 </div>
             </div>
+        </div>
 
-            <hr>
+        <hr class="my-4" />
 
-            <div class="mb-3 row">
-                <h2>{{ 'Custom Parameters'|trans }}</h2>
-                <p>{{ 'Here, you have the option to include custom parameters that can be requested from the API. This is particularly useful if you want to set specific limits for API keys. Your application can connect to the FOSSBilling API and retrieve the custom parameters you have defined for an API key.'|trans }}</p>
-                <P>{{ 'FOSSBilling will remove the "custom_" prefix from the value name when requesting them from the API. IE: custom_monthlyLimit will be named monthlyLimit when fetched through the API.'|trans}}
-                <div class="col" id="customParameters">
-                    <span class="btn btn-primary" onclick="addNewField()">{{ 'Add New Field'|trans }}</span>
-                    {% for key, value in product.config %}
-                        {% if key starts with 'custom_' %}
-                            <div class="field-container row" id="{{key}}">
-                                <label class="form-label col-3 col-form-label">{{key}}:</label>
-                                <div class="col d-flex align-items-center">
-                                    <input type="text" class="form-control me-2" value="{{value}}" name="config[{{key}}]"/><span
-                                    class="btn btn-primary ms-2" onclick='deleteField("{{key}}")'>{{ 'Delete'|trans }}</span>
-                                </div>
+        <div class="mb-4">
+            <div class="mb-3">
+                <h3 class="card-title mb-1">{{ 'Custom Parameters'|trans }}</h3>
+                <p class="text-secondary mb-1">{{ 'Add custom key/value pairs that your application can request through the FOSSBilling API, for example to set limits or feature flags for each API key.'|trans }}</p>
+                <p class="text-secondary mb-0">{{ 'FOSSBilling removes the "custom_" prefix when returning these values through the API. For example, "custom_monthlyLimit" becomes "monthlyLimit".'|trans }}</p>
+            </div>
+
+            <div class="d-flex justify-content-start mb-3">
+                <button class="btn btn-outline-primary" type="button" onclick="addNewField()">{{ 'Add New Field'|trans }}</button>
+            </div>
+
+            <div class="row g-3" id="customParameters">
+                {% for key, value in product.config %}
+                    {% if key starts with 'custom_' %}
+                        <div class="field-container col-12" id="{{ key }}">
+                            <label class="form-label">{{ key }}</label>
+                            <div class="d-flex gap-2 align-items-start">
+                                <input type="text" class="form-control" value="{{ value }}" name="config[{{ key }}]">
+                                <button class="btn btn-outline-danger flex-shrink-0" type="button" onclick='deleteField("{{ key }}")'>{{ 'Delete'|trans }}</button>
                             </div>
-                        {% endif %}
-                      {% endfor %}
-                </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
             </div>
+        </div>
 
-            <input type="hidden" name="id" value="{{ product.id }}">
-            <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
-        </form>
-    </div>
-    <script>
+        <input type="hidden" name="id" value="{{ product.id }}">
+        <div class="d-flex justify-content-end">
+            <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    function buildCustomField(name, value) {
+        const fieldContainer = document.createElement('div');
+        fieldContainer.classList.add('field-container', 'col-12');
+        fieldContainer.setAttribute('id', name);
+
+        const label = document.createElement('label');
+        label.classList.add('form-label');
+        label.textContent = name;
+
+        const wrapper = document.createElement('div');
+        wrapper.classList.add('d-flex', 'gap-2', 'align-items-start');
+
+        const input = document.createElement('input');
+        input.setAttribute('type', 'text');
+        input.classList.add('form-control');
+        input.setAttribute('name', 'config[' + name + ']');
+        input.value = value || '';
+
+        const button = document.createElement('button');
+        button.classList.add('btn', 'btn-outline-danger', 'flex-shrink-0');
+        button.setAttribute('type', 'button');
+        button.textContent = {{ 'Delete'|trans|json_encode|raw }};
+        button.addEventListener('click', function() {
+            deleteField(name);
+        });
+
+        wrapper.appendChild(input);
+        wrapper.appendChild(button);
+        fieldContainer.appendChild(label);
+        fieldContainer.appendChild(wrapper);
+
+        return fieldContainer;
+    }
+
     function addNewField() {
         Modals.create({
             type: 'prompt',
-            title: 'New field',
-            label: 'Give the new field a name',
+            title: {{ 'New field'|trans|json_encode|raw }},
+            label: {{ 'Give the new field a name'|trans|json_encode|raw }},
             value: 'monthlyLimit',
-            promptConfirmButton: 'Create',
-            promptConfirmCallback: function (name) {
-                // We use camel case to ensure it'll be programming-friendly & append 'custom_' to the start of it so they are easily identifiable as custom parameters.
+            promptConfirmButton: {{ 'Create'|trans|json_encode|raw }},
+            promptConfirmCallback: function(name) {
                 name = 'custom_' + toCamelCase(name);
-                var container = document.getElementById('customParameters');
-
-                // Create the container div
-                var fieldContainer = document.createElement('div');
-                fieldContainer.classList.add('field-container', 'row');
-                fieldContainer.setAttribute('id', name);
-
-                // Create the label element
-                var label = document.createElement('label');
-                label.classList.add('form-label', 'col-3', 'col-form-label');
-                label.textContent = name + ':';
-
-                // Create the div container for the input and button
-                var div = document.createElement('div');
-                div.classList.add('col', 'd-flex', 'align-items-center');
-
-                // Create the input element
-                var input = document.createElement('input');
-                input.setAttribute('type', 'text');
-                input.classList.add('form-control');
-                input.classList.add('me-2');
-                input.setAttribute('name', 'config[' + name + ']');
-
-                // Create the button element
-                var button = document.createElement('span');
-                button.classList.add('btn', 'btn-primary', 'ml-2');
-                button.textContent = 'Delete';
-                button.setAttribute('onclick', 'deleteField("' + name + '")');
-
-                // Append elements
-                div.appendChild(input);
-                div.appendChild(button);
-
-                // Append the label and div to the container div
-                fieldContainer.appendChild(label);
-                fieldContainer.appendChild(div);
-
-                // Append the container div to the main container
-                container.appendChild(fieldContainer);
+                const container = document.getElementById('customParameters');
+                container.appendChild(buildCustomField(name, ''));
             }
         });
     }
 
-    function deleteField(id){
+    function deleteField(id) {
         const element = document.getElementById(id);
-        element.remove();
+        if (element) {
+            element.remove();
+        }
     }
 
     function toCamelCase(str) {
         str = str.replace(/[^a-zA-Z0-9]/g, ' ');
-        var words = str.split(' ');
+        const words = str.split(' ').filter(Boolean);
 
-        // Capitalize the first letter of each word except the first word
-        for (var i = 1; i < words.length; i++) {
+        for (let i = 1; i < words.length; i++) {
             words[i] = words[i].charAt(0).toUpperCase() + words[i].slice(1);
         }
 
         return words.join('');
     }
-    </script>
+</script>

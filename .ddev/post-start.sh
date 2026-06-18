@@ -22,7 +22,9 @@ sleep 2
 if [ ! -d "$nodeModulesPath" ] || [ ! -f "$nodeBuildTimestamp" ] || [ "$packageLock" -nt "$nodeBuildTimestamp" ]; then
     npm ci --include=dev
     npmBuildNeeded=1
-elif [ ! -d "src/themes/admin_default/build" ]; then
+elif [ ! -f "src/public/assets/manifest.json" ] \
+    || [ ! -f "src/themes/admin_default/assets/build/manifest.json" ] \
+    || [ ! -f "src/themes/huraga/assets/build/manifest.json" ]; then
     npmBuildNeeded=1
 fi
 

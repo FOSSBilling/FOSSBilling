@@ -1,0 +1,122 @@
+<?php
+
+/**
+ * Copyright 2022-2026 FOSSBilling
+ * SPDX-License-Identifier: Apache-2.0.
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ */
+
+declare(strict_types=1);
+
+use Symfony\Component\HttpFoundation\Request;
+
+use function Tests\Helpers\container;
+
+test('dependency injection', function (): void {
+    $service = new Box\Mod\Antispam\Service();
+    $di = container();
+    $service->setDi($di);
+    $getDi = $service->getDi();
+    expect($getDi)->toEqual($di);
+});
+
+test('on before client sign up', function (): void {
+    $service = new Box\Mod\Antispam\Service();
+    $spamCheckerService = Mockery::mock(Box\Mod\Antispam\Service::class);
+    $spamCheckerService->shouldReceive('isBlockedIp')
+        ->atLeast()->once();
+    $spamCheckerService->shouldReceive('isSpam')
+        ->atLeast()->once();
+    $spamCheckerService->shouldReceive('isTemp')
+        ->atLeast()->once();
+    $spamCheckerService->shouldReceive('checkHoneypot')
+        ->atLeast()->once();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $spamCheckerService);
+    $boxEventMock = Mockery::mock('\Box_Event');
+    $boxEventMock->shouldReceive('getDi')
+        ->atLeast()->once()
+        ->andReturn($di);
+
+    $service->onBeforeClientSignUp($boxEventMock);
+});
+
+test('on before guest public ticket open', function (): void {
+    $service = new Box\Mod\Antispam\Service();
+    $spamCheckerService = Mockery::mock(Box\Mod\Antispam\Service::class);
+    $spamCheckerService->shouldReceive('isBlockedIp')
+        ->atLeast()->once();
+    $spamCheckerService->shouldReceive('isSpam')
+        ->atLeast()->once();
+    $spamCheckerService->shouldReceive('isTemp')
+        ->atLeast()->once();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $spamCheckerService);
+    $boxEventMock = Mockery::mock('\Box_Event');
+    $boxEventMock->shouldReceive('getDi')
+        ->atLeast()->once()
+        ->andReturn($di);
+
+    $service->onBeforeGuestPublicTicketOpen($boxEventMock);
+});
+
+test('is blocked ip ip not blocked', function (): void {
+    $service = new Box\Mod\Antispam\Service();
+    $clientIp = '214.1.4.99';
+    $modConfig = [
+        'block_ips' => true,
+        'blocked_ips' => '1.1.1.1' . PHP_EOL . '2.2.2.2',
+    ];
+
+    $di = container();
+    $di['request'] = Request::createFromGlobals();
+    $di['mod_config'] = $di->protect(function ($modName) use ($modConfig) {
+        if ($modName == 'Antispam') {
+            return $modConfig;
+        }
+    });
+
+    $boxEventMock = Mockery::mock('\Box_Event');
+    $boxEventMock->shouldReceive('getDi')
+        ->atLeast()->once()
+        ->andReturn($di);
+
+    $service->isBlockedIp($boxEventMock);
+});
+
+test('is blocked ip block ips not enabled', function (): void {
+    $service = new Box\Mod\Antispam\Service();
+    $modConfig = [
+        'block_ips' => false,
+    ];
+
+    $di = container();
+    $di['mod_config'] = $di->protect(function ($modName) use ($modConfig) {
+        if ($modName == 'Antispam') {
+            return $modConfig;
+        }
+    });
+
+    $boxEventMock = Mockery::mock('\Box_Event');
+    $boxEventMock->shouldReceive('getDi')
+        ->atLeast()->once()
+        ->andReturn($di);
+
+    $service->isBlockedIp($boxEventMock);
+});
+
+dataset('spam responses', fn (): array => [
+    [
+        '{"success" : "true", "username" : {"appears" : "true" }}', 'Your username is blacklisted in the Stop Forum Spam database',
+    ],
+    [
+        '{"success" : "true", "email" : {"appears" : "true" }}', 'Your e-mail is blacklisted in the Stop Forum Spam database',
+    ],
+    [
+        '{"success" : "true", "ip" : {"appears" : "true" }}', 'Your IP address is blacklisted in the Stop Forum Spam database',
+    ],
+]);

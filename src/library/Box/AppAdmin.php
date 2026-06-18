@@ -29,6 +29,10 @@ class Box_AppAdmin extends Box_App
     {
         $service = $this->di['mod_service']('Staff');
 
+        if ($this->di['auth']->isAdminLoggedIn() && $this->di['update_finalization']->isRequired() && !$this->di['update_finalization']->isAdminPathAllowed($this->uri)) {
+            $this->redirect('system/update/finalize');
+        }
+
         if ($this->mod !== 'extension' && $this->di['auth']->isAdminLoggedIn() && !$service->hasPermission(null, $this->mod)) {
             $e = new FOSSBilling\InformationException('You do not have permission to access the :mod: module', [':mod:' => $this->mod], 403);
 
