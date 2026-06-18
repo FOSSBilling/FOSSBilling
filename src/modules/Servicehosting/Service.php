@@ -1132,7 +1132,7 @@ class Service implements InjectionAwareInterface
 
     public function attachOrderConfig(Product $product, array $data): array
     {
-        $c = json_decode($product instanceof Product ? $product->getConfig() ?? '' : $product->config ?? '', true) ?? [];
+        $c = json_decode($product->getConfig() ?? '', true) ?? [];
 
         $data = array_merge($c, $data);
 

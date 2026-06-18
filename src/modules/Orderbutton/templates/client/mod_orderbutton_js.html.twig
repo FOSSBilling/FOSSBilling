@@ -22,21 +22,6 @@
             });
         });
 
-        document.querySelectorAll('.remove-cart-item').forEach(function(button) {
-            button.addEventListener('click', function(event) {
-                event.preventDefault();
-
-                if (confirm("{{ 'Are you sure you want to remove this item from cart?'|trans }}")) {
-                    var item_id = this.getAttribute('data-cart-item-id');
-
-                    FOSSBilling.api.guest.post("cart/remove_item", { id: item_id },
-                        () => {
-                            FOSSBilling.message("{{ 'Item was removed from cart'|trans }}");
-                            window.location.reload();
-                        });
-                }
-            });
-        });
     });
 
     function onOrderCheckout(result){

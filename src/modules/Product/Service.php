@@ -1009,10 +1009,10 @@ class Service implements InjectionAwareInterface
     /**
      * @return mixed[]
      */
-    private function getAddonsApiArray(Product $model): array
+    private function getAddonsApiArray(Product $model, bool $isAdmin = false): array
     {
         $addons = [];
-        foreach ($this->getProductAddons($model, !$isAdmin) as $addon) {
+        foreach ($this->getProductAddons($model) as $addon) {
             $d = $this->toAddonArray($addon, true, $isAdmin);
             $addons[] = $d;
         }
@@ -1123,13 +1123,13 @@ class Service implements InjectionAwareInterface
         return $this->getProductPluginMap([$id])[$id] ?? null;
     }
 
-    public function toAddonArray(Product $model, $deep = true): array
+    public function toAddonArray(Product $model, $deep = true, bool $isAdmin = false): array
     {
         $productPayment = $this->getProductPaymentById((int) $this->getProductPaymentId($model));
         $pricing = $this->toProductPaymentApiArray($productPayment);
         $config = json_decode($this->getProductConfigJson($model) ?? '', true) ?? [];
 
-        return [
+        $result = [
             'id' => $this->getProductId($model),
             'type' => $this->getProductType($model),
             'title' => $this->getProductTitle($model),
@@ -1324,10 +1324,6 @@ class Service implements InjectionAwareInterface
         }
 
         foreach ($orders as $order) {
-            if (!$order instanceof \Model_ClientOrder) {
-                continue;
-            }
-
             $redemption = $this->newPromoRedemption(
                 $promo,
                 $client,
@@ -1889,7 +1885,7 @@ class Service implements InjectionAwareInterface
         return $product->isStockControl();
     }
 
-    private function getProductStatus(Product $product): ?string
+    private function getProductStatus(Product $product): string
     {
         return $product->getStatus();
     }
@@ -1899,7 +1895,7 @@ class Service implements InjectionAwareInterface
         return $product->isHidden();
     }
 
-    private function getProductSetup(Product $product): ?string
+    private function getProductSetup(Product $product): string
     {
         return $product->getSetup();
     }
@@ -2169,37 +2165,6 @@ class Service implements InjectionAwareInterface
         return $this->getProductOrderRepository()->getRowsByProductId((int) $this->getProductId($product));
     }
 
-    private function getPromoRedemptionCount(Promo $model): int
-    {
-        return $this->getPromoRedemptionCountById((int) $model->id);
-    }
-
-    /**
-     * @return array{
-     *     operational_use_count: int,
-     *     max_uses: int|null,
-     *     remaining_operational_uses: int|null,
-     *     recorded_applications: int,
-     *     checkout_applications: int,
-     *     renewal_applications: int,
-     *     active_checkout_applications: int,
-     *     reserved_applications: int,
-     *     committed_applications: int,
-     *     released_applications: int,
-     *     distinct_clients: int,
-     *     orders_using_promo: int
-     * }
-     */
-    private function getPromoUsageStats(Promo $model): array
-    {
-        return $this->getPromoUsageStatsByValues((int) $model->id, (int) ($model->used ?? 0), !empty($model->maxuses) ? (int) $model->maxuses : null);
-    }
-
-    private function hasPromoRedemptionHistory(Promo $model, ?int $redemptionCount = null): bool
-    {
-        return $this->hasPromoRedemptionHistoryById((int) $model->id, $redemptionCount);
-    }
-
     /**
      * @param list<PromoRedemption> $redemptions
      */
@@ -2212,7 +2177,7 @@ class Service implements InjectionAwareInterface
         $releasedAt = new \DateTime();
         $checkoutReleaseCounts = [];
         foreach ($redemptions as $redemption) {
-            if (!$redemption instanceof PromoRedemption || $redemption->getStatus() !== PromoRedemption::STATUS_RESERVED) {
+            if ($redemption->getStatus() !== PromoRedemption::STATUS_RESERVED) {
                 continue;
             }
 

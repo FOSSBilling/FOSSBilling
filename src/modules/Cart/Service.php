@@ -760,13 +760,6 @@ class Service implements InjectionAwareInterface
         return $this->getProductService()->getRelatedProductDiscountByProductId((int) $model->product_id, $list, $config);
     }
 
-    private function getItemTitle(\Model_CartProduct $model)
-    {
-        $config = $this->getItemConfig($model);
-
-        return $this->getProductService()->getCartProductTitleById((int) $model->product_id, $config);
-    }
-
     protected function getItemPromoDiscount(\Model_CartProduct $model, Promo $promo)
     {
         $config = $this->getItemConfig($model);

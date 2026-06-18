@@ -800,7 +800,18 @@ const API = {
             );
           };
 
-          if (apiData.hasOwnProperty('modal') && apiData.modal.type === 'prompt') {
+          if (apiData.hasOwnProperty('modal') && (typeof Modals === 'undefined' || typeof Modals.create !== 'function')) {
+            if (apiData.modal.type === 'prompt') {
+              const value = window.prompt(apiData.modal.label ?? apiData.modal.title ?? '', apiData.modal.value ?? '');
+              if (value) {
+                const p = {};
+                p[apiData.modal.key] = value;
+                handleApiRequest('GET', linkElement.getAttribute('href'), p);
+              }
+            } else if (window.confirm(apiData.modal.content || apiData.modal.title || 'Are you sure?')) {
+              handleApiRequest('GET', linkElement.getAttribute('href'));
+            }
+          } else if (apiData.hasOwnProperty('modal') && apiData.modal.type === 'prompt') {
             Modals.create({
               type: apiData.modal.type,
               title: apiData.modal.title,
