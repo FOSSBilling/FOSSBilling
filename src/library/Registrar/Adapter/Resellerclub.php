@@ -700,11 +700,12 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             throw $e;
         }
 
-        if ($result->getContent(false) == 'true') {
-            return $result->getContent(false);
+        $content = $result->getContent(false);
+        if (in_array($content, ['true', 'false'], true)) {
+            return $content;
         }
-        if (is_numeric($result->getContent(false))) {
-            return $data = $result->getContent(false);
+        if (is_numeric($content)) {
+            return $content;
         }
         $json = $result->toArray(false);
 

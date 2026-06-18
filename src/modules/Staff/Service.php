@@ -145,7 +145,7 @@ class Service implements InjectionAwareInterface
 
     public function setPermissions(\Model_Admin $model, array $array): bool
     {
-        $caller = $this->di['loggedin_admin'];
+        $caller = $this->getLoggedInAdminOrCronAdmin();
 
         if ($caller->id == $model->id) {
             throw new \FOSSBilling\InformationException('You cannot modify your own permissions');
@@ -157,7 +157,7 @@ class Service implements InjectionAwareInterface
             $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
         }
 
-        if ($caller->role !== \Model_Admin::ROLE_ADMIN) {
+        if (!in_array($caller->role, [\Model_Admin::ROLE_ADMIN, \Model_Admin::ROLE_CRON], true)) {
             $callerPerms = $this->getPermissions($caller->id);
             $callerHasWildcard = !empty($callerPerms['default']['all']);
 
@@ -265,7 +265,7 @@ class Service implements InjectionAwareInterface
         $alwaysAllowed = ['index', 'dashboard', 'profile'];
 
         if (is_null($member)) {
-            $member = $this->di['loggedin_admin'];
+            $member = $this->getLoggedInAdminOrCronAdmin();
         }
 
         if ($member->role == \Model_Admin::ROLE_CRON || $member->role == \Model_Admin::ROLE_ADMIN || in_array($module, $alwaysAllowed)) {
@@ -915,5 +915,14 @@ class Service implements InjectionAwareInterface
         $model = $this->di['db']->findOne('Admin', 'email = ? AND status = ? AND role != ?', [$email, \Model_Admin::STATUS_ACTIVE, \Model_Admin::ROLE_CRON]);
 
         return $this->di['auth']->authorizeUser($model, $plainTextPassword);
+    }
+
+    private function getLoggedInAdminOrCronAdmin(): \Model_Admin
+    {
+        if (isset($this->di['auth']) && !$this->di['auth']->isAdminLoggedIn()) {
+            return $this->getCronAdmin();
+        }
+
+        return $this->di['loggedin_admin'];
     }
 }
