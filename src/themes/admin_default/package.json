@@ -5,7 +5,6 @@
     "dev": "node ./esbuild.mjs"
   },
   "dependencies": {
-    "@melloware/coloris": "^0.25.0",
     "@tabler/core": "^1.2.0",
     "chart.js": "^4.5.1",
     "flag-icons": "^7.2.3",
