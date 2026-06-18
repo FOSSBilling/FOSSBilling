@@ -105,10 +105,8 @@
                                     <div class="col-lg-4">
                                         <label class="form-label" for="background_color">{{ 'Color'|trans }}</label>
                                         <div class="input-group">
-                                            <input type="color" class="form-control form-control-color flex-grow-0" style="width: 4rem;" name="background_color"
-                                                   id="background_color" value="{{ params.background_color|default('#000000') }}">
                                             <input type="text" class="form-control" id="background_color_hex"
-                                                   value="{{ params.background_color|default('#000000') }}" pattern="#[0-9a-fA-F]{6}" aria-label="{{ 'Hex color value'|trans }}">
+                                                   value="{{ params.background_color|default('#000000') }}" maxlength="7" autocomplete="off" spellcheck="false" inputmode="text" aria-label="{{ 'Hex color value'|trans }}">
                                         </div>
                                     </div>
                                     <div class="col-lg-4">
