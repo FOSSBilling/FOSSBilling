@@ -140,7 +140,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $required = [
                 'register_tld' => 'Domain registration tld parameter missing.',
                 'register_sld' => 'Domain registration sld parameter missing.',
-                'register_years' => 'Please check domain availability before proceeding.',
+                'register_years' => 'Domain registration period is missing. Please check domain availability before proceeding.',
             ];
             $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
