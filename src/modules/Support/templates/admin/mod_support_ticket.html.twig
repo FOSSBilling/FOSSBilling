@@ -68,7 +68,13 @@
                                     {% if ticket.author.role == 'client' %}
                                         <tr><td>{{ 'Client'|trans }}</td><td><a href='{{ "client/manage/#{ticket.author.id }"|url }}'>{{ ticket.author.name }}</a> (#{{ ticket.author.id }})</td></tr>
                                     {% else %}
-                                        <tr><td>{{ 'Requester'|trans }}</td><td>{{ ticket.author.name }} ({{ ticket.author.email }})</td></tr>
+                                        <tr>
+                                            <td>{{ 'Author'|trans }}</td>
+                                            <td>
+                                                {{ ticket.author.name }} ({{ ticket.author.email }})
+                                                <span class="badge bg-orange-lt ms-1">{{ 'Guest' |trans }}</span>
+                                            </td>
+                                        </tr>
                                     {% endif %}
                                     <tr><td>{{ 'Helpdesk'|trans }}</td><td>{{ admin.support_helpdesk_get_pairs[ticket.support_helpdesk_id]|trans }}</td></tr>
                                     <tr><td>{{ 'Status'|trans }}</td><td>{{ mf.status_badge(ticket.status, 'ticket') }}</td></tr>

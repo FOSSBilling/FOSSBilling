@@ -36,10 +36,10 @@
 </head>
 <body>
 	{% set is_guest_ticket = ticket.hash|default('') %}
-	{% set requester_name = ticket.author.name|default('') %}
+	{% set author_name = ticket.author.name|default('') %}
 	<h1>Ticket Opened</h1>
 
-    <p>Hi {{ requester_name }},</p>
+    <p>Hi {{ author_name }},</p>
 
     <p>{{ticket.messages|default([])[0].content|default('')}}</p>
 

@@ -118,9 +118,9 @@
                     <div class="row g-3">
                         <div class="col-md-6 col-xl-3">
                             <div>
-                                <label class="form-label text-muted small mb-1" for="filter-ticket-auth">{{ 'Requester Type'|trans }}</label>
+                                <label class="form-label text-muted small mb-1" for="filter-ticket-auth">{{ 'Author Type'|trans }}</label>
                                 <select class="form-select" id="filter-ticket-auth" name="auth">
-                                    <option value="">{{ 'All Requesters'|trans }}</option>
+                                    <option value="">{{ 'All Authors'|trans }}</option>
                                     <option value="client"{% if request.auth == 'client' %} selected{% endif %}>{{ 'Clients'|trans }}</option>
                                     <option value="guest"{% if request.auth == 'guest' %} selected{% endif %}>{{ 'Guests'|trans }}</option>
                                 </select>
@@ -226,7 +226,7 @@
                         <th class="w-1 no-sort">
                             <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
                         </th>
-                        <th>{{ 'Requester'|trans }}</th>
+                        <th>{{ 'Author'|trans }}</th>
                         <th>{{ 'Subject'|trans }}</th>
                         <th>{{ 'Status'|trans }}</th>
                         <th>{{ 'Helpdesk'|trans }}</th>
@@ -257,8 +257,11 @@
                                 <div class="d-flex py-1 align-items-center">
                                     {{ avatar(ticket.author.email, 40, 'avatar me-2') }}
                                     <div class="flex-fill">
-                                        <div class="font-weight-medium">{{ ticket.author.name }}</div>
-                                        <div class="text-muted">{{ ticket.author.email }} · {{ 'Guest'|trans }}</div>
+                                        <div class="font-weight-medium">
+                                            {{ ticket.author.name }}
+                                            <span class="badge bg-orange-lt ms-1">{{ 'Guest'|trans }}</span>
+                                        </div>
+                                        <div class="text-muted">{{ ticket.author.email }}</div>
                                     </div>
                                 </div>
                             {% endif %}

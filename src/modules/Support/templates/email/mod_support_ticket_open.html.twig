@@ -36,11 +36,11 @@
 </head>
 <body>
 	{% set is_guest_ticket = ticket.hash|default('') %}
-	{% set requester_name = ticket.author.name|default('') %}
+	{% set author_name = ticket.author.name|default('') %}
 	<h1>Ticket Opened</h1>
 
     {% if is_guest_ticket %}
-    <p>Hi {{ requester_name }},</p>
+    <p>Hi {{ author_name }},</p>
     {% endif %}
 
     <p>Thank you for contacting our support team. A support ticket has now been opened for your request.</p>
