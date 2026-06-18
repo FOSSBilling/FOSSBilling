@@ -162,7 +162,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email = [];
             $email['to'] = $ticketObj->author_email;
             $email['to_name'] = $ticketObj->author_name;
-            $email['code'] = 'mod_support_pticket_open';
+            $email['code'] = 'mod_support_ticket_open';
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
@@ -185,7 +185,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email = [];
             $email['to'] = $ticketArr['author_email'];
             $email['to_name'] = $ticketArr['author_name'];
-            $email['code'] = 'mod_support_pticket_staff_open';
+            $email['code'] = 'mod_support_ticket_staff_open';
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
@@ -208,7 +208,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email = [];
             $email['to'] = $ticketArr['author_email'];
             $email['to_name'] = $ticketArr['author_name'];
-            $email['code'] = 'mod_support_pticket_staff_reply';
+            $email['code'] = 'mod_support_ticket_staff_reply';
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
@@ -231,7 +231,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email = [];
             $email['to'] = $ticketArr['author_email'];
             $email['to_name'] = $ticketArr['author_name'];
-            $email['code'] = 'mod_support_pticket_staff_close';
+            $email['code'] = 'mod_support_ticket_staff_close';
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {

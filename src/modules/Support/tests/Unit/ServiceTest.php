@@ -64,6 +64,7 @@ test('handles after client open ticket event', function (): void {
     $emailServiceMock = Mockery::mock(EmailService::class);
     $emailServiceMock->shouldReceive('sendTemplate')
         ->atLeast()->once()
+        ->with(Mockery::on(fn ($email) => $email['code'] === 'mod_support_ticket_open'))
         ->andReturn(true);
 
     $di = container();
@@ -110,6 +111,7 @@ test('handles after admin open ticket event', function (): void {
     $emailServiceMock = Mockery::mock(EmailService::class);
     $emailServiceMock->shouldReceive('sendTemplate')
         ->atLeast()->once()
+        ->with(Mockery::on(fn ($email) => $email['code'] === 'mod_support_ticket_staff_open'))
         ->andReturn(true);
 
     $di = container();
@@ -156,6 +158,7 @@ test('handles after admin close ticket event', function (): void {
     $emailServiceMock = Mockery::mock(EmailService::class);
     $emailServiceMock->shouldReceive('sendTemplate')
         ->atLeast()->once()
+        ->with(Mockery::on(fn ($email) => $email['code'] === 'mod_support_ticket_staff_close'))
         ->andReturn(true);
 
     $di = container();
@@ -202,6 +205,7 @@ test('handles after admin reply ticket event', function (): void {
     $emailServiceMock = Mockery::mock(EmailService::class);
     $emailServiceMock->shouldReceive('sendTemplate')
         ->atLeast()->once()
+        ->with(Mockery::on(fn ($email) => $email['code'] === 'mod_support_ticket_staff_reply'))
         ->andReturn(true);
 
     $di = container();
@@ -247,6 +251,7 @@ test('handles after guest public ticket open event', function (): void {
     $emailServiceMock = Mockery::mock(EmailService::class);
     $emailServiceMock->shouldReceive('sendTemplate')
         ->atLeast()->once()
+        ->with(Mockery::on(fn ($email) => $email['code'] === 'mod_support_ticket_open'))
         ->andReturn(true);
 
     $di = container();
@@ -291,6 +296,7 @@ test('handles after admin public ticket open event', function (): void {
     $emailServiceMock = Mockery::mock(EmailService::class);
     $emailServiceMock->shouldReceive('sendTemplate')
         ->atLeast()->once()
+        ->with(Mockery::on(fn ($email) => $email['code'] === 'mod_support_ticket_staff_open'))
         ->andReturn(true);
 
     $di = container();
@@ -336,6 +342,7 @@ test('handles after admin public ticket reply event', function (): void {
     $emailServiceMock = Mockery::mock(EmailService::class);
     $emailServiceMock->shouldReceive('sendTemplate')
         ->atLeast()->once()
+        ->with(Mockery::on(fn ($email) => $email['code'] === 'mod_support_ticket_staff_reply'))
         ->andReturn(true);
 
     $di = container();
@@ -381,6 +388,7 @@ test('handles after admin public ticket close event', function (): void {
     $emailServiceMock = Mockery::mock(EmailService::class);
     $emailServiceMock->shouldReceive('sendTemplate')
         ->atLeast()->once()
+        ->with(Mockery::on(fn ($email) => $email['code'] === 'mod_support_ticket_staff_close'))
         ->andReturn(true);
 
     $di = container();

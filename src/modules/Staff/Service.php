@@ -445,7 +445,7 @@ class Service implements InjectionAwareInterface
             $ticket = $supportTicketService->publicToApiArray($ticketModel, true);
             $email = [];
             $email['to_staff'] = true;
-            $email['code'] = 'mod_staff_pticket_open';
+            $email['code'] = 'mod_staff_ticket_open';
             $email['ticket'] = $ticket;
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
@@ -486,7 +486,7 @@ class Service implements InjectionAwareInterface
             $ticket = $supportTicketService->publicToApiArray($ticketModel, true);
             $email = [];
             $email['to_staff'] = true;
-            $email['code'] = 'mod_staff_pticket_reply';
+            $email['code'] = 'mod_staff_ticket_reply';
             $email['ticket'] = $ticket;
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
@@ -506,7 +506,7 @@ class Service implements InjectionAwareInterface
             $ticket = $supportService->publicToApiArray($publicTicket);
             $email = [];
             $email['to_staff'] = true;
-            $email['code'] = 'mod_staff_pticket_close';
+            $email['code'] = 'mod_staff_ticket_close';
             $email['ticket'] = $ticket;
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);

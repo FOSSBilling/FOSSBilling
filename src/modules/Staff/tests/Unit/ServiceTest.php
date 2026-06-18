@@ -269,7 +269,8 @@ test('onAfterClientReplyTicket sends email notification', function (): void {
         ->andReturn([]);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
-    $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once();
+    $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
+        ->with(Mockery::on(fn ($email) => $email['code'] === 'mod_staff_ticket_reply'));
 
     $eventMock->shouldReceive('getparameters')->atLeast()->once()
         ->andReturn(['id' => random_int(1, 100)]);
@@ -336,7 +337,8 @@ test('onAfterClientCloseTicket sends email notification', function (): void {
         ->andReturn([]);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
-    $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once();
+    $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
+        ->with(Mockery::on(fn ($email) => $email['code'] === 'mod_staff_ticket_close'));
 
     $eventMock->shouldReceive('getparameters')->atLeast()->once()
         ->andReturn(['id' => random_int(1, 100)]);
@@ -403,7 +405,8 @@ test('onAfterGuestPublicTicketOpen sends email notification', function (): void 
         ->andReturn([]);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
-    $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once();
+    $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
+        ->with(Mockery::on(fn ($email) => $email['code'] === 'mod_staff_ticket_open'));
 
     $eventMock->shouldReceive('getparameters')->atLeast()->once()
         ->andReturn(['id' => random_int(1, 100)]);
@@ -470,7 +473,8 @@ test('onAfterGuestPublicTicketReply sends email notification', function (): void
         ->andReturn([]);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
-    $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once();
+    $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
+        ->with(Mockery::on(fn ($email) => $email['code'] === 'mod_staff_ticket_reply'));
 
     $eventMock->shouldReceive('getparameters')->atLeast()->once()
         ->andReturn(['id' => random_int(1, 100)]);
