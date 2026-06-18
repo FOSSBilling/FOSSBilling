@@ -207,10 +207,12 @@ class Service implements InjectionAwareInterface
 
             // stock control
             'allow_quantity_select' => $this->isAllowQuantitySelect($model),
+
+            // Exposed publicly so the order form can be fetched during guest checkout.
+            'form_id' => $this->getProductFormId($model),
         ];
 
         if ($isAdmin) {
-            $result['form_id'] = $this->getProductFormId($model);
             $result['created_at'] = $this->formatDateTimeValue($this->getProductCreatedAt($model));
             $result['updated_at'] = $this->formatDateTimeValue($this->getProductUpdatedAt($model));
             $result['addons'] = $addons;
@@ -407,8 +409,6 @@ class Service implements InjectionAwareInterface
 
     public function createProduct($title, $type, $categoryId = null): int
     {
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits(Product::class, 5);
         $sql = 'SELECT MAX(priority) FROM product LIMIT 1';
         $priority = $this->di['db']->getCell($sql);
 
@@ -647,9 +647,6 @@ class Service implements InjectionAwareInterface
 
     public function createCategory($title, $description = null, $icon_url = null)
     {
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits(ProductCategory::class, 2);
-
         $model = (new ProductCategory())
             ->setTitle($title)
             ->setDescription($description)
@@ -1166,9 +1163,6 @@ class Service implements InjectionAwareInterface
         if ($this->getPromoRepository()->findOneBy(['code' => $code]) instanceof Promo) {
             throw new \FOSSBilling\InformationException('This promotion code already exists.');
         }
-
-        $systemService = $this->di['mod_service']('system');
-        $systemService->checkLimits(Promo::class, 2);
 
         $promo = new Promo();
         $promo->setCode($code);

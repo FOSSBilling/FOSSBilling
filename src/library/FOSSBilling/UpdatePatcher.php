@@ -1900,13 +1900,17 @@ class UpdatePatcher implements InjectionAwareInterface
             }
         }
 
+        // Normalise rows written by a previous partial migration run that pre-dated the
+        // status column; those rows have a NULL/empty status.  Legitimate 'reserved'
+        // rows created by concurrent checkouts are left untouched so the payment flow
+        // can commit or release them normally.
         $this->executeSql("
             UPDATE promo_redemption
             SET
                 status = 'committed',
                 committed_at = COALESCE(committed_at, created_at),
                 release_reason = NULL
-            WHERE status IS NULL OR status = '' OR status = 'reserved'
+            WHERE status IS NULL OR status = ''
         ");
     }
 }

@@ -83,16 +83,16 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    private static function logInfoToContainer(?\Pimple\Container $di, string $message): void
+    private static function logWarningToContainer(?\Pimple\Container $di, string $message): void
     {
         if ($di !== null && isset($di['logger'])) {
-            $di['logger']->info($message);
+            $di['logger']->warning($message);
         }
     }
 
-    private function logInfo(string $message): void
+    private function logWarning(string $message): void
     {
-        self::logInfoToContainer($this->di, $message);
+        self::logWarningToContainer($this->di, $message);
     }
 
     public function __construct()
@@ -408,7 +408,7 @@ class Service implements InjectionAwareInterface
                 $emailService->sendTemplate($email);
             }
         } catch (\Exception $exc) {
-            self::logInfoToContainer($di, 'Failed to send email for invoice payment: ' . $exc->getMessage());
+            self::logWarningToContainer($di, 'Failed to send email for invoice payment: ' . $exc->getMessage());
         }
 
         return true;
@@ -430,7 +430,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            self::logInfoToContainer($di, 'Failed to send email for invoice creation: ' . $exc->getMessage());
+            self::logWarningToContainer($di, 'Failed to send email for invoice creation: ' . $exc->getMessage());
         }
 
         return true;
@@ -462,7 +462,7 @@ class Service implements InjectionAwareInterface
                 $service->extendInvoiceHashLifetime($invoiceModel);
             }
         } catch (\Exception $exc) {
-            self::logInfoToContainer($di, 'Failed to send email for invoice approval: ' . $exc->getMessage());
+            self::logWarningToContainer($di, 'Failed to send email for invoice approval: ' . $exc->getMessage());
         }
 
         return true;
@@ -492,7 +492,7 @@ class Service implements InjectionAwareInterface
             // since the recipient is being re-engaged via the same link.
             $service->extendInvoiceHashLifetime($invoiceModel);
         } catch (\Exception $exc) {
-            self::logInfoToContainer($di, 'Failed to send invoice reminder email: ' . $exc->getMessage());
+            self::logWarningToContainer($di, 'Failed to send invoice reminder email: ' . $exc->getMessage());
         }
     }
 
@@ -532,7 +532,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            self::logInfoToContainer($di, 'Failed to send overdue invoice email: ' . $exc->getMessage());
+            self::logWarningToContainer($di, 'Failed to send overdue invoice email: ' . $exc->getMessage());
         }
     }
 
@@ -579,7 +579,7 @@ class Service implements InjectionAwareInterface
                 try {
                     $invoiceItemService->executeTask($item);
                 } catch (\Exception $e) {
-                    $this->logInfo($e->getMessage());
+                    $this->logWarning($e->getMessage());
                 }
             }
         }
@@ -761,7 +761,7 @@ class Service implements InjectionAwareInterface
                 $this->approveInvoice($model, ['id' => $invoiceId]);
                 $this->di['logger']->info("Approved invoice {$invoiceId} instantly.");
             } catch (\Exception $e) {
-                $this->logInfo($e->getMessage());
+                $this->logWarning($e->getMessage());
             }
         }
 
@@ -1045,7 +1045,7 @@ class Service implements InjectionAwareInterface
             case 'manual':
                 // @phpstan-ignore if.alwaysFalse
                 if (DEBUG) {
-                    $this->logInfo('Refunds are managed manually. No actions performed.');
+                    $this->logWarning('Refunds are managed manually. No actions performed.');
                 }
 
                 break;
@@ -1216,7 +1216,7 @@ class Service implements InjectionAwareInterface
             } catch (\Exception $e) {
                 // @phpstan-ignore if.alwaysFalse
                 if (DEBUG) {
-                    $this->logInfo($e->getMessage());
+                    $this->logWarning($e->getMessage());
                 }
             }
         }
@@ -1331,7 +1331,7 @@ class Service implements InjectionAwareInterface
                 $invoice = $this->generateForOrder($model);
                 $this->approveInvoice($invoice, ['id' => $invoice->id, 'use_credits' => true]);
             } catch (\Exception $e) {
-                $this->logInfo($e->getMessage());
+                $this->logWarning($e->getMessage());
             }
         }
 
@@ -1350,7 +1350,7 @@ class Service implements InjectionAwareInterface
                 $model = $this->di['db']->getExistingModelById('InvoiceItem', $item['id'] ?? 0);
                 $invoiceItemService->executeTask($model);
             } catch (\Exception $e) {
-                $this->logInfo($e->getMessage());
+                $this->logWarning($e->getMessage());
             }
         }
         $this->di['logger']->info('Executed action to activate paid invoices.');
@@ -2141,7 +2141,7 @@ class Service implements InjectionAwareInterface
 
             return $invoice;
         } catch (\Exception $e) {
-            $this->logInfo('Failed to generate renewal invoice for subscription payment: ' . $e->getMessage());
+            $this->logWarning('Failed to generate renewal invoice for subscription payment: ' . $e->getMessage());
 
             return null;
         }
