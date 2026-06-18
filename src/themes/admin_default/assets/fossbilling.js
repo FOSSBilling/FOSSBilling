@@ -101,17 +101,6 @@ function loadAdminFeature(loader, name) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (document.querySelector('#coloris-picker')) {
-    loadAdminFeature(async () => {
-      const { coloris, init } = await import('@melloware/coloris');
-      init();
-      coloris({
-        el: '#coloris-picker',
-        alpha: false
-      });
-    }, 'Coloris');
-  }
-
   if (document.querySelector('.datepicker')) {
     loadAdminFeature(async () => {
       const { default: initDatepickers } = await import('./js/datepicker');
