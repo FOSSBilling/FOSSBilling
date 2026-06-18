@@ -31,7 +31,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         $app->get('/support', 'get_tickets', [], static::class);
         $app->get('/support/ticket/:id', 'get_ticket', [], static::class);
         $app->get('/support/contact-us', 'get_contact_us', [], static::class);
-        $app->get('/support/contact-us/conversation/:hash', 'get_contact_us_conversation', ['hash' => '[a-z0-9]+'], static::class);
+        $app->get('/support/contact-us/conversation/:hash', 'get_ticket_redirect', ['hash' => '[a-z0-9]+'], static::class);
 
         if ($this->di['mod']('support')->getService()->kbEnabled()) {
             $app->get('/support/kb', 'get_kb_index', [], static::class);
@@ -49,8 +49,9 @@ class Client implements \FOSSBilling\InjectionAwareInterface
 
     public function get_ticket(\Box_App $app, $id): string
     {
-        $api = $this->di['api_client'];
-        $ticket = $api->support_ticket_get(['id' => $id]);
+        $ticket = ctype_digit((string) $id)
+            ? $this->di['api_client']->support_ticket_get(['id' => $id])
+            : $this->di['api_guest']->support_ticket_get(['hash' => $id]);
 
         return $app->render('mod_support_ticket', ['ticket' => $ticket]);
     }
@@ -60,15 +61,14 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_support_contact_us');
     }
 
-    public function get_contact_us_conversation(\Box_App $app, $hash): string
+    /**
+     * A redirect to keep old public ticket links working.
+     * 
+     * /support/contact-us/conversation/:hash -> /support/ticket/:hash
+     */
+    public function get_ticket_redirect(\Box_App $app, $hash): never
     {
-        $api = $this->di['api_guest'];
-        $data = [
-            'hash' => $hash,
-        ];
-        $array = $api->support_ticket_get($data);
-
-        return $app->render('mod_support_contact_us_conversation', ['ticket' => $array]);
+        $app->redirect('support/ticket/' . $hash);
     }
 
     /*

@@ -107,7 +107,7 @@
                         </a>
                         {% endif %}
                         {% if ticket.author.role == 'guest' and ticket.hash is defined %}
-                        <a class="btn btn-secondary" href='{{ "support/contact-us/conversation/#{ticket.hash}"|url(area: 'client') }}' target="_blank">
+                        <a class="btn btn-secondary" href='{{ "support/ticket/#{ticket.hash}"|url(area: 'client') }}' target="_blank">
                             <svg class="icon"><use href="#eye" /></svg>
                             {{ 'View as Author'|trans }}
                         </a>

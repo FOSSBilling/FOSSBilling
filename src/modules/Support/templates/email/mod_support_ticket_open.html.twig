@@ -54,7 +54,7 @@
     </ul>
 
     {% if is_guest_ticket %}
-        <a href='{{ "support/contact-us/conversation/#{ticket.hash|default('')}"|url(area: 'client') }}' target="_blank">Reply</a>
+        <a href='{{ "support/ticket/#{ticket.hash|default('')}"|url(area: 'client') }}' target="_blank">Reply</a>
     {% else %}
         <a href='{{ "support/ticket/#{ticket.id|default('')}"|url(area: 'client') }}' target="_blank">Reply</a>
     {% endif %}
