@@ -35,7 +35,7 @@ class Module implements InjectionAwareInterface
         'support', 'system', 'theme', 'orderbutton', 'formbuilder',
         'widgets'];
 
-    public function setDi(?\Pimple\Container $di): void
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }
