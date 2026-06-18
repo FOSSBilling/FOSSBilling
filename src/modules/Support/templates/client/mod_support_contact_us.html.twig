@@ -48,7 +48,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label" for="message">{{ 'Message'|trans }}</label>
-                            <textarea class="editor-textarea form-control" name="content" cols="5" rows="5" required="required" id="message">{{ request.content|default(request.message) }}</textarea>
+                            <textarea class="editor-textarea form-control" name="content" cols="5" rows="5" required="required" id="message">{{ request.content }}</textarea>
                         </div>
 
                         {{ mf.recaptcha }}

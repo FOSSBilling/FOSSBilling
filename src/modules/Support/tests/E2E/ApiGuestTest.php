@@ -53,7 +53,7 @@ test('creates ticket for guest', function (): void {
         'name' => $expectedName,
         'email' => $expectedEmail,
         'subject' => $expectedSubject,
-        'message' => $expectedMessage,
+        'content' => $expectedMessage,
     ]);
 
     expect($result->wasSuccessful())->toBeTrue();
@@ -98,7 +98,7 @@ test('rejects guest ticket creation when public tickets are disabled', function 
         'name' => 'Name',
         'email' => 'email2@example.com',
         'subject' => 'Subject',
-        'message' => 'message',
+        'content' => 'message',
     ]);
 
     expect($result->wasSuccessful())->toBeFalse();
@@ -125,7 +125,7 @@ test('rejects guest ticket creation without name', function (): void {
     $result = ApiClient::request('guest/support/ticket_create', [
         'email' => 'email@example.com',
         'subject' => 'Subject',
-        'message' => 'message',
+        'content' => 'message',
     ]);
 
     expect($result->wasSuccessful())->toBeFalse()
@@ -136,7 +136,7 @@ test('rejects guest ticket creation without email', function (): void {
     $result = ApiClient::request('guest/support/ticket_create', [
         'name' => 'Name',
         'subject' => 'Subject',
-        'message' => 'message',
+        'content' => 'message',
     ]);
 
     expect($result->wasSuccessful())->toBeFalse()
@@ -148,7 +148,7 @@ test('rejects guest ticket creation with invalid email', function (): void {
         'name' => 'Name',
         'email' => 'not-an-email',
         'subject' => 'Subject',
-        'message' => 'message',
+        'content' => 'message',
     ]);
 
     expect($result->wasSuccessful())->toBeFalse()
@@ -160,7 +160,7 @@ test('rejects guest ticket creation with empty subject', function (): void {
         'name' => 'Name',
         'email' => 'email@example.com',
         'subject' => '',
-        'message' => 'message',
+        'content' => 'message',
     ]);
 
     expect($result->wasSuccessful())->toBeFalse()
@@ -172,7 +172,7 @@ test('rejects guest ticket creation with empty message', function (): void {
         'name' => 'Name',
         'email' => 'email@example.com',
         'subject' => 'Subject',
-        'message' => '',
+        'content' => '',
     ]);
 
     expect($result->wasSuccessful())->toBeFalse()

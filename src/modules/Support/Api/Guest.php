@@ -33,12 +33,14 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     ])]
     public function ticket_create(array $data): string
     {
-        $this->getDi()['rate_limiter']->consumeOrThrow('guest_ticket_create', (string) $this->getIp());
-
+        // Deprecated 0.9.0 The 'message' parameter will be dropped. Update your themes to use 'content' instead.
         $content = $data['content'] ?? $data['message'] ?? null;
         if (!is_string($content) || strlen($content) < 4) {
             throw new \FOSSBilling\InformationException('Please enter your message');
         }
+
+        $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
+        $this->getDi()['rate_limiter']->consumeOrThrow('guest_ticket_create', (string) $this->getIp());
 
         // Sanitize message to prevent XSS attacks
         $data['content'] = \FOSSBilling\Tools::sanitizeContent($content, true);
@@ -77,6 +79,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     public function ticket_reply(array $data): int
     {
         $publicTicket = $this->getService()->findOneByHash($data['hash']);
+        // Deprecated 0.9.0 The 'message' parameter will be dropped. Update your themes to use 'content' instead.
         $message = $data['content'] ?? $data['message'] ?? null;
 
         if (!is_string($message)) {
