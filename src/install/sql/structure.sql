@@ -858,6 +858,37 @@ CREATE TABLE `promo` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `promo_redemption`
+--
+
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `promo_redemption` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `promo_id` bigint(20) DEFAULT NULL,
+  `client_id` bigint(20) DEFAULT NULL,
+  `client_order_id` bigint(20) DEFAULT NULL,
+  `invoice_id` bigint(20) DEFAULT NULL,
+  `phase` varchar(30) NOT NULL DEFAULT 'checkout',
+  `status` varchar(30) NOT NULL DEFAULT 'reserved',
+  `discount_amount` decimal(18,2) DEFAULT NULL,
+  `currency` varchar(20) DEFAULT NULL,
+  `committed_at` datetime DEFAULT NULL,
+  `released_at` datetime DEFAULT NULL,
+  `release_reason` varchar(100) DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `promo_id_idx` (`promo_id`),
+  KEY `client_id_idx` (`client_id`),
+  KEY `client_order_id_idx` (`client_order_id`),
+  KEY `invoice_id_idx` (`invoice_id`),
+  KEY `phase_idx` (`phase`),
+  KEY `status_idx` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `service_custom`
 --
 

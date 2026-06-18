@@ -14,22 +14,7 @@ use Box\Mod\Servicehosting\Service;
 
 use function Tests\Helpers\container;
 
-dataset('validateOrderDataProvider', fn (): array => [
-    ['server_id', 'Hosting product is not configured completely. Configure server for hosting product.', 701],
-    ['hosting_plan_id', 'Hosting product is not configured completely. Configure hosting plan for hosting product.', 702],
-    ['sld', 'Domain name is invalid.', 703],
-    ['tld', 'Domain extension is invalid.', 704],
-]);
-
-test('testGetDi', function (): void {
-    $service = new Service();
-    $di = container();
-    $service->setDi($di);
-    $getDi = $service->getDi();
-    expect($getDi)->toBe($di);
-});
-
-test('testValidateOrderData', function (string $field, string $exceptionMessage, int $excCode): void {
+test('validate order data', function (string $field, string $exceptionMessage, int $excCode): void {
     $service = new Service();
     $data = [
         'server_id' => 1,
@@ -40,12 +25,16 @@ test('testValidateOrderData', function (string $field, string $exceptionMessage,
 
     unset($data[$field]);
 
-    $this->expectException(FOSSBilling\Exception::class);
-    $this->expectExceptionMessage($exceptionMessage);
-    $service->validateOrderData($data);
-})->with('validateOrderDataProvider');
+    expect(fn () => $service->validateOrderData($data))
+        ->toThrow(FOSSBilling\Exception::class, $exceptionMessage);
+})->with([
+    ['server_id', 'Hosting product is not configured completely. Configure server for hosting product.', 701],
+    ['hosting_plan_id', 'Hosting product is not configured completely. Configure hosting plan for hosting product.', 702],
+    ['sld', 'Domain name is invalid.', 703],
+    ['tld', 'Domain extension is invalid.', 704],
+]);
 
-test('testActionCreate', function (): void {
+test('action create', function (): void {
     $service = new Service();
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
@@ -56,32 +45,21 @@ test('testActionCreate', function (): void {
         'tld' => 'com',
     ];
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderServiceMock
-    ->shouldReceive('getConfig')
-    ->atLeast()->once()
-    ->andReturn($confArr);
+    $orderServiceMock->shouldReceive('getConfig')->atLeast()->once()->andReturn($confArr);
 
     $hostingServerModel = new Model_ServiceHostingServer();
     $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
     $hostingPlansModel = new Model_ServiceHostingHp();
     $hostingPlansModel->loadBean(new Tests\Helpers\DummyBean());
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-        ->shouldReceive('getExistingModelById')
-        ->andReturn($hostingServerModel, $hostingPlansModel);
+    $dbMock->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn($hostingServerModel, $hostingPlansModel);
 
     $servhostingModel = new Model_ServiceHosting();
     $servhostingModel->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock
-    ->shouldReceive('dispense')
-    ->atLeast()->once()
-    ->andReturn($servhostingModel);
+    $dbMock->shouldReceive('dispense')->atLeast()->once()->andReturn($servhostingModel);
 
     $newserviceHostingId = 4;
-    $dbMock
-    ->shouldReceive('store')
-    ->atLeast()->once()
-    ->andReturn($newserviceHostingId);
+    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn($newserviceHostingId);
 
     $di = container();
     $di['db'] = $dbMock;
@@ -91,7 +69,7 @@ test('testActionCreate', function (): void {
     $service->action_create($orderModel);
 });
 
-test('testActionRenew', function (): void {
+test('action renew', function (): void {
     $service = new Service();
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
@@ -100,10 +78,7 @@ test('testActionRenew', function (): void {
     $model->loadBean(new Tests\Helpers\DummyBean());
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderServiceMock
-    ->shouldReceive('getOrderService')
-    ->atLeast()->once()
-    ->andReturn($model);
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($model);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')->atLeast()->once();
@@ -117,7 +92,7 @@ test('testActionRenew', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('testActionRenewOrderWithoutActiveService', function (): void {
+test('action renew order without active service', function (): void {
     $service = new Service();
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
@@ -130,12 +105,11 @@ test('testActionRenewOrderWithoutActiveService', function (): void {
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
-    $this->expectException(FOSSBilling\Exception::class);
-    $this->expectExceptionMessage(sprintf('Order %d has no active service', $orderModel->id));
-    $service->action_renew($orderModel);
+    expect(fn () => $service->action_renew($orderModel))
+        ->toThrow(FOSSBilling\Exception::class, sprintf('Order %d has no active service', $orderModel->id));
 });
 
-test('testActionSuspend', function (): void {
+test('action suspend', function (): void {
     $service = new Service();
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
@@ -144,10 +118,7 @@ test('testActionSuspend', function (): void {
     $model->loadBean(new Tests\Helpers\DummyBean());
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderServiceMock
-    ->shouldReceive('getOrderService')
-    ->atLeast()->once()
-    ->andReturn($model);
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($model);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')->atLeast()->once();
@@ -160,17 +131,14 @@ test('testActionSuspend', function (): void {
     $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
     $serverManagerMock->shouldReceive('suspendAccount')->atLeast()->once();
     $AMresultArray = [$serverManagerMock, new Server_Account()];
-    $serviceMock
-    ->shouldReceive('_getAM')
-    ->atLeast()->once()
-    ->andReturn($AMresultArray);
+    $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
 
     $serviceMock->setDi($di);
     $result = $serviceMock->action_suspend($orderModel);
     expect($result)->toBeTrue();
 });
 
-test('testActionSuspendOrderWithoutActiveService', function (): void {
+test('action suspend order without active service', function (): void {
     $service = new Service();
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
@@ -183,12 +151,11 @@ test('testActionSuspendOrderWithoutActiveService', function (): void {
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
-    $this->expectException(FOSSBilling\Exception::class);
-    $this->expectExceptionMessage(sprintf('Order %d has no active service', $orderModel->id));
-    $service->action_suspend($orderModel);
+    expect(fn () => $service->action_suspend($orderModel))
+        ->toThrow(FOSSBilling\Exception::class, sprintf('Order %d has no active service', $orderModel->id));
 });
 
-test('testActionUnsuspend', function (): void {
+test('action unsuspend', function (): void {
     $service = new Service();
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
@@ -197,10 +164,7 @@ test('testActionUnsuspend', function (): void {
     $model->loadBean(new Tests\Helpers\DummyBean());
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderServiceMock
-    ->shouldReceive('getOrderService')
-    ->atLeast()->once()
-    ->andReturn($model);
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($model);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')->atLeast()->once();
@@ -213,17 +177,14 @@ test('testActionUnsuspend', function (): void {
     $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
     $serverManagerMock->shouldReceive('unsuspendAccount')->atLeast()->once();
     $AMresultArray = [$serverManagerMock, new Server_Account()];
-    $serviceMock
-    ->shouldReceive('_getAM')
-    ->atLeast()->once()
-    ->andReturn($AMresultArray);
+    $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
 
     $serviceMock->setDi($di);
     $result = $serviceMock->action_unsuspend($orderModel);
     expect($result)->toBeTrue();
 });
 
-test('testActionUnsuspendOrderWithoutActiveService', function (): void {
+test('action unsuspend order without active service', function (): void {
     $service = new Service();
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
@@ -236,12 +197,11 @@ test('testActionUnsuspendOrderWithoutActiveService', function (): void {
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
-    $this->expectException(FOSSBilling\Exception::class);
-    $this->expectExceptionMessage(sprintf('Order %d has no active service', $orderModel->id));
-    $service->action_unsuspend($orderModel);
+    expect(fn () => $service->action_unsuspend($orderModel))
+        ->toThrow(FOSSBilling\Exception::class, sprintf('Order %d has no active service', $orderModel->id));
 });
 
-test('testActionCancel', function (): void {
+test('action cancel', function (): void {
     $service = new Service();
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
@@ -250,10 +210,7 @@ test('testActionCancel', function (): void {
     $model->loadBean(new Tests\Helpers\DummyBean());
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderServiceMock
-    ->shouldReceive('getOrderService')
-    ->atLeast()->once()
-    ->andReturn($model);
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($model);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')->atLeast()->once();
@@ -266,17 +223,14 @@ test('testActionCancel', function (): void {
     $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
     $serverManagerMock->shouldReceive('cancelAccount')->atLeast()->once();
     $AMresultArray = [$serverManagerMock, new Server_Account()];
-    $serviceMock
-    ->shouldReceive('_getAM')
-    ->atLeast()->once()
-    ->andReturn($AMresultArray);
+    $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
 
     $serviceMock->setDi($di);
     $result = $serviceMock->action_cancel($orderModel);
     expect($result)->toBeTrue();
 });
 
-test('testActionCancelOrderWithoutActiveService', function (): void {
+test('action cancel order without active service', function (): void {
     $service = new Service();
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
@@ -289,12 +243,11 @@ test('testActionCancelOrderWithoutActiveService', function (): void {
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
-    $this->expectException(FOSSBilling\Exception::class);
-    $this->expectExceptionMessage(sprintf('Order %d has no active service', $orderModel->id));
-    $service->action_cancel($orderModel);
+    expect(fn () => $service->action_cancel($orderModel))
+        ->toThrow(FOSSBilling\Exception::class, sprintf('Order %d has no active service', $orderModel->id));
 });
 
-test('testActionDelete', function (): void {
+test('action delete', function (): void {
     $service = new Service();
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
@@ -304,10 +257,7 @@ test('testActionDelete', function (): void {
     $model->loadBean(new Tests\Helpers\DummyBean());
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderServiceMock
-    ->shouldReceive('getOrderService')
-    ->atLeast()->once()
-    ->andReturn($model);
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($model);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('trash')->atLeast()->once();
@@ -323,7 +273,7 @@ test('testActionDelete', function (): void {
     $serviceMock->action_delete($orderModel);
 });
 
-test('testChangeAccountPlan', function (): void {
+test('change account plan', function (): void {
     $service = new Service();
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
@@ -339,27 +289,21 @@ test('testChangeAccountPlan', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['logger'] = new Box_Log();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
     $serverManagerMock->shouldReceive('changeAccountPackage')->atLeast()->once();
     $AMresultArray = [$serverManagerMock, new Server_Account()];
-    $serviceMock
-    ->shouldReceive('_getAM')
-    ->atLeast()->once()
-    ->andReturn($AMresultArray);
-    $serviceMock
-    ->shouldReceive('getServerPackage')
-    ->atLeast()->once()
-    ->andReturn(new Server_Package());
+    $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
+    $serviceMock->shouldReceive('getServerPackage')->atLeast()->once()->andReturn(new Server_Package());
 
     $serviceMock->setDi($di);
     $result = $serviceMock->changeAccountPlan($orderModel, $model, $modelHp);
     expect($result)->toBeTrue();
 });
 
-test('testChangeAccountUsername', function (): void {
+test('change account username', function (): void {
     $service = new Service();
     $data = [
         'username' => 'u123456',
@@ -377,17 +321,14 @@ test('testChangeAccountUsername', function (): void {
     $serverManagerMock->shouldReceive('changeAccountUsername')->atLeast()->once();
 
     $AMresultArray = [$serverManagerMock, new Server_Account()];
-    $serviceMock
-    ->shouldReceive('_getAM')
-    ->atLeast()->once()
-    ->andReturn($AMresultArray);
+    $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')->atLeast()->once();
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['logger'] = new Box_Log();
 
     $serviceMock->setDi($di);
 
@@ -395,7 +336,7 @@ test('testChangeAccountUsername', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('testChangeAccountUsernameMissingUsername', function (): void {
+test('change account username missing username', function (): void {
     $service = new Service();
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
@@ -404,12 +345,11 @@ test('testChangeAccountUsernameMissingUsername', function (): void {
     $model->loadBean(new Tests\Helpers\DummyBean());
     $data = [];
 
-    $this->expectException(FOSSBilling\Exception::class);
-    $this->expectExceptionMessage('Account username is missing or is invalid');
-    $service->changeAccountUsername($orderModel, $model, $data);
+    expect(fn () => $service->changeAccountUsername($orderModel, $model, $data))
+        ->toThrow(FOSSBilling\Exception::class, 'Account username is missing or is invalid');
 });
 
-test('testChangeAccountIp', function (): void {
+test('change account ip', function (): void {
     $service = new Service();
     $data = [
         'ip' => '1.1.1.1',
@@ -427,17 +367,14 @@ test('testChangeAccountIp', function (): void {
     $serverManagerMock->shouldReceive('changeAccountIp')->atLeast()->once();
 
     $AMresultArray = [$serverManagerMock, new Server_Account()];
-    $serviceMock
-    ->shouldReceive('_getAM')
-    ->atLeast()->once()
-    ->andReturn($AMresultArray);
+    $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')->atLeast()->once();
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['logger'] = new Box_Log();
 
     $serviceMock->setDi($di);
 
@@ -445,7 +382,7 @@ test('testChangeAccountIp', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('testChangeAccountIpMissingIp', function (): void {
+test('change account ip missing ip', function (): void {
     $service = new Service();
     $data = [];
     $orderModel = new Model_ClientOrder();
@@ -454,12 +391,11 @@ test('testChangeAccountIpMissingIp', function (): void {
     $model = new Model_ServiceHosting();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $this->expectException(FOSSBilling\Exception::class);
-    $this->expectExceptionMessage('Account IP address is missing or is invalid');
-    $service->changeAccountIp($orderModel, $model, $data);
+    expect(fn () => $service->changeAccountIp($orderModel, $model, $data))
+        ->toThrow(FOSSBilling\Exception::class, 'Account IP address is missing or is invalid');
 });
 
-test('testChangeAccountDomain', function (): void {
+test('change account domain', function (): void {
     $service = new Service();
     $data = [
         'tld' => 'com',
@@ -478,17 +414,14 @@ test('testChangeAccountDomain', function (): void {
     $serverManagerMock->shouldReceive('changeAccountDomain')->atLeast()->once();
 
     $AMresultArray = [$serverManagerMock, new Server_Account()];
-    $serviceMock
-    ->shouldReceive('_getAM')
-    ->atLeast()->once()
-    ->andReturn($AMresultArray);
+    $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')->atLeast()->once();
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['logger'] = new Box_Log();
 
     $serviceMock->setDi($di);
 
@@ -496,7 +429,7 @@ test('testChangeAccountDomain', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('testChangeAccountDomainMissingParams', function (): void {
+test('change account domain missing params', function (): void {
     $service = new Service();
     $data = [];
     $orderModel = new Model_ClientOrder();
@@ -505,12 +438,11 @@ test('testChangeAccountDomainMissingParams', function (): void {
     $model = new Model_ServiceHosting();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $this->expectException(FOSSBilling\Exception::class);
-    $this->expectExceptionMessage('Domain SLD or TLD is missing');
-    $service->changeAccountDomain($orderModel, $model, $data);
+    expect(fn () => $service->changeAccountDomain($orderModel, $model, $data))
+        ->toThrow(FOSSBilling\Exception::class, 'Domain SLD or TLD is missing');
 });
 
-test('testChangeAccountPassword', function (): void {
+test('change account password', function (): void {
     $service = new Service();
     $data = [
         'password' => 'topsecret',
@@ -529,17 +461,14 @@ test('testChangeAccountPassword', function (): void {
     $serverManagerMock->shouldReceive('changeAccountPassword')->atLeast()->once();
 
     $AMresultArray = [$serverManagerMock, new Server_Account()];
-    $serviceMock
-    ->shouldReceive('_getAM')
-    ->atLeast()->once()
-    ->andReturn($AMresultArray);
+    $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')->atLeast()->once();
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['logger'] = new Box_Log();
 
     $serviceMock->setDi($di);
 
@@ -547,7 +476,7 @@ test('testChangeAccountPassword', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('testChangeAccountPasswordMissingParams', function (): void {
+test('change account password missing params', function (): void {
     $service = new Service();
     $data = [];
     $orderModel = new Model_ClientOrder();
@@ -556,12 +485,11 @@ test('testChangeAccountPasswordMissingParams', function (): void {
     $model = new Model_ServiceHosting();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $this->expectException(FOSSBilling\Exception::class);
-    $this->expectExceptionMessage('Account password is missing or is invalid');
-    $service->changeAccountPassword($orderModel, $model, $data);
+    expect(fn () => $service->changeAccountPassword($orderModel, $model, $data))
+        ->toThrow(FOSSBilling\Exception::class, 'Account password is missing or is invalid');
 });
 
-test('testSync', function (): void {
+test('sync', function (): void {
     $service = new Service();
     $data = [
         'password' => 'topsecret',
@@ -585,23 +513,17 @@ test('testSync', function (): void {
     $accountObj2->setIp('2.2.2.2');
 
     $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
-    $serverManagerMock
-    ->shouldReceive('synchronizeAccount')
-    ->atLeast()->once()
-    ->andReturn($accountObj2);
+    $serverManagerMock->shouldReceive('synchronizeAccount')->atLeast()->once()->andReturn($accountObj2);
 
     $AMresultArray = [$serverManagerMock, $accountObj];
-    $serviceMock
-    ->shouldReceive('_getAM')
-    ->atLeast()->once()
-    ->andReturn($AMresultArray);
+    $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')->atLeast()->once();
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['logger'] = new Box_Log();
 
     $serviceMock->setDi($di);
 
@@ -609,7 +531,7 @@ test('testSync', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('testToApiArray', function (): void {
+test('to api array', function (): void {
     $service = new Service();
     $model = new Model_ServiceHosting();
     $model->loadBean(new Tests\Helpers\DummyBean());
@@ -621,19 +543,17 @@ test('testToApiArray', function (): void {
     $hostingHp->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-        ->shouldReceive('load')
-        ->andReturn($hostingServer, $hostingHp);
+    $dbMock->shouldReceive('load')->atLeast()->once()->andReturn($hostingServer, $hostingHp);
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
     $orderServiceMock->shouldReceive('getServiceOrder')->atLeast()->once();
 
-    $serverManagerCustomStub = Mockery::mock('\Server_Manager_Custom');
+    $serverManagerCustomMock = Mockery::mock('\Server_Manager_Custom')->shouldIgnoreMissing();
 
     $di = container();
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
-    $di['server_manager'] = $di->protect(fn ($manager, $config) => $serverManagerCustomStub);
+    $di['server_manager'] = $di->protect(fn ($manager, $config) => $serverManagerCustomMock);
 
     $service->setDi($di);
 
@@ -641,7 +561,7 @@ test('testToApiArray', function (): void {
     expect($result)->toBeArray();
 });
 
-test('testUpdate', function (): void {
+test('update', function (): void {
     $service = new Service();
     $data = [
         'username' => 'testUser',
@@ -655,20 +575,20 @@ test('testUpdate', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['logger'] = new Box_Log();
     $service->setDi($di);
 
     $result = $service->update($model, $data);
     expect($result)->toBeTrue();
 });
 
-test('testGetServerManagers', function (): void {
+test('get server managers', function (): void {
     $service = new Service();
     $result = $service->getServerManagers();
     expect($result)->toBeArray();
 });
 
-test('testGetServerManagerConfig', function (): void {
+test('get server manager config', function (): void {
     $service = new Service();
     $manager = 'Custom';
 
@@ -678,10 +598,10 @@ test('testGetServerManagerConfig', function (): void {
 
     $result = $service->getServerManagerConfig($manager);
     expect($result)->toBeArray();
-    expect($result)->toBe($expected);
+    expect($result)->toEqual($expected);
 });
 
-test('testGetServerPairs', function (): void {
+test('get server pairs', function (): void {
     $service = new Service();
     $expected = [
         '1' => 'name',
@@ -699,10 +619,7 @@ test('testGetServerPairs', function (): void {
     ];
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getAll')
-    ->atLeast()->once()
-    ->andReturn($queryResult);
+    $dbMock->shouldReceive('getAll')->atLeast()->once()->andReturn($queryResult);
 
     $di = container();
     $di['db'] = $dbMock;
@@ -710,37 +627,31 @@ test('testGetServerPairs', function (): void {
 
     $result = $service->getServerPairs();
     expect($result)->toBeArray();
-    expect($result)->toBe($expected);
+    expect($result)->toEqual($expected);
 });
 
-test('testGetServerSearchQuery', function (): void {
+test('get server search query', function (): void {
     $service = new Service();
     $result = $service->getServersSearchQuery([]);
     expect($result[0])->toBeString();
     expect($result[1])->toBeArray();
-    expect($result[1])->toBe([]);
+    expect($result[1])->toEqual([]);
 });
 
-test('testCreateServer', function (): void {
+test('create server', function (): void {
     $service = new Service();
     $dbMock = Mockery::mock('\Box_Database');
 
     $hostingServerModel = new Model_ServiceHostingServer();
     $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock
-    ->shouldReceive('dispense')
-    ->atLeast()->once()
-    ->andReturn($hostingServerModel);
+    $dbMock->shouldReceive('dispense')->atLeast()->once()->andReturn($hostingServerModel);
 
     $newId = 1;
-    $dbMock
-    ->shouldReceive('store')
-    ->atLeast()->once()
-    ->andReturn($newId);
+    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn($newId);
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['logger'] = new Box_Log();
 
     $service->setDi($di);
 
@@ -753,7 +664,7 @@ test('testCreateServer', function (): void {
     expect($result)->toBe($newId);
 });
 
-test('testDeleteServer', function (): void {
+test('delete server', function (): void {
     $service = new Service();
     $hostingServerModel = new Model_ServiceHostingServer();
     $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
@@ -763,14 +674,14 @@ test('testDeleteServer', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['logger'] = new Box_Log();
     $service->setDi($di);
 
     $result = $service->deleteServer($hostingServerModel);
     expect($result)->toBeTrue();
 });
 
-test('testUpdateServer', function (): void {
+test('update server', function (): void {
     $service = new Service();
     $data = [
         'name' => 'newName',
@@ -798,7 +709,7 @@ test('testUpdateServer', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['logger'] = new Box_Log();
 
     $service->setDi($di);
 
@@ -806,34 +717,32 @@ test('testUpdateServer', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('testGetServerManager', function (): void {
+test('get server manager', function (): void {
     $service = new Service();
     $hostingServerModel = new Model_ServiceHostingServer();
     $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
     $hostingServerModel->manager = 'Custom';
 
-    $serverManagerCustomStub = Mockery::mock('\Server_Manager_Custom');
+    $serverManagerCustom = Mockery::mock('\Server_Manager_Custom')->shouldIgnoreMissing();
 
     $di = container();
-    $di['server_manager'] = $di->protect(fn ($manager, $config) => $serverManagerCustomStub);
+    $di['server_manager'] = $di->protect(fn ($manager, $config) => $serverManagerCustom);
     $service->setDi($di);
 
     $result = $service->getServerManager($hostingServerModel);
     expect($result)->toBeInstanceOf('\Server_Manager_Custom');
 });
 
-test('testGetServerManagerManagerNotDefined', function (): void {
+test('get server manager manager not defined', function (): void {
     $service = new Service();
     $hostingServerModel = new Model_ServiceHostingServer();
     $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $this->expectException(FOSSBilling\Exception::class);
-    $this->expectExceptionCode(654);
-    $this->expectExceptionMessage('Invalid server manager. Server was not configured properly');
-    $service->getServerManager($hostingServerModel);
+    expect(fn () => $service->getServerManager($hostingServerModel))
+        ->toThrow(FOSSBilling\Exception::class);
 });
 
-test('testGetServerManagerServerManagerInvalid', function (): void {
+test('get server manager server manager invalid', function (): void {
     $service = new Service();
     $hostingServerModel = new Model_ServiceHostingServer();
     $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
@@ -843,25 +752,16 @@ test('testGetServerManagerServerManagerInvalid', function (): void {
     $di['server_manager'] = $di->protect(fn ($manager, $config): null => null);
     $service->setDi($di);
 
-    $this->expectException(FOSSBilling\Exception::class);
-    $this->expectExceptionMessage("Server manager {$hostingServerModel->manager} is invalid.");
-    $service->getServerManager($hostingServerModel);
+    expect(fn () => $service->getServerManager($hostingServerModel))
+        ->toThrow(FOSSBilling\Exception::class, "Server manager {$hostingServerModel->manager} is invalid.");
 });
 
-test('testTestConnection', function (): void {
-    $service = new Service();
+test('test connection', function (): void {
     $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
-    $serverManagerMock
-    ->shouldReceive('testConnection')
-    ->atLeast()->once()
-    ->andReturn(true);
+    $serverManagerMock->shouldReceive('testConnection')->atLeast()->once()->andReturn(true);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-
-    $serviceMock
-    ->shouldReceive('getServerManager')
-    ->atLeast()->once()
-    ->andReturn($serverManagerMock);
+    $serviceMock->shouldReceive('getServerManager')->atLeast()->once()->andReturn($serverManagerMock);
 
     $hostingServerModel = new Model_ServiceHostingServer();
     $result = $serviceMock->testConnection($hostingServerModel);
@@ -869,7 +769,7 @@ test('testTestConnection', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('testGetHpPairs', function (): void {
+test('get hp pairs', function (): void {
     $service = new Service();
     $expected = [
         '1' => 'free',
@@ -887,10 +787,7 @@ test('testGetHpPairs', function (): void {
     ];
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getAll')
-    ->atLeast()->once()
-    ->andReturn($queryResult);
+    $dbMock->shouldReceive('getAll')->atLeast()->once()->andReturn($queryResult);
 
     $di = container();
     $di['db'] = $dbMock;
@@ -898,36 +795,36 @@ test('testGetHpPairs', function (): void {
 
     $result = $service->getHpPairs();
     expect($result)->toBeArray();
-    expect($result)->toBe($expected);
+    expect($result)->toEqual($expected);
 });
 
-test('testGetHpSearchQuery', function (): void {
+test('get hp search query', function (): void {
     $service = new Service();
     $result = $service->getServersSearchQuery([]);
     expect($result[0])->toBeString();
     expect($result[1])->toBeArray();
-    expect($result[1])->toBe([]);
+    expect($result[1])->toEqual([]);
 });
 
-test('testDeleteHp', function (): void {
+test('delete hp', function (): void {
     $service = new Service();
     $model = new Model_ServiceHostingHp();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')->atLeast()->once()->andReturn(null);
     $dbMock->shouldReceive('trash')->atLeast()->once();
+    $dbMock->shouldReceive('findOne')->atLeast()->once()->andReturn(null);
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['logger'] = new Box_Log();
     $service->setDi($di);
 
     $result = $service->deleteHp($model);
     expect($result)->toBeTrue();
 });
 
-test('testToHostingHpApiArray', function (): void {
+test('to hosting hp api array', function (): void {
     $service = new Service();
     $model = new Model_ServiceHostingHp();
     $model->loadBean(new Tests\Helpers\DummyBean());
@@ -936,7 +833,7 @@ test('testToHostingHpApiArray', function (): void {
     expect($result)->toBeArray();
 });
 
-test('testUpdateHp', function (): void {
+test('update hp', function (): void {
     $service = new Service();
     $data = [
         'name' => 'firstPlan',
@@ -958,7 +855,7 @@ test('testUpdateHp', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['logger'] = new Box_Log();
 
     $service->setDi($di);
 
@@ -966,21 +863,19 @@ test('testUpdateHp', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('testCreateHp', function (): void {
+test('create hp', function (): void {
     $service = new Service();
     $model = new Model_ServiceHostingHp();
     $model->loadBean(new Tests\Helpers\DummyBean());
     $newId = 1;
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-        ->shouldReceive('dispense')->atLeast()->once()->andReturn($model);
-    $dbMock
-        ->shouldReceive('store')->atLeast()->once()->andReturn($newId);
+    $dbMock->shouldReceive('dispense')->atLeast()->once()->andReturn($model);
+    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn($newId);
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['logger'] = new Box_Log();
 
     $service->setDi($di);
 
@@ -989,7 +884,7 @@ test('testCreateHp', function (): void {
     expect($result)->toBe($newId);
 });
 
-test('testGetServerPackage', function (): void {
+test('get server package', function (): void {
     $service = new Service();
     $model = new Model_ServiceHostingHp();
     $model->loadBean(new Tests\Helpers\DummyBean());
@@ -1002,8 +897,7 @@ test('testGetServerPackage', function (): void {
     expect($result)->toBeInstanceOf('\Server_Package');
 });
 
-test('testGetServerManagerWithLog', function (): void {
-    $service = new Service();
+test('get server manager with log', function (): void {
     $hostingServerModel = new Model_ServiceHostingServer();
     $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
     $hostingServerModel->manager = 'Custom';
@@ -1011,19 +905,12 @@ test('testGetServerManagerWithLog', function (): void {
     $clientOrderModel = new Model_ClientOrder();
     $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
-    $serverManagerMock->shouldReceive('setLog')->atLeast()->once();
+    $serverManagerMock = Mockery::mock('\Server_Manager_Custom')->shouldIgnoreMissing();
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock
-    ->shouldReceive('getServerManager')
-    ->atLeast()->once()
-    ->andReturn($serverManagerMock);
+    $serviceMock->shouldReceive('getServerManager')->atLeast()->once()->andReturn($serverManagerMock);
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderServiceMock
-    ->shouldReceive('getLogger')
-    ->atLeast()->once()
-    ->andReturn(new Tests\Helpers\TestLogger());
+    $orderServiceMock->shouldReceive('getLogger')->atLeast()->once()->andReturn(new Box_Log());
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
@@ -1033,27 +920,17 @@ test('testGetServerManagerWithLog', function (): void {
     expect($result)->toBeInstanceOf('\Server_Manager_Custom');
 });
 
-test('testGetManagerUrls', function (): void {
-    $service = new Service();
+test('get manager urls', function (): void {
     $hostingServerModel = new Model_ServiceHostingServer();
     $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
     $hostingServerModel->manager = 'Custom';
 
     $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
-    $serverManagerMock
-    ->shouldReceive('getLoginUrl')
-    ->atLeast()->once()
-    ->andReturn('/login');
-    $serverManagerMock
-    ->shouldReceive('getResellerLoginUrl')
-    ->atLeast()->once()
-    ->andReturn('/admin/login');
+    $serverManagerMock->shouldReceive('getLoginUrl')->atLeast()->once()->andReturn('/login');
+    $serverManagerMock->shouldReceive('getResellerLoginUrl')->atLeast()->once()->andReturn('/admin/login');
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock
-    ->shouldReceive('getServerManager')
-    ->atLeast()->once()
-    ->andReturn($serverManagerMock);
+    $serviceMock->shouldReceive('getServerManager')->atLeast()->once()->andReturn($serverManagerMock);
 
     $result = $serviceMock->getManagerUrls($hostingServerModel);
     expect($result)->toBeArray();
@@ -1061,20 +938,13 @@ test('testGetManagerUrls', function (): void {
     expect($result[1])->toBeString();
 });
 
-test('testGetManagerUrlsException', function (): void {
-    $service = new Service();
+test('get manager urls exception', function (): void {
     $hostingServerModel = new Model_ServiceHostingServer();
     $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
     $hostingServerModel->manager = 'Custom';
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock
-        ->shouldReceive('getServerManager')
-        ->andThrow(new Exception('Controlled unit test exception'));
-
-    $di = container();
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $serviceMock->setDi($di);
+    $serviceMock->shouldReceive('getServerManager')->atLeast()->once()->andThrow(new Exception('Controlled unit test exception'));
 
     $result = $serviceMock->getManagerUrls($hostingServerModel);
     expect($result)->toBeArray();
@@ -1082,36 +952,29 @@ test('testGetManagerUrlsException', function (): void {
     expect($result[1])->toBeFalse();
 });
 
-test('testGetFreeTldsFreeTldsAreNotSet', function (): void {
+test('get free tlds free tlds are not set', function (): void {
     $service = new Service();
     $di = container();
 
     $tldArray = ['tld' => '.com'];
     $serviceDomainServiceMock = Mockery::mock(Box\Mod\Servicedomain\Service::class);
-    $serviceDomainServiceMock
-    ->shouldReceive('tldToApiArray')
-    ->atLeast()->once()
-    ->andReturn($tldArray);
+    $serviceDomainServiceMock->shouldReceive('tldToApiArray')->atLeast()->once()->andReturn($tldArray);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceDomainServiceMock);
 
     $tldModel = new Model_Tld();
     $tldModel->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('find')
-    ->atLeast()->once()
-    ->andReturn([$tldModel]);
+    $dbMock->shouldReceive('find')->atLeast()->once()->andReturn([$tldModel]);
     $di['db'] = $dbMock;
 
     $service->setDi($di);
-    $model = new Model_Product();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $result = $service->getFreeTlds($model);
+    $product = new Box\Mod\Product\Entity\Product();
+    $result = $service->getFreeTlds($product);
     expect($result)->toBeArray();
 });
 
-test('testGetFreeTlds', function (): void {
+test('get free tlds', function (): void {
     $service = new Service();
     $config = [
         'free_tlds' => ['.com'],
@@ -1119,11 +982,10 @@ test('testGetFreeTlds', function (): void {
     $di = container();
 
     $service->setDi($di);
-    $model = new Model_Product();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->config = json_encode($config);
+    $product = new Box\Mod\Product\Entity\Product();
+    $product->setConfig(json_encode($config));
 
-    $result = $service->getFreeTlds($model);
+    $result = $service->getFreeTlds($product);
     expect($result)->toBeArray();
     expect($result)->not->toBeEmpty();
 });

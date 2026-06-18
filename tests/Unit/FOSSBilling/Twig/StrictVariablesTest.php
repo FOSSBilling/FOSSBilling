@@ -71,9 +71,7 @@ test('orderbutton checkout renders for guests under strict_variables', function 
             'show_custom_form_values' => false,
             'promocode' => '',
         ],
-        'settings' => [
-            'checkout_tos' => 'implicit',
-        ],
+        'settings' => [],
         'guest' => [
             'cart_get' => [
                 'items' => [

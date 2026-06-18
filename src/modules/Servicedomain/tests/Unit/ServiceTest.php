@@ -38,9 +38,7 @@ test('gets dependency injection container', function (): void {
 
 test('gets cart product title', function (array $data, string $expected): void {
     $service = new Service();
-    $product = new Model_CartProduct();
-    $product->loadBean(new Tests\Helpers\DummyBean());
-    $product->title = 'Example.com Registration';
+    $product = (new Box\Mod\Product\Entity\Product())->setTitle('Example.com Registration');
 
     $result = $service->getCartProductTitle($product, $data);
 

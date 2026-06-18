@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedownloadable;
 
+use Box\Mod\Product\Entity\Product;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
@@ -143,9 +144,9 @@ class Service implements InjectionAwareInterface
         $this->filesystem = new Filesystem();
     }
 
-    public function attachOrderConfig(\Model_Product $product, array &$data): array
+    public function attachOrderConfig(Product $product, array &$data): array
     {
-        $config = json_decode($product->config ?? '', true) ?? [];
+        $config = json_decode($product->getConfig() ?? '', true) ?? [];
         $required = [
             'filename' => 'Product is not configured completely.',
             self::STORED_FILENAME_CONFIG_KEY => 'Product is not configured completely.',
@@ -335,7 +336,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function uploadProductFile(\Model_Product $productModel): bool
+    public function uploadProductFile(Product $productModel): bool
     {
         $productService = $this->di['mod_service']('product');
         $request = $this->di['request'];
@@ -355,7 +356,7 @@ class Service implements InjectionAwareInterface
 
         $storedFilename = $this->storeUploadedFile($file);
 
-        $config = json_decode($productModel->config ?? '', true) ?? [];
+        $config = json_decode($productModel->getConfig() ?? '', true) ?? [];
         $oldStoredFilename = $config[self::STORED_FILENAME_CONFIG_KEY] ?? null;
 
         // Check if update_orders is true and update all orders
@@ -381,11 +382,12 @@ class Service implements InjectionAwareInterface
 
         $config['filename'] = $fileName;
         $config[self::STORED_FILENAME_CONFIG_KEY] = $storedFilename;
-        $productModel->config = json_encode($config);
-        $productModel->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($productModel);
+        $updatedAt = new \DateTime();
+        $productModel->setConfig(json_encode($config));
+        $productModel->setUpdatedAt($updatedAt);
+        $this->di['em']->flush();
 
-        $this->di['logger']->info('Uploaded new file for product %s', $productModel->id);
+        $this->di['logger']->info('Uploaded new file for product %s', $productModel->getId());
 
         if ($oldStoredFilename !== null && $oldStoredFilename !== $storedFilename) {
             $this->removeStoredFileIfOrphaned($oldStoredFilename);
@@ -510,13 +512,14 @@ class Service implements InjectionAwareInterface
         return $response;
     }
 
-    public function saveProductConfig(\Model_Product $productModel, array $data): bool
+    public function saveProductConfig(Product $productModel, $data): bool
     {
-        $config = json_decode($productModel->config ?? '', true) ?: [];
+        $config = json_decode($productModel->getConfig() ?? '', true) ?: [];
         $config['update_orders'] = Tools::normalizeBoolean($data['update_orders'] ?? false);
-        $productModel->config = json_encode($config);
-        $productModel->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($productModel);
+        $updatedAt = new \DateTime();
+        $productModel->setConfig(json_encode($config));
+        $productModel->setUpdatedAt($updatedAt);
+        $this->di['em']->flush();
 
         return true;
     }
@@ -526,10 +529,9 @@ class Service implements InjectionAwareInterface
      *
      * @throws \FOSSBilling\Exception
      */
-    public function sendProductFile(\Model_Product $product): Response
+    public function sendProductFile(Product $product): Response
     {
-        $config = $product->config;
-        $config = json_decode($config ?? '', true) ?: [];
+        $config = json_decode($product->getConfig() ?? '', true) ?: [];
 
         if (!isset($config['filename'], $config[self::STORED_FILENAME_CONFIG_KEY])) {
             throw new \FOSSBilling\Exception('No file associated with this product.', null, 404);
@@ -552,7 +554,7 @@ class Service implements InjectionAwareInterface
         $response->headers->set('Content-Type', 'application/octet-stream');
         $response->headers->set('Content-Disposition', $disposition);
 
-        $this->di['logger']->info('Downloaded product %s file by admin.', $product->id);
+        $this->di['logger']->info('Downloaded product %s file by admin.', $product->getId());
 
         return $response;
     }

@@ -25,6 +25,108 @@
 
 {% block content %}
 <div class="card">
+    <div class="card-body">
+        <h3>{{ 'Manage Promotion'|trans }}</h3>
+        {% if not promo.can_be_deleted %}
+            <div class="alert alert-info" role="alert">
+                {{ 'This promotion has redemption history and can no longer be deleted. Disable it to archive it.'|trans }}
+            </div>
+        {% endif %}
+        {% set stats = promo.usage_stats %}
+        <div class="row row-cards mb-4">
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Recorded Applications'|trans }}</div>
+                        <div class="h2 m-0">{{ stats.recorded_applications }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Checkout Applications'|trans }}</div>
+                        <div class="h2 m-0">{{ stats.checkout_applications }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Renewal Applications'|trans }}</div>
+                        <div class="h2 m-0">{{ stats.renewal_applications }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Reserved Applications'|trans }}</div>
+                        <div class="h2 m-0">{{ stats.reserved_applications }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Committed Applications'|trans }}</div>
+                        <div class="h2 m-0">{{ stats.committed_applications }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Released Applications'|trans }}</div>
+                        <div class="h2 m-0">{{ stats.released_applications }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Distinct Clients'|trans }}</div>
+                        <div class="h2 m-0">{{ stats.distinct_clients }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Orders Using Promo'|trans }}</div>
+                        <div class="h2 m-0">{{ stats.orders_using_promo }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-4">
+                <div class="card card-sm">
+                    <div class="card-body">
+                        <div class="text-secondary">{{ 'Operational Counter'|trans }}</div>
+                        <div class="h2 m-0">
+                            {{ stats.operational_use_count }}
+                            {% if stats.max_uses is not null %}/ {{ stats.max_uses }}{% else %}/ &#8734;{% endif %}
+                        </div>
+                        <div class="text-secondary small">
+                            {{ 'Used only for max-use enforcement, not historical reporting.'|trans }}
+                        </div>
+                        <div class="text-secondary small">
+                            {{ 'Active checkout applications'|trans }}: {{ stats.active_checkout_applications }}
+                        </div>
+                        <div class="text-secondary small">
+                            {% if stats.remaining_operational_uses is null %}
+                                {{ 'Remaining operational uses'|trans }}: {{ 'Unlimited'|trans }}
+                            {% else %}
+                                {{ 'Remaining operational uses'|trans }}: {{ stats.remaining_operational_uses }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
     <form method="post" action="{{ 'product/promo_update'|api_url }}" {{ fb_api_form({redirect: 'product/promos'|url}) }}>
         {% embed 'partial_admin_form_card.html.twig' with {
             title: 'Manage Promotion'|trans,

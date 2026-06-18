@@ -13,7 +13,6 @@ declare(strict_types=1);
 use Box\Mod\Client\Service as ClientService;
 use Box\Mod\Invoice\ServiceInvoiceItem;
 use Box\Mod\Invoice\ServiceTax;
-use Box\Mod\System\Service as SystemService;
 
 use function Tests\Helpers\container;
 
@@ -240,9 +239,6 @@ test('deletes a tax', function (): void {
 
 test('creates a tax', function (): void {
     $service = new ServiceTax();
-    $systemService = Mockery::mock(SystemService::class);
-    $systemService->shouldReceive('checkLimits')
-        ->byDefault();
 
     $taxModel = new Model_Tax();
     $taxModel->loadBean(new Tests\Helpers\DummyBean());
@@ -256,7 +252,6 @@ test('creates a tax', function (): void {
         ->andReturn($newId);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
     $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);

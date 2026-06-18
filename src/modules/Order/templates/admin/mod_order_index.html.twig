@@ -133,6 +133,12 @@
                             </div>
                             <div class="col-md-6 col-xl-4">
                                 <div>
+                                    <label class="form-label text-muted small mb-1" for="promo_id">{{ 'Promo ID'|trans }}</label>
+                                    <input class="form-control" type="text" id="promo_id" name="promo_id" value="{{ request.promo_id }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-xl-4">
+                                <div>
                                     <label class="form-label text-muted small mb-1" for="period">{{ 'Period'|trans }}</label>
                                     {{ mf.selectbox('period', guest.system_periods, request.period, 0, 'All Periods'|trans) }}
                                 </div>

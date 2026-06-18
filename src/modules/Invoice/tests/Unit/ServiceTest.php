@@ -470,7 +470,8 @@ test('marks invoice as paid', function (): void {
         ->atLeast()->once();
 
     $di = container();
-    $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $itemInvoiceServiceMock, $currencyServiceMock) {
+    $productServiceMock = Mockery::mock(Box\Mod\Product\Service::class)->shouldIgnoreMissing();
+    $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $itemInvoiceServiceMock, $currencyServiceMock, $productServiceMock) {
         if ($serviceName == 'system') {
             return $systemService;
         }
@@ -479,6 +480,9 @@ test('marks invoice as paid', function (): void {
         }
         if ($serviceName == 'currency') {
             return $currencyServiceMock;
+        }
+        if (strtolower($serviceName) == 'product') {
+            return $productServiceMock;
         }
     });
     $di['db'] = $dbMock;
@@ -2202,11 +2206,15 @@ test('markAsPaid transitions a deposit invoice to paid status', function (): voi
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['mod_service'] = $di->protect(fn ($name, $sub = '') => match ([$name, $sub]) {
-        ['system', ''] => $systemService,
-        ['currency', ''] => $currencyService,
-        ['Invoice', 'InvoiceItem'] => $invoiceItemService,
-        default => throw new RuntimeException("Unexpected service: {$name}/{$sub}"),
+    $productService = Mockery::mock(Box\Mod\Product\Service::class)->shouldIgnoreMissing();
+    $di['mod_service'] = $di->protect(function ($name, $sub = '') use ($systemService, $currencyService, $invoiceItemService, $productService) {
+        return match ([$name, $sub]) {
+            ['system', ''] => $systemService,
+            ['currency', ''] => $currencyService,
+            ['Invoice', 'InvoiceItem'] => $invoiceItemService,
+            ['Product', ''], ['product', ''] => $productService,
+            default => throw new RuntimeException("Unexpected service: {$name}/{$sub}"),
+        };
     });
     $di['events_manager'] = $eventsManager;
     $service->setDi($di);

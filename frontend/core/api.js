@@ -464,7 +464,7 @@ const API = {
         let errorObj;
         if (error.name === 'AbortError') {
           errorObj = {
-            message: timeoutMessage || 'Request timed out after ' + (timeoutMs / 1000) + ' seconds',
+            message: timeoutMessage || `Request timed out after ${timeoutMs / 1000} seconds`,
             code: 'timeout_error'
           };
         } else if (error.name === 'TypeError' && error.message.includes('NetworkError')) {

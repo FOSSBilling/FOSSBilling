@@ -50,7 +50,7 @@
                             <th>{{ 'Client Groups'|trans }}</th>
                             <th>{{ 'Validity Period'|trans }}</th>
                             <th>{{ 'Enabled'|trans }}</th>
-                            <th>{{ 'Usage'|trans }}</th>
+                            <th>{{ 'Limit Tracking'|trans }}</th>
                             <th class="w-1"></th>
                         </tr>
                     </thead>
@@ -81,19 +81,35 @@
                             until {% if promo.end_at %}{{ promo.end_at|format_date }}{% else %}disabled{% endif %}
                         </td>
                         <td>{{ mf.boolean_badge(promo.active, 'Yes'|trans, 'No'|trans, 'text-bg-success', 'text-bg-secondary') }}</td>
-                        <td>{{ promo.used }} / {% if promo.maxuses %}{{ promo.maxuses }}{% else %}&#8734;{% endif %}</td>
+                        <td>
+                            {{ promo.used }} / {% if promo.maxuses %}{{ promo.maxuses }}{% else %}&#8734;{% endif %}
+                            <div class="text-secondary small">{{ promo.redemption_count }} {{ 'recorded applications'|trans }}</div>
+                        </td>
                         <td>
                             <a class="btn btn-icon" href='{{ "product/promo/#{promo.id}"|url }}'>
                                 <svg class="icon">
                                     <use href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon" href="{{ 'product/promo_delete'|api_url(query: { 'id': promo.id }) }}"
-                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product/promos'|url}) }}>
+                            <a class="btn btn-icon" href='{{ "product/promo/#{promo.id}"|url }}#promo-redemptions' title="{{ 'View Redemption History'|trans }}">
                                 <svg class="icon">
-                                    <use href="#trash" />
+                                    <use href="#eye" />
                                 </svg>
                             </a>
+                            {% if promo.can_be_deleted %}
+                                <a class="btn btn-icon" href="{{ 'product/promo_delete'|api_url(query: { 'id': promo.id }) }}"
+                                    {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product/promos'|url}) }}>
+                                    <svg class="icon">
+                                        <use href="#trash" />
+                                    </svg>
+                                </a>
+                            {% else %}
+                                <button class="btn btn-icon" type="button" disabled title="{{ 'Promotions with redemption history cannot be deleted'|trans }}">
+                                    <svg class="icon">
+                                        <use href="#trash" />
+                                    </svg>
+                                </button>
+                            {% endif %}
                         </td>
                     </tr>
                     {% else %}

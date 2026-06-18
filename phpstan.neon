@@ -17,7 +17,6 @@ parameters:
 		- src/library/Model/Admin.php
 		- src/library/Model/Client.php
 		- src/library/Model/ServiceLicense.php
-		- src/library/Model/Product.php
 		- src/library/Server/Manager/Custom.php
 		- src/library/Server/Manager/Whm.php
 		- src/data/cache (?)
