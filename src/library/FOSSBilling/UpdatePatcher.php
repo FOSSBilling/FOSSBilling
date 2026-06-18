@@ -1900,7 +1900,7 @@ class UpdatePatcher implements InjectionAwareInterface
             }
         }
 
-        // Normalise rows written by a previous partial migration run that pre-dated the
+        // Normalize rows written by a previous partial migration run that pre-dated the
         // status column; those rows have a NULL/empty status.  Legitimate 'reserved'
         // rows created by concurrent checkouts are left untouched so the payment flow
         // can commit or release them normally.
