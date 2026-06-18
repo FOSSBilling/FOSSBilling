@@ -163,6 +163,7 @@ test('converts to api array', function (): void {
     $subscriptionServiceMock->shouldReceive('getSubscriptionPeriod')
         ->byDefault()
         ->andReturn('1W');
+    $invoiceItemServiceMock = Mockery::mock(ServiceInvoiceItem::class);
 
     $modelToArrayResult = [
         'id' => 1,
@@ -217,9 +218,10 @@ test('converts to api array', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $subscriptionServiceMock) {
+    $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $subscriptionServiceMock, $invoiceItemServiceMock) {
         $service = null;
         if ($sub == 'InvoiceItem') {
+            $service = $invoiceItemServiceMock;
         }
         if ($serviceName == 'system' || $serviceName == 'System') {
             $service = $systemService;
