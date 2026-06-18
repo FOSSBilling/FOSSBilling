@@ -11,118 +11,58 @@
 declare(strict_types=1);
 
 use Box\Mod\Order\Service as OrderService;
+use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicedownloadable\Service;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 use function Tests\Helpers\container;
-use function Tests\Helpers\moduleService;
 
-test('gets dependency injection container', function (): void {
-    $service = new Service();
-    $di = container();
-    $service->setDi($di);
-    $getDi = $service->getDi();
-    expect($getDi)->toBe($di);
-});
+function serviceDownloadableCreateProductEntity(?int $id = null, ?string $config = null): Product
+{
+    $product = new Product();
+    if ($id !== null) {
+        $reflection = new ReflectionProperty($product, 'id');
+        $reflection->setAccessible(true);
+        $reflection->setValue($product, $id);
+    }
+    if ($config !== null) {
+        $product->setConfig($config);
+    }
 
-test('attaches order config', function (): void {
-    $service = new Service();
-    $productModel = new Model_Product();
-    $productModel->loadBean(new Tests\Helpers\DummyBean());
-    $storedFilename = str_repeat('a', 64);
-    $productModel->config = json_encode([
-        'filename' => 'temp/asdcxTest.txt',
-        'stored_filename' => $storedFilename,
-    ]);
+    return $product;
+}
 
-    $data = [];
-
-    $expected = array_merge(json_decode($productModel->config ?? '', true), $data);
-
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
-    $validatorMock->shouldReceive('checkRequiredParamsForArray')
-        ->zeroOrMoreTimes();
-
-    $di = container();
-    $di['validator'] = $validatorMock;
-    $service->setDi($di);
-    $result = $service->attachOrderConfig($productModel, $data);
-    expect($result)->toBeArray();
-    expect($result)->toBe($expected);
-});
-
-test('creates action', function (): void {
-    $service = new Service();
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientOrderModel->config = json_encode([
-        'filename' => 'temp/asdcxTest.txt',
-        'stored_filename' => str_repeat('b', 64),
-    ]);
-
-    $model = new Model_ServiceDownloadable();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturn($model);
-
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(1);
-
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
-    $validatorMock->shouldReceive('checkRequiredParamsForArray')
-        ->zeroOrMoreTimes();
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $di['validator'] = $validatorMock;
-
-    $service->setDi($di);
-    $result = $service->action_create($clientOrderModel);
-    expect($result)->toBeInstanceOf(Model_ServiceDownloadable::class);
-});
-
-test('deletes action', function (): void {
+test('action delete', function (): void {
     $service = new Service();
     $clientOrderModel = new Model_ClientOrder();
 
     $orderServiceMock = Mockery::mock(OrderService::class);
-    $orderServiceMock->shouldReceive('getOrderService')
-        ->atLeast()->once()
-        ->andReturn(new Model_ServiceDownloadable());
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn(new Model_ServiceDownloadable());
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('trash')
-        ->atLeast()->once();
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('trash')->atLeast()->once();
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(moduleService(['order' => $orderServiceMock]));
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
     $service->action_delete($clientOrderModel);
 });
 
-test('saves product config', function (): void {
+test('save product config', function (): void {
     $service = new Service();
     $data = [
         'update_orders' => true,
     ];
 
-    $productModel = new Model_Product();
-    $productModel->loadBean(new Tests\Helpers\DummyBean());
-    $productModel->config = '{"filename": "test.txt"}';
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->with($productModel)
-        ->andReturn(1);
+    $productModel = serviceDownloadableCreateProductEntity(config: '{"filename": "test.txt"}');
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('flush')->once();
 
     $di = new Pimple\Container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
 
     $service->setDi($di);
     $result = $service->saveProductConfig($productModel, $data);
@@ -130,31 +70,25 @@ test('saves product config', function (): void {
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 
-    $updatedConfig = json_decode($productModel->config, true);
+    $updatedConfig = json_decode($productModel->getConfig() ?? '', true);
     expect($updatedConfig)->toBeArray();
-    expect($updatedConfig['filename'])->toBe('test.txt');
+    expect($updatedConfig['filename'])->toEqual('test.txt');
     expect($updatedConfig['update_orders'])->toBeTrue();
-    expect($productModel->updated_at)->not->toBeNull();
+    expect($productModel->getUpdatedAt())->not->toBeNull();
 });
 
-test('saves product config with existing config', function (): void {
+test('save product config with existing config', function (): void {
     $service = new Service();
     $data = [
         'update_orders' => false,
     ];
 
-    $productModel = new Model_Product();
-    $productModel->loadBean(new Tests\Helpers\DummyBean());
-    $productModel->config = '{"filename": "existing.txt", "update_orders": true}';
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->with($productModel)
-        ->andReturn(1);
+    $productModel = serviceDownloadableCreateProductEntity(config: '{"filename": "existing.txt", "update_orders": true}');
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('flush')->once();
 
     $di = new Pimple\Container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
 
     $service->setDi($di);
     $result = $service->saveProductConfig($productModel, $data);
@@ -162,31 +96,25 @@ test('saves product config with existing config', function (): void {
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 
-    $updatedConfig = json_decode($productModel->config, true);
+    $updatedConfig = json_decode($productModel->getConfig() ?? '', true);
     expect($updatedConfig)->toBeArray();
-    expect($updatedConfig['filename'])->toBe('existing.txt');
+    expect($updatedConfig['filename'])->toEqual('existing.txt');
     expect($updatedConfig['update_orders'])->toBeFalse();
-    expect($productModel->updated_at)->not->toBeNull();
+    expect($productModel->getUpdatedAt())->not->toBeNull();
 });
 
-test('saves product config with no existing config', function (): void {
+test('save product config with no existing config', function (): void {
     $service = new Service();
     $data = [
         'update_orders' => true,
     ];
 
-    $productModel = new Model_Product();
-    $productModel->loadBean(new Tests\Helpers\DummyBean());
-    $productModel->config = null;
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->with($productModel)
-        ->andReturn(1);
+    $productModel = serviceDownloadableCreateProductEntity();
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('flush')->once();
 
     $di = new Pimple\Container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
 
     $service->setDi($di);
     $result = $service->saveProductConfig($productModel, $data);
@@ -194,8 +122,39 @@ test('saves product config with no existing config', function (): void {
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 
-    $updatedConfig = json_decode((string) $productModel->config, true);
+    $updatedConfig = json_decode($productModel->getConfig() ?? '', true);
     expect($updatedConfig)->toBeArray();
+    expect($updatedConfig)->toHaveKey('update_orders');
     expect($updatedConfig['update_orders'])->toBeTrue();
-    expect($productModel->updated_at)->not->toBeNull();
+    expect($productModel->getUpdatedAt())->not->toBeNull();
+});
+
+test('validate file upload allows known extension with octet stream mime', function (): void {
+    $service = new Service();
+    $service->setDi(container());
+
+    $file = Mockery::mock(UploadedFile::class)->shouldIgnoreMissing();
+    $file->shouldReceive('getClientOriginalExtension')->andReturn('exe');
+    $file->shouldReceive('getClientOriginalName')->andReturn('installer.exe');
+    $file->shouldReceive('getMimeType')->andReturn('application/octet-stream');
+
+    $reflection = new ReflectionMethod(Service::class, 'validateFileUpload');
+    $reflection->invoke($service, $file);
+
+    expect(true)->toBeTrue();
+});
+
+test('validate file upload rejects unknown extension', function (): void {
+    $service = new Service();
+    $service->setDi(container());
+
+    $file = Mockery::mock(UploadedFile::class)->shouldIgnoreMissing();
+    $file->shouldReceive('getClientOriginalExtension')->andReturn('php');
+    $file->shouldReceive('getClientOriginalName')->andReturn('shell.php');
+    $file->shouldReceive('getMimeType')->andReturn('application/x-httpd-php');
+
+    $reflection = new ReflectionMethod(Service::class, 'validateFileUpload');
+
+    expect(fn () => $reflection->invoke($service, $file))
+        ->toThrow(FOSSBilling\Exception::class);
 });

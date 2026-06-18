@@ -21,8 +21,6 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      * Check license details callback. Request IP is detected automatically
      * You can pass any other parameters to be validated by license plugin.
      *
-     * @optional string $legacy - deprecated parameter. Returns result in non consistent API result
-     *
      * @return array - bool
      */
     public function check($data)

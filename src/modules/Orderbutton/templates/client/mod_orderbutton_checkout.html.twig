@@ -35,7 +35,7 @@
                             <td>
                                 {% if item.discount_price %}
                                     <del>{{ (item.total * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</del>
-                                    <strong class="text-success">{{ (item.total-item.discount_price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</strong>
+                                    <strong class="text-success">{{ ((item.total - item.discount_price) * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</strong>
                                 {% else %}
                                     {{ (item.total * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}
                                 {% endif %}
@@ -111,8 +111,8 @@
                     </tbody>
                 </table>
 
-                <div class="row-fluid">
-                    <div class="span6">
+                <div class="row">
+                    <div class="col-md-6">
                         {% if not cart.promocode %}
                             <a href="#" id="show-promo-field">{{ 'Have a coupon code?'|trans }}</a>
                         {% endif %}
@@ -134,7 +134,7 @@
                         </form>
                     </div>
 
-                    <div class="span6">
+                    <div class="col-md-6">
                         <table class="table table-bordered table-striped">
                             {% if cart.discount >0 %}
                                 <tr>
@@ -194,7 +194,7 @@
                                         {% if enough_in_balance %}
                                             <p>{{ 'Total amount will be deducted from account balance'|trans }}</p>
                                         {% endif %}
-                                        {% if settings.checkout_tos == 'explicit' %}
+                                        {% if settings.checkout_tos|default('0') == 'explicit' %}
                                             <div class="form-check mb-1">
                                                 <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" required>
                                                 <label class="form-check-label" for="flexCheckDefault">
@@ -208,7 +208,7 @@
                                     </div>
                                 </div>
                             </fieldset>
-                            {% if settings.checkout_tos == 'implicit' %}
+                            {% if settings.checkout_tos|default('0') == 'implicit' %}
                                 {# TODO: Make this translatable once support for placeholders is implemented #}
                                 <span class="text-muted">By completing your order, you agree to our <a href="{{ 'tos'|url }}" target="_blank">{{ 'Terms of Service'|trans }}</a> and <a href="{{ 'privacy-policy'|url }}" target="_blank">{{ 'Privacy Policy'|trans }}</a>.</span>
                             {% endif %}

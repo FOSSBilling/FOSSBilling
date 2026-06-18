@@ -1,4 +1,5 @@
-{% if list.pages > 1 and (url is defined and url is not null) %}
+{% if list.pages > 1 %}
+    {% set url = url|default(guest.system_current_url|split('?')|first) %}
     {% set pageParam = page_param|default('page') %}
     {% set hash = hash|default('') %}
     {% set currentPageRaw = request.(pageParam)|default(1) %}
@@ -15,7 +16,7 @@
     {% set filteredRequest = safeRequest|filter(v => v is not null) %}
     <nav aria-label="{{ 'Pagination'|trans }}">
         <ul class="pagination justify-content-center mb-0">
-            <li class="page-item{% if not currentPage or currentPage == 1 %} disabled{% endif %}">
+            <li class="page-item{% if currentPage == 1 %} disabled{% endif %}">
                 <a class="page-link"
                    href="{{ url|url(filteredRequest|merge({ (pageParam): 1 })) ~ hash }}"
                    aria-label="{{ 'First'|trans }}">
@@ -23,7 +24,7 @@
                 </a>
             </li>
 
-            <li class="page-item{% if not currentPage or currentPage == 1 %} disabled{% endif %}">
+            <li class="page-item{% if currentPage == 1 %} disabled{% endif %}">
                 <a class="page-link"
                    href="{{ url|url(filteredRequest|merge({ (pageParam): currentPage - 1 })) ~ hash }}"
                    aria-label="{{ 'Previous'|trans }}" rel="prev">

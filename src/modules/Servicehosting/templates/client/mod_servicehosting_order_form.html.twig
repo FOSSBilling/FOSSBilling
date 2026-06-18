@@ -3,7 +3,7 @@
 {% set tlds = guest.serviceDomain_tlds({"allow_register":1}) %}
 {% set transfer_tlds = guest.serviceDomain_tlds({"allow_transfer":1}) %}
 
-{# Domain configuration settings - default to true for backward compatibility #}
+{# Domain configuration settings default to enabled when unset. #}
 {% set allow_register = product.config.allow_domain_register ?? true %}
 {% set allow_transfer = product.config.allow_domain_transfer ?? true %}
 {% set allow_own = product.config.allow_domain_own ?? true %}

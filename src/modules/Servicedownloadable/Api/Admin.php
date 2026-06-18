@@ -31,7 +31,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('servicedownloadable', 'manage');
 
-        $model = $this->getDi()['db']->getExistingModelById('Product', $data['id'], 'Product not found');
+        $model = $this->di['mod_service']('product')->findProductById((int) $data['id']);
 
         $request = $this->getDi()['request'];
         if (!$request->files->has('file_data')) {
@@ -79,7 +79,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('servicedownloadable', 'manage');
 
-        $model = $this->getDi()['db']->getExistingModelById('Product', $data['id'], 'Product not found');
+        $model = $this->di['mod_service']('product')->findProductById((int) $data['id']);
 
         $service = $this->getService();
 
@@ -100,7 +100,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('servicedownloadable', 'manage');
 
-        $model = $this->getDi()['db']->getExistingModelById('Product', $data['id'], 'Product not found');
+        $model = $this->di['mod_service']('product')->findProductById((int) $data['id']);
 
         $service = $this->getService();
 

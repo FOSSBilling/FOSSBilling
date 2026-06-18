@@ -97,10 +97,9 @@ class Client extends \FOSSBilling\Api\AbstractApi
     public function upgradables($data)
     {
         $model = $this->_getOrder($data);
-        $product = $this->getDi()['db']->getExistingModelById('Product', $model->product_id);
-        $productService = $this->getDi()['mod_service']('product');
+        $productService = $this->di['mod_service']('product');
 
-        return $productService->getUpgradablePairs($product);
+        return $productService->getUpgradablePairsByProductId((int) $model->product_id);
     }
 
     /**

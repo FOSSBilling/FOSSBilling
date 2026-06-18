@@ -1035,13 +1035,7 @@ test('canned create', function (): void {
         ->atLeast()->once()
         ->andReturn($randId);
 
-    $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
-    $systemServiceMock->shouldReceive('checkLimits')
-        ->byDefault()
-        ->andReturn(null);
-
     $di = container();
-    $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
     $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
@@ -1716,16 +1710,10 @@ test('kb create category', function (): void {
         ->atLeast()->once()
         ->andReturn('article-slug');
 
-    $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
-    $systemServiceMock->shouldReceive('checkLimits')
-        ->byDefault()
-        ->andReturn(true);
-
     $di = container();
     $di['db'] = $dbMock;
     $di['tools'] = $toolsMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['mod_service'] = $di->protect(fn () => $systemServiceMock);
     $service->setDi($di);
 
     $result = $service->kbCreateCategory('Title', 'Description');

@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use Box\Mod\Product\Api\Guest;
+use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Service;
 
 use function Tests\Helpers\container;
@@ -27,17 +28,11 @@ test('gets product with id', function (): void {
     $api = new Guest();
     $data = ['id' => 1];
 
-    $model = new Model_Product();
+    $model = new Product();
 
     $serviceMock = Mockery::mock(Service::class);
-    /** @var Mockery\Expectation $expectation1 */
-    $expectation1 = $serviceMock->shouldReceive('findOneActiveById');
-    $expectation1->atLeast()->once();
-    $expectation1->andReturn($model);
-    /** @var Mockery\Expectation $expectation2 */
-    $expectation2 = $serviceMock->shouldReceive('toApiArray');
-    $expectation2->atLeast()->once();
-    $expectation2->andReturn([]);
+    $serviceMock->shouldReceive('findOneActiveById')->atLeast()->once()->andReturn($model);
+    $serviceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn([]);
 
     $di = container();
     $api->setDi($di);
@@ -50,17 +45,11 @@ test('gets product with slug', function (): void {
     $api = new Guest();
     $data = ['slug' => 'product/1'];
 
-    $model = new Model_Product();
+    $model = new Product();
 
     $serviceMock = Mockery::mock(Service::class);
-    /** @var Mockery\Expectation $expectation1 */
-    $expectation1 = $serviceMock->shouldReceive('findOneActiveBySlug');
-    $expectation1->atLeast()->once();
-    $expectation1->andReturn($model);
-    /** @var Mockery\Expectation $expectation2 */
-    $expectation2 = $serviceMock->shouldReceive('toApiArray');
-    $expectation2->atLeast()->once();
-    $expectation2->andReturn([]);
+    $serviceMock->shouldReceive('findOneActiveBySlug')->atLeast()->once()->andReturn($model);
+    $serviceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn([]);
 
     $di = container();
     $api->setDi($di);
@@ -74,10 +63,7 @@ test('throws exception when product not found', function (): void {
     $data = ['slug' => 'product/1'];
 
     $serviceMock = Mockery::mock(Service::class);
-    /** @var Mockery\Expectation $expectation */
-    $expectation = $serviceMock->shouldReceive('findOneActiveBySlug');
-    $expectation->atLeast()->once();
-    $expectation->andReturn(null);
+    $serviceMock->shouldReceive('findOneActiveBySlug')->atLeast()->once()->andReturn(null);
 
     $di = container();
     $api->setDi($di);
@@ -87,43 +73,28 @@ test('throws exception when product not found', function (): void {
         ->toThrow(FOSSBilling\Exception::class, 'Product not found');
 });
 
+test('gets paginated product list', function (): void {
+    $api = new Guest();
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('getPaginatedProducts')
+        ->once()
+        ->with(['status' => 'enabled', 'show_hidden' => false])
+        ->andReturn(['list' => []]);
+
+    $api->setService($serviceMock);
+    $result = $api->get_list([]);
+    expect($result)->toBeArray();
+});
+
 test('gets category list', function (): void {
     $api = new Guest();
     $serviceMock = Mockery::mock(Service::class);
-    /** @var Mockery\Expectation $expectation1 */
-    $expectation1 = $serviceMock->shouldReceive('getProductCategorySearchQuery');
-    $expectation1->atLeast()->once();
-    $expectation1->andReturn(['sqlString', []]);
-    /** @var Mockery\Expectation $expectation2 */
-    $expectation2 = $serviceMock->shouldReceive('toProductCategoryApiArray');
-    $expectation2->atLeast()->once();
-    $expectation2->andReturn([]);
-
-    $pager = [
-        'list' => [
-            0 => ['id' => 1],
-        ],
-    ];
-    $pagerMock = Mockery::mock(FOSSBilling\Pagination::class);
-    /** @var Mockery\Expectation $expectation4 */
-    $expectation4 = $pagerMock->shouldReceive('getPaginatedResultSet');
-    $expectation4->atLeast()->once();
-    $expectation4->andReturn($pager);
-
-    $modelProductCategory = new Model_ProductCategory();
-    $modelProductCategory->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock = Mockery::mock('\Box_Database');
-    /** @var Mockery\Expectation $expectation5 */
-    $expectation5 = $dbMock->shouldReceive('getExistingModelById');
-    $expectation5->atLeast()->once();
-    $expectation5->andReturn($modelProductCategory);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $di['pager'] = $pagerMock;
+    $serviceMock->shouldReceive('getPaginatedProductCategories')
+        ->once()
+        ->with(['status' => 'enabled'])
+        ->andReturn(['list' => []]);
 
     $api->setService($serviceMock);
-    $api->setDi($di);
     $result = $api->category_get_list([]);
     expect($result)->toBeArray();
 });
@@ -131,10 +102,7 @@ test('gets category list', function (): void {
 test('gets category pairs', function (): void {
     $api = new Guest();
     $serviceMock = Mockery::mock(Service::class);
-    /** @var Mockery\Expectation $expectation */
-    $expectation = $serviceMock->shouldReceive('getProductCategoryPairs');
-    $expectation->atLeast()->once();
-    $expectation->andReturn([]);
+    $serviceMock->shouldReceive('getProductCategoryPairs')->atLeast()->once()->andReturn([]);
 
     $api->setService($serviceMock);
     $result = $api->category_get_pairs([]);

@@ -362,7 +362,7 @@ class Server_Manager_Hestia extends Server_Manager
         $client = $this->getHttpClient()->withOptions([
             'verify_peer' => $verifyTls,
             'verify_host' => $verifyTls,
-            'timeout' => 30,
+            'timeout' => 120,
         ]);
 
         $response = $client->request('POST', $host, [

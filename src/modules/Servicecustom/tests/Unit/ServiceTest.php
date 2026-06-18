@@ -12,23 +12,21 @@ declare(strict_types=1);
 
 use Box\Mod\Formbuilder\Service as FormbuilderService;
 use Box\Mod\Order\Service as OrderService;
+use Box\Mod\Product\Entity\Product;
+use Box\Mod\Product\Service as ProductService;
 use Box\Mod\Servicecustom\Service;
 
 use function Tests\Helpers\container;
 
-afterEach(function (): void {
-    Mockery::close();
-});
-
-test('gets dependency injection container', function (): void {
+test('di returns dependency injection container', function (): void {
     $service = new Service();
     $di = container();
     $service->setDi($di);
     $getDi = $service->getDi();
-    expect($getDi)->toBe($di);
+    expect($getDi)->toEqual($di);
 });
 
-test('validates custom form', function (): void {
+test('validate custom form', function (): void {
     $service = new Service();
     $form = [
         'fields' => [
@@ -43,9 +41,7 @@ test('validates custom form', function (): void {
     ];
 
     $formbuilderService = Mockery::mock(FormbuilderService::class);
-    $formbuilderService->shouldReceive('getForm')
-        ->atLeast()->once()
-        ->andReturn($form);
+    $formbuilderService->shouldReceive('getForm')->atLeast()->once()->andReturn($form);
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $formbuilderService);
@@ -63,7 +59,7 @@ test('validates custom form', function (): void {
     expect($result)->toBeNull();
 });
 
-test('throws exception when validating custom form with missing field name', function (): void {
+test('validate custom form field name not set exception', function (): void {
     $service = new Service();
     $form = [
         'fields' => [
@@ -78,9 +74,7 @@ test('throws exception when validating custom form with missing field name', fun
     ];
 
     $formbuilderService = Mockery::mock(FormbuilderService::class);
-    $formbuilderService->shouldReceive('getForm')
-        ->atLeast()->once()
-        ->andReturn($form);
+    $formbuilderService->shouldReceive('getForm')->atLeast()->once()->andReturn($form);
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $formbuilderService);
@@ -96,7 +90,7 @@ test('throws exception when validating custom form with missing field name', fun
         ->toThrow(Exception::class);
 });
 
-test('throws exception when validating custom form with readonly field change', function (): void {
+test('validate custom form readonly field change exception', function (): void {
     $service = new Service();
     $form = [
         'fields' => [
@@ -111,9 +105,7 @@ test('throws exception when validating custom form with readonly field change', 
     ];
 
     $formbuilderService = Mockery::mock(FormbuilderService::class);
-    $formbuilderService->shouldReceive('getForm')
-        ->atLeast()->once()
-        ->andReturn($form);
+    $formbuilderService->shouldReceive('getForm')->atLeast()->once()->andReturn($form);
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $formbuilderService);
@@ -131,7 +123,112 @@ test('throws exception when validating custom form with readonly field change', 
         ->toThrow(Exception::class);
 });
 
-test('creates action', function (): void {
+test('validate custom form invalid url exception', function (): void {
+    $service = new Service();
+    $form = [
+        'fields' => [
+            0 => [
+                'type' => 'url',
+                'name' => 'website',
+                'label' => 'Website',
+                'required' => 0,
+            ],
+        ],
+    ];
+
+    $formbuilderService = Mockery::mock(FormbuilderService::class);
+    $formbuilderService->shouldReceive('getForm')->atLeast()->once()->andReturn($form);
+    $formbuilderService->shouldReceive('validateUrlField')->atLeast()->once()->andReturn(false);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $formbuilderService);
+
+    $service->setDi($di);
+
+    $product = [
+        'form_id' => 1,
+    ];
+    $data = [
+        'website' => 'invalid-url',
+    ];
+
+    expect(fn () => $service->validateCustomForm($data, $product))
+        ->toThrow(FOSSBilling\InformationException::class, 'Field Website must be a valid URL with a TLD (e.g., https://example.com)');
+});
+
+test('validate custom form valid url', function (): void {
+    $service = new Service();
+    $form = [
+        'fields' => [
+            0 => [
+                'type' => 'url',
+                'name' => 'website',
+                'label' => 'Website',
+                'required' => 0,
+            ],
+        ],
+    ];
+
+    $formbuilderService = Mockery::mock(FormbuilderService::class);
+    $formbuilderService->shouldReceive('getForm')->atLeast()->once()->andReturn($form);
+    $formbuilderService->shouldReceive('validateUrlField')->atLeast()->once()->andReturn(true);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $formbuilderService);
+
+    $service->setDi($di);
+
+    $product = [
+        'form_id' => 1,
+    ];
+    $data = [
+        'website' => 'https://example.com',
+    ];
+
+    $result = $service->validateCustomForm($data, $product);
+    expect($result)->toBeNull();
+});
+
+test('validate custom form url array input throws information exception', function (): void {
+    $service = new Service();
+    $form = [
+        'fields' => [
+            0 => [
+                'type' => 'url',
+                'name' => 'website',
+                'label' => 'Website',
+                'required' => 0,
+            ],
+        ],
+    ];
+
+    $formbuilderService = Mockery::mock(FormbuilderService::class);
+    $formbuilderService->shouldReceive('getForm')->once()->andReturn($form);
+    $formbuilderService->shouldNotReceive('validateUrlField');
+
+    $di = container();
+    $di['mod_service'] = $di->protect(function (string $module) use ($formbuilderService): Mockery\MockInterface {
+        if ($module !== 'formbuilder') {
+            throw new InvalidArgumentException(sprintf('Unexpected module requested: %s', $module));
+        }
+
+        return $formbuilderService;
+    });
+
+    $service->setDi($di);
+
+    $product = [
+        'form_id' => 1,
+    ];
+    $data = [
+        'website' => ['x'],
+    ];
+
+    expect(fn () => $service->validateCustomForm($data, $product))
+        ->toThrow(FOSSBilling\InformationException::class, 'Field Website must be a valid URL with a TLD (e.g., https://example.com)');
+});
+
+test('action create', function (): void {
     $service = new Service();
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
@@ -139,33 +236,35 @@ test('creates action', function (): void {
     $order->client_id = 1;
     $order->config = 'config';
 
-    $product = new Model_Product();
-    $product->loadBean(new Tests\Helpers\DummyBean());
-    $product->plugin = 'plugin';
-    $product->plugin_config = 'plugin_config';
+    $product = new Product();
+    $product->setPlugin('plugin');
+    $product->setPluginConfig('plugin_config');
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(1);
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($product);
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn(1);
     $serviceCustomModel = new Model_ServiceCustom();
     $serviceCustomModel->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturn($serviceCustomModel);
+    $dbMock->shouldReceive('dispense')->atLeast()->once()->andReturn($serviceCustomModel);
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('findProductById')->once()->with(1)->andReturn($product);
 
     $di = container();
     $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(function (string $service) use ($productService): Mockery\MockInterface {
+        if ($service === 'product') {
+            return $productService;
+        }
+
+        throw new RuntimeException('Unexpected service request');
+    });
     $service->setDi($di);
 
     $result = $service->action_create($order);
     expect($result)->toBeInstanceOf(Model_ServiceCustom::class);
 });
 
-test('activates action', function (): void {
+test('action activate', function (): void {
     $service = new Service();
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
@@ -176,40 +275,36 @@ test('activates action', function (): void {
     $serviceCustomModel->loadBean(new Tests\Helpers\DummyBean());
     $serviceCustomModel->plugin = '';
 
-    $orderServiceMock = Mockery::mock(OrderService::class);
-    $orderServiceMock->shouldReceive('getOrderService')
-        ->atLeast()->once()
-        ->andReturn($serviceCustomModel);
+    $serviceMock = Mockery::mock(OrderService::class);
+    $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceCustomModel);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceMock);
     $service->setDi($di);
 
     $result = $service->action_activate($order);
     expect($result)->toBeTrue();
 });
 
-test('throws exception when activating without order service', function (): void {
+test('action activate order service not created exception', function (): void {
     $service = new Service();
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
     $order->client_id = 1;
     $order->config = 'config';
 
-    $orderServiceMock = Mockery::mock(OrderService::class);
-    $orderServiceMock->shouldReceive('getOrderService')
-        ->atLeast()->once()
-        ->andReturn(null);
+    $serviceMock = Mockery::mock(OrderService::class);
+    $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn(null);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceMock);
     $service->setDi($di);
 
-    expect(fn (): bool => $service->action_activate($order))
+    expect(fn () => $service->action_activate($order))
         ->toThrow(Exception::class);
 });
 
-test('renews action', function (): void {
+test('action renew', function (): void {
     $service = new Service();
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
@@ -220,26 +315,22 @@ test('renews action', function (): void {
     $serviceCustomModel->loadBean(new Tests\Helpers\DummyBean());
     $serviceCustomModel->plugin = '';
 
-    $orderServiceMock = Mockery::mock(OrderService::class);
-    $orderServiceMock->shouldReceive('getOrderService')
-        ->atLeast()->once()
-        ->andReturn($serviceCustomModel);
+    $serviceMock = Mockery::mock(OrderService::class);
+    $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceCustomModel);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(1);
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn(1);
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceMock);
     $service->setDi($di);
 
     $result = $service->action_renew($order);
     expect($result)->toBeTrue();
 });
 
-test('throws exception when renewing without active service', function (): void {
+test('active service not found exception', function (): void {
     $service = new Service();
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
@@ -247,20 +338,18 @@ test('throws exception when renewing without active service', function (): void 
     $order->client_id = 1;
     $order->config = 'config';
 
-    $orderServiceMock = Mockery::mock(OrderService::class);
-    $orderServiceMock->shouldReceive('getOrderService')
-        ->atLeast()->once()
-        ->andReturn(null);
+    $serviceMock = Mockery::mock(OrderService::class);
+    $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn(null);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceMock);
     $service->setDi($di);
 
-    expect(fn (): bool => $service->action_renew($order))
+    expect(fn () => $service->action_renew($order))
         ->toThrow(Exception::class);
 });
 
-test('suspends action', function (): void {
+test('action suspend', function (): void {
     $service = new Service();
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
@@ -271,26 +360,22 @@ test('suspends action', function (): void {
     $serviceCustomModel->loadBean(new Tests\Helpers\DummyBean());
     $serviceCustomModel->plugin = '';
 
-    $orderServiceMock = Mockery::mock(OrderService::class);
-    $orderServiceMock->shouldReceive('getOrderService')
-        ->atLeast()->once()
-        ->andReturn($serviceCustomModel);
+    $serviceMock = Mockery::mock(OrderService::class);
+    $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceCustomModel);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(1);
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn(1);
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceMock);
     $service->setDi($di);
 
     $result = $service->action_suspend($order);
     expect($result)->toBeTrue();
 });
 
-test('unsuspends action', function (): void {
+test('action unsuspend', function (): void {
     $service = new Service();
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
@@ -301,26 +386,22 @@ test('unsuspends action', function (): void {
     $serviceCustomModel->loadBean(new Tests\Helpers\DummyBean());
     $serviceCustomModel->plugin = '';
 
-    $orderServiceMock = Mockery::mock(OrderService::class);
-    $orderServiceMock->shouldReceive('getOrderService')
-        ->atLeast()->once()
-        ->andReturn($serviceCustomModel);
+    $serviceMock = Mockery::mock(OrderService::class);
+    $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceCustomModel);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(1);
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn(1);
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceMock);
     $service->setDi($di);
 
     $result = $service->action_unsuspend($order);
     expect($result)->toBeTrue();
 });
 
-test('cancels action', function (): void {
+test('action cancel', function (): void {
     $service = new Service();
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
@@ -331,26 +412,22 @@ test('cancels action', function (): void {
     $serviceCustomModel->loadBean(new Tests\Helpers\DummyBean());
     $serviceCustomModel->plugin = '';
 
-    $orderServiceMock = Mockery::mock(OrderService::class);
-    $orderServiceMock->shouldReceive('getOrderService')
-        ->atLeast()->once()
-        ->andReturn($serviceCustomModel);
+    $serviceMock = Mockery::mock(OrderService::class);
+    $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceCustomModel);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(1);
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn(1);
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceMock);
     $service->setDi($di);
 
     $result = $service->action_cancel($order);
     expect($result)->toBeTrue();
 });
 
-test('uncancels action', function (): void {
+test('action uncancel', function (): void {
     $service = new Service();
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
@@ -361,26 +438,22 @@ test('uncancels action', function (): void {
     $serviceCustomModel->loadBean(new Tests\Helpers\DummyBean());
     $serviceCustomModel->plugin = '';
 
-    $orderServiceMock = Mockery::mock(OrderService::class);
-    $orderServiceMock->shouldReceive('getOrderService')
-        ->atLeast()->once()
-        ->andReturn($serviceCustomModel);
+    $serviceMock = Mockery::mock(OrderService::class);
+    $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceCustomModel);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(1);
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn(1);
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceMock);
     $service->setDi($di);
 
     $result = $service->action_uncancel($order);
     expect($result)->toBeTrue();
 });
 
-test('deletes action', function (): void {
+test('action delete', function (): void {
     $service = new Service();
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
@@ -391,26 +464,22 @@ test('deletes action', function (): void {
     $serviceCustomModel->loadBean(new Tests\Helpers\DummyBean());
     $serviceCustomModel->plugin = '';
 
-    $orderServiceMock = Mockery::mock(OrderService::class);
-    $orderServiceMock->shouldReceive('getOrderService')
-        ->atLeast()->once()
-        ->andReturn($serviceCustomModel);
+    $serviceMock = Mockery::mock(OrderService::class);
+    $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceCustomModel);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('trash')
-        ->atLeast()->once()
-        ->andReturn(null);
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('trash')->atLeast()->once()->andReturn(null);
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceMock);
     $service->setDi($di);
 
     $result = $service->action_delete($order);
     expect($result)->toBeTrue();
 });
 
-test('gets config', function (): void {
+test('get config', function (): void {
     $service = new Service();
     $decoded = [
         'J' => 5,
@@ -425,10 +494,11 @@ test('gets config', function (): void {
     $model->config = json_encode($decoded);
 
     $result = $service->getConfig($model);
-    expect($result)->toBe($decoded);
+
+    expect($result)->toEqual($decoded);
 });
 
-test('converts to api array', function (): void {
+test('to api array', function (): void {
     $service = new Service();
     $di = container();
     $service->setDi($di);
@@ -444,81 +514,83 @@ test('converts to api array', function (): void {
 
     $result = $service->toApiArray($model);
 
-    expect($result)->toBeArray();
-    expect($result['client_id'])->toBe($model->client_id);
-    expect($result['plugin'])->toBe($model->plugin);
-    expect($result['config_param'])->toBe('config_value');
-    expect($result['updated_at'])->toBe($model->updated_at);
-    expect($result['created_at'])->toBe($model->created_at);
+    expect($result['client_id'])->toEqual($model->client_id);
+    expect($result['plugin'])->toEqual($model->plugin);
+    expect($result['config_param'])->toEqual('config_value');
+    expect($result['updated_at'])->toEqual($model->updated_at);
+    expect($result['created_at'])->toEqual($model->created_at);
 });
 
-test('throws exception for forbidden custom call method', function (): void {
+test('custom call forbidden method exception', function (): void {
     $service = new Service();
+
     expect(fn () => $service->customCall(new Model_ServiceCustom(), 'delete'))
         ->toThrow(Exception::class);
 });
 
-test('gets service custom by order id', function (): void {
+test('get service custom by order id', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn(new Model_ClientOrder());
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn(new Model_ClientOrder());
 
-    $orderServiceMock = Mockery::mock(OrderService::class);
-    $orderServiceMock->shouldReceive('getOrderService')
-        ->atLeast()->once()
-        ->andReturn(new Model_ServiceCustom());
+    $orderService = Mockery::mock(OrderService::class);
+    $orderService->shouldReceive('getOrderService')->atLeast()->once()->andReturn(new Model_ServiceCustom());
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderService);
     $service->setDi($di);
 
     $result = $service->getServiceCustomByOrderId(1);
+
     expect($result)->toBeInstanceOf(Model_ServiceCustom::class);
 });
 
-test('throws exception when getting service custom by order id without order service', function (): void {
+test('get service custom by order id rejects order owned by another client', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn(new Model_ClientOrder());
-
-    $orderServiceMock = Mockery::mock(OrderService::class);
-    $orderServiceMock->shouldReceive('getOrderService')
-        ->atLeast()->once()
-        ->andReturn(null);
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('findOne')->once()->with('ClientOrder', 'id = ? AND client_id = ?', [1, 42])->andReturn(null);
+    $dbMock->shouldNotReceive('getExistingModelById');
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+    $service->setDi($di);
+
+    expect(fn () => $service->getServiceCustomByOrderId(1, 42))
+        ->toThrow(Exception::class, 'Order not found');
+});
+
+test('get service custom by order id order service not found exception', function (): void {
+    $service = new Service();
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn(new Model_ClientOrder());
+
+    $orderService = Mockery::mock(OrderService::class);
+    $orderService->shouldReceive('getOrderService')->atLeast()->once()->andReturn(null);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderService);
     $service->setDi($di);
 
     expect(fn () => $service->getServiceCustomByOrderId(1))
         ->toThrow(Exception::class);
 });
 
-test('updates config', function (): void {
-    $service = new Service();
+test('update config', function (): void {
     $model = new Model_ServiceCustom();
     $model->loadBean(new Tests\Helpers\DummyBean());
     $model->id = 1;
 
-    $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('getServiceCustomByOrderId')
-        ->atLeast()->once()
-        ->andReturn($model);
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('getServiceCustomByOrderId')->atLeast()->once()->andReturn($model);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(1);
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn(1);
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['logger'] = new Box_Log();
     $serviceMock->setDi($di);
 
     $config = ['param1' => 'value1'];
@@ -526,23 +598,20 @@ test('updates config', function (): void {
     expect($result)->toBeNull();
 });
 
-test('throws exception when updating config with non-array', function (): void {
-    $service = new Service();
+test('update config not array exception', function (): void {
     $model = new Model_ServiceCustom();
     $model->loadBean(new Tests\Helpers\DummyBean());
     $model->id = 1;
 
-    $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('getServiceCustomByOrderId')
-        ->never();
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldNotReceive('getServiceCustomByOrderId');
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->never();
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldNotReceive('store');
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['logger'] = new Box_Log();
     $serviceMock->setDi($di);
 
     $config = '';

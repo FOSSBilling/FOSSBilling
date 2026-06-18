@@ -47,7 +47,13 @@
         "resends",
         "Parenthesise",
         "yagiz",
-        "overpayments"
+        "overpayments",
+        "Litepicker",
+        "servicecustomtest",
+        "customtest",
+        "Customtest",
+        "mysite",
+        "myhost"
     ],
 
     "ignoreWords": [

@@ -10,52 +10,80 @@
 
 declare(strict_types=1);
 
-use function Tests\Helpers\container;
-use function Tests\Helpers\moduleService;
+use Box\Mod\Cart\Service;
+use Box\Mod\Currency\Entity\Currency;
+use Box\Mod\Currency\Repository\CurrencyRepository;
+use Box\Mod\Currency\Service as CurrencyService;
+use Box\Mod\Product\Entity\Product;
+use Box\Mod\Product\Entity\Promo;
+use Box\Mod\Product\Entity\PromoRedemption;
+use Box\Mod\Product\Service as ProductService;
+use Symfony\Component\HttpFoundation\Request;
 
-test('dependency injection', function (): void {
-    $service = new Box\Mod\Cart\Service();
-    $service = new Box\Mod\Cart\Service();
+use function Tests\Helpers\container;
+
+function createProductEntity(?int $id = null, ?string $type = null, ?string $config = null): Product
+{
+    $product = new Product();
+    if ($id !== null) {
+        $reflection = new ReflectionProperty($product, 'id');
+        $reflection->setAccessible(true);
+        $reflection->setValue($product, $id);
+    }
+    if ($type !== null) {
+        $product->setType($type);
+    }
+    if ($config !== null) {
+        $product->setConfig($config);
+    }
+
+    return $product;
+}
+
+function createPromoEntity(int $id): Promo
+{
+    $promo = new Promo();
+    $reflection = new ReflectionProperty($promo, 'id');
+    $reflection->setAccessible(true);
+    $reflection->setValue($promo, $id);
+
+    return $promo;
+}
+
+test('gets dependency injection container', function (): void {
+    $service = new Service();
 
     $di = container();
-    $db = Mockery::mock('Box_Database');
+    $db = Mockery::mock(Box_Database::class)->shouldIgnoreMissing();
 
     $di['db'] = $db;
     $service->setDi($di);
     $result = $service->getDi();
-
     expect($result)->toEqual($di);
 });
 
-test('get search query', function (): void {
-    $service = new Box\Mod\Cart\Service();
-    $service = new Box\Mod\Cart\Service();
+test('gets search query', function (): void {
+    $service = new Service();
     $result = $service->getSearchQuery([]);
-
     expect($result[0])->toBeString();
     expect($result[1])->toBeArray();
-    expect(strpos((string) $result[0], 'SELECT cart.id FROM cart'))->not->toBeFalse();
+    expect(strpos($result[0], 'SELECT cart.id FROM cart'))->not->toBeFalse();
 });
 
-test('get session cart exists', function (): void {
-    $service = new Box\Mod\Cart\Service();
-    $service = new Box\Mod\Cart\Service();
+test('getSessionCart returns existing cart', function (): void {
+    $service = new Service();
 
-    $sessionId = 'rrcpqo7tkjh14d2vmf0car64k7';
+    $session_id = 'rrcpqo7tkjh14d2vmf0car64k7';
 
     $model = new Model_Cart();
     $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->session_id = $sessionId;
+    $model->session_id = $session_id;
 
-    $dbMock = Mockery::mock('Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($model);
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('findOne')->atLeast()->once()->andReturn($model);
 
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
-    $sessionMock->shouldReceive('getId')
-        ->atLeast()->once()
-        ->andReturn($sessionId);
+    $sessionMock = Mockery::mock(FOSSBilling\Session::class)->shouldIgnoreMissing();
+    $sessionMock->shouldReceive('getId')->atLeast()->once()->andReturn($session_id);
 
     $di = container();
     $di['db'] = $dbMock;
@@ -64,151 +92,113 @@ test('get session cart exists', function (): void {
 
     $result = $service->getSessionCart();
 
-    expect($result)->toBeInstanceOf('Model_Cart');
-    expect($result->session_id)->toEqual($sessionId);
+    expect($result)->toBeInstanceOf(Model_Cart::class);
+    expect($result->session_id)->toEqual($session_id);
 });
 
-dataset('getSessionCartDoesNotExistProvider', fn (): array => [
-    [
-        100,
-        'atLeastOnce',
-        'never',
-    ],
-    [
-        null,
-        'never',
-        'atLeastOnce',
-    ],
-]);
+test('getSessionCart creates a new cart when one does not exist', function (?int $sessionGetWillReturn, string $getCurrencyByClientIdExpects, string $getDefaultExpects): void {
+    $service = new Service();
 
-test('get session cart does not exist', function (?int $sessionGetWillReturn, string $getCurrencyByClientIdExpects, string $getDefaultExpects): void {
-    $service = new Box\Mod\Cart\Service();
-    $service = new Box\Mod\Cart\Service();
-
-    $currencyModel = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
+    $currencyModel = Mockery::mock(Currency::class)->shouldIgnoreMissing();
     $currencyId = random_int(0, 1000);
-    $currencyModel->shouldReceive('getId')
-        ->byDefault()
-        ->andReturn($currencyId);
+    $currencyModel->shouldReceive('getId')->andReturn($currencyId);
 
-    $sessionId = 'rrcpqo7tkjh14d2vmf0car64k7';
-    $model = null;
-    $dbMock = Mockery::mock('Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($model);
+    $session_id = 'rrcpqo7tkjh14d2vmf0car64k7';
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('findOne')->atLeast()->once()->andReturn(null);
     $modelCart = new Model_Cart();
     $modelCart->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturn($modelCart);
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(1);
+    $dbMock->shouldReceive('dispense')->atLeast()->once()->andReturn($modelCart);
+    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn(1);
 
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
-    $sessionMock->shouldReceive('getId')
-        ->atLeast()->once()
-        ->andReturn($sessionId);
-    $sessionMock->shouldReceive('get')
-        ->atLeast()->once()
-        ->andReturn($sessionGetWillReturn);
+    $sessionMock = Mockery::mock(FOSSBilling\Session::class)->shouldIgnoreMissing();
+    $sessionMock->shouldReceive('getId')->atLeast()->once()->andReturn($session_id);
+    $sessionMock->shouldReceive('get')->atLeast()->once()->andReturn($sessionGetWillReturn);
 
-    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
+    $currencyRepositoryMock = Mockery::mock(CurrencyRepository::class)->makePartial();
     if ($sessionGetWillReturn === null) {
-        $currencyRepositoryMock->shouldReceive('findDefault')
-            ->atLeast()->once()
-            ->andReturn($currencyModel);
+        $currencyRepositoryMock->shouldReceive('findDefault')->atLeast()->once()->andReturn($currencyModel);
     } else {
-        $currencyRepositoryMock->shouldReceive('findDefault')->never();
+        $currencyRepositoryMock->shouldNotReceive('findDefault');
     }
 
-    $currencyServiceMock = Mockery::mock(Box\Mod\Currency\Service::class)->makePartial();
+    $currencyServiceMock = Mockery::mock(CurrencyService::class)->makePartial();
     if ($getCurrencyByClientIdExpects === 'atLeastOnce') {
-        $currencyServiceMock->shouldReceive('getCurrencyByClientId')
-            ->atLeast()->once()
-            ->andReturn($currencyModel);
+        $currencyServiceMock->shouldReceive('getCurrencyByClientId')->atLeast()->once()->andReturn($currencyModel);
     } else {
-        $currencyServiceMock->shouldReceive('getCurrencyByClientId')->never();
+        $currencyServiceMock->shouldNotReceive('getCurrencyByClientId');
     }
-    $currencyServiceMock->shouldReceive('getCurrencyRepository')
-        ->atLeast()->once()
-        ->andReturn($currencyRepositoryMock);
+    $currencyServiceMock->shouldReceive('getCurrencyRepository')->atLeast()->once()->andReturn($currencyRepositoryMock);
 
     $di = container();
     $di['db'] = $dbMock;
     $di['session'] = $sessionMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $currencyServiceMock);
+    $di['mod_service'] = $di->protect(fn () => $currencyServiceMock);
     $service->setDi($di);
 
     $result = $service->getSessionCart();
 
-    expect($result)->toBeInstanceOf('Model_Cart');
-    expect($result->session_id)->toEqual($sessionId);
+    expect($result)->toBeInstanceOf(Model_Cart::class);
+    expect($result->session_id)->toEqual($session_id);
     expect($result->currency_id)->toEqual($currencyId);
-})->with('getSessionCartDoesNotExistProvider');
+})->with([
+    [100, 'atLeastOnce', 'never'],
+    [null, 'never', 'atLeastOnce'],
+]);
 
-test('is stock available returns false when insufficient', function (): void {
-    $service = new Box\Mod\Cart\Service();
-    $product = new Model_Product();
-    $product->loadBean(new Tests\Helpers\DummyBean());
-    $product->stock_control = true;
-    $product->quantity_in_stock = 5;
+test('isStockAvailable returns false when product out of stock', function (): void {
+    $product = createProductEntity();
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('isStockAvailable')->once()->with($product, 6)->andReturn(false);
 
+    $di = container();
+    $di['mod_service'] = $di->protect(static fn () => $productService);
+    $service = new Service();
+    $service->setDi($di);
     $result = $service->isStockAvailable($product, 6);
-
     expect($result)->toBeFalse();
 });
 
-test('is stock available returns true when no stock control', function (): void {
-    $service = new Box\Mod\Cart\Service();
-    $product = new Model_Product();
-    $product->loadBean(new Tests\Helpers\DummyBean());
-    $product->stock_control = false;
-    $product->quantity_in_stock = 5;
+test('isStockAvailable returns true when product in stock', function (): void {
+    $product = createProductEntity();
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('isStockAvailable')->once()->with($product, 6)->andReturn(true);
 
+    $di = container();
+    $di['mod_service'] = $di->protect(static fn () => $productService);
+    $service = new Service();
+    $service->setDi($di);
     $result = $service->isStockAvailable($product, 6);
-
     expect($result)->toBeTrue();
 });
 
-test('is recurrent pricing', function (): void {
-    $service = new Box\Mod\Cart\Service();
-    $productTable = Mockery::mock(Model_ProductTable::class);
-    $productTable->shouldReceive('getPricingArray')
-        ->atLeast()->once()
-        ->andReturn(['type' => Model_ProductPayment::RECURRENT]);
+test('isRecurrentPricing returns true', function (): void {
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('isRecurrentProductPricing')->once()->with(Mockery::type(Product::class))->andReturn(true);
 
-    $productModelMock = Mockery::mock(Model_Product::class)->makePartial();
-    $productModelMock->shouldReceive('getTable')
-        ->atLeast()->once()
-        ->andReturn($productTable);
+    $productModelMock = createProductEntity();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(static fn () => $productService);
+    $service = new Service();
+    $service->setDi($di);
 
     $result = $service->isRecurrentPricing($productModelMock);
 
     expect($result)->toBeTrue();
 });
 
-test('is period enabled for product', function (): void {
-    $service = new Box\Mod\Cart\Service();
+test('isPeriodEnabledForProduct returns false', function (): void {
     $enabled = false;
-    $pricingArray = [
-        'type' => Model_ProductPayment::RECURRENT,
-        'recurrent' => [
-            'monthly' => [
-                'enabled' => $enabled,
-            ],
-        ],
-    ];
-    $productTable = Mockery::mock(Model_ProductTable::class);
-    $productTable->shouldReceive('getPricingArray')
-        ->atLeast()->once()
-        ->andReturn($pricingArray);
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('isProductPeriodEnabled')->once()->with(Mockery::type(Product::class), 'monthly')->andReturn($enabled);
 
-    $productModelMock = Mockery::mock(Model_Product::class)->makePartial();
-    $productModelMock->shouldReceive('getTable')
-        ->atLeast()->once()
-        ->andReturn($productTable);
+    $productModelMock = createProductEntity();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(static fn () => $productService);
+    $service = new Service();
+    $service->setDi($di);
 
     $result = $service->isPeriodEnabledForProduct($productModelMock, 'monthly');
 
@@ -216,26 +206,16 @@ test('is period enabled for product', function (): void {
     expect($result)->toEqual($enabled);
 });
 
-test('is period enabled for product not recurrent', function (): void {
-    $service = new Box\Mod\Cart\Service();
-    $enabled = false;
-    $pricingArray = [
-        'type' => Model_ProductPayment::FREE,
-        'recurrent' => [
-            'monthly' => [
-                'enabled' => $enabled,
-            ],
-        ],
-    ];
-    $productTable = Mockery::mock(Model_ProductTable::class);
-    $productTable->shouldReceive('getPricingArray')
-        ->atLeast()->once()
-        ->andReturn($pricingArray);
+test('isPeriodEnabledForProduct returns true', function (): void {
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('isProductPeriodEnabled')->once()->with(Mockery::type(Product::class), 'monthly')->andReturn(true);
 
-    $productModelMock = Mockery::mock(Model_Product::class)->makePartial();
-    $productModelMock->shouldReceive('getTable')
-        ->atLeast()->once()
-        ->andReturn($productTable);
+    $productModelMock = createProductEntity();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(static fn () => $productService);
+    $service = new Service();
+    $service->setDi($di);
 
     $result = $service->isPeriodEnabledForProduct($productModelMock, 'monthly');
 
@@ -243,108 +223,68 @@ test('is period enabled for product not recurrent', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('remove product', function (): void {
-    $service = new Box\Mod\Cart\Service();
+test('removeProduct returns true', function (): void {
     $cartProduct = new Model_CartProduct();
     $cartProduct->loadBean(new Tests\Helpers\DummyBean());
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($cartProduct);
-    $dbMock->shouldReceive('find')
-        ->atLeast()->once()
-        ->andReturn([$cartProduct]);
-    $dbMock->shouldReceive('trash')
-        ->atLeast()->once()
-        ->andReturn(null);
+    $dbMock = Mockery::mock(Box_Database::class)->makePartial();
+    $dbMock->shouldReceive('findOne')->atLeast()->once()->andReturn($cartProduct);
+    $dbMock->shouldReceive('find')->atLeast()->once()->andReturn([$cartProduct]);
+    $dbMock->shouldReceive('trash')->atLeast()->once()->andReturn(null);
 
     $di = container();
     $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service = new Service();
     $service->setDi($di);
 
     $cart = new Model_Cart();
     $cart->loadBean(new Tests\Helpers\DummyBean());
     $result = $service->removeProduct($cart, 1);
-
     expect($result)->toBeTrue();
 });
 
-test('remove product cart product not found', function (): void {
-    $service = new Box\Mod\Cart\Service();
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn(null);
-    $dbMock->shouldReceive('trash')->never();
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $cart = new Model_Cart();
-    $cart->loadBean(new Tests\Helpers\DummyBean());
-    $this->expectException(FOSSBilling\Exception::class);
-    $service->removeProduct($cart, 1);
-});
-
-test('change cart currency', function (): void {
-    $service = new Box\Mod\Cart\Service();
-
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(1);
-
-    $cart = new Model_Cart();
-    $cart->loadBean(new Tests\Helpers\DummyBean());
-
-    $currency = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
-    $currency->shouldReceive('getId')->atLeast()->once()->andReturn(1);
-    $currency->shouldReceive('getCode')->atLeast()->once()->andReturn('USD');
-    $currency->shouldReceive('getTitle')->byDefault()->andReturn('USD');
+test('removeProduct throws exception when cart product not found', function (): void {
+    $dbMock = Mockery::mock(Box_Database::class)->makePartial();
+    $dbMock->shouldReceive('findOne')->atLeast()->once()->andReturn(null);
+    $dbMock->shouldNotReceive('trash');
 
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
+    $service = new Service();
+    $service->setDi($di);
+
+    $cart = new Model_Cart();
+    $cart->loadBean(new Tests\Helpers\DummyBean());
+
+    expect(fn () => $service->removeProduct($cart, 1))->toThrow(FOSSBilling\Exception::class);
+});
+
+test('changeCartCurrency returns true', function (): void {
+    $dbMock = Mockery::mock(Box_Database::class)->makePartial();
+    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn(1);
+
+    $cart = new Model_Cart();
+    $cart->loadBean(new Tests\Helpers\DummyBean());
+
+    $currency = Mockery::mock(Currency::class)->shouldIgnoreMissing();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service = new Service();
     $service->setDi($di);
 
     $result = $service->changeCartCurrency($cart, $currency);
-
     expect($result)->toBeTrue();
 });
 
-test('reset cart', function (): void {
-    $service = new Box\Mod\Cart\Service();
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('find')
-        ->atLeast()->once()
-        ->andReturn([new Model_Product(), new Model_Product()]);
-    $dbMock->shouldReceive('trash')
-        ->atLeast()->once()
-        ->andReturn(null);
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(1);
-
-    $cart = new Model_Cart();
-    $cart->loadBean(new Tests\Helpers\DummyBean());
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $result = $service->resetCart($cart);
-
-    expect($result)->toBeTrue();
-});
-
-test('remove promo', function (): void {
-    $service = new Box\Mod\Cart\Service();
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(1);
+test('resetCart returns true', function (): void {
+    $dbMock = Mockery::mock(Box_Database::class)->makePartial();
+    $dbMock->shouldReceive('find')->atLeast()->once()->andReturn([new Model_CartProduct(), new Model_CartProduct()]);
+    $dbMock->shouldReceive('trash')->atLeast()->once()->andReturn(null);
+    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn(1);
 
     $cart = new Model_Cart();
     $cart->loadBean(new Tests\Helpers\DummyBean());
@@ -352,26 +292,36 @@ test('remove promo', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
+    $service = new Service();
     $service->setDi($di);
 
-    $result = $service->removePromo($cart);
-
+    $result = $service->resetCart($cart);
     expect($result)->toBeTrue();
 });
 
-test('apply promo', function (): void {
-    $service = new Box\Mod\Cart\Service();
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(1);
-    $dbMock->shouldReceive('find')
-        ->atLeast()->once()
-        ->andReturn([new Model_CartProduct(), new Model_CartProduct()]);
+test('removePromo returns true', function (): void {
+    $dbMock = Mockery::mock(Box_Database::class)->makePartial();
+    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn(1);
 
-    $promo = new Model_Promo();
-    $promo->loadBean(new Tests\Helpers\DummyBean());
-    $promo->id = 2;
+    $cart = new Model_Cart();
+    $cart->loadBean(new Tests\Helpers\DummyBean());
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service = new Service();
+    $service->setDi($di);
+
+    $result = $service->removePromo($cart);
+    expect($result)->toBeTrue();
+});
+
+test('applyPromo returns true', function (): void {
+    $dbMock = Mockery::mock(Box_Database::class)->makePartial();
+    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn(1);
+    $dbMock->shouldReceive('find')->atLeast()->once()->andReturn([new Model_CartProduct(), new Model_CartProduct()]);
+
+    $promo = createPromoEntity(2);
 
     $cart = new Model_Cart();
     $cart->loadBean(new Tests\Helpers\DummyBean());
@@ -380,27 +330,21 @@ test('apply promo', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
+    $service = new Service();
     $service->setDi($di);
 
     $result = $service->applyPromo($cart, $promo);
-
     expect($result)->toBeTrue();
 });
 
-test('apply promo already applied', function (): void {
-    $service = new Box\Mod\Cart\Service();
+test('applyPromo returns true when already applied', function (): void {
+    $dbMock = Mockery::mock(Box_Database::class)->makePartial();
+    $dbMock->shouldNotReceive('store');
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->never();
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldNotReceive('isEmptyCart');
 
-    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('isEmptyCart')->never();
-
-    $promo = new Model_Promo();
-    $promo->loadBean(new Tests\Helpers\DummyBean());
-    $promo->id = 5;
+    $promo = createPromoEntity(5);
 
     $cart = new Model_Cart();
     $cart->loadBean(new Tests\Helpers\DummyBean());
@@ -412,26 +356,17 @@ test('apply promo already applied', function (): void {
     $serviceMock->setDi($di);
 
     $result = $serviceMock->applyPromo($cart, $promo);
-
     expect($result)->toBeTrue();
 });
 
-test('apply promo empty cart exception', function (): void {
-    $service = new Box\Mod\Cart\Service();
+test('applyPromo throws exception when cart is empty', function (): void {
+    $dbMock = Mockery::mock(Box_Database::class)->makePartial();
+    $dbMock->shouldNotReceive('store');
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->never();
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('isEmptyCart')->atLeast()->once()->andReturn(true);
 
-    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('isEmptyCart')
-        ->atLeast()->once()
-        ->andReturn(true);
-
-    $promo = new Model_Promo();
-    $promo->loadBean(new Tests\Helpers\DummyBean());
-    $promo->id = 2;
+    $promo = createPromoEntity(2);
 
     $cart = new Model_Cart();
     $cart->loadBean(new Tests\Helpers\DummyBean());
@@ -442,223 +377,148 @@ test('apply promo empty cart exception', function (): void {
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
 
-    $this->expectException(FOSSBilling\Exception::class);
-    $serviceMock->applyPromo($cart, $promo);
+    expect(fn () => $serviceMock->applyPromo($cart, $promo))->toThrow(FOSSBilling\Exception::class);
 });
 
-test('rm', function (): void {
-    $service = new Box\Mod\Cart\Service();
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('find')
-        ->atLeast()->once()
-        ->andReturn([new Model_CartProduct()]);
-    $dbMock->shouldReceive('trash')
-        ->atLeast()->once()
-        ->andReturn(null);
+test('rm returns true', function (): void {
+    $dbMock = Mockery::mock(Box_Database::class)->makePartial();
+    $dbMock->shouldReceive('find')->atLeast()->once()->andReturn([new Model_CartProduct()]);
+    $dbMock->shouldReceive('trash')->atLeast()->once()->andReturn(null);
 
     $cart = new Model_Cart();
     $cart->loadBean(new Tests\Helpers\DummyBean());
 
     $di = container();
     $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service = new Service();
     $service->setDi($di);
 
     $result = $service->rm($cart);
+    expect($result)->toBeTrue();
+});
+
+test('isClientAbleToUsePromo returns false when client cannot use promo', function (): void {
+    $promo = createPromoEntity(1)
+        ->setOncePerClient(true);
+
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('canClientUsePromo')->once()->with($client, $promo)->andReturn(false);
+
+    $di = container();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn () => $productService);
+
+    $serviceMock = new Service();
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->isClientAbleToUsePromo($client, $promo);
+    expect($result)->toBeFalse();
+});
+
+test('clientHadUsedPromo returns true', function (): void {
+    $promo = createPromoEntity(1);
+
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('clientHasActivePromoApplication')->once()->with($client, $promo)->andReturn(true);
+
+    $di = container();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn () => $productService);
+    $service = new Service();
+    $service->setDi($di);
+
+    $reflection = new ReflectionObject($service);
+    $method = $reflection->getMethod('clientHadUsedPromo');
+    $result = $method->invoke($service, $client, $promo);
 
     expect($result)->toBeTrue();
 });
 
-test('is client able to use promo', function (): void {
-    $service = new Box\Mod\Cart\Service();
-
-    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('promoCanBeApplied')
-        ->atLeast()->once()
-        ->andReturn(true);
-    $serviceMock->shouldReceive('clientHadUsedPromo')
-        ->atLeast()->once()
-        ->andReturn(true);
-
-    $promo = new Model_Promo();
-    $promo->loadBean(new Tests\Helpers\DummyBean());
-    $promo->once_per_client = true;
+test('isClientAbleToUsePromo returns true once per client', function (): void {
+    $promo = createPromoEntity(1);
 
     $client = new Model_Client();
     $client->loadBean(new Tests\Helpers\DummyBean());
 
-    $di = container();
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $serviceMock->setDi($di);
-
-    $result = $serviceMock->isClientAbleToUsePromo($client, $promo);
-
-    expect($result)->toBeFalse();
-});
-
-test('client had used promo', function (): void {
-    $service = new Box\Mod\Cart\Service();
-
-    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
-    $serviceMock->shouldReceive('promoCanBeApplied')
-        ->atLeast()->once()
-        ->andReturn(true);
-
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('getCell')
-        ->atLeast()->once()
-        ->andReturn(1);
-
-    $promo = new Model_Promo();
-    $promo->loadBean(new Tests\Helpers\DummyBean());
-    $promo->once_per_client = true;
-
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('canClientUsePromo')->once()->with($client, $promo)->andReturn(true);
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(fn () => $productService);
+
+    $serviceMock = new Service();
     $serviceMock->setDi($di);
 
     $result = $serviceMock->isClientAbleToUsePromo($client, $promo);
-
-    expect($result)->toBeFalse();
-});
-
-test('is client able to use promo once per client', function (): void {
-    $service = new Box\Mod\Cart\Service();
-
-    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('promoCanBeApplied')
-        ->atLeast()->once()
-        ->andReturn(true);
-    $serviceMock->shouldReceive('clientHadUsedPromo')->never();
-
-    $promo = new Model_Promo();
-    $promo->loadBean(new Tests\Helpers\DummyBean());
-
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-
-    $di = container();
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $serviceMock->setDi($di);
-
-    $result = $serviceMock->isClientAbleToUsePromo($client, $promo);
-
     expect($result)->toBeTrue();
 });
 
-test('is client able to use promo can not be applied', function (): void {
-    $service = new Box\Mod\Cart\Service();
-
-    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('promoCanBeApplied')
-        ->atLeast()->once()
-        ->andReturn(false);
-    $serviceMock->shouldReceive('clientHadUsedPromo')->never();
-
-    $promo = new Model_Promo();
-    $promo->loadBean(new Tests\Helpers\DummyBean());
+test('isClientAbleToUsePromo returns false when promo cannot be applied', function (): void {
+    $promo = createPromoEntity(1);
 
     $client = new Model_Client();
     $client->loadBean(new Tests\Helpers\DummyBean());
 
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('canClientUsePromo')->once()->with($client, $promo)->andReturn(false);
+
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn () => $productService);
+
+    $serviceMock = new Service();
     $serviceMock->setDi($di);
 
     $result = $serviceMock->isClientAbleToUsePromo($client, $promo);
-
     expect($result)->toBeFalse();
 });
 
-dataset('promoCanBeAppliedProvider', function (): array {
-    $promo1 = new Model_Promo();
-    $promo1->loadBean(new Tests\Helpers\DummyBean());
-    $promo1->active = false;
-
-    $promo2 = new Model_Promo();
-    $promo2->loadBean(new Tests\Helpers\DummyBean());
-    $promo2->active = true;
-    $promo2->maxuses = 5;
-    $promo2->used = 5;
-
-    $promo3 = new Model_Promo();
-    $promo3->loadBean(new Tests\Helpers\DummyBean());
-    $promo3->active = true;
-    $promo3->maxuses = 10;
-    $promo3->used = 5;
-    $promo3->start_at = date('c', strtotime('tomorrow'));
-
-    $promo4 = new Model_Promo();
-    $promo4->loadBean(new Tests\Helpers\DummyBean());
-    $promo4->active = true;
-    $promo4->maxuses = 10;
-    $promo4->used = 5;
-    $promo4->start_at = date('c', strtotime('yesterday'));
-    $promo4->end_at = date('c', strtotime('yesterday'));
-
-    $promo5 = new Model_Promo();
-    $promo5->loadBean(new Tests\Helpers\DummyBean());
-    $promo5->active = true;
-    $promo5->maxuses = 10;
-    $promo5->used = 5;
-    $promo5->start_at = date('c', strtotime('yesterday'));
-    $promo5->end_at = date('c', strtotime('tomorrow'));
-
-    return [
-        [$promo1, false],
-        [$promo2, false],
-        [$promo3, false],
-        [$promo4, false],
-        [$promo5, true],
-    ];
-});
-
-test('promo can be applied', function (Model_Promo $promo, bool $expectedResult): void {
-    $service = new Box\Mod\Cart\Service();
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->never();
+test('promoCanBeApplied returns expected result', function (Promo $promo, bool $expectedResult): void {
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('promoCanBeApplied')->once()->with($promo)->andReturn($expectedResult);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn () => $productService);
+    $service = new Service();
     $service->setDi($di);
 
     $result = $service->promoCanBeApplied($promo);
-
     expect($result)->toEqual($expectedResult);
-})->with('promoCanBeAppliedProvider');
+})->with([
+    [createPromoEntity(1)->setActive(false), false],
+    [createPromoEntity(2)->setActive(true)->setMaxUses(5)->setUsed(5), false],
+    [createPromoEntity(3)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTime('tomorrow')), false],
+    [createPromoEntity(4)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTime('yesterday'))->setEndAt(new DateTime('yesterday')), false],
+    [createPromoEntity(5)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTime('yesterday'))->setEndAt(new DateTime('tomorrow')), true],
+]);
 
-test('get cart products', function (): void {
-    $service = new Box\Mod\Cart\Service();
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('find')
-        ->atLeast()->once()
-        ->andReturn([new Model_CartProduct()]);
+test('getCartProducts returns array of cart products', function (): void {
+    $dbMock = Mockery::mock(Box_Database::class)->makePartial();
+    $dbMock->shouldReceive('find')->atLeast()->once()->andReturn([new Model_CartProduct()]);
 
     $di = container();
     $di['db'] = $dbMock;
+    $service = new Service();
     $service->setDi($di);
 
     $cart = new Model_Cart();
     $cart->loadBean(new Tests\Helpers\DummyBean());
 
     $result = $service->getCartProducts($cart);
-
     expect($result)->toBeArray();
-    expect($result[0])->toBeInstanceOf('Model_CartProduct');
+    expect($result[0])->toBeInstanceOf(Model_CartProduct::class);
 });
 
-test('checkout cart', function (): void {
-    $service = new Box\Mod\Cart\Service();
-
+test('checkoutCart returns array with expected keys', function (): void {
     $cart = new Model_Cart();
     $cart->loadBean(new Tests\Helpers\DummyBean());
     $cart->promo_id = 1;
@@ -666,44 +526,35 @@ test('checkout cart', function (): void {
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
 
-    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
-    $serviceMock->shouldReceive('createFromCart')
-        ->atLeast()->once()
-        ->andReturn([$order, 1, [1]]);
-    $serviceMock->shouldReceive('isClientAbleToUsePromo')
-        ->atLeast()->once()
-        ->andReturn(true);
-    $serviceMock->shouldReceive('rm')
-        ->atLeast()->once()
-        ->andReturn(true);
-    $serviceMock->shouldReceive('isPromoAvailableForClientGroup')
-        ->atLeast()->once()
-        ->andReturn(true);
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('createFromCart')->atLeast()->once()->andReturn([$order, 1, [1]]);
+    $serviceMock->shouldReceive('isClientAbleToUsePromo')->atLeast()->once()->andReturn(true);
+    $serviceMock->shouldReceive('rm')->atLeast()->once()->andReturn(true);
+    $serviceMock->shouldReceive('isPromoAvailableForClientGroup')->atLeast()->once()->andReturn(true);
 
-    $eventMock = Mockery::mock(Box_EventManager::class);
-    $eventMock->shouldReceive('fire')
-        ->atLeast()->once();
+    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $invoice = new Model_Invoice();
     $invoice->loadBean(new Tests\Helpers\DummyBean());
     $invoice->hash = sha1('str');
 
-    $promo = new Model_Promo();
-    $promo->loadBean(new Tests\Helpers\DummyBean());
+    $promo = new Promo();
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($promo);
+    $dbMock = Mockery::mock(Box_Database::class)->shouldIgnoreMissing();
 
     $client = new Model_Client();
     $client->loadBean(new Tests\Helpers\DummyBean());
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('findPromoById')->once()->with(1)->andReturn($promo);
 
     $di = container();
     $di['events_manager'] = $eventMock;
     $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['request'] = new Symfony\Component\HttpFoundation\Request();
+    $di['request'] = new Request();
+    $di['mod_service'] = $di->protect(fn () => $productService);
 
     $serviceMock->setDi($di);
     $result = $serviceMock->checkoutCart($cart, $client);
@@ -715,9 +566,7 @@ test('checkout cart', function (): void {
     expect($result)->toHaveKey('orders');
 });
 
-test('checkout cart client is not able to use promo exception', function (): void {
-    $service = new Box\Mod\Cart\Service();
-
+test('checkoutCart throws exception when client is not able to use promo', function (): void {
     $cart = new Model_Cart();
     $cart->loadBean(new Tests\Helpers\DummyBean());
     $cart->promo_id = 1;
@@ -725,16 +574,13 @@ test('checkout cart client is not able to use promo exception', function (): voi
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
 
-    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
-    $serviceMock->shouldReceive('isClientAbleToUsePromo')
-        ->atLeast()->once()
-        ->andReturn(false);
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('isClientAbleToUsePromo')->atLeast()->once()->andReturn(false);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn(new Model_Promo());
+    $dbMock = Mockery::mock(Box_Database::class)->shouldIgnoreMissing();
+    $promo = new Promo();
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('findPromoById')->once()->with(1)->andReturn($promo);
 
     $client = new Model_Client();
     $client->loadBean(new Tests\Helpers\DummyBean());
@@ -742,24 +588,21 @@ test('checkout cart client is not able to use promo exception', function (): voi
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn () => $productService);
     $serviceMock->setDi($di);
 
-    $this->expectException(FOSSBilling\Exception::class);
-    $serviceMock->checkoutCart($cart, $client);
+    expect(fn () => $serviceMock->checkoutCart($cart, $client))->toThrow(FOSSBilling\Exception::class);
 });
 
-test('use promo', function (): void {
-    $service = new Box\Mod\Cart\Service();
-    $promo = new Model_Promo();
-    $promo->loadBean(new Tests\Helpers\DummyBean());
+test('usePromo returns null', function (): void {
+    $promo = createPromoEntity(1);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('exec')
-        ->atLeast()->once()
-        ->andReturn(1);
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('usePromo')->once()->with($promo);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(fn () => $productService);
+    $service = new Service();
     $service->setDi($di);
 
     $result = $service->usePromo($promo);
@@ -767,347 +610,759 @@ test('use promo', function (): void {
     expect($result)->toBeNull();
 });
 
-test('find active promo by code', function (): void {
-    $service = new Box\Mod\Cart\Service();
-    $promo = new Model_Promo();
-    $promo->loadBean(new Tests\Helpers\DummyBean());
+test('createFromCart uses database transaction', function (): void {
+    $cart = new Model_Cart();
+    $cart->loadBean(new Tests\Helpers\DummyBean());
+    $cart->currency_id = 2;
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($promo);
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client->currency = 'USD';
+
+    $currency = Mockery::mock(Currency::class)->makePartial();
+    $currency->shouldReceive('getCode')->once()->andReturn('USD');
+
+    $currencyRepository = Mockery::mock(CurrencyRepository::class);
+    $currencyRepository->shouldReceive('find')->once()->with(2)->andReturn($currency);
+    $currencyRepository->shouldNotReceive('findDefault');
+
+    $currencyService = Mockery::mock(CurrencyService::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
+
+    $clientService = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientService->shouldReceive('isClientTaxable')->once()->with($client)->andReturn(false);
+
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->id = 99;
+
+    $dbMock = Mockery::mock(Box_Database::class)->makePartial();
+    $dbMock->shouldReceive('transaction')->once()->with(Mockery::type(Closure::class))->andReturn([$order, null, [99]]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getSessionCart')->once()->andReturn($cart);
+    $serviceMock->shouldReceive('toApiArray')->once()->with($cart)->andReturn([
+        'items' => [['id' => 1]],
+        'total' => 0,
+    ]);
 
     $di = container();
     $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($currencyService, $clientService) {
+        if ($serviceName === 'currency') {
+            return $currencyService;
+        }
+        if ($serviceName === 'client') {
+            return $clientService;
+        }
+    });
+
+    $serviceMock->setDi($di);
+    $result = $serviceMock->createFromCart($client);
+
+    expect($result)->toBe([$order, null, [99]]);
+});
+
+test('createFromCart with promo entity uses product promo service', function (): void {
+    $cart = new Model_Cart();
+    $cart->loadBean(new Tests\Helpers\DummyBean());
+    $cart->id = 3;
+    $cart->currency_id = 2;
+    $cart->promo_id = 7;
+
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client->id = 9;
+    $client->currency = 'USD';
+
+    $currency = Mockery::mock(Currency::class)->makePartial();
+    $currency->shouldReceive('getCode')->once()->andReturn('USD');
+    $currency->shouldReceive('getConversionRate')->atLeast()->once()->andReturn(1.0);
+
+    $currencyRepository = Mockery::mock(CurrencyRepository::class);
+    $currencyRepository->shouldReceive('find')->once()->with(2)->andReturn($currency);
+
+    $currencyService = Mockery::mock(CurrencyService::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
+
+    $clientService = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientService->shouldReceive('isClientTaxable')->once()->with($client)->andReturn(false);
+
+    $promo = new Promo();
+    $promo->setCode('PROMO');
+    $promoIdReflection = new ReflectionProperty($promo, 'id');
+    $promoIdReflection->setAccessible(true);
+    $promoIdReflection->setValue($promo, 7);
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('findPromoById')->once()->with(7)->andReturn($promo);
+    $productService->shouldReceive('reservePromoForOrder')->once()->with($promo, Mockery::type(Model_ClientOrder::class));
+    $productService->shouldReceive('createCheckoutPromoRedemptions')->once()->with(
+        $promo,
+        $client,
+        Mockery::on(function (array $orders): bool {
+            return count($orders) === 1 && $orders[0] instanceof Model_ClientOrder;
+        }),
+        null,
+        PromoRedemption::STATUS_COMMITTED
+    );
+
+    $product = new Product();
+    $productIdReflection = new ReflectionProperty($product, 'id');
+    $productIdReflection->setAccessible(true);
+    $productIdReflection->setValue($product, 5);
+    $product->setStatus('enabled');
+    $product->setType('service');
+    $product->setSetup('manual');
+
+    $cartProduct = new Model_CartProduct();
+    $cartProduct->loadBean(new Tests\Helpers\DummyBean());
+    $cartProduct->id = 13;
+
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->id = 42;
+
+    $orderService = Mockery::mock(Box\Mod\Order\Service::class)->makePartial();
+    $orderService->shouldReceive('saveStatusChange')->once()->with(Mockery::type(Model_ClientOrder::class), 'Order Created');
+    $orderService->shouldReceive('toApiArray')->once()->with(Mockery::type(Model_ClientOrder::class), false, $client)->andReturn([
+        'product_id' => 5,
+        'total' => 0,
+        'discount' => 0,
+    ]);
+
+    $dbMock = Mockery::mock(Box_Database::class)->makePartial();
+    $dbMock->shouldReceive('transaction')->once()->with(Mockery::type(Closure::class))->andReturnUsing(fn (Closure $callback) => $callback());
+    $dbMock->shouldReceive('dispense')->once()->with('ClientOrder')->andReturn($order);
+    $dbMock->shouldReceive('store')->atLeast()->once();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getSessionCart')->once()->andReturn($cart);
+    $serviceMock->shouldReceive('toApiArray')->once()->with($cart)->andReturn([
+        'items' => [['id' => 1]],
+        'total' => 0,
+    ]);
+    $serviceMock->shouldReceive('getCartProducts')->once()->with($cart)->andReturn([$cartProduct]);
+    $serviceMock->shouldReceive('cartProductToApiArray')->once()->with($cartProduct)->andReturn([
+        'product_id' => 5,
+        'form_id' => null,
+        'title' => 'Example product',
+        'type' => 'service',
+        'unit' => 'service',
+        'period' => '1M',
+        'quantity' => 1,
+        'price' => 0,
+        'discount_price' => 0,
+        'setup_price' => 0,
+        'discount_setup' => 0,
+        'notes' => null,
+    ]);
+    $serviceMock->shouldReceive('isStockAvailable')->once()->with($product, 1)->andReturn(true);
+
+    $productService->shouldReceive('findProductById')->twice()->with(5)->andReturn($product);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($currencyService, $clientService, $productService, $orderService) {
+        return match ($serviceName) {
+            'currency' => $currencyService,
+            'client' => $clientService,
+            'Product' => $productService,
+            'order', 'Order' => $orderService,
+            default => null,
+        };
+    });
+
+    $serviceMock->setDi($di);
+    $result = $serviceMock->createFromCart($client);
+
+    expect($result)->toBe([$order, null, [42]]);
+});
+
+test('createFromCart compensates promo usage on transaction failure', function (): void {
+    $cart = new Model_Cart();
+    $cart->loadBean(new Tests\Helpers\DummyBean());
+    $cart->id = 3;
+    $cart->currency_id = 2;
+    $cart->promo_id = 7;
+
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client->id = 9;
+    $client->currency = 'USD';
+
+    $currency = Mockery::mock(Currency::class)->makePartial();
+    $currency->shouldReceive('getCode')->once()->andReturn('USD');
+    $currency->shouldReceive('getConversionRate')->atLeast()->once()->andReturn(1.0);
+
+    $currencyRepository = Mockery::mock(CurrencyRepository::class);
+    $currencyRepository->shouldReceive('find')->once()->with(2)->andReturn($currency);
+
+    $currencyService = Mockery::mock(CurrencyService::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
+
+    $clientService = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientService->shouldReceive('isClientTaxable')->once()->with($client)->andReturn(false);
+
+    $promo = new Promo();
+    $promo->setCode('PROMO');
+    $promoIdReflection = new ReflectionProperty($promo, 'id');
+    $promoIdReflection->setAccessible(true);
+    $promoIdReflection->setValue($promo, 7);
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('findPromoById')->once()->with(7)->andReturn($promo);
+    $productService->shouldReceive('reservePromoForOrder')->once()->with($promo, Mockery::type(Model_ClientOrder::class));
+
+    // Simulate Doctrine-side failure during redemption creation.
+    $productService->shouldReceive('createCheckoutPromoRedemptions')
+        ->andThrow(new RuntimeException('Doctrine flush failed'));
+
+    // The compensating method must be invoked with the order ID and count.
+    $productService->shouldReceive('compensateCheckoutPromoFailure')
+        ->once()
+        ->with($promo, [42], 1);
+
+    $product = new Product();
+    $productIdReflection = new ReflectionProperty($product, 'id');
+    $productIdReflection->setAccessible(true);
+    $productIdReflection->setValue($product, 5);
+    $product->setStatus('enabled');
+    $product->setType('service');
+    $product->setSetup('manual');
+
+    $cartProduct = new Model_CartProduct();
+    $cartProduct->loadBean(new Tests\Helpers\DummyBean());
+    $cartProduct->id = 13;
+
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->id = 42;
+
+    $orderService = Mockery::mock(Box\Mod\Order\Service::class)->makePartial();
+    $orderService->shouldReceive('saveStatusChange')->once()->with(Mockery::type(Model_ClientOrder::class), 'Order Created');
+
+    $dbMock = Mockery::mock(Box_Database::class)->makePartial();
+    $dbMock->shouldReceive('transaction')->once()->with(Mockery::type(Closure::class))->andReturnUsing(fn (Closure $callback) => $callback());
+    $dbMock->shouldReceive('dispense')->once()->with('ClientOrder')->andReturn($order);
+    $dbMock->shouldReceive('store')->atLeast()->once();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getSessionCart')->once()->andReturn($cart);
+    $serviceMock->shouldReceive('toApiArray')->once()->with($cart)->andReturn([
+        'items' => [['id' => 1]],
+        'total' => 0,
+    ]);
+    $serviceMock->shouldReceive('getCartProducts')->once()->with($cart)->andReturn([$cartProduct]);
+    $serviceMock->shouldReceive('cartProductToApiArray')->once()->with($cartProduct)->andReturn([
+        'product_id' => 5,
+        'form_id' => null,
+        'title' => 'Example product',
+        'type' => 'service',
+        'unit' => 'service',
+        'period' => '1M',
+        'quantity' => 1,
+        'price' => 0,
+        'discount_price' => 0,
+        'setup_price' => 0,
+        'discount_setup' => 0,
+        'notes' => null,
+    ]);
+    $serviceMock->shouldReceive('isStockAvailable')->once()->with($product, 1)->andReturn(true);
+
+    $productService->shouldReceive('findProductById')->once()->with(5)->andReturn($product);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Box_Log();
+    $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($currencyService, $clientService, $productService, $orderService) {
+        return match ($serviceName) {
+            'currency' => $currencyService,
+            'client' => $clientService,
+            'Product' => $productService,
+            'order', 'Order' => $orderService,
+            default => null,
+        };
+    });
+
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->createFromCart($client))
+        ->toThrow(RuntimeException::class, 'Doctrine flush failed');
+});
+
+test('usePromo throws exception when limit reached', function (): void {
+    $promo = createPromoEntity(1);
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('usePromo')->once()->with($promo)->andThrow(new FOSSBilling\InformationException('This promo code has reached its maximum number of uses.'));
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn () => $productService);
+    $service = new Service();
+    $service->setDi($di);
+
+    expect(fn () => $service->usePromo($promo))->toThrow(FOSSBilling\InformationException::class);
+});
+
+test('findActivePromoByCode returns promo', function (): void {
+    $promo = new Promo();
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('findActivePromoByCode')->once()->with('CODE')->andReturn($promo);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn () => $productService);
+    $service = new Service();
     $service->setDi($di);
 
     $result = $service->findActivePromoByCode('CODE');
 
-    expect($result)->toBeInstanceOf('Model_Promo');
+    expect($result)->toBeInstanceOf(Promo::class);
 });
 
-test('add item throws exception when out of stock', function (): void {
-    $service = new Box\Mod\Cart\Service();
+test('addItem throws exception when recurring payment period param missing', function (): void {
     $cartModel = new Model_Cart();
     $cartModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $productModel = new Model_Product();
-    $productModel->loadBean(new Tests\Helpers\DummyBean());
-    $productModel->type = 'hosting';
+    $productModel = createProductEntity(type: 'Custom');
 
     $data = [];
 
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')
-        ->atLeast()->once();
+    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class)->shouldIgnoreMissing();
 
-    $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
-    $serviceHostingServiceMock->shouldReceive('getDomainProductFromConfig')
-        ->atLeast()->once()
-        ->andReturn([]);
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('isRecurrentPricing')->atLeast()->once()->andReturn(true);
 
-    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
-    $serviceMock->shouldReceive('isRecurrentPricing')
-        ->atLeast()->once()
-        ->andReturn(false);
-    $serviceMock->shouldReceive('isStockAvailable')
-        ->atLeast()->once()
-        ->andReturn(false);
-
+    $productService = new ProductService();
     $di = container();
     $di['events_manager'] = $eventMock;
-    $di['mod_service'] = $di->protect(moduleService(['servicehosting' => $serviceHostingServiceMock]));
+    $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productService) {
+        if ($name === 'Product') {
+            return $productService;
+        }
 
-    $serviceMock->setDi($di);
-    $productModel->setDi($di);
-
-    $this->expectException(FOSSBilling\Exception::class);
-    $this->expectExceptionMessage('This item is currently out of stock');
-    $serviceMock->addItem($cartModel, $productModel, $data);
-});
-
-test('add item for hosting type product', function (): void {
-    $service = new Box\Mod\Cart\Service();
-    $cartModel = new Model_Cart();
-    $cartModel->loadBean(new Tests\Helpers\DummyBean());
-
-    $productModel = new Model_Product();
-    $productModel->loadBean(new Tests\Helpers\DummyBean());
-    $productModel->type = 'hosting';
-
-    $data = [];
-
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')
-        ->atLeast()->once();
-
-    $productDomainModel = new Model_ProductDomain();
-    $productDomainModel->loadBean(new Tests\Helpers\DummyBean());
-    $domainProduct = ['config' => [], 'product' => $productDomainModel];
-
-    $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
-    $serviceHostingServiceMock->shouldReceive('getDomainProductFromConfig')
-        ->atLeast()->once()
-        ->andReturn($domainProduct);
-    $serviceHostingServiceMock->shouldReceive('prependOrderConfig')
-        ->atLeast()->once()
-        ->andReturn([]);
-    $serviceHostingServiceMock->shouldReceive('validateOrderData')
-        ->atLeast()->once()
-        ->andReturn(true);
-
-    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('isRecurrentPricing')
-        ->atLeast()->once()
-        ->andReturn(false);
-    $serviceMock->shouldReceive('isStockAvailable')
-        ->atLeast()->once()
-        ->andReturn(true);
-    $serviceMock->shouldReceive('addProduct')
-        ->atLeast()->once();
-
-    $di = container();
-    $di['events_manager'] = $eventMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceHostingServiceMock);
-    $di['logger'] = new Tests\Helpers\TestLogger();
-
-    $serviceMock->setDi($di);
-    $productModel->setDi($di);
-    $productDomainModel->setDi($di);
-
-    $result = $serviceMock->addItem($cartModel, $productModel, $data);
-    expect($result)->toBeTrue();
-});
-
-test('add item for license type product', function (): void {
-    $service = new Box\Mod\Cart\Service();
-    $cartModel = new Model_Cart();
-    $cartModel->loadBean(new Tests\Helpers\DummyBean());
-
-    $productModel = new Model_Product();
-    $productModel->loadBean(new Tests\Helpers\DummyBean());
-    $productModel->type = 'license';
-
-    $data = [];
-
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')
-        ->atLeast()->once();
-
-    $serviceLicenseServiceMock = Mockery::mock(Box\Mod\Servicelicense\Service::class);
-    $serviceLicenseServiceMock->shouldReceive('attachOrderConfig')
-        ->atLeast()->once()
-        ->andReturn([]);
-    $serviceLicenseServiceMock->shouldReceive('validateOrderData')
-        ->atLeast()->once()
-        ->andReturn(true);
-
-    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('isRecurrentPricing')
-        ->atLeast()->once()
-        ->andReturn(false);
-    $serviceMock->shouldReceive('isStockAvailable')
-        ->atLeast()->once()
-        ->andReturn(true);
-    $serviceMock->shouldReceive('addProduct')
-        ->atLeast()->once();
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('find')
-        ->byDefault()
-        ->andReturn([]);
-    $dbMock->shouldReceive('load')
-        ->atLeast()->once()
-        ->andReturn($productModel);
-
-    $di = container();
-    $di['events_manager'] = $eventMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceLicenseServiceMock);
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['db'] = $dbMock;
-
-    $serviceMock->setDi($di);
-    $productModel->setDi($di);
-
-    $result = $serviceMock->addItem($cartModel, $productModel, $data);
-    expect($result)->toBeTrue();
-});
-
-test('add item for custom type product', function (): void {
-    $service = new Box\Mod\Cart\Service();
-    $cartModel = new Model_Cart();
-    $cartModel->loadBean(new Tests\Helpers\DummyBean());
-
-    $productModel = new Model_Product();
-    $productModel->loadBean(new Tests\Helpers\DummyBean());
-    $productModel->type = 'custom';
-
-    $data = [];
-
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')
-        ->atLeast()->once();
-
-    $serviceCustomServiceMock = Mockery::mock(Box\Mod\Servicecustom\Service::class);
-    $serviceCustomServiceMock->shouldReceive('validateCustomForm')
-        ->atLeast()->once();
-
-    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
-    $serviceMock->shouldReceive('isRecurrentPricing')
-        ->atLeast()->once()
-        ->andReturn(false);
-    $serviceMock->shouldReceive('isStockAvailable')
-        ->atLeast()->once()
-        ->andReturn(true);
-
-    $cartProduct = new Model_CartProduct();
-    $cartProduct->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('find')
-        ->byDefault()
-        ->andReturn([]);
-    $dbMock->shouldReceive('toArray')
-        ->atLeast()->once()
-        ->andReturn([]);
-    $dbMock->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturn($cartProduct);
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once();
-
-    $di = container();
-    $di['events_manager'] = $eventMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceCustomServiceMock);
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['db'] = $dbMock;
-
-    $serviceMock->setDi($di);
-    $productModel->setDi($di);
-
-    $result = $serviceMock->addItem($cartModel, $productModel, $data);
-    expect($result)->toBeTrue();
-});
-
-test('add item throws exception when recurring payment period param missing', function (): void {
-    $service = new Box\Mod\Cart\Service();
-    $cartModel = new Model_Cart();
-    $cartModel->loadBean(new Tests\Helpers\DummyBean());
-
-    $productModel = new Model_Product();
-    $productModel->loadBean(new Tests\Helpers\DummyBean());
-    $productModel->type = 'Custom';
-
-    $data = [];
-
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')
-        ->atLeast()->once();
-
-    $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
-
-    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
-    $serviceMock->shouldReceive('isRecurrentPricing')
-        ->atLeast()->once()
-        ->andReturn(true);
-
-    $di = container();
-    $di['events_manager'] = $eventMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceHostingServiceMock);
-
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
-    $validatorMock->shouldReceive('checkRequiredParamsForArray')
-        ->andThrow(new FOSSBilling\Exception('Period parameter not passed'));
+        return $serviceHostingServiceMock;
+    });
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class)->shouldIgnoreMissing();
+    $validatorMock->shouldReceive('checkRequiredParamsForArray')->andThrow(new FOSSBilling\Exception('Period parameter not passed'));
     $di['validator'] = $validatorMock;
-
+    $productService->setDi($di);
     $serviceMock->setDi($di);
-    $productModel->setDi($di);
 
-    $this->expectException(FOSSBilling\Exception::class);
-    $this->expectExceptionMessage('Period parameter not passed');
-    $serviceMock->addItem($cartModel, $productModel, $data);
+    expect(fn () => $serviceMock->addItem($cartModel, $productModel, $data))
+        ->toThrow(FOSSBilling\Exception::class, 'Period parameter not passed');
 });
 
-test('add item throws exception when recurring payment period is not enabled', function (): void {
-    $service = new Box\Mod\Cart\Service();
+test('addItem throws exception when recurring payment period is not enabled', function (): void {
     $cartModel = new Model_Cart();
     $cartModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $productModel = new Model_Product();
-    $productModel->loadBean(new Tests\Helpers\DummyBean());
-    $productModel->type = 'hosting';
+    $productModel = createProductEntity(type: 'hosting');
 
     $data = ['period' => '1W'];
 
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')
-        ->atLeast()->once();
+    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventMock->shouldReceive('fire')->atLeast()->once();
 
-    $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class)->shouldIgnoreMissing();
 
-    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
-    $serviceMock->shouldReceive('isRecurrentPricing')
-        ->atLeast()->once()
-        ->andReturn(true);
-    $serviceMock->shouldReceive('isPeriodEnabledForProduct')
-        ->atLeast()->once()
-        ->andReturn(false);
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('isRecurrentPricing')->atLeast()->once()->andReturn(true);
+    $serviceMock->shouldReceive('isPeriodEnabledForProduct')->atLeast()->once()->andReturn(false);
 
+    $productService = new ProductService();
     $di = container();
     $di['events_manager'] = $eventMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceHostingServiceMock);
+    $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productService) {
+        if ($name === 'Product') {
+            return $productService;
+        }
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
-    $validatorMock->shouldReceive('checkRequiredParamsForArray');
+        return $serviceHostingServiceMock;
+    });
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class)->shouldIgnoreMissing();
     $di['validator'] = $validatorMock;
-
+    $productService->setDi($di);
     $serviceMock->setDi($di);
-    $productModel->setDi($di);
 
-    $this->expectException(FOSSBilling\Exception::class);
-    $this->expectExceptionMessage('Selected billing period is invalid');
-    $serviceMock->addItem($cartModel, $productModel, $data);
+    expect(fn () => $serviceMock->addItem($cartModel, $productModel, $data))
+        ->toThrow(FOSSBilling\Exception::class, 'Selected billing period is invalid');
 });
 
-test('to api array', function (): void {
-    $service = new Box\Mod\Cart\Service();
+test('addItem throws exception when out of stock', function (): void {
+    $cartModel = new Model_Cart();
+    $cartModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $productModel = createProductEntity(type: 'hosting');
+
+    $data = [];
+
+    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventMock->shouldReceive('fire')->atLeast()->once();
+
+    $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class)->shouldIgnoreMissing();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('isRecurrentPricing')->atLeast()->once()->andReturn(false);
+    $serviceMock->shouldReceive('isStockAvailable')->atLeast()->once()->andReturn(false);
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('find')->atLeast()->once()->andReturn([]);
+
+    $productService = new ProductService();
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['events_manager'] = $eventMock;
+    $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productService) {
+        if ($name === 'Product') {
+            return $productService;
+        }
+
+        return $serviceHostingServiceMock;
+    });
+
+    $productService->setDi($di);
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->addItem($cartModel, $productModel, $data))
+        ->toThrow(FOSSBilling\Exception::class, 'This item is currently out of stock');
+});
+
+test('addItem rejects cumulative stock overflow', function (): void {
+    $cartModel = new Model_Cart();
+    $cartModel->loadBean(new Tests\Helpers\DummyBean());
+    $cartModel->id = 10;
+
+    $productModel = createProductEntity(id: 7, type: 'hosting');
+    $productModel->setStockControl(true);
+    $productModel->setQuantityInStock(1);
+
+    $existingCartProduct = new Model_CartProduct();
+    $existingCartProduct->loadBean(new Tests\Helpers\DummyBean());
+    $existingCartProduct->product_id = 7;
+    $existingCartProduct->config = json_encode(['quantity' => 1]);
+
+    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventMock->shouldReceive('fire')->atLeast()->once();
+
+    $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class)->shouldIgnoreMissing();
+    $productServiceMock = Mockery::mock(ProductService::class)->shouldIgnoreMissing();
+    $productServiceMock->shouldReceive('isStockAvailable')->once()->with($productModel, 2)->andReturn(false);
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('find')->atLeast()->once()->with('CartProduct', Mockery::any(), Mockery::any())->andReturn([$existingCartProduct]);
+    $dbMock->shouldNotReceive('store');
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('isRecurrentPricing')->atLeast()->once()->andReturn(false);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['events_manager'] = $eventMock;
+    $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productServiceMock) {
+        if ($name === 'Product') {
+            return $productServiceMock;
+        }
+
+        return $serviceHostingServiceMock;
+    });
+
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->addItem($cartModel, $productModel, ['quantity' => 1]))
+        ->toThrow(FOSSBilling\Exception::class, 'This item is currently out of stock');
+});
+
+test('addItem rejects duplicate domain register', function (): void {
+    $cartModel = new Model_Cart();
+    $cartModel->loadBean(new Tests\Helpers\DummyBean());
+    $cartModel->id = 1;
+
+    $productModel = createProductEntity(type: 'domain');
+
+    // An existing cart item already holds example.com via register keys.
+    $existingCartProduct = new Model_CartProduct();
+    $existingCartProduct->loadBean(new Tests\Helpers\DummyBean());
+    $existingCartProduct->config = json_encode(['register_sld' => 'example', 'register_tld' => '.com']);
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('find')->atLeast()->once()->with('CartProduct', Mockery::any(), Mockery::any())->andReturn([$existingCartProduct]);
+
+    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventMock->shouldReceive('fire')->atLeast()->once();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('isRecurrentPricing')->atLeast()->once()->andReturn(false);
+
+    $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class)->shouldIgnoreMissing();
+
+    $productService = new ProductService();
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['events_manager'] = $eventMock;
+    $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productService) {
+        if ($name === 'Product') {
+            return $productService;
+        }
+
+        return $serviceHostingServiceMock;
+    });
+    $productService->setDi($di);
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->addItem($cartModel, $productModel, ['register_sld' => 'example', 'register_tld' => '.com']))
+        ->toThrow(FOSSBilling\InformationException::class, 'This domain is already in the cart.');
+});
+
+test('addItem rejects duplicate domain transfer', function (): void {
+    $cartModel = new Model_Cart();
+    $cartModel->loadBean(new Tests\Helpers\DummyBean());
+    $cartModel->id = 2;
+
+    $productModel = createProductEntity(type: 'domain');
+
+    // An existing cart item holds example.net via transfer keys.
+    $existingCartProduct = new Model_CartProduct();
+    $existingCartProduct->loadBean(new Tests\Helpers\DummyBean());
+    $existingCartProduct->config = json_encode(['transfer_sld' => 'example', 'transfer_tld' => '.net']);
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('find')->atLeast()->once()->with('CartProduct', Mockery::any(), Mockery::any())->andReturn([$existingCartProduct]);
+
+    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventMock->shouldReceive('fire')->atLeast()->once();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('isRecurrentPricing')->atLeast()->once()->andReturn(false);
+
+    $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class)->shouldIgnoreMissing();
+
+    $productService = new ProductService();
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['events_manager'] = $eventMock;
+    $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productService) {
+        if ($name === 'Product') {
+            return $productService;
+        }
+
+        return $serviceHostingServiceMock;
+    });
+    $productService->setDi($di);
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->addItem($cartModel, $productModel, ['transfer_sld' => 'example', 'transfer_tld' => '.net']))
+        ->toThrow(FOSSBilling\InformationException::class, 'This domain is already in the cart.');
+});
+
+test('addItem rejects duplicate domain nested', function (): void {
+    $cartModel = new Model_Cart();
+    $cartModel->loadBean(new Tests\Helpers\DummyBean());
+    $cartModel->id = 3;
+
+    $productModel = createProductEntity(type: 'hosting');
+
+    // An existing hosting cart item stores the domain under the nested 'domain' key.
+    $existingCartProduct = new Model_CartProduct();
+    $existingCartProduct->loadBean(new Tests\Helpers\DummyBean());
+    $existingCartProduct->config = json_encode([
+        'domain' => ['register_sld' => 'mysite', 'register_tld' => '.org'],
+    ]);
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('find')->atLeast()->once()->with('CartProduct', Mockery::any(), Mockery::any())->andReturn([$existingCartProduct]);
+
+    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventMock->shouldReceive('fire')->atLeast()->once();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('isRecurrentPricing')->atLeast()->once()->andReturn(false);
+
+    $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class)->shouldIgnoreMissing();
+
+    $productService = new ProductService();
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['events_manager'] = $eventMock;
+    $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productService) {
+        if ($name === 'Product') {
+            return $productService;
+        }
+
+        return $serviceHostingServiceMock;
+    });
+    $productService->setDi($di);
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->addItem($cartModel, $productModel, [
+        'domain' => ['register_sld' => 'mysite', 'register_tld' => '.org'],
+    ]))->toThrow(FOSSBilling\InformationException::class, 'This domain is already in the cart.');
+});
+
+test('addItem for hosting type returns true', function (): void {
+    $cartModel = new Model_Cart();
+    $cartModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $productModel = createProductEntity(type: 'hosting');
+
+    $data = [];
+
+    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventMock->shouldReceive('fire')->atLeast()->once();
+
+    $productDomainModel = createProductEntity(type: 'domain');
+    $domainProduct = ['config' => [], 'product' => $productDomainModel];
+
+    $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class)->shouldIgnoreMissing();
+    $serviceHostingServiceMock->shouldReceive('getDomainProductFromConfig')->atLeast()->once()->andReturn($domainProduct);
+    $serviceHostingServiceMock->shouldReceive('attachOrderConfig')->atLeast()->once()->andReturn([]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('isRecurrentPricing')->atLeast()->once()->andReturn(false);
+    $serviceMock->shouldReceive('isStockAvailable')->atLeast()->once()->andReturn(true);
+    $serviceMock->shouldReceive('addProduct')->atLeast()->once();
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('find')->atLeast()->once()->andReturn([]);
+
+    $productService = new ProductService();
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['events_manager'] = $eventMock;
+    $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productService) {
+        if ($name === 'Product') {
+            return $productService;
+        }
+
+        return $serviceHostingServiceMock;
+    });
+    $di['logger'] = new Box_Log();
+
+    $productService->setDi($di);
+    $serviceMock->setDi($di);
+    $result = $serviceMock->addItem($cartModel, $productModel, $data);
+    expect($result)->toBeTrue();
+});
+
+test('addItem for license type returns true', function (): void {
+    $cartModel = new Model_Cart();
+    $cartModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $productModel = createProductEntity(type: 'license');
+
+    $data = [];
+
+    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventMock->shouldReceive('fire')->atLeast()->once();
+
+    $serviceLicenseServiceMock = Mockery::mock(Box\Mod\Servicelicense\Service::class);
+    $serviceLicenseServiceMock->shouldReceive('attachOrderConfig')->atLeast()->once()->andReturn([]);
+    $serviceLicenseServiceMock->shouldReceive('validateOrderData')->atLeast()->once()->andReturn(true);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('isRecurrentPricing')->atLeast()->once()->andReturn(false);
+    $serviceMock->shouldReceive('isStockAvailable')->atLeast()->once()->andReturn(true);
+    $serviceMock->shouldReceive('addProduct')->atLeast()->once();
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('find')->atLeast()->once()->andReturn([]);
+
+    $productService = new ProductService();
+    $di = container();
+    $di['events_manager'] = $eventMock;
+    $di['mod_service'] = $di->protect(function ($name) use ($serviceLicenseServiceMock, $productService) {
+        if ($name === 'Product') {
+            return $productService;
+        }
+
+        return $serviceLicenseServiceMock;
+    });
+    $di['logger'] = new Box_Log();
+    $di['db'] = $dbMock;
+
+    $productService->setDi($di);
+    $serviceMock->setDi($di);
+    $result = $serviceMock->addItem($cartModel, $productModel, $data);
+    expect($result)->toBeTrue();
+});
+
+test('addItem for custom type returns true', function (): void {
+    $cartModel = new Model_Cart();
+    $cartModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $productModel = createProductEntity(type: 'custom');
+
+    $data = [];
+
+    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventMock->shouldReceive('fire')->atLeast()->once();
+
+    $serviceCustomServiceMock = Mockery::mock(Box\Mod\Servicecustom\Service::class);
+    $serviceCustomServiceMock->shouldReceive('validateCustomForm')->atLeast()->once();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('isRecurrentPricing')->atLeast()->once()->andReturn(false);
+    $serviceMock->shouldReceive('isStockAvailable')->atLeast()->once()->andReturn(true);
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('find')->atLeast()->once()->andReturn([]);
+    $cartProduct = new Model_CartProduct();
+    $cartProduct->loadBean(new Tests\Helpers\DummyBean());
+    $dbMock->shouldReceive('dispense')->atLeast()->once()->andReturn($cartProduct);
+    $dbMock->shouldReceive('store')->atLeast()->once();
+
+    $productService = new ProductService();
+    $di = container();
+    $di['events_manager'] = $eventMock;
+    $di['mod_service'] = $di->protect(function ($name) use ($serviceCustomServiceMock, $productService) {
+        if ($name === 'Product') {
+            return $productService;
+        }
+
+        return $serviceCustomServiceMock;
+    });
+    $di['logger'] = new Box_Log();
+    $di['db'] = $dbMock;
+
+    $productService->setDi($di);
+    $serviceMock->setDi($di);
+    $result = $serviceMock->addItem($cartModel, $productModel, $data);
+    expect($result)->toBeTrue();
+});
+
+test('toApiArray returns expected structure', function (): void {
     $cartModel = new Model_Cart();
     $cartModel->loadBean(new Tests\Helpers\DummyBean());
 
     $cartProductModel = new Model_CartProduct();
     $cartProductModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
-    $serviceMock->shouldReceive('getCartProducts')
-        ->atLeast()->once()
-        ->andReturn([$cartProductModel]);
-
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getCartProducts')->atLeast()->once()->andReturn([$cartProductModel]);
     $cartProductApiArray = [
         'total' => 1,
         'setup_price' => 0,
         'discount' => 0,
     ];
-    $serviceMock->shouldReceive('cartProductToApiArray')
-        ->atLeast()->once()
-        ->andReturn($cartProductApiArray);
+    $serviceMock->shouldReceive('cartProductToApiArray')->atLeast()->once()->andReturn($cartProductApiArray);
 
-    $currencyServiceMock = Mockery::mock(Box\Mod\Currency\Service::class);
-    $currencyModelMock = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
-    $currencyModelMock->shouldReceive('toApiArray')
-        ->atLeast()->once()
-        ->andReturn([]);
+    $currencyService = Mockery::mock(CurrencyService::class)->shouldIgnoreMissing();
 
-    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
-    $currencyRepositoryMock->shouldReceive('find')
-        ->atLeast()->once()
-        ->andReturn($currencyModelMock);
+    $dbMock = Mockery::mock(Box_Database::class)->shouldIgnoreMissing();
+    $currencyModel = Mockery::mock(Currency::class)->shouldIgnoreMissing();
+    $currencyModel->shouldReceive('toApiArray')->andReturn([]);
 
-    $currencyServiceMock->shouldReceive('getCurrencyRepository')
-        ->atLeast()->once()
-        ->andReturn($currencyRepositoryMock);
+    $currencyRepositoryMock = Mockery::mock(CurrencyRepository::class)->makePartial();
+    $currencyRepositoryMock->shouldReceive('find')->atLeast()->once()->andReturn($currencyModel);
 
-    $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $currencyServiceMock);
+    $currencyService->shouldReceive('getCurrencyRepository')->atLeast()->once()->andReturn($currencyRepositoryMock);
+
+    $di = new Pimple\Container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(fn () => $currencyService);
 
     $serviceMock->setDi($di);
 
@@ -1121,13 +1376,11 @@ test('to api array', function (): void {
         'currency' => [],
         'subtotal' => 1,
     ];
-
     expect($result)->toBeArray();
     expect($result)->toEqual($expected);
 });
 
-test('get product discount with promo', function (): void {
-    $service = new Box\Mod\Cart\Service();
+test('getProductDiscount returns discount array', function (): void {
     $cartProductModel = new Model_CartProduct();
     $cartProductModel->loadBean(new Tests\Helpers\DummyBean());
 
@@ -1135,29 +1388,22 @@ test('get product discount with promo', function (): void {
     $modelCart->loadBean(new Tests\Helpers\DummyBean());
     $modelCart->promo_id = 1;
 
-    $promoModel = new Model_Promo();
-    $promoModel->loadBean(new Tests\Helpers\DummyBean());
+    $promoModel = new Promo();
 
     $discountPrice = 25;
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')
-        ->atLeast()->once()
-        ->andReturn($modelCart);
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($promoModel);
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('load')->atLeast()->once()->with('Cart', Mockery::any())->andReturn($modelCart);
 
     $di = container();
     $di['db'] = $dbMock;
+    $productService = Mockery::mock(ProductService::class)->shouldIgnoreMissing();
+    $productService->shouldReceive('findPromoById')->once()->with(1)->andReturn($promoModel);
+    $di['mod_service'] = $di->protect(fn () => $productService);
 
-    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('getRelatedItemsDiscount')
-        ->atLeast()->once()
-        ->andReturn(0);
-    $serviceMock->shouldReceive('getItemPromoDiscount')
-        ->atLeast()->once()
-        ->andReturn($discountPrice);
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('getRelatedItemsDiscount')->atLeast()->once()->andReturn(0);
+    $serviceMock->shouldReceive('getItemPromoDiscount')->atLeast()->once()->andReturn($discountPrice);
 
     $serviceMock->setDi($di);
     $setupPrice = 0;
@@ -1165,32 +1411,25 @@ test('get product discount with promo', function (): void {
 
     expect($result)->toBeArray();
     expect($result[0])->toEqual($discountPrice);
-    expect($result[1])->toEqual(0);
+    $discountSetup = 0;
+    expect($result[1])->toEqual($discountSetup);
 });
 
-test('get product discount with no promo', function (): void {
-    $service = new Box\Mod\Cart\Service();
+test('getProductDiscount returns zeros when no promo', function (): void {
     $cartProductModel = new Model_CartProduct();
     $cartProductModel->loadBean(new Tests\Helpers\DummyBean());
 
     $modelCart = new Model_Cart();
     $modelCart->loadBean(new Tests\Helpers\DummyBean());
 
-    $promoModel = new Model_Promo();
-    $promoModel->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')
-        ->atLeast()->once()
-        ->andReturn($modelCart);
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('load')->atLeast()->once()->with('Cart', Mockery::any())->andReturn($modelCart);
 
     $di = container();
     $di['db'] = $dbMock;
 
-    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('getRelatedItemsDiscount')
-        ->atLeast()->once()
-        ->andReturn(0);
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('getRelatedItemsDiscount')->atLeast()->once()->andReturn(0);
 
     $serviceMock->setDi($di);
     $setupPrice = 0;
@@ -1201,8 +1440,7 @@ test('get product discount with no promo', function (): void {
     expect($result[1])->toEqual(0);
 });
 
-test('get product discount with product qty set and free setup', function (): void {
-    $service = new Box\Mod\Cart\Service();
+test('getProductDiscount returns free setup discount', function (): void {
     $cartProductModel = new Model_CartProduct();
     $cartProductModel->loadBean(new Tests\Helpers\DummyBean());
 
@@ -1210,30 +1448,22 @@ test('get product discount with product qty set and free setup', function (): vo
     $modelCart->loadBean(new Tests\Helpers\DummyBean());
     $modelCart->promo_id = 1;
 
-    $promoModel = new Model_Promo();
-    $promoModel->loadBean(new Tests\Helpers\DummyBean());
-    $promoModel->freesetup = 1;
+    $promoModel = new Promo();
+    $promoModel->setFreeSetup(true);
 
     $discountPrice = 25;
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')
-        ->atLeast()->once()
-        ->andReturn($modelCart);
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($promoModel);
-
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('load')->atLeast()->once()->with('Cart', Mockery::any())->andReturn($modelCart);
     $di = container();
     $di['db'] = $dbMock;
+    $productService = Mockery::mock(ProductService::class)->shouldIgnoreMissing();
+    $productService->shouldReceive('findPromoById')->once()->with(1)->andReturn($promoModel);
+    $di['mod_service'] = $di->protect(fn () => $productService);
 
-    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('getRelatedItemsDiscount')
-        ->atLeast()->once()
-        ->andReturn(0);
-    $serviceMock->shouldReceive('getItemPromoDiscount')
-        ->atLeast()->once()
-        ->andReturn($discountPrice);
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('getRelatedItemsDiscount')->atLeast()->once()->andReturn(0);
+    $serviceMock->shouldReceive('getItemPromoDiscount')->atLeast()->once()->andReturn($discountPrice);
 
     $serviceMock->setDi($di);
     $setupPrice = 25;
@@ -1241,66 +1471,51 @@ test('get product discount with product qty set and free setup', function (): vo
 
     expect($result)->toBeArray();
     expect($result[0])->toEqual($discountPrice);
-    expect($result[1])->toEqual($setupPrice);
+    $discountSetup = $setupPrice;
+    expect($result[1])->toEqual($discountSetup);
 });
 
-dataset('isPromoAvailableForClientGroupProvider', function () {
-    $promo1 = new Model_Promo();
-    $promo1->loadBean(new Tests\Helpers\DummyBean());
-    $promo1->client_groups = json_encode([]);
+test('isPromoAvailableForClientGroup returns expected result', function (Promo $promo, ?Model_Client $client, bool $expectedResult): void {
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('isPromoAvailableForClientGroup')->once()->with($promo)->andReturn($expectedResult);
 
-    $client1 = new Model_Client();
-    $client1->loadBean(new Tests\Helpers\DummyBean());
-
-    $promo2 = new Model_Promo();
-    $promo2->loadBean(new Tests\Helpers\DummyBean());
-    $promo2->client_groups = json_encode([1, 2]);
-
-    $client2 = new Model_Client();
-    $client2->loadBean(new Tests\Helpers\DummyBean());
-    $client2->client_group_id = null;
-
-    $promo3 = new Model_Promo();
-    $promo3->loadBean(new Tests\Helpers\DummyBean());
-    $promo3->client_groups = json_encode([1, 2]);
-
-    $client3 = new Model_Client();
-    $client3->loadBean(new Tests\Helpers\DummyBean());
-    $client3->client_group_id = 3;
-
-    $promo4 = new Model_Promo();
-    $promo4->loadBean(new Tests\Helpers\DummyBean());
-    $promo4->client_groups = json_encode([1, 2]);
-
-    $client4 = new Model_Client();
-    $client4->loadBean(new Tests\Helpers\DummyBean());
-    $client4->client_group_id = 2;
-
-    $promo5 = new Model_Promo();
-    $promo5->loadBean(new Tests\Helpers\DummyBean());
-    $promo5->client_groups = json_encode([]);
-
-    $promo6 = new Model_Promo();
-    $promo6->loadBean(new Tests\Helpers\DummyBean());
-    $promo6->client_groups = json_encode([1, 2]);
-
-    return [
-        'no client groups set for promo - any client valid' => [$promo1, $client1, true],
-        'client groups set for promo - client not in any group' => [$promo2, $client2, false],
-        'client groups set for promo - client group not included' => [$promo3, $client3, false],
-        'client groups set for promo - applies to client' => [$promo4, $client4, true],
-        'no client groups set - guest valid' => [$promo5, null, true],
-        'client groups set - guest invalid' => [$promo6, null, false],
-    ];
-});
-
-test('is promo available for client group', function (Model_Promo $promo, ?Model_Client $client, bool $expectedResult): void {
-    $service = new Box\Mod\Cart\Service();
     $di = container();
     $di['loggedin_client'] = $client;
+    $di['mod_service'] = $di->protect(fn () => $productService);
+    $service = new Service();
     $service->setDi($di);
 
     $result = $service->isPromoAvailableForClientGroup($promo);
 
     expect($result)->toEqual($expectedResult);
-})->with('isPromoAvailableForClientGroupProvider');
+})->with([
+    [createPromoEntity(1)->setClientGroups(json_encode([])), (function (): Model_Client {
+        $c = new Model_Client();
+        $c->loadBean(new Tests\Helpers\DummyBean());
+
+        return $c;
+    })(), true],
+    [createPromoEntity(2)->setClientGroups(json_encode([1, 2])), (function (): Model_Client {
+        $c = new Model_Client();
+        $c->loadBean(new Tests\Helpers\DummyBean());
+        $c->client_group_id = null;
+
+        return $c;
+    })(), false],
+    [createPromoEntity(3)->setClientGroups(json_encode([1, 2])), (function (): Model_Client {
+        $c = new Model_Client();
+        $c->loadBean(new Tests\Helpers\DummyBean());
+        $c->client_group_id = 3;
+
+        return $c;
+    })(), false],
+    [createPromoEntity(4)->setClientGroups(json_encode([1, 2])), (function (): Model_Client {
+        $c = new Model_Client();
+        $c->loadBean(new Tests\Helpers\DummyBean());
+        $c->client_group_id = 2;
+
+        return $c;
+    })(), true],
+    [createPromoEntity(5)->setClientGroups(json_encode([])), null, true],
+    [createPromoEntity(6)->setClientGroups(json_encode([1, 2])), null, false],
+]);

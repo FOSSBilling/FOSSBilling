@@ -1,10 +1,10 @@
 {% if order.status == 'active' %}
 <div class="card mb-4">
     <div class="card-header">
-        <h2>{{ order.title }}</h2>
+        <h1>{{ order.title }}</h1>
     </div>
     <div class="card-body">
-        <h3>{{ 'API Key Details'|trans }}</h3>
+        <h2>{{ 'API Key Details'|trans }}</h2>
         <table class="table table-striped table-bordered table-sm">
             <tbody>
                 <tr>
@@ -16,7 +16,7 @@
             </tbody>
         </table>
 
-        <h4>{{ 'Reset API Key'|trans }}</h4>
+        <h3>{{ 'Reset API Key'|trans }}</h3>
         <div class="block">
             <a class="btn btn-primary" {{ fb_api_link({href: 'serviceapikey/reset'|api_url(query: {order_id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>{{ 'Reset'|trans }}</a>
         </div>

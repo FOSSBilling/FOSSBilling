@@ -1212,16 +1212,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 throw new \FOSSBilling\Exception('rel_new_value must be a valid positive integer product ID, received: :value', [':value' => $rel_new_value]);
             }
 
-            $product = $this->di['db']->getExistingModelById('Product', $order->product_id);
-            $allowedUpgrades = json_decode($product->upgrades ?? '', true) ?? [];
-            $allowedUpgrades = array_map(static fn ($upgradeId): string => (string) $upgradeId, $allowedUpgrades);
-            $requestedUpgradeId = (string) $rel_new_value;
-
-            if (!in_array($requestedUpgradeId, $allowedUpgrades, true)) {
-                $upgrade = $this->di['db']->getExistingModelById('Product', $rel_new_value);
-
-                throw new InformationException('Sorry, but ":product" is not allowed to be upgraded to ":upgrade"', [':product' => $product->title, ':upgrade' => $upgrade->title ?? 'unknown']);
-            }
+            $productService = $this->di['mod_service']('product');
+            $productService->assertUpgradeAllowedByIds((int) $order->product_id, (int) $rel_new_value);
         }
 
         // check if support ticket with same uncompleted task already exists

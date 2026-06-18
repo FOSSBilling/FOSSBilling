@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Product\Api;
 
+use Box\Mod\Product\Entity\Product;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -30,17 +31,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('product', 'view');
 
-        $service = $this->getService();
-
-        [$sql, $params] = $service->getProductSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
-
-        foreach ($pager['list'] as $key => $item) {
-            $model = $this->getDi()['db']->getExistingModelById('Product', $item['id'], 'Post not found');
-            $pager['list'][$key] = $this->getService()->toApiArray($model, false, $this->getIdentity());
-        }
-
-        return $pager;
+        return $this->getService()->getPaginatedProducts($data, $this->getIdentity());
     }
 
     /**
@@ -66,7 +57,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('product', 'view');
 
-        $model = $this->_getProduct($data);
+        $model = $this->getService()->findProductById((int) $data['id']);
         $service = $this->getService();
 
         return $service->toApiArray($model, true, $this->getIdentity());
@@ -102,7 +93,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         // allow having only one domain product
         if ($data['type'] == 'domain') {
             $model = $service->getMainDomainProduct();
-            if ($model instanceof \Model_Product) {
+            if ($model !== null) {
                 throw new \FOSSBilling\InformationException('You have already created domain product.', null, 413);
             }
         }
@@ -236,8 +227,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('product', 'view');
 
-        $model = $this->getDi()['db']->load('Product', $data['id']);
-        if (!$model instanceof \Model_Product || !$model->is_addon) {
+        $model = $this->getService()->findProductById((int) $data['id']);
+        if (!$model instanceof Product || !$model->isAddon()) {
             throw new \FOSSBilling\Exception('Addon not found');
         }
         $service = $this->getService();
@@ -273,11 +264,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('product', 'manage_products');
 
-        $model = $this->getDi()['db']->load('Product', $data['id']);
-        if (!$model instanceof \Model_Product || !$model->is_addon) {
+        $model = $this->getService()->findProductById((int) $data['id']);
+        if (!$model instanceof Product || !$model->isAddon()) {
             throw new \FOSSBilling\Exception('Addon not found');
         }
-        $this->getDi()['logger']->info('Updated addon #%s', $model->id);
+        $this->di['logger']->info('Updated addon #%s', $model->getId());
 
         return $this->update($data);
     }
@@ -337,7 +328,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('product', 'manage_categories');
 
-        $model = $this->getDi()['db']->getExistingModelById('ProductCategory', $data['id'], 'Category not found');
+        $model = $this->getService()->findProductCategoryById((int) $data['id']);
 
         $title = $data['title'] ?? null;
         $description = $data['description'] ?? null;
@@ -358,9 +349,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function category_get($data)
     {
-        $this->checkPermissions('product', 'view');
+        $this->checkPermissions('product', 'manage_categories');
 
-        $model = $this->getDi()['db']->getExistingModelById('ProductCategory', $data['id'], 'Category not found');
+        $model = $this->getService()->findProductCategoryById((int) $data['id']);
 
         return $this->getService()->toProductCategoryApiArray($model, true, $this->getIdentity());
     }
@@ -401,7 +392,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('product', 'manage_categories');
 
-        $model = $this->getDi()['db']->getExistingModelById('ProductCategory', $data['id'], 'Category not found');
+        $model = $this->getService()->findProductCategoryById((int) $data['id']);
         $service = $this->getService();
 
         return $service->removeProductCategory($model);
@@ -417,13 +408,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('product', 'view');
 
         $service = $this->getService();
-
-        [$sql, $params] = $service->getPromoSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $qb = $service->getPromoSearchQueryBuilder($data);
+        $pager = $this->di['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
-            $model = $this->getDi()['db']->getExistingModelById('Promo', $item['id'], 'Promo not found');
-            $pager['list'][$key] = $this->getService()->toPromoApiArray($model);
+            $pager['list'][$key] = $this->getService()->enrichPromoApiArray($item);
         }
 
         return $pager;
@@ -486,9 +475,34 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('product', 'view');
 
         $id = $data['id'] ?? null;
-        $model = $this->getDi()['db']->getExistingModelById('Promo', $id, 'Promo not found');
+        $model = $this->getService()->findPromoById((int) $id);
 
         return $this->getService()->toPromoApiArray($model, true, $this->getIdentity());
+    }
+
+    /**
+     * Get promo redemption history.
+     *
+     * @return array
+     *
+     * @throws \FOSSBilling\Exception
+     */
+    #[RequiredParams(['promo_id' => 'Promo ID is missing'])]
+    public function promo_redemption_get_list($data)
+    {
+        $this->checkPermissions('product', 'view');
+
+        /** @var \Box\Mod\Product\Repository\PromoRedemptionRepository $repo */
+        $repo = $this->getService()->getPromoRedemptionRepository();
+
+        $qb = $repo->getSearchQueryBuilder($data);
+        $pager = $this->di['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
+
+        foreach ($pager['list'] as $key => $item) {
+            $pager['list'][$key] = $this->getService()->enrichPromoRedemptionApiArray($item);
+        }
+
+        return $pager;
     }
 
     /**
@@ -517,9 +531,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('product', 'manage_promos');
 
-        $model = $this->getDi()['db']->getExistingModelById('Promo', $data['id'], 'Promo not found');
-
         $service = $this->getService();
+        $model = $service->findPromoById((int) $data['id']);
 
         return $service->updatePromo($model, $data);
     }
@@ -536,7 +549,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('product', 'manage_promos');
 
-        $model = $this->getDi()['db']->getExistingModelById('Promo', $data['id'], 'Promo not found');
+        $model = $this->getService()->findPromoById((int) $data['id']);
 
         return $this->getService()->deletePromo($model);
     }
@@ -544,6 +557,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Product ID was not passed'])]
     private function _getProduct($data)
     {
-        return $this->getDi()['db']->getExistingModelById('Product', $data['id'], 'Product not found');
+        return $this->getService()->findProductById((int) $data['id']);
     }
 }

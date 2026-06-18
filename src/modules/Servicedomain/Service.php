@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedomain;
 
+use Box\Mod\Product\Entity\Product;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -57,7 +58,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function getCartProductTitle($product, array $data)
+    public function getCartProductTitle(Product $product, array $data)
     {
         if (
             isset($data['action']) && $data['action'] == 'register'
@@ -73,7 +74,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             return __trans('Domain :domain transfer', [':domain' => $data['transfer_sld'] . $data['transfer_tld']]);
         }
 
-        return $product->title;
+        return $product->getTitle();
     }
 
     public function validateOrderData(&$data): void
@@ -140,7 +141,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $required = [
                 'register_tld' => 'Domain registration tld parameter missing.',
                 'register_sld' => 'Domain registration sld parameter missing.',
-                'register_years' => 'Years parameter is missing for domain configuration.',
+                'register_years' => 'Domain registration period is missing. Please check domain availability before proceeding.',
             ];
             $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
@@ -378,8 +379,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->contact_phone = $contact->getTel();
 
         $model->details = serialize($whois);
-        $model->expires_at = date('Y-m-d H:i:s', $whois->getExpirationTime());
-        $model->registered_at = date('Y-m-d H:i:s', $whois->getRegistrationTime());
+        $model->expires_at = $this->formatRegistrarTimestamp($whois->getExpirationTime());
+        $model->registered_at = $this->formatRegistrarTimestamp($whois->getRegistrationTime());
         $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
@@ -1111,5 +1112,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['logger']->info('Updated domain #%s without sending actions to server', $s->id);
 
         return true;
+    }
+
+    private function formatRegistrarTimestamp(mixed $timestamp): ?string
+    {
+        if (!is_numeric($timestamp) || (int) $timestamp <= 0) {
+            return null;
+        }
+
+        return date('Y-m-d H:i:s', (int) $timestamp);
     }
 }

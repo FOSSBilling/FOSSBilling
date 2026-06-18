@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicelicense;
 
+use Box\Mod\Product\Entity\Product;
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -44,9 +45,9 @@ class Service implements InjectionAwareInterface
     /**
      * Method called before adding product to cart.
      */
-    public function attachOrderConfig(\Model_Product $product, array $data): array
+    public function attachOrderConfig(Product $product, array $data): array
     {
-        $config = json_decode($product->config ?? '', true) ?? [];
+        $config = json_decode($product->getConfig() ?? '', true) ?? [];
 
         return array_merge($config, $data);
     }
@@ -382,7 +383,9 @@ class Service implements InjectionAwareInterface
                 return new $class_name();
             }
         }
-        $this->di['logger']->warning("License #{$model->id} plugin {$model->plugin} is invalid.");
+        if (isset($this->di['logger'])) {
+            $this->di['logger']->info('License #%s plugin %s is invalid.', $model->id, $model->plugin);
+        }
 
         return null;
     }

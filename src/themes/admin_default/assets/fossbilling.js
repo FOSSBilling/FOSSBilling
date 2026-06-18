@@ -66,20 +66,30 @@ async function copyTextToClipboard(text) {
 function handleClipboardResult(button, success) {
   if (success) {
     let tooltip = bootstrap.Tooltip.getInstance(button);
+    let createdForThisAction = false;
     if (!tooltip) {
       tooltip = new bootstrap.Tooltip(button, { trigger: 'manual' });
+      createdForThisAction = true;
     }
 
+    const hadOriginalTitle = Object.prototype.hasOwnProperty.call(button.dataset, 'bsOriginalTitle');
     const originalTitle = button.dataset.bsOriginalTitle;
     button.dataset.bsOriginalTitle = 'Copied';
     tooltip.show();
     setTimeout(() => {
-      button.dataset.bsOriginalTitle = originalTitle;
+      if (hadOriginalTitle) {
+        button.dataset.bsOriginalTitle = originalTitle;
+      } else {
+        delete button.dataset.bsOriginalTitle;
+      }
       tooltip.hide();
+      if (createdForThisAction) {
+        tooltip.dispose();
+      }
     }, 2000);
   } else {
     if (typeof FOSSBilling !== 'undefined' && FOSSBilling.message) {
-      FOSSBilling.message('Failed to copy to clipboard', 'error');
+      FOSSBilling.message('Failed to copy to clipboard. Please select the text and copy it manually.', 'error');
     }
   }
 }
@@ -106,7 +116,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (document.querySelector('.sortable')) {
-    loadAdminFeature(() => import('sortable-tablesort/dist/sortable.min.js'), 'sortable tables');
+    loadAdminFeature(async () => {
+      await import('sortable-tablesort/dist/sortable.min.js');
+    }, 'sortable tables');
   }
 
   if (document.querySelector('#theme-settings')) {
