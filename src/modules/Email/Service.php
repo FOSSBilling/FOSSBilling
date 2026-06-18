@@ -1061,6 +1061,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         try {
             $mail = new \FOSSBilling\Mail($sender, $recipient, $queue->subject, $queue->content, $transport, $settings['custom_dsn'] ?? null);
+            if (!empty($settings['reply_to'])) {
+                $mail->addReplyTo($settings['reply_to']);
+            }
 
             if (!Environment::isProduction()) {
                 $this->di['logger']->setChannel('email')->info('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
