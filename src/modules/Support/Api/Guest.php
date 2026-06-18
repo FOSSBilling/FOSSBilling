@@ -30,18 +30,18 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         'name' => 'Please enter your name',
         'email' => 'Please enter your email address',
         'subject' => 'Please enter the subject',
-        'message' => 'Please enter your message',
     ])]
     public function ticket_create(array $data): string
     {
         $this->getDi()['rate_limiter']->consumeOrThrow('guest_ticket_create', (string) $this->getIp());
 
-        if (!is_string($data['message']) || strlen($data['message']) < 4) {
+        $content = $data['content'] ?? $data['message'] ?? null;
+        if (!is_string($content) || strlen($content) < 4) {
             throw new \FOSSBilling\InformationException('Please enter your message');
         }
 
         // Sanitize message to prevent XSS attacks
-        $data['message'] = \FOSSBilling\Tools::sanitizeContent($data['message'], true);
+        $data['content'] = \FOSSBilling\Tools::sanitizeContent($content, true);
 
         return $this->getService()->ticketCreateForGuest($data);
     }
@@ -75,19 +75,20 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      *
      * @return string - ticket hash
      */
-    #[RequiredParams(['hash' => 'Public ticket hash required', 'message' => 'Message cannot be empty'])]
+    #[RequiredParams(['hash' => 'Public ticket hash required'])]
     public function ticket_reply(array $data): string
     {
         $publicTicket = $this->getService()->publicFindOneByHash($data['hash']);
+        $message = $data['content'] ?? $data['message'] ?? null;
 
-        if (!is_string($data['message'])) {
+        if (!is_string($message)) {
             throw new \FOSSBilling\InformationException('Message cannot be empty');
         }
 
         // Sanitize message to prevent XSS attacks
-        $data['message'] = \FOSSBilling\Tools::sanitizeContent($data['message'], true);
+        $message = \FOSSBilling\Tools::sanitizeContent($message, true);
 
-        return $this->getService()->publicTicketReplyForGuest($publicTicket, $data['message']);
+        return $this->getService()->publicTicketReplyForGuest($publicTicket, $message);
     }
 
     /**
@@ -96,6 +97,11 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     public function public_tickets_enabled(): bool
     {
         return $this->getService()->publicTicketsEnabled();
+    }
+
+    public function helpdesk_get_pairs(): array
+    {
+        return $this->getService()->helpdeskGetPairs();
     }
 
     /*

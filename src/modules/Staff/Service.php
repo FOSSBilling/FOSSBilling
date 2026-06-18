@@ -502,7 +502,7 @@ class Service implements InjectionAwareInterface
 
         try {
             $supportService = $di['mod_service']('support');
-            $publicTicket = $di['db']->load('SupportPTicket', $params['id']);
+            $publicTicket = $supportService->getPublicTicketById((int) $params['id']);
             $ticket = $supportService->publicToApiArray($publicTicket);
             $email = [];
             $email['to_staff'] = true;

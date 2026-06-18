@@ -79,7 +79,6 @@ class Service
         $this->_exec($api, 'order_batch_suspend_expired');
         $this->_exec($api, 'order_batch_cancel_suspended');
         $this->_exec($api, 'support_batch_ticket_auto_close');
-        $this->_exec($api, 'support_batch_public_ticket_auto_close');
         $this->_exec($api, 'client_batch_expire_password_reminders');
         $this->_exec($api, 'cart_batch_expire');
         $this->_exec($api, 'email_batch_sendmail');

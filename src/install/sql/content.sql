@@ -359,16 +359,6 @@ VALUES
 UNLOCK TABLES;
 
 
-# Dump of table support_p_ticket
-# ------------------------------------------------------------
-
-
-
-# Dump of table support_p_ticket_message
-# ------------------------------------------------------------
-
-
-
 # Dump of table support_pr
 # ------------------------------------------------------------
 

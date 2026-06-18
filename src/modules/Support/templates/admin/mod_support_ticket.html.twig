@@ -41,9 +41,11 @@
                     <li class="nav-item" role="presentation">
                         <a class="nav-link" href="#tab-notes" data-bs-toggle="tab" role="tab">{{ 'Notes'|trans }} {% if ticket.notes is defined and ticket.notes|length > 0 %}({{ ticket.notes|length }}){% endif %}</a>
                     </li>
+                    {% if ticket.client_id %}
                     <li class="nav-item" role="presentation">
                         <a class="nav-link" href="#tab-support" data-bs-toggle="tab" role="tab">{{ 'Client Tickets'|trans }}</a>
                     </li>
+                    {% endif %}
     {% endblock %}
 
     {% block detail_tab_content %}
@@ -63,7 +65,11 @@
                             <table class="table card-table table-vcenter table-striped text-nowrap">
                                 <tbody>
                                     <tr><td class="w-25">{{ 'Ticket ID'|trans }}</td><td>#{{ ticket.id }}</td></tr>
-                                    <tr><td>{{ 'Client'|trans }}</td><td><a href='{{ "client/manage/#{ticket.client.id }"|url }}'>{{ ticket.client.first_name }} {{ ticket.client.last_name }}</a> (#{{ ticket.client.id }})</td></tr>
+                                    {% if ticket.client_id %}
+                                        <tr><td>{{ 'Client'|trans }}</td><td><a href='{{ "client/manage/#{ticket.client.id }"|url }}'>{{ ticket.client.first_name }} {{ ticket.client.last_name }}</a> (#{{ ticket.client.id }})</td></tr>
+                                    {% else %}
+                                        <tr><td>{{ 'Requester'|trans }}</td><td>{{ ticket.author.name|default(ticket.author_name) }} ({{ ticket.author.email|default(ticket.author_email) }})</td></tr>
+                                    {% endif %}
                                     <tr><td>{{ 'Helpdesk'|trans }}</td><td>{{ admin.support_helpdesk_get_pairs[ticket.support_helpdesk_id]|trans }}</td></tr>
                                     <tr><td>{{ 'Status'|trans }}</td><td>{{ mf.status_badge(ticket.status, 'ticket') }}</td></tr>
                                     <tr><td>{{ 'Time Opened'|trans }}</td><td>{{ ticket.created_at|format_date }}</td></tr>
@@ -92,6 +98,12 @@
                         <a class="btn btn-primary" href="{{ 'support/task_complete'|api_url(query: { 'id': ticket.id }) }}" {{ fb_api_link({ reload: true }) }}>
                             <svg class="icon"><use href="#check" /></svg>
                             {{ 'Set Task Complete'|trans }}
+                        </a>
+                        {% endif %}
+                        {% if not ticket.client_id and ticket.hash is defined %}
+                        <a class="btn btn-secondary" href='{{ "support/contact-us/conversation/#{ticket.hash}"|url(area: 'client') }}' target="_blank">
+                            <svg class="icon"><use href="#eye" /></svg>
+                            {{ 'View as Author'|trans }}
                         </a>
                         {% endif %}
                     {% endblock %}
@@ -146,11 +158,11 @@
                                 <div>{{ include('mod_support_canned_selector.html.twig') }}</div>
                             </div>
 
-                            <textarea class="editor-textarea" id="rt" name="content" rows="10" required>{{ 'Hello'|trans }} {{ ticket.client.first_name }},
+                            <textarea class="editor-textarea" id="rt" name="content" rows="10" required>{{ 'Hello'|trans }} {{ ticket.client_id ? ticket.client.first_name : ticket.author.name|default(ticket.author_name) }},
 {{ canned_delay_message }}
 
 {{ profile.signature }}
-{{ ticket.helpdesk.signature }}</textarea>
+{{ ticket.helpdesk.signature|default('') }}</textarea>
                         </div>
                         <div class="card-footer d-flex flex-wrap align-items-center gap-2">
                             <input type="hidden" name="id" value="{{ ticket.id }}">
@@ -263,6 +275,7 @@
             </div>
         </div>
 
+        {% if ticket.client_id %}
         <div class="tab-pane fade" id="tab-support" role="tabpanel">
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Client Tickets'|trans,
@@ -312,6 +325,7 @@
                 {% endblock %}
             {% endembed %}
         </div>
+        {% endif %}
     {% endblock %}
 {% endembed %}
 {% endblock %}

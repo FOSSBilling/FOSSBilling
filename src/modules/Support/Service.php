@@ -244,9 +244,19 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di['db']->getExistingModelById('SupportTicket', $id, 'Ticket not found');
     }
 
-    public function getPublicTicketById(int $id): \Model_SupportPTicket
+    public function getPublicTicketById(int $id): \Model_SupportTicket
     {
-        return $this->di['db']->getExistingModelById('SupportPTicket', $id, 'Ticket not found');
+        $ticket = $this->di['db']->getExistingModelById('SupportTicket', $id, 'Ticket not found');
+        if (!$this->isGuestTicket($ticket)) {
+            throw new \FOSSBilling\Exception('Public ticket not found');
+        }
+
+        return $ticket;
+    }
+
+    public function isGuestTicket(\Model_SupportTicket $ticket): bool
+    {
+        return empty($ticket->client_id) && !empty($ticket->access_hash);
     }
 
     /**
@@ -300,6 +310,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $date_from = $data['date_from'] ?? null;
         $date_to = $data['date_to'] ?? null;
         $priority = $data['priority'] ?? null;
+        $auth = $data['auth'] ?? null;
+        $name = $data['name'] ?? null;
+        $email = $data['email'] ?? null;
 
         $where = [];
         $bindings = [];
@@ -329,6 +342,22 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if ($client_id) {
             $where[] = 'c.id = :client_id';
             $bindings[':client_id'] = $client_id;
+        }
+
+        if ($auth === 'guest') {
+            $where[] = 'st.client_id IS NULL AND st.access_hash IS NOT NULL';
+        } elseif ($auth === 'client') {
+            $where[] = 'st.client_id IS NOT NULL';
+        }
+
+        if ($name) {
+            $where[] = 'st.author_name LIKE :filter_author_name';
+            $bindings[':filter_author_name'] = '%' . $name . '%';
+        }
+
+        if ($email) {
+            $where[] = 'st.author_email LIKE :filter_author_email';
+            $bindings[':filter_author_email'] = '%' . $email . '%';
         }
 
         if ($content) {
@@ -373,9 +402,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 $bindings[':ticket_id'] = $search;
             } else {
                 $search = '%' . $search . '%';
-                $where[] = '(stm.content LIKE :content OR st.subject LIKE :subject)';
+                $where[] = '(stm.content LIKE :content OR st.subject LIKE :subject OR st.author_name LIKE :author_name OR st.author_email LIKE :author_email)';
                 $bindings[':content'] = $search;
                 $bindings[':subject'] = $search;
+                $bindings[':author_name'] = $search;
+                $bindings[':author_email'] = $search;
             }
         }
 
@@ -472,7 +503,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $ticket instanceof \Model_SupportTicket;
     }
 
-    public function closeTicket(\Model_SupportTicket $ticket, \Model_Admin|\Model_Client $identity): bool
+    public function closeTicket(\Model_SupportTicket $ticket, \Model_Admin|\Model_Client|\Model_Guest $identity): bool
     {
         $ticket->status = \Model_SupportTicket::CLOSED;
         $ticket->updated_at = date('Y-m-d H:i:s');
@@ -480,9 +511,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['db']->store($ticket);
 
         if ($identity instanceof \Model_Admin) {
-            $this->di['events_manager']->fire(['event' => 'onAfterAdminCloseTicket', 'params' => ['id' => $ticket->id]]);
+            $event = $this->isGuestTicket($ticket) ? 'onAfterAdminPublicTicketClose' : 'onAfterAdminCloseTicket';
+            $this->di['events_manager']->fire(['event' => $event, 'params' => ['id' => $ticket->id]]);
         } elseif ($identity instanceof \Model_Client) {
             $this->di['events_manager']->fire(['event' => 'onAfterClientCloseTicket', 'params' => ['id' => $ticket->id]]);
+        } elseif ($identity instanceof \Model_Guest) {
+            $this->di['events_manager']->fire(['event' => 'onAfterGuestPublicTicketClose', 'params' => ['id' => $ticket->id]]);
         }
 
         $this->di['logger']->info('Closed ticket "%s"', $ticket->id);
@@ -574,13 +608,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function toApiArray(\Model_SupportTicket $model, bool $deep = true, \Model_Admin|\Model_Client|null $identity = null): array
     {
         $firstSupportTicketMessage = $this->di['db']->findOne('SupportTicketMessage', 'support_ticket_id = :support_ticket_id ORDER by id ASC LIMIT 1', [':support_ticket_id' => $model->id]);
-        $supportHelpdesk = $this->di['db']->load('SupportHelpdesk', $model->support_helpdesk_id);
+        $supportHelpdesk = $model->support_helpdesk_id ? $this->di['db']->load('SupportHelpdesk', $model->support_helpdesk_id) : null;
 
         $data = $this->ticketToApiArray($this->di['db']->toArray($model), $identity);
         $data['replies'] = $this->messageGetRepliesCount($model);
         $data['first'] = $firstSupportTicketMessage instanceof \Model_SupportTicketMessage ? $this->messageToApiArray($firstSupportTicketMessage, true, $identity) : null;
-        $data['helpdesk'] = $this->helpdeskToApiArray($supportHelpdesk, $identity);
+        $data['helpdesk'] = $supportHelpdesk instanceof \Model_SupportHelpdesk ? $this->helpdeskToApiArray($supportHelpdesk, $identity) : null;
         $data['client'] = $this->getClientApiArrayForTicket($model, $identity);
+        $data['author'] = $this->getTicketAuthor($model, $identity);
 
         if ($deep) {
             $messages = $this->messageGetTicketMessages($model);
@@ -605,6 +640,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     private function ticketToApiArray(array $data, \Model_Admin|\Model_Client|null $identity = null): array
     {
+        if (!empty($data['access_hash'])) {
+            $data['hash'] = $data['access_hash'];
+        }
+
         if ($identity instanceof \Model_Admin) {
             return $data;
         }
@@ -613,6 +652,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $data['support_helpdesk_id'],
             $data['client_id'],
             $data['priority'],
+            $data['access_hash'],
             $data['rel_type'],
             $data['rel_id'],
             $data['rel_task'],
@@ -776,6 +816,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getClientApiArrayForTicket(\Model_SupportTicket $ticket, \Model_Admin|\Model_Client|null $identity = null): array
     {
+        if ($this->isGuestTicket($ticket)) {
+            return [];
+        }
+
         $client = $this->di['db']->load('Client', $ticket->client_id);
 
         if ($client instanceof \Model_Client) {
@@ -784,6 +828,24 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['logger']->error('Missing client for ticket ' . $ticket->id);
 
         return [];
+    }
+
+    private function getTicketAuthor(\Model_SupportTicket $ticket, \Model_Admin|\Model_Client|null $identity = null): array
+    {
+        if ($this->isGuestTicket($ticket)) {
+            $author = [
+                'name' => $ticket->author_name,
+                'role' => 'guest',
+            ];
+
+            if ($identity instanceof \Model_Admin || $identity === null) {
+                $author['email'] = $ticket->author_email;
+            }
+
+            return $author;
+        }
+
+        return $this->getClientApiArrayForTicket($ticket, $identity);
     }
 
     private function clientToTicketApiArray(\Model_Client $client, \Model_Admin|\Model_Client|null $identity = null): array
@@ -910,9 +972,21 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if ($model->admin_id) {
             $author = $this->di['db']->load('Admin', $model->admin_id);
             $role = 'admin';
-        } else {
+        } elseif ($model->client_id) {
             $author = $this->di['db']->load('Client', $model->client_id);
             $role = 'client';
+        } else {
+            $ticket = $this->di['db']->load('SupportTicket', $model->support_ticket_id);
+
+            if ($ticket instanceof \Model_SupportTicket && $this->isGuestTicket($ticket)) {
+                return [
+                    'name' => $ticket->author_name,
+                    'email' => $ticket->author_email,
+                    'role' => 'guest',
+                ];
+            }
+
+            return [];
         }
 
         if (!$author) {
@@ -978,7 +1052,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     /**
      * @param \Model_Admin $identity
      */
-    public function ticketReply(\Model_SupportTicket $ticket, \Model_Admin|\Model_Client $identity, string $content): int
+    public function ticketReply(\Model_SupportTicket $ticket, \Model_Admin|\Model_Client|\Model_Guest $identity, string $content): int
     {
         $msg = $this->di['db']->dispense('SupportTicketMessage');
         $msg->support_ticket_id = $ticket->id;
@@ -995,7 +1069,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         if ($identity instanceof \Model_Admin) {
             $ticket->status = \Model_SupportTicket::ONHOLD;
-        } elseif ($identity instanceof \Model_Client) {
+        } elseif ($identity instanceof \Model_Client || $identity instanceof \Model_Guest) {
             $ticket->status = \Model_SupportTicket::OPENED;
         }
 
@@ -1003,9 +1077,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['db']->store($ticket);
 
         if ($identity instanceof \Model_Admin) {
-            $this->di['events_manager']->fire(['event' => 'onAfterAdminReplyTicket', 'params' => ['id' => $ticket->id]]);
+            $event = $this->isGuestTicket($ticket) ? 'onAfterAdminPublicTicketReply' : 'onAfterAdminReplyTicket';
+            $this->di['events_manager']->fire(['event' => $event, 'params' => ['id' => $ticket->id]]);
         } elseif ($identity instanceof \Model_Client) {
             $this->di['events_manager']->fire(['event' => 'onAfterClientReplyTicket', 'params' => ['id' => $ticket->id]]);
+        } elseif ($identity instanceof \Model_Guest) {
+            $this->di['events_manager']->fire(['event' => 'onAfterGuestPublicTicketReply', 'params' => ['id' => $ticket->id]]);
         }
 
         $this->di['logger']->info('Replied to ticket "%s"', $ticket->id);
@@ -1051,6 +1128,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        $data['content'] = $data['content'] ?? $data['message'] ?? null;
+
+        SupportTicketValidator::validateTicketCreation($data);
 
         $event_params = $data;
         $event_params['ip'] = $this->di['request']->getClientIp();
@@ -1058,16 +1138,19 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $status = 'open';
         $subject = $data['subject'] ?? null;
-        $message = $data['message'] ?? null;
+        $message = $data['content'] ?? null;
 
         if (is_array($altered)) {
             $status = $altered['status'] ?? null;
             $subject = $altered['subject'] ?? null;
-            $message = $altered['message'] ?? null;
+            $message = $altered['content'] ?? $altered['message'] ?? null;
         }
 
-        $ticket = $this->di['db']->dispense('SupportPTicket');
-        $ticket->hash = bin2hex(random_bytes(random_int(15, 30)));
+        $helpdesk = isset($data['support_helpdesk_id']) ? $this->di['db']->getExistingModelById('SupportHelpdesk', $data['support_helpdesk_id'], 'Helpdesk invalid') : $this->getDefaultHelpdesk();
+
+        $ticket = $this->di['db']->dispense('SupportTicket');
+        $ticket->access_hash = bin2hex(random_bytes(random_int(15, 30)));
+        $ticket->support_helpdesk_id = $helpdesk->id;
         $ticket->author_name = $data['name'];
         $ticket->author_email = $data['email'];
         $ticket->subject = $subject;
@@ -1076,8 +1159,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $ticket->updated_at = date('Y-m-d H:i:s');
         $ticketId = $this->di['db']->store($ticket);
 
-        $msg = $this->di['db']->dispense('SupportPTicketMessage');
-        $msg->support_p_ticket_id = $ticket->id;
+        $msg = $this->di['db']->dispense('SupportTicketMessage');
+        $msg->support_ticket_id = $ticket->id;
         $msg->content = $message;
         $msg->ip = $this->di['request']->getClientIp();
         $msg->created_at = date('Y-m-d H:i:s');
@@ -1088,7 +1171,25 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['logger']->info('"%s" opened public ticket "%s"', $ticket->author_email, $ticketId);
 
-        return $ticket->hash;
+        return $ticket->access_hash;
+    }
+
+    private function getDefaultHelpdesk(): \Model_SupportHelpdesk
+    {
+        $helpdesk = $this->di['db']->findOne('SupportHelpdesk', 'ORDER BY id ASC LIMIT 1');
+        if ($helpdesk instanceof \Model_SupportHelpdesk) {
+            return $helpdesk;
+        }
+
+        $helpdesk = $this->di['db']->dispense('SupportHelpdesk');
+        $helpdesk->name = 'General';
+        $helpdesk->close_after = 24;
+        $helpdesk->can_reopen = 0;
+        $helpdesk->created_at = date('Y-m-d H:i:s');
+        $helpdesk->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($helpdesk);
+
+        return $helpdesk;
     }
 
     public function publicTicketsEnabled(): bool
@@ -1255,345 +1356,34 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function publicGetStatuses(): array
     {
-        return [
-            \Model_SupportPTicket::OPENED => 'Open',
-            \Model_SupportPTicket::ONHOLD => 'On Hold',
-            \Model_SupportPTicket::CLOSED => 'Closed',
-        ];
+        return $this->getStatuses();
     }
 
-    public function publicFindOneByHash(string $hash): \Model_SupportPTicket
+    public function publicFindOneByHash(string $hash): \Model_SupportTicket
     {
-        $bindings = [
-            ':hash' => $hash,
-        ];
-
-        $publicTicket = $this->di['db']->findOne('SupportPTicket', 'hash = :hash', $bindings);
-        if (!$publicTicket instanceof \Model_SupportPTicket) {
+        $publicTicket = $this->di['db']->findOne('SupportTicket', 'access_hash = :hash AND client_id IS NULL', [':hash' => $hash]);
+        if (!$publicTicket instanceof \Model_SupportTicket) {
             throw new \FOSSBilling\Exception('Public ticket not found');
         }
 
         return $publicTicket;
     }
 
-    public function publicGetSearchQuery(array $data): array
+    public function publicCloseTicket(\Model_SupportTicket $model, \Model_Admin|\Model_Guest $identity): bool
     {
-        $query = 'SELECT spt.* FROM support_p_ticket spt
-        LEFT JOIN support_p_ticket_message sptm
-        ON spt.id = sptm.support_p_ticket_id';
-
-        $search = $data['search'] ?? null;
-
-        $id = $data['id'] ?? null;
-        $status = $data['status'] ?? null;
-        $name = $data['name'] ?? null;
-        $email = $data['email'] ?? null;
-        $subject = $data['subject'] ?? null;
-        $content = $data['content'] ?? null;
-
-        $where = [];
-        $bindings = [];
-
-        if ($id) {
-            $where[] = 'spt.id  = :p_ticket_id';
-            $bindings[':p_ticket_id'] = $id;
-        }
-
-        if ($status) {
-            $where[] = 'spt.status  = :p_ticket_status';
-            $bindings[':p_ticket_status'] = $status;
-        }
-
-        if ($email) {
-            $where[] = 'spt.author_email  = :p_ticket_author_email';
-            $bindings[':p_ticket_author_email'] = $email;
-        }
-
-        if ($name) {
-            $where[] = 'spt.author_name  = :p_ticket_author_name';
-            $bindings[':p_ticket_author_name'] = $name;
-        }
-
-        if ($content) {
-            $where[] = 'spt.content LIKE :p_ticket_content';
-            $bindings[':p_ticket_content'] = "%$content%";
-        }
-
-        if ($subject) {
-            $where[] = 'spt.subject LIKE :p_ticket_subject';
-            $bindings[':p_ticket_subject'] = "%$subject%";
-        }
-
-        // smartSearch
-        if ($search) {
-            if (is_numeric($search)) {
-                $where[] = 'spt.id = :p_ticket_id';
-                $bindings[':p_ticket_id'] = $search;
-            } else {
-                $search = '%' . $search . '%';
-                $where[] = '(sptm.content LIKE :p_message_content OR spt.subject LIKE :p_ticket_subject)';
-                $bindings[':p_message_content'] = $search;
-                $bindings[':p_ticket_subject'] = $search;
-            }
-        }
-
-        if (!empty($where)) {
-            $query = $query . ' WHERE ' . implode(' AND ', $where);
-        }
-
-        $query .= ' GROUP BY spt.id, sptm.id ORDER BY spt.id DESC, sptm.id ASC';
-
-        return [$query, $bindings];
+        return $this->closeTicket($model, $identity);
     }
 
-    public function publicCounter(): array
+    public function publicToApiArray(\Model_SupportTicket $model, bool $deep = true, $identity = null): array
     {
-        $query = 'SELECT status, COUNT(id) as counter
-                FROM support_p_ticket
-                GROUP BY status';
-
-        $data = $this->di['db']->getAssoc($query);
-
-        return [
-            'total' => array_sum($data),
-            \Model_SupportPTicket::OPENED => $data[\Model_SupportPTicket::OPENED] ?? 0,
-            \Model_SupportPTicket::CLOSED => $data[\Model_SupportPTicket::CLOSED] ?? 0,
-            \Model_SupportPTicket::ONHOLD => $data[\Model_SupportPTicket::ONHOLD] ?? 0,
-        ];
+        return $this->toApiArray($model, $deep, $identity instanceof \Model_Admin ? $identity : null);
     }
 
-    public function publicGetLatest(): array
+    public function publicTicketReplyForGuest(\Model_SupportTicket $ticket, string $message): string
     {
-        return $this->di['db']->find('SupportPTicket', 'ORDER BY id DESC Limit 10');
-    }
+        $this->ticketReply($ticket, new \Model_Guest(), $message);
 
-    public function publicCountByStatus(string $status): int
-    {
-        $query = 'SELECT COUNT(id) as counter
-                FROM support_p_ticket
-                WHERE status = :status
-                GROUP BY status';
-
-        return (int) $this->di['db']->getCell($query, [':status' => $status]);
-    }
-
-    public function publicGetExpired(): array
-    {
-        $bindings = [
-            ':status' => \Model_SupportPTicket::ONHOLD,
-        ];
-
-        return $this->di['db']->find('SupportPTicket', 'status = :status AND DATE_ADD(updated_at, INTERVAL 48 HOUR) < NOW() ORDER BY id ASC', $bindings);
-    }
-
-    public function publicCloseTicket(\Model_SupportPTicket $model, \Model_Admin|\Model_Guest $identity): bool
-    {
-        $model->status = 'closed';
-        $model->updated_at = date('Y-m-d H:i:s');
-
-        $this->di['db']->store($model);
-
-        if ($identity instanceof \Model_Admin) {
-            $this->di['events_manager']->fire(['event' => 'onAfterAdminPublicTicketClose', 'params' => ['id' => $model->id]]);
-            $this->di['logger']->info('Public Ticket %s was closed', $model->id);
-        } elseif ($identity instanceof \Model_Guest) {
-            $this->di['events_manager']->fire(['event' => 'onAfterGuestPublicTicketClose', 'params' => ['id' => $model->id]]);
-            $this->di['logger']->info('"%s" closed public ticket "%s"', $model->author_email, $model->id);
-        }
-
-        return true;
-    }
-
-    public function publicAutoClose(\Model_SupportPTicket $model): bool
-    {
-        $model->status = 'closed';
-        $model->updated_at = date('Y-m-d H:i:s');
-
-        $this->di['db']->store($model);
-
-        $this->di['logger']->info('Public Ticket %s was closed', $model->id);
-
-        return true;
-    }
-
-    public function publicRm(\Model_SupportPTicket $model): bool
-    {
-        $id = $model->id;
-        $bindings = [
-            ':support_p_ticket_id' => $model->id,
-        ];
-        $messages = $this->di['db']->find('SupportPTicketMessage', 'support_p_ticket_id = :support_p_ticket_id', $bindings);
-
-        foreach ($messages as $message) {
-            $this->di['db']->trash($message);
-        }
-
-        $this->di['db']->trash($model);
-
-        $this->di['logger']->info('Deleted public ticket #%s', $id);
-
-        return true;
-    }
-
-    public function publicToApiArray(\Model_SupportPTicket $model, bool $deep = true, $identity = null): array
-    {
-        $data = $this->di['db']->toArray($model);
-
-        if (!$identity instanceof \Model_Admin) {
-            unset($data['author_email']);
-        }
-
-        $messages = [];
-        $messagesArr = $this->di['db']->find('SupportPTicketMessage', 'support_p_ticket_id = :support_p_ticket_id ORDER BY id', [':support_p_ticket_id' => $model->id]);
-        foreach ($messagesArr as $msg) {
-            $messages[] = $this->publicMessageToApiArray($msg, true, $identity);
-        }
-
-        $first = reset($messagesArr);
-        if ($first instanceof \Model_SupportPTicketMessage) {
-            $data['author'] = $this->publicMessageGetAuthorDetails($first, $identity);
-        } else {
-            $data['author'] = [];
-        }
-        $data['messages'] = $messages;
-
-        return $data;
-    }
-
-    public function publicMessageGetAuthorDetails(\Model_SupportPTicketMessage $model, $identity = null): array
-    {
-        if ($model->admin_id) {
-            $author = $this->di['db']->getExistingModelById('Admin', $model->admin_id);
-
-            $result = [
-                'name' => $author->getFullName(),
-            ];
-
-            if ($identity instanceof \Model_Admin) {
-                $result['email'] = $author->email;
-            }
-
-            return $result;
-        }
-
-        $ticket = $this->di['db']->getExistingModelById('SupportPTicket', $model->support_p_ticket_id);
-
-        $result = [
-            'name' => $ticket->author_name,
-        ];
-
-        if ($identity instanceof \Model_Admin) {
-            $result['email'] = $ticket->author_email;
-        }
-
-        return $result;
-    }
-
-    public function publicMessageToApiArray(\Model_SupportPTicketMessage $model, bool $deep = true, $identity = null): array
-    {
-        $data = [
-            'id' => $model->id,
-            'content' => $model->content,
-            'created_at' => $model->created_at,
-            'updated_at' => $model->updated_at,
-        ];
-
-        if ($identity instanceof \Model_Admin) {
-            $data['support_p_ticket_id'] = $model->support_p_ticket_id;
-            $data['admin_id'] = $model->admin_id;
-            $data['ip'] = $model->ip;
-        }
-
-        $data['author'] = $this->publicMessageGetAuthorDetails($model, $identity);
-
-        return $data;
-    }
-
-    public function publicTicketCreate(array $data, \Model_Admin $identity): int
-    {
-        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
-
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminPublicTicketOpen', 'params' => $data]);
-
-        $ticket = $this->di['db']->dispense('SupportPTicket');
-        $ticket->hash = bin2hex(random_bytes(random_int(15, 30)));
-        $ticket->author_name = $data['name'];
-        $ticket->author_email = $data['email'];
-        $ticket->subject = $data['subject'];
-        $ticket->status = 'open';
-        $ticket->created_at = date('Y-m-d H:i:s');
-        $ticket->updated_at = date('Y-m-d H:i:s');
-        $ticketId = $this->di['db']->store($ticket);
-
-        $msg = $this->di['db']->dispense('SupportPTicketMessage');
-        $msg->support_p_ticket_id = $ticketId;
-        $msg->admin_id = $identity->id;
-        $msg->content = $data['message'];
-        $msg->ip = $this->di['request']->getClientIp();
-        $msg->created_at = date('Y-m-d H:i:s');
-        $msg->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($msg);
-
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminPublicTicketOpen', 'params' => ['id' => $ticketId]]);
-
-        $this->di['logger']->info('Opened public ticket for email "%s"', $ticket->author_email);
-
-        return $ticketId;
-    }
-
-    public function publicTicketUpdate(\Model_SupportPTicket $model, $data): bool
-    {
-        $model->subject = $data['subject'] ?? $model->subject;
-        $model->status = $data['status'] ?? $model->status;
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
-
-        $this->di['logger']->info('Updated public ticket #%s', $model->id);
-
-        return true;
-    }
-
-    public function publicTicketReply(\Model_SupportPTicket $ticket, \Model_Admin $identity, string $content): int
-    {
-        $msg = $this->di['db']->dispense('SupportPTicketMessage');
-        $msg->support_p_ticket_id = $ticket->id;
-        $msg->admin_id = $identity->id;
-        $msg->content = $content;
-        $msg->ip = $this->di['request']->getClientIp();
-        $msg->created_at = date('Y-m-d H:i:s');
-        $msg->updated_at = date('Y-m-d H:i:s');
-        $messageId = $this->di['db']->store($msg);
-
-        $ticket->status = \Model_SupportPTicket::ONHOLD;
-        $ticket->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($ticket);
-
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminPublicTicketReply', 'params' => ['id' => $ticket->id]]);
-
-        $this->di['logger']->info('Replied to public ticket "%s"', $ticket->id);
-
-        return $messageId;
-    }
-
-    public function publicTicketReplyForGuest(\Model_SupportPTicket $ticket, string $message): string
-    {
-        $msg = $this->di['db']->dispense('SupportPTicketMessage');
-        $msg->support_p_ticket_id = $ticket->id;
-        $msg->content = $message;
-        $msg->ip = $this->di['request']->getClientIp();
-        $msg->created_at = date('Y-m-d H:i:s');
-        $msg->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($msg);
-
-        $ticket->status = \Model_SupportPTicket::OPENED;
-        $ticket->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($ticket);
-
-        $this->di['events_manager']->fire(['event' => 'onAfterGuestPublicTicketReply', 'params' => ['id' => $ticket->id]]);
-
-        $this->di['logger']->info('Client "%s" replied to public ticket "%s"', $ticket->author_email, $ticket->id);
-
-        return $ticket->hash;
+        return $ticket->access_hash;
     }
 
     public function helpdeskUpdate(\Model_SupportHelpdesk $model, array $data): bool

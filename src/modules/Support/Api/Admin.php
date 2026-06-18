@@ -186,27 +186,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Action to close all inquiries which have not received any replies for a
-     * time defined in helpdesk.
-     *
-     * Run by cron job
-     */
-    public function batch_public_ticket_auto_close($data): bool
-    {
-        $this->checkPermissions('support', 'manage_tickets');
-
-        // Auto close public tickets
-        $expired = $this->getService()->publicGetExpired();
-        foreach ($expired as $model) {
-            if (!$this->getService()->publicAutoClose($model)) {
-                $this->getDi()['logger']->info('Public Ticket %s was not closed', $model->id);
-            }
-        }
-
-        return true;
-    }
-
-    /**
      * Return tickets statuses with counter.
      */
     public function ticket_get_statuses(array $data): array
@@ -218,134 +197,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         }
 
         return $this->getService()->counter();
-    }
-
-    /**
-     * Get paginated list of inquiries.
-     */
-    public function public_ticket_get_list(array $data): array
-    {
-        $this->checkPermissions('support', 'view');
-
-        [$sql, $bindings] = $this->getService()->publicGetSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
-
-        foreach ($pager['list'] as $key => $ticketArr) {
-            $ticket = $this->getDi()['db']->getExistingModelById('SupportPTicket', $ticketArr['id'], 'Ticket not found');
-            $pager['list'][$key] = $this->getService()->publicToApiArray($ticket, true, $this->getIdentity());
-        }
-
-        return $pager;
-    }
-
-    /**
-     * Create new public inquiry.
-     *
-     * @throws \FOSSBilling\Exception
-     */
-    #[RequiredParams(['name' => 'Name is required', 'email' => 'Email is required', 'subject' => 'Subject is required', 'message' => 'Message is required'])]
-    public function public_ticket_create(array $data): int
-    {
-        $this->checkPermissions('support', 'manage_tickets');
-
-        $data['subject'] = \FOSSBilling\Tools::sanitizeContent($data['subject'], false);
-        $data['message'] = \FOSSBilling\Tools::sanitizeContent($data['message'], true);
-
-        return $this->getService()->publicTicketCreate($data, $this->getIdentity());
-    }
-
-    /**
-     * Get inquiry details.
-     *
-     * @throws \FOSSBilling\Exception
-     */
-    #[RequiredParams(['id' => 'Ticket ID is missing'])]
-    public function public_ticket_get(array $data): array
-    {
-        $this->checkPermissions('support', 'view');
-
-        $model = $this->getDi()['db']->getExistingModelById('SupportPTicket', $data['id'], 'Ticket not found');
-
-        return $this->getService()->publicToApiArray($model, true, $this->getIdentity());
-    }
-
-    /**
-     * Delete inquiry.
-     *
-     * @throws \FOSSBilling\Exception
-     */
-    #[RequiredParams(['id' => 'Ticket ID is missing'])]
-    public function public_ticket_delete(array $data): bool
-    {
-        $this->checkPermissions('support', 'manage_tickets');
-
-        $model = $this->getDi()['db']->getExistingModelById('SupportPTicket', $data['id'], 'Ticket not found');
-
-        return $this->getService()->publicRm($model);
-    }
-
-    /**
-     * Set id status to closed.
-     *
-     * @throws \FOSSBilling\Exception
-     */
-    #[RequiredParams(['id' => 'Ticket ID is missing'])]
-    public function public_ticket_close(array $data): bool
-    {
-        $this->checkPermissions('support', 'manage_tickets');
-
-        $ticket = $this->getDi()['db']->getExistingModelById('SupportPTicket', $data['id'], 'Ticket not found');
-
-        return $this->getService()->publicCloseTicket($ticket, $this->getIdentity());
-    }
-
-    /**
-     * Update inquiry details.
-     *
-     * @optional string $subject - subject
-     * @optional string $status - status
-     *
-     * @throws \FOSSBilling\Exception
-     */
-    #[RequiredParams(['id' => 'Ticket ID is missing'])]
-    public function public_ticket_update(array $data): bool
-    {
-        $this->checkPermissions('support', 'manage_tickets');
-
-        $model = $this->getDi()['db']->getExistingModelById('SupportPTicket', $data['id'], 'Ticket not found');
-
-        return $this->getService()->publicTicketUpdate($model, $data);
-    }
-
-    /**
-     * Post new reply to inquiry.
-     *
-     * @throws \FOSSBilling\Exception
-     */
-    #[RequiredParams(['id' => 'Ticket ID is missing', 'content' => 'Ticket content required'])]
-    public function public_ticket_reply(array $data): int
-    {
-        $this->checkPermissions('support', 'manage_tickets');
-
-        $data['content'] = \FOSSBilling\Tools::sanitizeContent($data['content'], true);
-
-        $ticket = $this->getDi()['db']->getExistingModelById('SupportPTicket', $data['id'], 'Ticket not found');
-
-        return $this->getService()->publicTicketReply($ticket, $this->getIdentity(), $data['content']);
-    }
-
-    /**
-     * Return tickets statuses with counter.
-     */
-    public function public_ticket_get_statuses(array $data): array
-    {
-        $this->checkPermissions('support', 'view');
-
-        if (isset($data['titles'])) {
-            return $this->getService()->publicGetStatuses();
-        }
-
-        return $this->getService()->publicCounter();
     }
 
     /**
@@ -672,21 +523,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         foreach ($data['ids'] as $id) {
             $this->ticket_delete(['id' => $id]);
-        }
-
-        return true;
-    }
-
-    /**
-     * Deletes tickets with given IDs.
-     */
-    #[RequiredParams(['ids' => 'IDs were not passed'])]
-    public function batch_delete_public($data): bool
-    {
-        $this->checkPermissions('support', 'manage_tickets');
-
-        foreach ($data['ids'] as $id) {
-            $this->public_ticket_delete(['id' => $id]);
         }
 
         return true;

@@ -45,13 +45,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 ],
                 [
                     'location' => 'support',
-                    'label' => __trans('Public Tickets'),
-                    'uri' => $this->di['url']->adminLink('support/public-tickets', ['status' => 'open']),
-                    'index' => 200,
-                    'class' => '',
-                ],
-                [
-                    'location' => 'support',
                     'label' => __trans('Canned Responses'),
                     'uri' => $this->di['url']->adminLink('support/canned-responses'),
                     'index' => 400,
@@ -81,8 +74,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $app->get('/support/index', 'get_index', [], static::class);
         $app->get('/support/ticket/:id', 'get_ticket', ['id' => '[0-9]+'], static::class);
         $app->get('/support/ticket/:id/message/:messageid', 'get_ticket', ['id' => '[0-9]+', 'messageid' => '[0-9]+'], static::class);
-        $app->get('/support/public-tickets', 'get_public_tickets', [], static::class);
-        $app->get('/support/public-ticket/:id', 'get_public_ticket', ['id' => '[0-9]+'], static::class);
         $app->get('/support/helpdesks', 'get_helpdesks', [], static::class);
         $app->get('/support/helpdesk/:id', 'get_helpdesk', ['id' => '[0-9]+'], static::class);
         $app->get('/support/canned-responses', 'get_canned_list', [], static::class);
@@ -128,40 +119,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         }
 
         return $app->render('mod_support_ticket', ['ticket' => $ticket, 'canned_delay_message' => $cdm, 'request_message' => $messageid]);
-    }
-
-    public function get_public_tickets(\Box_App $app): string
-    {
-        $this->di['is_admin_logged'];
-
-        return $app->render('mod_support_public_tickets');
-    }
-
-    public function get_public_ticket(\Box_App $app, $id): string
-    {
-        $api = $this->di['api_admin'];
-        $ticket = $api->support_public_ticket_get(['id' => $id]);
-
-        $cdm = '';
-        $mod = $this->di['mod']('support');
-        $config = $mod->getConfig();
-
-        try {
-            if (isset($config['delay_enable']) && $config['delay_enable'] && isset($config['delay_hours']) && $config['delay_hours'] >= 0) {
-                $last_message = end($ticket['messages']);
-                reset($ticket);
-
-                $hours_passed = (round((time() - strtotime((string) $last_message['created_at'])) / 3600) > $config['delay_hours']);
-                if ($hours_passed) {
-                    $delay_canned = $api->support_canned_get(['id' => $config['delay_message_id']]);
-                    $cdm = $delay_canned['content'];
-                }
-            }
-        } catch (\Exception $e) {
-            $this->di['logger']->error($e->getMessage());
-        }
-
-        return $app->render('mod_support_public_ticket', ['ticket' => $ticket, 'canned_delay_message' => $cdm]);
     }
 
     public function get_helpdesk(\Box_App $app, $id): string

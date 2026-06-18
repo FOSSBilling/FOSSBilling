@@ -272,6 +272,11 @@ class UpdatePatcher implements InjectionAwareInterface
         return in_array($column, $this->getTableColumns($table), true);
     }
 
+    private function tableExists(string $table): bool
+    {
+        return (bool) $this->fetchOne('SHOW TABLES LIKE :table', ['table' => $table]);
+    }
+
     private function getTableColumns(string $table): array
     {
         $columns = $this->fetchAll(sprintf('SHOW COLUMNS FROM `%s`', $this->quoteIdentifier($table)));
@@ -458,6 +463,7 @@ class UpdatePatcher implements InjectionAwareInterface
             69 => 'patch69',
             70 => 'patch70',
             71 => 'patch71',
+            72 => 'patch72',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1569,6 +1575,89 @@ class UpdatePatcher implements InjectionAwareInterface
         if (!$this->tableHasColumn('invoice', 'text_2')) {
             $this->executeSql('ALTER TABLE `invoice` ADD COLUMN `text_2` text');
         }
+    }
+
+    private function patch72(): void
+    {
+        if (!$this->tableHasColumn('support_ticket', 'access_hash')) {
+            $this->executeSql('ALTER TABLE `support_ticket` ADD COLUMN `access_hash` VARCHAR(255) DEFAULT NULL AFTER `client_id`;');
+        }
+
+        if (!$this->tableHasColumn('support_ticket', 'author_name')) {
+            $this->executeSql('ALTER TABLE `support_ticket` ADD COLUMN `author_name` VARCHAR(255) DEFAULT NULL AFTER `access_hash`;');
+        }
+
+        if (!$this->tableHasColumn('support_ticket', 'author_email')) {
+            $this->executeSql('ALTER TABLE `support_ticket` ADD COLUMN `author_email` VARCHAR(255) DEFAULT NULL AFTER `author_name`;');
+        }
+
+        if (!$this->tableHasIndex('support_ticket', 'access_hash_idx')) {
+            $this->executeSql('ALTER TABLE `support_ticket` ADD INDEX `access_hash_idx` (`access_hash`);');
+        }
+
+        if (!$this->tableExists('support_p_ticket')) {
+            return;
+        }
+
+        $defaultHelpdeskId = $this->fetchOne('SELECT id FROM support_helpdesk ORDER BY id ASC LIMIT 1');
+        if (!$defaultHelpdeskId) {
+            $now = date('Y-m-d H:i:s');
+            $this->executeSql(
+                'INSERT INTO support_helpdesk (name, close_after, can_reopen, created_at, updated_at) VALUES (:name, :close_after, :can_reopen, :created_at, :updated_at)',
+                [
+                    'name' => 'General',
+                    'close_after' => 24,
+                    'can_reopen' => 0,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]
+            );
+            $defaultHelpdeskId = $this->fetchOne('SELECT id FROM support_helpdesk ORDER BY id ASC LIMIT 1');
+        }
+
+        $publicTickets = $this->fetchAll('SELECT * FROM support_p_ticket ORDER BY id ASC');
+        foreach ($publicTickets as $publicTicket) {
+            $this->executeSql(
+                'INSERT INTO support_ticket (support_helpdesk_id, client_id, access_hash, author_name, author_email, subject, status, created_at, updated_at)
+                 VALUES (:support_helpdesk_id, NULL, :access_hash, :author_name, :author_email, :subject, :status, :created_at, :updated_at)',
+                [
+                    'support_helpdesk_id' => $defaultHelpdeskId,
+                    'access_hash' => $publicTicket['hash'],
+                    'author_name' => $publicTicket['author_name'],
+                    'author_email' => $publicTicket['author_email'],
+                    'subject' => $publicTicket['subject'],
+                    'status' => $publicTicket['status'],
+                    'created_at' => $publicTicket['created_at'],
+                    'updated_at' => $publicTicket['updated_at'],
+                ]
+            );
+
+            $ticketId = (int) $this->getPdo()->lastInsertId();
+            $messages = $this->fetchAll('SELECT * FROM support_p_ticket_message WHERE support_p_ticket_id = :id ORDER BY id ASC', [
+                'id' => $publicTicket['id'],
+            ]);
+
+            foreach ($messages as $message) {
+                $this->executeSql(
+                    'INSERT INTO support_ticket_message (support_ticket_id, admin_id, content, ip, created_at, updated_at)
+                     VALUES (:support_ticket_id, :admin_id, :content, :ip, :created_at, :updated_at)',
+                    [
+                        'support_ticket_id' => $ticketId,
+                        'admin_id' => $message['admin_id'],
+                        'content' => $message['content'],
+                        'ip' => $message['ip'],
+                        'created_at' => $message['created_at'],
+                        'updated_at' => $message['updated_at'],
+                    ]
+                );
+            }
+        }
+
+        if ($this->tableExists('support_p_ticket_message')) {
+            $this->executeSql('DROP TABLE `support_p_ticket_message`;');
+        }
+
+        $this->executeSql('DROP TABLE `support_p_ticket`;');
     }
 
     private function generateDownloadableStoredFilename(): string

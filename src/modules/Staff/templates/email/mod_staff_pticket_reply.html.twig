@@ -39,7 +39,7 @@
 	<p>Hello {{ staff.name|default('') }},</p>
 
     <p>Public ticket {{ticket.id|default('')}} has a new reply.</p>
-	<a href='{{ "support/public-ticket/#{ticket.id|default('')}"|url(area: 'admin') }}' target="_blank">Reply here.</a></p>
+	<a href='{{ "support/ticket/#{ticket.id|default('')}"|url(area: 'admin') }}' target="_blank">Reply here.</a></p>
 
     <p>You may <a href="{{ 'staff/login'|url(query: { 'email': staff.email|default('') }, area: 'admin') }}" target="_blank">login</a> or <a href="{{ 'staff/profile'|url(area: 'admin') }}" target="_blank">edit your profile.</a>
 

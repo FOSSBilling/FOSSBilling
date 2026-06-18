@@ -118,6 +118,16 @@
                     <div class="row g-3">
                         <div class="col-md-6 col-xl-3">
                             <div>
+                                <label class="form-label text-muted small mb-1" for="filter-ticket-auth">{{ 'Requester Type'|trans }}</label>
+                                <select class="form-select" id="filter-ticket-auth" name="auth">
+                                    <option value="">{{ 'All Requesters'|trans }}</option>
+                                    <option value="client"{% if request.auth == 'client' %} selected{% endif %}>{{ 'Clients'|trans }}</option>
+                                    <option value="guest"{% if request.auth == 'guest' %} selected{% endif %}>{{ 'Guests'|trans }}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-xl-3">
+                            <div>
                                 <label class="form-label text-muted small mb-1" for="filter-ticket-client-id">{{ 'Client ID'|trans }}</label>
                                 <input class="form-control" type="text" id="filter-ticket-client-id" name="client_id" value="{{ request.client_id }}" placeholder="{{ 'Client ID'|trans }}">
                             </div>
@@ -132,6 +142,18 @@
                             <div>
                                 <label class="form-label text-muted small mb-1" for="filter-ticket-subject">{{ 'Ticket Subject'|trans }}</label>
                                 <input class="form-control" type="text" id="filter-ticket-subject" name="subject" value="{{ request.subject }}" placeholder="{{ 'Ticket Subject'|trans }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-xl-3">
+                            <div>
+                                <label class="form-label text-muted small mb-1" for="filter-ticket-name">{{ 'Guest Name'|trans }}</label>
+                                <input class="form-control" type="text" id="filter-ticket-name" name="name" value="{{ request.name }}" placeholder="{{ 'Guest Name'|trans }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-xl-3">
+                            <div>
+                                <label class="form-label text-muted small mb-1" for="filter-ticket-email">{{ 'Guest Email'|trans }}</label>
+                                <input class="form-control" type="text" id="filter-ticket-email" name="email" value="{{ request.email }}" placeholder="{{ 'Guest Email'|trans }}">
                             </div>
                         </div>
                         <div class="col-md-6 col-xl-3">
@@ -204,7 +226,7 @@
                         <th class="w-1 no-sort">
                             <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
                         </th>
-                        <th>{{ 'Client'|trans }}</th>
+                        <th>{{ 'Requester'|trans }}</th>
                         <th>{{ 'Subject'|trans }}</th>
                         <th>{{ 'Status'|trans }}</th>
                         <th>{{ 'Helpdesk'|trans }}</th>
@@ -214,22 +236,32 @@
                 <tbody>
                     {% set tickets = admin.support_ticket_get_list({ 'per_page': 25, 'page': request.page, 'deep': 0, 'include_first': 0 }|merge(request)) %}
                     {% for i, ticket in tickets.list %}
-                    <tr class="priority_{{ ticket.priority }}">
+                    <tr class="priority_{{ ticket.priority|default(100) }}">
                         <td>
                             <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ ticket.id }}">
                         </td>
                         <td>
-                            <div class="d-flex py-1 align-items-center">
-                                <a href='{{ "client/manage/#{ticket.client_id}"|url }}'>
-                                    {{ avatar(ticket.client.email, 40, 'avatar me-2') }}
-                                </a>
-                                <div class="flex-fill">
-                                    <div class="font-weight-medium">
-                                        <a href='{{ "client/manage/#{ticket.client_id}"|url }}'>{{ ticket.client.first_name }} {{ ticket.client.last_name }}</a>
+                            {% if ticket.client_id %}
+                                <div class="d-flex py-1 align-items-center">
+                                    <a href='{{ "client/manage/#{ticket.client_id}"|url }}'>
+                                        {{ avatar(ticket.client.email, 40, 'avatar me-2') }}
+                                    </a>
+                                    <div class="flex-fill">
+                                        <div class="font-weight-medium">
+                                            <a href='{{ "client/manage/#{ticket.client_id}"|url }}'>{{ ticket.client.first_name }} {{ ticket.client.last_name }}</a>
+                                        </div>
+                                        <div class="text-muted">{{ ticket.client.email }}</div>
                                     </div>
-                                    <div class="text-muted">{{ ticket.client.email }}</div>
                                 </div>
-                            </div>
+                            {% else %}
+                                <div class="d-flex py-1 align-items-center">
+                                    {{ avatar(ticket.author.email|default(ticket.author_email), 40, 'avatar me-2') }}
+                                    <div class="flex-fill">
+                                        <div class="font-weight-medium">{{ ticket.author.name|default(ticket.author_name) }}</div>
+                                        <div class="text-muted">{{ ticket.author.email|default(ticket.author_email) }} · {{ 'Guest'|trans }}</div>
+                                    </div>
+                                </div>
+                            {% endif %}
                         </td>
                         <td>
                             <div>
@@ -245,7 +277,7 @@
                             <span class="text-muted">{{ ticket.updated_at|timeago }} {{ 'ago'|trans }}</span>
                         </td>
                         <td>{{ mf.status_badge(ticket.status, 'ticket') }}</td>
-                        <td>{{ ticket.helpdesk.name }}</td>
+                        <td>{{ ticket.helpdesk.name|default('-') }}</td>
                         <td>
                             <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}#reply-box'>
                                 <svg class="icon">

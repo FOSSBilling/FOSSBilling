@@ -88,7 +88,7 @@
                 <form method="post" action="{{ 'support/ticket_reply'|api_url(role: 'guest') }}" {{ fb_api_form({ reload: true }) }}>
                     <input type="hidden" name="hash" value="{{ ticket.hash }}" />
 
-                    <textarea name="message" cols="5" rows="10" class="editor-textarea form-control" required="required" id="ticket-reply-text"></textarea>
+                    <textarea name="content" cols="5" rows="10" class="editor-textarea form-control" required="required" id="ticket-reply-text"></textarea>
                     <button class="btn btn-primary btn-large mt-1" type="submit" id="submit-support-message" value="{{ 'Post'|trans }}" onclick="">{{ 'Post'|trans }}</button>
                 </form>
             {% elseif ticket.status == 'closed' %}

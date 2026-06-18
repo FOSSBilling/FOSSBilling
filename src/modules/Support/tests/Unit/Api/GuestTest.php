@@ -28,7 +28,7 @@ test('ticket create', function (): void {
         'name' => 'Name',
         'email' => 'email@wxample.com',
         'subject' => 'Subject',
-        'message' => 'Message',
+        'content' => 'Message',
     ];
     $result = $guestApi->ticket_create($data);
 
@@ -51,7 +51,7 @@ test('ticket create message too short exception', function (): void {
         'name' => 'Name',
         'email' => 'email@wxample.com',
         'subject' => 'Subject',
-        'message' => '',
+        'content' => '',
     ];
 
     expect(fn (): string => $guestApi->ticket_create($data))->toThrow(FOSSBilling\Exception::class);
@@ -61,7 +61,7 @@ test('ticket get', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $serviceMock->shouldReceive('publicFindOneByHash')->atLeast()->once()
-        ->andReturn(new Model_SupportPTicket());
+        ->andReturn(new Model_SupportTicket());
     $serviceMock->shouldReceive('publicToApiArray')->atLeast()->once()
         ->andReturn([]);
 
@@ -82,7 +82,7 @@ test('ticket close', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $serviceMock->shouldReceive('publicFindOneByHash')->atLeast()->once()
-        ->andReturn(new Model_SupportPTicket());
+        ->andReturn(new Model_SupportTicket());
     $serviceMock->shouldReceive('publicCloseTicket')->atLeast()->once()
         ->andReturn(true);
 
@@ -104,7 +104,7 @@ test('ticket reply', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $serviceMock->shouldReceive('publicFindOneByHash')->atLeast()->once()
-        ->andReturn(new Model_SupportPTicket());
+        ->andReturn(new Model_SupportTicket());
     $serviceMock->shouldReceive('publicTicketReplyForGuest')->atLeast()->once()
         ->andReturn(sha1(uniqid()));
 
@@ -115,7 +115,7 @@ test('ticket reply', function (): void {
 
     $data = [
         'hash' => sha1(uniqid()),
-        'message' => 'Message',
+        'content' => 'Message',
     ];
     $result = $guestApi->ticket_reply($data);
 

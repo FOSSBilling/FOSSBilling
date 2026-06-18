@@ -235,7 +235,7 @@ test('handles after guest public ticket open event', function (): void {
         'author_name' => 'Name',
     ];
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $supportPTicketModel = new Model_SupportPTicket();
+    $supportPTicketModel = new Model_SupportTicket();
     $supportPTicketModel->loadBean(new Tests\Helpers\DummyBean());
     $serviceMock->shouldReceive('getPublicTicketById')
         ->atLeast()->once()
@@ -279,7 +279,7 @@ test('handles after admin public ticket open event', function (): void {
         'author_name' => 'Name',
     ];
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $supportPTicketModel = new Model_SupportPTicket();
+    $supportPTicketModel = new Model_SupportTicket();
     $supportPTicketModel->loadBean(new Tests\Helpers\DummyBean());
     $serviceMock->shouldReceive('getPublicTicketById')
         ->atLeast()->once()
@@ -324,7 +324,7 @@ test('handles after admin public ticket reply event', function (): void {
         'author_name' => 'Name',
     ];
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $supportPTicketModel = new Model_SupportPTicket();
+    $supportPTicketModel = new Model_SupportTicket();
     $supportPTicketModel->loadBean(new Tests\Helpers\DummyBean());
     $serviceMock->shouldReceive('getPublicTicketById')
         ->atLeast()->once()
@@ -369,7 +369,7 @@ test('handles after admin public ticket close event', function (): void {
         'author_name' => 'Name',
     ];
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $supportPTicketModel = new Model_SupportPTicket();
+    $supportPTicketModel = new Model_SupportTicket();
     $supportPTicketModel->loadBean(new Tests\Helpers\DummyBean());
     $serviceMock->shouldReceive('getPublicTicketById')
         ->atLeast()->once()
@@ -429,8 +429,9 @@ test('gets ticket by id', function (): void {
 test('gets public ticket by id', function (): void {
     $service = new Service();
     $dbMock = Mockery::mock('\Box_Database');
-    $supportPTicketModel = new Model_SupportPTicket();
+    $supportPTicketModel = new Model_SupportTicket();
     $supportPTicketModel->loadBean(new Tests\Helpers\DummyBean());
+    $supportPTicketModel->access_hash = 'test-hash-123';
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($supportPTicketModel);
@@ -440,7 +441,7 @@ test('gets public ticket by id', function (): void {
     $service->setDi($di);
 
     $result = $service->getPublicTicketById(1);
-    expect($result)->toBeInstanceOf(Model_SupportPTicket::class);
+    expect($result)->toBeInstanceOf(Model_SupportTicket::class);
 });
 
 test('gets statuses', function (): void {
@@ -560,6 +561,7 @@ test('gets latest tickets', function (): void {
     $service = new Service();
     $ticket = new Model_SupportTicket();
     $ticket->loadBean(new Tests\Helpers\DummyBean());
+    $ticket->support_helpdesk_id = 1;
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('find')
         ->atLeast()->once()
@@ -859,6 +861,7 @@ test('converts ticket to api array', function (): void {
 
     $ticket = new Model_SupportTicket();
     $ticket->loadBean(new Tests\Helpers\DummyBean());
+    $ticket->support_helpdesk_id = 1;
 
     $result = $serviceMock->toApiArray($ticket, true, new Model_Admin());
     expect($result)->toBeArray();
@@ -920,6 +923,7 @@ test('converts ticket to api array with rel details', function (): void {
 
     $ticket = new Model_SupportTicket();
     $ticket->loadBean(new Tests\Helpers\DummyBean());
+    $ticket->support_helpdesk_id = 1;
     $ticket->rel_id = 1;
     $ticket->rel_type = 'Type';
 
@@ -1924,13 +1928,13 @@ test('kb find category by slug', function (): void {
 });
 
 /*
- * Public Ticket Tests
+ * Guest Ticket Tests
  */
 
 test('public get statuses', function (): void {
     $service = new Service();
     $result = $service->publicGetStatuses();
-    expect($result)->toBeArray();
+    expect($result)->toEqual($service->getStatuses());
 });
 
 test('public find one by hash', function (): void {
@@ -1938,14 +1942,14 @@ test('public find one by hash', function (): void {
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('findOne')
         ->atLeast()->once()
-        ->andReturn(new Model_SupportPTicket());
+        ->andReturn(new Model_SupportTicket());
 
     $di = container();
     $di['db'] = $dbMock;
     $service->setDi($di);
 
     $result = $service->publicFindOneByHash(sha1(uniqid()));
-    expect($result)->toBeInstanceOf(Model_SupportPTicket::class);
+    expect($result)->toBeInstanceOf(Model_SupportTicket::class);
 });
 
 test('public find one by hash not found exception', function (): void {
@@ -1961,113 +1965,6 @@ test('public find one by hash not found exception', function (): void {
 
     $this->expectException(FOSSBilling\Exception::class);
     $service->publicFindOneByHash(sha1(uniqid()));
-});
-
-dataset('publicGetSearchQueryProvider', fn (): array => [
-    'with search string' => [
-        [
-            'search' => 'Query',
-            'id' => 1,
-            'status' => Model_SupportPTicket::OPENED,
-            'name' => 'Name',
-            'email' => 'email@example.com',
-            'subject' => 'Subject',
-            'content' => 'Content',
-        ],
-    ],
-    'with search int' => [
-        [
-            'search' => 1,
-            'id' => 1,
-            'status' => Model_SupportPTicket::OPENED,
-            'name' => 'Name',
-            'email' => 'email@example.com',
-            'subject' => 'Subject',
-            'content' => 'Content',
-        ],
-    ],
-]);
-
-test('public get search query', function (array $data): void {
-    $service = new Service();
-    $di = container();
-    $service->setDi($di);
-
-    [$query, $bindings] = $service->publicGetSearchQuery($data);
-    expect($query)->toBeString();
-    expect($bindings)->toBeArray();
-})->with('publicGetSearchQueryProvider');
-
-test('public counter', function (): void {
-    $service = new Service();
-    $arr = [
-        Model_SupportPTicket::OPENED => 1,
-        Model_SupportPTicket::ONHOLD => 1,
-        Model_SupportPTicket::CLOSED => 1,
-    ];
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAssoc')
-        ->atLeast()->once()
-        ->andReturn($arr);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $result = $service->publicCounter();
-    expect($result)->toBeArray();
-    expect($result)->toHaveKey('total');
-    expect($result['total'])->toEqual(array_sum($arr));
-});
-
-test('public get latest', function (): void {
-    $service = new Service();
-    $ticket = new Model_SupportPTicket();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('find')
-        ->atLeast()->once()
-        ->andReturn([$ticket, $ticket]);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $result = $service->publicGetLatest();
-    expect($result)->toBeArray();
-    expect($result[0])->toBeInstanceOf(Model_SupportPTicket::class);
-});
-
-test('public count by status', function (): void {
-    $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getCell')
-        ->atLeast()->once()
-        ->andReturn('1');
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $result = $service->publicCountByStatus('open');
-    expect($result)->toBeInt();
-});
-
-test('public get expired', function (): void {
-    $service = new Service();
-    $ticket = new Model_SupportPTicket();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('find')
-        ->atLeast()->once()
-        ->andReturn([$ticket, $ticket]);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $result = $service->publicGetExpired();
-    expect($result)->toBeArray();
-    expect($result[0])->toBeInstanceOf(Model_SupportPTicket::class);
 });
 
 dataset('publicCloseTicketProvider', fn (): array => [
@@ -2092,292 +1989,25 @@ test('public close ticket', function (Model_Admin|Model_Guest $identity): void {
     $di['events_manager'] = $eventMock;
     $service->setDi($di);
 
-    $ticket = new Model_SupportPTicket();
+    $ticket = new Model_SupportTicket();
     $ticket->loadBean(new Tests\Helpers\DummyBean());
+    $ticket->access_hash = 'test-hash-123';
 
     $result = $service->publicCloseTicket($ticket, $identity);
     expect($result)->toBeTrue();
 })->with('publicCloseTicketProvider');
 
-test('public auto close', function (): void {
-    $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
+test('public to api array delegates to ticket serialization', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('toApiArray')
         ->atLeast()->once()
-        ->andReturn(1);
+        ->andReturn(['hash' => 'test-hash-123']);
 
-    $di = container();
-    $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $service->setDi($di);
-
-    $ticket = new Model_SupportPTicket();
-    $ticket->loadBean(new Tests\Helpers\DummyBean());
-
-    $result = $service->publicAutoClose($ticket);
-    expect($result)->toBeTrue();
-});
-
-test('public rm', function (): void {
-    $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('trash')
-        ->atLeast()->once()
-        ->andReturn(null);
-    $dbMock->shouldReceive('find')
-        ->atLeast()->once()
-        ->andReturn([new Model_SupportPTicketMessage()]);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $service->setDi($di);
-
-    $ticket = new Model_SupportPTicket();
-    $ticket->loadBean(new Tests\Helpers\DummyBean());
-
-    $result = $service->publicRm($ticket);
-    expect($result)->toBeTrue();
-});
-
-dataset('publicToApiArrayProvider', fn (): array => [
-    'with message' => [
-        new Model_SupportPTicketMessage(),
-        'atLeastOnce',
-    ],
-    'without message' => [
-        null,
-        'never',
-    ],
-]);
-
-test('public to api array', function (?Model_SupportPTicketMessage $findOne, string $publicMessageGetAuthorDetailsCalled): void {
-    $service = new Service();
-    $ticketMessages = [new Model_SupportPTicketMessage(), new Model_SupportPTicketMessage()];
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->andReturn($findOne);
-    $dbMock->shouldReceive('toArray')
-        ->byDefault()
-        ->andReturn([]);
-    $dbMock->shouldReceive('find')
-        ->andReturn($ticketMessages);
-
-    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('publicMessageToApiArray')
-        ->atLeast()->once()
-        ->andReturn([]);
-    $serviceMock->shouldReceive('publicMessageGetAuthorDetails')
-        ->atLeast()->once()
-        ->andReturn(['name' => 'Name', 'email' => 'email#example.com']);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $serviceMock->setDi($di);
-
-    $ticket = new Model_SupportPTicket();
+    $ticket = new Model_SupportTicket();
     $ticket->loadBean(new Tests\Helpers\DummyBean());
 
     $result = $serviceMock->publicToApiArray($ticket, true);
-    expect($result)->toBeArray();
-    expect($result)->toHaveKey('author');
-    expect($result)->toHaveKey('messages');
-    expect($result['messages'])->toHaveCount(count($ticketMessages));
-})->with('publicToApiArrayProvider');
-
-test('public message get author details admin', function (): void {
-    $service = new Service();
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 1;
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($admin);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $ticketMsg = new Model_SupportPTicketMessage();
-    $ticketMsg->loadBean(new Tests\Helpers\DummyBean());
-    $ticketMsg->admin_id = 1;
-
-    $result = $service->publicMessageGetAuthorDetails($ticketMsg);
-    expect($result)->toBeArray();
-    expect($result)->toHaveKey('name');
-});
-
-test('public message get author details not admin', function (): void {
-    $service = new Service();
-    $ticket = new Model_SupportPTicket();
-    $ticket->loadBean(new Tests\Helpers\DummyBean());
-    $ticket->author_name = 'Name';
-    $ticket->author_email = 'Email@example.com';
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($ticket);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $ticketMsg = new Model_SupportPTicketMessage();
-    $ticketMsg->loadBean(new Tests\Helpers\DummyBean());
-    $ticketMsg->admin_id = null;
-
-    $result = $service->publicMessageGetAuthorDetails($ticketMsg);
-    expect($result)->toBeArray();
-    expect($result)->toHaveKey('name');
-});
-
-test('public message to api array', function (): void {
-    $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('toArray')
-        ->byDefault()
-        ->andReturn([]);
-
-    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('publicMessageGetAuthorDetails')
-        ->atLeast()->once()
-        ->andReturn([]);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $serviceMock->setDi($di);
-
-    $ticketMsg = new Model_SupportPTicketMessage();
-    $ticketMsg->loadBean(new Tests\Helpers\DummyBean());
-    $ticketMsg->id = 1;
-
-    $result = $serviceMock->publicMessageToApiArray($ticketMsg);
-    expect($result)->toBeArray();
-    expect($result)->toHaveKey('author');
-});
-
-test('public ticket create', function (): void {
-    $service = new Service();
-    $message = new Model_SupportTicketMessage();
-    $message->loadBean(new Tests\Helpers\DummyBean());
-
-    $randId = 1;
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturn($message);
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn($randId);
-
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')
-        ->atLeast()->once();
-
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')
-        ->atLeast()->once();
-
-    $requestMock = Mockery::mock(FOSSBilling\Request::class);
-    $requestMock->shouldReceive('getClientIp')
-        ->atLeast()->once()
-        ->andReturn('127.0.0.1');
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['events_manager'] = $eventMock;
-    $di['tools'] = $toolsMock;
-    $di['request'] = $requestMock;
-    $service->setDi($di);
-
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 1;
-
-    $data = [
-        'email' => 'email@example.com',
-        'name' => 'Name',
-        'message' => 'Message',
-        'request' => 'Request',
-        'subject' => 'Subject',
-    ];
-
-    $result = $service->publicTicketCreate($data, $admin);
-    expect($result)->toBeInt();
-    expect($result)->toEqual($randId);
-});
-
-test('public ticket update', function (): void {
-    $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(1);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $service->setDi($di);
-
-    $ticket = new Model_SupportPTicket();
-    $ticket->loadBean(new Tests\Helpers\DummyBean());
-
-    $data = [
-        'support_helpdesk_id' => 1,
-        'status' => Model_SupportTicket::OPENED,
-        'subject' => 'Subject',
-        'priority' => 1,
-    ];
-
-    $result = $service->publicTicketUpdate($ticket, $data);
-    expect($result)->toBeTrue();
-});
-
-test('public ticket reply', function (): void {
-    $service = new Service();
-    $message = new Model_SupportTicketMessage();
-    $message->loadBean(new Tests\Helpers\DummyBean());
-
-    $randId = 1;
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturn($message);
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn($randId);
-
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')
-        ->atLeast()->once();
-
-    $requestMock = Mockery::mock(FOSSBilling\Request::class);
-    $requestMock->shouldReceive('getClientIp')
-        ->atLeast()->once()
-        ->andReturn('127.0.0.1');
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['events_manager'] = $eventMock;
-    $di['request'] = $requestMock;
-    $service->setDi($di);
-
-    $ticket = new Model_SupportPTicket();
-    $ticket->loadBean(new Tests\Helpers\DummyBean());
-
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-
-    $result = $service->publicTicketReply($ticket, $admin, 'Content');
-    expect($result)->toBeInt();
-    expect($result)->toEqual($randId);
+    expect($result)->toEqual(['hash' => 'test-hash-123']);
 });
 
 test('public ticket reply for guest', function (): void {
@@ -2390,7 +2020,8 @@ test('public ticket reply for guest', function (): void {
         ->atLeast()->once()
         ->andReturn($message);
     $dbMock->shouldReceive('store')
-        ->atLeast()->once();
+        ->atLeast()->once()
+        ->andReturn(1);
 
     $requestMock = Mockery::mock(FOSSBilling\Request::class);
     $requestMock->shouldReceive('getClientIp')
@@ -2408,9 +2039,9 @@ test('public ticket reply for guest', function (): void {
     $di['events_manager'] = $eventMock;
     $service->setDi($di);
 
-    $ticket = new Model_SupportPTicket();
+    $ticket = new Model_SupportTicket();
     $ticket->loadBean(new Tests\Helpers\DummyBean());
-    $ticket->hash = 'test-hash-123';
+    $ticket->access_hash = 'test-hash-123';
 
     $result = $service->publicTicketReplyForGuest($ticket, 'Content');
     expect($result)->toBeString();
