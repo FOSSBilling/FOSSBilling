@@ -14,7 +14,6 @@ namespace Box\Mod\Staff;
 
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\PaginationOptions;
-use FOSSBilling\Security\AuthenticationRequiredException;
 
 class Service implements InjectionAwareInterface
 {
@@ -920,10 +919,10 @@ class Service implements InjectionAwareInterface
 
     private function getLoggedInAdminOrCronAdmin(): \Model_Admin
     {
-        try {
-            return $this->di['loggedin_admin'];
-        } catch (AuthenticationRequiredException) {
+        if (isset($this->di['auth']) && !$this->di['auth']->isAdminLoggedIn()) {
             return $this->getCronAdmin();
         }
+
+        return $this->di['loggedin_admin'];
     }
 }

@@ -201,10 +201,13 @@ test('hasPermission falls back to cron admin when no admin is logged in', functi
         ->once()
         ->andReturn($cronAdmin);
 
+    $auth = Mockery::mock(Box_Authorization::class);
+    $auth->shouldReceive('isAdminLoggedIn')
+        ->once()
+        ->andReturn(false);
+
     $di = new Pimple\Container();
-    $di['loggedin_admin'] = function (): void {
-        throw new FOSSBilling\Security\AuthenticationRequiredException('admin');
-    };
+    $di['auth'] = $auth;
     $service->setDi($di);
 
     expect($service->hasPermission(null, 'order'))->toBeTrue();
