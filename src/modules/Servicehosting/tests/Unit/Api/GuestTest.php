@@ -1,84 +1,71 @@
 <?php
 
+/**
+ * Copyright 2022-2026 FOSSBilling
+ * SPDX-License-Identifier: Apache-2.0.
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ */
+
 declare(strict_types=1);
 
-namespace Box\Mod\Servicehosting\Api;
+use Box\Mod\Servicehosting\Api\Guest;
 
-use PHPUnit\Framework\Attributes\Group;
+use function Tests\Helpers\container;
 
-#[Group('Core')]
-final class GuestTest extends \BBTestCase
-{
-    protected ?Guest $api;
+test('free tlds', function (): void {
+    $api = new Guest();
+    $di = container();
 
-    public function setUp(): void
-    {
-        $this->api = new Guest();
-    }
+    $model = new Box\Mod\Product\Entity\Product();
+    $model->setType(Box\Mod\Product\Service::HOSTING);
 
-    public function testFreeTlds(): void
-    {
-        $di = $this->getDi();
+    $productService = Mockery::mock(Box\Mod\Product\Service::class);
+    $productService->shouldReceive('findProductById')->once()->with(1)->andReturn($model);
 
-        $model = new \Box\Mod\Product\Entity\Product();
-        $model->setType(\Box\Mod\Product\Service::HOSTING);
+    $di['mod_service'] = $di->protect(function (string $service) use ($productService) {
+        if ($service === 'product') {
+            return $productService;
+        }
 
-        $productService = $this->createMock(\Box\Mod\Product\Service::class);
-        $productService->expects($this->once())
-            ->method('findProductById')
-            ->with(1)
-            ->willReturn($model);
+        throw new RuntimeException('Unexpected service request');
+    });
 
-        $di['mod_service'] = $di->protect(function (string $service) use ($productService) {
-            if ($service === 'product') {
-                return $productService;
-            }
+    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock->shouldReceive('getFreeTlds')->atLeast()->once()->with($model)->andReturn([]);
+    $api->setService($serviceMock);
+    $api->setDi($di);
 
-            throw new \RuntimeException('Unexpected service request');
-        });
+    $result = $api->free_tlds(['product_id' => 1]);
+    expect($result)->toBeArray();
+});
 
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
-        $serviceMock->expects($this->atLeastOnce())
-            ->method('getFreeTlds')
-            ->with($model)
-            ->willReturn([]);
-        $this->api->setService($serviceMock);
-        $this->api->setDi($di);
+test('free tlds product type is not hosting', function (): void {
+    $api = new Guest();
+    $di = container();
 
-        $result = $this->api->free_tlds(['product_id' => 1]);
-        $this->assertIsArray($result);
-    }
+    $model = new Box\Mod\Product\Entity\Product();
 
-    public function testFreeTldsProductTypeIsNotHosting(): void
-    {
-        $di = $this->getDi();
+    $productService = Mockery::mock(Box\Mod\Product\Service::class);
+    $productService->shouldReceive('findProductById')->once()->with(1)->andReturn($model);
 
-        $model = new \Box\Mod\Product\Entity\Product();
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class)->shouldIgnoreMissing();
 
-        $productService = $this->createMock(\Box\Mod\Product\Service::class);
-        $productService->expects($this->once())
-            ->method('findProductById')
-            ->with(1)
-            ->willReturn($model);
+    $di['validator'] = $validatorMock;
+    $di['mod_service'] = $di->protect(function (string $service) use ($productService) {
+        if ($service === 'product') {
+            return $productService;
+        }
 
-        $validatorMock = $this->createStub(\FOSSBilling\Validate::class);
+        throw new RuntimeException('Unexpected service request');
+    });
 
-        $di['validator'] = $validatorMock;
-        $di['mod_service'] = $di->protect(function (string $service) use ($productService) {
-            if ($service === 'product') {
-                return $productService;
-            }
+    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock->shouldNotReceive('getFreeTlds');
+    $api->setService($serviceMock);
+    $api->setDi($di);
 
-            throw new \RuntimeException('Unexpected service request');
-        });
-
-        $serviceMock = $this->createMock(\Box\Mod\Servicehosting\Service::class);
-        $serviceMock->expects($this->never())->method('getFreeTlds');
-        $this->api->setService($serviceMock);
-        $this->api->setDi($di);
-
-        $this->expectException(\FOSSBilling\Exception::class);
-        $this->expectExceptionMessage('Product type is invalid');
-        $this->api->free_tlds(['product_id' => 1]);
-    }
-}
+    expect(fn () => $api->free_tlds(['product_id' => 1]))
+        ->toThrow(FOSSBilling\Exception::class, 'Product type is invalid');
+});

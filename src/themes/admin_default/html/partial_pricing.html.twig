@@ -127,7 +127,8 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        document.querySelectorAll('.pp input.price:not(:disabled)').forEach(function(input) {
+        const priceInputs = document.querySelectorAll('.pp input.price:not(:disabled)');
+        priceInputs.forEach(function(input) {
             function updateTotal() {
                 const row = input.closest('tr');
                 const setupPrice = row.querySelector('input.setup_price').value;
@@ -139,9 +140,7 @@
 
             input.addEventListener('input', updateTotal);
             updateTotal();
-        });
 
-        document.querySelectorAll('.pp input.price:not(:disabled)').forEach(function(input) {
             input.addEventListener('change', function() {
                 const row = this.closest('tr');
                 const setupPrice = row.querySelector('input.setup_price').value;
@@ -168,11 +167,11 @@
         });
     });
 
-    function countTotal(p, s) {
-        p = parseFloat(p);
-        s = parseFloat(s);
+    function countTotal(price, setupPrice) {
+        price = parseFloat(price);
+        setupPrice = parseFloat(setupPrice);
 
-        const num = p + s;
+        const num = price + setupPrice;
 
         if (!isNaN(num)) {
             return num.toFixed(2);

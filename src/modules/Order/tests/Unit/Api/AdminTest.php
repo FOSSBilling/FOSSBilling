@@ -1,838 +1,705 @@
 <?php
 
+/**
+ * Copyright 2022-2026 FOSSBilling
+ * SPDX-License-Identifier: Apache-2.0.
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ */
+
 declare(strict_types=1);
 
-#[Group('Core')]
-final class Api_AdminTest extends BBTestCase
-{
-    protected ?Box\Mod\Order\Api\Admin $api;
+use Box\Mod\Order\Api\Admin;
+use Box\Mod\Order\Service;
 
-    public function setUp(): void
-    {
-        $this->api = new Box\Mod\Order\Api\Admin();
-    }
+use function Tests\Helpers\container;
 
-    public function testGet(): void
-    {
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
+test('gets an order', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
-        $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getOrder')
-            ->willReturn($order);
+    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock->shouldAllowMockingProtectedMethods();
+    $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['toApiArray'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
-            ->willReturn([]);
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn([]);
 
-        $apiMock->setService($serviceMock);
+    $apiMock->setService($serviceMock);
 
-        $data = [
-            'id' => 1,
-        ];
-        $result = $apiMock->get($data);
+    $data = ['id' => 1];
+    $result = $apiMock->get($data);
 
-        $this->assertIsArray($result);
-    }
+    expect($result)->toBeArray();
+});
 
-    public function testGetList(): void
-    {
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['getSearchQuery'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('getSearchQuery')
-            ->willReturn(['query', []]);
+test('gets list of orders', function (): void {
+    $api = new Admin();
 
-        $paginatorMock = $this->getMockBuilder(FOSSBilling\Pagination::class)
-        ->onlyMethods(['getPaginatedResultSet'])
-        ->disableOriginalConstructor()
-        ->getMock();
-        $paginatorMock->expects($this->atLeastOnce())
-            ->method('getPaginatedResultSet')
-            ->willReturn(['list' => []]);
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('getSearchQuery')->atLeast()->once()->andReturn(['query', []]);
+    $serviceMock->shouldReceive('getBatchForApi')->atLeast()->once()->andReturn([]);
 
-        $modMock = $this->getMockBuilder('\\' . FOSSBilling\Module::class)->disableOriginalConstructor()->getMock();
-        $modMock->expects($this->atLeastOnce())
-            ->method('getConfig')
-            ->willReturn(['show_addons' => 0]);
+    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
+    $paginatorMock->shouldReceive('getPaginatedResultSet')->atLeast()->once()->andReturn(['list' => []]);
 
-        $di = $this->getDi();
-        $di['pager'] = $paginatorMock;
-        $di['mod'] = $di->protect(fn (): PHPUnit\Framework\MockObject\MockObject => $modMock);
+    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn(['show_addons' => 0]);
 
-        $this->api->setDi($di);
+    $di = container();
+    $di['pager'] = $paginatorMock;
+    $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
 
-        $this->api->setService($serviceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-        $result = $this->api->get_list([]);
+    $result = $api->get_list([]);
 
-        $this->assertIsArray($result);
-    }
+    expect($result)->toBeArray();
+});
 
-    public function testCreate(): void
-    {
-        $this->markTestSkipped("Stale relative to main\'s order permission/get_list/SQL refactor; needs follow-up port.");
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['createOrder'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('createOrder')
-            ->willReturn(1);
+test('creates an order', function (): void {
+    $api = new Admin();
 
-        $productModel = new Box\Mod\Product\Entity\Product();
-        $productServiceMock = $this->createMock(Box\Mod\Product\Service::class);
-        $productServiceMock->expects($this->once())
-            ->method('findProductById')
-            ->with(1)
-            ->willReturn($productModel);
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('createOrder')->atLeast()->once()->andReturn(1);
 
-        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
-        $dbMock->expects($this->once())
-            ->method('getExistingModelById')
-            ->willReturn(new Model_Client());
+    $productModel = new Box\Mod\Product\Entity\Product();
+    $productServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
+    $productServiceMock->shouldReceive('findProductById')->once()->with(1)->andReturn($productModel);
 
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(function (string $serviceName) use ($productServiceMock) {
-            if ($serviceName === 'product') {
-                return $productServiceMock;
-            }
+    $clientModel = new Model_Client();
+    $clientModel->loadBean(new Tests\Helpers\DummyBean());
 
-            throw new RuntimeException('Unexpected service request');
-        });
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('getExistingModelById')->once()->andReturn($clientModel);
 
-        $data = [
-            'client_id' => 1,
-            'product_id' => 1,
-        ];
-        $result = $this->api->create($data);
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(fn (string $name): Mockery\MockInterface => match (strtolower($name)) {
+        'product' => $productServiceMock,
+        default => Mockery::mock()->shouldIgnoreMissing(),
+    });
 
-        $this->assertIsInt($result);
-    }
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-    public function testCreateWithMarkInvoicePaidRequiresInvoicePermission(): void
-    {
-        $this->markTestSkipped("Stale relative to main\'s order permission/get_list/SQL refactor; needs follow-up port.");
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['createOrder'])->getMock();
-        $serviceMock->expects($this->never())->method('createOrder');
+    $data = ['client_id' => 1, 'product_id' => 1];
+    $result = $api->create($data);
 
-        $staffServiceMock = $this->createMock(Box\Mod\Staff\Service::class);
-        $staffServiceMock->expects($this->once())
-            ->method('checkPermissionsAndThrowException')
-            ->with('invoice')
-            ->willThrowException(new FOSSBilling\InformationException('Denied', [], 403));
+    expect($result)->toBeInt();
+    expect($result)->toBe(1);
+});
 
-        $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn (string $serviceName): PHPUnit\Framework\MockObject\MockObject => match ($serviceName) {
-            'Staff' => $staffServiceMock,
-            default => throw new RuntimeException('Unexpected service request'),
-        });
+test('rejects order create with mark invoice paid when invoice permission is missing', function (): void {
+    $api = new Admin();
 
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('createOrder')->never();
 
-        $this->expectException(FOSSBilling\InformationException::class);
-        $this->api->create([
-            'client_id' => 1,
-            'product_id' => 1,
-            'invoice_option' => 'issue-invoice',
-            'mark_invoice_paid' => 1,
-            'gateway_id' => 5,
-        ]);
-    }
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffServiceMock->shouldReceive('hasPermission')->byDefault()->andReturn(true);
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->byDefault()
+        ->andReturn(true);
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('invoice', null, null, Mockery::any())
+        ->andThrow(new FOSSBilling\InformationException('Denied', [], 403));
 
-    public function testCreateWithMarkInvoicePaidUsesInvoiceService(): void
-    {
-        $this->markTestSkipped("Stale relative to main\'s order permission/get_list/SQL refactor; needs follow-up port.");
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['createOrder'])->getMock();
-        $serviceMock->expects($this->once())->method('createOrder')
-            ->with(
-                $this->isInstanceOf(Model_Client::class),
-                $this->isInstanceOf(Box\Mod\Product\Entity\Product::class),
-                $this->callback(fn (array $data): bool => $data['gateway_id'] === 5
-                    && $data['invoice_option'] === 'issue-invoice'
-                    && $data['mark_invoice_paid'] === true)
-            )
-            ->willReturn(55);
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (string $name): Mockery\MockInterface => match (strtolower($name)) {
+        'staff' => $staffServiceMock,
+        default => Mockery::mock()->shouldIgnoreMissing(),
+    });
 
-        $staffServiceMock = $this->createMock(Box\Mod\Staff\Service::class);
-        $staffServiceMock->expects($this->once())
-            ->method('checkPermissionsAndThrowException')
-            ->with('invoice');
+    $api->setDi($di);
+    $api->setService($serviceMock);
 
-        $invoiceServiceMock = $this->getMockBuilder(Box\Mod\Invoice\Service::class)
-            ->onlyMethods(['validateAdminMarkAsPaidRequest'])
-            ->getMock();
-        $invoiceServiceMock->expects($this->once())
-            ->method('validateAdminMarkAsPaidRequest')
-            ->with($this->callback(fn (array $data): bool => $data['gateway_id'] === 5
+    expect(fn () => $api->create([
+        'client_id' => 1,
+        'product_id' => 1,
+        'invoice_option' => 'issue-invoice',
+        'mark_invoice_paid' => 1,
+        'gateway_id' => 5,
+    ]))->toThrow(FOSSBilling\InformationException::class);
+});
+
+test('uses invoice service to validate mark paid request when permission granted', function (): void {
+    $api = new Admin();
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('createOrder')
+        ->once()
+        ->with(
+            Mockery::type(Model_Client::class),
+            Mockery::type(Box\Mod\Product\Entity\Product::class),
+            Mockery::on(fn (array $data): bool => $data['gateway_id'] === 5
                 && $data['invoice_option'] === 'issue-invoice'
-                && $data['mark_invoice_paid'] === true))
-            ->willReturn(new Model_PayGateway());
-
-        $clientModel = new Model_Client();
-        $clientModel->loadBean(new DummyBean());
-        $productModel = new Box\Mod\Product\Entity\Product();
-        $productServiceMock = $this->createMock(Box\Mod\Product\Service::class);
-        $productServiceMock->expects($this->once())
-            ->method('findProductById')
-            ->with(1)
-            ->willReturn($productModel);
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
-        $dbMock->expects($this->once())
-            ->method('getExistingModelById')
-            ->willReturn($clientModel);
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn (string $serviceName): PHPUnit\Framework\MockObject\MockObject => match ($serviceName) {
-            'Staff' => $staffServiceMock,
-            'Invoice' => $invoiceServiceMock,
-            'product' => $productServiceMock,
-            default => throw new RuntimeException('Unexpected service request'),
-        });
-
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
-
-        $result = $this->api->create([
-            'client_id' => 1,
-            'product_id' => 1,
-            'invoice_option' => 'issue-invoice',
-            'mark_invoice_paid' => 1,
-            'gateway_id' => 5,
-        ]);
-
-        $this->assertSame(55, $result);
-    }
-
-    public function testCreateWithMarkInvoicePaidRejectsInvalidInvoicePaymentPayloadBeforeOrderCreation(): void
-    {
-        $this->markTestSkipped("Stale relative to main\'s order permission/get_list/SQL refactor; needs follow-up port.");
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['createOrder'])->getMock();
-        $serviceMock->expects($this->never())->method('createOrder');
-
-        $staffServiceMock = $this->createMock(Box\Mod\Staff\Service::class);
-        $staffServiceMock->expects($this->once())
-            ->method('checkPermissionsAndThrowException')
-            ->with('invoice');
-
-        $invoiceServiceMock = $this->getMockBuilder(Box\Mod\Invoice\Service::class)
-            ->onlyMethods(['validateAdminMarkAsPaidRequest'])
-            ->getMock();
-        $invoiceServiceMock->expects($this->once())
-            ->method('validateAdminMarkAsPaidRequest')
-            ->willThrowException(new FOSSBilling\InformationException('Transaction ID is required when using the Custom payment gateway.'));
-
-        $di = $this->getDi();
-        $di['mod_service'] = $di->protect(fn (string $serviceName): PHPUnit\Framework\MockObject\MockObject => match ($serviceName) {
-            'Staff' => $staffServiceMock,
-            'Invoice' => $invoiceServiceMock,
-            default => throw new RuntimeException('Unexpected service request'),
-        });
-
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
-
-        $this->expectException(FOSSBilling\InformationException::class);
-        $this->expectExceptionMessage('Transaction ID is required when using the Custom payment gateway.');
-        $this->api->create([
-            'client_id' => 1,
-            'product_id' => 1,
-            'invoice_option' => 'issue-invoice',
-            'mark_invoice_paid' => 1,
-            'gateway_id' => 5,
-        ]);
-    }
-
-    public function testUpdate(): void
-    {
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
-
-        $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getOrder')
-            ->willReturn($order);
-
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['updateOrder'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('updateOrder')
-            ->willReturn(true);
-
-        $apiMock->setService($serviceMock);
-
-        $data = [
-            'client_id' => 1,
-            'product_id' => 1,
-        ];
-        $result = $apiMock->update($data);
+                && $data['mark_invoice_paid'] === true)
+        )
+        ->andReturn(55);
+
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffServiceMock->shouldReceive('hasPermission')->byDefault()->andReturn(true);
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->byDefault()
+        ->andReturn(true);
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('invoice', null, null, Mockery::any());
+
+    $payGateway = new Model_PayGateway();
+    $payGateway->loadBean(new Tests\Helpers\DummyBean());
+
+    $invoiceServiceMock = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $invoiceServiceMock->shouldReceive('validateAdminMarkAsPaidRequest')
+        ->once()
+        ->with(Mockery::on(fn (array $data): bool => $data['gateway_id'] === 5
+            && $data['invoice_option'] === 'issue-invoice'
+            && $data['mark_invoice_paid'] === true))
+        ->andReturn($payGateway);
+
+    $productModel = new Box\Mod\Product\Entity\Product();
+
+    $productServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
+    $productServiceMock->shouldReceive('findProductById')->once()->with(1)->andReturn($productModel);
+
+    $clientModel = new Model_Client();
+    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('getExistingModelById')->once()->andReturn($clientModel);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(fn (string $name): Mockery\MockInterface => match (strtolower($name)) {
+        'staff' => $staffServiceMock,
+        'invoice' => $invoiceServiceMock,
+        'product' => $productServiceMock,
+        default => Mockery::mock()->shouldIgnoreMissing(),
+    });
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    $result = $api->create([
+        'client_id' => 1,
+        'product_id' => 1,
+        'invoice_option' => 'issue-invoice',
+        'mark_invoice_paid' => 1,
+        'gateway_id' => 5,
+    ]);
+
+    expect($result)->toBe(55);
+});
+
+test('rejects invalid invoice payment payload before order creation', function (): void {
+    $api = new Admin();
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('createOrder')->never();
+
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffServiceMock->shouldReceive('hasPermission')->byDefault()->andReturn(true);
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->byDefault()
+        ->andReturn(true);
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('invoice', null, null, Mockery::any());
+
+    $invoiceServiceMock = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $invoiceServiceMock->shouldReceive('validateAdminMarkAsPaidRequest')
+        ->once()
+        ->andThrow(new FOSSBilling\InformationException('Transaction ID is required when using the Custom payment gateway.'));
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (string $name): Mockery\MockInterface => match (strtolower($name)) {
+        'staff' => $staffServiceMock,
+        'invoice' => $invoiceServiceMock,
+        default => Mockery::mock()->shouldIgnoreMissing(),
+    });
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect(fn () => $api->create([
+        'client_id' => 1,
+        'product_id' => 1,
+        'invoice_option' => 'issue-invoice',
+        'mark_invoice_paid' => 1,
+        'gateway_id' => 5,
+    ]))->toThrow(FOSSBilling\InformationException::class, 'Transaction ID is required when using the Custom payment gateway.');
+});
+
+test('updates an order', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+
+    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock->shouldAllowMockingProtectedMethods();
+    $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
-        $this->assertTrue($result);
-    }
-
-    public function testActivate(): void
-    {
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
-
-        $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getOrder')
-            ->willReturn($order);
-
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['activateOrder'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('activateOrder')
-            ->willReturn(true);
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('updateOrder')->atLeast()->once()->andReturn(true);
 
-        $apiMock->setService($serviceMock);
-
-        $data = [
-            'client_id' => 1,
-            'product_id' => 1,
-        ];
-        $result = $apiMock->activate($data);
+    $apiMock->setService($serviceMock);
 
-        $this->assertTrue($result);
-    }
-
-    public function testRenew(): void
-    {
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
-
-        $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getOrder')
-            ->willReturn($order);
-
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['renewOrder'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('renewOrder')
-            ->willReturn(true);
-
-        $apiMock->setService($serviceMock);
+    $data = ['client_id' => 1, 'product_id' => 1];
+    $result = $apiMock->update($data);
 
-        $data = [];
-        $result = $apiMock->renew($data);
+    expect($result)->toBeTrue();
+});
 
-        $this->assertTrue($result);
-    }
-
-    public function testRenewPendingSetup(): void
-    {
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
-        $order->status = Model_ClientOrder::STATUS_PENDING_SETUP;
-
-        $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder', 'activate'])->disableOriginalConstructor()->getMock();
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getOrder')
-            ->willReturn($order);
-        $apiMock->expects($this->atLeastOnce())
-            ->method('activate')
-            ->willReturn(true);
+test('activates an order', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
-        $data = [];
-        $result = $apiMock->renew($data);
+    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock->shouldAllowMockingProtectedMethods();
+    $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
-        $this->assertTrue($result);
-    }
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('activateOrder')->atLeast()->once()->andReturn(true);
 
-    public function testSuspend(): void
-    {
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
+    $apiMock->setService($serviceMock);
 
-        $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getOrder')
-            ->willReturn($order);
+    $data = ['client_id' => 1, 'product_id' => 1];
+    $result = $apiMock->activate($data);
 
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['suspendFromOrder'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('suspendFromOrder')
-            ->willReturn(true);
-
-        $di = $this->getDi();
-
-        $apiMock->setDi($di);
-
-        $apiMock->setService($serviceMock);
+    expect($result)->toBeTrue();
+});
 
-        $data = [];
-        $result = $apiMock->suspend($data);
+test('renews an order', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
-        $this->assertTrue($result);
-    }
+    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock->shouldAllowMockingProtectedMethods();
+    $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
-    public function testUnsuspend(): void
-    {
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
-        $order->status = Model_ClientOrder::STATUS_SUSPENDED;
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('renewOrder')->atLeast()->once()->andReturn(true);
 
-        $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getOrder')
-            ->willReturn($order);
+    $apiMock->setService($serviceMock);
 
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['unsuspendFromOrder'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('unsuspendFromOrder')
-            ->willReturn(true);
-
-        $apiMock->setService($serviceMock);
+    $data = [];
+    $result = $apiMock->renew($data);
 
-        $data = [];
-        $result = $apiMock->unsuspend($data);
-
-        $this->assertTrue($result);
-    }
-
-    public function testUnsuspendNotSuspendedException(): void
-    {
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
-        $order->status = Model_ClientOrder::STATUS_ACTIVE;
+    expect($result)->toBeTrue();
+});
 
-        $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getOrder')
-            ->willReturn($order);
+test('renewing a pending setup order delegates to activate', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->status = Model_ClientOrder::STATUS_PENDING_SETUP;
 
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['unsuspendFromOrder'])->getMock();
-        $serviceMock->expects($this->never())->method('unsuspendFromOrder')
-            ->willReturn(true);
-
-        $apiMock->setService($serviceMock);
+    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock->shouldAllowMockingProtectedMethods();
+    $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
+    $apiMock->shouldReceive('activate')->atLeast()->once()->andReturn(true);
 
-        $data = [];
-        $this->expectException(FOSSBilling\Exception::class);
-        $result = $apiMock->unsuspend($data);
+    $data = [];
+    $result = $apiMock->renew($data);
 
-        $this->assertTrue($result);
-    }
+    expect($result)->toBeTrue();
+});
 
-    public function testCancel(): void
-    {
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
+test('suspends an order', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
 
-        $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getOrder')
-            ->willReturn($order);
+    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock->shouldAllowMockingProtectedMethods();
+    $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['cancelFromOrder'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('cancelFromOrder')
-            ->willReturn(true);
-
-        $di = $this->getDi();
-
-        $apiMock->setDi($di);
-        $apiMock->setService($serviceMock);
-
-        $data = [];
-        $result = $apiMock->cancel($data);
-
-        $this->assertTrue($result);
-    }
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('suspendFromOrder')->atLeast()->once()->andReturn(true);
 
-    public function testUncancel(): void
-    {
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
-        $order->status = Model_ClientOrder::STATUS_CANCELED;
-
-        $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getOrder')
-            ->willReturn($order);
-
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['uncancelFromOrder'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('uncancelFromOrder')
-            ->willReturn(true);
+    $di = container();
+    $apiMock->setDi($di);
+    $apiMock->setService($serviceMock);
 
-        $apiMock->setService($serviceMock);
-
-        $data = [];
-        $result = $apiMock->uncancel($data);
-
-        $this->assertTrue($result);
-    }
+    $data = [];
+    $result = $apiMock->suspend($data);
 
-    public function testUncancelNotCanceledException(): void
-    {
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
-        $order->status = Model_ClientOrder::STATUS_ACTIVE;
+    expect($result)->toBeTrue();
+});
 
-        $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getOrder')
-            ->willReturn($order);
+test('unsuspends a suspended order', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->status = Model_ClientOrder::STATUS_SUSPENDED;
 
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['uncancelFromOrder'])->getMock();
-        $serviceMock->expects($this->never())->method('uncancelFromOrder')
-            ->willReturn(true);
+    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock->shouldAllowMockingProtectedMethods();
+    $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
-        $apiMock->setService($serviceMock);
-
-        $data = [];
-        $this->expectException(FOSSBilling\Exception::class);
-        $result = $apiMock->uncancel($data);
-
-        $this->assertTrue($result);
-    }
-
-    public function testDelete(): void
-    {
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
-
-        $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getOrder')
-            ->willReturn($order);
-
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['deleteFromOrder'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('deleteFromOrder')
-            ->willReturn(true);
-
-        $apiMock->setService($serviceMock);
-
-        $data = [];
-        $result = $apiMock->delete($data);
-
-        $this->assertTrue($result);
-    }
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('unsuspendFromOrder')->atLeast()->once()->andReturn(true);
 
-    public function testDeleteWithAddons(): void
-    {
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
-
-        $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getOrder')
-            ->willReturn($order);
-
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['deleteFromOrder', 'getOrderAddonsList'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('deleteFromOrder')
-            ->willReturn(true);
-        $serviceMock->expects($this->atLeastOnce())->method('getOrderAddonsList')
-            ->willReturn([new Model_ClientOrder()]);
-
-        $apiMock->setService($serviceMock);
-
-        $data = [
-            'delete_addons' => true,
-        ];
-        $result = $apiMock->delete($data);
-
-        $this->assertTrue($result);
-    }
-
-    public function testBatchSuspendExpired(): void
-    {
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['batchSuspendExpired'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('batchSuspendExpired')
-            ->willReturn(true);
-
-        $this->api->setService($serviceMock);
+    $apiMock->setService($serviceMock);
 
-        $data = [];
-        $result = $this->api->batch_suspend_expired($data);
-
-        $this->assertTrue($result);
-    }
-
-    public function testBatchCancelSuspended(): void
-    {
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['batchCancelSuspended'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('batchCancelSuspended')
-            ->willReturn(true);
-
-        $this->api->setService($serviceMock);
-
-        $data = [];
-        $result = $this->api->batch_cancel_suspended($data);
-
-        $this->assertTrue($result);
-    }
-
-    public function testUpdateConfig(): void
-    {
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
-
-        $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getOrder')
-            ->willReturn($order);
+    $data = [];
+    $result = $apiMock->unsuspend($data);
 
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['updateOrderConfig'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('updateOrderConfig')
-            ->willReturn(true);
+    expect($result)->toBeTrue();
+});
 
-        $apiMock->setService($serviceMock);
+test('throws exception when unsuspending non-suspended order', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->status = Model_ClientOrder::STATUS_ACTIVE;
 
-        $data = [
-            'config' => [],
-        ];
-        $result = $apiMock->update_config($data);
+    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock->shouldAllowMockingProtectedMethods();
+    $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
-        $this->assertTrue($result);
-    }
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('unsuspendFromOrder')->never()->andReturn(true);
 
-    public function testUpdateConfigNotSetConfigException(): void
-    {
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
+    $apiMock->setService($serviceMock);
 
-        $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getOrder')
-            ->willReturn($order);
+    $data = [];
 
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['updateOrderConfig'])->getMock();
-        $serviceMock->expects($this->never())->method('updateOrderConfig')
-            ->willReturn(true);
-
-        $apiMock->setService($serviceMock);
+    expect(fn () => $apiMock->unsuspend($data))->toThrow(FOSSBilling\Exception::class);
+});
 
-        $data = [];
-        $this->expectException(FOSSBilling\Exception::class);
-        $result = $apiMock->update_config($data);
-
-        $this->assertTrue($result);
-    }
-
-    public function testService(): void
-    {
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
-
-        $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getOrder')
-            ->willReturn($order);
-
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['getOrderServiceData'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('getOrderServiceData')
-            ->willReturn([]);
-
-        $admin = new Model_Admin();
-        $admin->loadBean(new RedBeanPHP\OODBBean());
-
-        $apiMock->setService($serviceMock);
-        $apiMock->setIdentity($admin);
-
-        $data = [
-            'id' => 1,
-        ];
-        $result = $apiMock->service($data);
-
-        $this->assertIsArray($result);
-    }
-
-    public function testStatusHistoryGetList(): void
-    {
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
-
-        $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getOrder')
-            ->willReturn($order);
-
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['getOrderStatusSearchQuery'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('getOrderStatusSearchQuery')
-            ->willReturn(['query', []]);
-
-        $paginatorMock = $this->getMockBuilder(FOSSBilling\Pagination::class)
-        ->onlyMethods(['getPaginatedResultSet'])
-        ->disableOriginalConstructor()
-        ->getMock();
-        $paginatorMock->expects($this->atLeastOnce())
-            ->method('getPaginatedResultSet')
-            ->willReturn([]);
-
-        $di = $this->getDi();
-
-        $di['pager'] = $paginatorMock;
-
-        $apiMock->setDi($di);
-
-        $apiMock->setService($serviceMock);
-
-        $result = $apiMock->status_history_get_list([]);
-
-        $this->assertIsArray($result);
-    }
-
-    public function testStatusHistoryAdd(): void
-    {
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['orderStatusAdd'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('orderStatusAdd')
-            ->willReturn(true);
-
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
-
-        $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getOrder')
-            ->willReturn($order);
-
-        $di = $this->getDi();
-        $apiMock->setDi($di);
-        $apiMock->setService($serviceMock);
-
-        $data = [
-            'status' => Model_ClientOrder::STATUS_ACTIVE,
-        ];
-        $result = $apiMock->status_history_add($data);
-
-        $this->assertTrue($result);
-    }
-
-    public function testStatusHistoryDelete(): void
-    {
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['orderStatusRm'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('orderStatusRm')
-            ->willReturn(true);
-
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
-
-        $di = $this->getDi();
-        $this->api->setDi($di);
-        $this->api->setService($serviceMock);
-
-        $data = [
-            'id' => 1,
-        ];
-        $result = $this->api->status_history_delete($data);
-
-        $this->assertTrue($result);
-    }
-
-    public function testGetStatuses(): void
-    {
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['counter'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('counter')
-            ->willReturn([]);
-
-        $this->api->setService($serviceMock);
-
-        $result = $this->api->get_statuses();
-        $this->assertIsArray($result);
-    }
-
-    public function testGetInvoiceOptions(): void
-    {
-        $result = $this->api->get_invoice_options([]);
-        $this->assertIsArray($result);
-    }
-
-    public function testGetStatusPairs(): void
-    {
-        $result = $this->api->get_status_pairs([]);
-        $this->assertIsArray($result);
-    }
-
-    public function testAddons(): void
-    {
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['getOrderAddonsList', 'toApiArray'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('getOrderAddonsList')
-            ->willReturn([new Model_ClientOrder()]);
-        $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
-            ->willReturn([]);
-
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
-
-        $apiMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['_getOrder'])->disableOriginalConstructor()->getMock();
-        $apiMock->expects($this->atLeastOnce())
-            ->method('_getOrder')
-            ->willReturn($order);
-
-        $apiMock->setService($serviceMock);
-
-        $data = [
-            'status' => Model_ClientOrder::STATUS_ACTIVE,
-        ];
-        $result = $apiMock->addons($data);
-
-        $this->assertIsArray($result);
-        $this->assertIsArray($result[0]);
-    }
-
-    public function testGetOrder(): void
-    {
-        $validatorMock = $this->createStub(FOSSBilling\Validate::class);
-
-        $serviceMock = $this->getMockBuilder(Box\Mod\Order\Service::class)
-            ->onlyMethods(['toApiArray'])->getMock();
-        $serviceMock->expects($this->atLeastOnce())->method('toApiArray')
-            ->willReturn([]);
-
-        $order = new Model_ClientOrder();
-        $order->loadBean(new DummyBean());
-
-        $dbMock = $this->getMockBuilder('\Box_Database')->disableOriginalConstructor()->getMock();
-        $dbMock->expects($this->atLeastOnce())
-            ->method('getExistingModelById')
-            ->willReturn($order);
-
-        $di = $this->getDi();
-        $di['validator'] = $validatorMock;
-        $di['db'] = $dbMock;
-        $this->api->setDi($di);
-
-        $this->api->setService($serviceMock);
-
-        $data = [
-            'id' => 1,
-        ];
-        $result = $this->api->get($data);
-    }
-
-    public function testBatchDelete(): void
-    {
-        $activityMock = $this->getMockBuilder(Box\Mod\Order\Api\Admin::class)->onlyMethods(['delete'])->getMock();
-        $activityMock->expects($this->atLeastOnce())
-            ->method('delete')
-            ->willReturn(true);
-
-        $di = $this->getDi();
-        $activityMock->setDi($di);
-
-        $result = $activityMock->batch_delete(['ids' => [1, 2, 3]]);
-        $this->assertTrue($result);
-    }
-}
+test('cancels an order', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+
+    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock->shouldAllowMockingProtectedMethods();
+    $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('cancelFromOrder')->atLeast()->once()->andReturn(true);
+
+    $di = container();
+    $apiMock->setDi($di);
+    $apiMock->setService($serviceMock);
+
+    $data = [];
+    $result = $apiMock->cancel($data);
+
+    expect($result)->toBeTrue();
+});
+
+test('uncancels a canceled order', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->status = Model_ClientOrder::STATUS_CANCELED;
+
+    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock->shouldAllowMockingProtectedMethods();
+    $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('uncancelFromOrder')->atLeast()->once()->andReturn(true);
+
+    $apiMock->setService($serviceMock);
+
+    $data = [];
+    $result = $apiMock->uncancel($data);
+
+    expect($result)->toBeTrue();
+});
+
+test('throws exception when uncanceling non-canceled order', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->status = Model_ClientOrder::STATUS_ACTIVE;
+
+    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock->shouldAllowMockingProtectedMethods();
+    $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('uncancelFromOrder')->never()->andReturn(true);
+
+    $apiMock->setService($serviceMock);
+
+    $data = [];
+
+    expect(fn () => $apiMock->uncancel($data))->toThrow(FOSSBilling\Exception::class);
+});
+
+test('deletes an order', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+
+    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock->shouldAllowMockingProtectedMethods();
+    $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('deleteFromOrder')->atLeast()->once()->andReturn(true);
+
+    $apiMock->setService($serviceMock);
+
+    $data = [];
+    $result = $apiMock->delete($data);
+
+    expect($result)->toBeTrue();
+});
+
+test('deletes an order with addons', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+
+    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock->shouldAllowMockingProtectedMethods();
+    $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('deleteFromOrder')->atLeast()->once()->andReturn(true);
+    $serviceMock->shouldReceive('getOrderAddonsList')->atLeast()->once()->andReturn([new Model_ClientOrder()]);
+
+    $apiMock->setService($serviceMock);
+
+    $data = ['delete_addons' => true];
+    $result = $apiMock->delete($data);
+
+    expect($result)->toBeTrue();
+});
+
+test('batch suspends expired orders', function (): void {
+    $api = new Admin();
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('batchSuspendExpired')->atLeast()->once()->andReturn(true);
+
+    $api->setService($serviceMock);
+
+    $data = [];
+    $result = $api->batch_suspend_expired($data);
+
+    expect($result)->toBeTrue();
+});
+
+test('batch cancels suspended orders', function (): void {
+    $api = new Admin();
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('batchCancelSuspended')->atLeast()->once()->andReturn(true);
+
+    $api->setService($serviceMock);
+
+    $data = [];
+    $result = $api->batch_cancel_suspended($data);
+
+    expect($result)->toBeTrue();
+});
+
+test('updates order config', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+
+    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock->shouldAllowMockingProtectedMethods();
+    $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('updateOrderConfig')->atLeast()->once()->andReturn(true);
+
+    $apiMock->setService($serviceMock);
+
+    $data = ['config' => []];
+    $result = $apiMock->update_config($data);
+
+    expect($result)->toBeTrue();
+});
+
+test('throws exception when config is not set', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+
+    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock->shouldAllowMockingProtectedMethods();
+    $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('updateOrderConfig')->never()->andReturn(true);
+
+    $apiMock->setService($serviceMock);
+
+    $data = [];
+
+    expect(fn () => $apiMock->update_config($data))->toThrow(FOSSBilling\Exception::class);
+});
+
+test('gets order service', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+
+    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock->shouldAllowMockingProtectedMethods();
+    $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('getOrderServiceData')->atLeast()->once()->andReturn([]);
+
+    $admin = new Model_Admin();
+    $admin->loadBean(new Tests\Helpers\DummyBean());
+
+    $apiMock->setService($serviceMock);
+    $apiMock->setIdentity($admin);
+
+    $data = ['id' => 1];
+    $result = $apiMock->service($data);
+
+    expect($result)->toBeArray();
+});
+
+test('gets order status history', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+
+    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock->shouldAllowMockingProtectedMethods();
+    $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('getOrderStatusSearchQuery')->atLeast()->once()->andReturn(['query', []]);
+
+    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
+    $paginatorMock->shouldReceive('getPaginatedResultSet')->atLeast()->once()->andReturn([]);
+
+    $di = container();
+    $di['pager'] = $paginatorMock;
+
+    $apiMock->setDi($di);
+    $apiMock->setService($serviceMock);
+
+    $result = $apiMock->status_history_get_list([]);
+
+    expect($result)->toBeArray();
+});
+
+test('adds order status history', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+
+    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock->shouldAllowMockingProtectedMethods();
+    $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('orderStatusAdd')->atLeast()->once()->andReturn(true);
+
+    $di = container();
+    $apiMock->setDi($di);
+    $apiMock->setService($serviceMock);
+
+    $data = ['status' => Model_ClientOrder::STATUS_ACTIVE];
+    $result = $apiMock->status_history_add($data);
+
+    expect($result)->toBeTrue();
+});
+
+test('deletes order status history', function (): void {
+    $api = new Admin();
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('orderStatusRm')->atLeast()->once()->andReturn(true);
+
+    $di = container();
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    $data = ['id' => 1];
+    $result = $api->status_history_delete($data);
+
+    expect($result)->toBeTrue();
+});
+
+test('gets statuses', function (): void {
+    $api = new Admin();
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('counter')->atLeast()->once()->andReturn([]);
+
+    $api->setService($serviceMock);
+
+    $result = $api->get_statuses();
+
+    expect($result)->toBeArray();
+});
+
+test('gets invoice options', function (): void {
+    $api = new Admin();
+    $result = $api->get_invoice_options([]);
+
+    expect($result)->toBeArray();
+});
+
+test('gets status pairs', function (): void {
+    $api = new Admin();
+    $result = $api->get_status_pairs([]);
+
+    expect($result)->toBeArray();
+});
+
+test('gets addons for an order', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+
+    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock->shouldAllowMockingProtectedMethods();
+    $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('getOrderAddonsList')->atLeast()->once()->andReturn([new Model_ClientOrder()]);
+    $serviceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn([]);
+
+    $apiMock->setService($serviceMock);
+
+    $data = ['status' => Model_ClientOrder::STATUS_ACTIVE];
+    $result = $apiMock->addons($data);
+
+    expect($result)->toBeArray();
+    expect($result[0])->toBeArray();
+});
+
+test('gets an order via getOrder', function (): void {
+    $api = new Admin();
+
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock->shouldIgnoreMissing();
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn([]);
+
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn($order);
+
+    $di = container();
+    $di['validator'] = $validatorMock;
+    $di['db'] = $dbMock;
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    $data = ['id' => 1];
+    $api->get($data);
+});
+
+test('batch deletes orders', function (): void {
+    $api = new Admin();
+
+    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock->shouldAllowMockingProtectedMethods();
+    $apiMock->shouldReceive('delete')->atLeast()->once()->andReturn(true);
+
+    $di = container();
+    $apiMock->setDi($di);
+
+    $result = $apiMock->batch_delete(['ids' => [1, 2, 3]]);
+
+    expect($result)->toBeTrue();
+});

@@ -84,9 +84,15 @@ document.addEventListener('DOMContentLoaded', () => {
   currencySelector.forEach(function (select) {
     select.addEventListener('change', function () {
       FOSSBilling.api.guest.post('cart/set_currency', {currency: select.value}, function(response) {
-        location.reload()
+        location.reload();
       }, function(error) {
-        FOSSBilling.message(error)
+        let message = 'An unexpected error occurred';
+        if (error && typeof error === 'object') {
+          message = error.message || error.code || message;
+        } else if (typeof error === 'string') {
+          message = error;
+        }
+        FOSSBilling.message(message, 'error');
       });
     });
   });

@@ -35,7 +35,7 @@
                             <td>
                                 {% if item.discount_price %}
                                     <del>{{ (item.total * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</del>
-                                    <strong class="text-success">{{ (item.total-item.discount_price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</strong>
+                                    <strong class="text-success">{{ ((item.total - item.discount_price) * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</strong>
                                 {% else %}
                                     {{ (item.total * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}
                                 {% endif %}
@@ -106,8 +106,8 @@
                     </tbody>
                 </table>
 
-                <div class="row-fluid">
-                    <div class="span6">
+                <div class="row">
+                    <div class="col-md-6">
                         {% if not cart.promocode %}
                             <a href="#" id="show-promo-field">{{ 'Have a coupon code?'|trans }}</a>
                         {% endif %}
@@ -129,7 +129,7 @@
                         </form>
                     </div>
 
-                    <div class="span6">
+                    <div class="col-md-6">
                         <table class="table table-bordered table-striped">
                             {% if cart.discount >0 %}
                                 <tr>

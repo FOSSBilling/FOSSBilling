@@ -14,7 +14,7 @@
     {% set filteredRequest = safeRequest|filter(v => v is not null) %}
     <nav aria-label="{{ 'Pagination'|trans }}">
         <ul class="pagination justify-content-center mb-0">
-            <li class="page-item{% if not currentPage or currentPage == 1 %} disabled{% endif %}">
+            <li class="page-item{% if currentPage == 1 %} disabled{% endif %}">
                 <a class="page-link"
                    href="{{ url|url(filteredRequest|merge({ (pageParam): 1 })) }}"
                    aria-label="{{ 'First'|trans }}">
@@ -22,7 +22,7 @@
                 </a>
             </li>
 
-            <li class="page-item{% if not currentPage or currentPage == 1 %} disabled{% endif %}">
+            <li class="page-item{% if currentPage == 1 %} disabled{% endif %}">
                 <a class="page-link"
                    href="{{ url|url(filteredRequest|merge({ (pageParam): currentPage - 1 })) }}"
                    aria-label="{{ 'Previous'|trans }}" rel="prev">

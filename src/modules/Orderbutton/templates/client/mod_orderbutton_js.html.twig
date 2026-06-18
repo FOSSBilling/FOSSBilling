@@ -48,7 +48,9 @@
                     if (r.iframe) {
                         document.getElementById('payment-html-inner').innerHTML = r.result;
                         bootstrap.Collapse.getOrCreateInstance(checkoutEl).hide();
-                        document.getElementById('checkout').remove();
+                        if (checkoutEl) {
+                            checkoutEl.remove();
+                        }
                         bootstrap.Collapse.getOrCreateInstance(paymentHtmlEl).show();
                     } else {
                         const link = '{{ "invoice/banklink"|url }}' + '/' + result.invoice_hash + '/' + result.gateway_id;
@@ -67,12 +69,13 @@
     function onLogin(result){
         FOSSBilling.message("{{ 'You logged in successfully'|trans }}");
         let registerEl = document.getElementById('register');
-        new bootstrap.Collapse('#register').hide();
+        let checkoutEl = document.getElementById('checkout');
+        bootstrap.Collapse.getOrCreateInstance(registerEl).hide();
         document.querySelector("#checkoutButton").hidden = false;
         document.querySelector("#loginMessage").hidden = true;
         setTimeout(() => {
             registerEl.parentElement.remove();
-            new bootstrap.Collapse('#checkout').show();
+            bootstrap.Collapse.getOrCreateInstance(checkoutEl).show();
         }, 500);
     }
 
@@ -85,12 +88,12 @@
             () => {
                 FOSSBilling.message("{{ 'You logged in successfully'|trans }}");
                 let registerEl = document.getElementById('register');
-                new bootstrap.Collapse('#register').hide();
+                bootstrap.Collapse.getOrCreateInstance(registerEl).hide();
                 document.querySelector("#checkoutButton").hidden = false;
                 document.querySelector("#loginMessage").hidden = true;
                 setTimeout(() => {
                     registerEl.parentElement.remove();
-                    new bootstrap.Collapse('#checkout').show();
+                    bootstrap.Collapse.getOrCreateInstance(document.getElementById('checkout')).show();
                     }, 500);
             });
     }

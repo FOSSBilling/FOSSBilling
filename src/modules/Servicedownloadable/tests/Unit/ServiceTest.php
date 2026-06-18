@@ -1,172 +1,160 @@
 <?php
 
+/**
+ * Copyright 2022-2026 FOSSBilling
+ * SPDX-License-Identifier: Apache-2.0.
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ */
+
 declare(strict_types=1);
 
-namespace Box\Mod\Servicedownloadable;
+use Box\Mod\Order\Service as OrderService;
+use Box\Mod\Product\Entity\Product;
+use Box\Mod\Servicedownloadable\Service;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
-use PHPUnit\Framework\Attributes\Group;
+use function Tests\Helpers\container;
 
-#[Group('Core')]
-final class ServiceTest extends \BBTestCase
+function serviceDownloadableCreateProductEntity(?int $id = null, ?string $config = null): Product
 {
-    protected ?Service $service = null;
-
-    public function setUp(): void
-    {
-        $this->service = new Service();
+    $product = new Product();
+    if ($id !== null) {
+        $reflection = new ReflectionProperty($product, 'id');
+        $reflection->setAccessible(true);
+        $reflection->setValue($product, $id);
+    }
+    if ($config !== null) {
+        $product->setConfig($config);
     }
 
-    private function createProductEntity(?int $id = null, ?string $config = null): \Box\Mod\Product\Entity\Product
-    {
-        $product = new \Box\Mod\Product\Entity\Product();
-        if ($id !== null) {
-            $reflection = new \ReflectionProperty($product, 'id');
-            $reflection->setAccessible(true);
-            $reflection->setValue($product, $id);
-        }
-        if ($config !== null) {
-            $product->setConfig($config);
-        }
-
-        return $product;
-    }
-
-    public function testActionDelete(): void
-    {
-        $clientOrderModel = new \Model_ClientOrder();
-
-        $orderServiceMock = $this->createMock(\Box\Mod\Order\Service::class);
-        $orderServiceMock->expects($this->atLeastOnce())
-            ->method('getOrderService')
-            ->willReturn(new \Model_ServiceDownloadable());
-
-        $dbMock = $this->createMock(\Box_Database::class);
-        $dbMock->expects($this->atLeastOnce())
-            ->method('trash');
-
-        $di = $this->getDi();
-        $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(fn (): \PHPUnit\Framework\MockObject\MockObject => $orderServiceMock);
-
-        $this->service->setDi($di);
-        $this->service->action_delete($clientOrderModel);
-    }
-
-    public function testSaveProductConfig(): void
-    {
-        $data = [
-            'update_orders' => true,
-        ];
-
-        $productModel = $this->createProductEntity(config: '{"filename": "test.txt"}');
-        $emMock = $this->createMock(\Doctrine\ORM\EntityManagerInterface::class);
-        $emMock->expects($this->once())
-            ->method('flush');
-
-        $di = new \Pimple\Container();
-        $di['em'] = $emMock;
-
-        $this->service->setDi($di);
-        $result = $this->service->saveProductConfig($productModel, $data);
-
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
-
-        // Verify the config was updated correctly
-        $updatedConfig = json_decode($productModel->getConfig() ?? '', true);
-        $this->assertIsArray($updatedConfig);
-        $this->assertEquals('test.txt', $updatedConfig['filename']);
-        $this->assertTrue($updatedConfig['update_orders']);
-        $this->assertNotNull($productModel->getUpdatedAt());
-    }
-
-    public function testSaveProductConfigWithExistingConfig(): void
-    {
-        $data = [
-            'update_orders' => false,
-        ];
-
-        $productModel = $this->createProductEntity(config: '{"filename": "existing.txt", "update_orders": true}');
-        $emMock = $this->createMock(\Doctrine\ORM\EntityManagerInterface::class);
-        $emMock->expects($this->once())
-            ->method('flush');
-
-        $di = new \Pimple\Container();
-        $di['em'] = $emMock;
-
-        $this->service->setDi($di);
-        $result = $this->service->saveProductConfig($productModel, $data);
-
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
-
-        // Verify the config was updated correctly
-        $updatedConfig = json_decode($productModel->getConfig() ?? '', true);
-        $this->assertIsArray($updatedConfig);
-        $this->assertEquals('existing.txt', $updatedConfig['filename']);
-        $this->assertFalse($updatedConfig['update_orders']);
-        $this->assertNotNull($productModel->getUpdatedAt());
-    }
-
-    public function testSaveProductConfigWithNoExistingConfig(): void
-    {
-        $data = [
-            'update_orders' => true,
-        ];
-
-        $productModel = $this->createProductEntity();
-        $emMock = $this->createMock(\Doctrine\ORM\EntityManagerInterface::class);
-        $emMock->expects($this->once())
-            ->method('flush');
-
-        $di = new \Pimple\Container();
-        $di['em'] = $emMock;
-
-        $this->service->setDi($di);
-        $result = $this->service->saveProductConfig($productModel, $data);
-
-        $this->assertIsBool($result);
-        $this->assertTrue($result);
-
-        // Verify the config was created correctly
-        $updatedConfig = json_decode($productModel->getConfig() ?? '', true);
-        $this->assertIsArray($updatedConfig);
-        $this->assertArrayHasKey('update_orders', $updatedConfig);
-        $this->assertTrue($updatedConfig['update_orders']);
-        $this->assertNotNull($productModel->getUpdatedAt());
-    }
-
-    public function testValidateFileUploadAllowsKnownExtensionWithOctetStreamMime(): void
-    {
-        $this->service->setDi($this->getDi());
-
-        $file = $this->createStub(\Symfony\Component\HttpFoundation\File\UploadedFile::class);
-        $file->method('getClientOriginalExtension')->willReturn('exe');
-        $file->method('getClientOriginalName')->willReturn('installer.exe');
-        $file->method('getMimeType')->willReturn('application/octet-stream');
-
-        $this->invokeValidateFileUpload($file);
-
-        $this->addToAssertionCount(1);
-    }
-
-    public function testValidateFileUploadRejectsUnknownExtension(): void
-    {
-        $this->service->setDi($this->getDi());
-
-        $file = $this->createStub(\Symfony\Component\HttpFoundation\File\UploadedFile::class);
-        $file->method('getClientOriginalExtension')->willReturn('php');
-        $file->method('getClientOriginalName')->willReturn('shell.php');
-        $file->method('getMimeType')->willReturn('application/x-httpd-php');
-
-        $this->expectException(\FOSSBilling\Exception::class);
-
-        $this->invokeValidateFileUpload($file);
-    }
-
-    private function invokeValidateFileUpload(\Symfony\Component\HttpFoundation\File\UploadedFile $file): void
-    {
-        $reflection = new \ReflectionMethod(Service::class, 'validateFileUpload');
-        $reflection->invoke($this->service, $file);
-    }
+    return $product;
 }
+
+test('action delete', function (): void {
+    $service = new Service();
+    $clientOrderModel = new Model_ClientOrder();
+
+    $orderServiceMock = Mockery::mock(OrderService::class);
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn(new Model_ServiceDownloadable());
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('trash')->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+
+    $service->setDi($di);
+    $service->action_delete($clientOrderModel);
+});
+
+test('save product config', function (): void {
+    $service = new Service();
+    $data = [
+        'update_orders' => true,
+    ];
+
+    $productModel = serviceDownloadableCreateProductEntity(config: '{"filename": "test.txt"}');
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('flush')->once();
+
+    $di = new Pimple\Container();
+    $di['em'] = $emMock;
+
+    $service->setDi($di);
+    $result = $service->saveProductConfig($productModel, $data);
+
+    expect($result)->toBeBool();
+    expect($result)->toBeTrue();
+
+    $updatedConfig = json_decode($productModel->getConfig() ?? '', true);
+    expect($updatedConfig)->toBeArray();
+    expect($updatedConfig['filename'])->toEqual('test.txt');
+    expect($updatedConfig['update_orders'])->toBeTrue();
+    expect($productModel->getUpdatedAt())->not->toBeNull();
+});
+
+test('save product config with existing config', function (): void {
+    $service = new Service();
+    $data = [
+        'update_orders' => false,
+    ];
+
+    $productModel = serviceDownloadableCreateProductEntity(config: '{"filename": "existing.txt", "update_orders": true}');
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('flush')->once();
+
+    $di = new Pimple\Container();
+    $di['em'] = $emMock;
+
+    $service->setDi($di);
+    $result = $service->saveProductConfig($productModel, $data);
+
+    expect($result)->toBeBool();
+    expect($result)->toBeTrue();
+
+    $updatedConfig = json_decode($productModel->getConfig() ?? '', true);
+    expect($updatedConfig)->toBeArray();
+    expect($updatedConfig['filename'])->toEqual('existing.txt');
+    expect($updatedConfig['update_orders'])->toBeFalse();
+    expect($productModel->getUpdatedAt())->not->toBeNull();
+});
+
+test('save product config with no existing config', function (): void {
+    $service = new Service();
+    $data = [
+        'update_orders' => true,
+    ];
+
+    $productModel = serviceDownloadableCreateProductEntity();
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('flush')->once();
+
+    $di = new Pimple\Container();
+    $di['em'] = $emMock;
+
+    $service->setDi($di);
+    $result = $service->saveProductConfig($productModel, $data);
+
+    expect($result)->toBeBool();
+    expect($result)->toBeTrue();
+
+    $updatedConfig = json_decode($productModel->getConfig() ?? '', true);
+    expect($updatedConfig)->toBeArray();
+    expect($updatedConfig)->toHaveKey('update_orders');
+    expect($updatedConfig['update_orders'])->toBeTrue();
+    expect($productModel->getUpdatedAt())->not->toBeNull();
+});
+
+test('validate file upload allows known extension with octet stream mime', function (): void {
+    $service = new Service();
+    $service->setDi(container());
+
+    $file = Mockery::mock(UploadedFile::class)->shouldIgnoreMissing();
+    $file->shouldReceive('getClientOriginalExtension')->andReturn('exe');
+    $file->shouldReceive('getClientOriginalName')->andReturn('installer.exe');
+    $file->shouldReceive('getMimeType')->andReturn('application/octet-stream');
+
+    $reflection = new ReflectionMethod(Service::class, 'validateFileUpload');
+    $reflection->invoke($service, $file);
+
+    expect(true)->toBeTrue();
+});
+
+test('validate file upload rejects unknown extension', function (): void {
+    $service = new Service();
+    $service->setDi(container());
+
+    $file = Mockery::mock(UploadedFile::class)->shouldIgnoreMissing();
+    $file->shouldReceive('getClientOriginalExtension')->andReturn('php');
+    $file->shouldReceive('getClientOriginalName')->andReturn('shell.php');
+    $file->shouldReceive('getMimeType')->andReturn('application/x-httpd-php');
+
+    $reflection = new ReflectionMethod(Service::class, 'validateFileUpload');
+
+    expect(fn () => $reflection->invoke($service, $file))
+        ->toThrow(FOSSBilling\Exception::class);
+});
