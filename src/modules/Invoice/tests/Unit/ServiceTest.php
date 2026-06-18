@@ -2026,7 +2026,7 @@ test('validatePaymentAmount logs warning on significant overpayment', function (
 
     $service->validatePaymentAmount(60.00, 50.00);
 
-    $warnings = array_filter($logger->calls, fn ($c) => $c['method'] === 'warning');
+    $warnings = array_filter($logger->calls, fn ($c): bool => $c['method'] === 'warning');
     expect($warnings)->not->toBeEmpty();
 });
 
@@ -2039,7 +2039,7 @@ test('validatePaymentAmount does not warn for minor overpayment within tolerance
 
     $service->validatePaymentAmount(50.50, 50.00);
 
-    $warnings = array_filter($logger->calls, fn ($c) => $c['method'] === 'warning');
+    $warnings = array_filter($logger->calls, fn ($c): bool => $c['method'] === 'warning');
     expect($warnings)->toBeEmpty();
 });
 
@@ -2128,9 +2128,7 @@ test('generateRenewalInvoiceForSubscriptionPayment uses the original order and n
 
     $serviceMock = Mockery::mock(Service::class . '[generateForOrder, approveInvoice]');
     $serviceMock->shouldReceive('generateForOrder')
-        ->with(Mockery::on(function ($order) use ($originalOrder): bool {
-            return $order === $originalOrder;
-        }))
+        ->with(Mockery::on(fn ($order): bool => $order === $originalOrder))
         ->once()
         ->andReturn($renewalInvoice);
     $serviceMock->shouldReceive('approveInvoice')
@@ -2198,13 +2196,11 @@ test('markAsPaid transitions a deposit invoice to paid status', function (): voi
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['mod_service'] = $di->protect(function ($name, $sub = '') use ($systemService, $currencyService, $invoiceItemService) {
-        return match ([$name, $sub]) {
-            ['system', ''] => $systemService,
-            ['currency', ''] => $currencyService,
-            ['Invoice', 'InvoiceItem'] => $invoiceItemService,
-            default => throw new RuntimeException("Unexpected service: {$name}/{$sub}"),
-        };
+    $di['mod_service'] = $di->protect(fn ($name, $sub = '') => match ([$name, $sub]) {
+        ['system', ''] => $systemService,
+        ['currency', ''] => $currencyService,
+        ['Invoice', 'InvoiceItem'] => $invoiceItemService,
+        default => throw new RuntimeException("Unexpected service: {$name}/{$sub}"),
     });
     $di['events_manager'] = $eventsManager;
     $service->setDi($di);
