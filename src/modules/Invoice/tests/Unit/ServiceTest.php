@@ -1210,7 +1210,11 @@ test('clears stale paid invoice reference when generating for order', function (
             return $orderServiceMock;
         }
 
-        return $invoiceItemServiceMock;
+        if ($module === 'Invoice' && $submodule === 'InvoiceItem') {
+            return $invoiceItemServiceMock;
+        }
+
+        throw new RuntimeException(sprintf('Unexpected mod_service request: module "%s", submodule "%s"', $module, (string) $submodule));
     });
 
     $serviceMock->setDi($di);
