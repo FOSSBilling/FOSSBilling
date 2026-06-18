@@ -67,7 +67,7 @@ class Service implements InjectionAwareInterface
 
     public static function onBeforeClientOpenTicket(\Box_Event $event): void
     {
-        if (empty($event->getParameters()['email'])) {
+        if ($event->getParameters()['author_role'] !== 'guest') {
             return;
         }
 

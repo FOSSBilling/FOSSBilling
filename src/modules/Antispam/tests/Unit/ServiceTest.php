@@ -62,7 +62,24 @@ test('on before client open ticket checks guest submissions', function (): void 
         ->andReturn($di);
     $boxEventMock->shouldReceive('getParameters')
         ->atLeast()->once()
-        ->andReturn(['email' => 'guest@example.com']);
+        ->andReturn(['author_role' => 'guest', 'email' => 'guest@example.com']);
+
+    $service->onBeforeClientOpenTicket($boxEventMock);
+});
+
+test('on before client open ticket skips client submissions', function (): void {
+    $service = new Box\Mod\Antispam\Service();
+    $spamCheckerService = Mockery::mock(Box\Mod\Antispam\Service::class);
+    $spamCheckerService->shouldReceive('isBlockedIp')->never();
+    $spamCheckerService->shouldReceive('isSpam')->never();
+    $spamCheckerService->shouldReceive('isTemp')->never();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $spamCheckerService);
+    $boxEventMock = Mockery::mock('\Box_Event');
+    $boxEventMock->shouldReceive('getParameters')
+        ->atLeast()->once()
+        ->andReturn(['author_role' => 'client', 'client_id' => 1]);
 
     $service->onBeforeClientOpenTicket($boxEventMock);
 });

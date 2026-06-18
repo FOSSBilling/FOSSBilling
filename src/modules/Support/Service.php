@@ -1089,6 +1089,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         SupportTicketValidator::validateTicketCreation($data);
 
         $event_params = $data;
+        $event_params['author_role'] = 'guest';
         $event_params['ip'] = $this->di['request']->getClientIp();
         $altered = $this->di['events_manager']->fire(['event' => 'onBeforeClientOpenTicket', 'params' => $event_params]);
 
@@ -1236,6 +1237,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         $event_params = $data;
+        $event_params['author_role'] = 'client';
         $event_params['client_id'] = $client->id;
         $this->di['events_manager']->fire(['event' => 'onBeforeClientOpenTicket', 'params' => $event_params]);
 
