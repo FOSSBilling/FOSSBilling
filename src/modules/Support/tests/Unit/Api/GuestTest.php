@@ -62,7 +62,7 @@ test('ticket get', function (): void {
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $serviceMock->shouldReceive('findOneByHash')->atLeast()->once()
         ->andReturn(new Model_SupportTicket());
-    $serviceMock->shouldReceive('publicToApiArray')->atLeast()->once()
+    $serviceMock->shouldReceive('toApiArray')->atLeast()->once()
         ->andReturn([]);
 
     $di = container();
@@ -119,8 +119,7 @@ test('ticket reply', function (): void {
     ];
     $result = $guestApi->ticket_reply($data);
 
-    expect($result)->toBeString();
-    expect(strlen($result))->toEqual(40);
+    expect($result)->toBeInt();
 });
 
 /*

@@ -68,13 +68,18 @@ test('creates ticket for guest', function (): void {
 
     $ticketData = $ticketGetResult->getResult();
     expect($ticketData)->toBeArray()
-        ->toHaveKey('author_name')
+        ->toHaveKey('author')
         ->toHaveKey('subject')
         ->toHaveKey('messages')
-        ->and($ticketData['author_name'])->toBe($expectedName)
         ->and($ticketData['subject'])->toBe($expectedSubject)
         ->and($ticketData['messages'])->toBeArray()->not->toBeEmpty()
         ->and($ticketData['messages'][0]['content'])->toBe($expectedMessage);
+
+    expect($ticketData['author'])->toMatchArray([
+        'name' => $expectedName,
+        'email' => $expectedEmail,
+        'role' => 'guest',
+    ]);
 });
 
 test('rejects guest ticket creation when public tickets are disabled', function (): void {

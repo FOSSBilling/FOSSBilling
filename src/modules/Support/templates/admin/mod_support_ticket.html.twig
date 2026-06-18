@@ -41,7 +41,7 @@
                     <li class="nav-item" role="presentation">
                         <a class="nav-link" href="#tab-notes" data-bs-toggle="tab" role="tab">{{ 'Notes'|trans }} {% if ticket.notes is defined and ticket.notes|length > 0 %}({{ ticket.notes|length }}){% endif %}</a>
                     </li>
-                    {% if ticket.client_id %}
+                    {% if ticket.author.role == 'client' %}
                     <li class="nav-item" role="presentation">
                         <a class="nav-link" href="#tab-support" data-bs-toggle="tab" role="tab">{{ 'Client Tickets'|trans }}</a>
                     </li>
@@ -65,10 +65,10 @@
                             <table class="table card-table table-vcenter table-striped text-nowrap">
                                 <tbody>
                                     <tr><td class="w-25">{{ 'Ticket ID'|trans }}</td><td>#{{ ticket.id }}</td></tr>
-                                    {% if ticket.client_id %}
-                                        <tr><td>{{ 'Client'|trans }}</td><td><a href='{{ "client/manage/#{ticket.client.id }"|url }}'>{{ ticket.client.first_name }} {{ ticket.client.last_name }}</a> (#{{ ticket.client.id }})</td></tr>
+                                    {% if ticket.author.role == 'client' %}
+                                        <tr><td>{{ 'Client'|trans }}</td><td><a href='{{ "client/manage/#{ticket.author.id }"|url }}'>{{ ticket.author.name }}</a> (#{{ ticket.author.id }})</td></tr>
                                     {% else %}
-                                        <tr><td>{{ 'Requester'|trans }}</td><td>{{ ticket.author.name|default(ticket.author_name) }} ({{ ticket.author.email|default(ticket.author_email) }})</td></tr>
+                                        <tr><td>{{ 'Requester'|trans }}</td><td>{{ ticket.author.name }} ({{ ticket.author.email }})</td></tr>
                                     {% endif %}
                                     <tr><td>{{ 'Helpdesk'|trans }}</td><td>{{ admin.support_helpdesk_get_pairs[ticket.support_helpdesk_id]|trans }}</td></tr>
                                     <tr><td>{{ 'Status'|trans }}</td><td>{{ mf.status_badge(ticket.status, 'ticket') }}</td></tr>
@@ -100,7 +100,7 @@
                             {{ 'Set Task Complete'|trans }}
                         </a>
                         {% endif %}
-                        {% if not ticket.client_id and ticket.hash is defined %}
+                        {% if ticket.author.role == 'guest' and ticket.hash is defined %}
                         <a class="btn btn-secondary" href='{{ "support/contact-us/conversation/#{ticket.hash}"|url(area: 'client') }}' target="_blank">
                             <svg class="icon"><use href="#eye" /></svg>
                             {{ 'View as Author'|trans }}
@@ -158,7 +158,7 @@
                                 <div>{{ include('mod_support_canned_selector.html.twig') }}</div>
                             </div>
 
-                            <textarea class="editor-textarea" id="rt" name="content" rows="10" required>{{ 'Hello'|trans }} {{ ticket.client_id ? ticket.client.first_name : ticket.author.name|default(ticket.author_name) }},
+                            <textarea class="editor-textarea" id="rt" name="content" rows="10" required>{{ 'Hello'|trans }} {{ ticket.author.first_name|default(ticket.author.name) }},
 {{ canned_delay_message }}
 
 {{ profile.signature }}
@@ -275,7 +275,7 @@
             </div>
         </div>
 
-        {% if ticket.client_id %}
+        {% if ticket.author.role == 'client' %}
         <div class="tab-pane fade" id="tab-support" role="tabpanel">
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Client Tickets'|trans,
@@ -283,7 +283,7 @@
                 card_class: 'm-3'
             } %}
                 {% block section_action %}
-                    <a href="{{ 'support'|url(query: { 'client_id': ticket.client.id}) }}#tab-new" class="btn btn-primary">
+                    <a href="{{ 'support'|url(query: { 'client_id': ticket.author.id}) }}#tab-new" class="btn btn-primary">
                         <svg class="icon"><use href="#plus" /></svg>
                         {{ 'New Support Ticket'|trans }}
                     </a>
@@ -303,7 +303,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% set tickets = admin.support_ticket_get_list({ 'per_page': 20, 'client_id': ticket.client.id, 'deep': 0, 'include_first': 0 }) %}
+                                {% set tickets = admin.support_ticket_get_list({ 'per_page': 20, 'client_id': ticket.author.id, 'deep': 0, 'include_first': 0 }) %}
                                 {% for related_ticket in tickets.list %}
                                 <tr>
                                     <td>{{ related_ticket.id }}</td>

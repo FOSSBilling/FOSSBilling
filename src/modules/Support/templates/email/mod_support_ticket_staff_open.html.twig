@@ -36,7 +36,7 @@
 </head>
 <body>
 	{% set is_guest_ticket = ticket.hash|default('') %}
-	{% set requester_name = ticket.author.name|default(ticket.author_name|default(c.first_name|default('') ~ ' ' ~ c.last_name|default(''))) %}
+	{% set requester_name = ticket.author.name|default('') %}
 	<h1>Ticket Opened</h1>
 
     <p>Hi {{ requester_name }},</p>

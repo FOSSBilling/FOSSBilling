@@ -35,7 +35,7 @@
 	</style>
 </head>
 <body>
-	{% set requester_name = ticket.author.name|default(ticket.author_name|default(ticket.client.first_name|default('') ~ ' ' ~ ticket.client.last_name|default(''))) %}
+	{% set requester_name = ticket.author.name|default('') %}
 	<h1>Ticket Reply</h1>
 	<p>Hello {{ staff.name|default('') }},</p>
 

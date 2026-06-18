@@ -241,24 +241,24 @@
                             <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ ticket.id }}">
                         </td>
                         <td>
-                            {% if ticket.client_id %}
+                            {% if ticket.author.role == 'client' %}
                                 <div class="d-flex py-1 align-items-center">
-                                    <a href='{{ "client/manage/#{ticket.client_id}"|url }}'>
-                                        {{ avatar(ticket.client.email, 40, 'avatar me-2') }}
+                                    <a href='{{ "client/manage/#{ticket.author.id}"|url }}'>
+                                        {{ avatar(ticket.author.email, 40, 'avatar me-2') }}
                                     </a>
                                     <div class="flex-fill">
                                         <div class="font-weight-medium">
-                                            <a href='{{ "client/manage/#{ticket.client_id}"|url }}'>{{ ticket.client.first_name }} {{ ticket.client.last_name }}</a>
+                                            <a href='{{ "client/manage/#{ticket.author.id}"|url }}'>{{ ticket.author.name }}</a>
                                         </div>
-                                        <div class="text-muted">{{ ticket.client.email }}</div>
+                                        <div class="text-muted">{{ ticket.author.email }}</div>
                                     </div>
                                 </div>
                             {% else %}
                                 <div class="d-flex py-1 align-items-center">
-                                    {{ avatar(ticket.author.email|default(ticket.author_email), 40, 'avatar me-2') }}
+                                    {{ avatar(ticket.author.email, 40, 'avatar me-2') }}
                                     <div class="flex-fill">
-                                        <div class="font-weight-medium">{{ ticket.author.name|default(ticket.author_name) }}</div>
-                                        <div class="text-muted">{{ ticket.author.email|default(ticket.author_email) }} · {{ 'Guest'|trans }}</div>
+                                        <div class="font-weight-medium">{{ ticket.author.name }}</div>
+                                        <div class="text-muted">{{ ticket.author.email }} · {{ 'Guest'|trans }}</div>
                                     </div>
                                 </div>
                             {% endif %}

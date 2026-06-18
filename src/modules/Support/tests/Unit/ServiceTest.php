@@ -24,6 +24,7 @@ function supportClientFixture(): Model_Client
     $client->id = 1;
     $client->first_name = 'Client';
     $client->last_name = 'Name';
+    $client->email = 'client@example.com';
 
     return $client;
 }
@@ -724,6 +725,14 @@ test('converts ticket to api array', function (): void {
     expect($result)->toHaveKey('replies');
     expect($result)->toHaveKey('helpdesk');
     expect($result)->toHaveKey('messages');
+    expect($result['author'])->toMatchArray([
+        'id' => 1,
+        'name' => 'Client Name',
+        'first_name' => 'Client',
+        'last_name' => 'Name',
+        'email' => 'client@example.com',
+        'role' => 'client',
+    ]);
     expect(count($result['messages']))->toBe(count($ticketMessages));
 });
 
@@ -1894,8 +1903,7 @@ test('public ticket reply for guest', function (): void {
     $ticket->access_hash = 'test-hash-123';
 
     $result = $service->ticketReply($ticket, new \Model_Guest(), 'Content');
-    expect($result)->toBeString();
-    expect($result)->toEqual('test-hash-123');
+    expect($result)->toBeInt();
 });
 
 /*

@@ -535,8 +535,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $data['replies'] = $this->messageGetRepliesCount($model);
         $data['first'] = $firstSupportTicketMessage instanceof \Model_SupportTicketMessage ? $this->messageToApiArray($firstSupportTicketMessage, true, $identity) : null;
         $data['helpdesk'] = $supportHelpdesk instanceof \Model_SupportHelpdesk ? $this->helpdeskToApiArray($supportHelpdesk, $identity) : null;
-        $data['client'] = $this->getClientApiArrayForTicket($model, $identity);
         $data['author'] = $this->getTicketAuthor($model, $identity);
+        // @deprecated 0.9.0 Use author instead.
+        $data['client'] = $this->getClientApiArrayForTicket($model, $identity);
 
         if ($deep) {
             $messages = $this->messageGetTicketMessages($model);
@@ -568,6 +569,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if ($identity instanceof \Model_Admin) {
             return $data;
         }
+
+        // @deprecated 0.9.0 Use author.id/name/email instead of client_id/author_name/author_email.
 
         unset(
             $data['support_helpdesk_id'],
@@ -660,11 +663,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         $clients = [];
+        $clientAuthors = [];
         if (!empty($clientIds)) {
             $placeholders = implode(',', array_fill(0, count($clientIds), '?'));
             $clientModels = $this->di['db']->find('Client', "id IN ($placeholders)", $clientIds);
             foreach ($clientModels as $client) {
                 $clients[$client->id] = $this->clientToTicketApiArray($client, $identity);
+                $clientAuthors[$client->id] = $this->clientToTicketAuthorArray($client);
             }
         }
 
@@ -677,10 +682,22 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $helpdesk = $helpdesks[$ticket['support_helpdesk_id']] ?? null;
             $data['helpdesk'] = $helpdesk ? $this->helpdeskToApiArray($helpdesk, $identity) : null;
 
-            if (!isset($clients[$ticket['client_id']])) {
+            if (empty($ticket['client_id']) && !empty($ticket['access_hash'])) {
+                $data['author'] = [
+                    'name' => $ticket['author_name'],
+                    'email' => $ticket['author_email'],
+                    'role' => 'guest',
+                ];
+                // @deprecated 0.9.0 Use author instead.
+                $data['client'] = [];
+            } elseif (!isset($clients[$ticket['client_id']])) {
                 $this->di['logger']->error('Missing client for ticket ' . $ticket['id']);
+                $data['author'] = [];
+                // @deprecated 0.9.0 Use author instead.
                 $data['client'] = [];
             } else {
+                $data['author'] = $clientAuthors[$ticket['client_id']];
+                // @deprecated 0.9.0 Use author instead.
                 $data['client'] = $clients[$ticket['client_id']];
             }
 
@@ -766,7 +783,26 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             return $author;
         }
 
-        return $this->getClientApiArrayForTicket($ticket, $identity);
+        $client = $this->di['db']->load('Client', $ticket->client_id);
+
+        if ($client instanceof \Model_Client) {
+            return $this->clientToTicketAuthorArray($client);
+        }
+        $this->di['logger']->error('Missing client for ticket ' . $ticket->id);
+
+        return [];
+    }
+
+    private function clientToTicketAuthorArray(\Model_Client $client): array
+    {
+        return [
+            'id' => $client->id,
+            'name' => $client->getFullName(),
+            'first_name' => $client->first_name,
+            'last_name' => $client->last_name,
+            'email' => $client->email,
+            'role' => 'client',
+        ];
     }
 
     private function clientToTicketApiArray(\Model_Client $client, \Model_Admin|\Model_Client|null $identity = null): array
