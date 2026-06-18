@@ -38,7 +38,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             'subpages' => [
                 [
                     'location' => 'support',
-                    'label' => __trans('Client Tickets'),
+                    'label' => __trans('Support Tickets'),
                     'uri' => $this->di['url']->adminLink('support', ['status' => 'open']),
                     'index' => 100,
                     'class' => '',

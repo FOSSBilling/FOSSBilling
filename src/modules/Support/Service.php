@@ -173,16 +173,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di['db']->getExistingModelById('SupportTicket', $id, 'Ticket not found');
     }
 
-    public function getPublicTicketById(int $id): \Model_SupportTicket
-    {
-        $ticket = $this->di['db']->getExistingModelById('SupportTicket', $id, 'Ticket not found');
-        if (!$this->isGuestTicket($ticket)) {
-            throw new \FOSSBilling\Exception('Public ticket not found');
-        }
-
-        return $ticket;
-    }
-
+    /**
+     * Determine if the provided ticket is a guest ticket
+     * 
+     * @todo Doctrine: Move this to the Entity when migrating to Doctrine
+     */
     public function isGuestTicket(\Model_SupportTicket $ticket): bool
     {
         return empty($ticket->client_id) && !empty($ticket->access_hash);
@@ -441,9 +436,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         if ($identity instanceof \Model_Admin) {
             $this->di['events_manager']->fire(['event' => 'onAfterAdminCloseTicket', 'params' => ['id' => $ticket->id]]);
-        } elseif ($identity instanceof \Model_Client) {
-            $this->di['events_manager']->fire(['event' => 'onAfterClientCloseTicket', 'params' => ['id' => $ticket->id]]);
-        } elseif ($identity instanceof \Model_Guest) {
+        } else {
             $this->di['events_manager']->fire(['event' => 'onAfterClientCloseTicket', 'params' => ['id' => $ticket->id]]);
         }
 
@@ -1281,12 +1274,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di['db']->store($msg);
     }
 
-    public function publicGetStatuses(): array
-    {
-        return $this->getStatuses();
-    }
-
-    public function publicFindOneByHash(string $hash): \Model_SupportTicket
+    public function findOneByHash(string $hash): \Model_SupportTicket
     {
         $publicTicket = $this->di['db']->findOne('SupportTicket', 'access_hash = :hash AND client_id IS NULL', [':hash' => $hash]);
         if (!$publicTicket instanceof \Model_SupportTicket) {
@@ -1294,23 +1282,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         return $publicTicket;
-    }
-
-    public function publicCloseTicket(\Model_SupportTicket $model, \Model_Admin|\Model_Guest $identity): bool
-    {
-        return $this->closeTicket($model, $identity);
-    }
-
-    public function publicToApiArray(\Model_SupportTicket $model, bool $deep = true, $identity = null): array
-    {
-        return $this->toApiArray($model, $deep, $identity instanceof \Model_Admin ? $identity : null);
-    }
-
-    public function publicTicketReplyForGuest(\Model_SupportTicket $ticket, string $message): string
-    {
-        $this->ticketReply($ticket, new \Model_Guest(), $message);
-
-        return $ticket->access_hash;
     }
 
     public function helpdeskUpdate(\Model_SupportHelpdesk $model, array $data): bool

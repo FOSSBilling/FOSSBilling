@@ -60,7 +60,7 @@ test('ticket create message too short exception', function (): void {
 test('ticket get', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('publicFindOneByHash')->atLeast()->once()
+    $serviceMock->shouldReceive('findOneByHash')->atLeast()->once()
         ->andReturn(new Model_SupportTicket());
     $serviceMock->shouldReceive('publicToApiArray')->atLeast()->once()
         ->andReturn([]);
@@ -81,9 +81,9 @@ test('ticket get', function (): void {
 test('ticket close', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('publicFindOneByHash')->atLeast()->once()
+    $serviceMock->shouldReceive('findOneByHash')->atLeast()->once()
         ->andReturn(new Model_SupportTicket());
-    $serviceMock->shouldReceive('publicCloseTicket')->atLeast()->once()
+    $serviceMock->shouldReceive('closeTicket')->atLeast()->once()
         ->andReturn(true);
 
     $di = container();
@@ -103,10 +103,10 @@ test('ticket close', function (): void {
 test('ticket reply', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('publicFindOneByHash')->atLeast()->once()
+    $serviceMock->shouldReceive('findOneByHash')->atLeast()->once()
         ->andReturn(new Model_SupportTicket());
-    $serviceMock->shouldReceive('publicTicketReplyForGuest')->atLeast()->once()
-        ->andReturn(sha1(uniqid()));
+    $serviceMock->shouldReceive('ticketReply')->atLeast()->once()
+        ->andReturn(1);
 
     $di = container();
     $guestApi->setDi($di);

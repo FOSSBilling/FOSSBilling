@@ -54,9 +54,9 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['hash' => 'Public ticket hash required'])]
     public function ticket_get(array $data): array
     {
-        $publicTicket = $this->getService()->publicFindOneByHash($data['hash']);
+        $publicTicket = $this->getService()->findOneByHash($data['hash']);
 
-        return $this->getService()->publicToApiArray($publicTicket);
+        return $this->getService()->toApiArray($publicTicket);
     }
 
     /**
@@ -65,9 +65,9 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['hash' => 'Public ticket hash required'])]
     public function ticket_close(array $data): bool
     {
-        $publicTicket = $this->getService()->publicFindOneByHash($data['hash']);
+        $publicTicket = $this->getService()->findOneByHash($data['hash']);
 
-        return $this->getService()->publicCloseTicket($publicTicket, $this->getIdentity());
+        return $this->getService()->closeTicket($publicTicket, $this->getIdentity());
     }
 
     /**
@@ -76,9 +76,9 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      * @return string - ticket hash
      */
     #[RequiredParams(['hash' => 'Public ticket hash required'])]
-    public function ticket_reply(array $data): string
+    public function ticket_reply(array $data): int
     {
-        $publicTicket = $this->getService()->publicFindOneByHash($data['hash']);
+        $publicTicket = $this->getService()->findOneByHash($data['hash']);
         $message = $data['content'] ?? $data['message'] ?? null;
 
         if (!is_string($message)) {
@@ -88,7 +88,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         // Sanitize message to prevent XSS attacks
         $message = \FOSSBilling\Tools::sanitizeContent($message, true);
 
-        return $this->getService()->publicTicketReplyForGuest($publicTicket, $message);
+        return $this->getService()->ticketReply($publicTicket, new \Model_Guest(), $message);
     }
 
     /**
@@ -99,6 +99,9 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         return $this->getService()->publicTicketsEnabled();
     }
 
+    /**
+     * Return pairs for support helpdesks. Can be used to populate the select box.
+     */
     public function helpdesk_get_pairs(): array
     {
         return $this->getService()->helpdeskGetPairs();

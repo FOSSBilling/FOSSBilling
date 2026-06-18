@@ -300,24 +300,6 @@ test('gets ticket by id', function (): void {
     expect($result)->toBeInstanceOf(Model_SupportTicket::class);
 });
 
-test('gets public ticket by id', function (): void {
-    $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $supportPTicketModel = new Model_SupportTicket();
-    $supportPTicketModel->loadBean(new Tests\Helpers\DummyBean());
-    $supportPTicketModel->access_hash = 'test-hash-123';
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($supportPTicketModel);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $result = $service->getPublicTicketById(1);
-    expect($result)->toBeInstanceOf(Model_SupportTicket::class);
-});
-
 test('gets statuses', function (): void {
     $service = new Service();
     $result = $service->getStatuses();
@@ -1805,12 +1787,6 @@ test('kb find category by slug', function (): void {
  * Guest Ticket Tests
  */
 
-test('public get statuses', function (): void {
-    $service = new Service();
-    $result = $service->publicGetStatuses();
-    expect($result)->toEqual($service->getStatuses());
-});
-
 test('public find one by hash', function (): void {
     $service = new Service();
     $dbMock = Mockery::mock('\Box_Database');
@@ -1822,7 +1798,7 @@ test('public find one by hash', function (): void {
     $di['db'] = $dbMock;
     $service->setDi($di);
 
-    $result = $service->publicFindOneByHash(sha1(uniqid()));
+    $result = $service->findOneByHash(sha1(uniqid()));
     expect($result)->toBeInstanceOf(Model_SupportTicket::class);
 });
 
@@ -1838,10 +1814,10 @@ test('public find one by hash not found exception', function (): void {
     $service->setDi($di);
 
     $this->expectException(FOSSBilling\Exception::class);
-    $service->publicFindOneByHash(sha1(uniqid()));
+    $service->findOneByHash(sha1(uniqid()));
 });
 
-dataset('publicCloseTicketProvider', fn (): array => [
+dataset('closeTicketProvider', fn (): array => [
     'with admin' => [new Model_Admin()],
     'with guest' => [new Model_Guest()],
 ]);
@@ -1867,9 +1843,9 @@ test('public close ticket', function (Model_Admin|Model_Guest $identity): void {
     $ticket->loadBean(new Tests\Helpers\DummyBean());
     $ticket->access_hash = 'test-hash-123';
 
-    $result = $service->publicCloseTicket($ticket, $identity);
+    $result = $service->closeTicket($ticket, $identity);
     expect($result)->toBeTrue();
-})->with('publicCloseTicketProvider');
+})->with('closeTicketProvider');
 
 test('public to api array delegates to ticket serialization', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -1880,7 +1856,7 @@ test('public to api array delegates to ticket serialization', function (): void 
     $ticket = new Model_SupportTicket();
     $ticket->loadBean(new Tests\Helpers\DummyBean());
 
-    $result = $serviceMock->publicToApiArray($ticket, true);
+    $result = $serviceMock->toApiArray($ticket, true);
     expect($result)->toEqual(['hash' => 'test-hash-123']);
 });
 
@@ -1917,7 +1893,7 @@ test('public ticket reply for guest', function (): void {
     $ticket->loadBean(new Tests\Helpers\DummyBean());
     $ticket->access_hash = 'test-hash-123';
 
-    $result = $service->publicTicketReplyForGuest($ticket, 'Content');
+    $result = $service->ticketReply($ticket, new \Model_Guest(), 'Content');
     expect($result)->toBeString();
     expect($result)->toEqual('test-hash-123');
 });
