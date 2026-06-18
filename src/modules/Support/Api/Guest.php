@@ -72,8 +72,6 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Reply to public ticket.
-     *
-     * @return string - ticket hash
      */
     #[RequiredParams(['hash' => 'Public ticket hash required'])]
     public function ticket_reply(array $data): int

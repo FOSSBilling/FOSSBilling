@@ -990,7 +990,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         if ($identity instanceof \Model_Admin) {
             $ticket->status = \Model_SupportTicket::ONHOLD;
-        } elseif ($identity instanceof \Model_Client || $identity instanceof \Model_Guest) {
+        } else {
             $ticket->status = \Model_SupportTicket::OPENED;
         }
 
