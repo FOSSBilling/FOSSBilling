@@ -57,6 +57,10 @@ class generalCheck implements \FOSSBilling\Interfaces\SecurityCheckInterface
             $message .= '- ' . __trans('Warning: CSRF prevention is not enabled for the API.') . "\n";
             $status = $status <= $this->warn ? $this->warn : $status;
         }
+        if (!$config['rate_limiter']['enabled']) {
+            $message .= '- ' . __trans('Warning: Rate limiting is disabled.') . "\n";
+            $status = $status <= $this->warn ? $this->warn : $status;
+        }
 
         /*
          * Debug mode toggles
