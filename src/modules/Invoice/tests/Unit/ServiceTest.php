@@ -163,6 +163,7 @@ test('converts to api array', function (): void {
     $subscriptionServiceMock->shouldReceive('getSubscriptionPeriod')
         ->byDefault()
         ->andReturn('1W');
+    $invoiceItemServiceMock = Mockery::mock(ServiceInvoiceItem::class);
 
     $modelToArrayResult = [
         'id' => 1,
@@ -217,9 +218,10 @@ test('converts to api array', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $subscriptionServiceMock) {
+    $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $subscriptionServiceMock, $invoiceItemServiceMock) {
         $service = null;
         if ($sub == 'InvoiceItem') {
+            $service = $invoiceItemServiceMock;
         }
         if ($serviceName == 'system' || $serviceName == 'System') {
             $service = $systemService;
@@ -270,7 +272,7 @@ test('handles after admin invoice payment received event', function (): void {
         ->andReturn($invoiceModel);
 
     $di = container();
-    $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $serviceMock) {
+    $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($emailService, $serviceMock) {
         if ($serviceName == 'invoice') {
             return $serviceMock;
         }
@@ -321,7 +323,7 @@ test('handles after admin invoice reminder sent event', function (): void {
         ->atLeast()->once();
 
     $di = container();
-    $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $serviceMock) {
+    $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($emailService, $serviceMock) {
         if ($serviceName == 'invoice') {
             return $serviceMock;
         }
@@ -1210,7 +1212,11 @@ test('clears stale paid invoice reference when generating for order', function (
             return $orderServiceMock;
         }
 
-        return $invoiceItemServiceMock;
+        if ($module === 'Invoice' && $submodule === 'InvoiceItem') {
+            return $invoiceItemServiceMock;
+        }
+
+        throw new RuntimeException(sprintf('Unexpected mod_service request: module "%s", submodule "%s"', $module, (string) $submodule));
     });
 
     $serviceMock->setDi($di);
