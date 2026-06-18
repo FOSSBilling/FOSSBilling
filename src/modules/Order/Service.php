@@ -53,18 +53,6 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    private static function logInfoToContainer(?\Pimple\Container $di, string $message): void
-    {
-        if ($di !== null && isset($di['logger'])) {
-            $di['logger']->info($message);
-        }
-    }
-
-    private function logInfo(string $message): void
-    {
-        self::logInfoToContainer($this->di, $message);
-    }
-
     public function counter(): array
     {
         $sql = '
@@ -108,7 +96,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            self::logInfoToContainer($di, 'Failed to send order activation email: ' . $exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send order activation email', ['exception' => $exc->getMessage(), 'order_id' => $order_id]);
         }
     }
 
@@ -134,7 +122,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            self::logInfoToContainer($di, 'Failed to send order renewal email: ' . $exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send order renewal email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -160,7 +148,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            self::logInfoToContainer($di, 'Failed to send order suspension email: ' . $exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send order suspension email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -186,7 +174,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            self::logInfoToContainer($di, 'Failed to send order unsuspension email: ' . $exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send order unsuspension email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -210,7 +198,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            self::logInfoToContainer($di, 'Failed to send order cancellation email: ' . $exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send order cancellation email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -236,7 +224,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            self::logInfoToContainer($di, 'Failed to send order uncancel email: ' . $exc->getMessage());
+            $di['logger']->setChannel('email')->error('Failed to send order uncancel email', ['exception' => $exc->getMessage()]);
         }
     }
 
@@ -812,12 +800,12 @@ class Service implements InjectionAwareInterface
                     $invoiceService->markAsPaidByAdmin($invoice, $data);
                 }
             } catch (\Exception $e) {
-                $this->logInfo($e->getMessage());
+                $this->di['logger']->info($e->getMessage());
 
                 try {
                     $invoiceService->addNote($invoice, 'Order was created, but invoice follow-up failed: ' . $e->getMessage());
                 } catch (\Exception $noteException) {
-                    $this->logInfo($noteException->getMessage());
+                    $this->di['logger']->info($noteException->getMessage());
                 }
             }
         }
@@ -833,7 +821,7 @@ class Service implements InjectionAwareInterface
             try {
                 $this->activateOrder($order);
             } catch (\Exception $e) {
-                $this->logInfo($e->getMessage());
+                $this->di['logger']->info($e->getMessage());
             }
         }
 
@@ -868,7 +856,7 @@ class Service implements InjectionAwareInterface
                 $this->createFromOrder($addon);
                 $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderActivate', 'params' => ['id' => $addon->id]]);
             } catch (\Exception $e) {
-                $this->logInfo($e->getMessage());
+                $this->di['logger']->info($e->getMessage());
             }
         }
 
@@ -950,7 +938,7 @@ class Service implements InjectionAwareInterface
             $productService = $this->di['mod_service']('product');
             $productService->reduceStock((int) $order->product_id, $order->quantity);
         } else {
-            $this->logInfo("Order without product ID detected Order #{$order->id}.");
+            $this->di['logger']->info("Order without product ID detected Order #{$order->id}.");
         }
 
         $this->saveStatusChange($order, 'Order activated');
@@ -997,7 +985,7 @@ class Service implements InjectionAwareInterface
             return $repo->$action($o, $service);
         }
 
-        $this->logInfo("Service {$order->service_type} does not support action {$action}.");
+        $this->di['logger']->info("Service {$order->service_type} does not support action {$action}.");
 
         return null;
     }
@@ -1115,7 +1103,7 @@ class Service implements InjectionAwareInterface
                 try {
                     $this->renewFromOrder($addon);
                 } catch (\Exception $e) {
-                    $this->logInfo($e->getMessage());
+                    $this->di['logger']->info($e->getMessage());
                 }
             }
         }
@@ -1335,7 +1323,7 @@ class Service implements InjectionAwareInterface
             if (!$forceDelete) {
                 throw $e;
             }
-            $this->logInfo("{$e->getMessage()} in {$e->getFile()} : {$e->getFile()}");
+            $this->di['logger']->info("{$e->getMessage()} in {$e->getFile()} : {$e->getFile()}");
         }
 
         $id = $order->id;
@@ -1374,7 +1362,7 @@ class Service implements InjectionAwareInterface
             try {
                 $this->suspendFromOrder($order, $reason);
             } catch (\Exception $e) {
-                $this->logInfo($e->getMessage());
+                $this->di['logger']->info($e->getMessage());
             }
         }
 
@@ -1417,7 +1405,7 @@ class Service implements InjectionAwareInterface
                 $order = $this->di['db']->getExistingModelById('ClientOrder', $orderArr['id'], 'Order not found');
                 $this->cancelFromOrder($order, $reason);
             } catch (\Exception $e) {
-                $this->logInfo($e->getMessage());
+                $this->di['logger']->info($e->getMessage());
             }
         }
 
@@ -1553,13 +1541,13 @@ class Service implements InjectionAwareInterface
         $orderId = $order->id;
         $service = $this->getOrderService($order);
         if (!is_object($service)) {
-            $this->logInfo("Order #{$orderId} has no active service.");
+            $this->di['logger']->info("Order #{$orderId} has no active service.");
 
             return null;
         }
         $srepo = $this->di['mod_service']('service' . $order->service_type);
         if (!method_exists($srepo, 'toApiArray')) {
-            $this->logInfo("Service #{$order->service_type} method toApiArray is missing.");
+            $this->di['logger']->info("Service #{$order->service_type} method toApiArray is missing.");
 
             return null;
         }
