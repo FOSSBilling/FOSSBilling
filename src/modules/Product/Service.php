@@ -458,8 +458,9 @@ class Service implements InjectionAwareInterface
         }
 
         $form_id = $data['form_id'] ?? $this->getProductFormId($model);
+        $productCategoryId = $data['product_category_id'] ?? $this->getProductCategoryId($model);
 
-        $this->setProductCategoryIdValue($model, $data['product_category_id'] ?? $this->getProductCategoryId($model));
+        $this->setProductCategoryIdValue($model, empty($productCategoryId) ? null : (int) $productCategoryId);
         $this->setProductFormIdValue($model, empty($form_id) ? null : (int) $form_id);
         $this->setProductIconUrlValue($model, $data['icon_url'] ?? $this->getProductIconUrl($model));
         $this->setProductStatusValue($model, (string) ($data['status'] ?? $this->getProductStatus($model)));
@@ -1008,7 +1009,7 @@ class Service implements InjectionAwareInterface
     private function getAddonsApiArray(Product $model, bool $isAdmin = false): array
     {
         $addons = [];
-        foreach ($this->getProductAddons($model) as $addon) {
+        foreach ($this->getProductAddons($model, $isAdmin) as $addon) {
             $d = $this->toAddonArray($addon, true, $isAdmin);
             $addons[] = $d;
         }
@@ -1016,7 +1017,7 @@ class Service implements InjectionAwareInterface
         return $addons;
     }
 
-    public function getProductAddons(Product $model)
+    public function getProductAddons(Product $model, bool $includeUnavailable = false)
     {
         $ids = $this->normalizeProductIds(json_decode($this->getProductAddonsJson($model) ?? '', true) ?? []);
 
@@ -1024,7 +1025,7 @@ class Service implements InjectionAwareInterface
             return [];
         }
 
-        return $this->getProductRepository()->findAddonsByIds($ids, (int) $this->getProductId($model));
+        return $this->getProductRepository()->findAddonsByIds($ids, (int) $this->getProductId($model), $includeUnavailable);
     }
 
     /**

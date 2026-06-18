@@ -158,7 +158,7 @@ class ProductRepository extends EntityRepository
      *
      * @return list<Product>
      */
-    public function findAddonsByIds(array $ids, ?int $excludeId = null): array
+    public function findAddonsByIds(array $ids, ?int $excludeId = null, bool $includeUnavailable = false): array
     {
         if ($ids === []) {
             return [];
@@ -172,6 +172,13 @@ class ProductRepository extends EntityRepository
             ->setParameter('isAddon', true)
             ->setParameter('ids', $ids)
             ->orderBy('p.id', 'ASC');
+
+        if (!$includeUnavailable) {
+            $qb->andWhere('p.active = :active')
+                ->andWhere('p.status = :status')
+                ->setParameter('active', true)
+                ->setParameter('status', 'enabled');
+        }
 
         if ($excludeId !== null) {
             $qb->andWhere('p.id != :excludeId')
@@ -187,6 +194,7 @@ class ProductRepository extends EntityRepository
             'id' => $id,
             'type' => 'custom',
             'isAddon' => true,
+            'active' => true,
             'status' => 'enabled',
         ]);
     }
