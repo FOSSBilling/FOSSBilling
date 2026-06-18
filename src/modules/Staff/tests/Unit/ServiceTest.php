@@ -999,9 +999,6 @@ test('create creates new admin account', function (): void {
     $adminModel = new Model_Admin();
     $adminModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
-    $systemServiceMock->shouldReceive('checkLimits')->byDefault();
-
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
 
@@ -1025,7 +1022,6 @@ test('create creates new admin account', function (): void {
     $di['events_manager'] = $eventsMock;
     $di['logger'] = $logStub;
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemServiceMock);
 
     $di['password'] = $passwordMock;
 
@@ -1050,9 +1046,6 @@ test('create throws exception for duplicate email', function (): void {
     $adminModel = new Model_Admin();
     $adminModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
-    $systemServiceMock->shouldReceive('checkLimits')->byDefault();
-
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
 
@@ -1076,7 +1069,6 @@ test('create throws exception for duplicate email', function (): void {
     $di['events_manager'] = $eventsMock;
     $di['logger'] = $logStub;
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemServiceMock);
 
     $di['password'] = $passwordMock;
 
@@ -1133,9 +1125,6 @@ test('createGroup creates new admin group', function (): void {
     $adminGroupModel->loadBean(new Tests\Helpers\DummyBean());
     $newGroupId = 1;
 
-    $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
-    $systemServiceMock->shouldReceive('checkLimits')->byDefault();
-
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('dispense')->atLeast()->once()
         ->andReturn($adminGroupModel);
@@ -1149,7 +1138,6 @@ test('createGroup creates new admin group', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemServiceMock);
 
     $serviceMock->setDi($di);
 

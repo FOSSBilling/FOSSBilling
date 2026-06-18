@@ -680,8 +680,6 @@ test('get payment types', function (): void {
 
 test('create product', function (): void {
     $service = new Service();
-    $systemServiceMock = Mockery::mock();
-    $systemServiceMock->shouldReceive('checkLimits')->atLeast()->once();
 
     $newProductId = 1;
 
@@ -695,7 +693,6 @@ test('create product', function (): void {
     $productRepo->shouldReceive('findOneBy')->once()->with(['slug' => 'title'])->andReturn(null);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): object => $systemServiceMock);
     $di['db'] = $dbMock;
     $di['em'] = productTestCreateEntityManagerWithRepositories($productRepo, null, productTestCreateProductEntity($newProductId), productTestCreateProductPaymentEntity(1));
     $di['tools'] = $toolMock;
@@ -945,12 +942,8 @@ test('create category', function (): void {
     $service = new Service();
     $newCategoryId = 1;
 
-    $systemServiceMock = Mockery::mock();
-    $systemServiceMock->shouldReceive('checkLimits')->atLeast()->once();
-
     $di = container();
     $di['em'] = productTestCreateEntityManagerWithRepositories(null, null, null, null, null, productTestCreateProductCategoryEntity($newCategoryId));
-    $di['mod_service'] = $di->protect(fn (): object => $systemServiceMock);
     $di['logger'] = new Box_Log();
 
     $service->setDi($di);
@@ -995,8 +988,6 @@ test('remove product category', function (): void {
 
 test('create promo', function (): void {
     $service = new Service();
-    $systemServiceMock = Mockery::mock();
-    $systemServiceMock->shouldReceive('checkLimits')->atLeast()->once();
 
     $promoRepo = Mockery::mock(PromoRepository::class);
     $promoRepo->shouldReceive('findOneBy')->once()->with(['code' => 'code'])->andReturn(null);
@@ -1024,7 +1015,6 @@ test('create promo', function (): void {
     };
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): object => $systemServiceMock);
     $di['logger'] = new Box_Log();
     $di['em'] = $emMock;
 
