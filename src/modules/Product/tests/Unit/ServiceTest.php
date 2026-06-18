@@ -707,7 +707,7 @@ test('create product', function (): void {
     expect($result)->toEqual($newProductId);
 });
 
-test('update product missng pricing type', function (): void {
+test('update product missing pricing type', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
     $typesArr = [
@@ -892,7 +892,7 @@ test('create addon', function (): void {
     expect($result)->toEqual($newProductId);
 });
 
-test('delete product activa order exception', function (): void {
+test('delete product active order exception', function (): void {
     $service = new Service();
     $model = productTestCreateProductEntity(1);
 
@@ -936,7 +936,7 @@ test('update category', function (): void {
 
     $service->setDi($di);
 
-    $result = $service->updateCategory($model, 'title', 'decription', 'http://urltoimg.com/img.jpg');
+    $result = $service->updateCategory($model, 'title', 'description', 'http://urltoimg.com/img.jpg');
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
@@ -2063,7 +2063,7 @@ test('get starting price', function (): void {
 test('can upgrade to returns true', function (): void {
     $service = new Service();
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('getUpgradablePairs')->atLeast()->once()->andReturn(['2' => 'Hossting']);
+    $serviceMock->shouldReceive('getUpgradablePairs')->atLeast()->once()->andReturn(['2' => 'Hosting']);
 
     $productModel = productTestCreateProductEntity(1);
     $newProductModel = productTestCreateProductEntity(2);
@@ -2072,7 +2072,7 @@ test('can upgrade to returns true', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('can upgrade to upgrade is imposible', function (): void {
+test('can upgrade to upgrade is impossible', function (): void {
     $service = new Service();
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getUpgradablePairs')->atLeast()->once()->andReturn(['4' => 'Domain']);

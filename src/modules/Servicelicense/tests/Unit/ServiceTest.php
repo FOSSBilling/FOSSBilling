@@ -25,7 +25,7 @@ function serviceLicenseCreateProductEntity(string $config): Product
     return $product;
 }
 
-test('attach order config empty product conig', function (): void {
+test('attach order config empty product config', function (): void {
     $service = new Service();
     $productModel = serviceLicenseCreateProductEntity('{}');
     $data = [];
