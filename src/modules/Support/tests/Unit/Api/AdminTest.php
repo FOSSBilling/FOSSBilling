@@ -10,7 +10,28 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Support\Entity\KbArticle;
+use Box\Mod\Support\Entity\KbArticleCategory;
+use Box\Mod\Support\Repository\KbArticleCategoryRepository;
+use Box\Mod\Support\Repository\KbArticleRepository;
+use Doctrine\ORM\QueryBuilder;
+
 use function Tests\Helpers\container;
+
+function adminSupportKbCategoryFixture(): KbArticleCategory
+{
+    return (new KbArticleCategory())
+        ->setTitle('category-title')
+        ->setSlug('category-slug');
+}
+
+function adminSupportKbArticleFixture(): KbArticle
+{
+    return (new KbArticle())
+        ->setCategory(adminSupportKbCategoryFixture())
+        ->setTitle('Title')
+        ->setSlug('article-slug');
+}
 
 test('ticket get list', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
@@ -929,11 +950,25 @@ test('kb article get list', function (): void {
         'cat' => 'category',
     ];
 
+    $qb = Mockery::mock(QueryBuilder::class);
+    $repo = Mockery::mock(KbArticleRepository::class);
+    $repo->shouldReceive('getSearchQueryBuilder')
+        ->once()
+        ->with('status', 'search', 'category')
+        ->andReturn($qb);
+
+    $pager = Mockery::mock(FOSSBilling\Pagination::class);
+    $pager->shouldReceive('paginateDoctrineQuery')
+        ->once()
+        ->with($qb, Mockery::type(FOSSBilling\PaginationOptions::class))
+        ->andReturn(['list' => []]);
+    $di['pager'] = $pager;
+    $adminApi->setDi($di);
+
     $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $kbService
-    ->shouldReceive('kbSearchArticles')
-    ->atLeast()->once()
-    ->andReturn(['list' => []]);
+    $kbService->shouldReceive('getKbArticleRepository')
+        ->once()
+        ->andReturn($repo);
 
     $adminApi->setService($kbService);
 
@@ -949,11 +984,11 @@ test('kb article get', function (): void {
         'id' => 1,
     ];
 
-    $db = Mockery::mock('Box_Database');
-    $db
-    ->shouldReceive('findOne')
-    ->atLeast()->once()
-    ->andReturn(new Model_SupportKbArticle());
+    $repo = Mockery::mock(KbArticleRepository::class);
+    $repo->shouldReceive('find')
+        ->once()
+        ->with(1)
+        ->andReturn(adminSupportKbArticleFixture());
 
     $admin = new Model_Admin();
     $admin->loadBean(new Tests\Helpers\DummyBean());
@@ -962,15 +997,13 @@ test('kb article get', function (): void {
 
     $di = container();
     $di['loggedin_admin'] = $admin;
-    $di['db'] = $db;
 
     $adminApi->setDi($di);
 
     $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $kbService
-    ->shouldReceive('kbToApiArray')
-    ->atLeast()->once()
-    ->andReturn([]);
+    $kbService->shouldReceive('getKbArticleRepository')
+        ->once()
+        ->andReturn($repo);
     $adminApi->setService($kbService);
 
     $result = $adminApi->kb_article_get($data);
@@ -985,16 +1018,21 @@ test('kb article get not found exception', function (): void {
         'id' => 1,
     ];
 
-    $db = Mockery::mock('Box_Database');
-    $db
-    ->shouldReceive('findOne')
-    ->atLeast()->once()
-    ->andReturn(false);
+    $repo = Mockery::mock(KbArticleRepository::class);
+    $repo->shouldReceive('find')
+        ->once()
+        ->with(1)
+        ->andReturn(null);
+
+    $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $kbService->shouldReceive('getKbArticleRepository')
+        ->once()
+        ->andReturn($repo);
 
     $di = container();
-    $di['db'] = $db;
 
     $adminApi->setDi($di);
+    $adminApi->setService($kbService);
     expect(fn (): array => $adminApi->kb_article_get($data))->toThrow(FOSSBilling\Exception::class);
 });
 
@@ -1062,19 +1100,22 @@ test('kb article delete', function (): void {
         'id' => 1,
     ];
 
-    $db = Mockery::mock('Box_Database');
-    $db
-    ->shouldReceive('findOne')
-    ->atLeast()->once()
-    ->andReturn(new Model_SupportKbArticle());
+    $article = adminSupportKbArticleFixture();
+    $repo = Mockery::mock(KbArticleRepository::class);
+    $repo->shouldReceive('find')
+        ->once()
+        ->with(1)
+        ->andReturn($article);
 
     $di = container();
-    $di['db'] = $db;
 
     $adminApi->setDi($di);
 
     $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $kbService->shouldReceive('kbRm')->atLeast()->once();
+    $kbService->shouldReceive('getKbArticleRepository')
+        ->once()
+        ->andReturn($repo);
+    $kbService->shouldReceive('kbRm')->once()->with($article);
     $adminApi->setService($kbService);
 
     $result = $adminApi->kb_article_delete($data);
@@ -1085,18 +1126,20 @@ test('kb article delete not found exception', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
     $adminApi = new Box\Mod\Support\Api\Admin();
 
-    $db = Mockery::mock('Box_Database');
-    $db
-    ->shouldReceive('findOne')
-    ->atLeast()->once()
-    ->andReturn(false);
+    $repo = Mockery::mock(KbArticleRepository::class);
+    $repo->shouldReceive('find')
+        ->once()
+        ->with(1)
+        ->andReturn(null);
 
     $di = container();
-    $di['db'] = $db;
 
     $adminApi->setDi($di);
 
     $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $kbService->shouldReceive('getKbArticleRepository')
+        ->once()
+        ->andReturn($repo);
     $kbService->shouldReceive('kbRm')->never()
     ;
     $adminApi->setService($kbService);
@@ -1116,16 +1159,20 @@ test('kb category get list', function (): void {
         'list' => [],
     ];
 
+    $repo = Mockery::mock(KbArticleCategoryRepository::class);
+    $repo->shouldReceive('getSearchQueryBuilder')
+        ->once()
+        ->andReturn(Mockery::mock(QueryBuilder::class));
+
     $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $kbService
-    ->shouldReceive('kbCategoryGetSearchQuery')
-    ->atLeast()->once()
-    ->andReturn(['String', []]);
+    $kbService->shouldReceive('getKbArticleCategoryRepository')
+        ->once()
+        ->andReturn($repo);
 
     $pager = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
 
     $pager
-    ->shouldReceive('getPaginatedResultSet')
+    ->shouldReceive('paginateDoctrineQuery')
     ->atLeast()->once()
     ->andReturn($willReturn);
 
@@ -1144,23 +1191,21 @@ test('kb category get', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
     $adminApi = new Box\Mod\Support\Api\Admin();
 
-    $db = Mockery::mock('Box_Database');
-    $db
-    ->shouldReceive('findOne')
-    ->atLeast()->once()
-    ->andReturn(new Model_SupportKbArticleCategory());
+    $repo = Mockery::mock(KbArticleCategoryRepository::class);
+    $repo->shouldReceive('find')
+        ->once()
+        ->with(1)
+        ->andReturn(adminSupportKbCategoryFixture());
 
     $di = container();
-    $di['db'] = $db;
     $di['validator'] = new FOSSBilling\Validate();
 
     $adminApi->setDi($di);
 
     $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $kbService
-    ->shouldReceive('kbCategoryToApiArray')
-    ->atLeast()->once()
-    ->andReturn([]);
+    $kbService->shouldReceive('getKbArticleCategoryRepository')
+        ->once()
+        ->andReturn($repo);
     $adminApi->setService($kbService);
 
     $data = [
@@ -1184,21 +1229,21 @@ test('kb category get not found exception', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
     $adminApi = new Box\Mod\Support\Api\Admin();
 
-    $db = Mockery::mock('Box_Database');
-    $db
-    ->shouldReceive('findOne')
-    ->atLeast()->once()
-    ->andReturn(false);
+    $repo = Mockery::mock(KbArticleCategoryRepository::class);
+    $repo->shouldReceive('find')
+        ->once()
+        ->with(1)
+        ->andReturn(null);
 
     $di = container();
 
-    $di['db'] = $db;
     $di['validator'] = new FOSSBilling\Validate();
     $adminApi->setDi($di);
 
     $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $kbService->shouldReceive('kbCategoryToApiArray')->never()
-        ->andReturn([]);
+    $kbService->shouldReceive('getKbArticleCategoryRepository')
+        ->once()
+        ->andReturn($repo);
     $adminApi->setService($kbService);
 
     $data = [
@@ -1243,14 +1288,16 @@ test('kb category update', function (): void {
     ->andReturn(true);
     $adminApi->setService($kbService);
 
-    $db = Mockery::mock('Box_Database');
-    $db
-    ->shouldReceive('findOne')
-    ->atLeast()->once()
-    ->andReturn(new Model_SupportKbArticleCategory());
+    $repo = Mockery::mock(KbArticleCategoryRepository::class);
+    $repo->shouldReceive('find')
+        ->once()
+        ->with(1)
+        ->andReturn(adminSupportKbCategoryFixture());
+    $kbService->shouldReceive('getKbArticleCategoryRepository')
+        ->once()
+        ->andReturn($repo);
 
     $di = container();
-    $di['db'] = $db;
     $di['validator'] = new FOSSBilling\Validate();
 
     $adminApi->setDi($di);
@@ -1285,14 +1332,16 @@ test('kb category update not found', function (): void {
         ->andReturn(true);
     $adminApi->setService($kbService);
 
-    $db = Mockery::mock('Box_Database');
-    $db
-    ->shouldReceive('findOne')
-    ->atLeast()->once()
-    ->andReturn(false);
+    $repo = Mockery::mock(KbArticleCategoryRepository::class);
+    $repo->shouldReceive('find')
+        ->once()
+        ->with(1)
+        ->andReturn(null);
+    $kbService->shouldReceive('getKbArticleCategoryRepository')
+        ->once()
+        ->andReturn($repo);
 
     $di = container();
-    $di['db'] = $db;
     $di['validator'] = new FOSSBilling\Validate();
 
     $adminApi->setDi($di);
@@ -1318,14 +1367,17 @@ test('kb category delete', function (): void {
     ->andReturn(true);
     $adminApi->setService($kbService);
 
-    $db = Mockery::mock('Box_Database');
-    $db
-    ->shouldReceive('findOne')
-    ->atLeast()->once()
-    ->andReturn(new Model_SupportKbArticleCategory());
+    $category = adminSupportKbCategoryFixture();
+    $repo = Mockery::mock(KbArticleCategoryRepository::class);
+    $repo->shouldReceive('find')
+        ->once()
+        ->with(1)
+        ->andReturn($category);
+    $kbService->shouldReceive('getKbArticleCategoryRepository')
+        ->once()
+        ->andReturn($repo);
 
     $di = container();
-    $di['db'] = $db;
     $di['validator'] = new FOSSBilling\Validate();
 
     $adminApi->setDi($di);
@@ -1356,14 +1408,16 @@ test('kb category delete not found', function (): void {
         ->andReturn(true);
     $adminApi->setService($kbService);
 
-    $db = Mockery::mock('Box_Database');
-    $db
-    ->shouldReceive('findOne')
-    ->atLeast()->once()
-    ->andReturn(false);
+    $repo = Mockery::mock(KbArticleCategoryRepository::class);
+    $repo->shouldReceive('find')
+        ->once()
+        ->with(1)
+        ->andReturn(null);
+    $kbService->shouldReceive('getKbArticleCategoryRepository')
+        ->once()
+        ->andReturn($repo);
 
     $di = container();
-    $di['db'] = $db;
     $di['validator'] = new FOSSBilling\Validate();
 
     $adminApi->setDi($di);
@@ -1379,11 +1433,15 @@ test('kb category get pairs', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
     $adminApi = new Box\Mod\Support\Api\Admin();
 
+    $repo = Mockery::mock(KbArticleCategoryRepository::class);
+    $repo->shouldReceive('getPairs')
+        ->once()
+        ->andReturn([]);
+
     $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $kbService
-    ->shouldReceive('kbCategoryGetPairs')
-    ->atLeast()->once()
-    ->andReturn([]);
+    $kbService->shouldReceive('getKbArticleCategoryRepository')
+        ->once()
+        ->andReturn($repo);
     $adminApi->setService($kbService);
 
     $result = $adminApi->kb_category_get_pairs([]);

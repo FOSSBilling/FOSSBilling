@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Support\Api;
 
+use Box\Mod\Support\Entity\KbArticle;
+use Box\Mod\Support\Entity\KbArticleCategory;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -130,14 +132,12 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $search = $data['search'] ?? null;
         $cat = $data['kb_article_category_id'] ?? null;
 
-        $pager = $this->getService()->kbSearchArticles('active', $search, $cat, PaginationOptions::fromArray($data));
+        /** @var \Box\Mod\Support\Repository\KbArticleRepository $repo */
+        $repo = $this->getService()->getKbArticleRepository();
+        
+        $qb = $repo->getSearchQueryBuilder(KbArticle::ACTIVE, $search, $cat);
 
-        foreach ($pager['list'] as $key => $item) {
-            $article = $this->getDi()['db']->getExistingModelById('SupportKbArticle', $item['id'], 'KB Article not found');
-            $pager['list'][$key] = $this->getService()->kbToApiArray($article);
-        }
-
-        return $pager;
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
     }
 
     /**
@@ -152,19 +152,25 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $id = $data['id'] ?? null;
         $slug = $data['slug'] ?? null;
 
-        $model = false;
+        $article = false;
+        /** @var \Box\Mod\Support\Repository\KbArticleRepository $repo */
+        $repo = $this->getService()->getKbArticleRepository();
+        
         if ($id) {
-            $model = $this->getService()->kbFindActiveArticleById((int) $id);
+            $article = $repo->findOneActiveById((int) $id);
         } else {
-            $model = $this->getService()->kbFindActiveArticleBySlug($slug);
+            $article = $repo->findOneActiveBySlug($slug);
         }
 
-        if (!$model instanceof \Model_SupportKbArticle) {
+        if (!$article instanceof KbArticle) {
             throw new \FOSSBilling\InformationException('Article item not found');
         }
-        $this->getService()->kbHitView($model);
 
-        return $this->getService()->kbToApiArray($model, true, $this->getIdentity());
+        // Increment hit count
+        $article->incrementViews();
+        $this->getDi()['em']->flush();
+
+        return $article->toApiArray($this->getIdentity(), true);
     }
 
     /**
@@ -172,19 +178,15 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      */
     public function kb_category_get_list(array $data): array
     {
-        $data['article_status'] = \Model_SupportKbArticle::ACTIVE;
-        [$query, $bindings] = $this->getService()->kbCategoryGetSearchQuery($data);
-
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($query, $bindings, PaginationOptions::fromArray($data));
-
+        $data['article_status'] = KbArticle::ACTIVE;
         $q = $data['q'] ?? null;
 
-        foreach ($pager['list'] as $key => $item) {
-            $category = $this->getDi()['db']->getExistingModelById('SupportKbArticleCategory', $item['id'], 'KB Article not found');
-            $pager['list'][$key] = $this->getService()->kbCategoryToApiArray($category, $this->getIdentity(), $q);
-        }
+        /** @var \Box\Mod\Support\Repository\KbArticleCategoryRepository $repo */
+        $repo = $this->getService()->getKbArticleCategoryRepository();
+        
+        $qb = $repo->getSearchQueryBuilder($data);
 
-        return $pager;
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data), $this->getIdentity(), $q);
     }
 
     /**
@@ -192,7 +194,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      */
     public function kb_category_get_pairs(array $data): array
     {
-        return $this->getService()->kbCategoryGetPairs();
+        return $this->getService()->getKbArticleCategoryRepository()->getPairs();
     }
 
     /**
@@ -207,17 +209,20 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $id = $data['id'] ?? null;
         $slug = $data['slug'] ?? null;
 
-        $model = false;
+        $cat = false;
+        
+        /** @var \Box\Mod\Support\Repository\KbArticleCategoryRepository $repo */
+        $repo = $this->getService()->getKbArticleCategoryRepository();
         if ($id) {
-            $model = $this->getService()->kbFindCategoryById((int) $id);
+            $cat = $repo->find((int) $id);
         } else {
-            $model = $this->getService()->kbFindCategoryBySlug($slug);
+            $cat = $repo->findOneBySlug($slug);
         }
 
-        if (!$model instanceof \Model_SupportKbArticleCategory) {
+        if (!$cat instanceof KbArticleCategory) {
             throw new \FOSSBilling\InformationException('Knowledge Base category not found');
         }
 
-        return $this->getService()->kbCategoryToApiArray($model, $this->getIdentity());
+        return $cat->toApiArray($this->getIdentity());
     }
 }

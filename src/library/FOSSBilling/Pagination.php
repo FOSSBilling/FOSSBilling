@@ -52,8 +52,9 @@ class Pagination implements InjectionAwareInterface
      * Entities implementing `ApiArrayInterface` will use `toApiArray()`, others will be normalized
      * using Symfony's ObjectNormalizer.
      *
-     * @param QueryBuilder      $qb         the Doctrine QueryBuilder instance to paginate
-     * @param PaginationOptions $pagination pagination options
+     * @param QueryBuilder      $qb              the Doctrine QueryBuilder instance to paginate
+     * @param PaginationOptions $pagination      pagination options
+     * @param mixed             ...$apiArrayArgs optional arguments passed to entity toApiArray() methods
      *
      * @return array{
      *     pages: int,      // Total number of pages
@@ -63,7 +64,7 @@ class Pagination implements InjectionAwareInterface
      *     list: array      // List of paginated items as arrays
      * }
      */
-    public function paginateDoctrineQuery(QueryBuilder $qb, PaginationOptions $pagination): array
+    public function paginateDoctrineQuery(QueryBuilder $qb, PaginationOptions $pagination, mixed ...$apiArrayArgs): array
     {
         $serializer = new Serializer([new ObjectNormalizer()]);
 
@@ -77,7 +78,7 @@ class Pagination implements InjectionAwareInterface
         $list = [];
         foreach ($paginator as $entity) {
             if ($entity instanceof ApiArrayInterface) {
-                $list[] = $entity->toApiArray();
+                $list[] = $apiArrayArgs === [] ? $entity->toApiArray() : call_user_func_array([$entity, 'toApiArray'], $apiArrayArgs);
             } else {
                 $list[] = $serializer->normalize($entity);
             }

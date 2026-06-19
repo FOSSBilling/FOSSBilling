@@ -10,7 +10,29 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Support\Entity\KbArticle;
+use Box\Mod\Support\Entity\KbArticleCategory;
+use Box\Mod\Support\Repository\KbArticleCategoryRepository;
+use Box\Mod\Support\Repository\KbArticleRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\QueryBuilder;
+
 use function Tests\Helpers\container;
+
+function guestSupportKbCategoryFixture(): KbArticleCategory
+{
+    return (new KbArticleCategory())
+        ->setTitle('category-title')
+        ->setSlug('category-slug');
+}
+
+function guestSupportKbArticleFixture(): KbArticle
+{
+    return (new KbArticle())
+        ->setCategory(guestSupportKbCategoryFixture())
+        ->setTitle('Title')
+        ->setSlug('article-slug');
+}
 
 test('ticket create', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
@@ -137,14 +159,27 @@ test('kb article get list', function (): void {
         'list' => [],
     ];
 
+    $qb = Mockery::mock(QueryBuilder::class);
+    $repo = Mockery::mock(KbArticleRepository::class);
+    $repo->shouldReceive('getSearchQueryBuilder')
+        ->once()
+        ->with(KbArticle::ACTIVE, null, null)
+        ->andReturn($qb);
+
     $supportService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $supportService
-    ->shouldReceive('kbSearchArticles')
-    ->atLeast()->once()
-    ->andReturn($willReturn);
+    $supportService->shouldReceive('getKbArticleRepository')
+        ->once()
+        ->andReturn($repo);
     $guestApi->setService($supportService);
 
+    $pager = Mockery::mock(FOSSBilling\Pagination::class);
+    $pager->shouldReceive('paginateDoctrineQuery')
+        ->once()
+        ->with($qb, Mockery::type(FOSSBilling\PaginationOptions::class))
+        ->andReturn($willReturn);
+
     $di = container();
+    $di['pager'] = $pager;
 
     $guestApi->setDi($di);
     $result = $guestApi->kb_article_get_list([]);
@@ -155,22 +190,24 @@ test('kb article get list', function (): void {
 test('kb article get with id', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
 
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('flush')->once();
+
     $di = container();
+    $di['em'] = $em;
 
     $guestApi->setDi($di);
 
+    $repo = Mockery::mock(KbArticleRepository::class);
+    $repo->shouldReceive('findOneActiveById')
+        ->once()
+        ->with(1)
+        ->andReturn(guestSupportKbArticleFixture());
+
     $supportService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $supportService
-    ->shouldReceive('kbFindActiveArticleById')
-    ->atLeast()->once()
-    ->andReturn(new Model_SupportKbArticle());
-    $supportService->shouldReceive('kbFindActiveArticleBySlug')->never()
-        ->andReturn(new Model_SupportKbArticle());
-    $supportService->shouldReceive('kbHitView')->atLeast()->once();
-    $supportService
-    ->shouldReceive('kbToApiArray')
-    ->atLeast()->once()
-    ->andReturn([]);
+    $supportService->shouldReceive('getKbArticleRepository')
+        ->once()
+        ->andReturn($repo);
     $guestApi->setService($supportService);
 
     $data = [
@@ -183,22 +220,24 @@ test('kb article get with id', function (): void {
 test('kb article get with slug', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
 
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('flush')->once();
+
     $di = container();
+    $di['em'] = $em;
 
     $guestApi->setDi($di);
 
+    $repo = Mockery::mock(KbArticleRepository::class);
+    $repo->shouldReceive('findOneActiveBySlug')
+        ->once()
+        ->with('article-slug')
+        ->andReturn(guestSupportKbArticleFixture());
+
     $supportService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $supportService->shouldReceive('kbFindActiveArticleById')->never()
-        ->andReturn(new Model_SupportKbArticle());
-    $supportService
-    ->shouldReceive('kbFindActiveArticleBySlug')
-    ->atLeast()->once()
-    ->andReturn(new Model_SupportKbArticle());
-    $supportService->shouldReceive('kbHitView')->atLeast()->once();
-    $supportService
-    ->shouldReceive('kbToApiArray')
-    ->atLeast()->once()
-    ->andReturn([]);
+    $supportService->shouldReceive('getKbArticleRepository')
+        ->once()
+        ->andReturn($repo);
     $guestApi->setService($supportService);
 
     $data = [
@@ -211,16 +250,7 @@ test('kb article get with slug', function (): void {
 test('kb article get id and slug not set exception', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
 
-    $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $kbService->shouldReceive('kbFindActiveArticleById')->never()
-        ->andReturn(new Model_SupportKbArticle());
-    $kbService->shouldReceive('kbFindActiveArticleBySlug')->never()
-        ->andReturn(new Model_SupportKbArticle());
-    $kbService->shouldReceive('kbHitView')->never()
-    ;
-    $kbService->shouldReceive('kbToApiArray')->never()
-        ->andReturn([]);
-    $guestApi->setService($kbService);
+    $guestApi->setService(Mockery::mock(Box\Mod\Support\Service::class)->makePartial());
 
     expect(fn (): array => $guestApi->kb_article_get([]))->toThrow(FOSSBilling\Exception::class);
 });
@@ -228,17 +258,16 @@ test('kb article get id and slug not set exception', function (): void {
 test('kb article get not found by id', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
 
+    $repo = Mockery::mock(KbArticleRepository::class);
+    $repo->shouldReceive('findOneActiveById')
+        ->once()
+        ->with(1)
+        ->andReturn(null);
+
     $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $kbService
-    ->shouldReceive('kbFindActiveArticleById')
-    ->atLeast()->once()
-    ->andReturn(null);
-    $kbService->shouldReceive('kbFindActiveArticleBySlug')->never()
-        ->andReturn(new Model_SupportKbArticle());
-    $kbService->shouldReceive('kbHitView')->never()
-    ;
-    $kbService->shouldReceive('kbToApiArray')->never()
-        ->andReturn([]);
+    $kbService->shouldReceive('getKbArticleRepository')
+        ->once()
+        ->andReturn($repo);
     $guestApi->setService($kbService);
 
     $data = [
@@ -254,17 +283,16 @@ test('kb article get not found by id', function (): void {
 test('kb article get not found by slug', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
 
+    $repo = Mockery::mock(KbArticleRepository::class);
+    $repo->shouldReceive('findOneActiveBySlug')
+        ->once()
+        ->with('article-slug')
+        ->andReturn(null);
+
     $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $kbService->shouldReceive('kbFindActiveArticleById')->never()
-        ->andReturn(new Model_SupportKbArticle());
-    $kbService
-    ->shouldReceive('kbFindActiveArticleBySlug')
-    ->atLeast()->once()
-    ->andReturn(null);
-    $kbService->shouldReceive('kbHitView')->never()
-    ;
-    $kbService->shouldReceive('kbToApiArray')->never()
-        ->andReturn([]);
+    $kbService->shouldReceive('getKbArticleRepository')
+        ->once()
+        ->andReturn($repo);
     $guestApi->setService($kbService);
 
     $data = [
@@ -289,16 +317,20 @@ test('kb category get list', function (): void {
         'list' => [],
     ];
 
+    $repo = Mockery::mock(KbArticleCategoryRepository::class);
+    $repo->shouldReceive('getSearchQueryBuilder')
+        ->once()
+        ->andReturn(Mockery::mock(QueryBuilder::class));
+
     $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $kbService
-    ->shouldReceive('kbCategoryGetSearchQuery')
-    ->atLeast()->once()
-    ->andReturn(['String', []]);
+    $kbService->shouldReceive('getKbArticleCategoryRepository')
+        ->once()
+        ->andReturn($repo);
 
     $pager = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
 
     $pager
-    ->shouldReceive('getPaginatedResultSet')
+    ->shouldReceive('paginateDoctrineQuery')
     ->atLeast()->once()
     ->andReturn($willReturn);
 
@@ -321,11 +353,15 @@ test('kb category get pairs', function (): void {
         2 => 'Second Category',
     ];
 
+    $repo = Mockery::mock(KbArticleCategoryRepository::class);
+    $repo->shouldReceive('getPairs')
+        ->once()
+        ->andReturn($expected);
+
     $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $kbService
-    ->shouldReceive('kbCategoryGetPairs')
-    ->atLeast()->once()
-    ->andReturn($expected);
+    $kbService->shouldReceive('getKbArticleCategoryRepository')
+        ->once()
+        ->andReturn($repo);
     $guestApi->setService($kbService);
 
     $result = $guestApi->kb_category_get_pairs([]);
@@ -336,17 +372,16 @@ test('kb category get pairs', function (): void {
 test('kb category get with id', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
 
+    $repo = Mockery::mock(KbArticleCategoryRepository::class);
+    $repo->shouldReceive('find')
+        ->once()
+        ->with(1)
+        ->andReturn(guestSupportKbCategoryFixture());
+
     $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $kbService
-    ->shouldReceive('kbFindCategoryById')
-    ->atLeast()->once()
-    ->andReturn(new Model_SupportKbArticleCategory());
-    $kbService->shouldReceive('kbFindCategoryBySlug')->never()
-        ->andReturn(new Model_SupportKbArticleCategory());
-    $kbService
-    ->shouldReceive('kbCategoryToApiArray')
-    ->atLeast()->once()
-    ->andReturn([]);
+    $kbService->shouldReceive('getKbArticleCategoryRepository')
+        ->once()
+        ->andReturn($repo);
     $guestApi->setService($kbService);
 
     $data = [
@@ -363,17 +398,16 @@ test('kb category get with id', function (): void {
 test('kb category get with slug', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
 
+    $repo = Mockery::mock(KbArticleCategoryRepository::class);
+    $repo->shouldReceive('findOneBySlug')
+        ->once()
+        ->with('category-slug')
+        ->andReturn(guestSupportKbCategoryFixture());
+
     $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $kbService->shouldReceive('kbFindCategoryById')->never()
-        ->andReturn(new Model_SupportKbArticleCategory());
-    $kbService
-    ->shouldReceive('kbFindCategoryBySlug')
-    ->atLeast()->once()
-    ->andReturn(new Model_SupportKbArticleCategory());
-    $kbService
-    ->shouldReceive('kbCategoryToApiArray')
-    ->atLeast()->once()
-    ->andReturn([]);
+    $kbService->shouldReceive('getKbArticleCategoryRepository')
+        ->once()
+        ->andReturn($repo);
     $guestApi->setService($kbService);
 
     $di = container();
@@ -390,14 +424,7 @@ test('kb category get with slug', function (): void {
 test('kb category get id and slug not set exception', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
 
-    $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $kbService->shouldReceive('kbFindCategoryById')->never()
-        ->andReturn(new Model_SupportKbArticleCategory());
-    $kbService->shouldReceive('kbFindCategoryBySlug')->never()
-        ->andReturn(new Model_SupportKbArticleCategory());
-    $kbService->shouldReceive('kbCategoryToApiArray')->never()
-        ->andReturn([]);
-    $guestApi->setService($kbService);
+    $guestApi->setService(Mockery::mock(Box\Mod\Support\Service::class)->makePartial());
 
     expect(fn (): array => $guestApi->kb_category_get([]))->toThrow(FOSSBilling\Exception::class);
 });
@@ -405,14 +432,16 @@ test('kb category get id and slug not set exception', function (): void {
 test('kb category get not found by id', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
 
+    $repo = Mockery::mock(KbArticleCategoryRepository::class);
+    $repo->shouldReceive('find')
+        ->once()
+        ->with(1)
+        ->andReturn(null);
+
     $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $kbService
-        ->shouldReceive('kbFindCategoryById')
-        ->andThrow(new FOSSBilling\Exception('Knowledge Base category not found'));
-    $kbService->shouldReceive('kbFindCategoryBySlug')->never()
-        ->andReturn(new Model_SupportKbArticleCategory());
-    $kbService->shouldReceive('kbCategoryToApiArray')->never()
-        ->andReturn([]);
+    $kbService->shouldReceive('getKbArticleCategoryRepository')
+        ->once()
+        ->andReturn($repo);
     $guestApi->setService($kbService);
 
     $data = [
@@ -429,15 +458,16 @@ test('kb category get not found by id', function (): void {
 test('kb category get not found by slug', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
 
+    $repo = Mockery::mock(KbArticleCategoryRepository::class);
+    $repo->shouldReceive('findOneBySlug')
+        ->once()
+        ->with('article-slug')
+        ->andReturn(null);
+
     $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $kbService->shouldReceive('kbFindCategoryById')->never()
-        ->andReturn(new Model_SupportKbArticleCategory());
-    $kbService
-    ->shouldReceive('kbFindCategoryBySlug')
-    ->atLeast()->once()
-    ->andReturn(null);
-    $kbService->shouldReceive('kbCategoryToApiArray')->never()
-        ->andReturn([]);
+    $kbService->shouldReceive('getKbArticleCategoryRepository')
+        ->once()
+        ->andReturn($repo);
     $guestApi->setService($kbService);
 
     $data = [
