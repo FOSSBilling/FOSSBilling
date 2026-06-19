@@ -416,13 +416,13 @@ test('to api array self-heals invoice with missing hash', function (): void {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $subscriptionServiceMock, $invoiceItemServiceMock) {
         $service = null;
-        if ($sub == 'InvoiceItem') {
+        if ($sub === 'InvoiceItem') {
             $service = $invoiceItemServiceMock;
         }
-        if ($serviceName == 'system' || $serviceName == 'System') {
+        if ($serviceName === 'system' || $serviceName === 'System') {
             $service = $systemService;
         }
-        if ($sub == 'Subscription') {
+        if ($sub === 'Subscription') {
             $service = $subscriptionServiceMock;
         }
 
