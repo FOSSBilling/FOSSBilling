@@ -65,7 +65,7 @@ test('handles after client open ticket event', function (): void {
     $emailServiceMock = Mockery::mock(EmailService::class);
     $emailServiceMock->shouldReceive('sendTemplate')
         ->atLeast()->once()
-        ->with(Mockery::on(fn ($email) => $email['code'] === 'mod_support_ticket_open'))
+        ->with(Mockery::on(fn ($email): bool => $email['code'] === 'mod_support_ticket_open'))
         ->andReturn(true);
 
     $di = container();
@@ -112,7 +112,7 @@ test('handles after admin open ticket event', function (): void {
     $emailServiceMock = Mockery::mock(EmailService::class);
     $emailServiceMock->shouldReceive('sendTemplate')
         ->atLeast()->once()
-        ->with(Mockery::on(fn ($email) => $email['code'] === 'mod_support_ticket_staff_open'))
+        ->with(Mockery::on(fn ($email): bool => $email['code'] === 'mod_support_ticket_staff_open'))
         ->andReturn(true);
 
     $di = container();
@@ -159,7 +159,7 @@ test('handles after admin close ticket event', function (): void {
     $emailServiceMock = Mockery::mock(EmailService::class);
     $emailServiceMock->shouldReceive('sendTemplate')
         ->atLeast()->once()
-        ->with(Mockery::on(fn ($email) => $email['code'] === 'mod_support_ticket_staff_close'))
+        ->with(Mockery::on(fn ($email): bool => $email['code'] === 'mod_support_ticket_staff_close'))
         ->andReturn(true);
 
     $di = container();
@@ -206,7 +206,7 @@ test('handles after admin reply ticket event', function (): void {
     $emailServiceMock = Mockery::mock(EmailService::class);
     $emailServiceMock->shouldReceive('sendTemplate')
         ->atLeast()->once()
-        ->with(Mockery::on(fn ($email) => $email['code'] === 'mod_support_ticket_staff_reply'))
+        ->with(Mockery::on(fn ($email): bool => $email['code'] === 'mod_support_ticket_staff_reply'))
         ->andReturn(true);
 
     $di = container();
@@ -256,7 +256,7 @@ test('handles guest ticket with regular client open event', function (): void {
     $emailServiceMock = Mockery::mock(EmailService::class);
     $emailServiceMock->shouldReceive('sendTemplate')
         ->atLeast()->once()
-        ->with(Mockery::on(fn ($email) => $email['code'] === 'mod_support_ticket_open' && $email['to'] === 'email@example.com'))
+        ->with(Mockery::on(fn ($email): bool => $email['code'] === 'mod_support_ticket_open' && $email['to'] === 'email@example.com'))
         ->andReturn(true);
 
     $di = container();
@@ -1847,7 +1847,7 @@ test('guest ticket reply', function (): void {
     $ticket->loadBean(new Tests\Helpers\DummyBean());
     $ticket->access_hash = 'test-hash-123';
 
-    $result = $service->ticketReply($ticket, new \Model_Guest(), 'Content');
+    $result = $service->ticketReply($ticket, new Model_Guest(), 'Content');
     expect($result)->toBeInt();
 });
 

@@ -105,7 +105,7 @@ test('action renew order without active service', function (): void {
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
-    expect(fn () => $service->action_renew($orderModel))
+    expect(fn (): bool => $service->action_renew($orderModel))
         ->toThrow(FOSSBilling\Exception::class, sprintf('Order %d has no active service', $orderModel->id));
 });
 
@@ -151,7 +151,7 @@ test('action suspend order without active service', function (): void {
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
-    expect(fn () => $service->action_suspend($orderModel))
+    expect(fn (): bool => $service->action_suspend($orderModel))
         ->toThrow(FOSSBilling\Exception::class, sprintf('Order %d has no active service', $orderModel->id));
 });
 
@@ -197,7 +197,7 @@ test('action unsuspend order without active service', function (): void {
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
-    expect(fn () => $service->action_unsuspend($orderModel))
+    expect(fn (): bool => $service->action_unsuspend($orderModel))
         ->toThrow(FOSSBilling\Exception::class, sprintf('Order %d has no active service', $orderModel->id));
 });
 
@@ -243,7 +243,7 @@ test('action cancel order without active service', function (): void {
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
-    expect(fn () => $service->action_cancel($orderModel))
+    expect(fn (): bool => $service->action_cancel($orderModel))
         ->toThrow(FOSSBilling\Exception::class, sprintf('Order %d has no active service', $orderModel->id));
 });
 
@@ -345,7 +345,7 @@ test('change account username missing username', function (): void {
     $model->loadBean(new Tests\Helpers\DummyBean());
     $data = [];
 
-    expect(fn () => $service->changeAccountUsername($orderModel, $model, $data))
+    expect(fn (): bool => $service->changeAccountUsername($orderModel, $model, $data))
         ->toThrow(FOSSBilling\Exception::class, 'Account username is missing or is invalid');
 });
 
@@ -391,7 +391,7 @@ test('change account ip missing ip', function (): void {
     $model = new Model_ServiceHosting();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
-    expect(fn () => $service->changeAccountIp($orderModel, $model, $data))
+    expect(fn (): bool => $service->changeAccountIp($orderModel, $model, $data))
         ->toThrow(FOSSBilling\Exception::class, 'Account IP address is missing or is invalid');
 });
 
@@ -438,7 +438,7 @@ test('change account domain missing params', function (): void {
     $model = new Model_ServiceHosting();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
-    expect(fn () => $service->changeAccountDomain($orderModel, $model, $data))
+    expect(fn (): bool => $service->changeAccountDomain($orderModel, $model, $data))
         ->toThrow(FOSSBilling\Exception::class, 'Domain SLD or TLD is missing');
 });
 
@@ -485,7 +485,7 @@ test('change account password missing params', function (): void {
     $model = new Model_ServiceHosting();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
-    expect(fn () => $service->changeAccountPassword($orderModel, $model, $data))
+    expect(fn (): bool => $service->changeAccountPassword($orderModel, $model, $data))
         ->toThrow(FOSSBilling\Exception::class, 'Account password is missing or is invalid');
 });
 

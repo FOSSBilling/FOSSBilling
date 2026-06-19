@@ -1643,7 +1643,7 @@ class Service implements InjectionAwareInterface
 
     private function getProductUnit(Product $product): string
     {
-        return (string) $product->getUnit();
+        return $product->getUnit();
     }
 
     private function isAddonProduct(Product $product): bool

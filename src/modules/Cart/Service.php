@@ -188,7 +188,7 @@ class Service implements InjectionAwareInterface
             /** @var Product $cartProduct */
             $cartProduct = $cartItem['product'];
             $requestedQty = $this->getRequestedQuantity($cartItem['config']);
-            $cartProductId = (int) $this->getProductId($cartProduct);
+            $cartProductId = $this->getProductId($cartProduct);
             $pendingQuantities[$cartProductId] = ($pendingQuantities[$cartProductId] ?? 0) + $requestedQty;
 
             $reservedQty = $this->getReservedQuantityInCart($cart, $cartProductId);
@@ -584,15 +584,15 @@ class Service implements InjectionAwareInterface
                      * https://github.com/boxbilling/boxbilling/discussions/1022#discussioncomment-1311819
                      */
                     if ($item['type'] === 'domain' || $item['type'] === 'hosting') {
-                        $item['register_sld'] = (isset($item['register_sld'])) ? strtolower($item['register_sld']) : null;
-                        $item['transfer_sld'] = (isset($item['transfer_sld'])) ? strtolower($item['transfer_sld']) : null;
-                        $item['sld'] = (isset($item['sld'])) ? strtolower($item['sld']) : null;
-                        $item['domain']['owndomain_sld'] = (isset($item['domain']['owndomain_sld'])) ? strtolower($item['domain']['owndomain_sld']) : null;
-                        $item['domain']['register_sld'] = (isset($item['domain']['register_sld'])) ? strtolower($item['domain']['register_sld']) : null;
-                        $item['domain']['transfer_sld'] = (isset($item['domain']['transfer_sld'])) ? strtolower($item['domain']['transfer_sld']) : null;
+                        $item['register_sld'] = (isset($item['register_sld'])) ? strtolower((string) $item['register_sld']) : null;
+                        $item['transfer_sld'] = (isset($item['transfer_sld'])) ? strtolower((string) $item['transfer_sld']) : null;
+                        $item['sld'] = (isset($item['sld'])) ? strtolower((string) $item['sld']) : null;
+                        $item['domain']['owndomain_sld'] = (isset($item['domain']['owndomain_sld'])) ? strtolower((string) $item['domain']['owndomain_sld']) : null;
+                        $item['domain']['register_sld'] = (isset($item['domain']['register_sld'])) ? strtolower((string) $item['domain']['register_sld']) : null;
+                        $item['domain']['transfer_sld'] = (isset($item['domain']['transfer_sld'])) ? strtolower((string) $item['domain']['transfer_sld']) : null;
 
                         // Domain TLD must begin with a period - add if not present for owndomain.
-                        $item['domain']['owndomain_tld'] = (isset($item['domain']['owndomain_tld'])) ? (str_contains($item['domain']['owndomain_tld'], '.') ? $item['domain']['owndomain_tld'] : '.' . $item['domain']['owndomain_tld']) : null;
+                        $item['domain']['owndomain_tld'] = (isset($item['domain']['owndomain_tld'])) ? (str_contains((string) $item['domain']['owndomain_tld'], '.') ? $item['domain']['owndomain_tld'] : '.' . $item['domain']['owndomain_tld']) : null;
                     }
 
                     $order = $this->di['db']->dispense('ClientOrder');
@@ -754,7 +754,7 @@ class Service implements InjectionAwareInterface
         $this->getProductService()->usePromo($promo);
     }
 
-    public function findActivePromoByCode($code)
+    public function findActivePromoByCode($code): ?Promo
     {
         return $this->getProductService()->findActivePromoByCode($code);
     }
@@ -765,7 +765,7 @@ class Service implements InjectionAwareInterface
      *
      * @return number
      */
-    protected function getRelatedItemsDiscount(\Model_Cart $cart, \Model_CartProduct $model)
+    protected function getRelatedItemsDiscount(\Model_Cart $cart, \Model_CartProduct $model): float
     {
         $config = $this->getItemConfig($model);
 

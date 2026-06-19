@@ -76,7 +76,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function getCartProductTitle(Product $product, array $data)
+    public function getCartProductTitle(Product $product, array $data): ?string
     {
         try {
             $data = array_merge(json_decode($product->getConfig() ?? '', true) ?? [], $data);
