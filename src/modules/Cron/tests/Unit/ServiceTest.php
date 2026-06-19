@@ -86,3 +86,22 @@ test('exec passes empty array when cron task has no params', function (): void {
     expect($api->method)->toBe('invoice_batch_pay_with_credits');
     expect($api->params)->toBe([]);
 });
+
+test('runCrons restores the previous cron context when update finalization interrupts execution', function (): void {
+    $updateFinalization = Mockery::mock()->shouldIgnoreMissing();
+    $updateFinalization->shouldReceive('isRequired')->once()->andReturn(true);
+
+    $di = container();
+    $di['update_finalization'] = $updateFinalization;
+
+    $service = new Service();
+    $service->setDi($di);
+
+    try {
+        $service->runCrons();
+    } catch (FOSSBilling\InformationException) {
+        // Expected: update finalization is pending, cron tasks are skipped.
+    }
+
+    expect(isset($di['is_cron']))->toBeFalse();
+});

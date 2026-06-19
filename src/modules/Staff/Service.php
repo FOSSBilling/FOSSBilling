@@ -157,7 +157,7 @@ class Service implements InjectionAwareInterface
             $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
         }
 
-        if (!in_array($caller->role, [\Model_Admin::ROLE_ADMIN, \Model_Admin::ROLE_CRON], true)) {
+        if ($caller->role !== \Model_Admin::ROLE_ADMIN) {
             $callerPerms = $this->getPermissions($caller->id);
             $callerHasWildcard = !empty($callerPerms['default']['all']);
 
@@ -860,7 +860,9 @@ class Service implements InjectionAwareInterface
     private function getLoggedInAdminOrCronAdmin(): \Model_Admin
     {
         if (isset($this->di['auth']) && !$this->di['auth']->isAdminLoggedIn()) {
-            return $this->getCronAdmin();
+            if (isset($this->di['is_cron']) && $this->di['is_cron'] === true) {
+                return $this->getCronAdmin();
+            }
         }
 
         return $this->di['loggedin_admin'];
