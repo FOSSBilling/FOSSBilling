@@ -1730,6 +1730,8 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch73(): void
     {
+        // Merge guest/public support tickets into the regular support ticket tables.
+        // See https://github.com/FOSSBilling/FOSSBilling/pull/3799
         if (!$this->tableHasColumn('support_ticket', 'access_hash')) {
             $this->executeSql('ALTER TABLE `support_ticket` ADD COLUMN `access_hash` VARCHAR(255) DEFAULT NULL AFTER `client_id`;');
         }
@@ -1746,10 +1748,35 @@ class UpdatePatcher implements InjectionAwareInterface
             $this->executeSql('ALTER TABLE `support_ticket` ADD INDEX `access_hash_idx` (`access_hash`);');
         }
 
+        $this->executeSql("
+            DELETE FROM email_template
+            WHERE action_code IN (
+                'mod_staff_pticket_close',
+                'mod_staff_pticket_open',
+                'mod_staff_pticket_reply',
+                'mod_support_pticket_open',
+                'mod_support_pticket_staff_close',
+                'mod_support_pticket_staff_open',
+                'mod_support_pticket_staff_reply'
+            )
+        ");
+
+        // Remove obsolete guest/public ticket email templates from extracted update archives.
+        $this->executeFileActions([
+            Path::join(PATH_MODS, 'Staff', 'templates', 'email', 'mod_staff_pticket_close.html.twig') => 'unlink',
+            Path::join(PATH_MODS, 'Staff', 'templates', 'email', 'mod_staff_pticket_open.html.twig') => 'unlink',
+            Path::join(PATH_MODS, 'Staff', 'templates', 'email', 'mod_staff_pticket_reply.html.twig') => 'unlink',
+            Path::join(PATH_MODS, 'Support', 'templates', 'email', 'mod_support_pticket_open.html.twig') => 'unlink',
+            Path::join(PATH_MODS, 'Support', 'templates', 'email', 'mod_support_pticket_staff_close.html.twig') => 'unlink',
+            Path::join(PATH_MODS, 'Support', 'templates', 'email', 'mod_support_pticket_staff_open.html.twig') => 'unlink',
+            Path::join(PATH_MODS, 'Support', 'templates', 'email', 'mod_support_pticket_staff_reply.html.twig') => 'unlink',
+        ]);
+
         if (!$this->tableExists('support_p_ticket')) {
             return;
         }
 
+        // Move legacy support_p_ticket rows into support_ticket, preserving guest access hashes.
         $defaultHelpdeskId = $this->fetchOne('SELECT id FROM support_helpdesk ORDER BY id ASC LIMIT 1');
         if (!$defaultHelpdeskId) {
             $now = date('Y-m-d H:i:s');
