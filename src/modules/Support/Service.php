@@ -1036,9 +1036,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         if ($identity instanceof \Model_Admin) {
             $this->di['events_manager']->fire(['event' => 'onAfterAdminReplyTicket', 'params' => ['id' => $ticket->id]]);
-        } elseif ($identity instanceof \Model_Client) {
-            $this->di['events_manager']->fire(['event' => 'onAfterClientReplyTicket', 'params' => ['id' => $ticket->id]]);
-        } elseif ($identity instanceof \Model_Guest) {
+        } else {
             $this->di['events_manager']->fire(['event' => 'onAfterClientReplyTicket', 'params' => ['id' => $ticket->id]]);
         }
 

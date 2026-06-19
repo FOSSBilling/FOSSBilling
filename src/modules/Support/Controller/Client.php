@@ -50,9 +50,12 @@ class Client implements \FOSSBilling\InjectionAwareInterface
     public function get_ticket(\Box_App $app, $id): string
     {
         $id = (string) $id;
-        $ticket = ctype_digit($id) && strlen($id) < 30
-            ? $this->di['api_client']->support_ticket_get(['id' => $id])
-            : $this->di['api_guest']->support_ticket_get(['hash' => $id]);
+        if (ctype_digit($id) && strlen($id) < 30) {
+            $this->di['is_client_logged'];
+            $ticket = $this->di['api_client']->support_ticket_get(['id' => $id]);
+        } else {
+            $ticket = $this->di['api_guest']->support_ticket_get(['hash' => $id]);
+        }
 
         return $app->render('mod_support_ticket', ['ticket' => $ticket]);
     }

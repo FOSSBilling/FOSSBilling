@@ -35,7 +35,7 @@
 	</style>
 </head>
 <body>
-	{% set is_guest_ticket = ticket.hash|default('') %}
+	{% set is_guest_ticket = ticket.author.role|default('') == 'guest' %}
 	<h1>Ticket Opened</h1>
 
     {% if is_guest_ticket %}
