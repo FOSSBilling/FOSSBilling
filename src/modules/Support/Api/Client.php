@@ -22,7 +22,7 @@ use FOSSBilling\Validation\Api\RequiredParams;
 class Client extends \FOSSBilling\Api\AbstractApi
 {
     /**
-     * Get client tickets list.
+     * Get the list of tickets for the logged in client.
      *
      * @optional string status - filter tickets by status
      * @optional string date_from - show tickets created since this day. Can be any string parsable by strtotime()

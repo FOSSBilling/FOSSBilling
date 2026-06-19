@@ -38,7 +38,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         $app->get('/service', 'get_orders', [], '\\' . \Box\Mod\Order\Controller\Client::class);
         $app->get('/service/manage/:id', 'get_order', ['id' => '[0-9]+'], '\\' . \Box\Mod\Order\Controller\Client::class);
         $app->get('/contact-us', 'get_contact_us', [], '\\' . \Box\Mod\Support\Controller\Client::class);
-        $app->get('/contact-us/conversation/:hash', 'get_contact_us_conversation', ['hash' => '[a-z0-9]+'], '\\' . \Box\Mod\Support\Controller\Client::class);
+        $app->get('/contact-us/conversation/:hash', 'get_ticket_redirect', ['hash' => '[a-z0-9]+'], '\\' . \Box\Mod\Support\Controller\Client::class);
 
         $service = $this->di['mod_service']('redirect');
         $redirects = $service->getRedirects();

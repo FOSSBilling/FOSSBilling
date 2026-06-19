@@ -35,9 +35,10 @@
 	</style>
 </head>
 <body>
+	{% set is_guest_ticket = ticket.author.role|default('') == 'guest' %}
 	<h1>Ticket Opened</h1>
 
-    <p>Hi {{ c.first_name|default('') }} {{ c.last_name|default('') }},</p>
+    <p>Hi {{ ticket.author.name|default('') }},</p>
 
     <p>{{ticket.messages|default([])[0].content|default('')}}</p>
 
@@ -48,11 +49,17 @@
         <li><strong>Status:</strong> {{ticket.status|default('')|title}}</li>
     </ul>
 
-    <a href='{{ "support/ticket/#{ticket.id|default('')}"|url(area: 'client') }}' target="_blank">Reply</a>
+    {% if is_guest_ticket %}
+        <a href='{{ "support/ticket/#{ticket.hash|default('')}"|url(area: 'client') }}' target="_blank">Reply</a>
+    {% else %}
+        <a href='{{ "support/ticket/#{ticket.id|default('')}"|url(area: 'client') }}' target="_blank">Reply</a>
+    {% endif %}
 
     <p>Please do not reply to this email directly. Use the link provided above.</p>
 
+    {% if not is_guest_ticket %}
     <p>You may <a href="{{ 'login'|url(query: {'email': c.email|default('') }, area: 'client') }}" target="_blank">login</a> or <a href="{{ 'client/profile'|url(area: 'client') }}" target="_blank">edit your profile.</a>
+    {% endif %}
 
 	<div class="signature">{{ guest.system_email.signature }}</div>
 </body>

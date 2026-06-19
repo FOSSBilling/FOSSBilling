@@ -407,6 +407,7 @@ test('support admin ticket renders with no notes and no rel', function (): void 
                 'first' => null,
                 'helpdesk' => ['id' => 1, 'name' => 'Helpdesk', 'can_reopen' => true, 'signature' => ''],
                 'client' => ['id' => 1, 'first_name' => 'Test', 'last_name' => 'Client'],
+                'author' => ['id' => 1, 'role' => 'client', 'name' => 'Test Client', 'first_name' => 'Test', 'last_name' => 'Client', 'email' => 'client@example.com'],
             ],
         ],
     );
@@ -463,6 +464,7 @@ test('support admin ticket renders with a related order and a note', function ()
                 'first' => null,
                 'helpdesk' => ['id' => 1, 'name' => 'Helpdesk', 'can_reopen' => true, 'signature' => ''],
                 'client' => ['id' => 1, 'first_name' => 'Test', 'last_name' => 'Client'],
+                'author' => ['id' => 1, 'role' => 'client', 'name' => 'Test Client', 'first_name' => 'Test', 'last_name' => 'Client', 'email' => 'client@example.com'],
             ],
         ],
     );
@@ -512,6 +514,7 @@ test('support admin ticket renders with a pending task (rel.status=pending)', fu
                 'first' => null,
                 'helpdesk' => ['id' => 1, 'name' => 'Helpdesk', 'can_reopen' => true, 'signature' => ''],
                 'client' => ['id' => 1, 'first_name' => 'Test', 'last_name' => 'Client'],
+                'author' => ['id' => 1, 'role' => 'client', 'name' => 'Test Client', 'first_name' => 'Test', 'last_name' => 'Client', 'email' => 'client@example.com'],
             ],
         ],
     );

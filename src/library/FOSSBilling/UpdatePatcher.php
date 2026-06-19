@@ -272,6 +272,14 @@ class UpdatePatcher implements InjectionAwareInterface
         return in_array($column, $this->getTableColumns($table), true);
     }
 
+    private function tableExists(string $table): bool
+    {
+        return (bool) $this->fetchOne(
+            'SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1',
+            ['table' => $table],
+        );
+    }
+
     private function getTableColumns(string $table): array
     {
         $columns = $this->fetchAll(sprintf('SHOW COLUMNS FROM `%s`', $this->quoteIdentifier($table)));
@@ -459,6 +467,7 @@ class UpdatePatcher implements InjectionAwareInterface
             70 => 'patch70',
             71 => 'patch71',
             72 => 'patch72',
+            73 => 'patch73',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1180,17 +1189,10 @@ class UpdatePatcher implements InjectionAwareInterface
             'mod_staff_client_signup' => ['13018c8f888668bbf731367ca3388a34f7170ff213bf1fa07771c375c4aae775', 'a573783ce28183abe13257c5b2663f750f8e37eb9056aad0c6abf203573d2f83'],
             'mod_staff_password_reset_approve' => ['f4e810c0a880b72dac35d7d7c1317fabdbc253c94b2c40387e72300fc502e75b', '8e3a3e5e4ffb9b393c08bcef9c07818a73c70d8c25a6cbed3f9ef339008e32bb'],
             'mod_staff_password_reset_request' => ['7afb81438ba5fe02b0cb1de5e2a0adafa1d54163fa6db3c594b052ae41d7a702', 'f6b1527a328af6b4e1c7a0f4d96d4cea7fa328a053508dc614385d39d78cc925'],
-            'mod_staff_pticket_close' => ['649f36bc186928c2581f27e017dcad39ee38a01100bb38e0458e02cab1d06cb8', '49b9aced9a16bb81ce961a097c945a9c6dd828b3d8aab3b3c3557bb5d12ec85e'],
-            'mod_staff_pticket_open' => ['5b80a40322052bccb1e00854c02fe4ad46be9dfbbdbf0b17a641af99175b72c5', 'd30deb555b30c5a85f25b23bb4c83a76e49d8a8379ad09d4aff9968888e637ce'],
-            'mod_staff_pticket_reply' => ['2fb0c49c240c05925211f0bd0e90b3de4ceab4287c1c89be6155f0a3d71d7811', '22bbf90befc02e3da6211c7036362fb296a38eb4be686d18752552b3cc0ae63d'],
             'mod_staff_ticket_close' => ['5b80a40322052bccb1e00854c02fe4ad46be9dfbbdbf0b17a641af99175b72c5', 'd54e0d97b88218404c731929eb2a39857ee422070e857802374626b72bf84b2f'],
             'mod_staff_ticket_open' => ['5b80a40322052bccb1e00854c02fe4ad46be9dfbbdbf0b17a641af99175b72c5', 'dbe1dee98606a36285a79d019e6180e62ee04cc7e3c3f16d34045d6c70aaf78e'],
             'mod_staff_ticket_reply' => ['5b80a40322052bccb1e00854c02fe4ad46be9dfbbdbf0b17a641af99175b72c5', '87238cbde59fd9faa31c8e0d6039924ad6068f1ca3858ad91b06cc4633243153'],
             'mod_support_helpdesk_ticket_open' => ['2fb0c49c240c05925211f0bd0e90b3de4ceab4287c1c89be6155f0a3d71d7811', '709e2ff17c01e1056ef4824e507e4474a6eeb1e3f35d5acd1c646074d98cc5d6'],
-            'mod_support_pticket_open' => ['5b80a40322052bccb1e00854c02fe4ad46be9dfbbdbf0b17a641af99175b72c5', '9735ea9dfe213f0880f95fabf82cc0530bac78feeeab9b6ec21fee501c3e9e3f'],
-            'mod_support_pticket_staff_close' => ['649f36bc186928c2581f27e017dcad39ee38a01100bb38e0458e02cab1d06cb8', '40a10a0a559dd5e3f69d8464df979db6bc5109696c4a1df6f60ea6802ca3376f'],
-            'mod_support_pticket_staff_open' => ['2fb0c49c240c05925211f0bd0e90b3de4ceab4287c1c89be6155f0a3d71d7811', '7dcba8e4fae63dd9ef4815a5db8cfb0cf6a510d48b947ec64f9e8163b8078e03'],
-            'mod_support_pticket_staff_reply' => ['2fb0c49c240c05925211f0bd0e90b3de4ceab4287c1c89be6155f0a3d71d7811', '4afbeb7038d64bd1a53277902139019fa219554cdb32fb1ec74b07e85b40e83d'],
             'mod_support_ticket_open' => ['5b80a40322052bccb1e00854c02fe4ad46be9dfbbdbf0b17a641af99175b72c5', '78fe28d46cba9f344b9a2045114b1a7d723dc8a62602690413ecac30287bcae2'],
             'mod_support_ticket_staff_close' => ['2fb0c49c240c05925211f0bd0e90b3de4ceab4287c1c89be6155f0a3d71d7811', '965d0369564e2edc832db28564e414b960f9559213750d7f1f1baf0b1cceb2a7'],
             'mod_support_ticket_staff_open' => ['2fb0c49c240c05925211f0bd0e90b3de4ceab4287c1c89be6155f0a3d71d7811', '98ff5f36b64fb0f874048c7dd44310e98ecf2b08f49e8dab701d9d4bb5e81ba5'],
@@ -1572,6 +1574,291 @@ class UpdatePatcher implements InjectionAwareInterface
         }
     }
 
+    private function patch72(): void
+    {
+        $this->executeFileActions([
+            Path::join(PATH_LIBRARY, 'Model', 'Product.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ProductCategory.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ProductCustom.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ProductDomain.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ProductDomainTable.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ProductDownloadable.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ProductHosting.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ProductLicense.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ProductPayment.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ProductTable.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'Promo.php') => 'unlink',
+            Path::join(PATH_CACHE, 'classMap.php') => 'unlink',
+            Path::join(PATH_CACHE, 'fallbackClassMap.php') => 'unlink',
+        ]);
+
+        $schemaManager = $this->di['dbal']->createSchemaManager();
+        if (!$schemaManager->tablesExist(['promo_redemption'])) {
+            $this->executeSql(
+                "CREATE TABLE `promo_redemption` (
+                    `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                    `promo_id` bigint(20) DEFAULT NULL,
+                    `client_id` bigint(20) DEFAULT NULL,
+                    `client_order_id` bigint(20) DEFAULT NULL,
+                    `invoice_id` bigint(20) DEFAULT NULL,
+                    `phase` varchar(30) NOT NULL DEFAULT 'checkout',
+                    `status` varchar(30) NOT NULL DEFAULT 'reserved',
+                    `discount_amount` decimal(18,2) DEFAULT NULL,
+                    `currency` varchar(20) DEFAULT NULL,
+                    `committed_at` datetime DEFAULT NULL,
+                    `released_at` datetime DEFAULT NULL,
+                    `release_reason` varchar(100) DEFAULT NULL,
+                    `created_at` datetime DEFAULT NULL,
+                    `updated_at` datetime DEFAULT NULL,
+                    PRIMARY KEY (`id`),
+                    KEY `promo_id_idx` (`promo_id`),
+                    KEY `client_id_idx` (`client_id`),
+                    KEY `client_order_id_idx` (`client_order_id`),
+                    KEY `invoice_id_idx` (`invoice_id`),
+                    KEY `phase_idx` (`phase`),
+                    KEY `status_idx` (`status`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;"
+            );
+        }
+
+        $table = $schemaManager->introspectTable('promo_redemption');
+        $columns = [];
+
+        if (!$table->hasColumn('status')) {
+            $columns[] = "ADD COLUMN `status` varchar(30) NOT NULL DEFAULT 'reserved' AFTER `phase`";
+        }
+
+        if (!$table->hasColumn('committed_at')) {
+            $columns[] = 'ADD COLUMN `committed_at` datetime DEFAULT NULL AFTER `currency`';
+        }
+
+        if (!$table->hasColumn('released_at')) {
+            $columns[] = 'ADD COLUMN `released_at` datetime DEFAULT NULL AFTER `committed_at`';
+        }
+
+        if (!$table->hasColumn('release_reason')) {
+            $columns[] = 'ADD COLUMN `release_reason` varchar(100) DEFAULT NULL AFTER `released_at`';
+        }
+
+        if ($columns !== []) {
+            $this->executeSql('ALTER TABLE promo_redemption ' . implode(', ', $columns));
+        }
+
+        $table = $schemaManager->introspectTable('promo_redemption');
+        $expectedIndexes = [
+            'promo_id_idx' => 'promo_id',
+            'client_id_idx' => 'client_id',
+            'client_order_id_idx' => 'client_order_id',
+            'invoice_id_idx' => 'invoice_id',
+            'phase_idx' => 'phase',
+            'status_idx' => 'status',
+        ];
+
+        foreach ($expectedIndexes as $indexName => $columnName) {
+            if (!$table->hasIndex($indexName)) {
+                $this->executeSql(sprintf(
+                    'ALTER TABLE promo_redemption ADD INDEX `%s` (`%s`)',
+                    $indexName,
+                    $columnName
+                ));
+            }
+        }
+
+        $existingRedemptions = (int) $this->di['dbal']->executeQuery('SELECT COUNT(id) FROM promo_redemption')->fetchOne();
+        if ($existingRedemptions === 0) {
+            $orders = $this->di['dbal']->executeQuery(
+                'SELECT id, promo_id, client_id, promo_used, discount, currency, created_at, updated_at
+                 FROM client_order
+                 WHERE promo_id IS NOT NULL'
+            )->fetchAllAssociative();
+
+            foreach ($orders as $order) {
+                $checkoutCreatedAt = $order['created_at'] ?? date('Y-m-d H:i:s');
+                $renewalCreatedAt = $order['updated_at'] ?: $checkoutCreatedAt;
+                $discountAmount = $order['discount'] !== null ? (float) $order['discount'] : null;
+
+                $this->di['dbal']->insert('promo_redemption', [
+                    'promo_id' => $order['promo_id'],
+                    'client_id' => $order['client_id'],
+                    'client_order_id' => $order['id'],
+                    'invoice_id' => null,
+                    'phase' => 'checkout',
+                    'status' => 'committed',
+                    'discount_amount' => $discountAmount,
+                    'currency' => $order['currency'],
+                    'committed_at' => $checkoutCreatedAt,
+                    'released_at' => null,
+                    'release_reason' => null,
+                    'created_at' => $checkoutCreatedAt,
+                    'updated_at' => $checkoutCreatedAt,
+                ]);
+
+                $renewalCount = max(0, ((int) ($order['promo_used'] ?? 1)) - 1);
+                for ($i = 0; $i < $renewalCount; ++$i) {
+                    $this->di['dbal']->insert('promo_redemption', [
+                        'promo_id' => $order['promo_id'],
+                        'client_id' => $order['client_id'],
+                        'client_order_id' => $order['id'],
+                        'invoice_id' => null,
+                        'phase' => 'renewal',
+                        'status' => 'committed',
+                        'discount_amount' => $discountAmount,
+                        'currency' => $order['currency'],
+                        'committed_at' => $renewalCreatedAt,
+                        'released_at' => null,
+                        'release_reason' => null,
+                        'created_at' => $renewalCreatedAt,
+                        'updated_at' => $renewalCreatedAt,
+                    ]);
+                }
+            }
+        }
+
+        // Normalize rows written by a previous partial migration run that pre-dated the
+        // status column; those rows have a NULL/empty status.  Legitimate 'reserved'
+        // rows created by concurrent checkouts are left untouched so the payment flow
+        // can commit or release them normally.
+        $this->executeSql("
+            UPDATE promo_redemption
+            SET
+                status = 'committed',
+                committed_at = COALESCE(committed_at, created_at),
+                release_reason = NULL
+            WHERE status IS NULL OR status = ''
+        ");
+    }
+
+    private function patch73(): void
+    {
+        // Merge guest/public support tickets into the regular support ticket tables.
+        // See https://github.com/FOSSBilling/FOSSBilling/pull/3799
+        if (!$this->tableHasColumn('support_ticket', 'access_hash')) {
+            $this->executeSql('ALTER TABLE `support_ticket` ADD COLUMN `access_hash` VARCHAR(255) DEFAULT NULL AFTER `client_id`;');
+        }
+
+        if (!$this->tableHasColumn('support_ticket', 'author_name')) {
+            $this->executeSql('ALTER TABLE `support_ticket` ADD COLUMN `author_name` VARCHAR(255) DEFAULT NULL AFTER `access_hash`;');
+        }
+
+        if (!$this->tableHasColumn('support_ticket', 'author_email')) {
+            $this->executeSql('ALTER TABLE `support_ticket` ADD COLUMN `author_email` VARCHAR(255) DEFAULT NULL AFTER `author_name`;');
+        }
+
+        if (!$this->tableHasIndex('support_ticket', 'access_hash_idx')) {
+            $this->executeSql('ALTER TABLE `support_ticket` ADD INDEX `access_hash_idx` (`access_hash`);');
+        }
+
+        $this->executeSql("
+            DELETE FROM email_template
+            WHERE action_code IN (
+                'mod_staff_pticket_close',
+                'mod_staff_pticket_open',
+                'mod_staff_pticket_reply',
+                'mod_support_pticket_open',
+                'mod_support_pticket_staff_close',
+                'mod_support_pticket_staff_open',
+                'mod_support_pticket_staff_reply'
+            )
+        ");
+
+        // Remove obsolete guest/public ticket email templates from extracted update archives.
+        $this->executeFileActions([
+            Path::join(PATH_MODS, 'Staff', 'templates', 'email', 'mod_staff_pticket_close.html.twig') => 'unlink',
+            Path::join(PATH_MODS, 'Staff', 'templates', 'email', 'mod_staff_pticket_open.html.twig') => 'unlink',
+            Path::join(PATH_MODS, 'Staff', 'templates', 'email', 'mod_staff_pticket_reply.html.twig') => 'unlink',
+            Path::join(PATH_MODS, 'Support', 'templates', 'email', 'mod_support_pticket_open.html.twig') => 'unlink',
+            Path::join(PATH_MODS, 'Support', 'templates', 'email', 'mod_support_pticket_staff_close.html.twig') => 'unlink',
+            Path::join(PATH_MODS, 'Support', 'templates', 'email', 'mod_support_pticket_staff_open.html.twig') => 'unlink',
+            Path::join(PATH_MODS, 'Support', 'templates', 'email', 'mod_support_pticket_staff_reply.html.twig') => 'unlink',
+        ]);
+
+        $row = $this->fetchOne(
+            "SELECT meta_value FROM extension_meta WHERE extension = 'mod_support' AND meta_key = 'config'",
+        );
+
+        if (is_string($row) && $row !== '') {
+            $configJson = $this->di['crypt']->decrypt($row, Config::getProperty('info.salt'));
+            if (is_string($configJson)) {
+                $config = json_decode($configJson, true);
+                if (is_array($config) && isset($config['disable_public_tickets']) && !isset($config['disable_guest_tickets'])) {
+                    $config['disable_guest_tickets'] = $config['disable_public_tickets'];
+                    unset($config['disable_public_tickets']);
+                    $encrypted = $this->di['crypt']->encrypt(json_encode($config, JSON_THROW_ON_ERROR), Config::getProperty('info.salt'));
+                    $this->executeSql(
+                        "UPDATE extension_meta SET meta_value = :config WHERE extension = 'mod_support' AND meta_key = 'config'",
+                        ['config' => $encrypted],
+                    );
+                }
+            }
+        }
+
+        if (!$this->tableExists('support_p_ticket')) {
+            return;
+        }
+
+        // Move legacy support_p_ticket rows into support_ticket, preserving guest access hashes.
+        $defaultHelpdeskId = $this->fetchOne('SELECT id FROM support_helpdesk ORDER BY id ASC LIMIT 1');
+        if (!$defaultHelpdeskId) {
+            $now = date('Y-m-d H:i:s');
+            $this->executeSql(
+                'INSERT INTO support_helpdesk (name, close_after, can_reopen, created_at, updated_at) VALUES (:name, :close_after, :can_reopen, :created_at, :updated_at)',
+                [
+                    'name' => 'General',
+                    'close_after' => 24,
+                    'can_reopen' => 0,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]
+            );
+            $defaultHelpdeskId = $this->fetchOne('SELECT id FROM support_helpdesk ORDER BY id ASC LIMIT 1');
+        }
+
+        $publicTickets = $this->fetchAll('SELECT * FROM support_p_ticket ORDER BY id ASC');
+        foreach ($publicTickets as $publicTicket) {
+            $this->executeSql(
+                'INSERT INTO support_ticket (support_helpdesk_id, client_id, access_hash, author_name, author_email, subject, status, created_at, updated_at)
+                 VALUES (:support_helpdesk_id, NULL, :access_hash, :author_name, :author_email, :subject, :status, :created_at, :updated_at)',
+                [
+                    'support_helpdesk_id' => $defaultHelpdeskId,
+                    'access_hash' => $publicTicket['hash'],
+                    'author_name' => $publicTicket['author_name'],
+                    'author_email' => $publicTicket['author_email'],
+                    'subject' => $publicTicket['subject'],
+                    'status' => $publicTicket['status'],
+                    'created_at' => $publicTicket['created_at'],
+                    'updated_at' => $publicTicket['updated_at'],
+                ]
+            );
+
+            $ticketId = (int) $this->getPdo()->lastInsertId();
+            $messages = $this->tableExists('support_p_ticket_message')
+                ? $this->fetchAll('SELECT * FROM support_p_ticket_message WHERE support_p_ticket_id = :id ORDER BY id ASC', [
+                    'id' => $publicTicket['id'],
+                ]) : [];
+
+            foreach ($messages as $message) {
+                $this->executeSql(
+                    'INSERT INTO support_ticket_message (support_ticket_id, admin_id, content, ip, created_at, updated_at)
+                     VALUES (:support_ticket_id, :admin_id, :content, :ip, :created_at, :updated_at)',
+                    [
+                        'support_ticket_id' => $ticketId,
+                        'admin_id' => $message['admin_id'],
+                        'content' => $message['content'],
+                        'ip' => $message['ip'],
+                        'created_at' => $message['created_at'],
+                        'updated_at' => $message['updated_at'],
+                    ]
+                );
+            }
+        }
+
+        if ($this->tableExists('support_p_ticket_message')) {
+            $this->executeSql('DROP TABLE `support_p_ticket_message`;');
+        }
+
+        $this->executeSql('DROP TABLE `support_p_ticket`;');
+    }
+
     private function generateDownloadableStoredFilename(): string
     {
         do {
@@ -1758,159 +2045,5 @@ class UpdatePatcher implements InjectionAwareInterface
                 $oldGatewayAssetsPath => 'unlink',
             ]);
         }
-    }
-
-    private function patch72(): void
-    {
-        $this->executeFileActions([
-            Path::join(PATH_LIBRARY, 'Model', 'Product.php') => 'unlink',
-            Path::join(PATH_LIBRARY, 'Model', 'ProductCategory.php') => 'unlink',
-            Path::join(PATH_LIBRARY, 'Model', 'ProductCustom.php') => 'unlink',
-            Path::join(PATH_LIBRARY, 'Model', 'ProductDomain.php') => 'unlink',
-            Path::join(PATH_LIBRARY, 'Model', 'ProductDomainTable.php') => 'unlink',
-            Path::join(PATH_LIBRARY, 'Model', 'ProductDownloadable.php') => 'unlink',
-            Path::join(PATH_LIBRARY, 'Model', 'ProductHosting.php') => 'unlink',
-            Path::join(PATH_LIBRARY, 'Model', 'ProductLicense.php') => 'unlink',
-            Path::join(PATH_LIBRARY, 'Model', 'ProductPayment.php') => 'unlink',
-            Path::join(PATH_LIBRARY, 'Model', 'ProductTable.php') => 'unlink',
-            Path::join(PATH_LIBRARY, 'Model', 'Promo.php') => 'unlink',
-            Path::join(PATH_CACHE, 'classMap.php') => 'unlink',
-            Path::join(PATH_CACHE, 'fallbackClassMap.php') => 'unlink',
-        ]);
-
-        $schemaManager = $this->di['dbal']->createSchemaManager();
-        if (!$schemaManager->tablesExist(['promo_redemption'])) {
-            $this->executeSql(
-                "CREATE TABLE `promo_redemption` (
-                    `id` bigint(20) NOT NULL AUTO_INCREMENT,
-                    `promo_id` bigint(20) DEFAULT NULL,
-                    `client_id` bigint(20) DEFAULT NULL,
-                    `client_order_id` bigint(20) DEFAULT NULL,
-                    `invoice_id` bigint(20) DEFAULT NULL,
-                    `phase` varchar(30) NOT NULL DEFAULT 'checkout',
-                    `status` varchar(30) NOT NULL DEFAULT 'reserved',
-                    `discount_amount` decimal(18,2) DEFAULT NULL,
-                    `currency` varchar(20) DEFAULT NULL,
-                    `committed_at` datetime DEFAULT NULL,
-                    `released_at` datetime DEFAULT NULL,
-                    `release_reason` varchar(100) DEFAULT NULL,
-                    `created_at` datetime DEFAULT NULL,
-                    `updated_at` datetime DEFAULT NULL,
-                    PRIMARY KEY (`id`),
-                    KEY `promo_id_idx` (`promo_id`),
-                    KEY `client_id_idx` (`client_id`),
-                    KEY `client_order_id_idx` (`client_order_id`),
-                    KEY `invoice_id_idx` (`invoice_id`),
-                    KEY `phase_idx` (`phase`),
-                    KEY `status_idx` (`status`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;"
-            );
-        }
-
-        $table = $schemaManager->introspectTable('promo_redemption');
-        $columns = [];
-
-        if (!$table->hasColumn('status')) {
-            $columns[] = "ADD COLUMN `status` varchar(30) NOT NULL DEFAULT 'reserved' AFTER `phase`";
-        }
-
-        if (!$table->hasColumn('committed_at')) {
-            $columns[] = 'ADD COLUMN `committed_at` datetime DEFAULT NULL AFTER `currency`';
-        }
-
-        if (!$table->hasColumn('released_at')) {
-            $columns[] = 'ADD COLUMN `released_at` datetime DEFAULT NULL AFTER `committed_at`';
-        }
-
-        if (!$table->hasColumn('release_reason')) {
-            $columns[] = 'ADD COLUMN `release_reason` varchar(100) DEFAULT NULL AFTER `released_at`';
-        }
-
-        if ($columns !== []) {
-            $this->executeSql('ALTER TABLE promo_redemption ' . implode(', ', $columns));
-        }
-
-        $table = $schemaManager->introspectTable('promo_redemption');
-        $expectedIndexes = [
-            'promo_id_idx' => 'promo_id',
-            'client_id_idx' => 'client_id',
-            'client_order_id_idx' => 'client_order_id',
-            'invoice_id_idx' => 'invoice_id',
-            'phase_idx' => 'phase',
-            'status_idx' => 'status',
-        ];
-
-        foreach ($expectedIndexes as $indexName => $columnName) {
-            if (!$table->hasIndex($indexName)) {
-                $this->executeSql(sprintf(
-                    'ALTER TABLE promo_redemption ADD INDEX `%s` (`%s`)',
-                    $indexName,
-                    $columnName
-                ));
-            }
-        }
-
-        $existingRedemptions = (int) $this->di['dbal']->executeQuery('SELECT COUNT(id) FROM promo_redemption')->fetchOne();
-        if ($existingRedemptions === 0) {
-            $orders = $this->di['dbal']->executeQuery(
-                'SELECT id, promo_id, client_id, promo_used, discount, currency, created_at, updated_at
-                 FROM client_order
-                 WHERE promo_id IS NOT NULL'
-            )->fetchAllAssociative();
-
-            foreach ($orders as $order) {
-                $checkoutCreatedAt = $order['created_at'] ?? date('Y-m-d H:i:s');
-                $renewalCreatedAt = $order['updated_at'] ?: $checkoutCreatedAt;
-                $discountAmount = $order['discount'] !== null ? (float) $order['discount'] : null;
-
-                $this->di['dbal']->insert('promo_redemption', [
-                    'promo_id' => $order['promo_id'],
-                    'client_id' => $order['client_id'],
-                    'client_order_id' => $order['id'],
-                    'invoice_id' => null,
-                    'phase' => 'checkout',
-                    'status' => 'committed',
-                    'discount_amount' => $discountAmount,
-                    'currency' => $order['currency'],
-                    'committed_at' => $checkoutCreatedAt,
-                    'released_at' => null,
-                    'release_reason' => null,
-                    'created_at' => $checkoutCreatedAt,
-                    'updated_at' => $checkoutCreatedAt,
-                ]);
-
-                $renewalCount = max(0, ((int) ($order['promo_used'] ?? 1)) - 1);
-                for ($i = 0; $i < $renewalCount; ++$i) {
-                    $this->di['dbal']->insert('promo_redemption', [
-                        'promo_id' => $order['promo_id'],
-                        'client_id' => $order['client_id'],
-                        'client_order_id' => $order['id'],
-                        'invoice_id' => null,
-                        'phase' => 'renewal',
-                        'status' => 'committed',
-                        'discount_amount' => $discountAmount,
-                        'currency' => $order['currency'],
-                        'committed_at' => $renewalCreatedAt,
-                        'released_at' => null,
-                        'release_reason' => null,
-                        'created_at' => $renewalCreatedAt,
-                        'updated_at' => $renewalCreatedAt,
-                    ]);
-                }
-            }
-        }
-
-        // Normalize rows written by a previous partial migration run that pre-dated the
-        // status column; those rows have a NULL/empty status.  Legitimate 'reserved'
-        // rows created by concurrent checkouts are left untouched so the payment flow
-        // can commit or release them normally.
-        $this->executeSql("
-            UPDATE promo_redemption
-            SET
-                status = 'committed',
-                committed_at = COALESCE(committed_at, created_at),
-                release_reason = NULL
-            WHERE status IS NULL OR status = ''
-        ");
     }
 }

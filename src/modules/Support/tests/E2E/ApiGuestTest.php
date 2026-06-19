@@ -53,7 +53,7 @@ test('creates ticket for guest', function (): void {
         'name' => $expectedName,
         'email' => $expectedEmail,
         'subject' => $expectedSubject,
-        'message' => $expectedMessage,
+        'content' => $expectedMessage,
     ]);
 
     expect($result->wasSuccessful())->toBeTrue();
@@ -68,17 +68,22 @@ test('creates ticket for guest', function (): void {
 
     $ticketData = $ticketGetResult->getResult();
     expect($ticketData)->toBeArray()
-        ->toHaveKey('author_name')
+        ->toHaveKey('author')
         ->toHaveKey('subject')
         ->toHaveKey('messages')
-        ->and($ticketData['author_name'])->toBe($expectedName)
         ->and($ticketData['subject'])->toBe($expectedSubject)
         ->and($ticketData['messages'])->toBeArray()->not->toBeEmpty()
         ->and($ticketData['messages'][0]['content'])->toBe($expectedMessage);
+
+    expect($ticketData['author'])->toMatchArray([
+        'name' => $expectedName,
+        'email' => $expectedEmail,
+        'role' => 'guest',
+    ]);
 });
 
-test('rejects guest ticket creation when public tickets are disabled', function (): void {
-    $configResult = ApiClient::request('admin/extension/config_save', ['ext' => 'mod_support', 'disable_public_tickets' => true]);
+test('rejects guest ticket creation when guest tickets are disabled', function (): void {
+    $configResult = ApiClient::request('admin/extension/config_save', ['ext' => 'mod_support', 'disable_guest_tickets' => true]);
     expect($configResult->wasSuccessful())->toBeTrue();
 
     $configGetResult = ApiClient::request('admin/extension/config_get', ['ext' => 'mod_support']);
@@ -86,14 +91,14 @@ test('rejects guest ticket creation when public tickets are disabled', function 
 
     $configData = $configGetResult->getResult();
     expect($configData)->toBeArray()
-        ->toHaveKey('disable_public_tickets')
-        ->and((bool) $configData['disable_public_tickets'])->toBeTrue();
+        ->toHaveKey('disable_guest_tickets')
+        ->and((bool) $configData['disable_guest_tickets'])->toBeTrue();
 
     $result = ApiClient::request('guest/support/ticket_create', [
         'name' => 'Name',
         'email' => 'email2@example.com',
         'subject' => 'Subject',
-        'message' => 'message',
+        'content' => 'message',
     ]);
 
     expect($result->wasSuccessful())->toBeFalse();
@@ -103,15 +108,15 @@ test('rejects guest ticket creation when public tickets are disabled', function 
         ->toContain('unregistered users');
 });
 
-test('public tickets enabled reflects configuration', function (): void {
-    $enabledResult = ApiClient::request('guest/support/public_tickets_enabled');
+test('guest tickets enabled reflects configuration', function (): void {
+    $enabledResult = ApiClient::request('guest/support/guest_tickets_enabled');
     expect($enabledResult->wasSuccessful())->toBeTrue()
         ->and($enabledResult->getResult())->toBeTrue();
 
-    $configResult = ApiClient::request('admin/extension/config_save', ['ext' => 'mod_support', 'disable_public_tickets' => true]);
+    $configResult = ApiClient::request('admin/extension/config_save', ['ext' => 'mod_support', 'disable_guest_tickets' => true]);
     expect($configResult->wasSuccessful())->toBeTrue();
 
-    $disabledResult = ApiClient::request('guest/support/public_tickets_enabled');
+    $disabledResult = ApiClient::request('guest/support/guest_tickets_enabled');
     expect($disabledResult->wasSuccessful())->toBeTrue()
         ->and($disabledResult->getResult())->toBeFalse();
 });
@@ -120,7 +125,7 @@ test('rejects guest ticket creation without name', function (): void {
     $result = ApiClient::request('guest/support/ticket_create', [
         'email' => 'email@example.com',
         'subject' => 'Subject',
-        'message' => 'message',
+        'content' => 'message',
     ]);
 
     expect($result->wasSuccessful())->toBeFalse()
@@ -131,7 +136,7 @@ test('rejects guest ticket creation without email', function (): void {
     $result = ApiClient::request('guest/support/ticket_create', [
         'name' => 'Name',
         'subject' => 'Subject',
-        'message' => 'message',
+        'content' => 'message',
     ]);
 
     expect($result->wasSuccessful())->toBeFalse()
@@ -143,7 +148,7 @@ test('rejects guest ticket creation with invalid email', function (): void {
         'name' => 'Name',
         'email' => 'not-an-email',
         'subject' => 'Subject',
-        'message' => 'message',
+        'content' => 'message',
     ]);
 
     expect($result->wasSuccessful())->toBeFalse()
@@ -155,7 +160,7 @@ test('rejects guest ticket creation with empty subject', function (): void {
         'name' => 'Name',
         'email' => 'email@example.com',
         'subject' => '',
-        'message' => 'message',
+        'content' => 'message',
     ]);
 
     expect($result->wasSuccessful())->toBeFalse()
@@ -167,7 +172,7 @@ test('rejects guest ticket creation with empty message', function (): void {
         'name' => 'Name',
         'email' => 'email@example.com',
         'subject' => 'Subject',
-        'message' => '',
+        'content' => '',
     ]);
 
     expect($result->wasSuccessful())->toBeFalse()

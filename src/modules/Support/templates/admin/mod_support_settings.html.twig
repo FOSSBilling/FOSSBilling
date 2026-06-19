@@ -25,7 +25,7 @@
         <div class="card-header">
             <div>
                 <h3 class="card-title">{{ 'Support Settings'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Manage support automation, knowledge base availability, public tickets, and helpdesk configuration.'|trans }}</p>
+                <p class="card-subtitle">{{ 'Manage support automation, knowledge base availability, guest tickets, and helpdesk configuration.'|trans }}</p>
             </div>
         </div>
         <div class="card-body pt-3 pb-0 px-0">
@@ -108,11 +108,11 @@
                             </label>
                         </div>
                         <div class="card-body border-top">
-                            <h4 class="card-title mb-2">{{ 'Public Tickets'|trans }}</h4>
-                            <p class="text-secondary mb-3">{{ 'Control whether non-client visitors may open public support tickets.'|trans }}</p>
+                            <h4 class="card-title mb-2">{{ 'Guest Tickets'|trans }}</h4>
+                            <p class="text-secondary mb-3">{{ 'Control whether non-client visitors may open support tickets.'|trans }}</p>
                             <label class="form-check form-switch form-switch-2">
-                                <input class="form-check-input" name="disable_public_tickets" type="checkbox" {% if params.disable_public_tickets|default(false) %} checked="checked"{% endif %}>
-                                <span class="form-check-label">{{ 'Disable Public Tickets'|trans }}</span>
+                                <input class="form-check-input" name="disable_guest_tickets" type="checkbox" {% if params.disable_guest_tickets|default(false) %} checked="checked"{% endif %}>
+                                <span class="form-check-label">{{ 'Disable Guest Tickets'|trans }}</span>
                             </label>
                         </div>
                         <div class="card-footer text-end">

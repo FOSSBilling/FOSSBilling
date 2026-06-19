@@ -39,12 +39,16 @@
                             <input class="form-control" type="email" name="email" value="{{ request.email }}" required="required" id="email">
                         </div>
                         <div class="mb-3">
+                            <label for="support-helpdesk-id" class="form-label">{{ 'Helpdesk'|trans }}</label>
+                            {{ mf.selectbox('support_helpdesk_id', guest.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label" for="subject">{{ 'Subject'|trans }}</label>
                             <input class="form-control" type="text" name="subject" value="{{ request.subject }}" required="required" id="subject">
                         </div>
                         <div class="mb-3">
                             <label class="form-label" for="message">{{ 'Message'|trans }}</label>
-                            <textarea class="editor-textarea form-control" name="message" cols="5" rows="5" required="required" id="message">{{ request.message }}</textarea>
+                            <textarea class="editor-textarea form-control" name="content" cols="5" rows="5" required="required" id="message">{{ request.content }}</textarea>
                         </div>
 
                         {{ mf.recaptcha }}
@@ -92,7 +96,7 @@
         });
 
         function onTicketCreate(result){
-            window.location = "{{ 'support/contact-us/conversation'|url }}" + '/' + result;
+            window.location = "{{ 'support/ticket'|url }}" + '/' + result;
         }
     </script>
 {% endblock %}

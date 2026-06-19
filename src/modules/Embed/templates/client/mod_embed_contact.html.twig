@@ -65,7 +65,7 @@
 
             <div class="embed-field">
                 <label class="embed-label" for="embed-contact-message">{{ 'Message'|trans }}</label>
-                <textarea id="embed-contact-message" class="embed-textarea" name="message" cols="5" rows="5" required="required">{{ request.message }}</textarea>
+                <textarea id="embed-contact-message" class="embed-textarea" name="content" cols="5" rows="5" required="required">{{ request.content }}</textarea>
             </div>
 
             {{ include('mod_antispam_recaptcha.html.twig') }}
@@ -99,7 +99,7 @@
                 if(json.error) {
                     alert(json.error.message);
                 } else {
-                    parent.window.location = "{{ 'support/contact-us/conversation'|url }}" + '/' + json.result;
+                    parent.window.location = "{{ 'support/ticket'|url }}" + '/' + json.result;
                 }
             })
             .catch(error => console.error('Error:', error));

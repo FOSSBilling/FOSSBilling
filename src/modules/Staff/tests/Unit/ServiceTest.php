@@ -311,7 +311,8 @@ test('onAfterClientReplyTicket sends email notification', function (): void {
         ->andReturn([]);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
-    $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once();
+    $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
+        ->with(Mockery::on(fn ($email) => $email['code'] === 'mod_staff_ticket_reply'));
 
     $eventMock->shouldReceive('getparameters')->atLeast()->once()
         ->andReturn(['id' => random_int(1, 100)]);
@@ -378,7 +379,8 @@ test('onAfterClientCloseTicket sends email notification', function (): void {
         ->andReturn([]);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
-    $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once();
+    $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
+        ->with(Mockery::on(fn ($email) => $email['code'] === 'mod_staff_ticket_close'));
 
     $eventMock->shouldReceive('getparameters')->atLeast()->once()
         ->andReturn(['id' => random_int(1, 100)]);
@@ -435,17 +437,18 @@ test('onAfterClientCloseTicket handles email exception', function (): void {
     $service->onAfterClientCloseTicket($eventMock);
 });
 
-test('onAfterGuestPublicTicketOpen sends email notification', function (): void {
+test('onAfterClientOpenTicket sends guest email notification', function (): void {
     $eventMock = Mockery::mock('\Box_Event');
 
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
-    $supportServiceMock->shouldReceive('getPublicTicketById')->atLeast()->once()
-        ->andReturn(new Model_SupportPTicket());
-    $supportServiceMock->shouldReceive('publicToApiArray')->atLeast()->once()
+    $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
+        ->andReturn(new Model_SupportTicket());
+    $supportServiceMock->shouldReceive('toApiArray')->atLeast()->once()
         ->andReturn([]);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
-    $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once();
+    $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
+        ->with(Mockery::on(fn ($email) => $email['code'] === 'mod_staff_ticket_open'));
 
     $eventMock->shouldReceive('getparameters')->atLeast()->once()
         ->andReturn(['id' => random_int(1, 100)]);
@@ -465,16 +468,16 @@ test('onAfterGuestPublicTicketOpen sends email notification', function (): void 
     $eventMock->shouldReceive('getDi')->atLeast()->once()
         ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterGuestPublicTicketOpen($eventMock);
+    $service->onAfterClientOpenTicket($eventMock);
 });
 
-test('onAfterGuestPublicTicketOpen handles email exception', function (): void {
+test('onAfterClientOpenTicket handles guest email exception', function (): void {
     $eventMock = Mockery::mock('\Box_Event');
 
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
-    $supportServiceMock->shouldReceive('getPublicTicketById')->atLeast()->once()
-        ->andReturn(new Model_SupportPTicket());
-    $supportServiceMock->shouldReceive('publicToApiArray')->atLeast()->once()
+    $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
+        ->andReturn(new Model_SupportTicket());
+    $supportServiceMock->shouldReceive('toApiArray')->atLeast()->once()
         ->andReturn([]);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
@@ -499,20 +502,21 @@ test('onAfterGuestPublicTicketOpen handles email exception', function (): void {
     $eventMock->shouldReceive('getDi')->atLeast()->once()
         ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterGuestPublicTicketOpen($eventMock);
+    $service->onAfterClientOpenTicket($eventMock);
 });
 
-test('onAfterGuestPublicTicketReply sends email notification', function (): void {
+test('onAfterClientReplyTicket sends guest email notification', function (): void {
     $eventMock = Mockery::mock('\Box_Event');
 
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
-    $supportServiceMock->shouldReceive('getPublicTicketById')->atLeast()->once()
-        ->andReturn(new Model_SupportPTicket());
-    $supportServiceMock->shouldReceive('publicToApiArray')->atLeast()->once()
+    $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
+        ->andReturn(new Model_SupportTicket());
+    $supportServiceMock->shouldReceive('toApiArray')->atLeast()->once()
         ->andReturn([]);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
-    $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once();
+    $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
+        ->with(Mockery::on(fn ($email) => $email['code'] === 'mod_staff_ticket_reply'));
 
     $eventMock->shouldReceive('getparameters')->atLeast()->once()
         ->andReturn(['id' => random_int(1, 100)]);
@@ -532,16 +536,16 @@ test('onAfterGuestPublicTicketReply sends email notification', function (): void
     $eventMock->shouldReceive('getDi')->atLeast()->once()
         ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterGuestPublicTicketReply($eventMock);
+    $service->onAfterClientReplyTicket($eventMock);
 });
 
-test('onAfterGuestPublicTicketReply handles email exception', function (): void {
+test('onAfterClientReplyTicket handles guest email exception', function (): void {
     $eventMock = Mockery::mock('\Box_Event');
 
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
-    $supportServiceMock->shouldReceive('getPublicTicketById')->atLeast()->once()
-        ->andReturn(new Model_SupportPTicket());
-    $supportServiceMock->shouldReceive('publicToApiArray')->atLeast()->once()
+    $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
+        ->andReturn(new Model_SupportTicket());
+    $supportServiceMock->shouldReceive('toApiArray')->atLeast()->once()
         ->andReturn([]);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
@@ -566,7 +570,7 @@ test('onAfterGuestPublicTicketReply handles email exception', function (): void 
     $eventMock->shouldReceive('getDi')->atLeast()->once()
         ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterGuestPublicTicketReply($eventMock);
+    $service->onAfterClientReplyTicket($eventMock);
 });
 
 test('onAfterClientSignUp sends email notification', function (): void {
@@ -632,11 +636,13 @@ test('onAfterClientSignUp handles email exception', function (): void {
     $service->onAfterClientSignUp($eventMock);
 });
 
-test('onAfterGuestPublicTicketClose handles email exception', function (): void {
+test('onAfterClientCloseTicket handles guest email exception', function (): void {
     $eventMock = Mockery::mock('\Box_Event');
 
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
-    $supportServiceMock->shouldReceive('publicToApiArray')->atLeast()->once()
+    $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
+        ->andReturn(new Model_SupportTicket());
+    $supportServiceMock->shouldReceive('toApiArray')->atLeast()->once()
         ->andReturn([]);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
@@ -645,10 +651,6 @@ test('onAfterGuestPublicTicketClose handles email exception', function (): void 
 
     $eventMock->shouldReceive('getparameters')->atLeast()->once()
         ->andReturn(['id' => random_int(1, 100)]);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')->atLeast()->once()
-        ->andReturn(new Model_SupportPTicket());
 
     $service = new Service();
 
@@ -661,12 +663,10 @@ test('onAfterGuestPublicTicketClose handles email exception', function (): void 
             return $emailServiceMock;
         }
     });
-    $di['db'] = $dbMock;
-
     $eventMock->shouldReceive('getDi')->atLeast()->once()
         ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterGuestPublicTicketClose($eventMock);
+    $service->onAfterClientCloseTicket($eventMock);
 });
 
 test('onAfterClientOpenTicket sends mod_staff_ticket_open email', function (): void {
@@ -674,6 +674,7 @@ test('onAfterClientOpenTicket sends mod_staff_ticket_open email', function (): v
 
     $ticketModel = new Model_SupportTicket();
     $ticketModel->loadBean(new Tests\Helpers\DummyBean());
+    $ticketModel->support_helpdesk_id = 1;
 
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
@@ -728,6 +729,7 @@ test('onAfterClientOpenTicket sends mod_support_helpdesk_ticket_open email', fun
 
     $ticketModel = new Model_SupportTicket();
     $ticketModel->loadBean(new Tests\Helpers\DummyBean());
+    $ticketModel->support_helpdesk_id = 1;
 
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()

@@ -344,48 +344,12 @@ test('batch ticket auto close not closed', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('batch public ticket auto close', function (): void {
-    $api = new Box\Mod\Support\Api\Admin();
-    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('publicGetExpired')->atLeast()->once()
-        ->andReturn([new Model_SupportPTicket(), new Model_SupportPTicket()]);
-    $serviceMock->shouldReceive('publicAutoClose')->atLeast()->once()
-        ->andReturn(true);
-
-    $api->setService($serviceMock);
-
-    $result = $api->batch_public_ticket_auto_close([]);
-
-    expect($result)->toBeTrue();
-});
-
-test('batch public ticket auto close not closed', function (): void {
-    $api = new Box\Mod\Support\Api\Admin();
-    $ticket = new Model_SupportPTicket();
-    $ticket->loadBean(new Tests\Helpers\DummyBean());
-    $ticket->id = 1;
-
-    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('publicGetExpired')->atLeast()->once()
-        ->andReturn([$ticket, $ticket]);
-    $serviceMock->shouldReceive('publicAutoClose')->atLeast()->once()
-    ;
-
-    $api->setService($serviceMock);
-    $di = container();
-    $di['logger'] = $this->createStub('\Box_Log');
-    $api->setDi($di);
-    $result = $api->batch_public_ticket_auto_close([]);
-
-    expect($result)->toBeTrue();
-});
-
 test('ticket get statuses', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
     $statuses = [
-        Model_SupportPTicket::OPENED => 'Open',
-        Model_SupportPTicket::ONHOLD => 'On hold',
-        Model_SupportPTicket::CLOSED => 'Closed',
+        Model_SupportTicket::OPENED => 'Open',
+        Model_SupportTicket::ONHOLD => 'On hold',
+        Model_SupportTicket::CLOSED => 'Closed',
     ];
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $serviceMock->shouldReceive('getStatuses')
@@ -403,9 +367,9 @@ test('ticket get statuses', function (): void {
 test('ticket get statuses titles set', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
     $statuses = [
-        Model_SupportPTicket::OPENED => 'Open',
-        Model_SupportPTicket::ONHOLD => 'On hold',
-        Model_SupportPTicket::CLOSED => 'Closed',
+        Model_SupportTicket::OPENED => 'Open',
+        Model_SupportTicket::ONHOLD => 'On hold',
+        Model_SupportTicket::CLOSED => 'Closed',
     ];
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $serviceMock->shouldReceive('getStatuses')->atLeast()->once()
@@ -419,251 +383,6 @@ test('ticket get statuses titles set', function (): void {
         'titles' => true,
     ];
     $result = $api->ticket_get_statuses($data);
-
-    expect($result)->toEqual($statuses);
-});
-
-test('public ticket get list', function (): void {
-    $api = new Box\Mod\Support\Api\Admin();
-    $resultSet = [
-        'list' => [
-            0 => ['id' => 1],
-        ],
-    ];
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
-    $paginatorMock
-    ->shouldReceive('getPaginatedResultSet')
-    ->atLeast()->once()
-    ->andReturn($resultSet);
-
-    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('publicGetSearchQuery')->atLeast()->once()
-        ->andReturn(['query', []]);
-    $serviceMock->shouldReceive('publicToApiArray')->atLeast()->once()
-        ->andReturn(['query', []]);
-
-    $model = new Model_SupportPTicket();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock = Mockery::mock('\Box_DAtabase');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($model);
-
-    $di = container();
-    $di['pager'] = $paginatorMock;
-    $di['db'] = $dbMock;
-
-    $api->setDi($di);
-
-    $api->setService($serviceMock);
-
-    $data = [];
-    $result = $api->public_ticket_get_list($data);
-
-    expect($result)->toBeArray();
-});
-
-test('public ticket create', function (): void {
-    $api = new Box\Mod\Support\Api\Admin();
-    $randID = 1;
-    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('publicTicketCreate')->atLeast()->once()
-        ->andReturn($randID);
-
-    $di = container();
-    $api->setDi($di);
-
-    $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
-
-    $data = [
-        'name' => 'Name',
-        'email' => 'email@example.com',
-        'subject' => 'Subject',
-        'message' => 'Message',
-    ];
-
-    $result = $api->public_ticket_create($data);
-
-    expect($result)->toBeInt();
-    expect($result)->toEqual($randID);
-});
-
-test('public ticket get', function (): void {
-    $api = new Box\Mod\Support\Api\Admin();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Model_SupportPTicket());
-
-    $randID = 1;
-    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('publicToApiArray')->atLeast()->once()
-        ->andReturn([]);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $api->setDi($di);
-
-    $api->setService($serviceMock);
-
-    $data = [
-        'id' => 1,
-    ];
-    $result = $api->public_ticket_get($data);
-
-    expect($result)->toBeArray();
-});
-
-test('public ticket delete', function (): void {
-    $api = new Box\Mod\Support\Api\Admin();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Model_SupportPTicket());
-
-    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('publicRm')->atLeast()->once()
-        ->andReturn(true);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $api->setDi($di);
-
-    $api->setService($serviceMock);
-
-    $data = [
-        'id' => 1,
-    ];
-    $result = $api->public_ticket_delete($data);
-
-    expect($result)->toBeTrue();
-});
-
-test('public ticket close', function (): void {
-    $api = new Box\Mod\Support\Api\Admin();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Model_SupportPTicket());
-
-    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('publicCloseTicket')->atLeast()->once()
-        ->andReturn(true);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $api->setDi($di);
-
-    $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
-
-    $data = [
-        'id' => 1,
-    ];
-    $result = $api->public_ticket_close($data);
-
-    expect($result)->toBeTrue();
-});
-
-test('public ticket update', function (): void {
-    $api = new Box\Mod\Support\Api\Admin();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Model_SupportPTicket());
-
-    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('publicTicketUpdate')->atLeast()->once()
-        ->andReturn(true);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $api->setDi($di);
-
-    $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
-
-    $data = [
-        'id' => 1,
-    ];
-    $result = $api->public_ticket_update($data);
-
-    expect($result)->toBeTrue();
-});
-
-test('public ticket reply', function (): void {
-    $api = new Box\Mod\Support\Api\Admin();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Model_SupportPTicket());
-
-    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('publicTicketReply')->atLeast()->once()
-        ->andReturn(1);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $api->setDi($di);
-
-    $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
-
-    $data = [
-        'id' => 1,
-        'content' => 'Content',
-    ];
-    $result = $api->public_ticket_reply($data);
-
-    expect($result)->toBeInt();
-});
-
-test('public ticket get statuses', function (): void {
-    $api = new Box\Mod\Support\Api\Admin();
-    $statuses = [
-        Model_SupportPTicket::OPENED => 'Open',
-        Model_SupportPTicket::ONHOLD => 'On hold',
-        Model_SupportPTicket::CLOSED => 'Closed',
-    ];
-    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('publicGetStatuses')
-        ->andReturn($statuses);
-    $serviceMock->shouldReceive('publicCounter')->atLeast()->once()
-        ->andReturn($statuses);
-
-    $api->setService($serviceMock);
-
-    $result = $api->public_ticket_get_statuses([]);
-
-    expect($result)->toEqual($statuses);
-});
-
-test('public ticket get statuses titles set', function (): void {
-    $api = new Box\Mod\Support\Api\Admin();
-    $statuses = [
-        Model_SupportPTicket::OPENED => 'Open',
-        Model_SupportPTicket::ONHOLD => 'On hold',
-        Model_SupportPTicket::CLOSED => 'Closed',
-    ];
-    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('publicGetStatuses')->atLeast()->once()
-        ->andReturn($statuses);
-    $serviceMock->shouldReceive('publicCounter')
-        ->andReturn($statuses);
-
-    $api->setService($serviceMock);
-
-    $data = [
-        'titles' => true,
-    ];
-    $result = $api->public_ticket_get_statuses($data);
 
     expect($result)->toEqual($statuses);
 });
@@ -1190,18 +909,6 @@ test('batch delete', function (): void {
     $activityMock->setDi($di);
 
     $result = $activityMock->batch_delete(['ids' => [1, 2, 3]]);
-    expect($result)->toBeTrue();
-});
-
-test('batch delete public', function (): void {
-    $api = new Box\Mod\Support\Api\Admin();
-    $activityMock = Mockery::mock(Box\Mod\Support\Api\Admin::class)->makePartial();
-    $activityMock->shouldReceive('public_ticket_delete')->atLeast()->once()->andReturn(true);
-
-    $di = container();
-    $activityMock->setDi($di);
-
-    $result = $activityMock->batch_delete_public(['ids' => [1, 2, 3]]);
     expect($result)->toBeTrue();
 });
 

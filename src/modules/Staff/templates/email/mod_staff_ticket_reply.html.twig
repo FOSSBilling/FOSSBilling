@@ -38,7 +38,7 @@
 	<h1>Ticket Reply</h1>
 	<p>Hello {{ staff.name|default('') }},</p>
 
-    <p><strong>{{ ticket.client.first_name|default('') }} {{ ticket.client.last_name|default('') }}</strong> replied to support ticket #{{ ticket.id|default('') }}</p>
+    <p><strong>{{ ticket.author.name|default('') }}</strong> replied to support ticket #{{ ticket.id|default('') }}</p>
 	<a href='{{ "support/ticket/#{ticket.id|default('')}"|url(area: 'admin') }}' target="_blank">Review the ticket</a>
 
     <p>Ticket info</p>

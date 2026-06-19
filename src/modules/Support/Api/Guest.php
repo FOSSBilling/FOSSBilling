@@ -10,10 +10,6 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-/**
- * Public tickets management.
- */
-
 namespace Box\Mod\Support\Api;
 
 use FOSSBilling\PaginationOptions;
@@ -22,7 +18,7 @@ use FOSSBilling\Validation\Api\RequiredParams;
 class Guest extends \FOSSBilling\Api\AbstractApi
 {
     /**
-     * Submit new public ticket.
+     * Submit new ticket.
      *
      * @return string - ticket hash
      */
@@ -30,72 +26,88 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         'name' => 'Please enter your name',
         'email' => 'Please enter your email address',
         'subject' => 'Please enter the subject',
-        'message' => 'Please enter your message',
     ])]
     public function ticket_create(array $data): string
     {
-        $this->getDi()['rate_limiter']->consumeOrThrow('guest_ticket_create', (string) $this->getIp());
-
-        if (!is_string($data['message']) || strlen($data['message']) < 4) {
+        // Deprecated 0.9.0 The 'message' parameter will be dropped. Update your themes to use 'content' instead.
+        $content = $data['content'] ?? $data['message'] ?? null;
+        if (!is_string($content) || strlen($content) < 4) {
             throw new \FOSSBilling\InformationException('Please enter your message');
         }
 
+        $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
+        $this->getDi()['rate_limiter']->consumeOrThrow('guest_ticket_create', (string) $this->getIp());
+
         // Sanitize message to prevent XSS attacks
-        $data['message'] = \FOSSBilling\Tools::sanitizeContent($data['message'], true);
+        $data['content'] = \FOSSBilling\Tools::sanitizeContent($content, true);
 
         return $this->getService()->ticketCreateForGuest($data);
     }
 
     /**
-     * Get public ticket.
+     * Get ticket.
      *
      * @return array - ticket details
      */
-    #[RequiredParams(['hash' => 'Public ticket hash required'])]
+    #[RequiredParams(['hash' => 'Ticket hash required'])]
     public function ticket_get(array $data): array
     {
-        $publicTicket = $this->getService()->publicFindOneByHash($data['hash']);
+        $guestTicket = $this->getService()->findOneByHash($data['hash']);
 
-        return $this->getService()->publicToApiArray($publicTicket);
+        return $this->getService()->toApiArray($guestTicket);
     }
 
     /**
-     * Close public ticket.
+     * Close ticket.
      */
-    #[RequiredParams(['hash' => 'Public ticket hash required'])]
+    #[RequiredParams(['hash' => 'Ticket hash required'])]
     public function ticket_close(array $data): bool
     {
-        $publicTicket = $this->getService()->publicFindOneByHash($data['hash']);
+        $guestTicket = $this->getService()->findOneByHash($data['hash']);
 
-        return $this->getService()->publicCloseTicket($publicTicket, $this->getIdentity());
+        return $this->getService()->closeTicket($guestTicket, $this->getIdentity());
     }
 
     /**
-     * Reply to public ticket.
-     *
-     * @return string - ticket hash
+     * Reply to ticket.
      */
-    #[RequiredParams(['hash' => 'Public ticket hash required', 'message' => 'Message cannot be empty'])]
-    public function ticket_reply(array $data): string
+    #[RequiredParams(['hash' => 'Ticket hash required'])]
+    public function ticket_reply(array $data): int
     {
-        $publicTicket = $this->getService()->publicFindOneByHash($data['hash']);
+        $guestTicket = $this->getService()->findOneByHash($data['hash']);
+        // Deprecated 0.9.0 The 'message' parameter will be dropped. Update your themes to use 'content' instead.
+        $message = $data['content'] ?? $data['message'] ?? null;
 
-        if (!is_string($data['message'])) {
+        if (!is_string($message)) {
             throw new \FOSSBilling\InformationException('Message cannot be empty');
         }
 
         // Sanitize message to prevent XSS attacks
-        $data['message'] = \FOSSBilling\Tools::sanitizeContent($data['message'], true);
+        $message = \FOSSBilling\Tools::sanitizeContent($message, true);
 
-        return $this->getService()->publicTicketReplyForGuest($publicTicket, $data['message']);
+        return $this->getService()->ticketReply($guestTicket, new \Model_Guest(), $message);
     }
 
     /**
-     * Get whether public tickets are enabled for guests.
+     * Get whether guest tickets are enabled.
      */
+    public function guest_tickets_enabled(): bool
+    {
+        return $this->getService()->guestTicketsEnabled();
+    }
+
     public function public_tickets_enabled(): bool
     {
-        return $this->getService()->publicTicketsEnabled();
+        // @deprecated 0.9.0 Use guest_tickets_enabled instead.
+        return $this->guest_tickets_enabled();
+    }
+
+    /**
+     * Return pairs for support helpdesks. Can be used to populate the select box.
+     */
+    public function helpdesk_get_pairs(): array
+    {
+        return $this->getService()->helpdeskGetPairs();
     }
 
     /*

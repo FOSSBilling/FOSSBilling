@@ -65,8 +65,12 @@ class Service implements InjectionAwareInterface
         $antispamService->checkHoneypot($event);
     }
 
-    public static function onBeforeGuestPublicTicketOpen(\Box_Event $event): void
+    public static function onBeforeClientOpenTicket(\Box_Event $event): void
     {
+        if ($event->getParameters()['author_role'] !== 'guest') {
+            return;
+        }
+
         $di = $event->getDi();
         $antispamService = $di['mod_service']('Antispam');
         $antispamService->isBlockedIp($event);

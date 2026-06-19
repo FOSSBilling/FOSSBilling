@@ -57,9 +57,10 @@
                 '/news',
                 '/tos',
                 '/privacy-policy'
-                {% if guest.support_public_tickets_enabled() %}
+                {% if guest.support_guest_tickets_enabled() %}
                 ,'/support/contact-us'
                 ,'/support/contact-us/conversation'
+                ,'/support/ticket'
                 {% endif %}
             ];
             const currentPath = window.location.pathname;
@@ -76,7 +77,7 @@
     {% set profile = client.profile_get %}
 {% endif %}
 {% set company = guest.system_company %}
-{% set guest_support_url = guest.support_public_tickets_enabled() ? 'support/contact-us'|url : 'login'|url %}
+{% set guest_support_url = guest.support_guest_tickets_enabled() ? 'support/contact-us'|url : 'login'|url %}
 {% set support_url = client ? 'support'|url : guest_support_url %}
 
 <div class="container">

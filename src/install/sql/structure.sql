@@ -1175,46 +1175,6 @@ CREATE TABLE `support_helpdesk` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `support_p_ticket`
---
-
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `support_p_ticket` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `hash` varchar(255) DEFAULT NULL,
-  `author_name` varchar(255) DEFAULT NULL,
-  `author_email` varchar(255) DEFAULT NULL,
-  `subject` varchar(255) DEFAULT NULL,
-  `status` varchar(30) DEFAULT 'open',
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `support_p_ticket_message`
---
-
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `support_p_ticket_message` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `support_p_ticket_id` bigint(20) DEFAULT NULL,
-  `admin_id` bigint(20) DEFAULT NULL COMMENT 'Filled when message author is admin',
-  `content` text,
-  `ip` varchar(45) DEFAULT NULL,
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `support_p_ticket_id_idx` (`support_p_ticket_id`),
-  KEY `admin_id_idx` (`admin_id`),
-  FULLTEXT KEY `content_idx` (`content`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `support_pr`
 --
 
@@ -1257,6 +1217,9 @@ CREATE TABLE `support_ticket` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `support_helpdesk_id` bigint(20) DEFAULT NULL,
   `client_id` bigint(20) DEFAULT NULL,
+  `access_hash` varchar(255) DEFAULT NULL,
+  `author_name` varchar(255) DEFAULT NULL,
+  `author_email` varchar(255) DEFAULT NULL,
   `priority` int(11) DEFAULT '100',
   `subject` varchar(255) DEFAULT NULL,
   `status` varchar(30) DEFAULT 'open' COMMENT 'open, closed, on_hold',
@@ -1269,7 +1232,8 @@ CREATE TABLE `support_ticket` (
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `support_helpdesk_id_idx` (`support_helpdesk_id`),
-  KEY `client_id_idx` (`client_id`)
+  KEY `client_id_idx` (`client_id`),
+  KEY `access_hash_idx` (`access_hash`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
