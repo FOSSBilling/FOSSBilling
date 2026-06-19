@@ -62,7 +62,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * A redirect to keep old public ticket links working.
+     * A redirect to keep old guest ticket links working.
      * 
      * /support/contact-us/conversation/:hash -> /support/ticket/:hash
      */

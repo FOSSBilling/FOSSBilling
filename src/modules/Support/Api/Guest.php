@@ -10,10 +10,6 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-/**
- * Public tickets management.
- */
-
 namespace Box\Mod\Support\Api;
 
 use FOSSBilling\PaginationOptions;
@@ -22,7 +18,7 @@ use FOSSBilling\Validation\Api\RequiredParams;
 class Guest extends \FOSSBilling\Api\AbstractApi
 {
     /**
-     * Submit new public ticket.
+     * Submit new ticket.
      *
      * @return string - ticket hash
      */
@@ -49,11 +45,11 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Get public ticket.
+     * Get ticket.
      *
      * @return array - ticket details
      */
-    #[RequiredParams(['hash' => 'Public ticket hash required'])]
+    #[RequiredParams(['hash' => 'Ticket hash required'])]
     public function ticket_get(array $data): array
     {
         $publicTicket = $this->getService()->findOneByHash($data['hash']);
@@ -62,9 +58,9 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Close public ticket.
+     * Close ticket.
      */
-    #[RequiredParams(['hash' => 'Public ticket hash required'])]
+    #[RequiredParams(['hash' => 'Ticket hash required'])]
     public function ticket_close(array $data): bool
     {
         $publicTicket = $this->getService()->findOneByHash($data['hash']);
@@ -73,9 +69,9 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Reply to public ticket.
+     * Reply to ticket.
      */
-    #[RequiredParams(['hash' => 'Public ticket hash required'])]
+    #[RequiredParams(['hash' => 'Ticket hash required'])]
     public function ticket_reply(array $data): int
     {
         $publicTicket = $this->getService()->findOneByHash($data['hash']);
@@ -93,11 +89,17 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Get whether public tickets are enabled for guests.
+     * Get whether guest tickets are enabled.
      */
+    public function guest_tickets_enabled(): bool
+    {
+        return $this->getService()->guestTicketsEnabled();
+    }
+
     public function public_tickets_enabled(): bool
     {
-        return $this->getService()->publicTicketsEnabled();
+        // @deprecated 0.9.0 Use guest_tickets_enabled instead.
+        return $this->guest_tickets_enabled();
     }
 
     /**

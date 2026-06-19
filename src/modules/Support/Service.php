@@ -1079,7 +1079,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function ticketCreateForGuest(array $data): string
     {
-        if (!$this->publicTicketsEnabled()) {
+        if (!$this->guestTicketsEnabled()) {
             throw new InformationException("We currently aren't accepting support tickets from unregistered users. Please use another contact method.");
         }
 
@@ -1126,7 +1126,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterClientOpenTicket', 'params' => ['id' => $ticketId]]);
 
-        $this->di['logger']->info('"%s" opened public ticket "%s"', $ticket->author_email, $ticketId);
+        $this->di['logger']->info('"%s" opened guest ticket "%s"', $ticket->author_email, $ticketId);
 
         return $ticket->access_hash;
     }
@@ -1149,12 +1149,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $helpdesk;
     }
 
-    public function publicTicketsEnabled(): bool
+    public function guestTicketsEnabled(): bool
     {
         $extensionService = $this->di['mod_service']('extension');
         $config = $extensionService->getConfig('mod_support');
 
-        return !(isset($config['disable_public_tickets']) && $config['disable_public_tickets']);
+        return !(isset($config['disable_guest_tickets']) && $config['disable_guest_tickets']);
     }
 
     public function canClientSubmitNewTicket(\Model_Client $client, array $config): bool
@@ -1308,7 +1308,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $publicTicket = $this->di['db']->findOne('SupportTicket', 'access_hash = :hash AND client_id IS NULL', [':hash' => $hash]);
         if (!$publicTicket instanceof \Model_SupportTicket) {
-            throw new \FOSSBilling\Exception('Public ticket not found');
+            throw new \FOSSBilling\Exception('Guest ticket not found');
         }
 
         return $publicTicket;

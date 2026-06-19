@@ -82,8 +82,8 @@ test('creates ticket for guest', function (): void {
     ]);
 });
 
-test('rejects guest ticket creation when public tickets are disabled', function (): void {
-    $configResult = ApiClient::request('admin/extension/config_save', ['ext' => 'mod_support', 'disable_public_tickets' => true]);
+test('rejects guest ticket creation when guest tickets are disabled', function (): void {
+    $configResult = ApiClient::request('admin/extension/config_save', ['ext' => 'mod_support', 'disable_guest_tickets' => true]);
     expect($configResult->wasSuccessful())->toBeTrue();
 
     $configGetResult = ApiClient::request('admin/extension/config_get', ['ext' => 'mod_support']);
@@ -91,8 +91,8 @@ test('rejects guest ticket creation when public tickets are disabled', function 
 
     $configData = $configGetResult->getResult();
     expect($configData)->toBeArray()
-        ->toHaveKey('disable_public_tickets')
-        ->and((bool) $configData['disable_public_tickets'])->toBeTrue();
+        ->toHaveKey('disable_guest_tickets')
+        ->and((bool) $configData['disable_guest_tickets'])->toBeTrue();
 
     $result = ApiClient::request('guest/support/ticket_create', [
         'name' => 'Name',
@@ -108,15 +108,15 @@ test('rejects guest ticket creation when public tickets are disabled', function 
         ->toContain('unregistered users');
 });
 
-test('public tickets enabled reflects configuration', function (): void {
-    $enabledResult = ApiClient::request('guest/support/public_tickets_enabled');
+test('guest tickets enabled reflects configuration', function (): void {
+    $enabledResult = ApiClient::request('guest/support/guest_tickets_enabled');
     expect($enabledResult->wasSuccessful())->toBeTrue()
         ->and($enabledResult->getResult())->toBeTrue();
 
-    $configResult = ApiClient::request('admin/extension/config_save', ['ext' => 'mod_support', 'disable_public_tickets' => true]);
+    $configResult = ApiClient::request('admin/extension/config_save', ['ext' => 'mod_support', 'disable_guest_tickets' => true]);
     expect($configResult->wasSuccessful())->toBeTrue();
 
-    $disabledResult = ApiClient::request('guest/support/public_tickets_enabled');
+    $disabledResult = ApiClient::request('guest/support/guest_tickets_enabled');
     expect($disabledResult->wasSuccessful())->toBeTrue()
         ->and($disabledResult->getResult())->toBeFalse();
 });

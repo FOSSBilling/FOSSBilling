@@ -1857,7 +1857,7 @@ test('public to api array delegates to ticket serialization', function (): void 
     expect($result)->toEqual(['hash' => 'test-hash-123']);
 });
 
-test('public ticket reply for guest', function (): void {
+test('guest ticket reply', function (): void {
     $service = new Service();
     $message = new Model_SupportTicketMessage();
     $message->loadBean(new Tests\Helpers\DummyBean());
