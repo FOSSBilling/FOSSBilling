@@ -268,6 +268,9 @@ test('handles guest ticket with regular client open event', function (): void {
             return $serviceMock;
         }
     });
+    $di['loggedin_client'] = static function (): void {
+        throw new Exception('Client is not logged in');
+    };
     $serviceMock->setDi($di);
 
     $eventMock = Mockery::mock('\Box_Event');

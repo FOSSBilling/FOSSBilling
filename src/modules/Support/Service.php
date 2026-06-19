@@ -69,11 +69,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         try {
             $ticketObj = $supportService->getTicketById((int) $params['id']);
-            $identity = isset($di['loggedin_client']) ? $di['loggedin_client'] : null;
+            $isGuestTicket = $supportService->isGuestTicket($ticketObj);
+            $identity = $isGuestTicket ? null : $di['loggedin_client'];
             $ticketArr = $supportService->toApiArray($ticketObj, true, $identity);
 
             $email = [];
-            if ($supportService->isGuestTicket($ticketObj)) {
+            if ($isGuestTicket) {
                 $email['to'] = $ticketObj->author_email;
                 $email['to_name'] = $ticketObj->author_name;
             } else {
