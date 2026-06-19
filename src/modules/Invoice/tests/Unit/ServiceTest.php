@@ -227,7 +227,7 @@ test('converts to api array', function (): void {
         if ($serviceName == 'system' || $serviceName == 'System') {
             $service = $systemService;
         }
-        if ($sub == 'Subscription') {
+        if ($sub === 'Subscription') {
             $service = $subscriptionServiceMock;
         }
 
