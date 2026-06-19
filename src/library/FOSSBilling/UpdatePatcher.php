@@ -1504,7 +1504,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $expires = $this->computeInvoiceHashExpiration();
         $rows = $this->fetchAll(
             "SELECT id FROM invoice WHERE hash IS NOT NULL
-               AND (LENGTH(hash) < 30 OR LENGTH(hash) > 60 OR hash NOT REGEXP '^[a-f0-9]+$')"
+               AND (LENGTH(hash) < 30 OR LENGTH(hash) > 60 OR BINARY hash NOT REGEXP '^[a-f0-9]+$')"
         );
         foreach ($rows as $row) {
             $this->executeSql(
@@ -1879,7 +1879,7 @@ class UpdatePatcher implements InjectionAwareInterface
         // Backfill hashes NULLed by the original revision of patch67.
         $expires = $this->computeInvoiceHashExpiration();
         $rows = $this->fetchAll(
-            "SELECT id FROM invoice WHERE hash IS NULL OR LENGTH(hash) < 30 OR LENGTH(hash) > 60 OR hash NOT REGEXP '^[a-f0-9]+$'"
+            "SELECT id FROM invoice WHERE hash IS NULL OR LENGTH(hash) < 30 OR LENGTH(hash) > 60 OR BINARY hash NOT REGEXP '^[a-f0-9]+$'"
         );
         foreach ($rows as $row) {
             $this->executeSql(
