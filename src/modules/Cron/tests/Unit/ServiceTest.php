@@ -103,5 +103,5 @@ test('runCrons restores the previous cron context when update finalization inter
         // Expected: update finalization is pending, cron tasks are skipped.
     }
 
-    expect($di['is_cron'])->toBeFalse();
+    expect(isset($di['is_cron']))->toBeFalse();
 });
