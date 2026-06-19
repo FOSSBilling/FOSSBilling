@@ -1866,15 +1866,8 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Ensures the invoice has a valid modern hash (30-60 lowercase hex).
-     * Regenerates the hash and stamps hash_expires_at if the hash is missing
-     * or in a legacy format. No-op for invoices that already have a valid
-     * hash, making it safe to call from read paths such as toApiArray().
-     *
-     * This self-heals invoices affected by the destructive hash migration in
-     * the original revision of patch67 and prevents recurrence of broken
-     * client-area invoice URLs — see
-     * https://github.com/FOSSBilling/FOSSBilling/issues/3791.
+     * Regenerates the hash if it is missing or in a legacy format. No-op
+     * for valid hashes, making it safe to call from read paths.
      */
     public function ensureValidHash(\Model_Invoice $invoice): void
     {
