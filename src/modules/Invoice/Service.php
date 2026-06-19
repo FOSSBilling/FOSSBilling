@@ -188,6 +188,7 @@ class Service implements InjectionAwareInterface
 
     public function toApiArray(\Model_Invoice $invoice, $deep = true, $identity = null): array
     {
+        $this->ensureValidHash($invoice);
         $row = $this->di['db']->toArray($invoice);
 
         $items = $this->di['db']->find('InvoiceItem', 'invoice_id = :iid', ['iid' => $row['id']]);
@@ -1850,8 +1851,8 @@ class Service implements InjectionAwareInterface
     /**
      * Re-stamps hash_expires_at on an existing invoice using the current
      * invoice_hash_lifetime_days setting. Also self-heals invoices whose
-     * hash is empty or in a legacy format (patch67 NULLs those) by
-     * generating a fresh modern hash.
+     * hash is empty or in a legacy format by generating a fresh modern
+     * hash. Called when an admin re-sends an invoice or payment reminder.
      */
     public function extendInvoiceHashLifetime(\Model_Invoice $invoice): void
     {
@@ -1860,6 +1861,30 @@ class Service implements InjectionAwareInterface
         if (!$isModern) {
             $invoice->hash = bin2hex(random_bytes(random_int(15, 30)));
         }
+        $invoice->hash_expires_at = $this->computeHashExpiration();
+        $this->di['db']->store($invoice);
+    }
+
+    /**
+     * Ensures the invoice has a valid modern hash (30-60 lowercase hex).
+     * Regenerates the hash and stamps hash_expires_at if the hash is missing
+     * or in a legacy format. No-op for invoices that already have a valid
+     * hash, making it safe to call from read paths such as toApiArray().
+     *
+     * This self-heals invoices affected by the destructive hash migration in
+     * the original revision of patch67 and prevents recurrence of broken
+     * client-area invoice URLs — see
+     * https://github.com/FOSSBilling/FOSSBilling/issues/3791.
+     */
+    public function ensureValidHash(\Model_Invoice $invoice): void
+    {
+        $hash = $invoice->hash ?? null;
+        $isModern = is_string($hash) && preg_match('/^[a-f0-9]{30,60}$/', $hash) === 1;
+        if ($isModern) {
+            return;
+        }
+
+        $invoice->hash = bin2hex(random_bytes(random_int(15, 30)));
         $invoice->hash_expires_at = $this->computeHashExpiration();
         $this->di['db']->store($invoice);
     }

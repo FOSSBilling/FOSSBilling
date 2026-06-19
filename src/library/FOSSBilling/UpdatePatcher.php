@@ -280,6 +280,23 @@ class UpdatePatcher implements InjectionAwareInterface
         );
     }
 
+    /**
+     * Computes the invoice hash expiration timestamp from the
+     * invoice_hash_lifetime_days system setting. Returns null when the
+     * setting is zero or negative (expiration disabled). Mirrors the logic
+     * in Invoice\Service::computeHashExpiration() for use during patching.
+     */
+    private function computeInvoiceHashExpiration(): ?string
+    {
+        $value = $this->fetchOne("SELECT value FROM setting WHERE param = 'invoice_hash_lifetime_days'");
+        $days = is_string($value) && $value !== '' ? (int) $value : 90;
+        if ($days <= 0) {
+            return null;
+        }
+
+        return date('Y-m-d H:i:s', strtotime("+{$days} days"));
+    }
+
     private function getTableColumns(string $table): array
     {
         $columns = $this->fetchAll(sprintf('SHOW COLUMNS FROM `%s`', $this->quoteIdentifier($table)));
@@ -468,6 +485,7 @@ class UpdatePatcher implements InjectionAwareInterface
             71 => 'patch71',
             72 => 'patch72',
             73 => 'patch73',
+            74 => 'patch74',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1484,23 +1502,37 @@ class UpdatePatcher implements InjectionAwareInterface
             ]
         );
 
-        // Destructive migration: NULL legacy invoice hashes that fall outside the
-        // modern 30-60 lowercase hex format enforced by the new guest API regex
-        // validation. Hashes that fall within the 30-60 char range (including
-        // 32-char MD5 and 40-char SHA-1) are preserved. Affected rows:
+        // Regenerate invoice hashes that fall outside the modern 30-60 lowercase
+        // hex format enforced by the new guest API regex validation. Hashes that
+        // fall within the 30-60 char range (including 32-char MD5 and 40-char
+        // SHA-1) are preserved. Affected rows:
         //   - 2022-era SHA-256 (64 hex, just over the upper bound)
         //   - 2023-era 200-254 hex
         //   - Any hash containing non-lowercase-hex characters
-        // These links would be rejected by the new API anyway, so leaving them
-        // in place creates dead links in customer email archives. The
-        // extendInvoiceHashLifetime() helper regenerates a valid modern hash
-        // automatically when an admin re-sends the invoice, restoring magic-link
-        // access without manual intervention.
-        $this->executeSql(
-            "UPDATE invoice SET hash = NULL
-             WHERE hash IS NOT NULL
+        // The client area invoice listing, PDF/print routes, payment gateway
+        // return URLs, and email links all build URLs from the invoice hash, so
+        // NULLing these hashes (as an earlier revision of this patch did) broke
+        // those URLs — see https://github.com/FOSSBilling/FOSSBilling/issues/3791.
+        // Regenerating into the modern format preserves all hash-based URL
+        // consumers while still invalidating the old magic links (which would be
+        // rejected by the new API validation anyway). The
+        // ensureValidHash() helper in the Invoice service also self-heals on
+        // read as a safety net.
+        $expires = $this->computeInvoiceHashExpiration();
+        $rows = $this->fetchAll(
+            "SELECT id FROM invoice WHERE hash IS NOT NULL
                AND (LENGTH(hash) < 30 OR LENGTH(hash) > 60 OR hash NOT REGEXP '^[a-f0-9]+$')"
         );
+        foreach ($rows as $row) {
+            $this->executeSql(
+                'UPDATE invoice SET hash = :hash, hash_expires_at = :expires WHERE id = :id',
+                [
+                    'hash' => bin2hex(random_bytes(random_int(15, 30))),
+                    'expires' => $expires,
+                    'id' => $row['id'],
+                ]
+            );
+        }
     }
 
     private function patch68(): void
@@ -1857,6 +1889,33 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         $this->executeSql('DROP TABLE `support_p_ticket`;');
+    }
+
+    private function patch74(): void
+    {
+        // Backfill invoice hashes that were NULLed by the original revision of
+        // patch67 (which set `hash = NULL` for legacy formats). The client area
+        // invoice listing, PDF/print routes, payment gateway return URLs, and
+        // email links all build URLs from the invoice hash, so missing hashes
+        // broke those URLs — see https://github.com/FOSSBilling/FOSSBilling/issues/3791.
+        // patch67 has since been amended to regenerate in-place, but installs
+        // that already ran the original NULLing revision need this repair.
+        // The Invoice service's ensureValidHash() also self-heals on read as a
+        // safety net, but backfilling here fixes all rows up front.
+        $expires = $this->computeInvoiceHashExpiration();
+        $rows = $this->fetchAll(
+            "SELECT id FROM invoice WHERE hash IS NULL OR LENGTH(hash) < 30 OR LENGTH(hash) > 60 OR hash NOT REGEXP '^[a-f0-9]+$'"
+        );
+        foreach ($rows as $row) {
+            $this->executeSql(
+                'UPDATE invoice SET hash = :hash, hash_expires_at = :expires WHERE id = :id',
+                [
+                    'hash' => bin2hex(random_bytes(random_int(15, 30))),
+                    'expires' => $expires,
+                    'id' => $row['id'],
+                ]
+            );
+        }
     }
 
     private function generateDownloadableStoredFilename(): string
