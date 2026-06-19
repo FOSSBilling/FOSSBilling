@@ -752,7 +752,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $ordered;
     }
 
-    public function getClientApiArrayForTicket(\Model_SupportTicket $ticket, \Model_Admin|\Model_Client|null $identity = null): array
+    private function getClientApiArrayForTicket(\Model_SupportTicket $ticket, \Model_Admin|\Model_Client|null $identity = null): array
     {
         if ($this->isGuestTicket($ticket)) {
             return [];
@@ -1154,7 +1154,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $extensionService = $this->di['mod_service']('extension');
         $config = $extensionService->getConfig('mod_support');
 
-        return !(isset($config['disable_guest_tickets']) && $config['disable_guest_tickets']);
+        // @deprecated 0.9.0 Use disable_guest_tickets instead.
+        $disableGuestTickets = $config['disable_guest_tickets'] ?? $config['disable_public_tickets'] ?? false;
+
+        return !$disableGuestTickets;
     }
 
     public function canClientSubmitNewTicket(\Model_Client $client, array $config): bool
@@ -1306,12 +1309,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function findOneByHash(string $hash): \Model_SupportTicket
     {
-        $publicTicket = $this->di['db']->findOne('SupportTicket', 'access_hash = :hash AND client_id IS NULL', [':hash' => $hash]);
-        if (!$publicTicket instanceof \Model_SupportTicket) {
+        $guestTicket = $this->di['db']->findOne('SupportTicket', 'access_hash = :hash AND client_id IS NULL', [':hash' => $hash]);
+        if (!$guestTicket instanceof \Model_SupportTicket) {
             throw new \FOSSBilling\Exception('Guest ticket not found');
         }
 
-        return $publicTicket;
+        return $guestTicket;
     }
 
     public function helpdeskUpdate(\Model_SupportHelpdesk $model, array $data): bool

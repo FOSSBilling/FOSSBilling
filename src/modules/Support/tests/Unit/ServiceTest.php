@@ -707,13 +707,14 @@ test('converts ticket to api array', function (): void {
     $serviceMock->shouldReceive('noteToApiArray')
         ->atLeast()->once()
         ->andReturn([]);
-    $serviceMock->shouldReceive('getClientApiArrayForTicket')
-        ->atLeast()->once()
+    $clientServiceMock = Mockery::mock(ClientService::class);
+    $clientServiceMock->shouldReceive('toApiArray')
+        ->byDefault()
         ->andReturn([]);
-
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
     $serviceMock->setDi($di);
 
     $ticket = new Model_SupportTicket();
@@ -777,13 +778,14 @@ test('converts ticket to api array with rel details', function (): void {
     $serviceMock->shouldReceive('noteToApiArray')
         ->atLeast()->once()
         ->andReturn([]);
-    $serviceMock->shouldReceive('getClientApiArrayForTicket')
-        ->atLeast()->once()
+    $clientServiceMock = Mockery::mock(ClientService::class);
+    $clientServiceMock->shouldReceive('toApiArray')
+        ->byDefault()
         ->andReturn([]);
-
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
     $serviceMock->setDi($di);
 
     $ticket = new Model_SupportTicket();
@@ -798,54 +800,6 @@ test('converts ticket to api array with rel details', function (): void {
     expect($result)->toHaveKey('helpdesk');
     expect($result)->toHaveKey('messages');
     expect(count($result['messages']))->toBe(count($ticketMessages));
-});
-
-test('gets client api array for ticket', function (): void {
-    $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')
-        ->atLeast()->once()
-        ->andReturn(supportClientFixture());
-
-    $clientServiceMock = Mockery::mock(ClientService::class);
-    $clientServiceMock->shouldReceive('toApiArray')
-        ->byDefault()
-        ->andReturn([]);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
-    $service->setDi($di);
-
-    $ticket = new Model_SupportTicket();
-    $ticket->loadBean(new Tests\Helpers\DummyBean());
-
-    $result = $service->getClientApiArrayForTicket($ticket);
-    expect($result)->toBeArray();
-});
-
-test('gets client api array for ticket when client not exists', function (): void {
-    $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')
-        ->atLeast()->once()
-        ->andReturn(null);
-
-    $clientServiceMock = Mockery::mock(ClientService::class);
-    $clientServiceMock->shouldReceive('toApiArray')->never();
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
-    $service->setDi($di);
-
-    $ticket = new Model_SupportTicket();
-    $ticket->loadBean(new Tests\Helpers\DummyBean());
-
-    $result = $service->getClientApiArrayForTicket($ticket);
-    expect($result)->toBeArray();
 });
 
 /*

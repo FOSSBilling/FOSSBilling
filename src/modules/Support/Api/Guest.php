@@ -52,9 +52,9 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['hash' => 'Ticket hash required'])]
     public function ticket_get(array $data): array
     {
-        $publicTicket = $this->getService()->findOneByHash($data['hash']);
+        $guestTicket = $this->getService()->findOneByHash($data['hash']);
 
-        return $this->getService()->toApiArray($publicTicket);
+        return $this->getService()->toApiArray($guestTicket);
     }
 
     /**
@@ -63,9 +63,9 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['hash' => 'Ticket hash required'])]
     public function ticket_close(array $data): bool
     {
-        $publicTicket = $this->getService()->findOneByHash($data['hash']);
+        $guestTicket = $this->getService()->findOneByHash($data['hash']);
 
-        return $this->getService()->closeTicket($publicTicket, $this->getIdentity());
+        return $this->getService()->closeTicket($guestTicket, $this->getIdentity());
     }
 
     /**
@@ -74,7 +74,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['hash' => 'Ticket hash required'])]
     public function ticket_reply(array $data): int
     {
-        $publicTicket = $this->getService()->findOneByHash($data['hash']);
+        $guestTicket = $this->getService()->findOneByHash($data['hash']);
         // Deprecated 0.9.0 The 'message' parameter will be dropped. Update your themes to use 'content' instead.
         $message = $data['content'] ?? $data['message'] ?? null;
 
@@ -85,7 +85,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         // Sanitize message to prevent XSS attacks
         $message = \FOSSBilling\Tools::sanitizeContent($message, true);
 
-        return $this->getService()->ticketReply($publicTicket, new \Model_Guest(), $message);
+        return $this->getService()->ticketReply($guestTicket, new \Model_Guest(), $message);
     }
 
     /**

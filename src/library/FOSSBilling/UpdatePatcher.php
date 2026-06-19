@@ -274,7 +274,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function tableExists(string $table): bool
     {
-        return (bool) $this->fetchOne('SHOW TABLES LIKE :table', ['table' => $table]);
+        return (bool) $this->fetchOne("SHOW TABLES LIKE :table ESCAPE '\\\\'", ['table' => addcslashes($table, '\\_%')]);
     }
 
     private function getTableColumns(string $table): array
@@ -1781,9 +1781,10 @@ class UpdatePatcher implements InjectionAwareInterface
             );
 
             $ticketId = (int) $this->getPdo()->lastInsertId();
-            $messages = $this->fetchAll('SELECT * FROM support_p_ticket_message WHERE support_p_ticket_id = :id ORDER BY id ASC', [
-                'id' => $publicTicket['id'],
-            ]);
+            $messages = $this->tableExists('support_p_ticket_message')
+                ? $this->fetchAll('SELECT * FROM support_p_ticket_message WHERE support_p_ticket_id = :id ORDER BY id ASC', [
+                    'id' => $publicTicket['id'],
+                ]) : [];
 
             foreach ($messages as $message) {
                 $this->executeSql(
