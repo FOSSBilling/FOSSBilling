@@ -382,6 +382,13 @@ $di['loggedin_client'] = function () use ($di) {
 };
 
 /*
+ * Signals whether the current request is executing cron tasks (CLI or HTTP-triggered).
+ * Set to true by Cron\Service::runCrons(). Used to scope cron-admin identity fallbacks
+ * so they cannot fire for unauthenticated requests outside of a genuine cron run.
+ */
+$di['is_cron'] = false;
+
+/*
  * Returns an existing logged-in admin model object.
  *
  * @param void

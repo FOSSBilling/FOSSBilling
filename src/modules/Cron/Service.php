@@ -58,6 +58,8 @@ class Service
 
     public function runCrons(): bool
     {
+        $this->di['is_cron'] = true;
+
         if ($this->di['update_finalization']->isRequired()) {
             $this->di['logger']->setChannel('cron')->warning('Skipped cron execution because update finalization is pending.');
 
