@@ -763,7 +763,7 @@ class Service implements InjectionAwareInterface
      * Function checks if product is related to other products in cart
      * If relation exists then count discount for this.
      *
-     * @return number
+     * @return float
      */
     protected function getRelatedItemsDiscount(\Model_Cart $cart, \Model_CartProduct $model): float
     {
