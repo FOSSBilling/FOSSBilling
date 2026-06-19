@@ -1772,6 +1772,26 @@ class UpdatePatcher implements InjectionAwareInterface
             Path::join(PATH_MODS, 'Support', 'templates', 'email', 'mod_support_pticket_staff_reply.html.twig') => 'unlink',
         ]);
 
+        $row = $this->fetchOne(
+            "SELECT meta_value FROM extension_meta WHERE extension = 'mod_support' AND meta_key = 'config'",
+        );
+
+        if (is_string($row) && $row !== '') {
+            $configJson = $this->di['crypt']->decrypt($row, Config::getProperty('info.salt'));
+            if (is_string($configJson)) {
+                $config = json_decode($configJson, true);
+                if (is_array($config) && isset($config['disable_public_tickets']) && !isset($config['disable_guest_tickets'])) {
+                    $config['disable_guest_tickets'] = $config['disable_public_tickets'];
+                    unset($config['disable_public_tickets']);
+                    $encrypted = $this->di['crypt']->encrypt(json_encode($config, JSON_THROW_ON_ERROR), Config::getProperty('info.salt'));
+                    $this->executeSql(
+                        "UPDATE extension_meta SET meta_value = :config WHERE extension = 'mod_support' AND meta_key = 'config'",
+                        ['config' => $encrypted],
+                    );
+                }
+            }
+        }
+
         if (!$this->tableExists('support_p_ticket')) {
             return;
         }
