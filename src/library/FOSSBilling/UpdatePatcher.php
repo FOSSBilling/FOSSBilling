@@ -274,7 +274,10 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function tableExists(string $table): bool
     {
-        return (bool) $this->fetchOne("SHOW TABLES LIKE :table ESCAPE '\\\\'", ['table' => addcslashes($table, '\\_%')]);
+        return (bool) $this->fetchOne(
+            'SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1',
+            ['table' => $table],
+        );
     }
 
     private function getTableColumns(string $table): array
