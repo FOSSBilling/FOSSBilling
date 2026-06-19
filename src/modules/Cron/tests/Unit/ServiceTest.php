@@ -87,7 +87,7 @@ test('exec passes empty array when cron task has no params', function (): void {
     expect($api->params)->toBe([]);
 });
 
-test('runCrons marks the request as cron context via the is_cron flag', function (): void {
+test('runCrons restores the previous cron context when update finalization interrupts execution', function (): void {
     $updateFinalization = Mockery::mock()->shouldIgnoreMissing();
     $updateFinalization->shouldReceive('isRequired')->once()->andReturn(true);
 
@@ -103,5 +103,5 @@ test('runCrons marks the request as cron context via the is_cron flag', function
         // Expected: update finalization is pending, cron tasks are skipped.
     }
 
-    expect($di['is_cron'])->toBeTrue();
+    expect($di['is_cron'])->toBeFalse();
 });
