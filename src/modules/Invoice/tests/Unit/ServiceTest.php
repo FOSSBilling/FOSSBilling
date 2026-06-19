@@ -436,8 +436,8 @@ test('to api array self-heals invoice with missing hash', function (): void {
 
     expect($result)->toBeArray();
     expect($result['hash'])->toBeString();
-    expect(strlen($result['hash']))->toBeGreaterThanOrEqual(30);
-    expect(strlen($result['hash']))->toBeLessThanOrEqual(60);
+    expect(strlen((string) $result['hash']))->toBeGreaterThanOrEqual(30);
+    expect(strlen((string) $result['hash']))->toBeLessThanOrEqual(60);
 });
 
 test('handles after admin invoice payment received event', function (): void {
@@ -2404,14 +2404,12 @@ test('markAsPaid transitions a deposit invoice to paid status', function (): voi
     $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $productService = Mockery::mock(Box\Mod\Product\Service::class)->shouldIgnoreMissing();
-    $di['mod_service'] = $di->protect(function ($name, $sub = '') use ($systemService, $currencyService, $invoiceItemService, $productService) {
-        return match ([$name, $sub]) {
-            ['system', ''] => $systemService,
-            ['currency', ''] => $currencyService,
-            ['Invoice', 'InvoiceItem'] => $invoiceItemService,
-            ['Product', ''], ['product', ''] => $productService,
-            default => throw new RuntimeException("Unexpected service: {$name}/{$sub}"),
-        };
+    $di['mod_service'] = $di->protect(fn ($name, $sub = '') => match ([$name, $sub]) {
+        ['system', ''] => $systemService,
+        ['currency', ''] => $currencyService,
+        ['Invoice', 'InvoiceItem'] => $invoiceItemService,
+        ['Product', ''], ['product', ''] => $productService,
+        default => throw new RuntimeException("Unexpected service: {$name}/{$sub}"),
     });
     $di['events_manager'] = $eventsManager;
     $service->setDi($di);

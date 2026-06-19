@@ -27,7 +27,6 @@ function createProductEntity(?int $id = null, ?string $type = null, ?string $con
     $product = new Product();
     if ($id !== null) {
         $reflection = new ReflectionProperty($product, 'id');
-        $reflection->setAccessible(true);
         $reflection->setValue($product, $id);
     }
     if ($type !== null) {
@@ -44,7 +43,6 @@ function createPromoEntity(int $id): Promo
 {
     $promo = new Promo();
     $reflection = new ReflectionProperty($promo, 'id');
-    $reflection->setAccessible(true);
     $reflection->setValue($promo, $id);
 
     return $promo;
@@ -67,7 +65,7 @@ test('gets search query', function (): void {
     $result = $service->getSearchQuery([]);
     expect($result[0])->toBeString();
     expect($result[1])->toBeArray();
-    expect(strpos($result[0], 'SELECT cart.id FROM cart'))->not->toBeFalse();
+    expect(strpos((string) $result[0], 'SELECT cart.id FROM cart'))->not->toBeFalse();
 });
 
 test('getSessionCart returns existing cart', function (): void {
@@ -258,7 +256,7 @@ test('removeProduct throws exception when cart product not found', function (): 
     $cart = new Model_Cart();
     $cart->loadBean(new Tests\Helpers\DummyBean());
 
-    expect(fn () => $service->removeProduct($cart, 1))->toThrow(FOSSBilling\Exception::class);
+    expect(fn (): bool => $service->removeProduct($cart, 1))->toThrow(FOSSBilling\Exception::class);
 });
 
 test('changeCartCurrency returns true', function (): void {
@@ -691,7 +689,6 @@ test('createFromCart with promo entity uses product promo service', function ():
     $promo = new Promo();
     $promo->setCode('PROMO');
     $promoIdReflection = new ReflectionProperty($promo, 'id');
-    $promoIdReflection->setAccessible(true);
     $promoIdReflection->setValue($promo, 7);
 
     $productService = Mockery::mock(ProductService::class);
@@ -700,16 +697,13 @@ test('createFromCart with promo entity uses product promo service', function ():
     $productService->shouldReceive('createCheckoutPromoRedemptions')->once()->with(
         $promo,
         $client,
-        Mockery::on(function (array $orders): bool {
-            return count($orders) === 1 && $orders[0] instanceof Model_ClientOrder;
-        }),
+        Mockery::on(fn (array $orders): bool => count($orders) === 1 && $orders[0] instanceof Model_ClientOrder),
         null,
         PromoRedemption::STATUS_COMMITTED
     );
 
     $product = new Product();
     $productIdReflection = new ReflectionProperty($product, 'id');
-    $productIdReflection->setAccessible(true);
     $productIdReflection->setValue($product, 5);
     $product->setStatus('enabled');
     $product->setType('service');
@@ -763,14 +757,12 @@ test('createFromCart with promo entity uses product promo service', function ():
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($currencyService, $clientService, $productService, $orderService) {
-        return match ($serviceName) {
-            'currency' => $currencyService,
-            'client' => $clientService,
-            'Product' => $productService,
-            'order', 'Order' => $orderService,
-            default => null,
-        };
+    $di['mod_service'] = $di->protect(fn ($serviceName, $sub = '') => match ($serviceName) {
+        'currency' => $currencyService,
+        'client' => $clientService,
+        'Product' => $productService,
+        'order', 'Order' => $orderService,
+        default => null,
     });
 
     $serviceMock->setDi($di);
@@ -807,7 +799,6 @@ test('createFromCart compensates promo usage on transaction failure', function (
     $promo = new Promo();
     $promo->setCode('PROMO');
     $promoIdReflection = new ReflectionProperty($promo, 'id');
-    $promoIdReflection->setAccessible(true);
     $promoIdReflection->setValue($promo, 7);
 
     $productService = Mockery::mock(ProductService::class);
@@ -825,7 +816,6 @@ test('createFromCart compensates promo usage on transaction failure', function (
 
     $product = new Product();
     $productIdReflection = new ReflectionProperty($product, 'id');
-    $productIdReflection->setAccessible(true);
     $productIdReflection->setValue($product, 5);
     $product->setStatus('enabled');
     $product->setType('service');
@@ -875,14 +865,12 @@ test('createFromCart compensates promo usage on transaction failure', function (
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new Box_Log();
-    $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($currencyService, $clientService, $productService, $orderService) {
-        return match ($serviceName) {
-            'currency' => $currencyService,
-            'client' => $clientService,
-            'Product' => $productService,
-            'order', 'Order' => $orderService,
-            default => null,
-        };
+    $di['mod_service'] = $di->protect(fn ($serviceName, $sub = '') => match ($serviceName) {
+        'currency' => $currencyService,
+        'client' => $clientService,
+        'Product' => $productService,
+        'order', 'Order' => $orderService,
+        default => null,
     });
 
     $serviceMock->setDi($di);

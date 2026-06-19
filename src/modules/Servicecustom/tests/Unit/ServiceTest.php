@@ -300,7 +300,7 @@ test('action activate order service not created exception', function (): void {
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceMock);
     $service->setDi($di);
 
-    expect(fn () => $service->action_activate($order))
+    expect(fn (): bool => $service->action_activate($order))
         ->toThrow(Exception::class);
 });
 
@@ -345,7 +345,7 @@ test('active service not found exception', function (): void {
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceMock);
     $service->setDi($di);
 
-    expect(fn () => $service->action_renew($order))
+    expect(fn (): bool => $service->action_renew($order))
         ->toThrow(Exception::class);
 });
 

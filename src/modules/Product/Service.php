@@ -368,7 +368,7 @@ class Service implements InjectionAwareInterface
             return 'year';
         }
 
-        return (string) $product->getUnit();
+        return $product->getUnit();
     }
 
     public function isRecurrentProductPricing(Product $product): bool
@@ -569,7 +569,7 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function createAddon($title, $description = null, $setup = null, $status = null, $iconUrl = null)
+    public function createAddon($title, $description = null, $setup = null, $status = null, $iconUrl = null): ?int
     {
         $productPayment = $this->createDefaultProductPayment();
         $paymentId = (int) $productPayment->getId();
@@ -645,7 +645,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function createCategory($title, $description = null, $icon_url = null)
+    public function createCategory($title, $description = null, $icon_url = null): ?int
     {
         $model = (new ProductCategory())
             ->setTitle($title)
@@ -681,7 +681,7 @@ class Service implements InjectionAwareInterface
         return $this->getProductRepository()->getSearchQueryBuilder($data);
     }
 
-    public function toProductCategoryApiArray(ProductCategory $model, $deep = true, $identity = null)
+    public function toProductCategoryApiArray(ProductCategory $model, $deep = true, $identity = null): array
     {
         $min_price = 0;
         $products = [];
@@ -1017,7 +1017,10 @@ class Service implements InjectionAwareInterface
         return $addons;
     }
 
-    public function getProductAddons(Product $model, bool $includeUnavailable = false)
+    /**
+     * @return mixed[]
+     */
+    public function getProductAddons(Product $model, bool $includeUnavailable = false): array
     {
         $ids = $this->normalizeProductIds(json_decode($this->getProductAddonsJson($model) ?? '', true) ?? []);
 
@@ -1158,7 +1161,7 @@ class Service implements InjectionAwareInterface
         return $this->getPromoRepository()->getSearchQueryBuilder($data);
     }
 
-    public function createPromo($code, $type, $value, $products, $periods, $clientGroups, $data)
+    public function createPromo($code, $type, $value, $products, $periods, $clientGroups, $data): int
     {
         if ($this->getPromoRepository()->findOneBy(['code' => $code]) instanceof Promo) {
             throw new \FOSSBilling\InformationException('This promotion code already exists.');
@@ -1634,7 +1637,7 @@ class Service implements InjectionAwareInterface
         return [
             'price' => (float) $this->getProductPrice($product, $config),
             'quantity' => $quantity,
-            'setup_price' => (float) $this->getProductSetupPrice($product, $config),
+            'setup_price' => $this->getProductSetupPrice($product, $config),
         ];
     }
 
@@ -1788,7 +1791,7 @@ class Service implements InjectionAwareInterface
     private function normalizeProductIds(array $ids): array
     {
         return array_values(array_unique(array_filter(
-            array_map('intval', $ids),
+            array_map(intval(...), $ids),
             static fn (int $id): bool => $id > 0
         )));
     }

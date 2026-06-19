@@ -175,8 +175,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * Determine if the provided ticket is a guest ticket
-     * 
+     * Determine if the provided ticket is a guest ticket.
+     *
      * @todo Doctrine: Move this to the Entity when migrating to Doctrine
      */
     public function isGuestTicket(\Model_SupportTicket $ticket): bool
@@ -1083,7 +1083,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
-        $data['content'] = $data['content'] ?? $data['message'] ?? null;
+        $data['content'] ??= $data['message'] ?? null;
 
         SupportTicketValidator::validateTicketCreation($data);
 
