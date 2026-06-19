@@ -224,7 +224,7 @@ test('converts to api array', function (): void {
         if ($sub == 'InvoiceItem') {
             $service = $invoiceItemServiceMock;
         }
-        if ($serviceName == 'system' || $serviceName == 'System') {
+        if (is_string($serviceName) && strtolower($serviceName) === 'system') {
             $service = $systemService;
         }
         if ($sub === 'Subscription') {
