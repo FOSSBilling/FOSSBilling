@@ -2333,7 +2333,7 @@ test('generateRenewalInvoiceForSubscriptionPayment uses the original order and n
         ->with('ClientOrder', 82)
         ->andReturn($originalOrder);
 
-    $serviceMock = Mockery::mock(Service::class . '[generateForOrder, approveInvoice]');
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('generateForOrder')
         ->with(Mockery::on(fn ($order): bool => $order === $originalOrder))
         ->once()
