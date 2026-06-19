@@ -191,7 +191,7 @@ test('hasPermission returns true for admin role', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('hasPermission falls back to cron admin when no admin is logged in', function (): void {
+test('hasPermission falls back to cron admin only within cron context', function (): void {
     $cronAdmin = new Model_Admin();
     $cronAdmin->loadBean(new Tests\Helpers\DummyBean());
     $cronAdmin->role = Model_Admin::ROLE_CRON;
@@ -208,9 +208,29 @@ test('hasPermission falls back to cron admin when no admin is logged in', functi
 
     $di = new Pimple\Container();
     $di['auth'] = $auth;
+    $di['is_cron'] = true;
     $service->setDi($di);
 
     expect($service->hasPermission(null, 'order'))->toBeTrue();
+});
+
+test('hasPermission stays fail-closed outside cron context when no admin is logged in', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldNotReceive('getCronAdmin');
+
+    $auth = Mockery::mock(Box_Authorization::class);
+    $auth->shouldReceive('isAdminLoggedIn')
+        ->andReturn(false);
+
+    $di = new Pimple\Container();
+    $di['auth'] = $auth;
+    $di['loggedin_admin'] = function (): never {
+        throw new FOSSBilling\Security\AuthenticationRequiredException('admin');
+    };
+    $service->setDi($di);
+
+    expect(fn () => $service->hasPermission(null, 'order'))
+        ->toThrow(FOSSBilling\Security\AuthenticationRequiredException::class);
 });
 
 test('hasPermission returns false for staff with empty permissions', function (): void {
@@ -1363,6 +1383,36 @@ test('setPermissions updates staff permissions', function (): void {
 
     $result = $serviceMock->setPermissions($admin, []);
     expect($result)->toBeTrue();
+});
+
+test('setPermissions subjects a cron-admin caller to the permission ceiling', function (): void {
+    $cronAdmin = new Model_Admin();
+    $cronAdmin->loadBean(new Tests\Helpers\DummyBean());
+    $cronAdmin->id = 999;
+    $cronAdmin->role = Model_Admin::ROLE_CRON;
+
+    $target = new Model_Admin();
+    $target->loadBean(new Tests\Helpers\DummyBean());
+    $target->id = 1;
+    $target->role = Model_Admin::ROLE_STAFF;
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getCronAdmin')->andReturn($cronAdmin);
+    // Cron role passes the module access check (god-mode), but the ceiling still applies.
+    $serviceMock->shouldReceive('hasPermission')->andReturn(true);
+    // Cron admin holds no permissions, so granting any must be rejected by the ceiling.
+    $serviceMock->shouldReceive('getPermissions')->with($cronAdmin->id)->andReturn([]);
+
+    $auth = Mockery::mock(Box_Authorization::class);
+    $auth->shouldReceive('isAdminLoggedIn')->andReturn(false);
+
+    $di = new Pimple\Container();
+    $di['auth'] = $auth;
+    $di['is_cron'] = true;
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->setPermissions($target, ['staff' => ['view' => 1]]))
+        ->toThrow(FOSSBilling\InformationException::class, 'You cannot grant permissions for a module you do not have access to');
 });
 
 test('getPermissions returns empty array when permissions are empty', function (): void {
