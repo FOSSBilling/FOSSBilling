@@ -470,10 +470,10 @@ test('handles after admin invoice payment received event', function (): void {
 
     $di = container();
     $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($emailService, $serviceMock) {
-        if ($serviceName == 'invoice') {
+        if ($serviceName === 'invoice') {
             return $serviceMock;
         }
-        if ($serviceName == 'email') {
+        if ($serviceName === 'email') {
             return $emailService;
         }
     });
