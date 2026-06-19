@@ -416,13 +416,13 @@ test('to api array self-heals invoice with missing hash', function (): void {
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $subscriptionServiceMock, $invoiceItemServiceMock) {
         $service = null;
-        if ($sub == 'InvoiceItem') {
+        if ($sub === 'InvoiceItem') {
             $service = $invoiceItemServiceMock;
         }
-        if ($serviceName == 'system' || $serviceName == 'System') {
+        if ($serviceName === 'system' || $serviceName === 'System') {
             $service = $systemService;
         }
-        if ($sub == 'Subscription') {
+        if ($sub === 'Subscription') {
             $service = $subscriptionServiceMock;
         }
 
@@ -2333,7 +2333,7 @@ test('generateRenewalInvoiceForSubscriptionPayment uses the original order and n
         ->with('ClientOrder', 82)
         ->andReturn($originalOrder);
 
-    $serviceMock = Mockery::mock(Service::class . '[generateForOrder, approveInvoice]');
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('generateForOrder')
         ->with(Mockery::on(fn ($order): bool => $order === $originalOrder))
         ->once()
