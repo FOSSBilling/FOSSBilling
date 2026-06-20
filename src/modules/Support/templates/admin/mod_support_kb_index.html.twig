@@ -106,11 +106,12 @@
                                 <thead>
                                     <tr>
                                         <th>{{ 'Title'|trans }}</th>
-                                        <th>{{ 'Category'|trans }}</th>
-                                        <th>{{ 'Status'|trans }}</th>
-                                        <th class="text-center">{{ 'Views'|trans }}</th>
-                                        <th class="w-1 no-sort"></th>
-                                    </tr>
+                                         <th>{{ 'Category'|trans }}</th>
+                                         <th>{{ 'Status'|trans }}</th>
+                                         <th class="text-center">{{ 'Views'|trans }}</th>
+                                         <th>{{ 'Updated'|trans }}</th>
+                                         <th class="w-1 no-sort"></th>
+                                     </tr>
                                 </thead>
                                 <tbody>
                                    {% set active_tab = request.tab|default('articles') %}
@@ -118,36 +119,47 @@
                                        {% set posts = admin.support_kb_article_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
                                        {% for i, post in posts.list %}
                                        <tr>
-                                           <td>
-                                               <a href='{{ "support/kb/article/#{post.id}"|url }}'>{{ post.title }}</a>
-                                           </td>
-                                           <td>
-                                               <a href='{{ "support/kb/category/#{post.category.id}"|url }}'>{{ post.category.title }}</a>
-                                           </td>
-                                           <td>{{ mf.status_badge(post.status, 'post') }}</td>
-                                           <td class="text-center">{{ post.views }}</td>
-                                           <td>
-                                               <a class="btn btn-icon" href='{{ "support/kb/article/#{post.id}"|url }}'>
-                                                   <svg class="icon">
-                                                       <use href="#edit" />
+                                            <td>
+                                                <a href='{{ "support/kb/article/#{post.id}"|url }}'>{{ post.title }}</a>
+                                            </td>
+                                            <td>
+                                                <a href='{{ "support/kb/category/#{post.category.id}"|url }}'>{{ post.category.title }}</a>
+                                            </td>
+                                            <td>{{ mf.status_badge(post.status, 'post') }}</td>
+                                            <td class="text-center">{{ post.views }}</td>
+                                            <td class="text-muted">{% if post.updated_at %}{{ '%time% ago'|trans({ '%time%': post.updated_at|timeago }) }}{% else %}-{% endif %}</td>
+                                            <td>
+                                                {% if post.status == 'active' %}
+                                                <a class="btn btn-icon" href='{{ "support/kb/#{post.category.slug}/#{post.slug}"|url(area: 'client') }}' target="_blank"
+                                                    data-bs-toggle="tooltip" data-bs-title="{{ 'View'|trans }}">
+                                                    <svg class="icon">
+                                                        <use href="#eye"/>
+                                                    </svg>
+                                                </a>
+                                                {% endif %}
+                                                <a class="btn btn-icon" href='{{ "support/kb/article/#{post.id}"|url }}'
+                                                    data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
+                                                    <svg class="icon">
+                                                        <use href="#edit" />
                                                    </svg>
-                                               </a>
-                                               <a class="btn btn-icon" href="{{ 'support/kb_article_delete'|api_url(query: { 'id': post.id }) }}"
-                                                   {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/kb'|url }) }}>
-                                                   <svg class="icon">
-                                                       <use href="#trash" />
-                                                   </svg>
-                                               </a>
-                                           </td>
-                                       </tr>
-                                       {% else %}
+                                                </a>
+                                                <a class="btn btn-icon" href="{{ 'support/kb_article_delete'|api_url(query: { 'id': post.id }) }}"
+                                                    data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
+                                                    {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Delete'|trans}, redirect: 'support/kb'|url }) }}>
+                                                    <svg class="icon">
+                                                        <use href="#trash" />
+                                                    </svg>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
                                        <tr>
-                                           <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
-                                       </tr>
-                                       {% endfor %}
-                                   {% else %}
-                                       <tr>
-                                           <td class="text-muted" colspan="5">{{ 'Open the Articles tab to load data'|trans }}</td>
+                                            <td class="text-muted" colspan="6">{{ 'Open the Articles tab to load data'|trans }}</td>
                                        </tr>
                                    {% endif %}
                                 </tbody>
@@ -168,19 +180,23 @@
                         <div class="table-responsive">
                             <table class="table card-table table-vcenter table-striped text-nowrap">
                                 <tbody>
-                                    {% for cat_id, cat_title in admin.support_kb_category_get_pairs %}
-                                    <tr>
-                                        <td>
-                                            <a href='{{ "support/kb/category/#{cat_id}"|url }}'>{{ cat_title }}</a>
-                                        </td>
-                                        <td class="w-1">
-                                            <a class="btn btn-icon" href='{{ "support/kb/category/#{cat_id}"|url }}'>
-                                                <svg class="icon">
-                                                    <use href="#edit" />
-                                                </svg>
-                                            </a>
-                                            <a class="btn btn-icon" href="{{ 'support/kb_category_delete'|api_url(query: { 'id': cat_id }) }}"
-                                                {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/kb#tab-categories'|url }) }}>
+                                    {% set categories = admin.support_kb_category_get_list({ 'per_page': 100 }) %}
+                                    {% for category in categories.list %}
+                                        {% set active_count = category.articles|filter(article => article.status == 'active')|length %}
+                                        {% set draft_count = category.articles|filter(article => article.status == 'draft')|length %}
+                                     <tr>
+                                         <td>
+                                             <a href='{{ "support/kb/category/#{category.id}"|url }}'>{{ category.title }}</a>
+                                             <div class="text-muted small">{{ '%active% active, %draft% draft'|trans({ '%active%': active_count, '%draft%': draft_count }) }}</div>
+                                         </td>
+                                         <td class="w-1">
+                                             <a class="btn btn-icon" href='{{ "support/kb/category/#{category.id}"|url }}'>
+                                                 <svg class="icon">
+                                                     <use href="#edit" />
+                                                 </svg>
+                                             </a>
+                                             <a class="btn btn-icon" href="{{ 'support/kb_category_delete'|api_url(query: { 'id': category.id }) }}"
+                                                 {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support/kb#tab-categories'|url }) }}>
                                                 <svg class="icon">
                                                     <use href="#trash" />
                                                 </svg>

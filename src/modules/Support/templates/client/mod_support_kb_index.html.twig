@@ -19,8 +19,10 @@
 {% block content %}
     {% if request.q %}
         {% set kbcategories = guest.support_kb_category_get_list({ "q": request.q }) %}
+        {% set kbarticles = guest.support_kb_article_get_list({ "search": request.q, "per_page": 10 }) %}
     {% else %}
         {% set kbcategories = guest.support_kb_category_get_list %}
+        {% set kbarticles = null %}
     {% endif %}
 
     <div class="row">
@@ -43,6 +45,15 @@
                     </div>
                 </div>
                 <div class="card-body">
+                {% if kbarticles and kbarticles.list %}
+                    <h5 class="mb-3">{{ 'Matching articles'|trans }}</h5>
+                    <div class="list-group mb-4">
+                        {% for article in kbarticles.list %}
+                            <a class="list-group-item list-group-item-action" href='{{ "support/kb/#{article.category.slug}/#{article.slug}"|url }}'>{{ article.title }}</a>
+                        {% endfor %}
+                    </div>
+                    <h5 class="mb-3">{{ 'Matching categories'|trans }}</h5>
+                {% endif %}
                 {% for row in kbcategories.list|batch(3) %}
                     <div class="row mb-2">
                         {% for i, category in row %}
@@ -58,7 +69,11 @@
                     </div>
                 {% else %}
                     <div class="alert alert-info text-center">
-                        {{ 'No results found for:'|trans }}&nbsp;<strong>{{ request.q }}</strong>
+                        {% if request.q %}
+                            {{ 'No results found for:'|trans }}&nbsp;<strong>{{ request.q }}</strong>
+                        {% else %}
+                            {{ 'No knowledge base categories are available yet.'|trans }}
+                        {% endif %}
                     </div>
                 {% endfor %}
                 </div>

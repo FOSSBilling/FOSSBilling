@@ -39,6 +39,13 @@
         } %}
             {% import 'macro_functions.html.twig' as mf %}
             {% block form_content %}
+                <div class="d-flex flex-wrap gap-3 text-muted small mb-3">
+                    <span>{{ 'Created'|trans }}: {% if post.created_at %}{{ '%time% ago'|trans({ '%time%': post.created_at|timeago }) }}{% else %}-{% endif %}</span>
+                    <span>{{ 'Updated'|trans }}: {% if post.updated_at %}{{ '%time% ago'|trans({ '%time%': post.updated_at|timeago }) }}{% else %}-{% endif %}</span>
+                    {% if post.status == 'active' %}
+                        <a href='{{ "support/kb/#{post.category.slug}/#{post.slug}"|url(area: 'client') }}' target="_blank" rel="noreferrer">{{ 'View public article'|trans }}</a>
+                    {% endif %}
+                </div>
                 <div class="row g-3">
                     <div class="col-lg-6">
                         <label class="form-label">{{ 'Category'|trans }}</label>

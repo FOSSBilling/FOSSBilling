@@ -106,6 +106,15 @@
                                 <input class="form-check-input" name="kb_enable" type="checkbox" {% if params.kb_enable|default(false) %} checked="checked"{% endif %}>
                                 <span class="form-check-label">{{ 'Enable Knowledge Base'|trans }}</span>
                             </label>
+                            <label class="form-check form-switch form-switch-2">
+                                <input class="form-check-input" name="kb_suggestions_ticket" type="checkbox" {% if params.kb_suggestions_ticket|default(false) %} checked="checked"{% endif %}>
+                                <span class="form-check-label">{{ 'Show KB suggestions on the client ticket form'|trans }}</span>
+                            </label>
+                            <label class="form-check form-switch form-switch-2">
+                                <input class="form-check-input" name="kb_suggestions_contact" type="checkbox" {% if params.kb_suggestions_contact|default(false) %} checked="checked"{% endif %}>
+                                <span class="form-check-label">{{ 'Show KB suggestions on the contact form'|trans }}</span>
+                            </label>
+                            </div>
                         </div>
                         <div class="card-body border-top">
                             <h4 class="card-title mb-2">{{ 'Guest Tickets'|trans }}</h4>
