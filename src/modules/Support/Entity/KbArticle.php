@@ -17,6 +17,10 @@ use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Interfaces\ApiArrayInterface;
 use FOSSBilling\Interfaces\TimestampInterface;
 
+// This entity doesn't use a PreUpdate callback unlike others
+// The reason is that updatedAt is updated everytime the hit counter is incremented
+// Which shouldn't be the case because updatedAt is used to determine when the article is last updated
+
 #[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\KbArticleRepository::class)]
 #[ORM\Table(name: 'support_kb_article')]
 #[ORM\HasLifecycleCallbacks]
@@ -98,12 +102,6 @@ class KbArticle implements ApiArrayInterface, TimestampInterface
         $this->updatedAt = $now;
     }
 
-    #[ORM\PreUpdate]
-    public function updateTimestamp(): void
-    {
-        $this->updatedAt = new \DateTime();
-    }
-
     public function getId(): ?int
     {
         return $this->id;
@@ -121,7 +119,10 @@ class KbArticle implements ApiArrayInterface, TimestampInterface
 
     public function setCategory(?KbArticleCategory $category): self
     {
-        $this->category = $category;
+        if ($this->category !== $category) {
+            $this->category = $category;
+            $this->touchUpdatedAt();
+        }
 
         return $this;
     }
@@ -152,7 +153,10 @@ class KbArticle implements ApiArrayInterface, TimestampInterface
 
     public function setTitle(?string $title): self
     {
-        $this->title = $title;
+        if ($this->title !== $title) {
+            $this->title = $title;
+            $this->touchUpdatedAt();
+        }
 
         return $this;
     }
@@ -164,7 +168,10 @@ class KbArticle implements ApiArrayInterface, TimestampInterface
 
     public function setContent(?string $content): self
     {
-        $this->content = $content;
+        if ($this->content !== $content) {
+            $this->content = $content;
+            $this->touchUpdatedAt();
+        }
 
         return $this;
     }
@@ -176,7 +183,10 @@ class KbArticle implements ApiArrayInterface, TimestampInterface
 
     public function setSlug(?string $slug): self
     {
-        $this->slug = $slug;
+        if ($this->slug !== $slug) {
+            $this->slug = $slug;
+            $this->touchUpdatedAt();
+        }
 
         return $this;
     }
@@ -188,7 +198,10 @@ class KbArticle implements ApiArrayInterface, TimestampInterface
 
     public function setStatus(string $status): self
     {
-        $this->status = $status;
+        if ($this->status !== $status) {
+            $this->status = $status;
+            $this->touchUpdatedAt();
+        }
 
         return $this;
     }
@@ -216,5 +229,10 @@ class KbArticle implements ApiArrayInterface, TimestampInterface
     public function setUpdatedAt(\DateTime $updatedAt): void
     {
         $this->updatedAt = $updatedAt;
+    }
+
+    private function touchUpdatedAt(): void
+    {
+        $this->updatedAt = new \DateTime();
     }
 }

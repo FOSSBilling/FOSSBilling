@@ -14,6 +14,7 @@ use Box\Mod\Client\Service as ClientService;
 use Box\Mod\Email\Service as EmailService;
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
+use Box\Mod\Support\Repository\KbArticleCategoryRepository;
 use Box\Mod\Support\Repository\KbArticleRepository;
 use Box\Mod\Support\Service;
 use Doctrine\ORM\EntityManagerInterface;
@@ -66,6 +67,21 @@ function supportKbArticleFixture(): KbArticle
     supportSetEntityId($article, 1);
 
     return $article;
+}
+
+function supportWireKbRepositories(EntityManagerInterface $em, ?KbArticleRepository $articleRepo = null, ?KbArticleCategoryRepository $categoryRepo = null): void
+{
+    $articleRepo ??= Mockery::mock(KbArticleRepository::class)->shouldIgnoreMissing();
+    $categoryRepo ??= Mockery::mock(KbArticleCategoryRepository::class)->shouldIgnoreMissing();
+
+    $em->shouldReceive('getRepository')
+        ->with(KbArticle::class)
+        ->byDefault()
+        ->andReturn($articleRepo);
+    $em->shouldReceive('getRepository')
+        ->with(KbArticleCategory::class)
+        ->byDefault()
+        ->andReturn($categoryRepo);
 }
 
 /*
@@ -1282,6 +1298,7 @@ test('kb rm', function (): void {
     $modelKb = supportKbArticleFixture()->setViews(10);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
     $emMock->shouldReceive('remove')->once()->with($modelKb);
     $emMock->shouldReceive('flush')->once();
 
@@ -1317,7 +1334,6 @@ dataset('kbArticleToApiArrayProvider', function () {
             ],
             false,
             null,
-            $category,
         ],
         'deep without admin' => [
             $model,
@@ -1338,7 +1354,6 @@ dataset('kbArticleToApiArrayProvider', function () {
             ],
             true,
             null,
-            $category,
         ],
         'deep with admin' => [
             $model,
@@ -1360,28 +1375,42 @@ dataset('kbArticleToApiArrayProvider', function () {
             ],
             true,
             new Model_Admin(),
-            $category,
         ],
     ];
 });
 
-test('kb to api array', function (KbArticle $model, array $expected, bool $deep, ?Model_Admin $identity, KbArticleCategory $category): void {
-    $model->setCategory($category);
-
+test('kb to api array', function (KbArticle $model, array $expected, bool $deep, ?Model_Admin $identity): void {
     $result = $model->toApiArray($identity, $deep);
     expect($result)->toEqual($expected);
 })->with('kbArticleToApiArrayProvider');
+
+test('kb article view increment does not update timestamp', function (): void {
+    $model = supportKbArticleFixture();
+
+    $updatedAt = $model->getUpdatedAt()?->format('Y-m-d H:i:s');
+    $model->incrementViews();
+
+    expect($model->getViews())->toBe(2)
+        ->and($model->getUpdatedAt()?->format('Y-m-d H:i:s'))->toBe($updatedAt);
+});
 
 test('kb create article', function (): void {
     $service = new Service();
     $randId = 1;
     $category = supportKbCategoryFixture();
 
-    $emMock = Mockery::mock(EntityManagerInterface::class);
-    $emMock->shouldReceive('getReference')
+    $categoryRepoMock = Mockery::mock(KbArticleCategoryRepository::class);
+    $categoryRepoMock->shouldReceive('find')
         ->once()
-        ->with(KbArticleCategory::class, 1)
+        ->with(1)
         ->andReturn($category);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock, categoryRepo: $categoryRepoMock);
+    $emMock->shouldReceive('getRepository')
+        ->once()
+        ->with(KbArticleCategory::class)
+        ->andReturn($categoryRepoMock);
     $emMock->shouldReceive('persist')
         ->once()
         ->with(Mockery::on(static fn (KbArticle $article): bool => $article->getCategory() === $category))
@@ -1406,6 +1435,32 @@ test('kb create article', function (): void {
     expect($result)->toEqual($randId);
 });
 
+test('kb create article category not found exception', function (): void {
+    $service = new Service();
+
+    $categoryRepoMock = Mockery::mock(KbArticleCategoryRepository::class);
+    $categoryRepoMock->shouldReceive('find')
+        ->once()
+        ->with(1)
+        ->andReturn(null);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock, categoryRepo: $categoryRepoMock);
+    $emMock->shouldReceive('getRepository')
+        ->once()
+        ->with(KbArticleCategory::class)
+        ->andReturn($categoryRepoMock);
+    $emMock->shouldReceive('persist')->never();
+    $emMock->shouldReceive('flush')->never();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $service->setDi($di);
+
+    $this->expectException(FOSSBilling\Exception::class);
+    $service->kbCreateArticle(1, 'Title', 'Active', 'Content');
+});
+
 test('kb update article', function (): void {
     $service = new Service();
     $randId = 1;
@@ -1417,15 +1472,23 @@ test('kb update article', function (): void {
         ->with($randId)
         ->andReturn($model);
 
+    $category = supportKbCategoryFixture();
+    $categoryRepoMock = Mockery::mock(KbArticleCategoryRepository::class);
+    $categoryRepoMock->shouldReceive('find')
+        ->once()
+        ->with(1)
+        ->andReturn($category);
+
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock, $repoMock);
     $emMock->shouldReceive('getRepository')
         ->once()
         ->with(KbArticle::class)
         ->andReturn($repoMock);
-    $emMock->shouldReceive('getReference')
+    $emMock->shouldReceive('getRepository')
         ->once()
-        ->with(KbArticleCategory::class, 1)
-        ->andReturn(supportKbCategoryFixture());
+        ->with(KbArticleCategory::class)
+        ->andReturn($categoryRepoMock);
     $emMock->shouldReceive('flush')->once();
 
     $di = container();
@@ -1439,6 +1502,43 @@ test('kb update article', function (): void {
     expect($model->getContent())->toBe('content');
 });
 
+test('kb update article category not found exception', function (): void {
+    $service = new Service();
+    $randId = 1;
+
+    $repoMock = Mockery::mock(KbArticleRepository::class);
+    $repoMock->shouldReceive('find')
+        ->once()
+        ->with($randId)
+        ->andReturn(supportKbArticleFixture());
+
+    $categoryRepoMock = Mockery::mock(KbArticleCategoryRepository::class);
+    $categoryRepoMock->shouldReceive('find')
+        ->once()
+        ->with(1)
+        ->andReturn(null);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock, $repoMock, $categoryRepoMock);
+    $emMock->shouldReceive('getRepository')
+        ->once()
+        ->with(KbArticle::class)
+        ->andReturn($repoMock);
+    $emMock->shouldReceive('getRepository')
+        ->once()
+        ->with(KbArticleCategory::class)
+        ->andReturn($categoryRepoMock);
+    $emMock->shouldReceive('flush')->never();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $this->expectException(FOSSBilling\Exception::class);
+    $service->kbUpdateArticle($randId, 1, 'Title', 'article-slug', 'active', 'content', 1);
+});
+
 test('kb update article not found exception', function (): void {
     $service = new Service();
     $randId = 1;
@@ -1450,6 +1550,7 @@ test('kb update article not found exception', function (): void {
         ->andReturn(null);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock, $repoMock);
     $emMock->shouldReceive('getRepository')
         ->once()
         ->with(KbArticle::class)
@@ -1476,6 +1577,7 @@ test('kb category rm', function (): void {
         ->andReturn(0);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock, $articleRepoMock);
     $emMock->shouldReceive('getRepository')
         ->once()
         ->with(KbArticle::class)
@@ -1501,6 +1603,7 @@ test('kb category rm has articles exception', function (): void {
         ->andReturn(1);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock, $articleRepoMock);
     $emMock->shouldReceive('getRepository')
         ->once()
         ->with(KbArticle::class)
@@ -1523,6 +1626,7 @@ test('kb create category', function (): void {
     $randId = 1;
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
     $emMock->shouldReceive('persist')
         ->once()
         ->with(Mockery::type(KbArticleCategory::class))
@@ -1550,6 +1654,7 @@ test('kb create category', function (): void {
 test('kb update category', function (): void {
     $service = new Service();
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
     $emMock->shouldReceive('flush')->once();
 
     $di = container();

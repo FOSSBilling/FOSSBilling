@@ -672,7 +672,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\InformationException('Article Category not found');
         }
 
-        return $cat->toApiArray();
+        return $cat->toApiArray($this->getIdentity());
     }
 
     /**

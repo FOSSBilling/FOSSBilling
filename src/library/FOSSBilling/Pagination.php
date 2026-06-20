@@ -78,7 +78,7 @@ class Pagination implements InjectionAwareInterface
         $list = [];
         foreach ($paginator as $entity) {
             if ($entity instanceof ApiArrayInterface) {
-                $list[] = $apiArrayArgs === [] ? $entity->toApiArray() : call_user_func_array([$entity, 'toApiArray'], $apiArrayArgs);
+                $list[] = $entity->toApiArray(...$apiArrayArgs);
             } else {
                 $list[] = $serializer->normalize($entity);
             }

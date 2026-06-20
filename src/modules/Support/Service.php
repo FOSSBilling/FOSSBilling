@@ -21,8 +21,8 @@ use FOSSBilling\InformationException;
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
-    protected ?KbArticleRepository $kbArticleRepository = null;
-    protected ?KbArticleCategoryRepository $kbArticleCategoryRepository = null;
+    protected KbArticleRepository $kbArticleRepository;
+    protected KbArticleCategoryRepository $kbArticleCategoryRepository;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -1569,7 +1569,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function kbCreateArticle(int $articleCategoryId, string $title, ?string $status = null, ?string $content = null): int
     {
-        $category = $this->di['em']->getReference(KbArticleCategory::class, $articleCategoryId);
+        $category = $this->getKbArticleCategoryRepository()->find($articleCategoryId);
         if (!$category instanceof KbArticleCategory) {
             throw new \FOSSBilling\Exception('Knowledge Base category not found');
         }
@@ -1599,7 +1599,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         if (isset($articleCategoryId)) {
-            $category = $this->di['em']->getReference(KbArticleCategory::class, $articleCategoryId);
+            $category = $this->getKbArticleCategoryRepository()->find($articleCategoryId);
             if (!$category instanceof KbArticleCategory) {
                 throw new \FOSSBilling\Exception('Knowledge Base category not found');
             }

@@ -20,7 +20,9 @@ class KbArticleRepository extends EntityRepository
 {
     public function getSearchQueryBuilder(?string $status = null, ?string $search = null, int|string|null $categoryId = null): QueryBuilder
     {
-        $qb = $this->createQueryBuilder('a');
+        $qb = $this->createQueryBuilder('a')
+            ->leftJoin('a.category', 'c')
+            ->addSelect('c');
 
         if ($categoryId !== null && $categoryId !== '') {
             $qb->andWhere('IDENTITY(a.category) = :categoryId')
@@ -54,38 +56,6 @@ class KbArticleRepository extends EntityRepository
             'slug' => $slug,
             'status' => KbArticle::ACTIVE,
         ]);
-    }
-
-    /**
-     * @return KbArticle[]
-     */
-    public function findActive(): array
-    {
-        return $this->findBy(['status' => KbArticle::ACTIVE], ['title' => 'ASC']);
-    }
-
-    /**
-     * @return KbArticle[]
-     */
-    public function findByCategory(int $categoryId, bool $admin, ?string $search = null): array
-    {
-        $qb = $this->createQueryBuilder('a')
-            ->andWhere('IDENTITY(a.category) = :categoryId')
-            ->setParameter('categoryId', $categoryId);
-
-        if (!$admin) {
-            $qb->andWhere('a.status = :status')
-                ->setParameter('status', KbArticle::ACTIVE);
-        }
-
-        if ($search !== null && $search !== '') {
-            $qb->andWhere('(a.title LIKE :search OR a.content LIKE :search)')
-                ->setParameter('search', '%' . $search . '%');
-        }
-
-        return $qb->orderBy('a.title', 'ASC')
-            ->getQuery()
-            ->getResult();
     }
 
     public function countByCategoryId(int $categoryId): int
