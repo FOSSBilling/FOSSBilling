@@ -154,7 +154,7 @@ test('action activate license collision max iterations exception', function (): 
 
     $service->setDi($di);
 
-    expect(fn () => $service->action_activate($clientOrderModel))
+    expect(fn (): bool => $service->action_activate($clientOrderModel))
         ->toThrow(FOSSBilling\Exception::class);
 });
 
@@ -177,7 +177,7 @@ test('action activate plugin not found', function (): void {
 
     $service->setDi($di);
 
-    expect(fn () => $service->action_activate($clientOrderModel))
+    expect(fn (): bool => $service->action_activate($clientOrderModel))
         ->toThrow(FOSSBilling\Exception::class, "License plugin {$serviceLicenseModel->plugin} was not found.");
 });
 
@@ -195,7 +195,7 @@ test('action activate order activation exception', function (): void {
 
     $service->setDi($di);
 
-    expect(fn () => $service->action_activate($clientOrderModel))
+    expect(fn (): bool => $service->action_activate($clientOrderModel))
         ->toThrow(FOSSBilling\Exception::class, 'Could not activate order. Service was not created');
 });
 

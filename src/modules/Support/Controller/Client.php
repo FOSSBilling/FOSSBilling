@@ -67,7 +67,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
 
     /**
      * A redirect to keep old guest ticket links working.
-     * 
+     *
      * /support/contact-us/conversation/:hash -> /support/ticket/:hash
      */
     public function get_ticket_redirect(\Box_App $app, $hash): never

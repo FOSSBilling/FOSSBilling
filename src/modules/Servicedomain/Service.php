@@ -58,7 +58,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function getCartProductTitle(Product $product, array $data)
+    public function getCartProductTitle(Product $product, array $data): ?string
     {
         if (
             isset($data['action']) && $data['action'] == 'register'

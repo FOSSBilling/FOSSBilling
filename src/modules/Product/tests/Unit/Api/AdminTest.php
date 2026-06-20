@@ -77,7 +77,7 @@ test('throws exception when preparing domain product already created', function 
     $api->setDi(container());
     $api->setService($serviceMock);
 
-    expect(fn () => $api->prepare($data))
+    expect(fn (): int => $api->prepare($data))
         ->toThrow(FOSSBilling\Exception::class, 'You have already created domain product');
 });
 
@@ -91,7 +91,7 @@ test('throws exception when preparing unrecognized product type', function (): v
     $api->setDi(container());
     $api->setService($serviceMock);
 
-    expect(fn () => $api->prepare($data))
+    expect(fn (): int => $api->prepare($data))
         ->toThrow(FOSSBilling\Exception::class, "Product type {$data['type']} is not registered.");
 });
 
@@ -186,7 +186,6 @@ test('gets an addon', function (): void {
 
     $model = new Product();
     $reflection = new ReflectionProperty($model, 'isAddon');
-    $reflection->setAccessible(true);
     $reflection->setValue($model, true);
 
     $serviceMock = Mockery::mock(Service::class);
@@ -207,7 +206,6 @@ test('updates an addon', function (): void {
 
     $model = new Product();
     $reflection = new ReflectionProperty($model, 'isAddon');
-    $reflection->setAccessible(true);
     $reflection->setValue($model, true);
 
     $serviceMock = Mockery::mock(Service::class);
