@@ -6,14 +6,14 @@
 
 {% block body_class %}kb-index{% endblock %}
 {% block breadcrumb %}
-  <li class="breadcrumb-item">
-    <a href="{{ 'support/kb'|url }}">{{ 'Knowledge Base'|trans }}</a>
-  </li>
-  {% if request.q %}
-  	<li class="breadcrumb-item active" aria-current="page">{{ request.q }}</li>
-  {% else %}
-  	<li class="breadcrumb-item active" aria-current="page">{{ 'Category List'|trans }}</li>
-  {% endif %}
+    {% if request.q %}
+        <li class="breadcrumb-item">
+            <a href="{{ 'support/kb'|url }}">{{ 'Knowledge Base'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ request.q }}</li>
+    {% else %}
+        <li class="breadcrumb-item active" aria-current="page">{{ 'Knowledge Base'|trans }}</li>
+    {% endif %}
 {% endblock %}
 
 {% block content %}

@@ -18,7 +18,7 @@ use FOSSBilling\Interfaces\ApiArrayInterface;
 use FOSSBilling\Interfaces\TimestampInterface;
 
 // This entity doesn't use a PreUpdate callback unlike others
-// The reason is that updatedAt is updated everytime the hit counter is incremented
+// The reason is that updatedAt is updated every time the hit counter is incremented
 // Which shouldn't be the case because updatedAt is used to determine when the article is last updated
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\KbArticleRepository::class)]

@@ -22,7 +22,8 @@ class KbArticleCategoryRepository extends EntityRepository
     {
         $qb = $this->createQueryBuilder('c')
             ->leftJoin('c.articles', 'a')
-            ->groupBy('c.id')
+            ->addSelect('a')
+            ->distinct()
             ->orderBy('c.title', 'ASC');
 
         if (!empty($data['article_status'])) {
