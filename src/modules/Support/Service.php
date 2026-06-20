@@ -1560,6 +1560,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return Tools::normalizeBoolean($config['kb_enable'] ?? true, true);
     }
 
+    public function kbArticleViewsEnabled(): bool
+    {
+        $extensionService = $this->di['mod_service']('extension');
+        $config = $extensionService->getConfig('mod_support');
+
+        return Tools::normalizeBoolean($config['kb_article_views_enable'] ?? true, true);
+    }
+
     public function kbSuggestionsEnabled(string $area): bool
     {
         if (!$this->kbEnabled()) {

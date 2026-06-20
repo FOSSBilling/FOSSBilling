@@ -132,6 +132,14 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
+     * Get whether public knowledge base article view counts are visible.
+     */
+    public function kb_article_views_enabled(): bool
+    {
+        return $this->getService()->kbArticleViewsEnabled();
+    }
+
+    /**
      * Get paginated list of knowledge base articles.
      * Returns only active articles.
      */

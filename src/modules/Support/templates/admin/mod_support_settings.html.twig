@@ -116,6 +116,12 @@
                                 <input class="form-check-input" name="kb_suggestions_contact" type="checkbox" {% if params.kb_suggestions_contact|default(false) %} checked="checked"{% endif %}>
                                 <span class="form-check-label">{{ 'Show KB suggestions on the contact form'|trans }}</span>
                             </label>
+                            {% set kb_article_views_enabled = params.kb_article_views_enable is not defined or params.kb_article_views_enable is same as(true) or params.kb_article_views_enable in [1, '1', 'true', 'on', 'yes'] %}
+                            <label class="form-check form-switch form-switch-2">
+                                <input name="kb_article_views_enable" type="hidden" value="false">
+                                <input class="form-check-input" name="kb_article_views_enable" type="checkbox" value="true" {% if kb_article_views_enabled %} checked="checked"{% endif %}>
+                                <span class="form-check-label">{{ 'Show article view counts publicly'|trans }}</span>
+                            </label>
                         </div>
                         <div class="card-body border-top">
                             <h4 class="card-title mb-2">{{ 'Guest Tickets'|trans }}</h4>

@@ -38,6 +38,7 @@ function guestSupportServiceMock(): Mockery\MockInterface
     $service = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $service->shouldReceive('kbEnabled')->byDefault()->andReturn(true);
     $service->shouldReceive('kbSuggestionsEnabled')->byDefault()->andReturn(true);
+    $service->shouldReceive('kbArticleViewsEnabled')->byDefault()->andReturn(true);
 
     return $service;
 }
@@ -193,6 +194,15 @@ test('kb article get list', function (): void {
     $result = $guestApi->kb_article_get_list([]);
     expect($result)->toBeArray();
     expect($result)->toEqual($willReturn);
+});
+
+test('kb article views enabled', function (): void {
+    $guestApi = new Box\Mod\Support\Api\Guest();
+    $service = guestSupportServiceMock();
+    $service->shouldReceive('kbArticleViewsEnabled')->once()->andReturn(false);
+    $guestApi->setService($service);
+
+    expect($guestApi->kb_article_views_enabled())->toBeFalse();
 });
 
 test('kb article get with id', function (): void {

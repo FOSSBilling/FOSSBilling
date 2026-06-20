@@ -25,7 +25,9 @@
                 {% if article.updated_at %}
                     <span>{{ 'Updated'|trans }} {{ '%time% ago'|trans({ '%time%': article.updated_at|timeago }) }}</span>
                 {% endif %}
-                <span>{{ article.views }} {{ 'views'|trans }}</span>
+                {% if guest.support_kb_article_views_enabled %}
+                    <span>{{ article.views }} {{ 'views'|trans }}</span>
+                {% endif %}
             </div>
         </div>
 

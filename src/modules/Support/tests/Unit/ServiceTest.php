@@ -1413,6 +1413,24 @@ test('kb suggestions enabled checks kb setting and area setting', function (): v
         ->and($service->kbSuggestionsEnabled('contact'))->toBeFalse();
 });
 
+test('kb article views enabled defaults on and can be disabled', function (array $config, bool $expected): void {
+    $service = new Service();
+
+    $extensionService = Mockery::mock(Box\Mod\Extension\Service::class);
+    $extensionService->shouldReceive('getConfig')
+        ->with('mod_support')
+        ->andReturn($config);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (string $serviceName, ?string $sub = null): Box\Mod\Extension\Service => $extensionService);
+    $service->setDi($di);
+
+    expect($service->kbArticleViewsEnabled())->toBe($expected);
+})->with([
+    'unset' => [[], true],
+    'disabled' => [['kb_article_views_enable' => 'false'], false],
+]);
+
 test('kb create article', function (): void {
     $service = new Service();
     $randId = 1;
