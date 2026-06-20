@@ -80,9 +80,14 @@
                         {% endfor %}
                     </div>
                 {% else %}
-                    <div class="alert alert-info text-center">
+                    <div class="alert alert-info text-center mb-0">
                         {% if request.q %}
-                            {{ 'No results found for:'|trans }}&nbsp;<strong>{{ request.q }}</strong>
+                            <h5>{{ 'No results found'|trans }}</h5>
+                            <p class="mb-3">{{ 'No articles or categories matched your search for:'|trans }} <strong>{{ request.q }}</strong></p>
+                            <div class="d-flex flex-wrap justify-content-center gap-2">
+                                <a class="btn btn-primary" href="{{ 'support/contact-us'|url }}">{{ 'Contact support'|trans }}</a>
+                                <a class="btn btn-outline-secondary" href="{{ 'support/kb'|url }}">{{ 'Browse all articles'|trans }}</a>
+                            </div>
                         {% else %}
                             {{ 'No knowledge base categories are available yet.'|trans }}
                         {% endif %}
