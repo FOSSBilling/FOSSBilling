@@ -16,6 +16,7 @@ describe('client profile', () => {
       country: 'GB',
       phoneCountryCode: '44',
       phone: '7700900123',
+      phoneDisplay: '7700 900123',
       address: '42 Updated Road',
       city: 'Updated City',
       state: 'Updated State',
@@ -51,7 +52,7 @@ describe('client profile', () => {
     cy.get('input[name="company"]').should('have.value', updatedProfile.company);
     cy.get('select[name="country"]').should('have.value', updatedProfile.country);
     cy.get('input[name="phone_cc"]').should('have.value', updatedProfile.phoneCountryCode);
-    cy.get('input[name="phone"]').should('have.value', updatedProfile.phone);
+    cy.get('input[name="phone"]').should('have.value', updatedProfile.phoneDisplay);
     cy.get('input[name="address_1"]').should('have.value', updatedProfile.address);
     cy.get('input[name="city"]').should('have.value', updatedProfile.city);
     cy.get('input[name="state"]').should('have.value', updatedProfile.state);
