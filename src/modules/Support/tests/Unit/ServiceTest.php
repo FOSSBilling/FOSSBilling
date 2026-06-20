@@ -1406,7 +1406,7 @@ test('kb suggestions enabled checks kb setting and area setting', function (): v
         ]);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): Box\Mod\Extension\Service => $extensionService);
+    $di['mod_service'] = $di->protect(fn (string $serviceName, ?string $sub = null): Box\Mod\Extension\Service => $extensionService);
     $service->setDi($di);
 
     expect($service->kbSuggestionsEnabled('ticket'))->toBeTrue()
