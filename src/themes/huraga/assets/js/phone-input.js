@@ -33,7 +33,7 @@ export default function initPhoneInput() {
     const syncFields = () => {
       const countryData = iti.getSelectedCountry();
       const dialCode = countryData?.dialCode || countryCodeInput.value;
-      countryCodeInput.value = input.value.trim() || initialPhoneCountryCode ? dialCode : '';
+      countryCodeInput.value = (input.value.trim() || initialPhoneCountryCode) ? dialCode : '';
 
       if (input.value.trim().startsWith('+') && dialCode) {
         const internationalNumber = iti.getNumber();
