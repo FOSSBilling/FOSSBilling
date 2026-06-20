@@ -143,6 +143,24 @@ body {
     max-width: 5.5rem;
 }
 
+.iti {
+    --iti-border-color: var(--bs-border-color);
+    --iti-country-selector-bg: var(--bs-body-bg);
+    --iti-hover-color: rgba(var(--bs-primary-rgb), 0.08);
+    --iti-icon-color: var(--bs-secondary-color);
+
+    width: 100%;
+}
+
+.iti__country-selector,
+.iti__search-input {
+    color: var(--bs-body-color);
+}
+
+.iti__search-input {
+    background-color: var(--bs-body-bg);
+}
+
 .email-list {
     border-radius: 0;
 

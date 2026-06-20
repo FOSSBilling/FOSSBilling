@@ -1,6 +1,7 @@
 import { Tooltip, Toast, Modal, Collapse, Tab } from 'bootstrap/dist/js/bootstrap.esm.js';
 import './js/utils';
 import initTheme from './js/ui/theme.js';
+import initPhoneInput from './js/phone-input.js';
 
 globalThis.bootstrap = { Tooltip, Toast, Modal, Collapse, Tab };
 
@@ -36,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
    * and the data-bs-theme attribute is kept in sync.
    */
   initTheme();
+  initPhoneInput();
 
   /**
    * Enable Bootstrap Tooltip
