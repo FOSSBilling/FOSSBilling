@@ -1569,6 +1569,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function kbCreateArticle(int $articleCategoryId, string $title, ?string $status = null, ?string $content = null): int
     {
+        $status = $this->normalizeKbArticleStatus($status ?? KbArticle::DRAFT);
         $category = $this->getKbArticleCategoryRepository()->find($articleCategoryId);
         if (!$category instanceof KbArticleCategory) {
             throw new \FOSSBilling\Exception('Knowledge Base category not found');
@@ -1578,7 +1579,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             ->setCategory($category)
             ->setTitle($title)
             ->setSlug($this->di['tools']->slug($title))
-            ->setStatus($status ?? KbArticle::DRAFT)
+            ->setStatus($status)
             ->setContent($content);
 
         $this->di['em']->persist($model);
@@ -1592,6 +1593,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function kbUpdateArticle(int $id, ?int $articleCategoryId = null, ?string $title = null, ?string $slug = null, ?string $status = null, ?string $content = null, ?int $views = null): bool
     {
+        $status = $status !== null ? $this->normalizeKbArticleStatus($status) : null;
         $model = $this->getKbArticleRepository()->find($id);
 
         if (!$model instanceof KbArticle) {
@@ -1632,6 +1634,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['logger']->info('Updated knowledge base article #%s', $id);
 
         return true;
+    }
+
+    private function normalizeKbArticleStatus(string $status): string
+    {
+        $status = strtolower(trim($status));
+        if (!in_array($status, [KbArticle::ACTIVE, KbArticle::DRAFT], true)) {
+            throw new \FOSSBilling\Exception('Invalid knowledge base article status: :status', [':status' => $status]);
+        }
+
+        return $status;
     }
 
     public function kbCategoryRm(KbArticleCategory $model): bool

@@ -14,7 +14,6 @@ use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
 use Box\Mod\Support\Repository\KbArticleCategoryRepository;
 use Box\Mod\Support\Repository\KbArticleRepository;
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 
 use function Tests\Helpers\container;
@@ -190,19 +189,19 @@ test('kb article get list', function (): void {
 test('kb article get with id', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
 
-    $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('flush')->once();
-
     $di = container();
-    $di['em'] = $em;
 
     $guestApi->setDi($di);
 
+    $article = guestSupportKbArticleFixture();
     $repo = Mockery::mock(KbArticleRepository::class);
     $repo->shouldReceive('findOneActiveById')
         ->once()
         ->with(1)
-        ->andReturn(guestSupportKbArticleFixture());
+        ->andReturn($article);
+    $repo->shouldReceive('incrementViews')
+        ->once()
+        ->with($article);
 
     $supportService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $supportService->shouldReceive('getKbArticleRepository')
@@ -220,19 +219,19 @@ test('kb article get with id', function (): void {
 test('kb article get with slug', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
 
-    $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('flush')->once();
-
     $di = container();
-    $di['em'] = $em;
 
     $guestApi->setDi($di);
 
+    $article = guestSupportKbArticleFixture();
     $repo = Mockery::mock(KbArticleRepository::class);
     $repo->shouldReceive('findOneActiveBySlug')
         ->once()
         ->with('article-slug')
-        ->andReturn(guestSupportKbArticleFixture());
+        ->andReturn($article);
+    $repo->shouldReceive('incrementViews')
+        ->once()
+        ->with($article);
 
     $supportService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $supportService->shouldReceive('getKbArticleRepository')

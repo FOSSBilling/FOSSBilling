@@ -1461,6 +1461,22 @@ test('kb create article category not found exception', function (): void {
     $service->kbCreateArticle(1, 'Title', 'Active', 'Content');
 });
 
+test('kb create article invalid status exception', function (): void {
+    $service = new Service();
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
+    $emMock->shouldReceive('persist')->never();
+    $emMock->shouldReceive('flush')->never();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $service->setDi($di);
+
+    $this->expectException(FOSSBilling\Exception::class);
+    $service->kbCreateArticle(1, 'Title', 'invalid', 'Content');
+});
+
 test('kb update article', function (): void {
     $service = new Service();
     $randId = 1;
@@ -1537,6 +1553,22 @@ test('kb update article category not found exception', function (): void {
 
     $this->expectException(FOSSBilling\Exception::class);
     $service->kbUpdateArticle($randId, 1, 'Title', 'article-slug', 'active', 'content', 1);
+});
+
+test('kb update article invalid status exception', function (): void {
+    $service = new Service();
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
+    $emMock->shouldReceive('flush')->never();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $this->expectException(FOSSBilling\Exception::class);
+    $service->kbUpdateArticle(1, null, null, null, 'invalid');
 });
 
 test('kb update article not found exception', function (): void {

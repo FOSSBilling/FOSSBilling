@@ -67,4 +67,22 @@ class KbArticleRepository extends EntityRepository
             ->getQuery()
             ->getSingleScalarResult();
     }
+
+    public function incrementViews(KbArticle $article): void
+    {
+        $id = $article->getId();
+        if ($id === null) {
+            return;
+        }
+
+        $this->getEntityManager()->createQueryBuilder()
+            ->update(KbArticle::class, 'a')
+            ->set('a.views', 'a.views + 1')
+            ->where('a.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->execute();
+
+        $article->incrementViews();
+    }
 }

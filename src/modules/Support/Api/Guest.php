@@ -134,7 +134,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
         /** @var \Box\Mod\Support\Repository\KbArticleRepository $repo */
         $repo = $this->getService()->getKbArticleRepository();
-        
+
         $qb = $repo->getSearchQueryBuilder(KbArticle::ACTIVE, $search, $cat);
 
         return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
@@ -152,23 +152,18 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $id = $data['id'] ?? null;
         $slug = $data['slug'] ?? null;
 
-        $article = false;
         /** @var \Box\Mod\Support\Repository\KbArticleRepository $repo */
         $repo = $this->getService()->getKbArticleRepository();
-        
-        if ($id) {
-            $article = $repo->findOneActiveById((int) $id);
-        } else {
-            $article = $repo->findOneActiveBySlug($slug);
-        }
+
+        $article = $id
+            ? $repo->findOneActiveById((int) $id)
+            : $repo->findOneActiveBySlug($slug);
 
         if (!$article instanceof KbArticle) {
             throw new \FOSSBilling\InformationException('Article item not found');
         }
 
-        // Increment hit count
-        $article->incrementViews();
-        $this->getDi()['em']->flush();
+        $repo->incrementViews($article);
 
         return $article->toApiArray($this->getIdentity(), true);
     }
@@ -183,7 +178,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
         /** @var \Box\Mod\Support\Repository\KbArticleCategoryRepository $repo */
         $repo = $this->getService()->getKbArticleCategoryRepository();
-        
+
         $qb = $repo->getSearchQueryBuilder($data);
 
         return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data), $this->getIdentity(), $q);
@@ -209,15 +204,12 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $id = $data['id'] ?? null;
         $slug = $data['slug'] ?? null;
 
-        $cat = false;
-        
         /** @var \Box\Mod\Support\Repository\KbArticleCategoryRepository $repo */
         $repo = $this->getService()->getKbArticleCategoryRepository();
-        if ($id) {
-            $cat = $repo->find((int) $id);
-        } else {
-            $cat = $repo->findOneBySlug($slug);
-        }
+        
+        $cat = $id
+            ? $repo->find((int) $id)
+            : $repo->findOneBySlug($slug);
 
         if (!$cat instanceof KbArticleCategory) {
             throw new \FOSSBilling\InformationException('Knowledge Base category not found');
