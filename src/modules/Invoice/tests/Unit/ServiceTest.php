@@ -148,6 +148,7 @@ test('converts to api array', function (): void {
     $service = new Service();
     $invoiceModel = new Model_Invoice();
     $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel->hash = 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4';
 
     $invoiceItemModel = new Model_InvoiceItem();
     $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
@@ -170,7 +171,7 @@ test('converts to api array', function (): void {
         'serie' => 'BB',
         'nr' => '0001',
         'serie_nr' => 'BB0001',
-        'hash' => 'hashedValue',
+        'hash' => 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4',
         'gateway_id' => '',
         'taxname' => '',
         'taxrate' => '',
@@ -223,10 +224,10 @@ test('converts to api array', function (): void {
         if ($sub == 'InvoiceItem') {
             $service = $invoiceItemServiceMock;
         }
-        if ($serviceName == 'system' || $serviceName == 'System') {
+        if (is_string($serviceName) && strtolower($serviceName) === 'system') {
             $service = $systemService;
         }
-        if ($sub == 'Subscription') {
+        if ($sub === 'Subscription') {
             $service = $subscriptionServiceMock;
         }
 
@@ -241,6 +242,202 @@ test('converts to api array', function (): void {
     expect($result['currency_rate'])->toBe(1);
     expect($result['paid_at'])->toBeNull();
     expect($result['buyer']['phone_cc'])->toBe('');
+});
+
+test('ensure valid hash is a no-op for modern hashes', function (): void {
+    $service = new Service();
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel->hash = 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4';
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldNotReceive('store');
+
+    $di = container();
+    $di['db'] = $dbMock;
+
+    $service->setDi($di);
+    $service->ensureValidHash($invoiceModel);
+
+    expect($invoiceModel->hash)->toBe('a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4');
+});
+
+test('ensure valid hash regenerates a missing hash', function (): void {
+    $service = new Service();
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_hash_lifetime_days', '90')
+        ->andReturn('90');
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')
+        ->once()
+        ->with($invoiceModel);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(function ($serviceName) use ($systemService) {
+        if ($serviceName === 'system') {
+            return $systemService;
+        }
+
+        return null;
+    });
+
+    $service->setDi($di);
+    $service->ensureValidHash($invoiceModel);
+
+    expect($invoiceModel->hash)->toBeString();
+    expect(strlen($invoiceModel->hash))->toBeGreaterThanOrEqual(30);
+    expect(strlen($invoiceModel->hash))->toBeLessThanOrEqual(60);
+    expect($invoiceModel->hash)->toMatch('/^[a-f0-9]+$/');
+    expect($invoiceModel->hash_expires_at)->toBeString();
+});
+
+test('ensure valid hash regenerates a legacy format hash', function (): void {
+    $service = new Service();
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel->hash = 'AAAAAAAAC4C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8';
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_hash_lifetime_days', '90')
+        ->andReturn('90');
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')
+        ->once()
+        ->with($invoiceModel);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(function ($serviceName) use ($systemService) {
+        if ($serviceName === 'system') {
+            return $systemService;
+        }
+
+        return null;
+    });
+
+    $service->setDi($di);
+    $service->ensureValidHash($invoiceModel);
+
+    expect(strlen($invoiceModel->hash))->toBeGreaterThanOrEqual(30);
+    expect(strlen($invoiceModel->hash))->toBeLessThanOrEqual(60);
+    expect($invoiceModel->hash)->toMatch('/^[a-f0-9]+$/');
+});
+
+test('to api array self-heals invoice with missing hash', function (): void {
+    $service = new Service();
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $invoiceItemModel = new Model_InvoiceItem();
+    $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getCompany')->atLeast()->once();
+    $systemService->shouldReceive('getParamValue')
+        ->atLeast()->once()
+        ->andReturnUsing(function (string $param, string $default = '') {
+            if ($param === 'invoice_hash_lifetime_days') {
+                return '90';
+            }
+
+            return $default;
+        });
+
+    $subscriptionServiceMock = Mockery::mock(ServiceSubscription::class);
+    $subscriptionServiceMock->shouldReceive('getSubscriptionPeriod')
+        ->byDefault()
+        ->andReturn('1W');
+    $invoiceItemServiceMock = Mockery::mock(ServiceInvoiceItem::class);
+
+    $modelToArrayResult = [
+        'id' => 1,
+        'serie' => 'BB',
+        'nr' => '0001',
+        'serie_nr' => 'BB0001',
+        'hash' => null,
+        'gateway_id' => '',
+        'taxname' => '',
+        'taxrate' => '',
+        'currency' => '',
+        'status' => '',
+        'notes' => '',
+        'text_1' => '',
+        'text_2' => '',
+        'due_at' => '',
+        'created_at' => '',
+        'updated_at' => '',
+        'buyer_first_name' => '',
+        'buyer_last_name' => '',
+        'buyer_company' => '',
+        'buyer_company_vat' => '',
+        'buyer_company_number' => '',
+        'buyer_address' => '',
+        'buyer_city' => '',
+        'buyer_state' => '',
+        'buyer_country' => '',
+        'buyer_phone' => '',
+        'buyer_email' => '',
+        'buyer_zip' => '',
+        'seller_company_vat' => '',
+        'seller_company_number' => '',
+    ];
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('toArray')
+        ->atLeast()->once()
+        ->andReturnUsing(function () use ($invoiceModel, $modelToArrayResult): array {
+            $modelToArrayResult['hash'] = $invoiceModel->hash;
+
+            return $modelToArrayResult;
+        });
+    $dbMock->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn([$invoiceItemModel]);
+    $dbMock->shouldReceive('getCell')
+        ->byDefault()
+        ->andReturn('1W');
+    $dbMock->shouldReceive('store')
+        ->once()
+        ->with($invoiceModel);
+
+    $periodMock = Mockery::mock('\Box_Period');
+    $periodMock->shouldReceive('getUnit');
+    $periodMock->shouldReceive('getQty');
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $subscriptionServiceMock, $invoiceItemServiceMock) {
+        $service = null;
+        if ($sub === 'InvoiceItem') {
+            $service = $invoiceItemServiceMock;
+        }
+        if ($serviceName === 'system' || $serviceName === 'System') {
+            $service = $systemService;
+        }
+        if ($sub === 'Subscription') {
+            $service = $subscriptionServiceMock;
+        }
+
+        return $service;
+    });
+    $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
+
+    $service->setDi($di);
+
+    $result = $service->toApiArray($invoiceModel);
+
+    expect($result)->toBeArray();
+    expect($result['hash'])->toBeString();
+    expect(strlen((string) $result['hash']))->toBeGreaterThanOrEqual(30);
+    expect(strlen((string) $result['hash']))->toBeLessThanOrEqual(60);
 });
 
 test('handles after admin invoice payment received event', function (): void {
@@ -273,10 +470,10 @@ test('handles after admin invoice payment received event', function (): void {
 
     $di = container();
     $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($emailService, $serviceMock) {
-        if ($serviceName == 'invoice') {
+        if ($serviceName === 'invoice') {
             return $serviceMock;
         }
-        if ($serviceName == 'email') {
+        if ($serviceName === 'email') {
             return $emailService;
         }
     });
@@ -2136,7 +2333,7 @@ test('generateRenewalInvoiceForSubscriptionPayment uses the original order and n
         ->with('ClientOrder', 82)
         ->andReturn($originalOrder);
 
-    $serviceMock = Mockery::mock(Service::class . '[generateForOrder, approveInvoice]');
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('generateForOrder')
         ->with(Mockery::on(fn ($order): bool => $order === $originalOrder))
         ->once()
@@ -2207,14 +2404,12 @@ test('markAsPaid transitions a deposit invoice to paid status', function (): voi
     $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $productService = Mockery::mock(Box\Mod\Product\Service::class)->shouldIgnoreMissing();
-    $di['mod_service'] = $di->protect(function ($name, $sub = '') use ($systemService, $currencyService, $invoiceItemService, $productService) {
-        return match ([$name, $sub]) {
-            ['system', ''] => $systemService,
-            ['currency', ''] => $currencyService,
-            ['Invoice', 'InvoiceItem'] => $invoiceItemService,
-            ['Product', ''], ['product', ''] => $productService,
-            default => throw new RuntimeException("Unexpected service: {$name}/{$sub}"),
-        };
+    $di['mod_service'] = $di->protect(fn ($name, $sub = '') => match ([$name, $sub]) {
+        ['system', ''] => $systemService,
+        ['currency', ''] => $currencyService,
+        ['Invoice', 'InvoiceItem'] => $invoiceItemService,
+        ['Product', ''], ['product', ''] => $productService,
+        default => throw new RuntimeException("Unexpected service: {$name}/{$sub}"),
     });
     $di['events_manager'] = $eventsManager;
     $service->setDi($di);

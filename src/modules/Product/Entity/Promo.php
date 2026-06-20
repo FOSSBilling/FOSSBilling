@@ -179,7 +179,7 @@ class Promo implements ApiArrayInterface, TimestampInterface
 
     public function setMaxUses(?int $maxUses): self
     {
-        $this->maxUses = max(0, (int) ($maxUses ?? 0));
+        $this->maxUses = max(0, $maxUses ?? 0);
 
         return $this;
     }
@@ -191,7 +191,7 @@ class Promo implements ApiArrayInterface, TimestampInterface
 
     public function setUsed(?int $used): self
     {
-        $this->used = max(0, (int) ($used ?? 0));
+        $this->used = max(0, $used ?? 0);
 
         return $this;
     }

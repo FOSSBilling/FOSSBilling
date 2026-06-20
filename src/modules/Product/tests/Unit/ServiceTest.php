@@ -30,7 +30,6 @@ function productTestCreateProductEntity(int $id): Product
 {
     $product = new Product();
     $reflection = new ReflectionProperty($product, 'id');
-    $reflection->setAccessible(true);
     $reflection->setValue($product, $id);
 
     return $product;
@@ -40,7 +39,6 @@ function productTestCreatePromoEntity(int $id): Promo
 {
     $promo = new Promo();
     $reflection = new ReflectionProperty($promo, 'id');
-    $reflection->setAccessible(true);
     $reflection->setValue($promo, $id);
 
     return $promo;
@@ -50,7 +48,6 @@ function productTestCreateProductCategoryEntity(int $id): ProductCategory
 {
     $category = new ProductCategory();
     $reflection = new ReflectionProperty($category, 'id');
-    $reflection->setAccessible(true);
     $reflection->setValue($category, $id);
 
     return $category;
@@ -60,7 +57,6 @@ function productTestCreateProductPaymentEntity(int $id): ProductPayment
 {
     $productPayment = new ProductPayment();
     $reflection = new ReflectionProperty($productPayment, 'id');
-    $reflection->setAccessible(true);
     $reflection->setValue($productPayment, $id);
 
     return $productPayment;
@@ -78,12 +74,12 @@ function productTestCreateEntityManagerWithRepositories(
         public int $flushCalls = 0;
 
         public function __construct(
-            private ?ProductRepository $productRepo,
-            private ?ProductPaymentRepository $paymentRepo,
-            private ?Product $persistedProduct,
-            private ?ProductPayment $persistedPayment,
-            private ?ProductCategoryRepository $categoryRepo,
-            private ?ProductCategory $persistedCategory,
+            private readonly ?ProductRepository $productRepo,
+            private readonly ?ProductPaymentRepository $paymentRepo,
+            private readonly ?Product $persistedProduct,
+            private readonly ?ProductPayment $persistedPayment,
+            private readonly ?ProductCategoryRepository $categoryRepo,
+            private readonly ?ProductCategory $persistedCategory,
         ) {
         }
 
@@ -101,19 +97,16 @@ function productTestCreateEntityManagerWithRepositories(
         {
             if ($entity instanceof Product && $this->persistedProduct instanceof Product) {
                 $reflection = new ReflectionProperty($entity, 'id');
-                $reflection->setAccessible(true);
                 $reflection->setValue($entity, $this->persistedProduct->getId());
             }
 
             if ($entity instanceof ProductPayment && $this->persistedPayment instanceof ProductPayment) {
                 $reflection = new ReflectionProperty($entity, 'id');
-                $reflection->setAccessible(true);
                 $reflection->setValue($entity, $this->persistedPayment->getId());
             }
 
             if ($entity instanceof ProductCategory && $this->persistedCategory instanceof ProductCategory) {
                 $reflection = new ReflectionProperty($entity, 'id');
-                $reflection->setAccessible(true);
                 $reflection->setValue($entity, $this->persistedCategory->getId());
             }
         }
@@ -134,7 +127,7 @@ function productTestCreateProductPaymentEntityManager(ProductPaymentRepository $
     return new class($paymentRepo) {
         public int $flushCalls = 0;
 
-        public function __construct(private ProductPaymentRepository $paymentRepo)
+        public function __construct(private readonly ProductPaymentRepository $paymentRepo)
         {
         }
 
@@ -797,11 +790,9 @@ test('update priority', function (): void {
     $productB = productTestCreateProductEntity(5);
 
     $productRepo = Mockery::mock(ProductRepository::class);
-    $productRepo->shouldReceive('find')->twice()->andReturnUsing(function ($id) use ($productA, $productB) {
-        return match ($id) {
-            1 => $productA,
-            5 => $productB,
-        };
+    $productRepo->shouldReceive('find')->twice()->andReturnUsing(fn ($id) => match ($id) {
+        1 => $productA,
+        5 => $productB,
     });
 
     $di = container();
@@ -901,7 +892,7 @@ test('delete product active order exception', function (): void {
 
     $service->setDi($di);
 
-    expect(fn () => $service->deleteProduct($model))
+    expect(fn (): bool => $service->deleteProduct($model))
         ->toThrow(FOSSBilling\Exception::class, 'Cannot remove product which has active orders.');
 });
 
@@ -965,7 +956,7 @@ test('remove product category category has products exception', function (): voi
 
     $service->setDi($di);
 
-    expect(fn () => $service->removeProductCategory($modelProductCategory))
+    expect(fn (): bool => $service->removeProductCategory($modelProductCategory))
         ->toThrow(FOSSBilling\Exception::class, 'Cannot remove product category with products');
 });
 
@@ -992,7 +983,7 @@ test('create promo', function (): void {
     $promoRepo = Mockery::mock(PromoRepository::class);
     $promoRepo->shouldReceive('findOneBy')->once()->with(['code' => 'code'])->andReturn(null);
 
-    $emMock = new class($promoRepo) {
+    $emMock = new readonly class($promoRepo) {
         public function __construct(private object $promoRepo)
         {
         }
@@ -1005,7 +996,6 @@ test('create promo', function (): void {
         public function persist(object $entity): void
         {
             $reflection = new ReflectionProperty($entity, 'id');
-            $reflection->setAccessible(true);
             $reflection->setValue($entity, 1);
         }
 
@@ -1036,7 +1026,7 @@ test('to promo api array', function (): void {
     $promoRepo = Mockery::mock(PromoRepository::class);
     $promoRepo->shouldReceive('countLinkedOrdersByPromoId')->once()->with(1)->andReturn(0);
 
-    $emMock = new class($promoRepo, $repoMock) {
+    $emMock = new readonly class($promoRepo, $repoMock) {
         public function __construct(private object $promoRepo, private object $redemptionRepo)
         {
         }
@@ -1081,7 +1071,7 @@ test('to promo api array includes usage stats for deep requests', function (): v
     $promoRepo = Mockery::mock(PromoRepository::class);
     $promoRepo->shouldNotReceive('countLinkedOrdersByPromoId');
 
-    $emMock = new class($promoRepo, $repoMock) {
+    $emMock = new readonly class($promoRepo, $repoMock) {
         public function __construct(private object $promoRepo, private object $redemptionRepo)
         {
         }
@@ -1147,11 +1137,11 @@ test('promo can be applied', function (Promo $promo, bool $expectedResult): void
     $service = new Service();
     expect($service->promoCanBeApplied($promo))->toBe($expectedResult);
 })->with([
-    'inactive' => [fn () => productTestCreatePromoEntity(1)->setActive(false), false],
-    'max uses reached' => [fn () => productTestCreatePromoEntity(2)->setActive(true)->setMaxUses(5)->setUsed(5), false],
-    'not yet started' => [fn () => productTestCreatePromoEntity(3)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTime('tomorrow')), false],
-    'already ended' => [fn () => productTestCreatePromoEntity(4)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTime('yesterday'))->setEndAt(new DateTime('yesterday')), false],
-    'within window' => [fn () => productTestCreatePromoEntity(5)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTime('yesterday'))->setEndAt(new DateTime('tomorrow')), true],
+    'inactive' => [fn (): Promo => productTestCreatePromoEntity(1)->setActive(false), false],
+    'max uses reached' => [fn (): Promo => productTestCreatePromoEntity(2)->setActive(true)->setMaxUses(5)->setUsed(5), false],
+    'not yet started' => [fn (): Promo => productTestCreatePromoEntity(3)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTime('tomorrow')), false],
+    'already ended' => [fn (): Promo => productTestCreatePromoEntity(4)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTime('yesterday'))->setEndAt(new DateTime('yesterday')), false],
+    'within window' => [fn (): Promo => productTestCreatePromoEntity(5)->setActive(true)->setMaxUses(10)->setUsed(5)->setStartAt(new DateTime('yesterday'))->setEndAt(new DateTime('tomorrow')), true],
 ]);
 
 test('can client use promo returns false when promo cannot be applied', function (): void {
@@ -1202,7 +1192,7 @@ test('use promo', function (): void {
     $promoRepo = Mockery::mock(PromoRepository::class);
     $promoRepo->shouldReceive('incrementUsageIfAvailable')->once()->with(12, Mockery::type(DateTimeInterface::class))->andReturn(1);
 
-    $emMock = new class($promoRepo) {
+    $emMock = new readonly class($promoRepo) {
         public function __construct(private object $promoRepo)
         {
         }
@@ -1228,7 +1218,7 @@ test('use promo limit reached', function (): void {
     $promoRepo = Mockery::mock(PromoRepository::class);
     $promoRepo->shouldReceive('incrementUsageIfAvailable')->once()->andReturn(0);
 
-    $emMock = new class($promoRepo) {
+    $emMock = new readonly class($promoRepo) {
         public function __construct(private object $promoRepo)
         {
         }
@@ -1335,13 +1325,12 @@ test('find active promo by code', function (): void {
     $promoEntity = new Promo();
     $promoEntity->setCode('CODE');
     $reflection = new ReflectionProperty($promoEntity, 'id');
-    $reflection->setAccessible(true);
     $reflection->setValue($promoEntity, 14);
 
     $promoRepo = Mockery::mock(PromoRepository::class);
     $promoRepo->shouldReceive('findActiveByCode')->once()->with('CODE')->andReturn($promoEntity);
 
-    $emMock = new class($promoRepo) {
+    $emMock = new readonly class($promoRepo) {
         public function __construct(private object $promoRepo)
         {
         }
@@ -1424,7 +1413,7 @@ test('get renewal promo adjustment for domain order', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['api_guest'] = $apiGuest;
-    $di['em'] = new class($promoRepo) {
+    $di['em'] = new readonly class($promoRepo) {
         public function __construct(private object $promoRepo)
         {
         }
@@ -1490,30 +1479,30 @@ test('is promo available for client group', function (Promo $promo, ?Model_Clien
 
     expect($service->isPromoAvailableForClientGroup($promo))->toBe($expectedResult);
 })->with([
-    'no restrictions' => [fn () => productTestCreatePromoEntity(1)->setClientGroups(json_encode([])), fn () => $client = new Model_Client(), true],
-    'restricted and no client group' => [fn () => productTestCreatePromoEntity(2)->setClientGroups(json_encode([1, 2])), function () {
+    'no restrictions' => [fn (): Promo => productTestCreatePromoEntity(1)->setClientGroups(json_encode([])), fn (): Model_Client => $client = new Model_Client(), true],
+    'restricted and no client group' => [fn (): Promo => productTestCreatePromoEntity(2)->setClientGroups(json_encode([1, 2])), function () {
         $client = new Model_Client();
         $client->loadBean(new Tests\Helpers\DummyBean());
         $client->client_group_id = null;
 
         return $client;
     }, false],
-    'restricted and wrong client group' => [fn () => productTestCreatePromoEntity(3)->setClientGroups(json_encode([1, 2])), function () {
+    'restricted and wrong client group' => [fn (): Promo => productTestCreatePromoEntity(3)->setClientGroups(json_encode([1, 2])), function () {
         $client = new Model_Client();
         $client->loadBean(new Tests\Helpers\DummyBean());
         $client->client_group_id = 3;
 
         return $client;
     }, false],
-    'restricted and matching client group' => [fn () => productTestCreatePromoEntity(4)->setClientGroups(json_encode([1, 2])), function () {
+    'restricted and matching client group' => [fn (): Promo => productTestCreatePromoEntity(4)->setClientGroups(json_encode([1, 2])), function () {
         $client = new Model_Client();
         $client->loadBean(new Tests\Helpers\DummyBean());
         $client->client_group_id = 2;
 
         return $client;
     }, true],
-    'no restrictions and no client' => [fn () => productTestCreatePromoEntity(5)->setClientGroups(json_encode([])), null, true],
-    'restricted and no client' => [fn () => productTestCreatePromoEntity(6)->setClientGroups(json_encode([1, 2])), null, false],
+    'no restrictions and no client' => [fn (): Promo => productTestCreatePromoEntity(5)->setClientGroups(json_encode([])), null, true],
+    'restricted and no client' => [fn (): Promo => productTestCreatePromoEntity(6)->setClientGroups(json_encode([1, 2])), null, false],
 ]);
 
 test('release reserved promo redemptions for invoice releases reservations and decrements operational counter', function (): void {
@@ -1548,7 +1537,7 @@ test('release reserved promo redemptions for invoice releases reservations and d
     $di['em'] = new class($promoRepo, $repoMock) {
         public int $flushCalls = 0;
 
-        public function __construct(private object $promoRepo, private object $redemptionRepo)
+        public function __construct(private readonly object $promoRepo, private readonly object $redemptionRepo)
         {
         }
 
@@ -1597,8 +1586,8 @@ test('compensateCheckoutPromoFailure deletes orphaned redemptions and decrements
         public int $removeCalls = 0;
 
         public function __construct(
-            private object $promoRepo,
-            private object $redemptionRepo,
+            private readonly object $promoRepo,
+            private readonly object $redemptionRepo,
         ) {
         }
 
@@ -1647,13 +1636,12 @@ test('update promo', function (): void {
     $promoEntity = new Promo();
     $promoEntity->setCode('OLD');
     $reflection = new ReflectionProperty($promoEntity, 'id');
-    $reflection->setAccessible(true);
     $reflection->setValue($promoEntity, 1);
 
     $promoRepo = Mockery::mock(PromoRepository::class);
     $promoRepo->shouldReceive('findOneBy')->once()->with(['code' => 'GO'])->andReturn(null);
 
-    $emMock = new class($promoRepo) {
+    $emMock = new readonly class($promoRepo) {
         public function __construct(private object $promoRepo)
         {
         }
@@ -1689,7 +1677,7 @@ test('delete promo', function (): void {
     $promoRepo = Mockery::mock(PromoRepository::class);
     $promoRepo->shouldReceive('countLinkedOrdersByPromoId')->once()->with(1)->andReturn(0);
 
-    $emMock = new class($promoRepo, $redemptionRepo) {
+    $emMock = new readonly class($promoRepo, $redemptionRepo) {
         public function __construct(private object $promoRepo, private object $redemptionRepo)
         {
         }
@@ -1730,7 +1718,7 @@ test('delete promo blocks deletion when redemption history exists', function ():
     $promoRepo = Mockery::mock(PromoRepository::class);
     $promoRepo->shouldNotReceive('countLinkedOrdersByPromoId');
 
-    $emMock = new class($promoRepo, $redemptionRepo) {
+    $emMock = new readonly class($promoRepo, $redemptionRepo) {
         public function __construct(private object $promoRepo, private object $redemptionRepo)
         {
         }
@@ -1747,7 +1735,7 @@ test('delete promo blocks deletion when redemption history exists', function ():
 
     $service->setDi($di);
 
-    expect(fn () => $service->deletePromo($promoEntity))
+    expect(fn (): bool => $service->deletePromo($promoEntity))
         ->toThrow(FOSSBilling\InformationException::class, 'Promotions with redemption history cannot be deleted. Disable the promotion instead.');
 });
 
@@ -1761,7 +1749,7 @@ test('delete promo blocks deletion when linked orders exist without ledger histo
     $promoRepo = Mockery::mock(PromoRepository::class);
     $promoRepo->shouldReceive('countLinkedOrdersByPromoId')->once()->with(1)->andReturn(1);
 
-    $emMock = new class($promoRepo, $redemptionRepo) {
+    $emMock = new readonly class($promoRepo, $redemptionRepo) {
         public function __construct(private object $promoRepo, private object $redemptionRepo)
         {
         }
@@ -1777,7 +1765,7 @@ test('delete promo blocks deletion when linked orders exist without ledger histo
 
     $service->setDi($di);
 
-    expect(fn () => $service->deletePromo($promoEntity))
+    expect(fn (): bool => $service->deletePromo($promoEntity))
         ->toThrow(FOSSBilling\InformationException::class, 'Promotions with redemption history cannot be deleted. Disable the promotion instead.');
 });
 
@@ -1846,7 +1834,7 @@ test('get product search query', function (): void {
     $repo->shouldReceive('getSearchQueryBuilder')->once()->with($data)->andReturn($qb);
 
     $di = container();
-    $di['em'] = new class($repo) {
+    $di['em'] = new readonly class($repo) {
         public function __construct(private ProductRepository $repo)
         {
         }
@@ -1929,7 +1917,7 @@ test('find one active by id', function (): void {
     $repo->shouldReceive('findActiveById')->once()->with(1)->andReturn($model);
 
     $di = container();
-    $di['em'] = new class($repo) {
+    $di['em'] = new readonly class($repo) {
         public function __construct(private ProductRepository $repo)
         {
         }
@@ -1953,7 +1941,7 @@ test('find one active by slug', function (): void {
     $repo->shouldReceive('findActiveBySlug')->once()->with('product/1')->andReturn($model);
 
     $di = container();
-    $di['em'] = new class($repo) {
+    $di['em'] = new readonly class($repo) {
         public function __construct(private ProductRepository $repo)
         {
         }
@@ -2146,11 +2134,9 @@ test('assert upgrade allowed by ids throws helpful exception', function (): void
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getUpgradablePairsByProductId')->once()->with(1)->andReturn([]);
-    $serviceMock->shouldReceive('findProductById')->twice()->andReturnUsing(function ($id) use ($currentProduct, $upgradeProduct) {
-        return match ($id) {
-            1 => $currentProduct,
-            2 => $upgradeProduct,
-        };
+    $serviceMock->shouldReceive('findProductById')->twice()->andReturnUsing(fn ($id) => match ($id) {
+        1 => $currentProduct,
+        2 => $upgradeProduct,
     });
 
     expect(fn () => $serviceMock->assertUpgradeAllowedByIds(1, 2))

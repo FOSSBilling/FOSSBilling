@@ -20,7 +20,6 @@ function orderServiceCreateProductEntity(?int $id = null, ?string $type = null):
     $product = new Product();
     if ($id !== null) {
         $reflection = new ReflectionProperty($product, 'id');
-        $reflection->setAccessible(true);
         $reflection->setValue($product, $id);
     }
     if ($type !== null) {
@@ -988,103 +987,101 @@ test('toApiArray returns expected keys', function (): void {
     expect($result)->toHaveKey('client');
 });
 
-dataset('searchQueryData', function (): array {
-    return [
-        'no data' => [[], 'SELECT co.* from client_order co', []],
-        'client_id' => [
-            ['client_id' => 1],
-            'co.client_id = :client_id',
-            [':client_id' => '1'],
+dataset('searchQueryData', fn (): array => [
+    'no data' => [[], 'SELECT co.* from client_order co', []],
+    'client_id' => [
+        ['client_id' => 1],
+        'co.client_id = :client_id',
+        [':client_id' => '1'],
+    ],
+    'invoice_option' => [
+        ['invoice_option' => 'issue-invoice'],
+        'co.invoice_option = :invoice_option',
+        [':invoice_option' => 'issue-invoice'],
+    ],
+    'id' => [
+        ['id' => 1],
+        'co.id = :id',
+        [':id' => '1'],
+    ],
+    'status' => [
+        ['status' => 'pending_setup'],
+        'co.status = :status',
+        [':status' => 'pending_setup'],
+    ],
+    'product_id' => [
+        ['product_id' => 1],
+        'co.product_id = :product_id',
+        [':product_id' => '1'],
+    ],
+    'type' => [
+        ['type' => 'custom'],
+        'co.service_type = :service_type',
+        [':service_type' => 'custom'],
+    ],
+    'title' => [
+        ['title' => 'titleField'],
+        'co.title LIKE :title',
+        [':title' => '%titleField%'],
+    ],
+    'period' => [
+        ['period' => '1Y'],
+        'co.period = :period',
+        [':period' => '1Y'],
+    ],
+    'hide_addons' => [
+        ['hide_addons' => true],
+        'co.group_master = 1',
+        [],
+    ],
+    'created_at' => [
+        ['created_at' => '2012-12-11'],
+        "DATE_FORMAT(co.created_at, '%Y-%m-%d') = :created_at",
+        [':created_at' => '2012-12-11'],
+    ],
+    'date_from' => [
+        ['date_from' => '2012-12-11'],
+        'UNIX_TIMESTAMP(co.created_at) >= :date_from',
+        [':date_from' => strtotime('2012-12-11')],
+    ],
+    'date_to' => [
+        ['date_to' => '2012-12-11'],
+        'UNIX_TIMESTAMP(co.created_at) <= :date_to',
+        [':date_to' => strtotime('2012-12-11')],
+    ],
+    'search numeric' => [
+        ['search' => 120],
+        'co.id = :search',
+        [':search' => 120],
+    ],
+    'search string' => [
+        ['search' => 'John'],
+        '(c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR co.title LIKE :title)',
+        [
+            ':first_name' => '%John%',
+            ':last_name' => '%John%',
+            ':title' => '%John%',
         ],
-        'invoice_option' => [
-            ['invoice_option' => 'issue-invoice'],
-            'co.invoice_option = :invoice_option',
-            [':invoice_option' => 'issue-invoice'],
+    ],
+    'ids' => [
+        ['ids' => [1, 2, 3]],
+        'co.id IN (:ids)',
+        [':ids' => '1, 2, 3'],
+    ],
+    'promo_id' => [
+        ['promo_id' => 9],
+        'co.promo_id = :promo_id',
+        [':promo_id' => 9],
+    ],
+    'meta' => [
+        ['meta' => ['param' => 'value']],
+        '(meta.name = :meta_name1 AND meta.value LIKE :meta_value1)',
+        [
+            ':meta_name1' => 'param',
+            ':meta_value1' => 'value%',
         ],
-        'id' => [
-            ['id' => 1],
-            'co.id = :id',
-            [':id' => '1'],
-        ],
-        'status' => [
-            ['status' => 'pending_setup'],
-            'co.status = :status',
-            [':status' => 'pending_setup'],
-        ],
-        'product_id' => [
-            ['product_id' => 1],
-            'co.product_id = :product_id',
-            [':product_id' => '1'],
-        ],
-        'type' => [
-            ['type' => 'custom'],
-            'co.service_type = :service_type',
-            [':service_type' => 'custom'],
-        ],
-        'title' => [
-            ['title' => 'titleField'],
-            'co.title LIKE :title',
-            [':title' => '%titleField%'],
-        ],
-        'period' => [
-            ['period' => '1Y'],
-            'co.period = :period',
-            [':period' => '1Y'],
-        ],
-        'hide_addons' => [
-            ['hide_addons' => true],
-            'co.group_master = 1',
-            [],
-        ],
-        'created_at' => [
-            ['created_at' => '2012-12-11'],
-            "DATE_FORMAT(co.created_at, '%Y-%m-%d') = :created_at",
-            [':created_at' => '2012-12-11'],
-        ],
-        'date_from' => [
-            ['date_from' => '2012-12-11'],
-            'UNIX_TIMESTAMP(co.created_at) >= :date_from',
-            [':date_from' => strtotime('2012-12-11')],
-        ],
-        'date_to' => [
-            ['date_to' => '2012-12-11'],
-            'UNIX_TIMESTAMP(co.created_at) <= :date_to',
-            [':date_to' => strtotime('2012-12-11')],
-        ],
-        'search numeric' => [
-            ['search' => 120],
-            'co.id = :search',
-            [':search' => 120],
-        ],
-        'search string' => [
-            ['search' => 'John'],
-            '(c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR co.title LIKE :title)',
-            [
-                ':first_name' => '%John%',
-                ':last_name' => '%John%',
-                ':title' => '%John%',
-            ],
-        ],
-        'ids' => [
-            ['ids' => [1, 2, 3]],
-            'co.id IN (:ids)',
-            [':ids' => '1, 2, 3'],
-        ],
-        'promo_id' => [
-            ['promo_id' => 9],
-            'co.promo_id = :promo_id',
-            [':promo_id' => 9],
-        ],
-        'meta' => [
-            ['meta' => ['param' => 'value']],
-            '(meta.name = :meta_name1 AND meta.value LIKE :meta_value1)',
-            [
-                ':meta_name1' => 'param',
-                ':meta_value1' => 'value%',
-            ],
-        ],
-    ];
-});
+    ],
+]);
 
 test('getSearchQuery returns expected query and bindings', function (array $data, string $expectedStr, array $expectedParams): void {
     $di = container();
@@ -1657,7 +1654,7 @@ test('activateOrder throws for non-pending order', function (): void {
 
     $svc = new Service();
 
-    expect(fn () => $svc->activateOrder($clientOrderModel))
+    expect(fn (): bool => $svc->activateOrder($clientOrderModel))
         ->toThrow(FOSSBilling\Exception::class, 'Only pending setup or failed orders can be activated');
 });
 
@@ -1775,7 +1772,7 @@ test('stockSale throws when quantity would go negative', function (): void {
     $svc = new Service();
     $svc->setDi($di);
 
-    expect(fn () => $svc->stockSale($productModel, 2))
+    expect(fn (): bool => $svc->stockSale($productModel, 2))
         ->toThrow(FOSSBilling\InformationException::class, 'Product 1 is out of stock.');
 });
 
@@ -1935,7 +1932,7 @@ test('suspendFromOrder throws for non-active order', function (): void {
     $svc = new Service();
     $svc->setDi($di);
 
-    expect(fn () => $svc->suspendFromOrder($clientOrderModel))
+    expect(fn (): bool => $svc->suspendFromOrder($clientOrderModel))
         ->toThrow(FOSSBilling\Exception::class, 'Only active orders can be suspended');
 });
 
@@ -2247,7 +2244,7 @@ test('updateOrderConfig throws when required field is missing', function (): voi
     $order->loadBean(new Tests\Helpers\DummyBean());
     $order->form_id = 7;
 
-    expect(fn () => $svc->updateOrderConfig($order, []))
+    expect(fn (): bool => $svc->updateOrderConfig($order, []))
         ->toThrow(FOSSBilling\Exception::class, '', 4892);
 });
 
@@ -2275,7 +2272,7 @@ test('updateOrderConfig throws for invalid select option', function (): void {
     $order->loadBean(new Tests\Helpers\DummyBean());
     $order->form_id = 8;
 
-    expect(fn () => $svc->updateOrderConfig($order, ['plan' => 'enterprise']))
+    expect(fn (): bool => $svc->updateOrderConfig($order, ['plan' => 'enterprise']))
         ->toThrow(FOSSBilling\Exception::class, '', 4893);
 });
 
@@ -2303,7 +2300,7 @@ test('updateOrderConfig select rejects array value', function (): void {
     $order->loadBean(new Tests\Helpers\DummyBean());
     $order->form_id = 11;
 
-    expect(fn () => $svc->updateOrderConfig($order, ['plan' => ['pro']]))
+    expect(fn (): bool => $svc->updateOrderConfig($order, ['plan' => ['pro']]))
         ->toThrow(FOSSBilling\Exception::class, '', 4893);
 });
 
@@ -2331,7 +2328,7 @@ test('updateOrderConfig throws for invalid radio option', function (): void {
     $order->loadBean(new Tests\Helpers\DummyBean());
     $order->form_id = 9;
 
-    expect(fn () => $svc->updateOrderConfig($order, ['os' => 'macos']))
+    expect(fn (): bool => $svc->updateOrderConfig($order, ['os' => 'macos']))
         ->toThrow(FOSSBilling\Exception::class, '', 4893);
 });
 
@@ -2359,7 +2356,7 @@ test('updateOrderConfig throws for invalid checkbox option', function (): void {
     $order->loadBean(new Tests\Helpers\DummyBean());
     $order->form_id = 10;
 
-    expect(fn () => $svc->updateOrderConfig($order, ['addons' => ['backup', 'ddos-protection']]))
+    expect(fn (): bool => $svc->updateOrderConfig($order, ['addons' => ['backup', 'ddos-protection']]))
         ->toThrow(FOSSBilling\Exception::class, '', 4894);
 });
 

@@ -23,7 +23,6 @@ function serviceDownloadableCreateProductEntity(?int $id = null, ?string $config
     $product = new Product();
     if ($id !== null) {
         $reflection = new ReflectionProperty($product, 'id');
-        $reflection->setAccessible(true);
         $reflection->setValue($product, $id);
     }
     if ($config !== null) {
@@ -155,6 +154,6 @@ test('validate file upload rejects unknown extension', function (): void {
 
     $reflection = new ReflectionMethod(Service::class, 'validateFileUpload');
 
-    expect(fn () => $reflection->invoke($service, $file))
+    expect(fn (): mixed => $reflection->invoke($service, $file))
         ->toThrow(FOSSBilling\Exception::class);
 });
