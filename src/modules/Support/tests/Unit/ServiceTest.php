@@ -1401,7 +1401,7 @@ test('kb suggestions enabled checks kb setting and area setting', function (): v
     $extensionService->shouldReceive('getConfig')
         ->with('mod_support')
         ->andReturn([
-            'kb_enable' => 'on',
+            'kb_enable' => true,
             'kb_suggestions_ticket' => 'on',
         ]);
 

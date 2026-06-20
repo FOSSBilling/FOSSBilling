@@ -102,8 +102,10 @@
                         <div class="card-body border-top">
                             <h4 class="card-title mb-2">{{ 'Knowledge Base'|trans }}</h4>
                             <p class="text-secondary mb-3">{{ 'Control whether the knowledge base is visible to clients and available throughout the support area.'|trans }}</p>
+                            {% set kb_enabled = params.kb_enable is not defined or params.kb_enable is same as(true) or params.kb_enable is same as('true') %}
                             <label class="form-check form-switch form-switch-2">
-                                <input class="form-check-input" name="kb_enable" type="checkbox" {% if params.kb_enable|default(false) %} checked="checked"{% endif %}>
+                                <input name="kb_enable" type="hidden" value="false">
+                                <input class="form-check-input" name="kb_enable" type="checkbox" value="true" {% if kb_enabled %} checked="checked"{% endif %}>
                                 <span class="form-check-label">{{ 'Enable Knowledge Base'|trans }}</span>
                             </label>
                             <label class="form-check form-switch form-switch-2">
@@ -114,7 +116,6 @@
                                 <input class="form-check-input" name="kb_suggestions_contact" type="checkbox" {% if params.kb_suggestions_contact|default(false) %} checked="checked"{% endif %}>
                                 <span class="form-check-label">{{ 'Show KB suggestions on the contact form'|trans }}</span>
                             </label>
-                            </div>
                         </div>
                         <div class="card-body border-top">
                             <h4 class="card-title mb-2">{{ 'Guest Tickets'|trans }}</h4>

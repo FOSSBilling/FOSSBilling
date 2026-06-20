@@ -17,6 +17,7 @@ use Box\Mod\Support\Entity\KbArticleCategory;
 use Box\Mod\Support\Repository\KbArticleCategoryRepository;
 use Box\Mod\Support\Repository\KbArticleRepository;
 use FOSSBilling\InformationException;
+use FOSSBilling\Tools;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
@@ -1556,7 +1557,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $extensionService = $this->di['mod_service']('extension');
         $config = $extensionService->getConfig('mod_support');
 
-        return isset($config['kb_enable']) && $config['kb_enable'] == 'on';
+        return Tools::normalizeBoolean($config['kb_enable'] ?? true, true);
     }
 
     public function kbSuggestionsEnabled(string $area): bool

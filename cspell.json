@@ -516,7 +516,8 @@
         "baselined",
         "endverbatim",
         "missingmodule",
-        "FOUC"
+        "FOUC",
+        "kbarticles"
     ],
     "ignorePaths": [
         "node_modules/**",
