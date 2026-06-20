@@ -13,6 +13,7 @@ describe('client profile', () => {
       firstName: 'Updated',
       lastName: 'Profile',
       company: 'Updated Cypress Company',
+      country: 'GB',
       phoneCountryCode: '44',
       phone: '7700900123',
       address: '42 Updated Road',
@@ -29,7 +30,7 @@ describe('client profile', () => {
       cy.get('input[name="first_name"]').clear().type(updatedProfile.firstName);
       cy.get('input[name="last_name"]').clear().type(updatedProfile.lastName);
       cy.get('input[name="company"]').clear().type(updatedProfile.company);
-      cy.get('input[name="phone_cc"]').clear().type(updatedProfile.phoneCountryCode);
+      cy.get('select[name="country"]').select(updatedProfile.country);
       cy.get('input[name="phone"]').clear().type(updatedProfile.phone);
       cy.get('input[name="address_1"]').clear().type(updatedProfile.address);
       cy.get('input[name="city"]').clear().type(updatedProfile.city);
@@ -48,6 +49,7 @@ describe('client profile', () => {
     cy.get('input[name="first_name"]').should('have.value', updatedProfile.firstName);
     cy.get('input[name="last_name"]').should('have.value', updatedProfile.lastName);
     cy.get('input[name="company"]').should('have.value', updatedProfile.company);
+    cy.get('select[name="country"]').should('have.value', updatedProfile.country);
     cy.get('input[name="phone_cc"]').should('have.value', updatedProfile.phoneCountryCode);
     cy.get('input[name="phone"]').should('have.value', updatedProfile.phone);
     cy.get('input[name="address_1"]').should('have.value', updatedProfile.address);
