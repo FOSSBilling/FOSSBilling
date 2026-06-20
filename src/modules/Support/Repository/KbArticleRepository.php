@@ -34,9 +34,20 @@ class KbArticleRepository extends EntityRepository
                 ->setParameter('status', $status);
         }
 
-        if ($search !== null && $search !== '') {
-            $qb->andWhere('(a.title LIKE :search OR a.content LIKE :search)')
-                ->setParameter('search', '%' . $search . '%');
+        if ($search !== null && trim($search) !== '') {
+            $search = mb_strtolower(trim($search));
+            $terms = preg_split('/\s+/', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+            foreach ($terms as $index => $term) {
+                $qb->andWhere(sprintf(
+                    '(LOWER(a.title) LIKE :searchTerm%s OR LOWER(a.content) LIKE :searchTerm%s OR LOWER(c.title) LIKE :searchTerm%s OR LOWER(c.description) LIKE :searchTerm%s)',
+                    $index,
+                    $index,
+                    $index,
+                    $index
+                ))
+                    ->setParameter('searchTerm' . $index, '%' . $term . '%');
+            }
         }
 
         return $qb->orderBy('a.title', 'ASC');

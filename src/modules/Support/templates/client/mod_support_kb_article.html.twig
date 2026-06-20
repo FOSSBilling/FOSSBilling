@@ -16,6 +16,7 @@
 {% endblock %}
 
 {% block content %}
+{% set related_articles = guest.support_kb_article_get_list({ 'kb_article_category_id': article.category.id, 'per_page': 6 }).list|filter(related_article => related_article.id != article.id)|slice(0, 5) %}
 <div class="row">
     <div class="col-md-12">
         <div class="card mb-4">
@@ -36,6 +37,18 @@
                 <a href='{{ "support/kb/#{article.category.slug}"|url }}' class="btn btn-primary btn-sm" type="button">{{ 'Similar Articles'|trans }}</a>
             </div>
         </div>
+        {% if related_articles %}
+        <div class="card mb-4">
+            <div class="card-header py-3">
+                <h2 class="h4 mb-0">{{ 'Related articles'|trans }}</h2>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for related_article in related_articles %}
+                    <a class="list-group-item list-group-item-action" href='{{ "support/kb/#{related_article.category.slug}/#{related_article.slug}"|url }}'>{{ related_article.title }}</a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
