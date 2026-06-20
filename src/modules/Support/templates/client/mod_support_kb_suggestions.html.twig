@@ -1,0 +1,90 @@
+<div class="fb-kb-suggestions alert alert-light border" data-input-id="{{ input_id|default('subject') }}" data-limit="{{ limit|default(5) }}" aria-live="polite">
+    <div class="fb-kb-suggestions-hint">
+        {{ 'Try the knowledge base before opening a ticket.'|trans }}
+        <a href="{{ 'support/kb'|url }}">{{ 'Browse articles'|trans }}</a>
+    </div>
+    <div class="fb-kb-suggestions-results d-none">
+        <div class="fw-bold mb-2">{{ 'Suggested knowledge base articles'|trans }}</div>
+        <div class="list-group list-group-flush"></div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (window.FOSSBillingKbSuggestionsInitialized) {
+        return;
+    }
+    window.FOSSBillingKbSuggestionsInitialized = true;
+
+    const debounce = (callback, delay) => {
+        let timeout;
+        return (...args) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => callback(...args), delay);
+        };
+    };
+
+    const renderSuggestions = (container, articles) => {
+        const hint = container.querySelector('.fb-kb-suggestions-hint');
+        const results = container.querySelector('.fb-kb-suggestions-results');
+        const list = container.querySelector('.list-group');
+        list.replaceChildren();
+
+        if (!articles.length) {
+            hint.classList.remove('d-none');
+            results.classList.add('d-none');
+            return;
+        }
+
+        articles.forEach((article) => {
+            const link = document.createElement('a');
+            link.className = 'list-group-item list-group-item-action px-0 bg-transparent';
+            link.href = `{{ 'support/kb'|url }}/${article.category.slug}/${article.slug}`;
+            link.target = '_blank';
+            link.rel = 'noopener';
+            link.textContent = article.title;
+            list.append(link);
+        });
+
+        hint.classList.add('d-none');
+        results.classList.remove('d-none');
+    };
+
+    document.querySelectorAll('.fb-kb-suggestions').forEach((container) => {
+        const input = document.getElementById(container.dataset.inputId);
+        if (!input) {
+            return;
+        }
+
+        let latestQuery = '';
+        const fetchSuggestions = debounce(() => {
+            const query = input.value.trim();
+            latestQuery = query;
+            if (query.length < 3) {
+                renderSuggestions(container, []);
+                return;
+            }
+
+            FOSSBilling.api.guest.get('support/kb_article_get_list', {
+                search: query,
+                per_page: container.dataset.limit || 5,
+            }, (result) => {
+                if (query !== latestQuery) {
+                    return;
+                }
+
+                renderSuggestions(container, result.list || []);
+            }, () => {
+                if (query !== latestQuery) {
+                    return;
+                }
+
+                renderSuggestions(container, []);
+            }, false);
+        }, 300);
+
+        input.addEventListener('input', fetchSuggestions);
+        fetchSuggestions();
+    });
+});
+</script>

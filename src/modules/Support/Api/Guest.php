@@ -124,11 +124,21 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
+     * Get whether the knowledge base suggestions are enabled in the specified area.
+     */
+    public function kb_suggestions_enabled(array $data): bool
+    {
+        return $this->getService()->kbSuggestionsEnabled($data['area'] ?? '');
+    }
+
+    /**
      * Get paginated list of knowledge base articles.
      * Returns only active articles.
      */
     public function kb_article_get_list(array $data): array
     {
+        $this->assertKbEnabled();
+
         $search = $data['search'] ?? null;
         $cat = $data['kb_article_category_id'] ?? null;
 
@@ -145,6 +155,8 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      */
     public function kb_article_get(array $data): array
     {
+        $this->assertKbEnabled();
+
         if (!isset($data['id']) && !isset($data['slug'])) {
             throw new \FOSSBilling\InformationException('ID or slug is missing');
         }
@@ -173,6 +185,8 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      */
     public function kb_category_get_list(array $data): array
     {
+        $this->assertKbEnabled();
+
         $data['article_status'] = KbArticle::ACTIVE;
         $q = $data['q'] ?? null;
 
@@ -189,6 +203,8 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      */
     public function kb_category_get_pairs(array $data): array
     {
+        $this->assertKbEnabled();
+
         return $this->getService()->getKbArticleCategoryRepository()->getPairs();
     }
 
@@ -197,6 +213,8 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      */
     public function kb_category_get(array $data): array
     {
+        $this->assertKbEnabled();
+
         if (!isset($data['id']) && !isset($data['slug'])) {
             throw new \FOSSBilling\InformationException('Category ID or slug is missing');
         }
@@ -206,7 +224,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
         /** @var \Box\Mod\Support\Repository\KbArticleCategoryRepository $repo */
         $repo = $this->getService()->getKbArticleCategoryRepository();
-        
+
         $cat = $id
             ? $repo->find((int) $id)
             : $repo->findOneBySlug($slug);
@@ -216,5 +234,12 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         }
 
         return $cat->toApiArray($this->getIdentity());
+    }
+
+    private function assertKbEnabled(): void
+    {
+        if (!$this->getService()->kbEnabled()) {
+            throw new \FOSSBilling\InformationException('Knowledge Base is disabled');
+        }
     }
 }

@@ -1394,6 +1394,25 @@ test('kb article view increment does not update timestamp', function (): void {
         ->and($model->getUpdatedAt()?->format('Y-m-d H:i:s'))->toBe($updatedAt);
 });
 
+test('kb suggestions enabled checks kb setting and area setting', function (): void {
+    $service = new Service();
+
+    $extensionService = Mockery::mock(Box\Mod\Extension\Service::class);
+    $extensionService->shouldReceive('getConfig')
+        ->with('mod_support')
+        ->andReturn([
+            'kb_enable' => 'on',
+            'kb_suggestions_ticket' => 'on',
+        ]);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (): Box\Mod\Extension\Service => $extensionService);
+    $service->setDi($di);
+
+    expect($service->kbSuggestionsEnabled('ticket'))->toBeTrue()
+        ->and($service->kbSuggestionsEnabled('contact'))->toBeFalse();
+});
+
 test('kb create article', function (): void {
     $service = new Service();
     $randId = 1;

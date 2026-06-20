@@ -1559,6 +1559,28 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return isset($config['kb_enable']) && $config['kb_enable'] == 'on';
     }
 
+    public function kbSuggestionsEnabled(string $area): bool
+    {
+        if (!$this->kbEnabled()) {
+            return false;
+        }
+
+        $key = match ($area) {
+            'contact' => 'kb_suggestions_contact',
+            'ticket' => 'kb_suggestions_ticket',
+            default => null,
+        };
+
+        if ($key === null) {
+            return false;
+        }
+
+        $extensionService = $this->di['mod_service']('extension');
+        $config = $extensionService->getConfig('mod_support');
+
+        return !empty($config[$key]);
+    }
+
     public function kbRm(KbArticle $model): void
     {
         $id = $model->getId();

@@ -33,10 +33,19 @@ function guestSupportKbArticleFixture(): KbArticle
         ->setSlug('article-slug');
 }
 
+function guestSupportServiceMock(): Mockery\MockInterface
+{
+    $service = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $service->shouldReceive('kbEnabled')->byDefault()->andReturn(true);
+    $service->shouldReceive('kbSuggestionsEnabled')->byDefault()->andReturn(true);
+
+    return $service;
+}
+
 test('ticket create', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
     $api = new Box\Mod\Support\Api\Guest();
-    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock = guestSupportServiceMock();
     $serviceMock->shouldReceive('ticketCreateForGuest')->atLeast()->once()
         ->andReturn(bin2hex(random_bytes(random_int(100, 127))));
 
@@ -59,7 +68,7 @@ test('ticket create', function (): void {
 
 test('ticket create message too short exception', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
-    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock = guestSupportServiceMock();
     $serviceMock->shouldReceive('ticketCreateForGuest')
         ->andReturn(sha1(uniqid()));
 
@@ -80,7 +89,7 @@ test('ticket create message too short exception', function (): void {
 
 test('ticket get', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
-    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock = guestSupportServiceMock();
     $serviceMock->shouldReceive('findOneByHash')->atLeast()->once()
         ->andReturn(new Model_SupportTicket());
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()
@@ -101,7 +110,7 @@ test('ticket get', function (): void {
 
 test('ticket close', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
-    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock = guestSupportServiceMock();
     $serviceMock->shouldReceive('findOneByHash')->atLeast()->once()
         ->andReturn(new Model_SupportTicket());
     $serviceMock->shouldReceive('closeTicket')->atLeast()->once()
@@ -123,7 +132,7 @@ test('ticket close', function (): void {
 
 test('ticket reply', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
-    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock = guestSupportServiceMock();
     $serviceMock->shouldReceive('findOneByHash')->atLeast()->once()
         ->andReturn(new Model_SupportTicket());
     $serviceMock->shouldReceive('ticketReply')->atLeast()->once()
@@ -165,7 +174,7 @@ test('kb article get list', function (): void {
         ->with(KbArticle::ACTIVE, null, null)
         ->andReturn($qb);
 
-    $supportService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $supportService = guestSupportServiceMock();
     $supportService->shouldReceive('getKbArticleRepository')
         ->once()
         ->andReturn($repo);
@@ -203,7 +212,7 @@ test('kb article get with id', function (): void {
         ->once()
         ->with($article);
 
-    $supportService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $supportService = guestSupportServiceMock();
     $supportService->shouldReceive('getKbArticleRepository')
         ->once()
         ->andReturn($repo);
@@ -233,7 +242,7 @@ test('kb article get with slug', function (): void {
         ->once()
         ->with($article);
 
-    $supportService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $supportService = guestSupportServiceMock();
     $supportService->shouldReceive('getKbArticleRepository')
         ->once()
         ->andReturn($repo);
@@ -249,9 +258,19 @@ test('kb article get with slug', function (): void {
 test('kb article get id and slug not set exception', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
 
-    $guestApi->setService(Mockery::mock(Box\Mod\Support\Service::class)->makePartial());
+    $guestApi->setService(guestSupportServiceMock());
 
     expect(fn (): array => $guestApi->kb_article_get([]))->toThrow(FOSSBilling\Exception::class);
+});
+
+test('kb article get list disabled exception', function (): void {
+    $guestApi = new Box\Mod\Support\Api\Guest();
+
+    $service = guestSupportServiceMock();
+    $service->shouldReceive('kbEnabled')->andReturn(false);
+    $guestApi->setService($service);
+
+    expect(fn (): array => $guestApi->kb_article_get_list([]))->toThrow(FOSSBilling\Exception::class);
 });
 
 test('kb article get not found by id', function (): void {
@@ -263,7 +282,7 @@ test('kb article get not found by id', function (): void {
         ->with(1)
         ->andReturn(null);
 
-    $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $kbService = guestSupportServiceMock();
     $kbService->shouldReceive('getKbArticleRepository')
         ->once()
         ->andReturn($repo);
@@ -288,7 +307,7 @@ test('kb article get not found by slug', function (): void {
         ->with('article-slug')
         ->andReturn(null);
 
-    $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $kbService = guestSupportServiceMock();
     $kbService->shouldReceive('getKbArticleRepository')
         ->once()
         ->andReturn($repo);
@@ -321,7 +340,7 @@ test('kb category get list', function (): void {
         ->once()
         ->andReturn(Mockery::mock(QueryBuilder::class));
 
-    $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $kbService = guestSupportServiceMock();
     $kbService->shouldReceive('getKbArticleCategoryRepository')
         ->once()
         ->andReturn($repo);
@@ -357,7 +376,7 @@ test('kb category get pairs', function (): void {
         ->once()
         ->andReturn($expected);
 
-    $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $kbService = guestSupportServiceMock();
     $kbService->shouldReceive('getKbArticleCategoryRepository')
         ->once()
         ->andReturn($repo);
@@ -377,7 +396,7 @@ test('kb category get with id', function (): void {
         ->with(1)
         ->andReturn(guestSupportKbCategoryFixture());
 
-    $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $kbService = guestSupportServiceMock();
     $kbService->shouldReceive('getKbArticleCategoryRepository')
         ->once()
         ->andReturn($repo);
@@ -403,7 +422,7 @@ test('kb category get with slug', function (): void {
         ->with('category-slug')
         ->andReturn(guestSupportKbCategoryFixture());
 
-    $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $kbService = guestSupportServiceMock();
     $kbService->shouldReceive('getKbArticleCategoryRepository')
         ->once()
         ->andReturn($repo);
@@ -423,7 +442,7 @@ test('kb category get with slug', function (): void {
 test('kb category get id and slug not set exception', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
 
-    $guestApi->setService(Mockery::mock(Box\Mod\Support\Service::class)->makePartial());
+    $guestApi->setService(guestSupportServiceMock());
 
     expect(fn (): array => $guestApi->kb_category_get([]))->toThrow(FOSSBilling\Exception::class);
 });
@@ -437,7 +456,7 @@ test('kb category get not found by id', function (): void {
         ->with(1)
         ->andReturn(null);
 
-    $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $kbService = guestSupportServiceMock();
     $kbService->shouldReceive('getKbArticleCategoryRepository')
         ->once()
         ->andReturn($repo);
@@ -463,7 +482,7 @@ test('kb category get not found by slug', function (): void {
         ->with('article-slug')
         ->andReturn(null);
 
-    $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $kbService = guestSupportServiceMock();
     $kbService->shouldReceive('getKbArticleCategoryRepository')
         ->once()
         ->andReturn($repo);

@@ -66,6 +66,7 @@ class KbArticleCategory implements ApiArrayInterface, TimestampInterface
             'slug' => $this->slug,
             'created_at' => $this->createdAt?->format('Y-m-d H:i:s'),
             'updated_at' => $this->updatedAt?->format('Y-m-d H:i:s'),
+            'articles' => [],
         ];
 
         foreach ($this->articles as $article) {
