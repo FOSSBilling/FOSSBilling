@@ -62,6 +62,10 @@ class Client implements \FOSSBilling\InjectionAwareInterface
 
     public function get_contact_us(\Box_App $app): string
     {
+        if ($this->di['auth']->isClientLoggedIn()) {
+            $app->redirect('support');
+        }
+
         return $app->render('mod_support_contact_us');
     }
 
