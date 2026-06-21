@@ -1553,7 +1553,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $extensionService = $this->di['mod_service']('extension');
         $config = $extensionService->getConfig('mod_support');
 
-        return !empty($config[$key]);
+        return Tools::normalizeBoolean($config[$key] ?? false);
     }
 
     public function kbRm(KbArticle $model): void

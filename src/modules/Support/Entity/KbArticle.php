@@ -17,9 +17,8 @@ use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Interfaces\ApiArrayInterface;
 use FOSSBilling\Interfaces\TimestampInterface;
 
-// This entity doesn't use a PreUpdate callback unlike others
-// The reason is that updatedAt is updated every time the hit counter is incremented
-// Which shouldn't be the case because updatedAt is used to determine when the article is last updated
+// This entity intentionally does not use a PreUpdate callback.
+// View counter updates should not affect updatedAt (it is used as the "last updated" timestamp).
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\KbArticleRepository::class)]
 #[ORM\Table(name: 'support_kb_article')]
@@ -212,7 +211,15 @@ class KbArticle implements ApiArrayInterface, TimestampInterface
 
     public function matchesSearch(string $query): bool
     {
-        return stripos($this->title ?? '', $query) !== false || stripos($this->content ?? '', $query) !== false;
+        $terms = preg_split('/\s+/', trim($query), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        foreach ($terms as $term) {
+            if (stripos($this->title ?? '', $term) === false && stripos($this->content ?? '', $term) === false) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public function getCreatedAt(): ?\DateTime
