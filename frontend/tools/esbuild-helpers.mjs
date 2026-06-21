@@ -12,6 +12,7 @@ export const sharedLoaders = {
   '.woff2': 'file',
   '.ttf': 'file',
   '.eot': 'file',
+  '.webp': 'file',
 };
 
 export function sassPlugin(nodeModulesDir, isProduction) {

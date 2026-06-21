@@ -131,11 +131,8 @@
                             {% if 'phone' in r %}
                                 <div class="mb-3">
                                     <label class="form-label" for="phone">{{ 'Phone Number'|trans }}</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">+</span>
-                                        <input class="form-control fb-phone-country-code" id="phone_cc" type="text" name="phone_cc" value="{{ request.phone_cc }}" inputmode="numeric" maxlength="3" pattern="[0-9]{1,3}" autocomplete="tel-country-code"/>
-                                        <input class="form-control" id="phone" type="text" name="phone" value="{{ request.phone }}"/>
-                                    </div>
+                                    <input type="hidden" id="phone_cc" name="phone_cc" value="{{ request.phone_cc }}">
+                                    <input class="form-control js-phone-input" id="phone" type="tel" name="phone" value="{{ request.phone }}" autocomplete="tel" data-initial-country="{{ request.country|default(guest.system_default_country)|lower }}" required="required"/>
                                 </div>
                             {% endif %}
 

@@ -87,7 +87,7 @@ Cypress.Commands.add('fillClientSignupForm', (client) => {
     Object.entries(values).forEach(([name, value]) => {
       const $field = $form.find(`[name="${name}"]`).first();
 
-      if ($field.length) {
+      if ($field.length && ($field.attr('type') || '').toLowerCase() !== 'hidden') {
         cy.wrap($field).clear().type(value, name.includes('password') ? { log: false } : {});
       }
     });

@@ -12,7 +12,7 @@ import { buildIconSprite } from '../../../frontend/tools/icon-sprite.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
-const purgeSafelist = [/^hide-/];
+const purgeSafelist = [/^hide-/, /^iti/];
 const rootDir = resolve(__dirname, '../../..');
 const nodeModulesDir = resolve(rootDir, 'node_modules');
 

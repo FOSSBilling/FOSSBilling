@@ -206,13 +206,8 @@
                                 <div class="row">
                                     <div class="col-md-7 mb-3">
                                         <label for="phone" class="form-label">{{ 'Phone Number'|trans }}</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">+</span>
-                                            <input class="form-control form-control-sm fb-phone-country-code" type="text" name="phone_cc" id="phone_cc" value="{{ request.phone_cc }}" inputmode="numeric" maxlength="3" pattern="[0-9]{1,3}" autocomplete="tel-country-code"
-                                                   placeholder="{{ 'Phone Code'|trans }}">
-                                            <input class="form-control form-control-sm w-50" type="text" name="phone" id="phone"
-                                                   placeholder="{{ 'Phone Number'|trans }}">
-                                        </div>
+                                        <input type="hidden" name="phone_cc" id="phone_cc" value="{{ request.phone_cc }}">
+                                        <input class="form-control form-control-sm js-phone-input" type="tel" name="phone" id="phone" value="{{ request.phone }}" autocomplete="tel" data-initial-country="{{ request.country|default(guest.system_default_country)|lower }}" required="required" placeholder="{{ 'Phone Number'|trans }}">
                                     </div>
                                 </div>
                             {% endif %}
