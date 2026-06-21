@@ -1132,7 +1132,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $message = $altered['content'] ?? $altered['message'] ?? null;
         }
 
-        $helpdesk = isset($data['support_helpdesk_id']) ? $this->getHelpdeskRepository()->find((int) $data['support_helpdesk_id']) : $this->getDefaultHelpdesk();
+        $helpdesk = isset($data['support_helpdesk_id'])
+            ? $this->getHelpdeskRepository()->find((int) $data['support_helpdesk_id'])
+            : $this->getHelpdeskRepository()->getDefault();
+        
         if (!$helpdesk instanceof Helpdesk) {
             throw new \FOSSBilling\Exception('Helpdesk invalid');
         }
@@ -1161,23 +1164,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['logger']->info('"%s" opened guest ticket "%s"', $ticket->author_email, $ticketId);
 
         return $ticket->access_hash;
-    }
-
-    private function getDefaultHelpdesk(): Helpdesk
-    {
-        $helpdesk = $this->getHelpdeskRepository()->findOneBy([], ['id' => 'ASC']);
-        if ($helpdesk instanceof Helpdesk) {
-            return $helpdesk;
-        }
-
-        $helpdesk = (new Helpdesk())
-            ->setName('General')
-            ->setCloseAfter(24)
-            ->setCanReopen(false);
-        $this->di['em']->persist($helpdesk);
-        $this->di['em']->flush();
-
-        return $helpdesk;
     }
 
     public function guestTicketsEnabled(): bool

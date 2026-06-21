@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Support\Repository;
 
+use Box\Mod\Support\Entity\Helpdesk;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
 
@@ -55,5 +56,23 @@ class HelpdeskRepository extends EntityRepository
             'SELECT COUNT(id) FROM support_ticket WHERE support_helpdesk_id = :helpdesk_id',
             ['helpdesk_id' => $helpdeskId]
         );
+    }
+
+    public function getDefault(): Helpdesk
+    {
+        $helpdesk = $this->findOneBy([], ['id' => 'ASC']);
+        if ($helpdesk instanceof Helpdesk) {
+            return $helpdesk;
+        }
+
+        $helpdesk = (new Helpdesk())
+            ->setName('General')
+            ->setCloseAfter(24)
+            ->setCanReopen(false);
+
+        $this->getEntityManager()->persist($helpdesk);
+        $this->getEntityManager()->flush();
+
+        return $helpdesk;
     }
 }

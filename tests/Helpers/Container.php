@@ -172,6 +172,7 @@ function container(): Container
         $kbArticleCategoryRepository = \Mockery::mock(\Box\Mod\Support\Repository\KbArticleCategoryRepository::class)->shouldIgnoreMissing();
         $cannedResponseRepository = \Mockery::mock(\Box\Mod\Support\Repository\CannedResponseRepository::class)->shouldIgnoreMissing();
         $cannedResponseCategoryRepository = \Mockery::mock(\Box\Mod\Support\Repository\CannedResponseCategoryRepository::class)->shouldIgnoreMissing();
+        $helpdeskRepository = \Mockery::mock(\Box\Mod\Support\Repository\HelpdeskRepository::class)->shouldIgnoreMissing();
 
         $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
         $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {
@@ -180,6 +181,7 @@ function container(): Container
             \Box\Mod\Support\Entity\KbArticleCategory::class => $kbArticleCategoryRepository,
             \Box\Mod\Support\Entity\CannedResponse::class => $cannedResponseRepository,
             \Box\Mod\Support\Entity\CannedResponseCategory::class => $cannedResponseCategoryRepository,
+            \Box\Mod\Support\Entity\Helpdesk::class => $helpdeskRepository,
             default => $extensionMetaRepository,
         });
 
