@@ -39,7 +39,7 @@
     {% endfor %}
 
 <div class="row row-deck row-cards">
-    <div class="col-12" id="discord-community-card">
+    <div class="col-12 d-none" id="discord-community-card">
         <div class="card bg-azure-lt">
             <div class="card-body d-flex flex-column flex-md-row align-items-md-center gap-3">
                 <div class="d-flex align-items-center gap-3 flex-fill">
@@ -458,9 +458,10 @@
             const card = document.getElementById('discord-community-card');
 
             if (!card || localStorage.getItem('hideDiscordCommunityCard') === '1') {
-                card?.remove();
                 return;
             }
+
+            card.classList.remove('d-none');
 
             card.querySelector('[data-dismiss-discord-community-card]')?.addEventListener('click', function() {
                 localStorage.setItem('hideDiscordCommunityCard', '1');
