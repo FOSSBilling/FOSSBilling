@@ -54,7 +54,8 @@
         "Customtest",
         "mysite",
         "myhost",
-        "inversed"
+        "inversed",
+        "Autoresponder"
     ],
 
     "ignoreWords": [

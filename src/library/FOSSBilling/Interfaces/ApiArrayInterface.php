@@ -14,5 +14,8 @@ namespace FOSSBilling\Interfaces;
 
 interface ApiArrayInterface
 {
+    /**
+     * Implementations may declare optional parameters for contextual API output.
+     */
     public function toApiArray(): array;
 }

@@ -155,7 +155,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
         $qb = $repo->getSearchQueryBuilder(KbArticle::ACTIVE, $search, $cat);
 
-        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data), $this->getIdentity(), false, $this->getService()->kbArticleViewsEnabled());
     }
 
     /**
@@ -185,7 +185,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
         $repo->incrementViews($article);
 
-        return $article->toApiArray($this->getIdentity(), true);
+        return $article->toApiArray($this->getIdentity(), includeContent: true, includeViews: $this->getService()->kbArticleViewsEnabled());
     }
 
     /**
@@ -203,7 +203,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
         $qb = $repo->getSearchQueryBuilder($data);
 
-        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data), $this->getIdentity(), $q);
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data), $this->getIdentity(), $q, $this->getService()->kbArticleViewsEnabled());
     }
 
     /**
@@ -241,7 +241,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\InformationException('Knowledge Base category not found');
         }
 
-        return $cat->toApiArray($this->getIdentity());
+        return $cat->toApiArray($this->getIdentity(), includeArticleViews: $this->getService()->kbArticleViewsEnabled());
     }
 
     private function assertKbEnabled(): void

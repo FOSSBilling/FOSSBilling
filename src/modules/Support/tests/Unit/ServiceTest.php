@@ -1254,7 +1254,7 @@ dataset('kbArticleToApiArrayProvider', function () {
             false,
             null,
         ],
-        'deep without admin' => [
+        'with content without admin' => [
             $model,
             [
                 'id' => $model->getId(),
@@ -1274,7 +1274,7 @@ dataset('kbArticleToApiArrayProvider', function () {
             true,
             null,
         ],
-        'deep with admin' => [
+        'with content and admin' => [
             $model,
             [
                 'id' => $model->getId(),
@@ -1295,11 +1295,30 @@ dataset('kbArticleToApiArrayProvider', function () {
             true,
             new Model_Admin(),
         ],
+        'views disabled' => [
+            $model,
+            [
+                'id' => $model->getId(),
+                'slug' => $model->getSlug(),
+                'title' => $model->getTitle(),
+                'created_at' => '2013-01-01 12:00:00',
+                'status' => $model->getStatus(),
+                'updated_at' => '2014-01-01 12:00:00',
+                'category' => [
+                    'id' => $category->getId(),
+                    'slug' => $category->getSlug(),
+                    'title' => $category->getTitle(),
+                ],
+            ],
+            false,
+            null,
+            false,
+        ],
     ];
 });
 
-test('kb to api array', function (KbArticle $model, array $expected, bool $deep, ?Model_Admin $identity): void {
-    $result = $model->toApiArray($identity, $deep);
+test('kb to api array', function (KbArticle $model, array $expected, bool $includeContent, ?Model_Admin $identity, bool $includeViews = true): void {
+    $result = $model->toApiArray($identity, $includeContent, $includeViews);
     expect($result)->toEqual($expected);
 })->with('kbArticleToApiArrayProvider');
 

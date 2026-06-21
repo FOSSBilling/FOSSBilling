@@ -184,7 +184,7 @@ test('kb article get list', function (): void {
     $pager = Mockery::mock(FOSSBilling\Pagination::class);
     $pager->shouldReceive('paginateDoctrineQuery')
         ->once()
-        ->with($qb, Mockery::type(FOSSBilling\PaginationOptions::class))
+        ->with($qb, Mockery::type(FOSSBilling\PaginationOptions::class), null, false, true)
         ->andReturn($willReturn);
 
     $di = container();
@@ -203,6 +203,33 @@ test('kb article views enabled', function (): void {
     $guestApi->setService($service);
 
     expect($guestApi->kb_article_views_enabled())->toBeFalse();
+});
+
+test('kb article get hides views when disabled', function (): void {
+    $guestApi = new Box\Mod\Support\Api\Guest();
+
+    $di = container();
+    $guestApi->setDi($di);
+
+    $article = guestSupportKbArticleFixture()->setViews(12);
+    $repo = Mockery::mock(KbArticleRepository::class);
+    $repo->shouldReceive('findOneActiveById')
+        ->once()
+        ->with(1)
+        ->andReturn($article);
+    $repo->shouldReceive('incrementViews')
+        ->once()
+        ->with($article);
+
+    $supportService = guestSupportServiceMock();
+    $supportService->shouldReceive('kbArticleViewsEnabled')->once()->andReturn(false);
+    $supportService->shouldReceive('getKbArticleRepository')
+        ->once()
+        ->andReturn($repo);
+    $guestApi->setService($supportService);
+
+    $result = $guestApi->kb_article_get(['id' => 1]);
+    expect($result)->not->toHaveKey('views');
 });
 
 test('kb article get with id', function (): void {

@@ -60,7 +60,7 @@ class KbArticle implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(name: 'updated_at', type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTime $updatedAt = null;
 
-    public function toApiArray(\Model_Admin|\Model_Client|\Model_Guest|null $identity = null, bool $deep = false): array
+    public function toApiArray(\Model_Admin|\Model_Client|\Model_Guest|null $identity = null, bool $includeContent = false, bool $includeViews = true): array
     {
         $category = $this->category;
         if (!$category instanceof KbArticleCategory) {
@@ -82,7 +82,11 @@ class KbArticle implements ApiArrayInterface, TimestampInterface
             ],
         ];
 
-        if ($deep) {
+        if (!$includeViews) {
+            unset($data['views']);
+        }
+
+        if ($includeContent) {
             $data['content'] = $this->content;
         }
 

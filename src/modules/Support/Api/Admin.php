@@ -604,7 +604,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\InformationException('Article not found');
         }
 
-        return $article->toApiArray($this->getIdentity(), true);
+        return $article->toApiArray($this->getIdentity(), includeContent: true);
     }
 
     /**
