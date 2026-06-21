@@ -55,9 +55,13 @@
                             </label>
                             <div id="autorespond_enable"{% if not params.autorespond_enable|default(false) %} style="display:none;"{% endif %}>
                                 <label class="form-label" for="autorespond_message_id">{{ 'Auto Response Message'|trans }}</label>
-                                <select class="form-select col-12 col-xl-8" id="autorespond_message_id" name="autorespond_message_id">
-                                    {% for response in admin.support_canned_get_list({ 'per_page': 90 }).list %}
-                                        <option value="{{ response.id }}"{% if params.autorespond_message_id|default('') == response.id %} selected{% endif %}>{{ response.title }}</option>
+                                <select class="form-select col-12 col-xl-8 canned_response_select" id="autorespond_message_id" name="autorespond_message_id">
+                                    {% for category_title, responses in admin.support_canned_pairs %}
+                                        <optgroup label="{{ category_title }}">
+                                            {% for response_id, response_title in responses %}
+                                                <option value="{{ response_id }}"{% if params.autorespond_message_id|default('') == response_id %} selected{% endif %}>{{ response_title }}</option>
+                                            {% endfor %}
+                                        </optgroup>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -81,9 +85,13 @@
                                     </div>
                                     <div class="col-lg-8">
                                         <label class="form-label" for="delay_message_id">{{ 'Delay Message'|trans }}</label>
-                                        <select class="form-select" id="delay_message_id" name="delay_message_id">
-                                            {% for response in admin.support_canned_get_list({ 'per_page': 90 }).list %}
-                                                <option value="{{ response.id }}"{% if params.delay_message_id|default('') == response.id %} selected{% endif %}>{{ response.title }}</option>
+                                        <select class="form-select canned_response_select" id="delay_message_id" name="delay_message_id">
+                                            {% for category_title, responses in admin.support_canned_pairs %}
+                                                <optgroup label="{{ category_title }}">
+                                                    {% for response_id, response_title in responses %}
+                                                        <option value="{{ response_id }}"{% if params.delay_message_id|default('') == response_id %} selected{% endif %}>{{ response_title }}</option>
+                                                    {% endfor %}
+                                                </optgroup>
                                             {% endfor %}
                                         </select>
                                     </div>

@@ -1297,7 +1297,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             && isset($config['autorespond_message_id'])
             && !empty($config['autorespond_message_id'])
         ) {
-            $this->cannedReply($ticket, $config['autorespond_message_id']);
+            $this->sendAutoresponderCannedReply($ticket, $config['autorespond_message_id']);
         }
 
         $this->di['logger']->info('Submitted new ticket "%s"', $ticketId);
@@ -1305,17 +1305,18 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return (int) $ticketId;
     }
 
-    private function cannedReply(\Model_SupportTicket $ticket, $cannedId): void
+    private function sendAutoresponderCannedReply(\Model_SupportTicket $ticket, $cannedId): void
     {
         try {
             $canned = $this->getCannedResponseRepository()->find((int) $cannedId)?->toApiArray() ?? [];
             $staffService = $this->di['mod_service']('staff');
             $admin = $staffService->getCronAdmin();
+
             if (isset($canned['content']) && $admin instanceof \Model_Admin) {
                 $this->ticketReply($ticket, $admin, $canned['content']);
             }
         } catch (\Exception $e) {
-            $this->di['logger']->error($e->getMessage());
+            $this->di['logger']->error('Autoresponder canned reply failed: %s', $e->getMessage());
         }
     }
 

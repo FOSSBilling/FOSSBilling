@@ -103,18 +103,22 @@ export default function initTomSelectControls() {
   }
 
 
-  const cannedResponseSelectorEl = document.querySelector('.canned_ticket_response');
-  if (cannedResponseSelectorEl !== null && cannedResponseSelectorEl.dataset.resturl) {
-    const cannedResponseSelector = new TomSelect('.canned_ticket_response', {
+  document.querySelectorAll('.canned_response_select').forEach((selectEl) => {
+    new TomSelect(selectEl, {
       controlInput: false,
       maxItems: 1,
       render: {
-        item: (data, escape) => createTomSelectTemplate(data, escape),
+        item: (data, escape) => `<span>${escape(data.text || '')}</span>`,
         option: (data, escape) => createTomSelectTemplate(data, escape),
       },
     });
+  });
 
-    cannedResponseSelector.on('change', (value) => {
+  const cannedResponseSelectorEl = document.querySelector('.canned_ticket_response');
+  if (cannedResponseSelectorEl !== null && cannedResponseSelectorEl.dataset.resturl) {
+    const cannedResponseSelector = cannedResponseSelectorEl.tomselect;
+
+    cannedResponseSelector?.on('change', (value) => {
       if (!value) return;
 
       try {
@@ -181,4 +185,5 @@ export default function initTomSelectControls() {
       }
     });
   }
+
 }
