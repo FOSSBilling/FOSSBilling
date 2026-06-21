@@ -415,6 +415,11 @@ final class FOSSBilling_Installer
             'api_token' => $this->session->get('admin_api_token'),
         ]);
 
+        $stmt = $this->pdo->prepare('INSERT INTO admin_group_member (admin_id, admin_group_id, created_at) VALUES (:admin_id, 1, NOW())');
+        $stmt->execute([
+            'admin_id' => $this->pdo->lastInsertId(),
+        ]);
+
         // Delete default currency from content file and use currency passed in the installer
         $stmt = $this->pdo->prepare("DELETE FROM currency WHERE code='USD'");
         $stmt->execute();

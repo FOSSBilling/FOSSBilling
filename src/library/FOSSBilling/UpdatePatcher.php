@@ -480,6 +480,7 @@ class UpdatePatcher implements InjectionAwareInterface
             72 => 'patch72',
             73 => 'patch73',
             74 => 'patch74',
+            75 => 'patch75',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1891,6 +1892,80 @@ class UpdatePatcher implements InjectionAwareInterface
                 ]
             );
         }
+    }
+
+    private function patch75(): void
+    {
+        if (!$this->tableHasColumn('admin_group', 'system_name')) {
+            $this->executeSql('ALTER TABLE `admin_group` ADD COLUMN `system_name` VARCHAR(100) DEFAULT NULL AFTER `name`;');
+        }
+
+        if (!$this->tableHasColumn('admin_group', 'permissions')) {
+            $this->executeSql('ALTER TABLE `admin_group` ADD COLUMN `permissions` TEXT DEFAULT NULL AFTER `system_name`;');
+        }
+
+        if (!$this->tableHasColumn('admin_group', 'protected')) {
+            $this->executeSql("ALTER TABLE `admin_group` ADD COLUMN `protected` TINYINT(1) DEFAULT '0' AFTER `permissions`;");
+        }
+
+        if (!$this->tableHasIndex('admin_group', 'system_name')) {
+            $this->executeSql('ALTER TABLE `admin_group` ADD UNIQUE INDEX `system_name` (`system_name`);');
+        }
+
+        if (!$this->tableExists('admin_group_member')) {
+            $this->executeSql('CREATE TABLE `admin_group_member` (
+                `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                `admin_id` bigint(20) NOT NULL,
+                `admin_group_id` bigint(20) NOT NULL,
+                `created_at` datetime DEFAULT NULL,
+                PRIMARY KEY (`id`),
+                UNIQUE KEY `admin_group_member_unique` (`admin_id`, `admin_group_id`),
+                KEY `admin_group_member_admin_id_idx` (`admin_id`),
+                KEY `admin_group_member_group_id_idx` (`admin_group_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;');
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $superAdminGroupId = $this->fetchOne("SELECT id FROM admin_group WHERE system_name = 'super_admin' LIMIT 1");
+        if (!$superAdminGroupId) {
+            $firstGroupId = $this->fetchOne('SELECT id FROM admin_group WHERE id = 1 LIMIT 1');
+            if ($firstGroupId) {
+                $this->executeSql(
+                    "UPDATE admin_group SET name = 'Super Administrator', system_name = 'super_admin', permissions = NULL, protected = 1, updated_at = :updated_at WHERE id = 1",
+                    ['updated_at' => $now],
+                );
+                $superAdminGroupId = 1;
+            } else {
+                $this->executeSql(
+                    "INSERT INTO admin_group (name, system_name, permissions, protected, created_at, updated_at) VALUES ('Super Administrator', 'super_admin', NULL, 1, :created_at, :updated_at)",
+                    ['created_at' => $now, 'updated_at' => $now],
+                );
+                $superAdminGroupId = (int) $this->getPdo()->lastInsertId();
+            }
+        } else {
+            $this->executeSql(
+                'UPDATE admin_group SET protected = 1, permissions = NULL, updated_at = :updated_at WHERE id = :id',
+                ['updated_at' => $now, 'id' => $superAdminGroupId],
+            );
+        }
+
+        $this->executeSql('
+            INSERT IGNORE INTO admin_group_member (admin_id, admin_group_id, created_at)
+            SELECT id, admin_group_id, :created_at
+            FROM admin
+            WHERE admin_group_id IS NOT NULL
+        ', ['created_at' => $now]);
+
+        $this->executeSql('
+            INSERT IGNORE INTO admin_group_member (admin_id, admin_group_id, created_at)
+            SELECT id, :admin_group_id, :created_at
+            FROM admin
+            WHERE role = :role
+        ', [
+            'admin_group_id' => $superAdminGroupId,
+            'created_at' => $now,
+            'role' => 'admin',
+        ]);
     }
 
     private function generateDownloadableStoredFilename(): string

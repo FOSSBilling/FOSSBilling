@@ -38,10 +38,10 @@
 LOCK TABLES `admin_group` WRITE;
 /*!40000 ALTER TABLE `admin_group` DISABLE KEYS */;
 
-INSERT INTO `admin_group` (`id`, `name`, `created_at`, `updated_at`)
+INSERT INTO `admin_group` (`id`, `name`, `system_name`, `permissions`, `protected`, `created_at`, `updated_at`)
 VALUES
-	(1,'Administrators','2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(2,'Support','2022-12-01 12:00:00','2022-12-01 12:00:00');
+	(1,'Super Administrator','super_admin',NULL,1,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(2,'Support',NULL,NULL,0,'2022-12-01 12:00:00','2022-12-01 12:00:00');
 
 /*!40000 ALTER TABLE `admin_group` ENABLE KEYS */;
 UNLOCK TABLES;
