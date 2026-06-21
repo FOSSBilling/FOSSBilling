@@ -109,7 +109,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      */
     public function helpdesk_get_pairs(): array
     {
-        return $this->getService()->helpdeskGetPairs();
+        return $this->getService()->getHelpdeskRepository()->getPairs();
     }
 
     /*

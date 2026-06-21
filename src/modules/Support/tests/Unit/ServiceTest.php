@@ -16,10 +16,12 @@ use Box\Mod\Support\Entity\CannedResponse;
 use Box\Mod\Support\Entity\CannedResponseCategory;
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
+use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Repository\CannedResponseCategoryRepository;
 use Box\Mod\Support\Repository\CannedResponseRepository;
 use Box\Mod\Support\Repository\KbArticleCategoryRepository;
 use Box\Mod\Support\Repository\KbArticleRepository;
+use Box\Mod\Support\Repository\HelpdeskRepository;
 use Box\Mod\Support\Service;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -96,12 +98,28 @@ function supportCannedResponseFixture(): CannedResponse
     return $response;
 }
 
-function supportWireKbRepositories(EntityManagerInterface $em, ?KbArticleRepository $articleRepo = null, ?KbArticleCategoryRepository $categoryRepo = null, ?CannedResponseRepository $cannedRepo = null, ?CannedResponseCategoryRepository $cannedCategoryRepo = null): void
+function helpdeskFixture(): Helpdesk
+{
+    $helpdesk = (new Helpdesk())
+        ->setName('General')
+        ->setEmail('support@example.com')
+        ->setCanReopen(true)
+        ->setCloseAfter(24)
+        ->setSignature('Signature');
+    $helpdesk->setCreatedAt(new DateTime('2013-01-01 12:00:00'));
+    $helpdesk->setUpdatedAt(new DateTime('2014-01-01 12:00:00'));
+    supportSetEntityId($helpdesk, 1);
+
+    return $helpdesk;
+}
+
+function supportWireKbRepositories(EntityManagerInterface $em, ?KbArticleRepository $articleRepo = null, ?KbArticleCategoryRepository $categoryRepo = null, ?CannedResponseRepository $cannedRepo = null, ?CannedResponseCategoryRepository $cannedCategoryRepo = null, ?HelpdeskRepository $helpdeskRepo = null): void
 {
     $articleRepo ??= Mockery::mock(KbArticleRepository::class)->shouldIgnoreMissing();
     $categoryRepo ??= Mockery::mock(KbArticleCategoryRepository::class)->shouldIgnoreMissing();
     $cannedRepo ??= Mockery::mock(CannedResponseRepository::class)->shouldIgnoreMissing();
     $cannedCategoryRepo ??= Mockery::mock(CannedResponseCategoryRepository::class)->shouldIgnoreMissing();
+    $helpdeskRepo ??= Mockery::mock(HelpdeskRepository::class)->shouldIgnoreMissing();
 
     $em->shouldReceive('getRepository')
         ->with(KbArticle::class)
@@ -119,6 +137,10 @@ function supportWireKbRepositories(EntityManagerInterface $em, ?KbArticleReposit
         ->with(CannedResponseCategory::class)
         ->byDefault()
         ->andReturn($cannedCategoryRepo);
+    $em->shouldReceive('getRepository')
+        ->with(Helpdesk::class)
+        ->byDefault()
+        ->andReturn($helpdeskRepo);
 }
 
 /*
@@ -666,10 +688,7 @@ test('auto closes a ticket', function (): void {
 
 test('checks if ticket can be reopened when not closed', function (): void {
     $service = new Service();
-    $helpdesk = new Model_SupportHelpdesk();
-    $helpdesk->loadBean(new Tests\Helpers\DummyBean());
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')->never();
 
     $di = container();
     $di['db'] = $dbMock;
@@ -685,24 +704,25 @@ test('checks if ticket can be reopened when not closed', function (): void {
 
 test('checks if ticket can be reopened', function (): void {
     $service = new Service();
-    $helpdesk = new Model_SupportHelpdesk();
-    $helpdesk->loadBean(new Tests\Helpers\DummyBean());
-    $helpdesk->support_helpdesk_id = 1;
-    $helpdesk->can_reopen = true;
+    $helpdeskRepo = Mockery::mock(HelpdeskRepository::class);
+    $helpdeskRepo->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn(helpdeskFixture());
+    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    supportWireKbRepositories($emMock, helpdeskRepo: $helpdeskRepo);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($helpdesk);
 
     $di = container();
     $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
     $ticket = new Model_SupportTicket();
     $ticket->loadBean(new Tests\Helpers\DummyBean());
     $ticket->status = Model_SupportTicket::CLOSED;
+    $ticket->support_helpdesk_id = 1;
 
     $result = $service->canBeReopened($ticket);
     expect($result)->toBeTrue();
@@ -766,8 +786,7 @@ test('converts ticket to api array', function (): void {
     $service = new Service();
     $supportTicketMessageModel = new Model_SupportTicketMessage();
     $supportTicketMessageModel->loadBean(new Tests\Helpers\DummyBean());
-    $helpdesk = new Model_SupportHelpdesk();
-    $helpdesk->loadBean(new Tests\Helpers\DummyBean());
+    $helpdesk = helpdeskFixture();
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('findOne')
@@ -775,7 +794,7 @@ test('converts ticket to api array', function (): void {
         ->andReturn($supportTicketMessageModel);
     $dbMock->shouldReceive('load')
         ->atLeast()->once()
-        ->andReturnUsing(fn ($type): Model_SupportHelpdesk|\Model_Client => $type === 'SupportHelpdesk' ? $helpdesk : supportClientFixture());
+        ->andReturn(supportClientFixture());
 
     $dbMock->shouldReceive('find')
         ->atLeast()->once()
@@ -793,9 +812,6 @@ test('converts ticket to api array', function (): void {
     $serviceMock->shouldReceive('messageToApiArray')
         ->atLeast()->once()
         ->andReturn([]);
-    $serviceMock->shouldReceive('helpdeskToApiArray')
-        ->atLeast()->once()
-        ->andReturn([]);
     $serviceMock->shouldReceive('messageGetTicketMessages')
         ->atLeast()->once()
         ->andReturn($ticketMessages);
@@ -806,8 +822,15 @@ test('converts ticket to api array', function (): void {
     $clientServiceMock->shouldReceive('toApiArray')
         ->byDefault()
         ->andReturn([]);
+    $helpdeskRepo = Mockery::mock(HelpdeskRepository::class);
+    $helpdeskRepo->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn($helpdesk);
+    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    supportWireKbRepositories($emMock, helpdeskRepo: $helpdeskRepo);
     $di = container();
     $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
     $serviceMock->setDi($di);
@@ -845,7 +868,7 @@ test('converts ticket to api array with rel details', function (): void {
         ->andReturnUsing(function () use (&$callCount) {
             ++$callCount;
 
-            return $callCount === 1 ? new Model_SupportHelpdesk() : supportClientFixture();
+            return supportClientFixture();
         });
 
     $dbMock->shouldReceive('find')
@@ -864,9 +887,6 @@ test('converts ticket to api array with rel details', function (): void {
     $serviceMock->shouldReceive('messageToApiArray')
         ->atLeast()->once()
         ->andReturn([]);
-    $serviceMock->shouldReceive('helpdeskToApiArray')
-        ->atLeast()->once()
-        ->andReturn([]);
     $serviceMock->shouldReceive('messageGetTicketMessages')
         ->atLeast()->once()
         ->andReturn($ticketMessages);
@@ -877,8 +897,15 @@ test('converts ticket to api array with rel details', function (): void {
     $clientServiceMock->shouldReceive('toApiArray')
         ->byDefault()
         ->andReturn([]);
+    $helpdeskRepo = Mockery::mock(HelpdeskRepository::class);
+    $helpdeskRepo->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn(helpdeskFixture());
+    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    supportWireKbRepositories($emMock, helpdeskRepo: $helpdeskRepo);
     $di = container();
     $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
     $serviceMock->setDi($di);
@@ -1051,8 +1078,6 @@ test('canned category update', function (): void {
 
 test('helpdesk get search query', function (): void {
     $service = new Service();
-    $di = container();
-    $service->setDi($di);
 
     $data = [
         'search' => 'SearchQuery',
@@ -1070,99 +1095,66 @@ test('helpdesk get search query', function (): void {
     expect($bindings)->toEqual($expectedBindings);
 });
 
-test('helpdesk get pairs', function (): void {
-    $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAssoc')
-        ->atLeast()->once()
-        ->andReturn([0 => 'General']);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $result = $service->helpdeskGetPairs();
-    expect($result)->toBeArray();
-});
-
 test('helpdesk rm', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('find')
+    $repo = Mockery::mock(HelpdeskRepository::class);
+    $repo->shouldReceive('countTickets')
         ->atLeast()->once()
-        ->andReturn([]);
-    $dbMock->shouldReceive('trash')
+        ->andReturn(0);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock, helpdeskRepo: $repo);
+    $emMock->shouldReceive('remove')
+        ->atLeast()->once()
+        ->andReturn(null);
+    $emMock->shouldReceive('flush')
         ->atLeast()->once()
         ->andReturn(null);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $helpdesk = new Model_SupportHelpdesk();
-    $helpdesk->loadBean(new Tests\Helpers\DummyBean());
-    $helpdesk->id = 1;
-
-    $result = $service->helpdeskRm($helpdesk);
+    $result = $service->helpdeskRm(helpdeskFixture());
     expect($result)->toBeTrue();
 });
 
 test('helpdesk rm has tickets exception', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('find')
+    $repo = Mockery::mock(HelpdeskRepository::class);
+    $repo->shouldReceive('countTickets')
         ->atLeast()->once()
-        ->andReturn([new Model_SupportTicket()]);
-    $dbMock->shouldReceive('trash')
+        ->andReturn(1);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock, helpdeskRepo: $repo);
+    $emMock->shouldReceive('remove')
         ->never();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $helpdesk = new Model_SupportHelpdesk();
-    $helpdesk->loadBean(new Tests\Helpers\DummyBean());
-    $helpdesk->id = 1;
-
     $this->expectException(FOSSBilling\Exception::class);
-    $service->helpdeskRm($helpdesk);
-});
-
-test('helpdesk to api array', function (): void {
-    $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('toArray')
-        ->byDefault()
-        ->andReturn([]);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $helpdesk = new Model_SupportHelpdesk();
-    $helpdesk->loadBean(new Tests\Helpers\DummyBean());
-    $helpdesk->id = 1;
-
-    $result = $service->helpdeskToApiArray($helpdesk);
-    expect($result)->toBeArray();
+    $service->helpdeskRm(helpdeskFixture());
 });
 
 test('helpdesk update', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
+    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    supportWireKbRepositories($emMock);
+    $emMock->shouldReceive('flush')
         ->atLeast()->once()
-        ->andReturn(1);
+        ->andReturn(null);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $helpdesk = new Model_SupportHelpdesk();
-    $helpdesk->loadBean(new Tests\Helpers\DummyBean());
+    $helpdesk = helpdeskFixture();
 
     $data = [
         'name' => 'Name',
@@ -1174,24 +1166,26 @@ test('helpdesk update', function (): void {
 
     $result = $service->helpdeskUpdate($helpdesk, $data);
     expect($result)->toBeTrue();
+    expect($helpdesk->getName())->toBe('Name');
 });
 
 test('helpdesk create', function (): void {
     $service = new Service();
     $randId = 1;
-    $helpDeskModel = new Model_SupportHelpdesk();
-    $helpDeskModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('dispense')
+    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    supportWireKbRepositories($emMock);
+    $emMock->shouldReceive('persist')
         ->atLeast()->once()
-        ->andReturn($helpDeskModel);
-    $dbMock->shouldReceive('store')
+        ->andReturnUsing(function (Helpdesk $helpdesk) use ($randId): void {
+            supportSetEntityId($helpdesk, $randId);
+        });
+    $emMock->shouldReceive('flush')
         ->atLeast()->once()
-        ->andReturn($randId);
+        ->andReturn(null);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
@@ -1922,8 +1916,7 @@ test('ticket create for admin', function (): void {
     $di['events_manager'] = $eventMock;
     $service->setDi($di);
 
-    $helpdesk = new Model_SupportHelpdesk();
-    $helpdesk->loadBean(new Tests\Helpers\DummyBean());
+    $helpdesk = helpdeskFixture();
 
     $admin = new Model_Admin();
     $admin->loadBean(new Tests\Helpers\DummyBean());
@@ -1999,8 +1992,7 @@ test('ticket create for client', function (): void {
 
     $serviceMock->setDi($di);
 
-    $helpdesk = new Model_SupportHelpdesk();
-    $helpdesk->loadBean(new Tests\Helpers\DummyBean());
+    $helpdesk = helpdeskFixture();
 
     $client = new Model_Client();
     $client->loadBean(new Tests\Helpers\DummyBean());
@@ -2025,8 +2017,7 @@ test('ticket create for client task already exists exception', function (): void
         ->byDefault()
         ->andReturn(true);
 
-    $helpdesk = new Model_SupportHelpdesk();
-    $helpdesk->loadBean(new Tests\Helpers\DummyBean());
+    $helpdesk = helpdeskFixture();
 
     $data = [
         'rel_id' => 1,

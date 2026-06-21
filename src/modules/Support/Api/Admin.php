@@ -20,6 +20,7 @@ use Box\Mod\Support\Entity\CannedResponse;
 use Box\Mod\Support\Entity\CannedResponseCategory;
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
+use Box\Mod\Support\Entity\Helpdesk;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -161,7 +162,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $data['content'] = \FOSSBilling\Tools::sanitizeContent($data['content'], true);
 
         $client = $this->getDi()['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
-        $helpdesk = $this->getDi()['db']->getExistingModelById('SupportHelpdesk', $data['support_helpdesk_id'], 'Helpdesk invalid');
+
+        /** @var \Box\Mod\Support\Repository\HelpdeskRepository $repo */
+        $repo = $this->getService()->getHelpdeskRepository();
+
+        $helpdesk = $repo->find((int) $data['support_helpdesk_id']);
+        if (!$helpdesk instanceof Helpdesk) {
+            throw new \FOSSBilling\InformationException('Helpdesk invalid');
+        }
 
         return $this->getService()->ticketCreateForAdmin($client, $helpdesk, $data, $this->getIdentity());
     }
@@ -210,9 +218,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'view');
 
-        [$sql, $bindings] = $this->getService()->helpdeskGetSearchQuery($data);
+        /** @var \Box\Mod\Support\Repository\HelpdeskRepository $repo */
+        $repo = $this->getService()->getHelpdeskRepository();
 
-        return $this->getDi()['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
+        $qb = $repo->getSearchQueryBuilder($data);
+
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data), $this->identity);
     }
 
     /**
@@ -222,7 +233,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'view');
 
-        return $this->getService()->helpdeskGetPairs();
+        return $this->getService()->getHelpdeskRepository()->getPairs();
     }
 
     /**
@@ -235,9 +246,15 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'view');
 
-        $model = $this->getDi()['db']->getExistingModelById('SupportHelpdesk', $data['id'], 'Help desk not found');
+        /** @var \Box\Mod\Support\Repository\HelpdeskRepository $repo */
+        $repo = $this->getService()->getHelpdeskRepository();
 
-        return $this->getService()->helpdeskToApiArray($model, $this->getIdentity());
+        $model = $repo->find((int) $data['id']);
+        if (!$model instanceof Helpdesk) {
+            throw new \FOSSBilling\InformationException('Help desk not found');
+        }
+
+        return $model->toApiArray($this->getIdentity());
     }
 
     /**
@@ -256,7 +273,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_helpdesk');
 
-        $model = $this->getDi()['db']->getExistingModelById('SupportHelpdesk', $data['id'], 'Help desk not found');
+        /** @var \Box\Mod\Support\Repository\HelpdeskRepository $repo */
+        $repo = $this->getService()->getHelpdeskRepository();
+
+        $model = $repo->find((int) $data['id']);
+        if (!$model instanceof Helpdesk) {
+            throw new \FOSSBilling\InformationException('Help desk not found');
+        }
 
         return $this->getService()->helpdeskUpdate($model, $data);
     }
@@ -291,7 +314,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_helpdesk');
 
-        $model = $this->getDi()['db']->getExistingModelById('SupportHelpdesk', $data['id'], 'Help desk not found');
+        /** @var \Box\Mod\Support\Repository\HelpdeskRepository $repo */
+        $repo = $this->getService()->getHelpdeskRepository();
+
+        $model = $repo->find((int) $data['id']);
+        if (!$model instanceof Helpdesk) {
+            throw new \FOSSBilling\InformationException('Help desk not found');
+        }
 
         return $this->getService()->helpdeskRm($model);
     }

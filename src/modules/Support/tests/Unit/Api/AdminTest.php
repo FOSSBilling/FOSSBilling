@@ -14,10 +14,12 @@ use Box\Mod\Support\Entity\CannedResponse;
 use Box\Mod\Support\Entity\CannedResponseCategory;
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
+use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Repository\CannedResponseCategoryRepository;
 use Box\Mod\Support\Repository\CannedResponseRepository;
 use Box\Mod\Support\Repository\KbArticleCategoryRepository;
 use Box\Mod\Support\Repository\KbArticleRepository;
+use Box\Mod\Support\Repository\HelpdeskRepository;
 use Doctrine\ORM\QueryBuilder;
 
 use function Tests\Helpers\container;
@@ -61,6 +63,19 @@ function adminSupportCannedResponseFixture(): CannedResponse
     adminSupportSetEntityId($response, 1);
 
     return $response;
+}
+
+function adminHelpdeskFixture(): Helpdesk
+{
+    $helpdesk = (new Helpdesk())
+        ->setName('General')
+        ->setEmail('support@example.com')
+        ->setCanReopen(true)
+        ->setCloseAfter(24)
+        ->setSignature('Signature');
+    adminSupportSetEntityId($helpdesk, 1);
+
+    return $helpdesk;
 }
 
 function adminSupportCannedCategoryWithResponsesFixture(): CannedResponseCategory
@@ -319,17 +334,22 @@ test('ticket create', function (): void {
     $clientModel = new Model_Client();
     $clientModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $supportHelpdeskModel = new Model_SupportHelpdesk();
-    $supportHelpdeskModel->loadBean(new Tests\Helpers\DummyBean());
+    $helpdeskModel = adminHelpdeskFixture();
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
     ->shouldReceive('getExistingModelById')
     ->atLeast()->once()
-    ->andReturn($clientModel, $supportHelpdeskModel);
+    ->andReturn($clientModel);
+    $repoMock = Mockery::mock(HelpdeskRepository::class);
+    $repoMock->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn($helpdeskModel);
 
     $randID = 1;
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class);
+    $serviceMock->shouldReceive('getHelpdeskRepository')->atLeast()->once()
+        ->andReturn($repoMock);
     $serviceMock->shouldReceive('ticketCreateForAdmin')->atLeast()->once()
         ->andReturn($randID);
 
@@ -455,15 +475,20 @@ test('ticket get statuses titles set', function (): void {
 
 test('helpdesk get list', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
+    $qbMock = Mockery::mock(QueryBuilder::class);
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $paginatorMock
-    ->shouldReceive('getPaginatedResultSet')
+    ->shouldReceive('paginateDoctrineQuery')
     ->atLeast()->once()
     ->andReturn([]);
+    $repoMock = Mockery::mock(HelpdeskRepository::class);
+    $repoMock->shouldReceive('getSearchQueryBuilder')
+        ->atLeast()->once()
+        ->andReturn($qbMock);
 
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('helpdeskGetSearchQuery')->atLeast()->once()
-        ->andReturn(['query', []]);
+    $serviceMock->shouldReceive('getHelpdeskRepository')->atLeast()->once()
+        ->andReturn($repoMock);
 
     $di = container();
     $di['pager'] = $paginatorMock;
@@ -480,9 +505,13 @@ test('helpdesk get list', function (): void {
 
 test('helpdesk get pairs', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
-    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('helpdeskGetPairs')->atLeast()->once()
+    $repoMock = Mockery::mock(HelpdeskRepository::class);
+    $repoMock->shouldReceive('getPairs')->atLeast()->once()
         ->andReturn([]);
+
+    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldReceive('getHelpdeskRepository')->atLeast()->once()
+        ->andReturn($repoMock);
 
     $api->setService($serviceMock);
 
@@ -494,18 +523,16 @@ test('helpdesk get pairs', function (): void {
 
 test('helpdesk get', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Model_SupportHelpdesk());
+    $repoMock = Mockery::mock(HelpdeskRepository::class);
+    $repoMock->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn(adminHelpdeskFixture());
 
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('helpdeskToApiArray')->atLeast()->once()
-        ->andReturn([]);
+    $serviceMock->shouldReceive('getHelpdeskRepository')->atLeast()->once()
+        ->andReturn($repoMock);
 
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
 
     $api->setService($serviceMock);
@@ -521,18 +548,18 @@ test('helpdesk get', function (): void {
 
 test('helpdesk update', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Model_SupportHelpdesk());
+    $repoMock = Mockery::mock(HelpdeskRepository::class);
+    $repoMock->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn(adminHelpdeskFixture());
 
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldReceive('getHelpdeskRepository')->atLeast()->once()
+        ->andReturn($repoMock);
     $serviceMock->shouldReceive('helpdeskUpdate')->atLeast()->once()
         ->andReturn(true);
 
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
 
     $api->setService($serviceMock);
@@ -568,18 +595,18 @@ test('helpdesk create', function (): void {
 
 test('helpdesk delete', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Model_SupportHelpdesk());
+    $repoMock = Mockery::mock(HelpdeskRepository::class);
+    $repoMock->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn(adminHelpdeskFixture());
 
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldReceive('getHelpdeskRepository')->atLeast()->once()
+        ->andReturn($repoMock);
     $serviceMock->shouldReceive('helpdeskRm')->atLeast()->once()
         ->andReturn(true);
 
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
 
     $api->setService($serviceMock);

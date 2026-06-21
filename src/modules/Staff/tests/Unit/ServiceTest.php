@@ -11,6 +11,9 @@
 declare(strict_types=1);
 
 use Box\Mod\Staff\Service;
+use Box\Mod\Support\Entity\Helpdesk;
+use Box\Mod\Support\Repository\HelpdeskRepository;
+use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
 
@@ -704,10 +707,15 @@ test('onAfterClientOpenTicket sends mod_staff_ticket_open email', function (): v
         }
     });
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')->atLeast()->once()
+    $repoMock = Mockery::mock(HelpdeskRepository::class);
+    $repoMock->shouldReceive('find')->atLeast()->once()
         ->andReturn(null);
-    $di['db'] = $dbMock;
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')
+        ->with(Helpdesk::class)
+        ->atLeast()->once()
+        ->andReturn($repoMock);
+    $di['em'] = $emMock;
     $admin = new Model_Admin();
     $admin->loadBean(new Tests\Helpers\DummyBean());
     $admin->role = Model_Admin::ROLE_ADMIN;
@@ -739,13 +747,11 @@ test('onAfterClientOpenTicket sends mod_support_helpdesk_ticket_open email', fun
     $supportServiceMock->shouldReceive('toApiArray')->atLeast()->once()
         ->andReturn($supportTicketArray);
 
-    $helpdeskModel = new Model_SupportHelpdesk();
-    $helpdeskModel->loadBean(new Tests\Helpers\DummyBean());
-    $helpdeskModel->email = 'helpdesk@support.com';
+    $helpdeskModel = (new Helpdesk())->setEmail('helpdesk@support.com');
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
     $emailConfig = [
-        'to' => $helpdeskModel->email,
+        'to' => $helpdeskModel->getEmail(),
         'code' => 'mod_support_helpdesk_ticket_open',
         'ticket' => $supportTicketArray,
     ];
@@ -762,10 +768,15 @@ test('onAfterClientOpenTicket sends mod_support_helpdesk_ticket_open email', fun
         }
     });
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')->atLeast()->once()
+    $repoMock = Mockery::mock(HelpdeskRepository::class);
+    $repoMock->shouldReceive('find')->atLeast()->once()
         ->andReturn($helpdeskModel);
-    $di['db'] = $dbMock;
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')
+        ->with(Helpdesk::class)
+        ->atLeast()->once()
+        ->andReturn($repoMock);
+    $di['em'] = $emMock;
     $admin = new Model_Admin();
     $admin->loadBean(new Tests\Helpers\DummyBean());
     $admin->role = Model_Admin::ROLE_ADMIN;

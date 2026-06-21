@@ -16,10 +16,12 @@ use Box\Mod\Support\Entity\CannedResponse;
 use Box\Mod\Support\Entity\CannedResponseCategory;
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
+use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Repository\CannedResponseCategoryRepository;
 use Box\Mod\Support\Repository\CannedResponseRepository;
 use Box\Mod\Support\Repository\KbArticleCategoryRepository;
 use Box\Mod\Support\Repository\KbArticleRepository;
+use Box\Mod\Support\Repository\HelpdeskRepository;
 use FOSSBilling\InformationException;
 use FOSSBilling\Tools;
 
@@ -30,6 +32,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     protected KbArticleCategoryRepository $kbArticleCategoryRepository;
     protected CannedResponseRepository $cannedResponseRepository;
     protected CannedResponseCategoryRepository $cannedResponseCategoryRepository;
+    protected HelpdeskRepository $helpdeskRepository;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -38,6 +41,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->kbArticleCategoryRepository = $this->di['em']->getRepository(KbArticleCategory::class);
         $this->cannedResponseRepository = $this->di['em']->getRepository(CannedResponse::class);
         $this->cannedResponseCategoryRepository = $this->di['em']->getRepository(CannedResponseCategory::class);
+        $this->helpdeskRepository = $this->di['em']->getRepository(Helpdesk::class);
     }
 
     public function getDi(): ?\Pimple\Container
@@ -63,6 +67,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function getCannedResponseCategoryRepository(): CannedResponseCategoryRepository
     {
         return $this->cannedResponseCategoryRepository;
+    }
+
+    public function getHelpdeskRepository(): HelpdeskRepository
+    {
+        return $this->helpdeskRepository;
     }
 
     public function getModulePermissions(): array
@@ -499,9 +508,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             return true;
         }
 
-        $helpdesk = $this->di['db']->getExistingModelById('SupportHelpdesk', $model->support_helpdesk_id);
+        $helpdesk = $this->getHelpdeskRepository()->find((int) $model->support_helpdesk_id);
+        if (!$helpdesk instanceof Helpdesk) {
+            throw new \FOSSBilling\Exception('Helpdesk invalid');
+        }
 
-        return (bool) $helpdesk->can_reopen;
+        return $helpdesk->canReopen();
     }
 
     /**
@@ -566,13 +578,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function toApiArray(\Model_SupportTicket $model, bool $deep = true, \Model_Admin|\Model_Client|null $identity = null): array
     {
         $firstSupportTicketMessage = $this->di['db']->findOne('SupportTicketMessage', 'support_ticket_id = :support_ticket_id ORDER by id ASC LIMIT 1', [':support_ticket_id' => $model->id]);
-        $supportHelpdesk = $model->support_helpdesk_id ? $this->di['db']->load('SupportHelpdesk', $model->support_helpdesk_id) : null;
+        $helpdesk = $model->support_helpdesk_id ? $this->getHelpdeskRepository()->find((int) $model->support_helpdesk_id) : null;
 
         $data = $this->ticketToApiArray($this->di['db']->toArray($model), $identity);
         $data['replies'] = $this->messageGetRepliesCount($model);
         $data['first'] = $firstSupportTicketMessage instanceof \Model_SupportTicketMessage ? $this->messageToApiArray($firstSupportTicketMessage, true, $identity) : null;
-        $data['helpdesk'] = $supportHelpdesk instanceof \Model_SupportHelpdesk ? $this->helpdeskToApiArray($supportHelpdesk, $identity) : null;
+        $data['helpdesk'] = $helpdesk instanceof Helpdesk ? $helpdesk->toApiArray($identity) : null;
         $data['author'] = $this->getTicketAuthor($model, $identity);
+
         // @deprecated 0.9.0 Use author instead.
         $data['client'] = $this->getClientApiArrayForTicket($model, $identity);
 
@@ -692,10 +705,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $helpdesks = [];
         if (!empty($helpdeskIds)) {
-            $placeholders = implode(',', array_fill(0, count($helpdeskIds), '?'));
-            $helpdeskModels = $this->di['db']->find('SupportHelpdesk', "id IN ($placeholders)", $helpdeskIds);
+            $helpdeskModels = $this->getHelpdeskRepository()->findBy(['id' => $helpdeskIds]);
             foreach ($helpdeskModels as $helpdesk) {
-                $helpdesks[$helpdesk->id] = $helpdesk;
+                $helpdesks[$helpdesk->getId()] = $helpdesk;
             }
         }
 
@@ -717,7 +729,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $data['first'] = isset($firstMessages[$ticket['id']]) ? $this->messageToApiArray($firstMessages[$ticket['id']], true, $identity) : null;
 
             $helpdesk = $helpdesks[$ticket['support_helpdesk_id']] ?? null;
-            $data['helpdesk'] = $helpdesk ? $this->helpdeskToApiArray($helpdesk, $identity) : null;
+            $data['helpdesk'] = $helpdesk instanceof Helpdesk ? $helpdesk->toApiArray($identity) : null;
 
             if (empty($ticket['client_id']) && !empty($ticket['access_hash'])) {
                 $data['author'] = [
@@ -910,36 +922,18 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$query, $bindings];
     }
 
-    public function helpdeskGetPairs(): array
+    public function helpdeskRm(Helpdesk $model): bool
     {
-        return $this->di['db']->getAssoc('SELECT id, name FROM support_helpdesk');
-    }
+        $id = $model->getId();
 
-    public function helpdeskRm(\Model_SupportHelpdesk $model): bool
-    {
-        $id = $model->id;
-
-        $tickets = $this->di['db']->find('SupportTicket', 'support_helpdesk_id = :support_helpdesk_id', [':support_helpdesk_id' => $model->id]);
-        if (Tools::safeCount($tickets) > 0) {
+        if ($id !== null && $this->getHelpdeskRepository()->countTickets($id) > 0) {
             throw new InformationException('Cannot remove helpdesk which has tickets');
         }
-        $this->di['db']->trash($model);
+        $this->di['em']->remove($model);
+        $this->di['em']->flush();
         $this->di['logger']->info('Deleted helpdesk #%s', $id);
 
         return true;
-    }
-
-    public function helpdeskToApiArray(\Model_SupportHelpdesk $model, \Model_Admin|\Model_Client|null $identity = null): array
-    {
-        if ($identity instanceof \Model_Admin) {
-            return $this->di['db']->toArray($model);
-        }
-
-        return [
-            'id' => $model->id,
-            'name' => $model->name,
-            'can_reopen' => (bool) $model->can_reopen,
-        ];
     }
 
     public function messageGetTicketMessages(\Model_SupportTicket $model): array
@@ -1081,7 +1075,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $msgId;
     }
 
-    public function ticketCreateForAdmin(\Model_Client $client, \Model_SupportHelpdesk $helpdesk, array $data, \Model_Admin $identity): int
+    public function ticketCreateForAdmin(\Model_Client $client, Helpdesk $helpdesk, array $data, \Model_Admin $identity): int
     {
         $status = $data['status'] ?? \Model_SupportTicket::ONHOLD;
 
@@ -1091,7 +1085,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $ticket->client_id = $client->id;
         $ticket->status = $status;
         $ticket->subject = $data['subject'];
-        $ticket->support_helpdesk_id = $helpdesk->id;
+        $ticket->support_helpdesk_id = $helpdesk->getId();
         $ticket->created_at = date('Y-m-d H:i:s');
         $ticket->updated_at = date('Y-m-d H:i:s');
         $ticketId = $this->di['db']->store($ticket);
@@ -1138,11 +1132,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $message = $altered['content'] ?? $altered['message'] ?? null;
         }
 
-        $helpdesk = isset($data['support_helpdesk_id']) ? $this->di['db']->getExistingModelById('SupportHelpdesk', $data['support_helpdesk_id'], 'Helpdesk invalid') : $this->getDefaultHelpdesk();
+        $helpdesk = isset($data['support_helpdesk_id']) ? $this->getHelpdeskRepository()->find((int) $data['support_helpdesk_id']) : $this->getDefaultHelpdesk();
+        if (!$helpdesk instanceof Helpdesk) {
+            throw new \FOSSBilling\Exception('Helpdesk invalid');
+        }
 
         $ticket = $this->di['db']->dispense('SupportTicket');
         $ticket->access_hash = bin2hex(random_bytes(random_int(15, 30)));
-        $ticket->support_helpdesk_id = $helpdesk->id;
+        $ticket->support_helpdesk_id = $helpdesk->getId();
         $ticket->author_name = $data['name'];
         $ticket->author_email = $data['email'];
         $ticket->subject = $subject;
@@ -1166,20 +1163,19 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $ticket->access_hash;
     }
 
-    private function getDefaultHelpdesk(): \Model_SupportHelpdesk
+    private function getDefaultHelpdesk(): Helpdesk
     {
-        $helpdesk = $this->di['db']->findOne('SupportHelpdesk', 'ORDER BY id ASC LIMIT 1');
-        if ($helpdesk instanceof \Model_SupportHelpdesk) {
+        $helpdesk = $this->getHelpdeskRepository()->findOneBy([], ['id' => 'ASC']);
+        if ($helpdesk instanceof Helpdesk) {
             return $helpdesk;
         }
 
-        $helpdesk = $this->di['db']->dispense('SupportHelpdesk');
-        $helpdesk->name = 'General';
-        $helpdesk->close_after = 24;
-        $helpdesk->can_reopen = 0;
-        $helpdesk->created_at = date('Y-m-d H:i:s');
-        $helpdesk->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($helpdesk);
+        $helpdesk = (new Helpdesk())
+            ->setName('General')
+            ->setCloseAfter(24)
+            ->setCanReopen(false);
+        $this->di['em']->persist($helpdesk);
+        $this->di['em']->flush();
 
         return $helpdesk;
     }
@@ -1213,7 +1209,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function ticketCreateForClient(\Model_Client $client, \Model_SupportHelpdesk $helpdesk, array $data): int
+    public function ticketCreateForClient(\Model_Client $client, Helpdesk $helpdesk, array $data): int
     {
         SupportTicketValidator::validateTicketCreation($data);
 
@@ -1274,7 +1270,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $ticket = $this->di['db']->dispense('SupportTicket');
         $ticket->client_id = $client->id;
         $ticket->subject = $data['subject'];
-        $ticket->support_helpdesk_id = $helpdesk->id;
+        $ticket->support_helpdesk_id = $helpdesk->getId();
         $ticket->created_at = date('Y-m-d H:i:s');
         $ticket->updated_at = date('Y-m-d H:i:s');
 
@@ -1352,32 +1348,44 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $guestTicket;
     }
 
-    public function helpdeskUpdate(\Model_SupportHelpdesk $model, array $data): bool
+    public function helpdeskUpdate(Helpdesk $model, array $data): bool
     {
-        $model->name = $data['name'] ?? $model->name;
-        $model->email = $data['email'] ?? $model->email;
-        $model->can_reopen = $data['can_reopen'] ?? $model->can_reopen;
-        $model->close_after = $data['close_after'] ?? $model->close_after;
-        $model->signature = $data['signature'] ?? $model->signature;
-        $model->updated_at = date('Y-m-d H:i:s');
-        $id = $this->di['db']->store($model);
+        if (array_key_exists('name', $data)) {
+            $model->setName($data['name']);
+        }
+        if (array_key_exists('email', $data)) {
+            $model->setEmail($data['email']);
+        }
+        if (array_key_exists('can_reopen', $data)) {
+            $model->setCanReopen($data['can_reopen']);
+        }
+        if (array_key_exists('close_after', $data)) {
+            $model->setCloseAfter($data['close_after']);
+        }
+        if (array_key_exists('signature', $data)) {
+            $model->setSignature($data['signature']);
+        }
 
-        $this->di['logger']->info('Updated helpdesk #%s', $id);
+        $this->di['em']->flush();
+
+        $this->di['logger']->info('Updated helpdesk #%s', $model->getId());
 
         return true;
     }
 
     public function helpdeskCreate(array $data): int
     {
-        $model = $this->di['db']->dispense('SupportHelpdesk');
-        $model->name = $data['name'];
-        $model->email = $data['email'] ?? null;
-        $model->can_reopen = $data['can_reopen'] ?? null;
-        $model->close_after = $data['close_after'] ?? null;
-        $model->signature = $data['signature'] ?? null;
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $id = $this->di['db']->store($model);
+        $model = (new Helpdesk())
+            ->setName($data['name'])
+            ->setEmail($data['email'] ?? null)
+            ->setCanReopen($data['can_reopen'] ?? null)
+            ->setCloseAfter($data['close_after'] ?? null)
+            ->setSignature($data['signature'] ?? null);
+
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
+
+        $id = (int) $model->getId();
 
         $this->di['logger']->info('Created helpdesk #%s', $id);
 

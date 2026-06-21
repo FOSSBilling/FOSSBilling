@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Support\Api;
 
+use Box\Mod\Support\Entity\Helpdesk;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -61,7 +62,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
      */
     public function helpdesk_get_pairs(): array
     {
-        return $this->getService()->helpdeskGetPairs();
+        return $this->getService()->getHelpdeskRepository()->getPairs();
     }
 
     /**
@@ -85,7 +86,13 @@ class Client extends \FOSSBilling\Api\AbstractApi
         // Sanitize content to prevent XSS attacks
         $data['content'] = \FOSSBilling\Tools::sanitizeContent($data['content'], true);
 
-        $helpdesk = $this->getDi()['db']->getExistingModelById('SupportHelpdesk', $data['support_helpdesk_id'], 'Helpdesk invalid');
+        /** @var \Box\Mod\Support\Repository\HelpdeskRepository $repo */
+        $repo = $this->getService()->getHelpdeskRepository();
+
+        $helpdesk = $repo->find((int) $data['support_helpdesk_id']);
+        if (!$helpdesk instanceof Helpdesk) {
+            throw new \FOSSBilling\InformationException('Helpdesk invalid');
+        }
 
         $client = $this->getIdentity();
 
