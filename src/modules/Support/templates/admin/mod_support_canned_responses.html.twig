@@ -103,6 +103,8 @@
                     <tr>
                         <th>{{ 'Title'|trans }}</th>
                         <th class="text-center">{{ 'Category'|trans }}</th>
+                        <th>{{ 'Created'|trans }}</th>
+                        <th>{{ 'Updated'|trans }}</th>
                         <th class="w-1 no-sort"></th>
                     </tr>
                 </thead>
@@ -116,6 +118,8 @@
                     <td class="text-center">
                         <a href='{{ "support/canned-category/#{response.category.id}"|url }}'>{{ response.category.title }}</a>
                     </td>
+                    <td class="text-muted">{% if response.created_at %}{{ '%time% ago'|trans({ '%time%': response.created_at|timeago }) }}{% else %}-{% endif %}</td>
+                    <td class="text-muted">{% if response.updated_at %}{{ '%time% ago'|trans({ '%time%': response.updated_at|timeago }) }}{% else %}-{% endif %}</td>
                     <td>
                         <a class="btn btn-icon" href='{{ "support/canned/#{response.id}"|url }}'>
                             <svg class="icon">
@@ -132,7 +136,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td class="text-muted" colspan="3">{{ 'The list is empty'|trans }}</td>
+                    <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
                 </tr>
                 {% endfor %}
                 </tbody>

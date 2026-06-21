@@ -10,8 +10,12 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Support\Entity\CannedResponse;
+use Box\Mod\Support\Entity\CannedResponseCategory;
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
+use Box\Mod\Support\Repository\CannedResponseCategoryRepository;
+use Box\Mod\Support\Repository\CannedResponseRepository;
 use Box\Mod\Support\Repository\KbArticleCategoryRepository;
 use Box\Mod\Support\Repository\KbArticleRepository;
 use Doctrine\ORM\QueryBuilder;
@@ -31,6 +35,47 @@ function adminSupportKbArticleFixture(): KbArticle
         ->setCategory(adminSupportKbCategoryFixture())
         ->setTitle('Title')
         ->setSlug('article-slug');
+}
+
+function adminSupportSetEntityId(object $entity, int $id): void
+{
+    $property = new ReflectionProperty($entity, 'id');
+    $property->setValue($entity, $id);
+}
+
+function adminSupportCannedCategoryFixture(): CannedResponseCategory
+{
+    $category = (new CannedResponseCategory())
+        ->setTitle('Category 1');
+    adminSupportSetEntityId($category, 1);
+
+    return $category;
+}
+
+function adminSupportCannedResponseFixture(): CannedResponse
+{
+    $response = (new CannedResponse())
+        ->setCategory(adminSupportCannedCategoryFixture())
+        ->setTitle('Title')
+        ->setContent('Content');
+    adminSupportSetEntityId($response, 1);
+
+    return $response;
+}
+
+function adminSupportCannedCategoryWithResponsesFixture(): CannedResponseCategory
+{
+    $category = adminSupportCannedCategoryFixture();
+    $response = (new CannedResponse())
+        ->setCategory($category)
+        ->setTitle('Title')
+        ->setContent('Content');
+    adminSupportSetEntityId($response, 1);
+
+    $responses = new ReflectionProperty($category, 'responses');
+    $responses->getValue($category)->add($response);
+
+    return $category;
 }
 
 test('ticket get list', function (): void {
@@ -555,29 +600,23 @@ test('canned get list', function (): void {
             0 => ['id' => 1],
         ],
     ];
+    $qbMock = Mockery::mock(QueryBuilder::class);
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $paginatorMock
-    ->shouldReceive('getPaginatedResultSet')
+    ->shouldReceive('paginateDoctrineQuery')
     ->atLeast()->once()
     ->andReturn($resultSet);
+    $repoMock = Mockery::mock(CannedResponseRepository::class);
+    $repoMock->shouldReceive('getSearchQueryBuilder')
+        ->atLeast()->once()
+        ->andReturn($qbMock);
 
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('cannedGetSearchQuery')->atLeast()->once()
-        ->andReturn(['query', []]);
-    $serviceMock->shouldReceive('cannedToApiArray')->atLeast()->once()
-        ->andReturn([]);
-
-    $model = new Model_SupportPr();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock = Mockery::mock('\Box_DAtabase');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($model);
+    $serviceMock->shouldReceive('getCannedResponseRepository')->atLeast()->once()
+        ->andReturn($repoMock);
 
     $di = container();
     $di['pager'] = $paginatorMock;
-    $di['db'] = $dbMock;
 
     $api->setDi($di);
 
@@ -591,15 +630,19 @@ test('canned get list', function (): void {
 
 test('canned pairs', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getAssoc')
-    ->atLeast()->once()
-    ->andReturn([1 => 'Title']);
+    $repoMock = Mockery::mock(CannedResponseRepository::class);
+    $repoMock->shouldReceive('getGroupedPairs')
+        ->atLeast()->once()
+        ->andReturn(['Category' => [1 => 'Title']]);
+
+    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldReceive('getCannedResponseRepository')
+        ->atLeast()->once()
+        ->andReturn($repoMock);
 
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
+    $api->setService($serviceMock);
 
     $data = [];
     $result = $api->canned_pairs();
@@ -609,18 +652,16 @@ test('canned pairs', function (): void {
 
 test('canned get', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Model_SupportPr());
+    $repoMock = Mockery::mock(CannedResponseRepository::class);
+    $repoMock->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn(adminSupportCannedResponseFixture());
 
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('cannedToApiArray')->atLeast()->once()
-        ->andReturn([]);
+    $serviceMock->shouldReceive('getCannedResponseRepository')->atLeast()->once()
+        ->andReturn($repoMock);
 
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
 
     $api->setService($serviceMock);
@@ -636,18 +677,18 @@ test('canned get', function (): void {
 
 test('canned delete', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Model_SupportPr());
+    $repoMock = Mockery::mock(CannedResponseRepository::class);
+    $repoMock->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn(adminSupportCannedResponseFixture());
 
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldReceive('getCannedResponseRepository')->atLeast()->once()
+        ->andReturn($repoMock);
     $serviceMock->shouldReceive('cannedRm')->atLeast()->once()
         ->andReturn(true);
 
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
 
     $api->setService($serviceMock);
@@ -685,18 +726,18 @@ test('canned create', function (): void {
 
 test('canned update', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
+    $repoMock = Mockery::mock(CannedResponseRepository::class);
+    $repoMock->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn(adminSupportCannedResponseFixture());
+
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldReceive('getCannedResponseRepository')->atLeast()->once()
+        ->andReturn($repoMock);
     $serviceMock->shouldReceive('cannedUpdate')->atLeast()->once()
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Model_SupportPr());
-
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
 
     $api->setService($serviceMock);
@@ -712,15 +753,19 @@ test('canned update', function (): void {
 
 test('canned category pairs', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getAssoc')
-    ->atLeast()->once()
-    ->andReturn([1 => 'Category 1']);
+    $repoMock = Mockery::mock(CannedResponseCategoryRepository::class);
+    $repoMock->shouldReceive('getPairs')
+        ->atLeast()->once()
+        ->andReturn([1 => 'Category 1']);
+
+    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldReceive('getCannedResponseCategoryRepository')
+        ->atLeast()->once()
+        ->andReturn($repoMock);
 
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
+    $api->setService($serviceMock);
 
     $api->setIdentity(new Model_Admin());
 
@@ -734,18 +779,16 @@ test('canned category pairs', function (): void {
 
 test('canned category get', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Model_SupportPrCategory());
+    $repoMock = Mockery::mock(CannedResponseCategoryRepository::class);
+    $repoMock->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn(adminSupportCannedCategoryWithResponsesFixture());
 
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('cannedCategoryToApiArray')->atLeast()->once()
-        ->andReturn([]);
+    $serviceMock->shouldReceive('getCannedResponseCategoryRepository')->atLeast()->once()
+        ->andReturn($repoMock);
 
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
 
     $api->setService($serviceMock);
@@ -757,25 +800,23 @@ test('canned category get', function (): void {
     $result = $api->canned_category_get($data);
 
     expect($result)->toBeArray();
+    expect($result['responses'])->toHaveCount(1);
 });
 
 test('canned category update', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
-    $supportCategory = new Model_SupportPrCategory();
-    $supportCategory->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($supportCategory);
+    $repoMock = Mockery::mock(CannedResponseCategoryRepository::class);
+    $repoMock->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn(adminSupportCannedCategoryFixture());
 
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldReceive('getCannedResponseCategoryRepository')->atLeast()->once()
+        ->andReturn($repoMock);
     $serviceMock->shouldReceive('cannedCategoryUpdate')->atLeast()->once()
         ->andReturn(true);
 
     $di = container();
-    $di['db'] = $dbMock;
 
     $api->setDi($di);
 
@@ -793,21 +834,18 @@ test('canned category update', function (): void {
 
 test('canned category delete', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
-    $supportCategory = new Model_SupportPrCategory();
-    $supportCategory->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($supportCategory);
+    $repoMock = Mockery::mock(CannedResponseCategoryRepository::class);
+    $repoMock->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn(adminSupportCannedCategoryFixture());
 
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldReceive('getCannedResponseCategoryRepository')->atLeast()->once()
+        ->andReturn($repoMock);
     $serviceMock->shouldReceive('cannedCategoryRm')->atLeast()->once()
         ->andReturn(true);
 
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
 
     $api->setService($serviceMock);

@@ -12,8 +12,12 @@ declare(strict_types=1);
 
 namespace Box\Mod\Support;
 
+use Box\Mod\Support\Entity\CannedResponse;
+use Box\Mod\Support\Entity\CannedResponseCategory;
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
+use Box\Mod\Support\Repository\CannedResponseCategoryRepository;
+use Box\Mod\Support\Repository\CannedResponseRepository;
 use Box\Mod\Support\Repository\KbArticleCategoryRepository;
 use Box\Mod\Support\Repository\KbArticleRepository;
 use FOSSBilling\InformationException;
@@ -24,12 +28,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     protected ?\Pimple\Container $di = null;
     protected KbArticleRepository $kbArticleRepository;
     protected KbArticleCategoryRepository $kbArticleCategoryRepository;
+    protected CannedResponseRepository $cannedResponseRepository;
+    protected CannedResponseCategoryRepository $cannedResponseCategoryRepository;
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
         $this->kbArticleRepository = $this->di['em']->getRepository(KbArticle::class);
         $this->kbArticleCategoryRepository = $this->di['em']->getRepository(KbArticleCategory::class);
+        $this->cannedResponseRepository = $this->di['em']->getRepository(CannedResponse::class);
+        $this->cannedResponseCategoryRepository = $this->di['em']->getRepository(CannedResponseCategory::class);
     }
 
     public function getDi(): ?\Pimple\Container
@@ -45,6 +53,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function getKbArticleCategoryRepository(): KbArticleCategoryRepository
     {
         return $this->kbArticleCategoryRepository;
+    }
+
+    public function getCannedResponseRepository(): CannedResponseRepository
+    {
+        return $this->cannedResponseRepository;
+    }
+
+    public function getCannedResponseCategoryRepository(): CannedResponseCategoryRepository
+    {
+        return $this->cannedResponseCategoryRepository;
     }
 
     public function getModulePermissions(): array
@@ -902,7 +920,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $id = $model->id;
 
         $tickets = $this->di['db']->find('SupportTicket', 'support_helpdesk_id = :support_helpdesk_id', [':support_helpdesk_id' => $model->id]);
-        if (\FOSSBilling\Tools::safeCount($tickets) > 0) {
+        if (Tools::safeCount($tickets) > 0) {
             throw new InformationException('Cannot remove helpdesk which has tickets');
         }
         $this->di['db']->trash($model);
@@ -1290,8 +1308,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     private function cannedReply(\Model_SupportTicket $ticket, $cannedId): void
     {
         try {
-            $cannedObj = $this->di['db']->getExistingModelById('SupportPr', $cannedId, 'Canned reply not found');
-            $canned = $this->cannedToApiArray($cannedObj);
+            $canned = $this->getCannedResponseRepository()->find((int) $cannedId)?->toApiArray() ?? [];
             $staffService = $this->di['mod_service']('staff');
             $admin = $staffService->getCronAdmin();
             if (isset($canned['content']) && $admin instanceof \Model_Admin) {
@@ -1366,158 +1383,106 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $id;
     }
 
-    public function cannedGetSearchQuery(array $data): array
+    public function cannedRm(CannedResponse $model): bool
     {
-        $query = 'SELECT sp.* FROM support_pr sp
-                LEFT JOIN support_pr_category spc
-                ON spc.id = sp.support_pr_category_id';
+        $id = $model->getId();
 
-        $search = $data['search'] ?? null;
-        $id = $data['id'] ?? null;
-        $categoryId = $data['category_id'] ?? null;
-
-        $where = [];
-        $bindings = [];
-
-        if ($id !== null && $id !== '') {
-            $where[] = 'sp.id = :id';
-            $bindings[':id'] = (int) $id;
-        }
-
-        if ($search) {
-            $search = '%' . $search . '%';
-            $where[] = '(sp.title LIKE :title OR sp.content LIKE :content OR spc.title LIKE :category_title)';
-            $bindings[':title'] = $search;
-            $bindings[':content'] = $search;
-            $bindings[':category_title'] = $search;
-        }
-
-        if ($categoryId !== null && $categoryId !== '') {
-            $where[] = 'sp.support_pr_category_id = :category_id';
-            $bindings[':category_id'] = (int) $categoryId;
-        }
-
-        if (!empty($where)) {
-            $query = $query . ' WHERE ' . implode(' AND ', $where);
-        }
-
-        $query .= ' ORDER BY sp.support_pr_category_id ASC';
-
-        return [$query, $bindings];
-    }
-
-    /**
-     * @return non-empty-array[]
-     */
-    public function cannedGetGroupedPairs(): array
-    {
-        $query = 'SELECT sp.title as r_title, spc.title as c_title FROM support_pr sp
-                LEFT JOIN support_pr_category spc
-                ON spc.id = sp.support_pr_category_id';
-
-        $data = $this->di['db']->getAll($query);
-        $res = [];
-        foreach ($data as $r) {
-            $res[$r['c_title']][$r['id']] = $r['r_title'];
-        }
-
-        return $res;
-    }
-
-    public function cannedRm(\Model_SupportPr $model): bool
-    {
-        $id = $model->id;
-
-        $this->di['db']->trash($model);
+        $this->di['em']->remove($model);
+        $this->di['em']->flush();
 
         $this->di['logger']->info('Deleted canned response #%s', $id);
 
         return true;
     }
 
-    public function cannedToApiArray(\Model_SupportPr $model): array
+    public function cannedCategoryRm(CannedResponseCategory $model): bool
     {
-        $result = $this->di['db']->toArray($model);
-        $category = $this->di['db']->load('SupportPrCategory', $model->support_pr_category_id);
-        if ($category instanceof \Model_SupportPrCategory) {
-            $result['category'] = [
-                'id' => $category->id,
-                'title' => $category->title,
-            ];
-        } else {
-            $result['category'] = [];
+        $id = $model->getId();
+        $responsesCount = $id !== null ? $this->getCannedResponseRepository()->countByCategoryId($id) : 0;
+
+        if ($responsesCount > 0) {
+            throw new InformationException('Cannot remove category which has canned responses');
         }
 
-        return $result;
-    }
-
-    public function cannedCategoryGetPairs(): array
-    {
-        return $this->di['db']->getAssoc('SELECT id, title FROM support_pr_category');
-    }
-
-    public function cannedCategoryRm(\Model_SupportPrCategory $model): bool
-    {
-        $id = $model->id;
-        $this->di['db']->trash($model);
+        $this->di['em']->remove($model);
+        $this->di['em']->flush();
         $this->di['logger']->info('Deleted canned response category #%s', $id);
 
         return true;
     }
 
-    public function cannedCategoryToApiArray(\Model_SupportPrCategory $model): array
-    {
-        return $this->di['db']->toArray($model);
-    }
-
     public function cannedCreate(string $title, int $categoryId, ?string $content = null): int
     {
-        $model = $this->di['db']->dispense('SupportPr');
-        $model->support_pr_category_id = $categoryId;
-        $model->title = $title;
-        $model->content = $content;
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $id = $this->di['db']->store($model);
+        $category = $this->getCannedResponseCategoryRepository()->find($categoryId);
+        if (!$category instanceof CannedResponseCategory) {
+            throw new \FOSSBilling\Exception('Canned category not found');
+        }
+
+        $model = (new CannedResponse())
+            ->setCategory($category)
+            ->setTitle($title)
+            ->setContent($content);
+
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
+
+        $id = (int) $model->getId();
 
         $this->di['logger']->info('Created new canned response #%s', $id);
 
         return $id;
     }
 
-    public function cannedUpdate(\Model_SupportPr $model, array $data): bool
+    public function cannedUpdate(CannedResponse $model, array $data): bool
     {
-        $model->support_pr_category_id = $data['category_id'] ?? $model->support_pr_category_id;
-        $model->title = $data['title'] ?? $model->title;
-        $model->content = $data['content'] ?? $model->content;
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        if (isset($data['category_id'])) {
+            $category = $this->getCannedResponseCategoryRepository()->find((int) $data['category_id']);
+            if (!$category instanceof CannedResponseCategory) {
+                throw new \FOSSBilling\Exception('Canned category not found');
+            }
 
-        $this->di['logger']->info('Updated canned response #%s', $model->id);
+            $model->setCategory($category);
+        }
+
+        if (isset($data['title'])) {
+            $model->setTitle($data['title']);
+        }
+
+        if (array_key_exists('content', $data)) {
+            $model->setContent($data['content']);
+        }
+
+        $this->di['em']->flush();
+
+        $this->di['logger']->info('Updated canned response #%s', $model->getId());
 
         return true;
     }
 
     public function cannedCategoryCreate(string $title): int
     {
-        $model = $this->di['db']->dispense('SupportPrCategory');
-        $model->title = $title;
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $id = $this->di['db']->store($model);
+        $model = (new CannedResponseCategory())
+            ->setTitle($title);
+
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
+
+        $id = (int) $model->getId();
 
         $this->di['logger']->info('Created new canned response category #%s', $id);
 
         return $id;
     }
 
-    public function cannedCategoryUpdate(\Model_SupportPrCategory $model, string $title): bool
+    public function cannedCategoryUpdate(CannedResponseCategory $model, ?string $title = null): bool
     {
-        $model->title = $title;
-        $model->updated_at = date('Y-m-d H:i:s');
-        $id = $this->di['db']->store($model);
+        if (isset($title)) {
+            $model->setTitle($title);
+        }
 
-        $this->di['logger']->info('Updated canned response category #%s', $id);
+        $this->di['em']->flush();
+
+        $this->di['logger']->info('Updated canned response category #%s', $model->getId());
 
         return true;
     }

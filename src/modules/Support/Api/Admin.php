@@ -16,6 +16,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Support\Api;
 
+use Box\Mod\Support\Entity\CannedResponse;
+use Box\Mod\Support\Entity\CannedResponseCategory;
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
 use FOSSBilling\PaginationOptions;
@@ -301,15 +303,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'view');
 
-        [$sql, $bindings] = $this->getService()->cannedGetSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
+        /** @var \Box\Mod\Support\Repository\CannedResponseRepository $repo */
+        $repo = $this->getService()->getCannedResponseRepository();
 
-        foreach ($pager['list'] as $key => $item) {
-            $staff = $this->getDi()['db']->getExistingModelById('SupportPr', $item['id'], 'Canned response not found');
-            $pager['list'][$key] = $this->getService()->cannedToApiArray($staff);
-        }
+        $qb = $repo->getSearchQueryBuilder($data);
 
-        return $pager;
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
     }
 
     /**
@@ -319,13 +318,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'view');
 
-        $res = $this->getDi()['db']->getAssoc('SELECT id, title FROM support_pr_category WHERE 1');
-        $list = [];
-        foreach ($res as $id => $title) {
-            $list[$title] = $this->getDi()['db']->getAssoc('SELECT id, title FROM support_pr WHERE support_pr_category_id = :id', ['id' => $id]);
-        }
+        /** @var \Box\Mod\Support\Repository\CannedResponseRepository $repo */
+        $repo = $this->getService()->getCannedResponseRepository();
 
-        return $list;
+        return $repo->getGroupedPairs();
     }
 
     /**
@@ -338,9 +334,15 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'view');
 
-        $model = $this->getDi()['db']->getExistingModelById('SupportPr', $data['id'], 'Canned reply not found');
+        /** @var \Box\Mod\Support\Repository\CannedResponseRepository $repo */
+        $repo = $this->getService()->getCannedResponseRepository();
 
-        return $this->getService()->cannedToApiArray($model);
+        $model = $repo->find((int) $data['id']);
+        if (!$model instanceof CannedResponse) {
+            throw new \FOSSBilling\InformationException('Canned reply not found');
+        }
+
+        return $model->toApiArray();
     }
 
     /**
@@ -353,7 +355,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_canned');
 
-        $model = $this->getDi()['db']->getExistingModelById('SupportPr', $data['id'], 'Canned reply not found');
+        /** @var \Box\Mod\Support\Repository\CannedResponseRepository $repo */
+        $repo = $this->getService()->getCannedResponseRepository();
+
+        $model = $repo->find((int) $data['id']);
+        if (!$model instanceof CannedResponse) {
+            throw new \FOSSBilling\InformationException('Canned reply not found');
+        }
 
         return $this->getService()->cannedRm($model);
     }
@@ -389,7 +397,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_canned');
 
-        $model = $this->getDi()['db']->getExistingModelById('SupportPr', $data['id'], 'Canned reply not found');
+        /** @var \Box\Mod\Support\Repository\CannedResponseRepository $repo */
+        $repo = $this->getService()->getCannedResponseRepository();
+
+        $model = $repo->find((int) $data['id']);
+        if (!$model instanceof CannedResponse) {
+            throw new \FOSSBilling\InformationException('Canned reply not found');
+        }
 
         return $this->getService()->cannedUpdate($model, $data);
     }
@@ -401,7 +415,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'view');
 
-        return $this->getDi()['db']->getAssoc('SELECT id, title FROM support_pr_category WHERE 1');
+        /** @var \Box\Mod\Support\Repository\CannedResponseCategoryRepository $repo */
+        $repo = $this->getService()->getCannedResponseCategoryRepository();
+
+        return $repo->getPairs();
     }
 
     /**
@@ -414,9 +431,15 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'view');
 
-        $model = $this->getDi()['db']->getExistingModelById('SupportPrCategory', $data['id'], 'Canned category not found');
+        /** @var \Box\Mod\Support\Repository\CannedResponseCategoryRepository $repo */
+        $repo = $this->getService()->getCannedResponseCategoryRepository();
 
-        return $this->getService()->cannedCategoryToApiArray($model);
+        $model = $repo->find((int) $data['id']);
+        if (!$model instanceof CannedResponseCategory) {
+            throw new \FOSSBilling\InformationException('Canned category not found');
+        }
+
+        return $model->toApiArray();
     }
 
     /**
@@ -431,9 +454,15 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_canned');
 
-        $model = $this->getDi()['db']->getExistingModelById('SupportPrCategory', $data['id'], 'Canned category not found');
+        /** @var \Box\Mod\Support\Repository\CannedResponseCategoryRepository $repo */
+        $repo = $this->getService()->getCannedResponseCategoryRepository();
 
-        $title = $data['title'] ?? $model->title;
+        $model = $repo->find((int) $data['id']);
+        if (!$model instanceof CannedResponseCategory) {
+            throw new \FOSSBilling\InformationException('Canned category not found');
+        }
+
+        $title = $data['title'] ?? $model->getTitle();
 
         return $this->getService()->cannedCategoryUpdate($model, $title);
     }
@@ -448,7 +477,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_canned');
 
-        $model = $this->getDi()['db']->getExistingModelById('SupportPrCategory', $data['id'], 'Canned category not found');
+        /** @var \Box\Mod\Support\Repository\CannedResponseCategoryRepository $repo */
+        $repo = $this->getService()->getCannedResponseCategoryRepository();
+
+        $model = $repo->find((int) $data['id']);
+        if (!$model instanceof CannedResponseCategory) {
+            throw new \FOSSBilling\InformationException('Canned category not found');
+        }
 
         return $this->getService()->cannedCategoryRm($model);
     }
@@ -546,7 +581,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         /** @var \Box\Mod\Support\Repository\KbArticleRepository $repo */
         $repo = $this->getService()->getKbArticleRepository();
-        
+
         $qb = $repo->getSearchQueryBuilder($status, $search, $cat);
 
         return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
@@ -562,7 +597,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         /** @var \Box\Mod\Support\Repository\KbArticleRepository $repo */
         $repo = $this->getService()->getKbArticleRepository();
-        
+
         $article = $repo->find((int) $data['id']);
 
         if (!$article instanceof KbArticle) {
@@ -628,7 +663,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         /** @var \Box\Mod\Support\Repository\KbArticleRepository $repo */
         $repo = $this->getService()->getKbArticleRepository();
-        
+
         $article = $repo->find((int) $data['id']);
 
         if (!$article instanceof KbArticle) {
@@ -649,7 +684,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         /** @var \Box\Mod\Support\Repository\KbArticleCategoryRepository $repo */
         $repo = $this->getService()->getKbArticleCategoryRepository();
-        
+
         $qb = $repo->getSearchQueryBuilder($data);
 
         return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data), $this->getIdentity(), $data['q'] ?? null);
@@ -665,7 +700,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         /** @var \Box\Mod\Support\Repository\KbArticleCategoryRepository $repo */
         $repo = $this->getService()->getKbArticleCategoryRepository();
-        
+
         $cat = $repo->find((int) $data['id']);
 
         if (!$cat instanceof KbArticleCategory) {
@@ -705,7 +740,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         /** @var \Box\Mod\Support\Repository\KbArticleCategoryRepository $repo */
         $repo = $this->getService()->getKbArticleCategoryRepository();
-        
+
         $cat = $repo->find((int) $data['id']);
 
         if (!$cat instanceof KbArticleCategory) {
@@ -729,7 +764,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         /** @var \Box\Mod\Support\Repository\KbArticleCategoryRepository $repo */
         $repo = $this->getService()->getKbArticleCategoryRepository();
-        
+
         $cat = $repo->find((int) $data['id']);
 
         if (!$cat instanceof KbArticleCategory) {

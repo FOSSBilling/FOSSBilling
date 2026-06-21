@@ -106,6 +106,8 @@ export default function initTomSelectControls() {
   const cannedResponseSelectorEl = document.querySelector('.canned_ticket_response');
   if (cannedResponseSelectorEl !== null && cannedResponseSelectorEl.dataset.resturl) {
     const cannedResponseSelector = new TomSelect('.canned_ticket_response', {
+      controlInput: false,
+      maxItems: 1,
       render: {
         item: (data, escape) => createTomSelectTemplate(data, escape),
         option: (data, escape) => createTomSelectTemplate(data, escape),
