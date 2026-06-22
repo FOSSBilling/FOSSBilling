@@ -62,9 +62,6 @@ class KbArticle implements ApiArrayInterface, TimestampInterface
     public function toApiArray(\Model_Admin|\Model_Client|\Model_Guest|null $identity = null, bool $includeContent = false, bool $includeViews = true): array
     {
         $category = $this->category;
-        if (!$category instanceof KbArticleCategory) {
-            throw new \FOSSBilling\Exception('Knowledge Base category not found');
-        }
 
         $data = [
             'id' => $this->id,
@@ -74,11 +71,11 @@ class KbArticle implements ApiArrayInterface, TimestampInterface
             'created_at' => $this->createdAt?->format('Y-m-d H:i:s'),
             'status' => $this->status,
             'updated_at' => $this->updatedAt?->format('Y-m-d H:i:s'),
-            'category' => [
+            'category' => $category instanceof KbArticleCategory ? [
                 'id' => $category->getId(),
                 'slug' => $category->getSlug(),
                 'title' => $category->getTitle(),
-            ],
+            ] : null,
         ];
 
         if (!$includeViews) {
