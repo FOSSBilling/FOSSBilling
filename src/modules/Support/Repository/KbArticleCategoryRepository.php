@@ -21,14 +21,19 @@ class KbArticleCategoryRepository extends EntityRepository
     public function getSearchQueryBuilder(array $data): QueryBuilder
     {
         $qb = $this->createQueryBuilder('c')
-            ->leftJoin('c.articles', 'a')
-            ->addSelect('a')
             ->distinct()
             ->orderBy('c.title', 'ASC');
 
+        // Use a WITH condition on the JOIN so the status filter does not turn the
+        // LEFT JOIN into an implicit INNER JOIN — categories with no active articles
+        // must still appear in the results.
         if (!empty($data['article_status'])) {
-            $qb->andWhere('a.status = :status')
+            $qb->leftJoin('c.articles', 'a', \Doctrine\ORM\Query\Expr\Join::WITH, 'a.status = :status')
+                ->addSelect('a')
                 ->setParameter('status', $data['article_status']);
+        } else {
+            $qb->leftJoin('c.articles', 'a')
+                ->addSelect('a');
         }
 
         if (isset($data['q']) && trim((string) $data['q']) !== '') {

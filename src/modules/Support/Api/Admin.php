@@ -613,7 +613,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $qb = $repo->getSearchQueryBuilder($status, $search, $cat);
 
-        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data), $this->getIdentity());
     }
 
     /**

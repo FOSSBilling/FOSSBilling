@@ -9,14 +9,16 @@
 <li class="breadcrumb-item">
     <a href="{{ 'support/kb'|url }}">{{ 'Knowledge Base'|trans }}</a>
 </li>
+{% if article.category %}
 <li class="breadcrumb-item">
     <a href='{{ "support/kb/#{article.category.slug}"|url }}'>{{ article.category.title }}</a>
 </li>
+{% endif %}
 <li class="breadcrumb-item active" aria-current="page">{{ article.title }}</li>
 {% endblock %}
 
 {% block content %}
-{% set related_articles = guest.support_kb_article_get_list({ 'kb_article_category_id': article.category.id, 'per_page': 6 }).list|filter(related_article => related_article.id != article.id)|slice(0, 5) %}
+{% set related_articles = article.category ? guest.support_kb_article_get_list({ 'kb_article_category_id': article.category.id, 'per_page': 6 }).list|filter(related_article => related_article.id != article.id)|slice(0, 5) : [] %}
 <div class="row g-4 justify-content-center">
     <article class="col-lg-9">
         <div class="mb-4">
@@ -51,7 +53,9 @@
 
         <div class="d-flex flex-wrap gap-2 mb-4">
             <a href="{{ 'support/kb'|url }}" class="btn btn-outline-secondary">{{ 'Browse all articles'|trans }}</a>
+            {% if article.category %}
             <a href='{{ "support/kb/#{article.category.slug}"|url }}' class="btn btn-outline-secondary">{{ 'More in this category'|trans }}</a>
+            {% endif %}
         </div>
     </article>
 
@@ -59,8 +63,10 @@
         <div class="position-sticky" style="top: 1rem;">
             <div class="card mb-4">
                 <div class="card-body">
+                    {% if article.category %}
                     <div class="text-muted small mb-1">{{ 'Category'|trans }}</div>
                     <a class="h5 d-block mb-3 text-decoration-none" href='{{ "support/kb/#{article.category.slug}"|url }}'>{{ article.category.title }}</a>
+                    {% endif %}
                     <a class="btn btn-outline-secondary btn-sm w-100" href="{{ 'support/kb'|url }}">{{ 'Knowledge Base'|trans }}</a>
                 </div>
             </div>
@@ -72,7 +78,7 @@
                 <div class="list-group list-group-flush">
                     {% if related_articles %}
                         {% for related_article in related_articles %}
-                            <a class="list-group-item list-group-item-action" href='{{ "support/kb/#{related_article.category.slug}/#{related_article.slug}"|url }}'>{{ related_article.title }}</a>
+                            <a class="list-group-item list-group-item-action" href='{{ related_article.category ? "support/kb/#{related_article.category.slug}/#{related_article.slug}"|url : "support/kb"|url }}'>{{ related_article.title }}</a>
                         {% endfor %}
                     {% else %}
                         <div class="list-group-item text-muted">{{ 'No related articles yet.'|trans }}</div>
