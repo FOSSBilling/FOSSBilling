@@ -510,7 +510,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $helpdesk = $this->getHelpdeskRepository()->find((int) $model->support_helpdesk_id);
         if (!$helpdesk instanceof Helpdesk) {
-            throw new \FOSSBilling\Exception('Helpdesk invalid');
+            return false;
         }
 
         return $helpdesk->canReopen();
@@ -1265,7 +1265,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     private function sendAutoresponderCannedReply(\Model_SupportTicket $ticket, $cannedId): void
     {
         try {
-            $canned = $this->getCannedResponseRepository()->find((int) $cannedId)?->toApiArray() ?? [];
+            $cannedResponse = $this->getCannedResponseRepository()->find((int) $cannedId);
+            if (!$cannedResponse instanceof CannedResponse) {
+                $this->di['logger']->warning('Autoresponder: canned response #%s not found, skipping reply for ticket #%s', $cannedId, $ticket->id);
+
+                return;
+            }
+
+            $canned = $cannedResponse->toApiArray();
             $staffService = $this->di['mod_service']('staff');
             $admin = $staffService->getCronAdmin();
 
@@ -1492,7 +1499,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $extensionService = $this->di['mod_service']('extension');
         $config = $extensionService->getConfig('mod_support');
 
-        return Tools::normalizeBoolean($config['kb_enable'] ?? true, true);
+        return Tools::normalizeBoolean($config['kb_enable'] ?? false, false);
     }
 
     public function kbArticleViewsEnabled(): bool

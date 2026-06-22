@@ -211,7 +211,9 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      */
     public function kb_category_get_pairs(array $data): array
     {
-        $this->assertKbEnabled();
+        if (!$this->getService()->kbEnabled()) {
+            return [];
+        }
 
         return $this->getService()->getKbArticleCategoryRepository()->getPairs();
     }

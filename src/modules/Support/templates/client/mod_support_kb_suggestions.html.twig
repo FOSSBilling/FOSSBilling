@@ -37,6 +37,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         articles.forEach((article) => {
+            if (!article.category) {
+                return;
+            }
             const link = document.createElement('a');
             link.className = 'list-group-item list-group-item-action px-0 bg-transparent';
             link.href = `{{ 'support/kb'|url }}/${encodeURIComponent(article.category.slug)}/${encodeURIComponent(article.slug)}`;

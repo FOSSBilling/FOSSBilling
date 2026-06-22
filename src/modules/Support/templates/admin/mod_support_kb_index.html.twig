@@ -123,13 +123,13 @@
                                                 <a href='{{ "support/kb/article/#{post.id}"|url }}'>{{ post.title }}</a>
                                             </td>
                                             <td>
-                                                <a href='{{ "support/kb/category/#{post.category.id}"|url }}'>{{ post.category.title }}</a>
+                                                {% if post.category %}<a href='{{ "support/kb/category/#{post.category.id}"|url }}'>{{ post.category.title }}</a>{% else %}<span class="text-muted">—</span>{% endif %}
                                             </td>
                                             <td>{{ mf.status_badge(post.status, 'post') }}</td>
                                             <td class="text-center">{{ post.views }}</td>
                                             <td class="text-muted">{% if post.updated_at %}{{ '%time% ago'|trans({ '%time%': post.updated_at|timeago }) }}{% else %}-{% endif %}</td>
                                             <td>
-                                                {% if post.status == 'active' %}
+                                                {% if post.status == 'active' and post.category %}
                                                 <a class="btn btn-icon" href='{{ "support/kb/#{post.category.slug}/#{post.slug}"|url(area: 'client') }}' target="_blank"
                                                     data-bs-toggle="tooltip" data-bs-title="{{ 'View'|trans }}">
                                                     <svg class="icon">
