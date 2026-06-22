@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', function () {
         articles.forEach((article) => {
             const link = document.createElement('a');
             link.className = 'list-group-item list-group-item-action px-0 bg-transparent';
-            link.href = `{{ 'support/kb'|url }}/${article.category.slug}/${article.slug}`;
+            link.href = `{{ 'support/kb'|url }}/${encodeURIComponent(article.category.slug)}/${encodeURIComponent(article.slug)}`;
             link.target = '_blank';
             link.rel = 'noopener';
             link.textContent = article.title;
