@@ -978,11 +978,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     private function registrarGetRegistrarAdapterClassName(\Model_TldRegistrar $model): string
     {
-        if (!$this->filesystem->exists(Path::join(PATH_LIBRARY, 'Registrar', 'Adapter', "{$model->registrar}.php"))) {
+        $file = Path::join(PATH_LIBRARY, 'Registrar', 'Adapter', "{$model->registrar}.php");
+        if (!$this->filesystem->exists($file)) {
             throw new \FOSSBilling\Exception('Domain registrar :adapter was not found', [':adapter' => $model->registrar]);
         }
 
         $class = sprintf('Registrar_Adapter_%s', $model->registrar);
+        if (!class_exists($class)) {
+            require_once $file;
+        }
+
         if (!class_exists($class)) {
             throw new \FOSSBilling\Exception('Registrar :adapter was not found', [':adapter' => $class]);
         }
