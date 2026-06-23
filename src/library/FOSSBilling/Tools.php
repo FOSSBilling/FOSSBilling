@@ -421,6 +421,10 @@ class Tools
      * Sanitize user content to prevent XSS attacks.
      * Uses Symfony's HTML Sanitizer component for robust protection.
      *
+     * Use this only for content that is stored and rendered as HTML.
+     * For Markdown content (e.g. ticket messages, KB articles), use sanitizeMarkdownContent() instead,
+     * since the HTML sanitizer incorrectly strips text that follows unrecognized tags like <foo>.
+     *
      * @param string $content   The content to sanitize. If empty, returns an empty string.
      * @param bool   $allowHtml Whether to allow safe HTML tags (default: true for rich content)
      *
@@ -451,6 +455,31 @@ class Tools
         $sanitizer = new \Symfony\Component\HtmlSanitizer\HtmlSanitizer($config);
 
         return trim($sanitizer->sanitize($content));
+    }
+
+    /**
+     * Sanitize Markdown content for storage.
+     *
+     * Unlike sanitizeContent(), this does NOT run an HTML sanitizer because the content is Markdown,
+     * not HTML. Running an HTML sanitizer on Markdown corrupts it: characters like < and > that users
+     * type as literal text get misinterpreted as unknown HTML elements and dropped together with all
+     * subsequent text.
+     *
+     * XSS protection for Markdown content is handled at render time by the markdown_to_html Twig
+     * filter, which is configured with html_input=escape so any raw HTML in the Markdown is safely
+     * escaped rather than executed.
+     *
+     * @param string $content the Markdown content to sanitize
+     *
+     * @return string Sanitized Markdown content safe for storage
+     */
+    public static function sanitizeMarkdownContent(string $content = ''): string
+    {
+        if (empty($content)) {
+            return '';
+        }
+
+        return trim(str_replace("\0", '', $content));
     }
 
     public static function validatePhoneCC(string|int $countryCode): int

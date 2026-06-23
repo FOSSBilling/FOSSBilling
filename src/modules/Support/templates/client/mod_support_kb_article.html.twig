@@ -5,6 +5,7 @@
 {% block meta_description %}{{ (article.content ?? '')|markdown_to_html|striptags|trim|truncate(160) }}{% endblock %}
 
 {% block body_class %}kb-article{% endblock %}
+{% block head %}{{ 'css/markdown.css' | public_asset_url | stylesheet_tag }}{% endblock %}
 {% block breadcrumb %}
 <li class="breadcrumb-item">
     <a href="{{ 'support/kb'|url }}">{{ 'Knowledge Base'|trans }}</a>
@@ -26,9 +27,9 @@
                 </div>
             </div>
             <div class="card-body">
-                <div class="list-group ms-2">
+                <article class="markdown-body bg-transparent text-reset">
                     {{ (article.content ?? '')|markdown_to_html }}
-                </div>
+                </article>
             </div>
             <div class="card-footer">
                 <a href="{{ 'support/kb'|url }}" class="btn btn-primary btn-sm" type="button">{{ 'Go Back'|trans }}</a>

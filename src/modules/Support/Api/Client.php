@@ -82,8 +82,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     ])]
     public function ticket_create(array $data): int
     {
-        // Sanitize content to prevent XSS attacks
-        $data['content'] = \FOSSBilling\Tools::sanitizeContent($data['content'], true);
+        $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']);
 
         $helpdesk = $this->getDi()['db']->getExistingModelById('SupportHelpdesk', $data['support_helpdesk_id'], 'Helpdesk invalid');
 
@@ -98,8 +97,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Ticket ID was not passed', 'content' => 'Ticket content required'])]
     public function ticket_reply(array $data): bool
     {
-        // Sanitize content to prevent XSS attacks
-        $data['content'] = \FOSSBilling\Tools::sanitizeContent($data['content'], true);
+        $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']);
 
         $client = $this->getIdentity();
 
