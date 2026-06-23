@@ -21,6 +21,7 @@ use FOSSBilling\Security\AuthenticationRequiredException;
 use FOSSBilling\Security\EmailValidationRequiredException;
 use RedBeanPHP\Facade;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -610,6 +611,13 @@ $di['update_readiness'] = new FOSSBilling\UpdateReadinessCheck(
  */
 $di['server_manager'] = $di->protect(function ($manager, $config) use ($di) {
     $class = sprintf('Server_Manager_%s', ucfirst((string) $manager));
+
+    if (!class_exists($class)) {
+        $file = Path::join(PATH_LIBRARY, 'Server', 'Manager', ucfirst((string) $manager) . '.php');
+        if (file_exists($file)) {
+            require_once $file;
+        }
+    }
 
     $s = new $class($config);
     $s->setLog($di['logger']);

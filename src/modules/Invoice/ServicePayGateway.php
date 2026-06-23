@@ -408,8 +408,14 @@ class ServicePayGateway implements InjectionAwareInterface
         $class = "Payment_Adapter_{$pg->gateway}";
 
         if (!class_exists($class)) {
-            $file = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', $pg->gateway, "{$pg->gateway}.php");
-            include $file;
+            $nestedFile = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', $pg->gateway, "{$pg->gateway}.php");
+            $flatFile = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', "{$pg->gateway}.php");
+
+            if ($this->filesystem->exists($nestedFile)) {
+                require_once $nestedFile;
+            } elseif ($this->filesystem->exists($flatFile)) {
+                require_once $flatFile;
+            }
         }
 
         return $class;
