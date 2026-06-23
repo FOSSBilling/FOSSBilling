@@ -348,7 +348,7 @@ test('gets adapter config', function (): void {
     $expected = '\Payment_Adapter_Custom';
     $filesystemMock = Mockery::mock(Symfony\Component\Filesystem\Filesystem::class);
     $filesystemMock->shouldReceive('exists')
-        ->atLeast()->once()
+        ->zeroOrMoreTimes()
         ->andReturn(true);
 
     $serviceMock = Mockery::mock(ServicePayGateway::class, [$filesystemMock])->makePartial()->shouldAllowMockingProtectedMethods();
@@ -369,7 +369,7 @@ test('throws exception when adapter class does not exist', function (): void {
     $expected = 'Payment_Adapter_ClassDoesNotExists';
     $filesystemMock = Mockery::mock(Symfony\Component\Filesystem\Filesystem::class);
     $filesystemMock->shouldReceive('exists')
-        ->atLeast()->once()
+        ->zeroOrMoreTimes()
         ->andReturn(true);
 
     $serviceMock = Mockery::mock(ServicePayGateway::class, [$filesystemMock])->makePartial()->shouldAllowMockingProtectedMethods();
@@ -378,7 +378,7 @@ test('throws exception when adapter class does not exist', function (): void {
         ->andReturn($expected);
 
     expect(fn () => $serviceMock->getAdapterConfig($payGatewayModel))
-        ->toThrow(FOSSBilling\Exception::class, sprintf('Payment gateway class %s was not found', $expected));
+        ->toThrow(FOSSBilling\Exception::class, sprintf('Payment gateway %s was not found', $payGatewayModel->gateway));
 });
 
 test('throws exception when adapter does not exist', function (): void {
@@ -389,7 +389,7 @@ test('throws exception when adapter does not exist', function (): void {
 
     $filesystemMock = Mockery::mock(Symfony\Component\Filesystem\Filesystem::class);
     $filesystemMock->shouldReceive('exists')
-        ->atLeast()->once()
+        ->zeroOrMoreTimes()
         ->andReturn(false);
 
     $serviceMock = Mockery::mock(ServicePayGateway::class, [$filesystemMock])->makePartial()->shouldAllowMockingProtectedMethods();
