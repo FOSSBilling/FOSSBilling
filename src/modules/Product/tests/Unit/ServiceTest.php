@@ -790,7 +790,7 @@ test('update priority', function (): void {
     $productB = productTestCreateProductEntity(5);
 
     $productRepo = Mockery::mock(ProductRepository::class);
-    $productRepo->shouldReceive('find')->twice()->andReturnUsing(fn ($id) => match ($id) {
+    $productRepo->shouldReceive('find')->twice()->andReturnUsing(fn ($id): Product => match ($id) {
         1 => $productA,
         5 => $productB,
     });
@@ -2134,7 +2134,7 @@ test('assert upgrade allowed by ids throws helpful exception', function (): void
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getUpgradablePairsByProductId')->once()->with(1)->andReturn([]);
-    $serviceMock->shouldReceive('findProductById')->twice()->andReturnUsing(fn ($id) => match ($id) {
+    $serviceMock->shouldReceive('findProductById')->twice()->andReturnUsing(fn ($id): Product => match ($id) {
         1 => $currentProduct,
         2 => $upgradeProduct,
     });
