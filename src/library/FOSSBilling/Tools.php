@@ -423,7 +423,7 @@ class Tools
      *
      * Use this only for content that is stored and rendered as HTML.
      * For Markdown content (e.g. ticket messages, KB articles), use sanitizeMarkdownContent() instead,
-     * since the HTML sanitizer incorrectly strips text that follows unrecognised tags like <foo>.
+     * since the HTML sanitizer incorrectly strips text that follows unrecognized tags like <foo>.
      *
      * @param string $content   The content to sanitize. If empty, returns an empty string.
      * @param bool   $allowHtml Whether to allow safe HTML tags (default: true for rich content)
