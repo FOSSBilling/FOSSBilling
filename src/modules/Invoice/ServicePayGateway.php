@@ -383,14 +383,9 @@ class ServicePayGateway implements InjectionAwareInterface
     public function getAdapterConfig(\Model_PayGateway $pg): array
     {
         $class = $this->getAdapterClassName($pg);
-        if (!$this->filesystem->exists(Path::join(PATH_LIBRARY, 'Payment', 'Adapter', "{$pg->gateway}.php"))) {
-            if (!$this->filesystem->exists(Path::join(PATH_LIBRARY, 'Payment', 'Adapter', $pg->gateway, "{$pg->gateway}.php"))) {
-                throw new \FOSSBilling\Exception('Payment gateway :adapter was not found', [':adapter' => $pg->gateway]);
-            }
-        }
 
         if (!class_exists($class)) {
-            throw new \FOSSBilling\Exception("Payment gateway class $class was not found");
+            throw new \FOSSBilling\Exception('Payment gateway :adapter was not found', [':adapter' => $pg->gateway]);
         }
 
         if (!method_exists($class, 'getConfig')) {

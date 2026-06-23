@@ -21,6 +21,7 @@ use FOSSBilling\Security\AuthenticationRequiredException;
 use FOSSBilling\Security\EmailValidationRequiredException;
 use RedBeanPHP\Facade;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpFoundation\Request;
@@ -610,11 +611,12 @@ $di['update_readiness'] = new FOSSBilling\UpdateReadinessCheck(
  * @return \Server_Manager The new server manager object that was just created.
  */
 $di['server_manager'] = $di->protect(function ($manager, $config) use ($di) {
-    $class = sprintf('Server_Manager_%s', ucfirst((string) $manager));
+    $managerName = ucfirst((string) $manager);
+    $class = sprintf('Server_Manager_%s', $managerName);
 
     if (!class_exists($class)) {
-        $file = Path::join(PATH_LIBRARY, 'Server', 'Manager', ucfirst((string) $manager) . '.php');
-        if (file_exists($file)) {
+        $file = Path::join(PATH_LIBRARY, 'Server', 'Manager', $managerName . '.php');
+        if ((new Filesystem())->exists($file)) {
             require_once $file;
         }
     }

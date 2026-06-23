@@ -757,7 +757,11 @@ class Service implements InjectionAwareInterface
 
         $classname = 'Server_Manager_' . $manager;
         if (!class_exists($classname)) {
-            require_once $filename;
+            try {
+                require_once $filename;
+            } catch (\Throwable) {
+                return [];
+            }
         }
 
         $method = 'getForm';
