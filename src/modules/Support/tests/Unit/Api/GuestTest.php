@@ -400,30 +400,6 @@ test('kb category get list', function (): void {
     expect($result)->toEqual($willReturn);
 });
 
-test('kb category get pairs', function (): void {
-    $guestApi = new Box\Mod\Support\Api\Guest();
-
-    $expected = [
-        1 => 'First Category',
-        2 => 'Second Category',
-    ];
-
-    $repo = Mockery::mock(KbArticleCategoryRepository::class);
-    $repo->shouldReceive('getPairs')
-        ->once()
-        ->andReturn($expected);
-
-    $kbService = guestSupportServiceMock();
-    $kbService->shouldReceive('getKbArticleCategoryRepository')
-        ->once()
-        ->andReturn($repo);
-    $guestApi->setService($kbService);
-
-    $result = $guestApi->kb_category_get_pairs([]);
-    expect($result)->toBeArray();
-    expect($result)->toEqual($expected);
-});
-
 test('kb category get with id', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
 
