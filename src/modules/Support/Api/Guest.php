@@ -40,8 +40,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
         $this->getDi()['rate_limiter']->consumeOrThrow('guest_ticket_create', (string) $this->getIp());
 
-        // Sanitize message to prevent XSS attacks
-        $data['content'] = \FOSSBilling\Tools::sanitizeContent($content, true);
+        $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($content);
 
         return $this->getService()->ticketCreateForGuest($data);
     }
@@ -84,8 +83,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\InformationException('Message cannot be empty');
         }
 
-        // Sanitize message to prevent XSS attacks
-        $message = \FOSSBilling\Tools::sanitizeContent($message, true);
+        $message = \FOSSBilling\Tools::sanitizeMarkdownContent($message);
 
         return $this->getService()->ticketReply($guestTicket, new \Model_Guest(), $message);
     }

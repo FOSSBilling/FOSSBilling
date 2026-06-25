@@ -120,8 +120,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        // Sanitize content to prevent XSS attacks
-        $data['content'] = \FOSSBilling\Tools::sanitizeContent($data['content'], true);
+        $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']);
 
         $ticket = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
 
@@ -158,8 +157,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        // Sanitize content to prevent XSS attacks
-        $data['content'] = \FOSSBilling\Tools::sanitizeContent($data['content'], true);
+        $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']);
 
         $client = $this->getDi()['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
 
@@ -648,10 +646,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('support', 'manage_kb');
 
         $articleCategoryId = (int) $data['kb_article_category_id'];
-        // Sanitize title and content to prevent XSS attacks
-        $title = \FOSSBilling\Tools::sanitizeContent($data['title'], false);
         $status = $data['status'] ?? KbArticle::DRAFT;
-        $content = isset($data['content']) ? \FOSSBilling\Tools::sanitizeContent($data['content'], true) : null;
+
+        $title = \FOSSBilling\Tools::sanitizeContent($data['title'], false);
+        $content = isset($data['content']) ? \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']) : null;
 
         return $this->getService()->kbCreateArticle($articleCategoryId, $title, $status, $content);
     }
@@ -672,11 +670,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('support', 'manage_kb');
 
         $articleCategoryId = isset($data['kb_article_category_id']) ? (int) $data['kb_article_category_id'] : null;
-        // Sanitize title and content to prevent XSS attacks
         $title = isset($data['title']) ? \FOSSBilling\Tools::sanitizeContent($data['title'], false) : null;
         $slug = $data['slug'] ?? null;
         $status = $data['status'] ?? null;
-        $content = isset($data['content']) ? \FOSSBilling\Tools::sanitizeContent($data['content'], true) : null;
+        $content = isset($data['content']) ? \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']) : null;
         $views = isset($data['views']) ? (int) $data['views'] : null;
 
         return $this->getService()->kbUpdateArticle((int) $data['id'], $articleCategoryId, $title, $slug, $status, $content, $views);

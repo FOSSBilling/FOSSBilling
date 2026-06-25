@@ -113,3 +113,42 @@ test('sanitize content preserves text content', function (): void {
     expect($result)->not->toContain('<');
     expect($result)->not->toContain('>');
 });
+
+test('sanitize markdown content preserves angle brackets as literal text', function (): void {
+    $input = 'Hello <World> this text must not disappear';
+    $result = FOSSBilling\Tools::sanitizeMarkdownContent($input);
+    expect($result)->toBe('Hello <World> this text must not disappear');
+});
+
+test('sanitize markdown content preserves comparison operators', function (): void {
+    $input = 'Value must be 1 < x < 10 and y > 0';
+    $result = FOSSBilling\Tools::sanitizeMarkdownContent($input);
+    expect($result)->toBe('Value must be 1 < x < 10 and y > 0');
+});
+
+test('sanitize markdown content removes null bytes', function (): void {
+    $result = FOSSBilling\Tools::sanitizeMarkdownContent("Hello\0World");
+    expect($result)->not->toContain("\0");
+    expect($result)->toBe('HelloWorld');
+});
+
+test('sanitize markdown content returns empty string for empty input', function (): void {
+    expect(FOSSBilling\Tools::sanitizeMarkdownContent(''))->toBe('');
+});
+
+test('sanitize markdown content trims surrounding whitespace', function (): void {
+    $result = FOSSBilling\Tools::sanitizeMarkdownContent("  Hello World  \n");
+    expect($result)->toBe('Hello World');
+});
+
+test('sanitize markdown content preserves markdown bold syntax', function (): void {
+    $input = 'This is **bold** and _italic_ text';
+    $result = FOSSBilling\Tools::sanitizeMarkdownContent($input);
+    expect($result)->toBe($input);
+});
+
+test('sanitize markdown content preserves markdown inline code', function (): void {
+    $input = 'Use `git clone` or `<tag>` syntax';
+    $result = FOSSBilling\Tools::sanitizeMarkdownContent($input);
+    expect($result)->toBe($input);
+});
