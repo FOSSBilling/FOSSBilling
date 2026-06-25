@@ -92,7 +92,7 @@ class KbArticleCategory implements ApiArrayInterface, TimestampInterface
     }
 
     #[ORM\PreUpdate]
-    public function updateTimestamp(): void
+    public function onPreUpdate(): void
     {
         $this->updatedAt = new \DateTime();
     }

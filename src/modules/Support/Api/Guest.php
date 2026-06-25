@@ -207,16 +207,6 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Get knowledge base categories id, title pairs.
-     */
-    public function kb_category_get_pairs(array $data): array
-    {
-        $this->assertKbEnabled();
-
-        return $this->getService()->getKbArticleCategoryRepository()->getPairs();
-    }
-
-    /**
      * Get knowledge base category by ID or SLUG.
      */
     public function kb_category_get(array $data): array

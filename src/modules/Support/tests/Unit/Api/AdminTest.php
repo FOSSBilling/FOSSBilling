@@ -1025,7 +1025,7 @@ test('kb article get list', function (): void {
     $pager = Mockery::mock(FOSSBilling\Pagination::class);
     $pager->shouldReceive('paginateDoctrineQuery')
         ->once()
-        ->with($qb, Mockery::type(FOSSBilling\PaginationOptions::class))
+        ->with($qb, Mockery::type(FOSSBilling\PaginationOptions::class), null)
         ->andReturn(['list' => []]);
     $di['pager'] = $pager;
     $adminApi->setDi($di);

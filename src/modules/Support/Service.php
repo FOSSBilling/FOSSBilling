@@ -14,14 +14,14 @@ namespace Box\Mod\Support;
 
 use Box\Mod\Support\Entity\CannedResponse;
 use Box\Mod\Support\Entity\CannedResponseCategory;
+use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
-use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Repository\CannedResponseCategoryRepository;
 use Box\Mod\Support\Repository\CannedResponseRepository;
+use Box\Mod\Support\Repository\HelpdeskRepository;
 use Box\Mod\Support\Repository\KbArticleCategoryRepository;
 use Box\Mod\Support\Repository\KbArticleRepository;
-use Box\Mod\Support\Repository\HelpdeskRepository;
 use FOSSBilling\InformationException;
 use FOSSBilling\Tools;
 
@@ -897,31 +897,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $data;
     }
 
-    public function helpdeskGetSearchQuery(array $data): array
-    {
-        $query = 'SELECT * FROM support_helpdesk';
-
-        $search = $data['search'] ?? null;
-
-        $where = [];
-        $bindings = [];
-
-        if ($search) {
-            $search = '%' . $search . '%';
-            $where[] = '(name LIKE :name OR email LIKE :email OR signature LIKE :signature)';
-            $bindings[':name'] = $search;
-            $bindings[':email'] = $search;
-            $bindings[':signature'] = $search;
-        }
-
-        if (!empty($where)) {
-            $query = $query . ' WHERE ' . implode(' AND ', $where);
-        }
-        $query .= ' ORDER BY id DESC';
-
-        return [$query, $bindings];
-    }
-
     public function helpdeskRm(Helpdesk $model): bool
     {
         $id = $model->getId();
@@ -929,6 +904,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if ($id !== null && $this->getHelpdeskRepository()->countTickets($id) > 0) {
             throw new InformationException('Cannot remove helpdesk which has tickets');
         }
+
         $this->di['em']->remove($model);
         $this->di['em']->flush();
         $this->di['logger']->info('Deleted helpdesk #%s', $id);
@@ -1135,7 +1111,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $helpdesk = isset($data['support_helpdesk_id'])
             ? $this->getHelpdeskRepository()->find((int) $data['support_helpdesk_id'])
             : $this->getHelpdeskRepository()->getDefault();
-        
+
         if (!$helpdesk instanceof Helpdesk) {
             throw new \FOSSBilling\Exception('Helpdesk invalid');
         }
@@ -1290,7 +1266,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     private function sendAutoresponderCannedReply(\Model_SupportTicket $ticket, $cannedId): void
     {
         try {
-            $canned = $this->getCannedResponseRepository()->find((int) $cannedId)?->toApiArray() ?? [];
+            $cannedResponse = $this->getCannedResponseRepository()->find((int) $cannedId);
+
+            if (!$cannedResponse instanceof CannedResponse) {
+                $this->di['logger']->warning('Autoresponder: canned response #%s not found, skipping reply for ticket #%s', $cannedId, $ticket->id);
+
+                return;
+            }
+
+            $canned = $cannedResponse->toApiArray();
+
             $staffService = $this->di['mod_service']('staff');
             $admin = $staffService->getCronAdmin();
 

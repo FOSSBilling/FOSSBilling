@@ -1076,25 +1076,6 @@ test('canned category update', function (): void {
  * Helpdesk Tests
  */
 
-test('helpdesk get search query', function (): void {
-    $service = new Service();
-
-    $data = [
-        'search' => 'SearchQuery',
-    ];
-    [$query, $bindings] = $service->helpdeskGetSearchQuery($data);
-
-    $expectedBindings = [
-        ':name' => '%SearchQuery%',
-        ':email' => '%SearchQuery%',
-        ':signature' => '%SearchQuery%',
-    ];
-
-    expect($query)->toBeString();
-    expect($bindings)->toBeArray();
-    expect($bindings)->toEqual($expectedBindings);
-});
-
 test('helpdesk rm', function (): void {
     $service = new Service();
     $repo = Mockery::mock(HelpdeskRepository::class);
