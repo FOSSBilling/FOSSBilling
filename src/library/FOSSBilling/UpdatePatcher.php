@@ -635,7 +635,7 @@ class UpdatePatcher implements InjectionAwareInterface
             $ext_service = $this->di['mod_service']('extension');
             if ($ext_service->isExtensionActive('mod', 'kb')) {
                 $support_ext_config = $ext_service->getConfig('mod_support');
-                $support_ext_config['kb_enable'] = 'on';
+                $support_ext_config['kb_enable'] = true;
                 $ext_service->setConfig($support_ext_config);
             }
 

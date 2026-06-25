@@ -14,5 +14,14 @@ namespace FOSSBilling\Interfaces;
 
 interface ApiArrayInterface
 {
+    /**
+     * Convert the entity to an array suitable for API output.
+     *
+     * Implementations may declare additional optional parameters (e.g. an identity
+     * model) to tailor output based on who is calling. PHP allows implementations
+     * to extend the interface signature with optional parameters, so callers that
+     * know the concrete type may pass context; callers that only have the interface
+     * type should call with no arguments.
+     */
     public function toApiArray(): array;
 }

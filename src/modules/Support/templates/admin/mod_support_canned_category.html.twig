@@ -1,6 +1,6 @@
 {% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
 
-{% block meta_title %}{{ 'Canned Category'|trans }}{% endblock %}
+{% block meta_title %}{{ category.title }}{% endblock %}
 
 {% set active_menu = 'support' %}
 
@@ -22,7 +22,7 @@
         <li class="breadcrumb-item">
             <a href="{{ 'support/canned-responses'|url }}#tab-categories">{{ 'Categories'|trans }}</a>
         </li>
-        <li class="breadcrumb-item active" aria-current="page">{{category.title}}</li>
+        <li class="breadcrumb-item active" aria-current="page">{{ category.title }}</li>
     </ol>
 {% endblock %}
 
@@ -30,9 +30,10 @@
 <div class="card">
     <form method="post" action="{{ 'support/canned_category_update'|api_url }}" {{ fb_api_form({ redirect: 'support/canned-responses#tab-categories'|url }) }}>
         {% embed 'partial_admin_form_card.html.twig' with {
-            title: 'Canned Category'|trans,
-            subtitle: category.title,
-            body_class: 'pt-4'
+            title: category.title,
+            subtitle: 'Update the category used to organize reusable support responses.'|trans,
+            body_class: 'pt-4',
+            footer_align: 'between'
         } %}
             {% block form_content %}
                 <div class="row g-3">
@@ -45,9 +46,65 @@
             {% endblock %}
 
             {% block form_actions %}
+                <a href="{{ 'support/canned-responses'|url }}#tab-categories" class="btn btn-secondary">
+                    <svg class="icon">
+                        <use href="#arrow-left" />
+                    </svg>
+                    {{ 'Go Back'|trans }}
+                </a>
                 <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
             {% endblock %}
         {% endembed %}
     </form>
+</div>
+
+<div class="card mt-3">
+    <div class="card-header">
+        <div>
+            <h3 class="card-title">{{ 'Responses'|trans }}</h3>
+            <p class="card-subtitle">{{ 'Manage canned responses assigned to this category.'|trans }}</p>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table card-table table-vcenter table-striped text-nowrap">
+            <thead>
+                <tr>
+                    <th>{{ 'Title'|trans }}</th>
+                    <th>{{ 'Created'|trans }}</th>
+                    <th>{{ 'Updated'|trans }}</th>
+                    <th class="w-1"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for response in category.responses %}
+                    <tr>
+                        <td>
+                            <a href='{{ "support/canned/#{response.id}"|url }}'>{{ response.title }}</a>
+                        </td>
+                        <td class="text-muted">{% if response.created_at %}{{ '%time% ago'|trans({ '%time%': response.created_at|timeago }) }}{% else %}-{% endif %}</td>
+                        <td class="text-muted">{% if response.updated_at %}{{ '%time% ago'|trans({ '%time%': response.updated_at|timeago }) }}{% else %}-{% endif %}</td>
+                        <td>
+                            <a class="btn btn-icon" href='{{ "support/canned/#{response.id}"|url }}' data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
+                                <svg class="icon">
+                                    <use href="#edit" />
+                                </svg>
+                            </a>
+                            <a class="btn btn-icon" href="{{ 'support/canned_delete'|api_url(query: { 'id': response.id }) }}"
+                                data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
+                                {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Delete'|trans}, redirect: "support/canned-category/#{category.id}"|url }) }}>
+                                <svg class="icon">
+                                    <use href="#trash" />
+                                </svg>
+                            </a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td class="text-muted" colspan="4">{{ 'No canned responses in this category yet.'|trans }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

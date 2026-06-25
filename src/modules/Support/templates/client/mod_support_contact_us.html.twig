@@ -46,6 +46,9 @@
                             <label class="form-label" for="subject">{{ 'Subject'|trans }}</label>
                             <input class="form-control" type="text" name="subject" value="{{ request.subject }}" required="required" id="subject">
                         </div>
+                        {% if guest.support_kb_suggestions_enabled({ 'area': 'contact' }) %}
+                            {{ include('mod_support_kb_suggestions.html.twig', { 'input_id': 'subject' }) }}
+                        {% endif %}
                         <div class="mb-3">
                             <label class="form-label" for="message">{{ 'Message'|trans }}</label>
                             <textarea class="editor-textarea form-control" name="content" cols="5" rows="5" required="required" id="message">{{ request.content }}</textarea>

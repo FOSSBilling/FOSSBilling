@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Staff;
 
+use Box\Mod\Support\Entity\Helpdesk;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\PaginationOptions;
 
@@ -369,11 +370,11 @@ class Service implements InjectionAwareInterface
             $ticketModel = $supportTicketService->getTicketById((int) $params['id']);
             $ticket = $supportTicketService->toApiArray($ticketModel, true);
 
-            $helpdeskModel = isset($ticketModel->support_helpdesk_id) && $ticketModel->support_helpdesk_id ? $di['db']->load('SupportHelpdesk', $ticketModel->support_helpdesk_id) : null;
+            $helpdeskModel = isset($ticketModel->support_helpdesk_id) && $ticketModel->support_helpdesk_id ? $di['em']->getRepository(Helpdesk::class)->find((int) $ticketModel->support_helpdesk_id) : null;
             $emailService = $di['mod_service']('email');
-            if ($helpdeskModel instanceof \Model_SupportHelpdesk && !empty($helpdeskModel->email)) {
+            if ($helpdeskModel instanceof Helpdesk && !empty($helpdeskModel->getEmail())) {
                 $email = [];
-                $email['to'] = $helpdeskModel->email;
+                $email['to'] = $helpdeskModel->getEmail();
                 $email['code'] = 'mod_support_helpdesk_ticket_open';
                 $email['ticket'] = $ticket;
                 $emailService->sendTemplate($email);

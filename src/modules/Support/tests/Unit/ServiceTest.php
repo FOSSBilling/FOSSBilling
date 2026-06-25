@@ -12,8 +12,18 @@ declare(strict_types=1);
 
 use Box\Mod\Client\Service as ClientService;
 use Box\Mod\Email\Service as EmailService;
+use Box\Mod\Support\Entity\CannedResponse;
+use Box\Mod\Support\Entity\CannedResponseCategory;
+use Box\Mod\Support\Entity\KbArticle;
+use Box\Mod\Support\Entity\KbArticleCategory;
+use Box\Mod\Support\Entity\Helpdesk;
+use Box\Mod\Support\Repository\CannedResponseCategoryRepository;
+use Box\Mod\Support\Repository\CannedResponseRepository;
+use Box\Mod\Support\Repository\KbArticleCategoryRepository;
+use Box\Mod\Support\Repository\KbArticleRepository;
+use Box\Mod\Support\Repository\HelpdeskRepository;
 use Box\Mod\Support\Service;
-use FOSSBilling\PaginationOptions;
+use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
 
@@ -27,6 +37,110 @@ function supportClientFixture(): Model_Client
     $client->email = 'client@example.com';
 
     return $client;
+}
+
+function supportSetEntityId(object $entity, int $id): void
+{
+    $property = new ReflectionProperty($entity, 'id');
+    $property->setValue($entity, $id);
+}
+
+function supportKbCategoryFixture(): KbArticleCategory
+{
+    $category = (new KbArticleCategory())
+        ->setTitle('category-title')
+        ->setSlug('category-slug')
+        ->setDescription('Description');
+    $category->setCreatedAt(new DateTime('2013-01-01 12:00:00'));
+    $category->setUpdatedAt(new DateTime('2014-01-01 12:00:00'));
+    supportSetEntityId($category, 1);
+
+    return $category;
+}
+
+function supportKbArticleFixture(): KbArticle
+{
+    $article = (new KbArticle())
+        ->setCategory(supportKbCategoryFixture())
+        ->setTitle('Title')
+        ->setSlug('article-slug')
+        ->setViews(1)
+        ->setContent('Content')
+        ->setStatus(KbArticle::ACTIVE);
+    $article->setCreatedAt(new DateTime('2013-01-01 12:00:00'));
+    $article->setUpdatedAt(new DateTime('2014-01-01 12:00:00'));
+    supportSetEntityId($article, 1);
+
+    return $article;
+}
+
+function supportCannedCategoryFixture(): CannedResponseCategory
+{
+    $category = (new CannedResponseCategory())
+        ->setTitle('General');
+    $category->setCreatedAt(new DateTime('2013-01-01 12:00:00'));
+    $category->setUpdatedAt(new DateTime('2014-01-01 12:00:00'));
+    supportSetEntityId($category, 1);
+
+    return $category;
+}
+
+function supportCannedResponseFixture(): CannedResponse
+{
+    $response = (new CannedResponse())
+        ->setCategory(supportCannedCategoryFixture())
+        ->setTitle('Name')
+        ->setContent('Content');
+    $response->setCreatedAt(new DateTime('2013-01-01 12:00:00'));
+    $response->setUpdatedAt(new DateTime('2014-01-01 12:00:00'));
+    supportSetEntityId($response, 1);
+
+    return $response;
+}
+
+function helpdeskFixture(): Helpdesk
+{
+    $helpdesk = (new Helpdesk())
+        ->setName('General')
+        ->setEmail('support@example.com')
+        ->setCanReopen(true)
+        ->setCloseAfter(24)
+        ->setSignature('Signature');
+    $helpdesk->setCreatedAt(new DateTime('2013-01-01 12:00:00'));
+    $helpdesk->setUpdatedAt(new DateTime('2014-01-01 12:00:00'));
+    supportSetEntityId($helpdesk, 1);
+
+    return $helpdesk;
+}
+
+function supportWireKbRepositories(EntityManagerInterface $em, ?KbArticleRepository $articleRepo = null, ?KbArticleCategoryRepository $categoryRepo = null, ?CannedResponseRepository $cannedRepo = null, ?CannedResponseCategoryRepository $cannedCategoryRepo = null, ?HelpdeskRepository $helpdeskRepo = null): void
+{
+    $articleRepo ??= Mockery::mock(KbArticleRepository::class)->shouldIgnoreMissing();
+    $categoryRepo ??= Mockery::mock(KbArticleCategoryRepository::class)->shouldIgnoreMissing();
+    $cannedRepo ??= Mockery::mock(CannedResponseRepository::class)->shouldIgnoreMissing();
+    $cannedCategoryRepo ??= Mockery::mock(CannedResponseCategoryRepository::class)->shouldIgnoreMissing();
+    $helpdeskRepo ??= Mockery::mock(HelpdeskRepository::class)->shouldIgnoreMissing();
+
+    $em->shouldReceive('getRepository')
+        ->with(KbArticle::class)
+        ->byDefault()
+        ->andReturn($articleRepo);
+    $em->shouldReceive('getRepository')
+        ->with(KbArticleCategory::class)
+        ->byDefault()
+        ->andReturn($categoryRepo);
+    $em->shouldReceive('getRepository')
+        ->with(CannedResponse::class)
+        ->byDefault()
+        ->andReturn($cannedRepo);
+    $em->shouldReceive('getRepository')
+        ->with(CannedResponseCategory::class)
+        ->byDefault()
+        ->andReturn($cannedCategoryRepo);
+    $em->shouldReceive('getRepository')
+        ->with(Helpdesk::class)
+        ->byDefault()
+        ->andReturn($helpdeskRepo);
 }
 
 /*
@@ -574,10 +688,7 @@ test('auto closes a ticket', function (): void {
 
 test('checks if ticket can be reopened when not closed', function (): void {
     $service = new Service();
-    $helpdesk = new Model_SupportHelpdesk();
-    $helpdesk->loadBean(new Tests\Helpers\DummyBean());
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')->never();
 
     $di = container();
     $di['db'] = $dbMock;
@@ -593,24 +704,25 @@ test('checks if ticket can be reopened when not closed', function (): void {
 
 test('checks if ticket can be reopened', function (): void {
     $service = new Service();
-    $helpdesk = new Model_SupportHelpdesk();
-    $helpdesk->loadBean(new Tests\Helpers\DummyBean());
-    $helpdesk->support_helpdesk_id = 1;
-    $helpdesk->can_reopen = true;
+    $helpdeskRepo = Mockery::mock(HelpdeskRepository::class);
+    $helpdeskRepo->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn(helpdeskFixture());
+    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    supportWireKbRepositories($emMock, helpdeskRepo: $helpdeskRepo);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($helpdesk);
 
     $di = container();
     $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
     $ticket = new Model_SupportTicket();
     $ticket->loadBean(new Tests\Helpers\DummyBean());
     $ticket->status = Model_SupportTicket::CLOSED;
+    $ticket->support_helpdesk_id = 1;
 
     $result = $service->canBeReopened($ticket);
     expect($result)->toBeTrue();
@@ -674,8 +786,7 @@ test('converts ticket to api array', function (): void {
     $service = new Service();
     $supportTicketMessageModel = new Model_SupportTicketMessage();
     $supportTicketMessageModel->loadBean(new Tests\Helpers\DummyBean());
-    $helpdesk = new Model_SupportHelpdesk();
-    $helpdesk->loadBean(new Tests\Helpers\DummyBean());
+    $helpdesk = helpdeskFixture();
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('findOne')
@@ -683,7 +794,7 @@ test('converts ticket to api array', function (): void {
         ->andReturn($supportTicketMessageModel);
     $dbMock->shouldReceive('load')
         ->atLeast()->once()
-        ->andReturnUsing(fn ($type): Model_SupportHelpdesk|\Model_Client => $type === 'SupportHelpdesk' ? $helpdesk : supportClientFixture());
+        ->andReturn(supportClientFixture());
 
     $dbMock->shouldReceive('find')
         ->atLeast()->once()
@@ -701,9 +812,6 @@ test('converts ticket to api array', function (): void {
     $serviceMock->shouldReceive('messageToApiArray')
         ->atLeast()->once()
         ->andReturn([]);
-    $serviceMock->shouldReceive('helpdeskToApiArray')
-        ->atLeast()->once()
-        ->andReturn([]);
     $serviceMock->shouldReceive('messageGetTicketMessages')
         ->atLeast()->once()
         ->andReturn($ticketMessages);
@@ -714,8 +822,15 @@ test('converts ticket to api array', function (): void {
     $clientServiceMock->shouldReceive('toApiArray')
         ->byDefault()
         ->andReturn([]);
+    $helpdeskRepo = Mockery::mock(HelpdeskRepository::class);
+    $helpdeskRepo->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn($helpdesk);
+    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    supportWireKbRepositories($emMock, helpdeskRepo: $helpdeskRepo);
     $di = container();
     $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
     $serviceMock->setDi($di);
@@ -753,7 +868,7 @@ test('converts ticket to api array with rel details', function (): void {
         ->andReturnUsing(function () use (&$callCount) {
             ++$callCount;
 
-            return $callCount === 1 ? new Model_SupportHelpdesk() : supportClientFixture();
+            return supportClientFixture();
         });
 
     $dbMock->shouldReceive('find')
@@ -772,9 +887,6 @@ test('converts ticket to api array with rel details', function (): void {
     $serviceMock->shouldReceive('messageToApiArray')
         ->atLeast()->once()
         ->andReturn([]);
-    $serviceMock->shouldReceive('helpdeskToApiArray')
-        ->atLeast()->once()
-        ->andReturn([]);
     $serviceMock->shouldReceive('messageGetTicketMessages')
         ->atLeast()->once()
         ->andReturn($ticketMessages);
@@ -785,8 +897,15 @@ test('converts ticket to api array with rel details', function (): void {
     $clientServiceMock->shouldReceive('toApiArray')
         ->byDefault()
         ->andReturn([]);
+    $helpdeskRepo = Mockery::mock(HelpdeskRepository::class);
+    $helpdeskRepo->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn(helpdeskFixture());
+    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    supportWireKbRepositories($emMock, helpdeskRepo: $helpdeskRepo);
     $di = container();
     $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
     $serviceMock->setDi($di);
@@ -809,386 +928,214 @@ test('converts ticket to api array with rel details', function (): void {
  * Canned Response Tests
  */
 
-test('canned get search query', function (): void {
-    $service = new Service();
-    $di = container();
-    $service->setDi($di);
-
-    $data = [
-        'search' => 'query',
-    ];
-
-    [$query, $bindings] = $service->cannedGetSearchQuery($data);
-    expect($query)->toBeString();
-    expect($bindings)->toBeArray();
-});
-
-test('canned get grouped pairs', function (): void {
-    $service = new Service();
-    $pairs = [
-        0 => [
-            'id' => 1,
-            'r_title' => 'R  Title',
-            'c_title' => 'General',
-        ],
-    ];
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
-        ->atLeast()->once()
-        ->andReturn($pairs);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $expected = [
-        'General' => [
-            1 => 'R  Title',
-        ],
-    ];
-
-    $result = $service->cannedGetGroupedPairs();
-    expect($result)->toBeArray();
-    expect($result)->toEqual($expected);
-});
-
 test('canned rm', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('trash')
+    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $emMock->shouldReceive('remove')
         ->atLeast()->once()
         ->andReturn(null);
+    $emMock->shouldReceive('flush')
+        ->atLeast()->once()
+        ->andReturn(null);
+    supportWireKbRepositories($emMock);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $canned = new Model_SupportPr();
-    $canned->loadBean(new Tests\Helpers\DummyBean());
-
-    $result = $service->cannedRm($canned);
+    $result = $service->cannedRm(supportCannedResponseFixture());
     expect($result)->toBeTrue();
-});
-
-test('canned to api array', function (): void {
-    $service = new Service();
-    $category = new Model_SupportPrCategory();
-    $category->loadBean(new Tests\Helpers\DummyBean());
-    $category->id = 1;
-    $category->title = 'General';
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('toArray')
-        ->byDefault()
-        ->andReturn([]);
-    $dbMock->shouldReceive('load')
-        ->atLeast()->once()
-        ->andReturn($category);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $canned = new Model_SupportPr();
-    $canned->loadBean(new Tests\Helpers\DummyBean());
-
-    $result = $service->cannedToApiArray($canned);
-    expect($result)->toBeArray();
-    expect($result)->toHaveKey('category');
-    expect($result['category'])->toBeArray();
-    expect($result['category'])->toHaveKey('id');
-    expect($result['category'])->toHaveKey('title');
-});
-
-test('canned to api array category not found', function (): void {
-    $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('toArray')
-        ->byDefault()
-        ->andReturn([]);
-    $dbMock->shouldReceive('load')
-        ->atLeast()->once()
-        ->andReturn(null);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $canned = new Model_SupportPr();
-    $canned->loadBean(new Tests\Helpers\DummyBean());
-
-    $result = $service->cannedToApiArray($canned);
-    expect($result)->toBeArray();
-    expect($result)->toHaveKey('category');
-    expect($result['category'])->toEqual([]);
-});
-
-test('canned category get pairs', function (): void {
-    $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAssoc')
-        ->atLeast()->once()
-        ->andReturn([0 => 'General']);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $result = $service->cannedCategoryGetPairs();
-    expect($result)->toBeArray();
 });
 
 test('canned category rm', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('trash')
+    $cannedRepoMock = Mockery::mock(CannedResponseRepository::class);
+    $cannedRepoMock->shouldReceive('countByCategoryId')
+        ->atLeast()->once()
+        ->andReturn(0);
+    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $emMock->shouldReceive('remove')
         ->atLeast()->once()
         ->andReturn(null);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $service->setDi($di);
-
-    $canned = new Model_SupportPrCategory();
-    $canned->loadBean(new Tests\Helpers\DummyBean());
-
-    $result = $service->cannedCategoryRm($canned);
-    expect($result)->toBeTrue();
-});
-
-test('canned category to api array', function (): void {
-    $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('toArray')
+    $emMock->shouldReceive('flush')
         ->atLeast()->once()
-        ->andReturn([]);
+        ->andReturn(null);
+    supportWireKbRepositories($emMock, cannedRepo: $cannedRepoMock);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $canned = new Model_SupportPrCategory();
-    $canned->loadBean(new Tests\Helpers\DummyBean());
-
-    $result = $service->cannedCategoryToApiArray($canned);
-    expect($result)->toBeArray();
+    $result = $service->cannedCategoryRm(supportCannedCategoryFixture());
+    expect($result)->toBeTrue();
 });
 
 test('canned create', function (): void {
     $service = new Service();
-    $randId = 1;
-    $helpDeskModel = new Model_SupportPr();
-    $helpDeskModel->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('dispense')
+    $categoryRepoMock = Mockery::mock(CannedResponseCategoryRepository::class);
+    $categoryRepoMock->shouldReceive('find')
         ->atLeast()->once()
-        ->andReturn($helpDeskModel);
-    $dbMock->shouldReceive('store')
+        ->andReturn(supportCannedCategoryFixture());
+    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $emMock->shouldReceive('persist')
         ->atLeast()->once()
-        ->andReturn($randId);
+        ->andReturnUsing(function (CannedResponse $model): void {
+            supportSetEntityId($model, 1);
+        });
+    $emMock->shouldReceive('flush')
+        ->atLeast()->once()
+        ->andReturn(null);
+    supportWireKbRepositories($emMock, cannedCategoryRepo: $categoryRepoMock);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
     $result = $service->cannedCreate('Name', 1, 'Content');
     expect($result)->toBeInt();
-    expect($result)->toEqual($randId);
+    expect($result)->toEqual(1);
 });
 
 test('canned update', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
+    $categoryRepoMock = Mockery::mock(CannedResponseCategoryRepository::class);
+    $categoryRepoMock->shouldReceive('find')
         ->atLeast()->once()
-        ->andReturn(1);
+        ->andReturn(supportCannedCategoryFixture());
+    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $emMock->shouldReceive('flush')
+        ->atLeast()->once()
+        ->andReturn(null);
+    supportWireKbRepositories($emMock, cannedCategoryRepo: $categoryRepoMock);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $model = new Model_SupportPr();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = supportCannedResponseFixture();
 
     $data = [
         'category_id' => 1,
-        'title' => 'email@example.com',
-        'content' => 1,
+        'title' => 'Updated Title',
+        'content' => 'Updated Content',
     ];
 
     $result = $service->cannedUpdate($model, $data);
     expect($result)->toBeTrue();
+    expect($model->getTitle())->toBe('Updated Title');
 });
 
 test('canned category create', function (): void {
     $service = new Service();
-    $randId = 1;
-    $supportPrCategoryModel = new Model_SupportPrCategory();
-    $supportPrCategoryModel->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('dispense')
+    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $emMock->shouldReceive('persist')
         ->atLeast()->once()
-        ->andReturn($supportPrCategoryModel);
-    $dbMock->shouldReceive('store')
+        ->andReturnUsing(function (CannedResponseCategory $model): void {
+            supportSetEntityId($model, 1);
+        });
+    $emMock->shouldReceive('flush')
         ->atLeast()->once()
-        ->andReturn($randId);
+        ->andReturn(null);
+    supportWireKbRepositories($emMock);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
     $result = $service->cannedCategoryCreate('Name');
     expect($result)->toBeInt();
-    expect($result)->toEqual($randId);
+    expect($result)->toEqual(1);
 });
 
 test('canned category update', function (): void {
     $service = new Service();
-    $randId = 1;
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
+    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $emMock->shouldReceive('flush')
         ->atLeast()->once()
-        ->andReturn($randId);
+        ->andReturn(null);
+    supportWireKbRepositories($emMock);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $model = new Model_SupportPrCategory();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = supportCannedCategoryFixture();
 
     $result = $service->cannedCategoryUpdate($model, 'Title');
     expect($result)->toBeTrue();
+    expect($model->getTitle())->toBe('Title');
 });
 
 /*
  * Helpdesk Tests
  */
 
-test('helpdesk get search query', function (): void {
-    $service = new Service();
-    $di = container();
-    $service->setDi($di);
-
-    $data = [
-        'search' => 'SearchQuery',
-    ];
-    [$query, $bindings] = $service->helpdeskGetSearchQuery($data);
-
-    $expectedBindings = [
-        ':name' => '%SearchQuery%',
-        ':email' => '%SearchQuery%',
-        ':signature' => '%SearchQuery%',
-    ];
-
-    expect($query)->toBeString();
-    expect($bindings)->toBeArray();
-    expect($bindings)->toEqual($expectedBindings);
-});
-
-test('helpdesk get pairs', function (): void {
-    $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAssoc')
-        ->atLeast()->once()
-        ->andReturn([0 => 'General']);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $result = $service->helpdeskGetPairs();
-    expect($result)->toBeArray();
-});
-
 test('helpdesk rm', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('find')
+    $repo = Mockery::mock(HelpdeskRepository::class);
+    $repo->shouldReceive('countTickets')
         ->atLeast()->once()
-        ->andReturn([]);
-    $dbMock->shouldReceive('trash')
+        ->andReturn(0);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock, helpdeskRepo: $repo);
+    $emMock->shouldReceive('remove')
+        ->atLeast()->once()
+        ->andReturn(null);
+    $emMock->shouldReceive('flush')
         ->atLeast()->once()
         ->andReturn(null);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $helpdesk = new Model_SupportHelpdesk();
-    $helpdesk->loadBean(new Tests\Helpers\DummyBean());
-    $helpdesk->id = 1;
-
-    $result = $service->helpdeskRm($helpdesk);
+    $result = $service->helpdeskRm(helpdeskFixture());
     expect($result)->toBeTrue();
 });
 
 test('helpdesk rm has tickets exception', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('find')
+    $repo = Mockery::mock(HelpdeskRepository::class);
+    $repo->shouldReceive('countTickets')
         ->atLeast()->once()
-        ->andReturn([new Model_SupportTicket()]);
-    $dbMock->shouldReceive('trash')
+        ->andReturn(1);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock, helpdeskRepo: $repo);
+    $emMock->shouldReceive('remove')
         ->never();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $helpdesk = new Model_SupportHelpdesk();
-    $helpdesk->loadBean(new Tests\Helpers\DummyBean());
-    $helpdesk->id = 1;
-
     $this->expectException(FOSSBilling\Exception::class);
-    $service->helpdeskRm($helpdesk);
-});
-
-test('helpdesk to api array', function (): void {
-    $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('toArray')
-        ->byDefault()
-        ->andReturn([]);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $helpdesk = new Model_SupportHelpdesk();
-    $helpdesk->loadBean(new Tests\Helpers\DummyBean());
-    $helpdesk->id = 1;
-
-    $result = $service->helpdeskToApiArray($helpdesk);
-    expect($result)->toBeArray();
+    $service->helpdeskRm(helpdeskFixture());
 });
 
 test('helpdesk update', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
+    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    supportWireKbRepositories($emMock);
+    $emMock->shouldReceive('flush')
         ->atLeast()->once()
-        ->andReturn(1);
+        ->andReturn(null);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $helpdesk = new Model_SupportHelpdesk();
-    $helpdesk->loadBean(new Tests\Helpers\DummyBean());
+    $helpdesk = helpdeskFixture();
 
     $data = [
         'name' => 'Name',
@@ -1200,24 +1147,26 @@ test('helpdesk update', function (): void {
 
     $result = $service->helpdeskUpdate($helpdesk, $data);
     expect($result)->toBeTrue();
+    expect($helpdesk->getName())->toBe('Name');
 });
 
 test('helpdesk create', function (): void {
     $service = new Service();
     $randId = 1;
-    $helpDeskModel = new Model_SupportHelpdesk();
-    $helpDeskModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('dispense')
+    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    supportWireKbRepositories($emMock);
+    $emMock->shouldReceive('persist')
         ->atLeast()->once()
-        ->andReturn($helpDeskModel);
-    $dbMock->shouldReceive('store')
+        ->andReturnUsing(function (Helpdesk $helpdesk) use ($randId): void {
+            supportSetEntityId($helpdesk, $randId);
+        });
+    $emMock->shouldReceive('flush')
         ->atLeast()->once()
-        ->andReturn($randId);
+        ->andReturn(null);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
@@ -1238,242 +1187,187 @@ test('helpdesk create', function (): void {
  * Knowledge Base Tests
  */
 
-test('kb search articles', function (): void {
-    $service = new Service();
-    $willReturn = [
-        'pages' => 5,
-        'page' => 2,
-        'per_page' => 2,
-        'total' => 10,
-        'list' => [],
-    ];
-
-    $pagerMock = Mockery::mock(FOSSBilling\Pagination::class);
-    $pagerMock->shouldReceive('getPaginatedResultSet')
-        ->atLeast()->once()
-        ->andReturn($willReturn);
-
-    $di = container();
-    $di['pager'] = $pagerMock;
-    $service->setDi($di);
-
-    $result = $service->kbSearchArticles('active', 'keyword', 'category', PaginationOptions::fromArray([]));
-    expect($result)->toBeArray();
-    expect($result)->toHaveKey('list');
-    expect($result['list'])->toBeArray();
-    expect($result)->toHaveKey('pages');
-    expect($result)->toHaveKey('page');
-    expect($result)->toHaveKey('per_page');
-    expect($result)->toHaveKey('total');
-});
-
-test('kb find active article by id', function (): void {
-    $service = new Service();
-    $model = new Model_SupportKbArticle();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($model);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $result = $service->kbFindActiveArticleById(5);
-    expect($result)->toBeInstanceOf(Model_SupportKbArticle::class);
-    expect($result)->toEqual($model);
-});
-
-test('kb find active article by slug', function (): void {
-    $service = new Service();
-    $model = new Model_SupportKbArticle();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($model);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $result = $service->kbFindActiveArticleBySlug('slug');
-    expect($result)->toBeInstanceOf(Model_SupportKbArticle::class);
-    expect($result)->toEqual($model);
-});
-
-test('kb find active', function (): void {
-    $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('find')
-        ->atLeast()->once()
-        ->andReturn([]);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $result = $service->kbFindActive();
-    expect($result)->toBeArray();
-});
-
-test('kb hit view', function (): void {
-    $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(5);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $modelKb = new Model_SupportKbArticle();
-    $modelKb->loadBean(new Tests\Helpers\DummyBean());
-    $modelKb->views = 10;
-
-    $result = $service->kbHitView($modelKb);
-    expect($result)->toBeNull();
-});
-
 test('kb rm', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('trash')
-        ->atLeast()->once()
-        ->andReturn(null);
+    $modelKb = supportKbArticleFixture()->setViews(10);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
+    $emMock->shouldReceive('remove')->once()->with($modelKb);
+    $emMock->shouldReceive('flush')->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
-
-    $modelKb = new Model_SupportKbArticle();
-    $modelKb->loadBean(new Tests\Helpers\DummyBean());
-    $modelKb->id = 1;
-    $modelKb->views = 10;
 
     $result = $service->kbRm($modelKb);
     expect($result)->toBeNull();
 });
 
-dataset('kbToApiArrayProvider', function () {
-    $model = new Model_SupportKbArticle();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->id = 1;
-    $model->slug = 'article-slug';
-    $model->title = 'Title';
-    $model->views = 1;
-    $model->content = 'Content';
-    $model->created_at = '2013-01-01 12:00:00';
-    $model->updated_at = '2014-01-01 12:00:00';
-    $model->status = 'active';
-    $model->kb_article_category_id = 1;
-
-    $category = new Model_SupportKbArticleCategory();
-    $category->loadBean(new Tests\Helpers\DummyBean());
-    $category->id = 1;
-    $category->slug = 'category-slug';
-    $category->title = 'category-title';
+dataset('kbArticleToApiArrayProvider', function () {
+    $model = supportKbArticleFixture();
+    $category = supportKbCategoryFixture();
 
     return [
         'shallow without admin' => [
             $model,
             [
-                'id' => $model->id,
-                'slug' => $model->slug,
-                'title' => $model->title,
-                'views' => $model->views,
-                'created_at' => $model->created_at,
-                'updated_at' => $model->updated_at,
+                'id' => $model->getId(),
+                'slug' => $model->getSlug(),
+                'title' => $model->getTitle(),
+                'views' => $model->getViews(),
+                'created_at' => '2013-01-01 12:00:00',
+                'updated_at' => '2014-01-01 12:00:00',
                 'category' => [
-                    'id' => $category->id,
-                    'slug' => $category->slug,
-                    'title' => $category->title,
+                    'id' => $category->getId(),
+                    'slug' => $category->getSlug(),
+                    'title' => $category->getTitle(),
                 ],
-                'status' => $model->status,
+                'status' => $model->getStatus(),
             ],
             false,
             null,
-            $category,
         ],
-        'deep without admin' => [
+        'with content without admin' => [
             $model,
             [
-                'id' => $model->id,
-                'slug' => $model->slug,
-                'title' => $model->title,
-                'views' => $model->views,
-                'created_at' => $model->created_at,
-                'updated_at' => $model->updated_at,
+                'id' => $model->getId(),
+                'slug' => $model->getSlug(),
+                'title' => $model->getTitle(),
+                'views' => $model->getViews(),
+                'created_at' => '2013-01-01 12:00:00',
+                'updated_at' => '2014-01-01 12:00:00',
                 'category' => [
-                    'id' => $category->id,
-                    'slug' => $category->slug,
-                    'title' => $category->title,
+                    'id' => $category->getId(),
+                    'slug' => $category->getSlug(),
+                    'title' => $category->getTitle(),
                 ],
-                'content' => $model->content,
-                'status' => $model->status,
+                'content' => $model->getContent(),
+                'status' => $model->getStatus(),
             ],
             true,
             null,
-            $category,
         ],
-        'deep with admin' => [
+        'with content and admin' => [
             $model,
             [
-                'id' => $model->id,
-                'slug' => $model->slug,
-                'title' => $model->title,
-                'views' => $model->views,
-                'created_at' => $model->created_at,
-                'updated_at' => $model->updated_at,
+                'id' => $model->getId(),
+                'slug' => $model->getSlug(),
+                'title' => $model->getTitle(),
+                'views' => $model->getViews(),
+                'created_at' => '2013-01-01 12:00:00',
+                'updated_at' => '2014-01-01 12:00:00',
                 'category' => [
-                    'id' => $category->id,
-                    'slug' => $category->slug,
-                    'title' => $category->title,
+                    'id' => $category->getId(),
+                    'slug' => $category->getSlug(),
+                    'title' => $category->getTitle(),
                 ],
-                'content' => $model->content,
-                'status' => $model->status,
-                'kb_article_category_id' => $model->kb_article_category_id,
+                'content' => $model->getContent(),
+                'status' => $model->getStatus(),
+                'kb_article_category_id' => $model->getKbArticleCategoryId(),
             ],
             true,
             new Model_Admin(),
-            $category,
+        ],
+        'views disabled' => [
+            $model,
+            [
+                'id' => $model->getId(),
+                'slug' => $model->getSlug(),
+                'title' => $model->getTitle(),
+                'created_at' => '2013-01-01 12:00:00',
+                'status' => $model->getStatus(),
+                'updated_at' => '2014-01-01 12:00:00',
+                'category' => [
+                    'id' => $category->getId(),
+                    'slug' => $category->getSlug(),
+                    'title' => $category->getTitle(),
+                ],
+            ],
+            false,
+            null,
+            false,
         ],
     ];
 });
 
-test('kb to api array', function (Model_SupportKbArticle $model, array $expected, bool $deep, ?Model_Admin $identity, Model_SupportKbArticleCategory $category): void {
+test('kb to api array', function (KbArticle $model, array $expected, bool $includeContent, ?Model_Admin $identity, bool $includeViews = true): void {
+    $result = $model->toApiArray($identity, $includeContent, $includeViews);
+    expect($result)->toEqual($expected);
+})->with('kbArticleToApiArrayProvider');
+
+test('kb article view increment does not update timestamp', function (): void {
+    $model = supportKbArticleFixture();
+
+    $updatedAt = $model->getUpdatedAt()?->format('Y-m-d H:i:s');
+    $model->incrementViews();
+
+    expect($model->getViews())->toBe(2)
+        ->and($model->getUpdatedAt()?->format('Y-m-d H:i:s'))->toBe($updatedAt);
+});
+
+test('kb suggestions enabled checks kb setting and area setting', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($category);
+
+    $extensionService = Mockery::mock(Box\Mod\Extension\Service::class);
+    $extensionService->shouldReceive('getConfig')
+        ->with('mod_support')
+        ->andReturn([
+            'kb_enable' => true,
+            'kb_suggestions_ticket' => 'on',
+        ]);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(fn (string $serviceName, ?string $sub = null): Box\Mod\Extension\Service => $extensionService);
     $service->setDi($di);
 
-    $result = $service->kbToApiArray($model, $deep, $identity);
-    expect($result)->toEqual($expected);
-})->with('kbToApiArrayProvider');
+    expect($service->kbSuggestionsEnabled('ticket'))->toBeTrue()
+        ->and($service->kbSuggestionsEnabled('contact'))->toBeFalse();
+});
+
+test('kb article views enabled defaults on and can be disabled', function (array $config, bool $expected): void {
+    $service = new Service();
+
+    $extensionService = Mockery::mock(Box\Mod\Extension\Service::class);
+    $extensionService->shouldReceive('getConfig')
+        ->with('mod_support')
+        ->andReturn($config);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (string $serviceName, ?string $sub = null): Box\Mod\Extension\Service => $extensionService);
+    $service->setDi($di);
+
+    expect($service->kbArticleViewsEnabled())->toBe($expected);
+})->with([
+    'unset' => [[], true],
+    'disabled' => [['kb_article_views_enable' => 'false'], false],
+]);
 
 test('kb create article', function (): void {
     $service = new Service();
     $randId = 1;
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn($randId);
+    $category = supportKbCategoryFixture();
 
-    $model = new Model_SupportKbArticle();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturn($model);
+    $categoryRepoMock = Mockery::mock(KbArticleCategoryRepository::class);
+    $categoryRepoMock->shouldReceive('find')
+        ->once()
+        ->with(1)
+        ->andReturn($category);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock, categoryRepo: $categoryRepoMock);
+    $emMock->shouldReceive('getRepository')
+        ->once()
+        ->with(KbArticleCategory::class)
+        ->andReturn($categoryRepoMock);
+    $emMock->shouldReceive('persist')
+        ->once()
+        ->with(Mockery::on(static fn (KbArticle $article): bool => $article->getCategory() === $category))
+        ->andReturnUsing(static function (KbArticle $article) use ($randId): void {
+            supportSetEntityId($article, $randId);
+        });
+    $emMock->shouldReceive('flush')->once();
 
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
     $toolsMock->shouldReceive('slug')
@@ -1481,7 +1375,7 @@ test('kb create article', function (): void {
         ->andReturn('article-slug');
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['tools'] = $toolsMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
@@ -1491,43 +1385,119 @@ test('kb create article', function (): void {
     expect($result)->toEqual($randId);
 });
 
+test('kb create article category not found exception', function (): void {
+    $service = new Service();
+
+    $categoryRepoMock = Mockery::mock(KbArticleCategoryRepository::class);
+    $categoryRepoMock->shouldReceive('find')
+        ->once()
+        ->with(1)
+        ->andReturn(null);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock, categoryRepo: $categoryRepoMock);
+    $emMock->shouldReceive('getRepository')
+        ->once()
+        ->with(KbArticleCategory::class)
+        ->andReturn($categoryRepoMock);
+    $emMock->shouldReceive('persist')->never();
+    $emMock->shouldReceive('flush')->never();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $service->setDi($di);
+
+    $this->expectException(FOSSBilling\Exception::class);
+    $service->kbCreateArticle(1, 'Title', 'Active', 'Content');
+});
+
+test('kb create article invalid status exception', function (): void {
+    $service = new Service();
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
+    $emMock->shouldReceive('persist')->never();
+    $emMock->shouldReceive('flush')->never();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $service->setDi($di);
+
+    $this->expectException(FOSSBilling\Exception::class);
+    $service->kbCreateArticle(1, 'Title', 'invalid', 'Content');
+});
+
 test('kb update article', function (): void {
     $service = new Service();
     $randId = 1;
-    $model = new Model_SupportKbArticle();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = supportKbArticleFixture();
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
+    $repoMock = Mockery::mock(KbArticleRepository::class);
+    $repoMock->shouldReceive('find')
+        ->once()
+        ->with($randId)
         ->andReturn($model);
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn($randId);
+
+    $category = supportKbCategoryFixture();
+    $categoryRepoMock = Mockery::mock(KbArticleCategoryRepository::class);
+    $categoryRepoMock->shouldReceive('find')
+        ->once()
+        ->with(1)
+        ->andReturn($category);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock, $repoMock);
+    $emMock->shouldReceive('getRepository')
+        ->once()
+        ->with(KbArticle::class)
+        ->andReturn($repoMock);
+    $emMock->shouldReceive('getRepository')
+        ->once()
+        ->with(KbArticleCategory::class)
+        ->andReturn($categoryRepoMock);
+    $emMock->shouldReceive('flush')->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
     $result = $service->kbUpdateArticle($randId, 1, 'Title', 'article-slug', 'active', 'content', 1);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
+    expect($model->getContent())->toBe('content');
 });
 
-test('kb update article not found exception', function (): void {
+test('kb update article category not found exception', function (): void {
     $service = new Service();
     $randId = 1;
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn(false);
-    $dbMock->shouldReceive('store')
-        ->never();
+    $repoMock = Mockery::mock(KbArticleRepository::class);
+    $repoMock->shouldReceive('find')
+        ->once()
+        ->with($randId)
+        ->andReturn(supportKbArticleFixture());
+
+    $categoryRepoMock = Mockery::mock(KbArticleCategoryRepository::class);
+    $categoryRepoMock->shouldReceive('find')
+        ->once()
+        ->with(1)
+        ->andReturn(null);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock, $repoMock, $categoryRepoMock);
+    $emMock->shouldReceive('getRepository')
+        ->once()
+        ->with(KbArticle::class)
+        ->andReturn($repoMock);
+    $emMock->shouldReceive('getRepository')
+        ->once()
+        ->with(KbArticleCategory::class)
+        ->andReturn($categoryRepoMock);
+    $emMock->shouldReceive('flush')->never();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
@@ -1535,94 +1505,72 @@ test('kb update article not found exception', function (): void {
     $service->kbUpdateArticle($randId, 1, 'Title', 'article-slug', 'active', 'content', 1);
 });
 
-dataset('kbCategoryGetSearchQueryProvider', fn (): array => [
-    'empty data' => [
-        [],
-        'SELECT kac.* FROM support_kb_article_category kac LEFT JOIN support_kb_article ka ON kac.id  = ka.kb_article_category_id GROUP BY kac.id ORDER BY kac.title',
-        [],
-    ],
-    'with article status' => [
-        ['article_status' => 'active'],
-        'SELECT kac.* FROM support_kb_article_category kac LEFT JOIN support_kb_article ka ON kac.id  = ka.kb_article_category_id WHERE ka.status = :status GROUP BY kac.id ORDER BY kac.title',
-        [':status' => 'active'],
-    ],
-    'with search query' => [
-        ['q' => 'search query'],
-        'SELECT kac.* FROM support_kb_article_category kac LEFT JOIN support_kb_article ka ON kac.id  = ka.kb_article_category_id WHERE (ka.title LIKE :title OR ka.content LIKE :content) GROUP BY kac.id ORDER BY kac.title',
-        [':title' => '%search query%', ':content' => '%search query%'],
-    ],
-    'with search query and article status' => [
-        ['q' => 'search query', 'article_status' => 'active'],
-        'SELECT kac.* FROM support_kb_article_category kac LEFT JOIN support_kb_article ka ON kac.id  = ka.kb_article_category_id WHERE ka.status = :status AND (ka.title LIKE :title OR ka.content LIKE :content) GROUP BY kac.id ORDER BY kac.title',
-        [':title' => '%search query%', ':content' => '%search query%', ':status' => 'active'],
-    ],
-]);
-
-test('kb category get search query', function (array $data, string $query, array $bindings): void {
+test('kb update article invalid status exception', function (): void {
     $service = new Service();
-    $di = container();
-    $service->setDi($di);
 
-    $result = $service->kbCategoryGetSearchQuery($data);
-
-    expect($result[0])->toBeString();
-    expect($result[1])->toBeArray();
-
-    // Normalize whitespace for comparison
-    $normalizedResult = trim((string) preg_replace('/\s+/', ' ', str_replace("\n", ' ', $result[0])));
-    $normalizedQuery = trim((string) preg_replace('/\s+/', ' ', str_replace("\n", ' ', $query)));
-    expect($normalizedResult)->toEqual($normalizedQuery);
-    expect($result[1])->toEqual($bindings);
-})->with('kbCategoryGetSearchQueryProvider');
-
-test('kb category find all', function (): void {
-    $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
-        ->atLeast()->once()
-        ->andReturn([]);
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
+    $emMock->shouldReceive('flush')->never();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $result = $service->kbCategoryFindAll();
-    expect($result)->toBeArray();
+    $this->expectException(FOSSBilling\Exception::class);
+    $service->kbUpdateArticle(1, null, null, null, 'invalid');
 });
 
-test('kb category get pairs', function (): void {
+test('kb update article not found exception', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAssoc')
-        ->atLeast()->once()
-        ->andReturn([]);
+    $randId = 1;
+
+    $repoMock = Mockery::mock(KbArticleRepository::class);
+    $repoMock->shouldReceive('find')
+        ->once()
+        ->with($randId)
+        ->andReturn(null);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock, $repoMock);
+    $emMock->shouldReceive('getRepository')
+        ->once()
+        ->with(KbArticle::class)
+        ->andReturn($repoMock);
+    $emMock->shouldReceive('flush')->never();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $result = $service->kbCategoryGetPairs();
-    expect($result)->toBeArray();
+    $this->expectException(FOSSBilling\Exception::class);
+    $service->kbUpdateArticle($randId, 1, 'Title', 'article-slug', 'active', 'content', 1);
 });
 
 test('kb category rm', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getCell')
-        ->atLeast()->once()
+    $model = supportKbCategoryFixture();
+
+    $articleRepoMock = Mockery::mock(KbArticleRepository::class);
+    $articleRepoMock->shouldReceive('countByCategoryId')
+        ->once()
+        ->with(1)
         ->andReturn(0);
-    $dbMock->shouldReceive('trash')
-        ->atLeast()->once()
-        ->andReturn(null);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock, $articleRepoMock);
+    $emMock->shouldReceive('getRepository')
+        ->once()
+        ->with(KbArticle::class)
+        ->andReturn($articleRepoMock);
+    $emMock->shouldReceive('remove')->once()->with($model);
+    $emMock->shouldReceive('flush')->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
-
-    $model = new Model_SupportKbArticleCategory();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->id = 1;
 
     $result = $service->kbCategoryRm($model);
     expect($result)->toBeTrue();
@@ -1630,19 +1578,26 @@ test('kb category rm', function (): void {
 
 test('kb category rm has articles exception', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getCell')
-        ->atLeast()->once()
+    $articleRepoMock = Mockery::mock(KbArticleRepository::class);
+    $articleRepoMock->shouldReceive('countByCategoryId')
+        ->once()
+        ->with(1)
         ->andReturn(1);
 
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock, $articleRepoMock);
+    $emMock->shouldReceive('getRepository')
+        ->once()
+        ->with(KbArticle::class)
+        ->andReturn($articleRepoMock);
+    $emMock->shouldReceive('remove')->never();
+
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $model = new Model_SupportKbArticleCategory();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->id = 1;
+    $model = supportKbCategoryFixture();
 
     $this->expectException(FOSSBilling\Exception::class);
     $service->kbCategoryRm($model);
@@ -1651,16 +1606,16 @@ test('kb category rm has articles exception', function (): void {
 test('kb create category', function (): void {
     $service = new Service();
     $randId = 1;
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn($randId);
 
-    $articleCategoryModel = new Model_SupportKbArticleCategory();
-    $articleCategoryModel->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturn($articleCategoryModel);
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
+    $emMock->shouldReceive('persist')
+        ->once()
+        ->with(Mockery::type(KbArticleCategory::class))
+        ->andReturnUsing(static function (KbArticleCategory $category) use ($randId): void {
+            supportSetEntityId($category, $randId);
+        });
+    $emMock->shouldReceive('flush')->once();
 
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
     $toolsMock->shouldReceive('slug')
@@ -1668,7 +1623,7 @@ test('kb create category', function (): void {
         ->andReturn('article-slug');
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['tools'] = $toolsMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
@@ -1680,61 +1635,20 @@ test('kb create category', function (): void {
 
 test('kb update category', function (): void {
     $service = new Service();
-    $randId = 1;
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn($randId);
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
+    $emMock->shouldReceive('flush')->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $model = new Model_SupportKbArticleCategory();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->id = 1;
+    $model = supportKbCategoryFixture();
 
     $result = $service->kbUpdateCategory($model, 'New Title', 'new-title', 'Description');
     expect($result)->toBeTrue();
-});
-
-test('kb find category by id', function (): void {
-    $service = new Service();
-    $model = new Model_SupportKbArticleCategory();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($model);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $result = $service->kbFindCategoryById(5);
-    expect($result)->toBeInstanceOf(Model_SupportKbArticleCategory::class);
-    expect($result)->toEqual($model);
-});
-
-test('kb find category by slug', function (): void {
-    $service = new Service();
-    $model = new Model_SupportKbArticleCategory();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($model);
-
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $result = $service->kbFindCategoryBySlug('slug');
-    expect($result)->toBeInstanceOf(Model_SupportKbArticleCategory::class);
-    expect($result)->toEqual($model);
+    expect($model->getTitle())->toBe('New Title');
 });
 
 /*
@@ -1983,8 +1897,7 @@ test('ticket create for admin', function (): void {
     $di['events_manager'] = $eventMock;
     $service->setDi($di);
 
-    $helpdesk = new Model_SupportHelpdesk();
-    $helpdesk->loadBean(new Tests\Helpers\DummyBean());
+    $helpdesk = helpdeskFixture();
 
     $admin = new Model_Admin();
     $admin->loadBean(new Tests\Helpers\DummyBean());
@@ -2018,9 +1931,12 @@ test('ticket create for client', function (): void {
     $dbMock->shouldReceive('store')
         ->atLeast()->once()
         ->andReturn($randId);
-    $dbMock->shouldReceive('getExistingModelById')
+    $cannedRepoMock = Mockery::mock(CannedResponseRepository::class);
+    $cannedRepoMock->shouldReceive('find')
         ->atLeast()->once()
-        ->andReturn(new Model_SupportPr());
+        ->andReturn(supportCannedResponseFixture());
+    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    supportWireKbRepositories($emMock, cannedRepo: $cannedRepoMock);
 
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')
@@ -2047,12 +1963,9 @@ test('ticket create for client', function (): void {
     $serviceMock->shouldReceive('messageCreateForTicket')
         ->atLeast()->once()
         ->andReturn(1);
-    $serviceMock->shouldReceive('cannedToApiArray')
-        ->atLeast()->once()
-        ->andReturn(['content' => 'Content']);
-
     $di = container();
     $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $eventMock;
     $di['mod'] = $di->protect(fn () => $supportModMock);
@@ -2060,8 +1973,7 @@ test('ticket create for client', function (): void {
 
     $serviceMock->setDi($di);
 
-    $helpdesk = new Model_SupportHelpdesk();
-    $helpdesk->loadBean(new Tests\Helpers\DummyBean());
+    $helpdesk = helpdeskFixture();
 
     $client = new Model_Client();
     $client->loadBean(new Tests\Helpers\DummyBean());
@@ -2086,8 +1998,7 @@ test('ticket create for client task already exists exception', function (): void
         ->byDefault()
         ->andReturn(true);
 
-    $helpdesk = new Model_SupportHelpdesk();
-    $helpdesk->loadBean(new Tests\Helpers\DummyBean());
+    $helpdesk = helpdeskFixture();
 
     $data = [
         'rel_id' => 1,

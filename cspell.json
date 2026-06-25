@@ -53,7 +53,9 @@
         "customtest",
         "Customtest",
         "mysite",
-        "myhost"
+        "myhost",
+        "inversed",
+        "Autoresponder"
     ],
 
     "ignoreWords": [
@@ -516,7 +518,8 @@
         "baselined",
         "endverbatim",
         "missingmodule",
-        "FOUC"
+        "FOUC",
+        "kbarticles"
     ],
     "ignorePaths": [
         "node_modules/**",

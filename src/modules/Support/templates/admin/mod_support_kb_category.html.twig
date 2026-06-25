@@ -1,5 +1,7 @@
 {% extends 'layout_default.html.twig' %}
 
+{% import 'macro_functions.html.twig' as mf %}
+
 {% block meta_title %}{{ category.title }}{% endblock %}
 
 {% set active_menu = 'support' %}
@@ -47,7 +49,7 @@
                     </div>
                     <div class="col-12">
                         <label class="form-label">{{ 'Description'|trans }}</label>
-                        <textarea class="form-control" name="description" rows="10">{{ category.description }}</textarea>
+                        <textarea class="form-control" name="description" rows="1">{{ category.description }}</textarea>
                     </div>
                 </div>
                 <input type="hidden" name="id" value="{{ category.id }}">
@@ -64,6 +66,65 @@
             {% endblock %}
         {% endembed %}
     </form>
+</div>
+
+<div class="card mt-3">
+    <div class="card-header">
+        <div>
+            <h3 class="card-title">{{ 'Articles'|trans }}</h3>
+            <p class="card-subtitle">{{ 'Manage articles assigned to this category.'|trans }}</p>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table card-table table-vcenter table-striped text-nowrap">
+            <thead>
+                <tr>
+                    <th>{{ 'Title'|trans }}</th>
+                    <th>{{ 'Status'|trans }}</th>
+                    <th class="text-center">{{ 'Views'|trans }}</th>
+                    <th>{{ 'Updated'|trans }}</th>
+                    <th class="w-1"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for article in category.articles %}
+                    <tr>
+                        <td>
+                            <a href='{{ "support/kb/article/#{article.id}"|url }}'>{{ article.title }}</a>
+                        </td>
+                        <td>{{ mf.status_badge(article.status, 'post') }}</td>
+                        <td class="text-center">{{ article.views }}</td>
+                        <td class="text-muted">{% if article.updated_at %}{{ '%time% ago'|trans({ '%time%': article.updated_at|timeago }) }}{% else %}-{% endif %}</td>
+                        <td>
+                            {% if article.status == 'active' %}
+                                <a class="btn btn-icon" href='{{ "support/kb/#{category.slug}/#{article.slug}"|url(area: 'client') }}' target="_blank" rel="noreferrer" data-bs-toggle="tooltip" data-bs-title="{{ 'View'|trans }}">
+                                    <svg class="icon">
+                                        <use href="#eye" />
+                                    </svg>
+                                </a>
+                            {% endif %}
+                            <a class="btn btn-icon" href='{{ "support/kb/article/#{article.id}"|url }}' data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
+                                <svg class="icon">
+                                    <use href="#edit" />
+                                </svg>
+                            </a>
+                            <a class="btn btn-icon" href="{{ 'support/kb_article_delete'|api_url(query: { 'id': article.id }) }}"
+                                data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
+                                {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Delete'|trans}, redirect: "support/kb/category/#{category.id}"|url }) }}>
+                                <svg class="icon">
+                                    <use href="#trash" />
+                                </svg>
+                            </a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td class="text-muted" colspan="5">{{ 'No articles in this category yet.'|trans }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 {% endblock %}

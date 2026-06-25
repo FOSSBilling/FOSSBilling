@@ -168,9 +168,20 @@ function container(): Container
         $emailTemplateRepository->shouldReceive('findOneByActionCode')->byDefault()->andReturn(null);
         $emailTemplateRepository->shouldReceive('getSearchQueryBuilder')->byDefault()->andReturn($templateQueryBuilder);
 
+        $kbArticleRepository = \Mockery::mock(\Box\Mod\Support\Repository\KbArticleRepository::class)->shouldIgnoreMissing();
+        $kbArticleCategoryRepository = \Mockery::mock(\Box\Mod\Support\Repository\KbArticleCategoryRepository::class)->shouldIgnoreMissing();
+        $cannedResponseRepository = \Mockery::mock(\Box\Mod\Support\Repository\CannedResponseRepository::class)->shouldIgnoreMissing();
+        $cannedResponseCategoryRepository = \Mockery::mock(\Box\Mod\Support\Repository\CannedResponseCategoryRepository::class)->shouldIgnoreMissing();
+        $helpdeskRepository = \Mockery::mock(\Box\Mod\Support\Repository\HelpdeskRepository::class)->shouldIgnoreMissing();
+
         $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
         $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {
             \Box\Mod\Email\Entity\EmailTemplate::class => $emailTemplateRepository,
+            \Box\Mod\Support\Entity\KbArticle::class => $kbArticleRepository,
+            \Box\Mod\Support\Entity\KbArticleCategory::class => $kbArticleCategoryRepository,
+            \Box\Mod\Support\Entity\CannedResponse::class => $cannedResponseRepository,
+            \Box\Mod\Support\Entity\CannedResponseCategory::class => $cannedResponseCategoryRepository,
+            \Box\Mod\Support\Entity\Helpdesk::class => $helpdeskRepository,
             default => $extensionMetaRepository,
         });
 

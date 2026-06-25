@@ -94,6 +94,9 @@
                         <label for="subject" class="form-label">{{ 'Subject'|trans }}</label>
                         <input type="text" name="subject" class="form-control" id="subject" required aria-describedby="subject" value="{{ request.subject|e }}">
                     </div>
+                    {% if guest.support_kb_suggestions_enabled({ 'area': 'ticket' }) %}
+                        {{ include('mod_support_kb_suggestions.html.twig', { 'input_id': 'subject' }) }}
+                    {% endif %}
                     <div class="mb-3">
                         <label for="message" class="form-label">{{ 'Message'|trans }}</label>
                         <textarea name="content" class="editor-textarea form-control" id="message" aria-describedby="message" rows="5" required>{{ request.content|e }}</textarea>

@@ -26,6 +26,8 @@
                 <div class="list-group ms-2">
                     {% for i, article in category.articles %}
                         <a class="list-group-item list-group-item-action" href='{{ "support/kb/#{article.category.slug}/#{article.slug}"|url }}'>{{ article.title }}</a>
+                    {% else %}
+                        <div class="alert alert-info mb-0">{{ 'No articles in this category yet.'|trans }}</div>
                     {% endfor %}
                 </div>
             </div>
