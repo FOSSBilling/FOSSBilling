@@ -10,6 +10,8 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Staff\Entity\AdminGroup;
+use Box\Mod\Staff\Repository\AdminGroupMemberRepository;
 use Box\Mod\Staff\Service;
 use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Repository\HelpdeskRepository;
@@ -76,6 +78,49 @@ class StaffQueryBuilderMock
     {
         return $this->stmt;
     }
+}
+
+function staffServiceWithGroupPermissions(array $groups = [], bool $isSuperAdministrator = false, array $modulePermissions = []): Service
+{
+    $groupRepository = Mockery::mock(AdminGroupMemberRepository::class);
+    $groupRepository->shouldReceive('adminBelongsToSystemGroup')->andReturn($isSuperAdministrator);
+    $groupRepository->shouldReceive('findGroupsForAdmin')->andReturn($groups);
+    $groupRepository->shouldReceive('getPermissionsForAdmin')->andReturnUsing(function () use ($groups): array {
+        $permissions = [];
+        foreach ($groups as $group) {
+            foreach ($group->getPermissions() as $module => $modulePermissions) {
+                $permissions[$module] ??= [];
+                foreach ($modulePermissions as $key => $value) {
+                    $permissions[$module][$key] = !empty($permissions[$module][$key]) || !empty($value);
+                }
+            }
+        }
+
+        return $permissions;
+    });
+
+    $em = new class($groupRepository) {
+        public function __construct(private AdminGroupMemberRepository $groupRepository)
+        {
+        }
+
+        public function getRepository(string $class): AdminGroupMemberRepository
+        {
+            return $this->groupRepository;
+        }
+    };
+
+    $extensionServiceMock = Mockery::mock(Box\Mod\Extension\Service::class)->makePartial();
+    $extensionServiceMock->shouldReceive('getSpecificModulePermissions')->andReturn($modulePermissions);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $extensionServiceMock);
+
+    $service = new Service();
+    $service->setDi($di);
+
+    return $service;
 }
 
 class StaffDbalMock
@@ -183,15 +228,28 @@ test('login throws exception when credentials are invalid', function (): void {
         ->toThrow(FOSSBilling\Exception::class, 'Check your login details');
 });
 
-test('hasPermission returns true for admin role', function (): void {
+test('hasPermission returns true for super administrator group member', function (): void {
     $member = new Model_Admin();
     $member->loadBean(new Tests\Helpers\DummyBean());
     $member->role = 'admin';
+    $member->id = 1;
 
-    $service = new Service();
+    $service = staffServiceWithGroupPermissions(isSuperAdministrator: true);
 
     $result = $service->hasPermission($member, 'example');
     expect($result)->toBeTrue();
+});
+
+test('hasPermission does not allow admin role without group permissions', function (): void {
+    $member = new Model_Admin();
+    $member->loadBean(new Tests\Helpers\DummyBean());
+    $member->role = 'admin';
+    $member->id = 1;
+
+    $service = staffServiceWithGroupPermissions();
+
+    $result = $service->hasPermission($member, 'example');
+    expect($result)->toBeFalse();
 });
 
 test('hasPermission falls back to cron admin only within cron context', function (): void {
@@ -236,71 +294,52 @@ test('hasPermission stays fail-closed outside cron context when no admin is logg
         ->toThrow(FOSSBilling\Security\AuthenticationRequiredException::class);
 });
 
-test('hasPermission returns false for staff with empty permissions', function (): void {
+test('hasPermission returns false for staff without groups', function (): void {
     $member = new Model_Admin();
     $member->loadBean(new Tests\Helpers\DummyBean());
     $member->role = 'staff';
+    $member->id = 1;
 
-    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $service = staffServiceWithGroupPermissions();
 
-    $serviceMock->shouldReceive('getPermissions')->atLeast()->once();
-
-    $extensionServiceMock = Mockery::mock(Box\Mod\Extension\Service::class)->makePartial();
-    $extensionServiceMock->shouldReceive('getSpecificModulePermissions')->atLeast()->once()
-        ->andReturn([]);
-
-    $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $extensionServiceMock);
-
-    $serviceMock->setDi($di);
-
-    $result = $serviceMock->hasPermission($member, 'example');
+    $result = $service->hasPermission($member, 'example');
     expect($result)->toBeFalse();
 });
 
-test('hasPermission returns false for staff without module permission', function (): void {
+test('hasPermission returns true for staff with group permission', function (): void {
     $member = new Model_Admin();
     $member->loadBean(new Tests\Helpers\DummyBean());
     $member->role = 'staff';
+    $member->id = 1;
 
-    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $group = (new AdminGroup())->setPermissions([
+        'example' => [
+            'access' => true,
+            'get_list' => true,
+        ],
+    ]);
 
-    $serviceMock->shouldReceive('getPermissions')->atLeast()->once()
-        ->andReturn(['cart' => [], 'client' => []]);
+    $service = staffServiceWithGroupPermissions([$group]);
 
-    $extensionServiceMock = Mockery::mock(Box\Mod\Extension\Service::class)->makePartial();
-    $extensionServiceMock->shouldReceive('getSpecificModulePermissions')->atLeast()->once()
-        ->andReturn([]);
-
-    $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $extensionServiceMock);
-
-    $serviceMock->setDi($di);
-
-    $result = $serviceMock->hasPermission($member, 'example');
-    expect($result)->toBeFalse();
+    $result = $service->hasPermission($member, 'example', 'get_list');
+    expect($result)->toBeTrue();
 });
 
 test('hasPermission returns false for staff without method permission', function (): void {
     $member = new Model_Admin();
     $member->loadBean(new Tests\Helpers\DummyBean());
     $member->role = 'staff';
+    $member->id = 1;
 
-    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $group = (new AdminGroup())->setPermissions([
+        'example' => [
+            'access' => true,
+        ],
+    ]);
 
-    $serviceMock->shouldReceive('getPermissions')->atLeast()->once()
-        ->andReturn(['example' => [], 'client' => []]);
+    $service = staffServiceWithGroupPermissions([$group]);
 
-    $extensionServiceMock = Mockery::mock(Box\Mod\Extension\Service::class)->makePartial();
-    $extensionServiceMock->shouldReceive('getSpecificModulePermissions')->atLeast()->once()
-        ->andReturn([]);
-
-    $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $extensionServiceMock);
-
-    $serviceMock->setDi($di);
-
-    $result = $serviceMock->hasPermission($member, 'example', 'get_list');
+    $result = $service->hasPermission($member, 'example', 'get_list');
     expect($result)->toBeFalse();
 });
 
@@ -1398,6 +1437,39 @@ test('setPermissions updates staff permissions', function (): void {
     expect($result)->toBeTrue();
 });
 
+test('setPermissions does not alter effective group permissions', function (): void {
+    $group = (new AdminGroup())->setPermissions([
+        'support' => [
+            'access' => true,
+        ],
+    ]);
+    $service = staffServiceWithGroupPermissions([$group], isSuperAdministrator: true);
+
+    $queryBuilderMock = new StaffQueryBuilderMock();
+    $dbalMock = new StaffDbalMock($queryBuilderMock);
+
+    $target = new Model_Admin();
+    $target->loadBean(new Tests\Helpers\DummyBean());
+    $target->id = 1;
+    $target->role = Model_Admin::ROLE_STAFF;
+
+    $loggedInAdmin = new Model_Admin();
+    $loggedInAdmin->loadBean(new Tests\Helpers\DummyBean());
+    $loggedInAdmin->id = 2;
+    $loggedInAdmin->role = Model_Admin::ROLE_ADMIN;
+
+    $service->getDi()['dbal'] = $dbalMock;
+    $service->getDi()['loggedin_admin'] = $loggedInAdmin;
+
+    $service->setPermissions($target, []);
+
+    expect($service->getPermissions($target->id))->toBe([
+        'support' => [
+            'access' => true,
+        ],
+    ]);
+});
+
 test('setPermissions subjects a cron-admin caller to the permission ceiling', function (): void {
     $cronAdmin = new Model_Admin();
     $cronAdmin->loadBean(new Tests\Helpers\DummyBean());
@@ -1428,45 +1500,45 @@ test('setPermissions subjects a cron-admin caller to the permission ceiling', fu
         ->toThrow(FOSSBilling\InformationException::class, 'You cannot grant permissions for a module you do not have access to');
 });
 
-test('getPermissions returns empty array when permissions are empty', function (): void {
-    $statementWithFetchOne = new StaffStatementMock('{}');
+test('getPermissions returns empty array when staff has no groups', function (): void {
+    $service = staffServiceWithGroupPermissions();
 
-    $service = new Service();
-
-    $queryBuilderMock = new StaffQueryBuilderMock($statementWithFetchOne);
-
-    $dbalMock = new StaffDbalMock($queryBuilderMock);
-
-    $di = new Pimple\Container();
-    $di['dbal'] = $dbalMock;
-    $service->setDi($di);
-
-    $member_id = 1;
-    $result = $service->getPermissions($member_id);
+    $result = $service->getPermissions(1);
     expect($result)->toBeArray();
     expect($result)->toBe([]);
 });
 
-test('getPermissions returns permissions array', function (): void {
-    $queryResult = '{"id" : "1"}';
+test('getPermissions returns union of group permissions', function (): void {
+    $supportGroup = (new AdminGroup())->setPermissions([
+        'support' => [
+            'access' => true,
+            'manage_tickets' => true,
+        ],
+    ]);
+    $billingGroup = (new AdminGroup())->setPermissions([
+        'support' => [
+            'manage_tickets' => false,
+            'manage_kb' => true,
+        ],
+        'invoice' => [
+            'access' => true,
+        ],
+    ]);
 
-    $statementWithFetchOne = new StaffStatementMock($queryResult);
+    $service = staffServiceWithGroupPermissions([$supportGroup, $billingGroup]);
 
-    $service = new Service();
-
-    $queryBuilderMock = new StaffQueryBuilderMock($statementWithFetchOne);
-
-    $dbalMock = new StaffDbalMock($queryBuilderMock);
-
-    $di = new Pimple\Container();
-    $di['dbal'] = $dbalMock;
-    $service->setDi($di);
-
-    $member_id = 1;
-    $expected = json_decode($queryResult ?? '', true);
-    $result = $service->getPermissions($member_id);
+    $result = $service->getPermissions(1);
     expect($result)->toBeArray();
-    expect($result)->toBe($expected);
+    expect($result)->toBe([
+        'support' => [
+            'access' => true,
+            'manage_tickets' => true,
+            'manage_kb' => true,
+        ],
+        'invoice' => [
+            'access' => true,
+        ],
+    ]);
 });
 
 test('authorizeAdmin returns null when email not found', function (): void {

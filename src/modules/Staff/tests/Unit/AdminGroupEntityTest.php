@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use Box\Mod\Staff\Entity\AdminGroup;
+use Box\Mod\Staff\Repository\AdminGroupMemberRepository;
 
 test('admin group encodes permissions and identifies super administrator group', function (): void {
     $group = (new AdminGroup())
@@ -32,4 +33,39 @@ test('admin group encodes permissions and identifies super administrator group',
                 'manage_tickets' => true,
             ],
         ]);
+});
+
+test('admin group member repository unions group permissions', function (): void {
+    $supportGroup = (new AdminGroup())->setPermissions([
+        'support' => [
+            'access' => true,
+            'manage_tickets' => true,
+        ],
+    ]);
+    $billingGroup = (new AdminGroup())->setPermissions([
+        'support' => [
+            'manage_tickets' => false,
+            'manage_kb' => true,
+        ],
+        'invoice' => [
+            'access' => true,
+        ],
+    ]);
+
+    $repository = Mockery::mock(AdminGroupMemberRepository::class)->makePartial();
+    $repository->shouldReceive('findGroupsForAdmin')
+        ->once()
+        ->with(1)
+        ->andReturn([$supportGroup, $billingGroup]);
+
+    expect($repository->getPermissionsForAdmin(1))->toBe([
+        'support' => [
+            'access' => true,
+            'manage_tickets' => true,
+            'manage_kb' => true,
+        ],
+        'invoice' => [
+            'access' => true,
+        ],
+    ]);
 });

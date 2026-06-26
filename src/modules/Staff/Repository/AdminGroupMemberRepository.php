@@ -17,6 +17,23 @@ use Doctrine\ORM\EntityRepository;
 
 class AdminGroupMemberRepository extends EntityRepository
 {
+    private function mergePermissions(array $permissions, array $groupPermissions): array
+    {
+        foreach ($groupPermissions as $module => $modulePermissions) {
+            if (!is_array($modulePermissions)) {
+                continue;
+            }
+
+            $permissions[$module] ??= [];
+
+            foreach ($modulePermissions as $key => $value) {
+                $permissions[$module][$key] = !empty($permissions[$module][$key]) || !empty($value);
+            }
+        }
+
+        return $permissions;
+    }
+
     /**
      * @return AdminGroup[]
      */
@@ -44,6 +61,20 @@ class AdminGroupMemberRepository extends EntityRepository
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
+    }
+
+    /**
+     * @return array<string, array<string, bool>>
+     */
+    public function getPermissionsForAdmin(int $adminId): array
+    {
+        $permissions = [];
+
+        foreach ($this->findGroupsForAdmin($adminId) as $group) {
+            $permissions = $this->mergePermissions($permissions, $group->getPermissions());
+        }
+
+        return $permissions;
     }
 
     public function countActiveMembersInSystemGroup(string $systemName): int

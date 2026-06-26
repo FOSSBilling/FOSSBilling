@@ -12,6 +12,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Staff;
 
+use Box\Mod\Staff\Entity\AdminGroup;
+use Box\Mod\Staff\Entity\AdminGroupMember;
+use Box\Mod\Staff\Repository\AdminGroupMemberRepository;
 use Box\Mod\Support\Entity\Helpdesk;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\PaginationOptions;
@@ -19,17 +22,26 @@ use FOSSBilling\PaginationOptions;
 class Service implements InjectionAwareInterface
 {
     private array $permissionCache = [];
+    private array $superAdministratorCache = [];
+
+    private ?AdminGroupMemberRepository $adminGroupMemberRepository = null;
 
     protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        $this->adminGroupMemberRepository = $this->di['em']->getRepository(AdminGroupMember::class);
     }
 
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    private function getAdminGroupMemberRepository(): AdminGroupMemberRepository
+    {
+        return $this->adminGroupMemberRepository;
     }
 
     private function getPermissionsFromCache(int|string $memberId): ?array
@@ -178,8 +190,6 @@ class Service implements InjectionAwareInterface
             ->setParameter('id', $model->id)
             ->executeStatement();
 
-        $this->permissionCache[(string) $model->id] = $array;
-
         return true;
     }
 
@@ -227,7 +237,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function getPermissions($member_id)
+    public function getPermissions($member_id): array
     {
         $cachedPermissions = $this->getPermissionsFromCache($member_id);
 
@@ -235,22 +245,22 @@ class Service implements InjectionAwareInterface
             return $cachedPermissions;
         }
 
-        $query = $this->di['dbal']->createQueryBuilder();
-        $query
-            ->select('permissions')
-            ->from('admin')
-            ->where('id = :id')
-            ->setParameter('id', $member_id);
-        $result = $query->executeQuery()->fetchOne() ?? '';
-
-        $permissions = json_decode($result, true);
-        if (!is_array($permissions)) {
-            $permissions = [];
-        }
+        $permissions = $this->getAdminGroupMemberRepository()->getPermissionsForAdmin((int) $member_id);
 
         $this->permissionCache[(string) $member_id] = $permissions;
 
         return $permissions;
+    }
+
+    private function isSuperAdministrator(int|string $memberId): bool
+    {
+        $cacheKey = (string) $memberId;
+
+        if (!array_key_exists($cacheKey, $this->superAdministratorCache)) {
+            $this->superAdministratorCache[$cacheKey] = $this->getAdminGroupMemberRepository()->adminBelongsToSystemGroup((int) $memberId, AdminGroup::SYSTEM_SUPER_ADMIN);
+        }
+
+        return $this->superAdministratorCache[$cacheKey];
     }
 
     /**
@@ -269,7 +279,11 @@ class Service implements InjectionAwareInterface
             $member = $this->getLoggedInAdminOrCronAdmin();
         }
 
-        if ($member->role == \Model_Admin::ROLE_CRON || $member->role == \Model_Admin::ROLE_ADMIN || in_array($module, $alwaysAllowed)) {
+        if ($member->role == \Model_Admin::ROLE_CRON || in_array($module, $alwaysAllowed)) {
+            return true;
+        }
+
+        if ($this->isSuperAdministrator($member->id)) {
             return true;
         }
 
