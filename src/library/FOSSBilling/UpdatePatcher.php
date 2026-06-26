@@ -762,17 +762,11 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         // Drop updated_at column from activity tables
         // Activity logs are never meant to be updated, only created
-        $q = 'ALTER TABLE `activity_admin_history` DROP COLUMN `updated_at`;';
-        $this->executeSql($q);
-
-        $q = 'ALTER TABLE `activity_client_email` DROP COLUMN `updated_at`;';
-        $this->executeSql($q);
-
-        $q = 'ALTER TABLE `activity_client_history` DROP COLUMN `updated_at`;';
-        $this->executeSql($q);
-
-        $q = 'ALTER TABLE `activity_system` DROP COLUMN `updated_at`;';
-        $this->executeSql($q);
+        foreach (['activity_admin_history', 'activity_client_email', 'activity_client_history', 'activity_system'] as $table) {
+            if ($this->tableHasColumn($table, 'updated_at')) {
+                $this->executeSql(sprintf('ALTER TABLE `%s` DROP COLUMN `updated_at`;', $this->quoteIdentifier($table)));
+            }
+        }
     }
 
     private function patch46(): void
