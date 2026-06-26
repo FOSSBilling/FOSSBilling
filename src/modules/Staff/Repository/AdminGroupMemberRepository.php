@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Box\Mod\Staff\Repository;
 
 use Box\Mod\Staff\Entity\AdminGroup;
+use Box\Mod\Staff\Entity\AdminGroupMember;
 use Doctrine\ORM\EntityRepository;
 
 class AdminGroupMemberRepository extends EntityRepository
@@ -39,14 +40,19 @@ class AdminGroupMemberRepository extends EntityRepository
      */
     public function findGroupsForAdmin(int $adminId): array
     {
-        return $this->createQueryBuilder('m')
-            ->select('g')
+        $memberships = $this->createQueryBuilder('m')
+            ->select('m', 'g')
             ->innerJoin('m.adminGroup', 'g')
             ->andWhere('m.adminId = :admin_id')
             ->setParameter('admin_id', $adminId)
             ->orderBy('g.id', 'ASC')
             ->getQuery()
             ->getResult();
+
+        return array_map(
+            static fn (AdminGroupMember $membership): AdminGroup => $membership->getAdminGroup(),
+            $memberships,
+        );
     }
 
     public function adminBelongsToSystemGroup(int $adminId, string $systemName): bool
@@ -61,6 +67,38 @@ class AdminGroupMemberRepository extends EntityRepository
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
+    }
+
+    public function findMembership(int $adminId, int $groupId): ?AdminGroupMember
+    {
+        return $this->createQueryBuilder('m')
+            ->innerJoin('m.adminGroup', 'g')
+            ->andWhere('m.adminId = :admin_id')
+            ->andWhere('g.id = :group_id')
+            ->setParameter('admin_id', $adminId)
+            ->setParameter('group_id', $groupId)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    /**
+     * @return int[]
+     */
+    public function getMemberIdsInGroup(int $groupId): array
+    {
+        return array_map('intval', $this->getEntityManager()->getConnection()->fetchFirstColumn(
+            'SELECT DISTINCT a.id
+             FROM admin a
+             INNER JOIN admin_group_member m ON m.admin_id = a.id
+             WHERE m.admin_group_id = :group_id
+             AND a.role != :cron_role
+             ORDER BY a.id ASC',
+            [
+                'group_id' => $groupId,
+                'cron_role' => \Model_Admin::ROLE_CRON,
+            ],
+        ));
     }
 
     /**
@@ -98,11 +136,8 @@ class AdminGroupMemberRepository extends EntityRepository
     {
         return (int) $this->getEntityManager()->getConnection()->fetchOne(
             'SELECT COUNT(DISTINCT admin_id)
-             FROM (
-                SELECT admin_id FROM admin_group_member WHERE admin_group_id = :group_id
-                UNION
-                SELECT id AS admin_id FROM admin WHERE admin_group_id = :group_id
-             ) members',
+             FROM admin_group_member
+             WHERE admin_group_id = :group_id',
             ['group_id' => $groupId],
         );
     }

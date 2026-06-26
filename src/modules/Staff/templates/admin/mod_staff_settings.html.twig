@@ -79,10 +79,6 @@
                                     <input class="form-control" type="text" id="staff-id" name="id" value="{{ request.id }}" placeholder="{{ 'Staff ID'|trans }}">
                                 </div>
                                 <div class="col-md-6 col-xl-3">
-                                    <label class="form-label text-muted small mb-1">{{ 'Group'|trans }}</label>
-                                    {{ mf.selectbox('admin_group_id', admin.staff_group_get_pairs, request.admin_group_id, 0, 'All Groups'|trans) }}
-                                </div>
-                                <div class="col-md-6 col-xl-3">
                                     <label class="form-label text-muted small mb-1" for="staff-status">{{ 'Status'|trans }}</label>
                                     <select class="form-select" id="staff-status" name="status">
                                         <option value="">{{ 'All Statuses'|trans }}</option>
@@ -120,7 +116,7 @@
                                 <th class="w-1">#</th>
                                 <th>{{ 'Name'|trans }}</th>
                                 <th>{{ 'Email'|trans }}</th>
-                                <th>{{ 'Group'|trans }}</th>
+                                <th>{{ 'Groups'|trans }}</th>
                                 <th>{{ 'Status'|trans }}</th>
                                 <th class="w-1"></th>
                             </tr>
@@ -138,7 +134,11 @@
                                     </td>
                                     <td>{{ member.email }}</td>
                                     <td>
-                                        <a href='{{ "staff/group/#{member.group.id}"|url }}'>{{ member.group.name }}</a>
+                                        {% for group in member.groups %}
+                                            <a class="badge bg-blue-lt text-blue text-decoration-none me-1" href='{{ "staff/group/#{group.id}"|url }}'>{{ group.name }}</a>
+                                        {% else %}
+                                            <span class="text-muted">{{ 'No groups'|trans }}</span>
+                                        {% endfor %}
                                     </td>
                                     <td>{{ mf.status_badge(member.status, 'admin') }}</td>
                                     <td>
@@ -262,10 +262,6 @@
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-lg-6">
-                            <label class="form-label" for="admin_group_id">{{ 'Group'|trans }}</label>
-                            {{ mf.selectbox('admin_group_id', admin.staff_group_get_pairs, '', 1) }}
-                        </div>
-                        <div class="col-lg-6">
                             <label class="form-label" for="new-staff-name">{{ 'Name'|trans }}</label>
                             <input class="form-control" id="new-staff-name" type="text" name="name" required>
                         </div>
@@ -325,7 +321,7 @@
 {% block js %}
     <script>
         function onAfterStaffCreate(id) {
-            window.location = "{{ 'staff/manage'|url }}/" + id + '#tab-permissions';
+            window.location = "{{ 'staff/manage'|url }}/" + id + '#tab-groups';
         }
 
         document.addEventListener("DOMContentLoaded", function() {

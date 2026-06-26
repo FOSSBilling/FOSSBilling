@@ -58,6 +58,21 @@ class Service implements InjectionAwareInterface
         $this->superAdministratorCache = [];
     }
 
+    private function assertCanRemoveActiveSuperAdministrator(\Model_Admin $admin): void
+    {
+        if ($admin->status !== \Model_Admin::STATUS_ACTIVE) {
+            return;
+        }
+
+        if (!$this->adminGroupMemberRepository->adminBelongsToSystemGroup((int) $admin->id, AdminGroup::SYSTEM_SUPER_ADMIN)) {
+            return;
+        }
+
+        if ($this->adminGroupMemberRepository->countActiveMembersInSystemGroup(AdminGroup::SYSTEM_SUPER_ADMIN) <= 1) {
+            throw new \FOSSBilling\InformationException('Cannot remove the last active super administrator');
+        }
+    }
+
     private function getPermissionsFromCache(int|string $memberId): ?array
     {
         $cacheKey = (string) $memberId;
@@ -168,87 +183,6 @@ class Service implements InjectionAwareInterface
         $sql .= sprintf(' ORDER BY name ASC LIMIT %u', $limit);
 
         return $this->di['db']->getAssoc($sql, $params);
-    }
-
-    public function setPermissions(\Model_Admin $model, array $array): bool
-    {
-        $caller = $this->getLoggedInAdminOrCronAdmin();
-
-        if ($caller->id == $model->id) {
-            throw new \FOSSBilling\InformationException('You cannot modify your own permissions');
-        }
-
-        if ($model->role === \Model_Admin::ROLE_ADMIN) {
-            $this->checkPermissionsAndThrowException('staff', 'create_and_edit_admin');
-        } else {
-            $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
-        }
-
-        if ($caller->role !== \Model_Admin::ROLE_ADMIN) {
-            $callerPerms = $this->getPermissions($caller->id);
-            $callerHasWildcard = !empty($callerPerms['default']['all']);
-
-            if (!$callerHasWildcard) {
-                $this->enforcePermissionCeiling($array, $callerPerms);
-            }
-        }
-
-        $array = array_filter($array);
-
-        $query = $this->di['dbal']->createQueryBuilder();
-        $query
-            ->update('admin')
-            ->set('permissions', ':p')
-            ->where('id = :id')
-            ->setParameter('p', json_encode($array))
-            ->setParameter('id', $model->id)
-            ->executeStatement();
-
-        return true;
-    }
-
-    private function enforcePermissionCeiling(array $submitted, array $callerPerms): void
-    {
-        foreach ($submitted as $module => $modulePerms) {
-            if ($module === 'default') {
-                if (!empty($submitted['default']['all']) && empty($callerPerms['default']['all'])) {
-                    throw new \FOSSBilling\InformationException('You cannot grant wildcard access that you do not have');
-                }
-
-                continue;
-            }
-
-            if (!is_array($modulePerms)) {
-                continue;
-            }
-
-            $hasGrantedPermissions = false;
-            foreach ($modulePerms as $value) {
-                if (!empty($value)) {
-                    $hasGrantedPermissions = true;
-
-                    break;
-                }
-            }
-
-            if (!$hasGrantedPermissions) {
-                continue;
-            }
-
-            if (!isset($callerPerms[$module])) {
-                throw new \FOSSBilling\InformationException('You cannot grant permissions for a module you do not have access to');
-            }
-
-            foreach ($modulePerms as $key => $value) {
-                if (empty($value)) {
-                    continue;
-                }
-
-                if (!isset($callerPerms[$module][$key]) || !$callerPerms[$module][$key]) {
-                    throw new \FOSSBilling\InformationException('You cannot grant a permission that you do not have');
-                }
-            }
-        }
     }
 
     public function getPermissions($member_id): array
@@ -500,7 +434,6 @@ class Service implements InjectionAwareInterface
         $id = $data['id'] ?? null;
         $search = $data['search'] ?? null;
         $status = $data['status'] ?? null;
-        $admin_group_id = $data['admin_group_id'] ?? null;
         $no_cron = (bool) ($data['no_cron'] ?? false);
 
         $where = [];
@@ -523,11 +456,6 @@ class Service implements InjectionAwareInterface
             $bindings[':status'] = $status;
         }
 
-        if ($admin_group_id !== null && $admin_group_id !== '') {
-            $where[] = 'admin_group_id = :admin_group_id';
-            $bindings[':admin_group_id'] = (int) $admin_group_id;
-        }
-
         if ($no_cron) {
             $where[] = 'role != :role';
             $bindings[':role'] = \Model_Admin::ROLE_CRON;
@@ -536,7 +464,7 @@ class Service implements InjectionAwareInterface
         if (!empty($where)) {
             $query = $query . ' WHERE ' . implode(' AND ', $where);
         }
-        $query .= ' ORDER BY `admin_group_id` ASC, id ASC';
+        $query .= ' ORDER BY id ASC';
 
         return [$query, $bindings];
     }
@@ -558,7 +486,6 @@ class Service implements InjectionAwareInterface
 
         $cron = $this->di['db']->dispense('Admin');
         $cron->role = \Model_Admin::ROLE_CRON;
-        $cron->admin_group_id = 1;
         $cron->email = $cronEmail;
         $cron->pass = $this->di['password']->hashIt($cronPass);
         $cron->name = 'System Cron Job';
@@ -577,7 +504,6 @@ class Service implements InjectionAwareInterface
         $data = [
             'id' => $model->id,
             'role' => $model->role,
-            'admin_group_id' => $model->admin_group_id,
             'email' => $model->email,
             'name' => $model->name,
             'status' => $model->status,
@@ -588,9 +514,11 @@ class Service implements InjectionAwareInterface
 
         $data['protected'] = $model->protected;
 
-        $adminGroupModel = $this->di['db']->load('AdminGroup', $model->admin_group_id);
-        $data['group']['id'] = $adminGroupModel->id;
-        $data['group']['name'] = $adminGroupModel->name;
+        $data['groups'] = array_map(
+            static fn (AdminGroup $group): array => $group->toApiArray(),
+            $this->adminGroupMemberRepository->findGroupsForAdmin((int) $model->id),
+        );
+        $data['group'] = $data['groups'][0] ?? null;
 
         return $data;
     }
@@ -607,10 +535,14 @@ class Service implements InjectionAwareInterface
 
         $previousStatus = $model->status;
 
+        $newStatus = $data['status'] ?? $model->status;
+        if ($previousStatus === \Model_Admin::STATUS_ACTIVE && $newStatus !== \Model_Admin::STATUS_ACTIVE) {
+            $this->assertCanRemoveActiveSuperAdministrator($model);
+        }
+
         $model->email = $data['email'] ?? $model->email;
-        $model->admin_group_id = $data['admin_group_id'] ?? $model->admin_group_id;
         $model->name = $data['name'] ?? $model->name;
-        $model->status = $data['status'] ?? $model->status;
+        $model->status = $newStatus;
         if ($model->status === \Model_Admin::STATUS_INACTIVE) {
             $model->api_token = null;
         }
@@ -641,6 +573,8 @@ class Service implements InjectionAwareInterface
         } else {
             $this->checkPermissionsAndThrowException('staff', 'delete_staff');
         }
+
+        $this->assertCanRemoveActiveSuperAdministrator($model);
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffDelete', 'params' => ['id' => $model->id]]);
 
@@ -689,7 +623,6 @@ class Service implements InjectionAwareInterface
 
         $model = $this->di['db']->dispense('Admin');
         $model->role = \Model_Admin::ROLE_STAFF;
-        $model->admin_group_id = $data['admin_group_id'];
         $model->email = $data['email'];
         $model->pass = $this->di['password']->hashIt($data['password']);
         $model->name = $data['name'];
@@ -766,6 +699,7 @@ class Service implements InjectionAwareInterface
                 throw new \FOSSBilling\InformationException('Parameter "permissions" must be an array');
             }
 
+            unset($data['permissions']['_submitted']);
             $model->setPermissions($data['permissions']);
         }
 
@@ -774,6 +708,49 @@ class Service implements InjectionAwareInterface
         $this->clearPermissionCache();
 
         $this->di['logger']->info('Updated staff group %s', $model->getId());
+
+        return true;
+    }
+
+    public function addAdminToGroup(\Model_Admin $admin, AdminGroup $group): bool
+    {
+        $this->checkPermissionsAndThrowException('staff', 'manage_groups');
+
+        $adminId = (int) $admin->id;
+        $groupId = (int) $group->getId();
+        if ($this->adminGroupMemberRepository->findMembership($adminId, $groupId) instanceof AdminGroupMember) {
+            return true;
+        }
+
+        $this->di['em']->persist(new AdminGroupMember($adminId, $group));
+        $this->di['em']->flush();
+        $this->clearPermissionCache();
+
+        $this->di['logger']->info('Added staff member %s to group %s', $adminId, $groupId);
+
+        return true;
+    }
+
+    public function removeAdminFromGroup(\Model_Admin $admin, AdminGroup $group): bool
+    {
+        $this->checkPermissionsAndThrowException('staff', 'manage_groups');
+
+        $adminId = (int) $admin->id;
+        $groupId = (int) $group->getId();
+        $membership = $this->adminGroupMemberRepository->findMembership($adminId, $groupId);
+        if (!$membership instanceof AdminGroupMember) {
+            return true;
+        }
+
+        if ($group->isSuperAdministrator()) {
+            $this->assertCanRemoveActiveSuperAdministrator($admin);
+        }
+
+        $this->di['em']->remove($membership);
+        $this->di['em']->flush();
+        $this->clearPermissionCache();
+
+        $this->di['logger']->info('Removed staff member %s from group %s', $adminId, $groupId);
 
         return true;
     }

@@ -21,7 +21,6 @@ test('gets admin profile', function (): void {
     $model->loadBean(new Tests\Helpers\DummyBean());
     $model->id = 1;
     $model->role = 'admin';
-    $model->admin_group_id = 1;
     $model->email = 'admin@fossbilling.org';
     $model->name = 'Admin';
     $model->signature = 'Sincerely';
@@ -36,7 +35,6 @@ test('gets admin profile', function (): void {
     $expected = [
         'id' => $model->id,
         'role' => $model->role,
-        'admin_group_id' => $model->admin_group_id,
         'email' => $model->email,
         'name' => $model->name,
         'signature' => $model->signature,

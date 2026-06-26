@@ -101,7 +101,6 @@ class Service implements InjectionAwareInterface
         return [
             'id' => $identity->id,
             'role' => $identity->role,
-            'admin_group_id' => $identity->admin_group_id,
             'email' => $identity->email,
             'name' => $identity->name,
             'signature' => $identity->signature,

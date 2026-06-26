@@ -481,6 +481,7 @@ class UpdatePatcher implements InjectionAwareInterface
             73 => 'patch73',
             74 => 'patch74',
             75 => 'patch75',
+            76 => 'patch76',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1960,6 +1961,17 @@ class UpdatePatcher implements InjectionAwareInterface
             'created_at' => $now,
             'role' => 'admin',
         ]);
+    }
+
+    private function patch76(): void
+    {
+        if ($this->tableHasColumn('admin', 'admin_group_id')) {
+            if ($this->tableHasIndex('admin', 'admin_group_id_idx')) {
+                $this->executeSql('ALTER TABLE `admin` DROP INDEX `admin_group_id_idx`;');
+            }
+
+            $this->executeSql('ALTER TABLE `admin` DROP COLUMN `admin_group_id`;');
+        }
     }
 
     private function generateDownloadableStoredFilename(): string

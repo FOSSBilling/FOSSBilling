@@ -82,7 +82,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $name - new name
      * @optional string $status - new status
      * @optional string $signature - new signature
-     * @optional int $admin_group_id - new group id
      *
      * @return bool
      *
@@ -157,7 +156,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         'email' => 'Email address was not passed',
         'password' => 'Password was not passed',
         'name' => 'Name was not passed',
-        'admin_group_id' => 'Group ID was not passed',
     ])]
     public function create($data)
     {
@@ -171,42 +169,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         return $this->getService()->create($data);
     }
 
-    /**
-     * Return staff member permissions.
-     *
-     * @return array
-     */
-    #[RequiredParams(['id' => 'ID was not passed'])]
-    public function permissions_get($data)
-    {
-        $this->checkPermissions('staff', 'create_and_edit_staff');
-
-        $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
-
-        return $this->getService()->getPermissions($model->id);
-    }
-
-    /**
-     * Update staff member permissions.
-     */
-    #[RequiredParams(['id' => 'ID was not passed', 'permissions' => 'Missing "permissions" parameter'])]
-    public function permissions_update($data): bool
-    {
-        $this->checkPermissions('staff', 'manage_settings');
-
-        $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
-
-        if (!is_array($data['permissions'])) {
-            throw new \FOSSBilling\InformationException('Parameter "permissions" must be an array');
-        }
-
-        $this->getService()->setPermissions($model, $data['permissions']);
-
-        $this->getDi()['logger']->info('Changed staff member %s permissions', $model->id);
-
-        return true;
-    }
-
     private function getAdminGroupById(int $id): AdminGroup
     {
         $group = $this->getService()->getAdminGroupRepository()->findById($id);
@@ -215,6 +177,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         }
 
         return $group;
+    }
+
+    private function getAdminById(int $id): \Model_Admin
+    {
+        return $this->getDi()['db']->getExistingModelById('Admin', $id, 'Staff member not found');
     }
 
     /**
@@ -313,6 +280,66 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $model = $this->getAdminGroupById((int) $data['id']);
 
         return $this->getService()->updateGroup($model, $data);
+    }
+
+    /**
+     * Add a staff member to a group.
+     */
+    #[RequiredParams(['admin_id' => 'Staff member ID was not passed', 'group_id' => 'Group ID was not passed'])]
+    public function group_member_add($data): bool
+    {
+        $this->checkPermissions('staff', 'manage_groups');
+
+        return $this->getService()->addAdminToGroup(
+            $this->getAdminById((int) $data['admin_id']),
+            $this->getAdminGroupById((int) $data['group_id']),
+        );
+    }
+
+    /**
+     * Remove a staff member from a group.
+     */
+    #[RequiredParams(['admin_id' => 'Staff member ID was not passed', 'group_id' => 'Group ID was not passed'])]
+    public function group_member_remove($data): bool
+    {
+        $this->checkPermissions('staff', 'manage_groups');
+
+        return $this->getService()->removeAdminFromGroup(
+            $this->getAdminById((int) $data['admin_id']),
+            $this->getAdminGroupById((int) $data['group_id']),
+        );
+    }
+
+    /**
+     * List staff members in a group.
+     */
+    #[RequiredParams(['group_id' => 'Group ID was not passed'])]
+    public function group_member_get_list($data): array
+    {
+        $this->checkPermissions('staff', 'manage_groups');
+
+        $group = $this->getAdminGroupById((int) $data['group_id']);
+
+        return array_map(
+            fn (int $adminId): array => $this->getService()->toModel_AdminApiArray($this->getAdminById($adminId)),
+            $this->getService()->getAdminGroupMemberRepository()->getMemberIdsInGroup((int) $group->getId()),
+        );
+    }
+
+    /**
+     * List groups assigned to a staff member.
+     */
+    #[RequiredParams(['admin_id' => 'Staff member ID was not passed'])]
+    public function admin_group_get_list($data): array
+    {
+        $this->checkPermissions('staff', 'manage_groups');
+
+        $admin = $this->getAdminById((int) $data['admin_id']);
+
+        return array_map(
+            static fn (AdminGroup $group): array => $group->toApiArray(),
+            $this->getService()->getAdminGroupMemberRepository()->findGroupsForAdmin((int) $admin->id),
+        );
     }
 
     /**
