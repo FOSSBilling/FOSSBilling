@@ -184,10 +184,9 @@
 
 {% block js %}
 <script>
-    const KEEP_SENTINEL = '{{ constant('Box\\Mod\\Servicehosting\\Service::CREDENTIAL_KEEP_SENTINEL') }}';
-    const KEEP_PLACEHOLDER = '{{ 'Leave blank to keep the saved credential.'|trans }}';
-    const CONFIGURED_BADGE = '{{ 'Configured'|trans }}';
-
+    const KEEP_SENTINEL = '{{ constant('Box\\Mod\\Servicehosting\\Service::CREDENTIAL_KEEP_SENTINEL')|e('js') }}';
+    const KEEP_PLACEHOLDER = '{{ 'Leave blank to keep the saved credential.'|trans|e('js') }}';
+    const CONFIGURED_BADGE = '{{ 'Configured'|trans|e('js') }}';
     function handleManagerChange(select) {
         const pairs = {{ admin.servicehosting_manager_get_pairs|json_encode|raw }};
         const defaults = {
