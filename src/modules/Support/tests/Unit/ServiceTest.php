@@ -14,14 +14,14 @@ use Box\Mod\Client\Service as ClientService;
 use Box\Mod\Email\Service as EmailService;
 use Box\Mod\Support\Entity\CannedResponse;
 use Box\Mod\Support\Entity\CannedResponseCategory;
+use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
-use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Repository\CannedResponseCategoryRepository;
 use Box\Mod\Support\Repository\CannedResponseRepository;
+use Box\Mod\Support\Repository\HelpdeskRepository;
 use Box\Mod\Support\Repository\KbArticleCategoryRepository;
 use Box\Mod\Support\Repository\KbArticleRepository;
-use Box\Mod\Support\Repository\HelpdeskRepository;
 use Box\Mod\Support\Service;
 use Doctrine\ORM\EntityManagerInterface;
 

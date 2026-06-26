@@ -50,8 +50,6 @@ class Client extends \FOSSBilling\Api\AbstractApi
      * @optional string $state - country state
      * @optional string $phone - Phone number
      * @optional string $phone_cc - Phone country code
-     * @optional string $document_type - Related document type, ie: passport, driving license
-     * @optional string $document_nr - Related document number, ie: passport number: LC45698122
      * @optional string $notes - Notes about client. Visible for admin only
      * @optional string $lang - language option
      * @optional string $custom_1 - Custom field 1

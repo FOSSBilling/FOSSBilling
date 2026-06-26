@@ -233,8 +233,6 @@ test('update returns true', function (): void {
         'address_2' => 'Utah',
         'phone_cc' => '+1',
         'phone' => '555-345-345',
-        'document_type' => 'doc',
-        'document_nr' => '1',
         'notes' => 'none',
         'country' => 'US',
         'postcode' => 'IL-11123',

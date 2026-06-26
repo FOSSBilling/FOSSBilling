@@ -128,8 +128,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $state - country state
      * @optional string $phone - Phone number
      * @optional string $phone_cc - Phone country code
-     * @optional string $document_type - Related document type, ie: passport, driving license
-     * @optional string $document_nr - Related document number, ie: passport number: LC45698122
      * @optional string $notes - Notes about client. Visible for admin only
      * @optional string $lang - Client language
      * @optional string $custom_1 - Custom field 1
@@ -223,8 +221,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $state - country state
      * @optional string $phone - Phone number
      * @optional string $phone_cc - Phone country code
-     * @optional string $document_type - Related document type, ie: passport, driving license
-     * @optional string $document_nr - Related document number, ie: passport number: LC45698122
      * @optional string $lang - Client language
      * @optional string $notes - Notes about client. Visible for admin only
      * @optional string $custom_1 - Custom field 1
@@ -294,8 +290,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $allowedFields = [
             'email', 'first_name', 'last_name', 'aid', 'gender', 'birthday',
-            'company', 'company_vat', 'address_1', 'address_2', 'document_type',
-            'document_nr', 'notes', 'country', 'postcode', 'state', 'city',
+            'company', 'company_vat', 'address_1', 'address_2',
+            'notes', 'country', 'postcode', 'state', 'city',
             'status', 'email_approved', 'tax_exempt', 'created_at',
             'custom_1', 'custom_2', 'custom_3', 'custom_4', 'custom_5',
             'custom_6', 'custom_7', 'custom_8', 'custom_9', 'custom_10',

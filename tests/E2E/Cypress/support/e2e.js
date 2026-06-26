@@ -78,7 +78,6 @@ Cypress.Commands.add('fillClientSignupForm', (client) => {
     postcode: client.postcode || '12345',
     phone_cc: client.phone_cc || '1',
     phone: client.phone || '5551234567',
-    document_nr: client.document_nr || 'AB123456',
     password: client.password,
     password_confirm: client.password,
   };
