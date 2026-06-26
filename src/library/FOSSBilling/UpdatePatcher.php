@@ -636,7 +636,7 @@ class UpdatePatcher implements InjectionAwareInterface
             $ext_service = $this->di['mod_service']('extension');
             if ($ext_service->isExtensionActive('mod', 'kb')) {
                 $support_ext_config = $ext_service->getConfig('mod_support');
-                $support_ext_config['kb_enable'] = 'on';
+                $support_ext_config['kb_enable'] = true;
                 $ext_service->setConfig($support_ext_config);
             }
 
@@ -763,17 +763,11 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         // Drop updated_at column from activity tables
         // Activity logs are never meant to be updated, only created
-        $q = 'ALTER TABLE `activity_admin_history` DROP COLUMN `updated_at`;';
-        $this->executeSql($q);
-
-        $q = 'ALTER TABLE `activity_client_email` DROP COLUMN `updated_at`;';
-        $this->executeSql($q);
-
-        $q = 'ALTER TABLE `activity_client_history` DROP COLUMN `updated_at`;';
-        $this->executeSql($q);
-
-        $q = 'ALTER TABLE `activity_system` DROP COLUMN `updated_at`;';
-        $this->executeSql($q);
+        foreach (['activity_admin_history', 'activity_client_email', 'activity_client_history', 'activity_system'] as $table) {
+            if ($this->tableHasColumn($table, 'updated_at')) {
+                $this->executeSql(sprintf('ALTER TABLE `%s` DROP COLUMN `updated_at`;', $this->quoteIdentifier($table)));
+            }
+        }
     }
 
     private function patch46(): void
@@ -1505,7 +1499,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $expires = $this->computeInvoiceHashExpiration();
         $rows = $this->fetchAll(
             "SELECT id FROM invoice WHERE hash IS NOT NULL
-               AND (LENGTH(hash) < 30 OR LENGTH(hash) > 60 OR BINARY hash NOT REGEXP '^[a-f0-9]+$')"
+               AND (LENGTH(hash) < 30 OR LENGTH(hash) > 60 OR CONVERT(hash USING utf8mb4) COLLATE utf8mb4_bin NOT REGEXP '^[a-f0-9]+$')"
         );
         foreach ($rows as $row) {
             $this->executeSql(
@@ -1880,7 +1874,7 @@ class UpdatePatcher implements InjectionAwareInterface
         // Backfill hashes NULLed by the original revision of patch67.
         $expires = $this->computeInvoiceHashExpiration();
         $rows = $this->fetchAll(
-            "SELECT id FROM invoice WHERE hash IS NULL OR LENGTH(hash) < 30 OR LENGTH(hash) > 60 OR BINARY hash NOT REGEXP '^[a-f0-9]+$'"
+            "SELECT id FROM invoice WHERE hash IS NULL OR LENGTH(hash) < 30 OR LENGTH(hash) > 60 OR CONVERT(hash USING utf8mb4) COLLATE utf8mb4_bin NOT REGEXP '^[a-f0-9]+$'"
         );
         foreach ($rows as $row) {
             $this->executeSql(

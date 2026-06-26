@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 'datepickers');
   }
 
-  if (document.querySelector('.js-locale-selector, .autocomplete-selector, .canned_ticket_response')) {
+  if (document.querySelector('.js-locale-selector, .autocomplete-selector, .canned_response_select')) {
     loadAdminFeature(async () => {
       const { default: initTomSelectControls } = await import('./js/tomselect');
       initTomSelectControls();

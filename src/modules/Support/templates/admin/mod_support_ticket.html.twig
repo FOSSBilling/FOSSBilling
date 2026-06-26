@@ -145,7 +145,9 @@
                                     <span class="ms-auto text-muted">{{ message.created_at|format_datetime }}</span>
                                 </div>
                                 <div class="card-body" style="display:{{ loop.last or loop.index + 1 == ticket.messages|length ? 'block' : 'none' }};">
-                                    {{ (message.content ?? '')|markdown_to_html }}
+                                    <article class="markdown-body bg-transparent text-reset">
+                                        {{ (message.content ?? '')|markdown_to_html }}
+                                    </article>
                                 </div>
                             </div>
                             {% endfor %}
@@ -408,4 +410,7 @@
 </script>
 {% endblock %}
 
-{% block head %}{{ wysiwyg('.editor-textarea') }}{% endblock %}
+{% block head %}
+    {{ 'css/markdown.css' | public_asset_url | stylesheet_tag }}
+    {{ wysiwyg('.editor-textarea') }}
+{% endblock %}

@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Support\Api;
 
+use Box\Mod\Support\Entity\KbArticle;
+use Box\Mod\Support\Entity\KbArticleCategory;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -38,8 +40,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
         $this->getDi()['rate_limiter']->consumeOrThrow('guest_ticket_create', (string) $this->getIp());
 
-        // Sanitize message to prevent XSS attacks
-        $data['content'] = \FOSSBilling\Tools::sanitizeContent($content, true);
+        $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($content);
 
         return $this->getService()->ticketCreateForGuest($data);
     }
@@ -82,8 +83,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\InformationException('Message cannot be empty');
         }
 
-        // Sanitize message to prevent XSS attacks
-        $message = \FOSSBilling\Tools::sanitizeContent($message, true);
+        $message = \FOSSBilling\Tools::sanitizeMarkdownContent($message);
 
         return $this->getService()->ticketReply($guestTicket, new \Model_Guest(), $message);
     }
@@ -107,7 +107,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      */
     public function helpdesk_get_pairs(): array
     {
-        return $this->getService()->helpdeskGetPairs();
+        return $this->getService()->getHelpdeskRepository()->getPairs();
     }
 
     /*
@@ -122,22 +122,38 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
+     * Get whether the knowledge base suggestions are enabled in the specified area.
+     */
+    public function kb_suggestions_enabled(array $data): bool
+    {
+        return $this->getService()->kbSuggestionsEnabled($data['area'] ?? '');
+    }
+
+    /**
+     * Get whether public knowledge base article view counts are visible.
+     */
+    public function kb_article_views_enabled(): bool
+    {
+        return $this->getService()->kbArticleViewsEnabled();
+    }
+
+    /**
      * Get paginated list of knowledge base articles.
      * Returns only active articles.
      */
     public function kb_article_get_list(array $data): array
     {
+        $this->assertKbEnabled();
+
         $search = $data['search'] ?? null;
         $cat = $data['kb_article_category_id'] ?? null;
 
-        $pager = $this->getService()->kbSearchArticles('active', $search, $cat, PaginationOptions::fromArray($data));
+        /** @var \Box\Mod\Support\Repository\KbArticleRepository $repo */
+        $repo = $this->getService()->getKbArticleRepository();
 
-        foreach ($pager['list'] as $key => $item) {
-            $article = $this->getDi()['db']->getExistingModelById('SupportKbArticle', $item['id'], 'KB Article not found');
-            $pager['list'][$key] = $this->getService()->kbToApiArray($article);
-        }
+        $qb = $repo->getSearchQueryBuilder(KbArticle::ACTIVE, $search, $cat);
 
-        return $pager;
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data), $this->getIdentity(), false, $this->getService()->kbArticleViewsEnabled());
     }
 
     /**
@@ -145,6 +161,8 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      */
     public function kb_article_get(array $data): array
     {
+        $this->assertKbEnabled();
+
         if (!isset($data['id']) && !isset($data['slug'])) {
             throw new \FOSSBilling\InformationException('ID or slug is missing');
         }
@@ -152,19 +170,20 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $id = $data['id'] ?? null;
         $slug = $data['slug'] ?? null;
 
-        $model = false;
-        if ($id) {
-            $model = $this->getService()->kbFindActiveArticleById((int) $id);
-        } else {
-            $model = $this->getService()->kbFindActiveArticleBySlug($slug);
-        }
+        /** @var \Box\Mod\Support\Repository\KbArticleRepository $repo */
+        $repo = $this->getService()->getKbArticleRepository();
 
-        if (!$model instanceof \Model_SupportKbArticle) {
+        $article = $id
+            ? $repo->findOneActiveById((int) $id)
+            : $repo->findOneActiveBySlug($slug);
+
+        if (!$article instanceof KbArticle) {
             throw new \FOSSBilling\InformationException('Article item not found');
         }
-        $this->getService()->kbHitView($model);
 
-        return $this->getService()->kbToApiArray($model, true, $this->getIdentity());
+        $repo->incrementViews($article);
+
+        return $article->toApiArray($this->getIdentity(), includeContent: true, includeViews: $this->getService()->kbArticleViewsEnabled());
     }
 
     /**
@@ -172,27 +191,17 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      */
     public function kb_category_get_list(array $data): array
     {
-        $data['article_status'] = \Model_SupportKbArticle::ACTIVE;
-        [$query, $bindings] = $this->getService()->kbCategoryGetSearchQuery($data);
+        $this->assertKbEnabled();
 
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($query, $bindings, PaginationOptions::fromArray($data));
-
+        $data['article_status'] = KbArticle::ACTIVE;
         $q = $data['q'] ?? null;
 
-        foreach ($pager['list'] as $key => $item) {
-            $category = $this->getDi()['db']->getExistingModelById('SupportKbArticleCategory', $item['id'], 'KB Article not found');
-            $pager['list'][$key] = $this->getService()->kbCategoryToApiArray($category, $this->getIdentity(), $q);
-        }
+        /** @var \Box\Mod\Support\Repository\KbArticleCategoryRepository $repo */
+        $repo = $this->getService()->getKbArticleCategoryRepository();
 
-        return $pager;
-    }
+        $qb = $repo->getSearchQueryBuilder($data);
 
-    /**
-     * Get knowledge base categories id, title pairs.
-     */
-    public function kb_category_get_pairs(array $data): array
-    {
-        return $this->getService()->kbCategoryGetPairs();
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data), $this->getIdentity(), $q, $this->getService()->kbArticleViewsEnabled());
     }
 
     /**
@@ -200,6 +209,8 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      */
     public function kb_category_get(array $data): array
     {
+        $this->assertKbEnabled();
+
         if (!isset($data['id']) && !isset($data['slug'])) {
             throw new \FOSSBilling\InformationException('Category ID or slug is missing');
         }
@@ -207,17 +218,24 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $id = $data['id'] ?? null;
         $slug = $data['slug'] ?? null;
 
-        $model = false;
-        if ($id) {
-            $model = $this->getService()->kbFindCategoryById((int) $id);
-        } else {
-            $model = $this->getService()->kbFindCategoryBySlug($slug);
-        }
+        /** @var \Box\Mod\Support\Repository\KbArticleCategoryRepository $repo */
+        $repo = $this->getService()->getKbArticleCategoryRepository();
 
-        if (!$model instanceof \Model_SupportKbArticleCategory) {
+        $cat = $id
+            ? $repo->find((int) $id)
+            : $repo->findOneBySlug($slug);
+
+        if (!$cat instanceof KbArticleCategory) {
             throw new \FOSSBilling\InformationException('Knowledge Base category not found');
         }
 
-        return $this->getService()->kbCategoryToApiArray($model, $this->getIdentity());
+        return $cat->toApiArray($this->getIdentity(), includeArticleViews: $this->getService()->kbArticleViewsEnabled());
+    }
+
+    private function assertKbEnabled(): void
+    {
+        if (!$this->getService()->kbEnabled()) {
+            throw new \FOSSBilling\InformationException('Knowledge Base is disabled');
+        }
     }
 }

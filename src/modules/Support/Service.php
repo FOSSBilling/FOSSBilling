@@ -12,21 +12,66 @@ declare(strict_types=1);
 
 namespace Box\Mod\Support;
 
+use Box\Mod\Support\Entity\CannedResponse;
+use Box\Mod\Support\Entity\CannedResponseCategory;
+use Box\Mod\Support\Entity\Helpdesk;
+use Box\Mod\Support\Entity\KbArticle;
+use Box\Mod\Support\Entity\KbArticleCategory;
+use Box\Mod\Support\Repository\CannedResponseCategoryRepository;
+use Box\Mod\Support\Repository\CannedResponseRepository;
+use Box\Mod\Support\Repository\HelpdeskRepository;
+use Box\Mod\Support\Repository\KbArticleCategoryRepository;
+use Box\Mod\Support\Repository\KbArticleRepository;
 use FOSSBilling\InformationException;
-use FOSSBilling\PaginationOptions;
+use FOSSBilling\Tools;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    protected KbArticleRepository $kbArticleRepository;
+    protected KbArticleCategoryRepository $kbArticleCategoryRepository;
+    protected CannedResponseRepository $cannedResponseRepository;
+    protected CannedResponseCategoryRepository $cannedResponseCategoryRepository;
+    protected HelpdeskRepository $helpdeskRepository;
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        $this->kbArticleRepository = $this->di['em']->getRepository(KbArticle::class);
+        $this->kbArticleCategoryRepository = $this->di['em']->getRepository(KbArticleCategory::class);
+        $this->cannedResponseRepository = $this->di['em']->getRepository(CannedResponse::class);
+        $this->cannedResponseCategoryRepository = $this->di['em']->getRepository(CannedResponseCategory::class);
+        $this->helpdeskRepository = $this->di['em']->getRepository(Helpdesk::class);
     }
 
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    public function getKbArticleRepository(): KbArticleRepository
+    {
+        return $this->kbArticleRepository;
+    }
+
+    public function getKbArticleCategoryRepository(): KbArticleCategoryRepository
+    {
+        return $this->kbArticleCategoryRepository;
+    }
+
+    public function getCannedResponseRepository(): CannedResponseRepository
+    {
+        return $this->cannedResponseRepository;
+    }
+
+    public function getCannedResponseCategoryRepository(): CannedResponseCategoryRepository
+    {
+        return $this->cannedResponseCategoryRepository;
+    }
+
+    public function getHelpdeskRepository(): HelpdeskRepository
+    {
+        return $this->helpdeskRepository;
     }
 
     public function getModulePermissions(): array
@@ -463,9 +508,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             return true;
         }
 
-        $helpdesk = $this->di['db']->getExistingModelById('SupportHelpdesk', $model->support_helpdesk_id);
+        $helpdesk = $this->getHelpdeskRepository()->find((int) $model->support_helpdesk_id);
+        if (!$helpdesk instanceof Helpdesk) {
+            throw new \FOSSBilling\Exception('Helpdesk invalid');
+        }
 
-        return (bool) $helpdesk->can_reopen;
+        return $helpdesk->canReopen();
     }
 
     /**
@@ -530,13 +578,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function toApiArray(\Model_SupportTicket $model, bool $deep = true, \Model_Admin|\Model_Client|null $identity = null): array
     {
         $firstSupportTicketMessage = $this->di['db']->findOne('SupportTicketMessage', 'support_ticket_id = :support_ticket_id ORDER by id ASC LIMIT 1', [':support_ticket_id' => $model->id]);
-        $supportHelpdesk = $model->support_helpdesk_id ? $this->di['db']->load('SupportHelpdesk', $model->support_helpdesk_id) : null;
+        $helpdesk = $model->support_helpdesk_id ? $this->getHelpdeskRepository()->find((int) $model->support_helpdesk_id) : null;
 
         $data = $this->ticketToApiArray($this->di['db']->toArray($model), $identity);
         $data['replies'] = $this->messageGetRepliesCount($model);
         $data['first'] = $firstSupportTicketMessage instanceof \Model_SupportTicketMessage ? $this->messageToApiArray($firstSupportTicketMessage, true, $identity) : null;
-        $data['helpdesk'] = $supportHelpdesk instanceof \Model_SupportHelpdesk ? $this->helpdeskToApiArray($supportHelpdesk, $identity) : null;
+        $data['helpdesk'] = $helpdesk instanceof Helpdesk ? $helpdesk->toApiArray($identity) : null;
         $data['author'] = $this->getTicketAuthor($model, $identity);
+
         // @deprecated 0.9.0 Use author instead.
         $data['client'] = $this->getClientApiArrayForTicket($model, $identity);
 
@@ -656,10 +705,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $helpdesks = [];
         if (!empty($helpdeskIds)) {
-            $placeholders = implode(',', array_fill(0, count($helpdeskIds), '?'));
-            $helpdeskModels = $this->di['db']->find('SupportHelpdesk', "id IN ($placeholders)", $helpdeskIds);
+            $helpdeskModels = $this->getHelpdeskRepository()->findBy(['id' => $helpdeskIds]);
             foreach ($helpdeskModels as $helpdesk) {
-                $helpdesks[$helpdesk->id] = $helpdesk;
+                $helpdesks[$helpdesk->getId()] = $helpdesk;
             }
         }
 
@@ -681,7 +729,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $data['first'] = isset($firstMessages[$ticket['id']]) ? $this->messageToApiArray($firstMessages[$ticket['id']], true, $identity) : null;
 
             $helpdesk = $helpdesks[$ticket['support_helpdesk_id']] ?? null;
-            $data['helpdesk'] = $helpdesk ? $this->helpdeskToApiArray($helpdesk, $identity) : null;
+            $data['helpdesk'] = $helpdesk instanceof Helpdesk ? $helpdesk->toApiArray($identity) : null;
 
             if (empty($ticket['client_id']) && !empty($ticket['access_hash'])) {
                 $data['author'] = [
@@ -849,61 +897,19 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $data;
     }
 
-    public function helpdeskGetSearchQuery(array $data): array
+    public function helpdeskRm(Helpdesk $model): bool
     {
-        $query = 'SELECT * FROM support_helpdesk';
+        $id = $model->getId();
 
-        $search = $data['search'] ?? null;
-
-        $where = [];
-        $bindings = [];
-
-        if ($search) {
-            $search = '%' . $search . '%';
-            $where[] = '(name LIKE :name OR email LIKE :email OR signature LIKE :signature)';
-            $bindings[':name'] = $search;
-            $bindings[':email'] = $search;
-            $bindings[':signature'] = $search;
-        }
-
-        if (!empty($where)) {
-            $query = $query . ' WHERE ' . implode(' AND ', $where);
-        }
-        $query .= ' ORDER BY id DESC';
-
-        return [$query, $bindings];
-    }
-
-    public function helpdeskGetPairs(): array
-    {
-        return $this->di['db']->getAssoc('SELECT id, name FROM support_helpdesk');
-    }
-
-    public function helpdeskRm(\Model_SupportHelpdesk $model): bool
-    {
-        $id = $model->id;
-
-        $tickets = $this->di['db']->find('SupportTicket', 'support_helpdesk_id = :support_helpdesk_id', [':support_helpdesk_id' => $model->id]);
-        if (\FOSSBilling\Tools::safeCount($tickets) > 0) {
+        if ($id !== null && $this->getHelpdeskRepository()->countTickets($id) > 0) {
             throw new InformationException('Cannot remove helpdesk which has tickets');
         }
-        $this->di['db']->trash($model);
+
+        $this->di['em']->remove($model);
+        $this->di['em']->flush();
         $this->di['logger']->info('Deleted helpdesk #%s', $id);
 
         return true;
-    }
-
-    public function helpdeskToApiArray(\Model_SupportHelpdesk $model, \Model_Admin|\Model_Client|null $identity = null): array
-    {
-        if ($identity instanceof \Model_Admin) {
-            return $this->di['db']->toArray($model);
-        }
-
-        return [
-            'id' => $model->id,
-            'name' => $model->name,
-            'can_reopen' => (bool) $model->can_reopen,
-        ];
     }
 
     public function messageGetTicketMessages(\Model_SupportTicket $model): array
@@ -1045,7 +1051,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $msgId;
     }
 
-    public function ticketCreateForAdmin(\Model_Client $client, \Model_SupportHelpdesk $helpdesk, array $data, \Model_Admin $identity): int
+    public function ticketCreateForAdmin(\Model_Client $client, Helpdesk $helpdesk, array $data, \Model_Admin $identity): int
     {
         $status = $data['status'] ?? \Model_SupportTicket::ONHOLD;
 
@@ -1055,7 +1061,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $ticket->client_id = $client->id;
         $ticket->status = $status;
         $ticket->subject = $data['subject'];
-        $ticket->support_helpdesk_id = $helpdesk->id;
+        $ticket->support_helpdesk_id = $helpdesk->getId();
         $ticket->created_at = date('Y-m-d H:i:s');
         $ticket->updated_at = date('Y-m-d H:i:s');
         $ticketId = $this->di['db']->store($ticket);
@@ -1102,11 +1108,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $message = $altered['content'] ?? $altered['message'] ?? null;
         }
 
-        $helpdesk = isset($data['support_helpdesk_id']) ? $this->di['db']->getExistingModelById('SupportHelpdesk', $data['support_helpdesk_id'], 'Helpdesk invalid') : $this->getDefaultHelpdesk();
+        $helpdesk = isset($data['support_helpdesk_id'])
+            ? $this->getHelpdeskRepository()->find((int) $data['support_helpdesk_id'])
+            : $this->getHelpdeskRepository()->getDefault();
+
+        if (!$helpdesk instanceof Helpdesk) {
+            throw new \FOSSBilling\Exception('Helpdesk invalid');
+        }
 
         $ticket = $this->di['db']->dispense('SupportTicket');
         $ticket->access_hash = bin2hex(random_bytes(random_int(15, 30)));
-        $ticket->support_helpdesk_id = $helpdesk->id;
+        $ticket->support_helpdesk_id = $helpdesk->getId();
         $ticket->author_name = $data['name'];
         $ticket->author_email = $data['email'];
         $ticket->subject = $subject;
@@ -1128,24 +1140,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['logger']->info('"%s" opened guest ticket "%s"', $ticket->author_email, $ticketId);
 
         return $ticket->access_hash;
-    }
-
-    private function getDefaultHelpdesk(): \Model_SupportHelpdesk
-    {
-        $helpdesk = $this->di['db']->findOne('SupportHelpdesk', 'ORDER BY id ASC LIMIT 1');
-        if ($helpdesk instanceof \Model_SupportHelpdesk) {
-            return $helpdesk;
-        }
-
-        $helpdesk = $this->di['db']->dispense('SupportHelpdesk');
-        $helpdesk->name = 'General';
-        $helpdesk->close_after = 24;
-        $helpdesk->can_reopen = 0;
-        $helpdesk->created_at = date('Y-m-d H:i:s');
-        $helpdesk->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($helpdesk);
-
-        return $helpdesk;
     }
 
     public function guestTicketsEnabled(): bool
@@ -1177,7 +1171,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function ticketCreateForClient(\Model_Client $client, \Model_SupportHelpdesk $helpdesk, array $data): int
+    public function ticketCreateForClient(\Model_Client $client, Helpdesk $helpdesk, array $data): int
     {
         SupportTicketValidator::validateTicketCreation($data);
 
@@ -1238,7 +1232,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $ticket = $this->di['db']->dispense('SupportTicket');
         $ticket->client_id = $client->id;
         $ticket->subject = $data['subject'];
-        $ticket->support_helpdesk_id = $helpdesk->id;
+        $ticket->support_helpdesk_id = $helpdesk->getId();
         $ticket->created_at = date('Y-m-d H:i:s');
         $ticket->updated_at = date('Y-m-d H:i:s');
 
@@ -1261,7 +1255,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             && isset($config['autorespond_message_id'])
             && !empty($config['autorespond_message_id'])
         ) {
-            $this->cannedReply($ticket, $config['autorespond_message_id']);
+            $this->sendAutoresponderCannedReply($ticket, $config['autorespond_message_id']);
         }
 
         $this->di['logger']->info('Submitted new ticket "%s"', $ticketId);
@@ -1269,18 +1263,27 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return (int) $ticketId;
     }
 
-    private function cannedReply(\Model_SupportTicket $ticket, $cannedId): void
+    private function sendAutoresponderCannedReply(\Model_SupportTicket $ticket, $cannedId): void
     {
         try {
-            $cannedObj = $this->di['db']->getExistingModelById('SupportPr', $cannedId, 'Canned reply not found');
-            $canned = $this->cannedToApiArray($cannedObj);
+            $cannedResponse = $this->getCannedResponseRepository()->find((int) $cannedId);
+
+            if (!$cannedResponse instanceof CannedResponse) {
+                $this->di['logger']->warning('Autoresponder: canned response #%s not found, skipping reply for ticket #%s', $cannedId, $ticket->id);
+
+                return;
+            }
+
+            $canned = $cannedResponse->toApiArray();
+
             $staffService = $this->di['mod_service']('staff');
             $admin = $staffService->getCronAdmin();
+
             if (isset($canned['content']) && $admin instanceof \Model_Admin) {
                 $this->ticketReply($ticket, $admin, $canned['content']);
             }
         } catch (\Exception $e) {
-            $this->di['logger']->error($e->getMessage());
+            $this->di['logger']->error('Autoresponder canned reply failed: %s', $e->getMessage());
         }
     }
 
@@ -1316,190 +1319,150 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $guestTicket;
     }
 
-    public function helpdeskUpdate(\Model_SupportHelpdesk $model, array $data): bool
+    public function helpdeskUpdate(Helpdesk $model, array $data): bool
     {
-        $model->name = $data['name'] ?? $model->name;
-        $model->email = $data['email'] ?? $model->email;
-        $model->can_reopen = $data['can_reopen'] ?? $model->can_reopen;
-        $model->close_after = $data['close_after'] ?? $model->close_after;
-        $model->signature = $data['signature'] ?? $model->signature;
-        $model->updated_at = date('Y-m-d H:i:s');
-        $id = $this->di['db']->store($model);
+        if (array_key_exists('name', $data)) {
+            $model->setName($data['name']);
+        }
+        if (array_key_exists('email', $data)) {
+            $model->setEmail($data['email']);
+        }
+        if (array_key_exists('can_reopen', $data)) {
+            $model->setCanReopen($data['can_reopen']);
+        }
+        if (array_key_exists('close_after', $data)) {
+            $model->setCloseAfter($data['close_after']);
+        }
+        if (array_key_exists('signature', $data)) {
+            $model->setSignature($data['signature']);
+        }
 
-        $this->di['logger']->info('Updated helpdesk #%s', $id);
+        $this->di['em']->flush();
+
+        $this->di['logger']->info('Updated helpdesk #%s', $model->getId());
 
         return true;
     }
 
     public function helpdeskCreate(array $data): int
     {
-        $model = $this->di['db']->dispense('SupportHelpdesk');
-        $model->name = $data['name'];
-        $model->email = $data['email'] ?? null;
-        $model->can_reopen = $data['can_reopen'] ?? null;
-        $model->close_after = $data['close_after'] ?? null;
-        $model->signature = $data['signature'] ?? null;
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $id = $this->di['db']->store($model);
+        $model = (new Helpdesk())
+            ->setName($data['name'])
+            ->setEmail($data['email'] ?? null)
+            ->setCanReopen($data['can_reopen'] ?? null)
+            ->setCloseAfter($data['close_after'] ?? null)
+            ->setSignature($data['signature'] ?? null);
+
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
+
+        $id = (int) $model->getId();
 
         $this->di['logger']->info('Created helpdesk #%s', $id);
 
         return $id;
     }
 
-    public function cannedGetSearchQuery(array $data): array
+    public function cannedRm(CannedResponse $model): bool
     {
-        $query = 'SELECT sp.* FROM support_pr sp
-                LEFT JOIN support_pr_category spc
-                ON spc.id = sp.support_pr_category_id';
+        $id = $model->getId();
 
-        $search = $data['search'] ?? null;
-        $id = $data['id'] ?? null;
-        $categoryId = $data['category_id'] ?? null;
-
-        $where = [];
-        $bindings = [];
-
-        if ($id !== null && $id !== '') {
-            $where[] = 'sp.id = :id';
-            $bindings[':id'] = (int) $id;
-        }
-
-        if ($search) {
-            $search = '%' . $search . '%';
-            $where[] = '(sp.title LIKE :title OR sp.content LIKE :content OR spc.title LIKE :category_title)';
-            $bindings[':title'] = $search;
-            $bindings[':content'] = $search;
-            $bindings[':category_title'] = $search;
-        }
-
-        if ($categoryId !== null && $categoryId !== '') {
-            $where[] = 'sp.support_pr_category_id = :category_id';
-            $bindings[':category_id'] = (int) $categoryId;
-        }
-
-        if (!empty($where)) {
-            $query = $query . ' WHERE ' . implode(' AND ', $where);
-        }
-
-        $query .= ' ORDER BY sp.support_pr_category_id ASC';
-
-        return [$query, $bindings];
-    }
-
-    /**
-     * @return non-empty-array[]
-     */
-    public function cannedGetGroupedPairs(): array
-    {
-        $query = 'SELECT sp.title as r_title, spc.title as c_title FROM support_pr sp
-                LEFT JOIN support_pr_category spc
-                ON spc.id = sp.support_pr_category_id';
-
-        $data = $this->di['db']->getAll($query);
-        $res = [];
-        foreach ($data as $r) {
-            $res[$r['c_title']][$r['id']] = $r['r_title'];
-        }
-
-        return $res;
-    }
-
-    public function cannedRm(\Model_SupportPr $model): bool
-    {
-        $id = $model->id;
-
-        $this->di['db']->trash($model);
+        $this->di['em']->remove($model);
+        $this->di['em']->flush();
 
         $this->di['logger']->info('Deleted canned response #%s', $id);
 
         return true;
     }
 
-    public function cannedToApiArray(\Model_SupportPr $model): array
+    public function cannedCategoryRm(CannedResponseCategory $model): bool
     {
-        $result = $this->di['db']->toArray($model);
-        $category = $this->di['db']->load('SupportPrCategory', $model->support_pr_category_id);
-        if ($category instanceof \Model_SupportPrCategory) {
-            $result['category'] = [
-                'id' => $category->id,
-                'title' => $category->title,
-            ];
-        } else {
-            $result['category'] = [];
+        $id = $model->getId();
+        $responsesCount = $id !== null ? $this->getCannedResponseRepository()->countByCategoryId($id) : 0;
+
+        if ($responsesCount > 0) {
+            throw new InformationException('Cannot remove category which has canned responses');
         }
 
-        return $result;
-    }
-
-    public function cannedCategoryGetPairs(): array
-    {
-        return $this->di['db']->getAssoc('SELECT id, title FROM support_pr_category');
-    }
-
-    public function cannedCategoryRm(\Model_SupportPrCategory $model): bool
-    {
-        $id = $model->id;
-        $this->di['db']->trash($model);
+        $this->di['em']->remove($model);
+        $this->di['em']->flush();
         $this->di['logger']->info('Deleted canned response category #%s', $id);
 
         return true;
     }
 
-    public function cannedCategoryToApiArray(\Model_SupportPrCategory $model): array
-    {
-        return $this->di['db']->toArray($model);
-    }
-
     public function cannedCreate(string $title, int $categoryId, ?string $content = null): int
     {
-        $model = $this->di['db']->dispense('SupportPr');
-        $model->support_pr_category_id = $categoryId;
-        $model->title = $title;
-        $model->content = $content;
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $id = $this->di['db']->store($model);
+        $category = $this->getCannedResponseCategoryRepository()->find($categoryId);
+        if (!$category instanceof CannedResponseCategory) {
+            throw new \FOSSBilling\Exception('Canned category not found');
+        }
+
+        $model = (new CannedResponse())
+            ->setCategory($category)
+            ->setTitle($title)
+            ->setContent($content);
+
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
+
+        $id = (int) $model->getId();
 
         $this->di['logger']->info('Created new canned response #%s', $id);
 
         return $id;
     }
 
-    public function cannedUpdate(\Model_SupportPr $model, array $data): bool
+    public function cannedUpdate(CannedResponse $model, array $data): bool
     {
-        $model->support_pr_category_id = $data['category_id'] ?? $model->support_pr_category_id;
-        $model->title = $data['title'] ?? $model->title;
-        $model->content = $data['content'] ?? $model->content;
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        if (isset($data['category_id'])) {
+            $category = $this->getCannedResponseCategoryRepository()->find((int) $data['category_id']);
+            if (!$category instanceof CannedResponseCategory) {
+                throw new \FOSSBilling\Exception('Canned category not found');
+            }
 
-        $this->di['logger']->info('Updated canned response #%s', $model->id);
+            $model->setCategory($category);
+        }
+
+        if (isset($data['title'])) {
+            $model->setTitle($data['title']);
+        }
+
+        if (array_key_exists('content', $data)) {
+            $model->setContent($data['content']);
+        }
+
+        $this->di['em']->flush();
+
+        $this->di['logger']->info('Updated canned response #%s', $model->getId());
 
         return true;
     }
 
     public function cannedCategoryCreate(string $title): int
     {
-        $model = $this->di['db']->dispense('SupportPrCategory');
-        $model->title = $title;
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $id = $this->di['db']->store($model);
+        $model = (new CannedResponseCategory())
+            ->setTitle($title);
+
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
+
+        $id = (int) $model->getId();
 
         $this->di['logger']->info('Created new canned response category #%s', $id);
 
         return $id;
     }
 
-    public function cannedCategoryUpdate(\Model_SupportPrCategory $model, string $title): bool
+    public function cannedCategoryUpdate(CannedResponseCategory $model, ?string $title = null): bool
     {
-        $model->title = $title;
-        $model->updated_at = date('Y-m-d H:i:s');
-        $id = $this->di['db']->store($model);
+        if (isset($title)) {
+            $model->setTitle($title);
+        }
 
-        $this->di['logger']->info('Updated canned response category #%s', $id);
+        $this->di['em']->flush();
+
+        $this->di['logger']->info('Updated canned response category #%s', $model->getId());
 
         return true;
     }
@@ -1539,124 +1502,66 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $extensionService = $this->di['mod_service']('extension');
         $config = $extensionService->getConfig('mod_support');
 
-        return isset($config['kb_enable']) && $config['kb_enable'] == 'on';
+        return Tools::normalizeBoolean($config['kb_enable'] ?? true, true);
     }
 
-    public function kbSearchArticles(?string $status, ?string $search, ?string $cat, PaginationOptions $pagination): array
+    public function kbArticleViewsEnabled(): bool
     {
-        $filter = [];
+        $extensionService = $this->di['mod_service']('extension');
+        $config = $extensionService->getConfig('mod_support');
 
-        $sql = '
-            SELECT *
-            FROM support_kb_article
-            WHERE 1
-        ';
+        return Tools::normalizeBoolean($config['kb_article_views_enable'] ?? true, true);
+    }
 
-        if ($cat) {
-            $sql .= ' AND kb_article_category_id = :cid';
-            $filter[':cid'] = $cat;
+    public function kbSuggestionsEnabled(string $area): bool
+    {
+        if (!$this->kbEnabled()) {
+            return false;
         }
 
-        if ($status) {
-            $sql .= ' AND status = :status';
-            $filter[':status'] = $status;
+        $key = match ($area) {
+            'contact' => 'kb_suggestions_contact',
+            'ticket' => 'kb_suggestions_ticket',
+            default => null,
+        };
+
+        if ($key === null) {
+            return false;
         }
 
-        if ($search) {
-            $sql .= ' AND (title LIKE :q OR content LIKE :q)';
-            $filter[':q'] = "%$search%";
-        }
+        $extensionService = $this->di['mod_service']('extension');
+        $config = $extensionService->getConfig('mod_support');
 
-        $sql .= ' ORDER BY title ASC';
-
-        return $this->di['pager']->getPaginatedResultSet($sql, $filter, $pagination);
+        return Tools::normalizeBoolean($config[$key] ?? false);
     }
 
-    public function kbFindActiveArticleById(int $id): ?\Model_SupportKbArticle
+    public function kbRm(KbArticle $model): void
     {
-        $bindings = [
-            ':id' => $id,
-            ':status' => \Model_SupportKbArticle::ACTIVE,
-        ];
-
-        return $this->di['db']->findOne('SupportKbArticle', 'id = :id AND status=:status', $bindings);
-    }
-
-    public function kbFindActiveArticleBySlug(string $slug): ?\Model_SupportKbArticle
-    {
-        $bindings = [
-            ':slug' => $slug,
-            ':status' => \Model_SupportKbArticle::ACTIVE,
-        ];
-
-        return $this->di['db']->findOne('SupportKbArticle', 'slug = :slug AND status=:status', $bindings);
-    }
-
-    public function kbFindActive(): array
-    {
-        return $this->di['db']->find('SupportKbArticle', 'status=:status', [':status' => \Model_SupportKbArticle::ACTIVE]);
-    }
-
-    public function kbHitView(\Model_SupportKbArticle $model): void
-    {
-        ++$model->views;
-        $this->di['db']->store($model);
-    }
-
-    public function kbRm(\Model_SupportKbArticle $model): void
-    {
-        $id = $model->id;
-        $this->di['db']->trash($model);
+        $id = $model->getId();
+        $this->di['em']->remove($model);
+        $this->di['em']->flush();
         $this->di['logger']->info('Deleted Knowledge Base article #%s', $id);
-    }
-
-    public function kbToApiArray(\Model_SupportKbArticle $model, $deep = false, $identity = null): array
-    {
-        $data = [
-            'id' => $model->id,
-            'slug' => $model->slug,
-            'title' => $model->title,
-            'views' => $model->views,
-            'created_at' => $model->created_at,
-            'status' => $model->status,
-            'updated_at' => $model->updated_at,
-        ];
-
-        $cat = $this->di['db']->getExistingModelById('SupportKbArticleCategory', $model->kb_article_category_id, 'Knowledge Base category not found');
-        $data['category'] = [
-            'id' => $cat->id,
-            'slug' => $cat->slug,
-            'title' => $cat->title,
-        ];
-
-        if ($deep) {
-            $data['content'] = $model->content;
-        }
-
-        if ($identity instanceof \Model_Admin) {
-            $data['status'] = $model->status;
-            $data['kb_article_category_id'] = $model->kb_article_category_id;
-        }
-
-        return $data;
     }
 
     public function kbCreateArticle(int $articleCategoryId, string $title, ?string $status = null, ?string $content = null): int
     {
-        if (!isset($status)) {
-            $status = \Model_SupportKbArticle::DRAFT;
+        $status = $this->normalizeKbArticleStatus($status ?? KbArticle::DRAFT);
+        $category = $this->getKbArticleCategoryRepository()->find($articleCategoryId);
+        if (!$category instanceof KbArticleCategory) {
+            throw new \FOSSBilling\Exception('Knowledge Base category not found');
         }
 
-        $model = $this->di['db']->dispense('SupportKbArticle');
-        $model->kb_article_category_id = $articleCategoryId;
-        $model->title = $title;
-        $model->slug = $this->di['tools']->slug($title);
-        $model->status = $status;
-        $model->content = $content;
-        $model->updated_at = date('Y-m-d H:i:s');
-        $model->created_at = date('Y-m-d H:i:s');
-        $id = $this->di['db']->store($model);
+        $model = (new KbArticle())
+            ->setCategory($category)
+            ->setTitle($title)
+            ->setSlug($this->di['tools']->slug($title))
+            ->setStatus($status)
+            ->setContent($content);
 
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
+
+        $id = (int) $model->getId();
         $this->di['logger']->info('Created new knowledge base article #%s', $id);
 
         return $id;
@@ -1664,198 +1569,110 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function kbUpdateArticle(int $id, ?int $articleCategoryId = null, ?string $title = null, ?string $slug = null, ?string $status = null, ?string $content = null, ?int $views = null): bool
     {
-        $model = $this->di['db']->findOne('SupportKbArticle', 'id = ?', [$id]);
+        $status = $status !== null ? $this->normalizeKbArticleStatus($status) : null;
+        $model = $this->getKbArticleRepository()->find($id);
 
-        if (!$model instanceof \Model_SupportKbArticle) {
+        if (!$model instanceof KbArticle) {
             throw new \FOSSBilling\Exception('Article not found');
         }
 
         if (isset($articleCategoryId)) {
-            $model->kb_article_category_id = $articleCategoryId;
+            $category = $this->getKbArticleCategoryRepository()->find($articleCategoryId);
+            if (!$category instanceof KbArticleCategory) {
+                throw new \FOSSBilling\Exception('Knowledge Base category not found');
+            }
+
+            $model->setCategory($category);
         }
 
         if (isset($title)) {
-            $model->title = $title;
+            $model->setTitle($title);
         }
 
         if (isset($slug)) {
-            $model->slug = $slug;
+            $model->setSlug($slug);
         }
 
         if (isset($status)) {
-            $model->status = $status;
+            $model->setStatus($status);
         }
 
         if (isset($content)) {
-            $model->content = $content;
+            $model->setContent($content);
         }
 
         if (isset($views)) {
-            $model->views = $views;
+            $model->setViews($views);
         }
-        $model->updated_at = date('Y-m-d H:i:s');
 
-        $this->di['db']->store($model);
+        $this->di['em']->flush();
 
         $this->di['logger']->info('Updated knowledge base article #%s', $id);
 
         return true;
     }
 
-    public function kbCategoryGetSearchQuery(array $data): array
+    private function normalizeKbArticleStatus(string $status): string
     {
-        $sql = '
-        SELECT kac.*
-        FROM support_kb_article_category kac
-        LEFT JOIN support_kb_article ka ON kac.id  = ka.kb_article_category_id';
-
-        $article_status = $data['article_status'] ?? null;
-        $query = $data['q'] ?? null;
-
-        $where = [];
-        $bindings = [];
-        if ($article_status) {
-            $where[] = 'ka.status = :status';
-
-            $bindings[':status'] = $article_status;
+        $status = strtolower(trim($status));
+        if (!in_array($status, [KbArticle::ACTIVE, KbArticle::DRAFT], true)) {
+            throw new \FOSSBilling\Exception('Invalid knowledge base article status: :status', [':status' => $status]);
         }
 
-        if ($query) {
-            $where[] = '(ka.title LIKE :title OR ka.content LIKE :content)';
-
-            $bindings[':title'] = "%$query%";
-            $bindings[':content'] = "%$query%";
-        }
-
-        if (!empty($where)) {
-            $sql = $sql . ' WHERE ' . implode(' AND ', $where);
-        }
-
-        $sql .= ' GROUP BY kac.id ORDER BY kac.title';
-
-        return [$sql, $bindings];
+        return $status;
     }
 
-    public function kbCategoryFindAll(): array
+    public function kbCategoryRm(KbArticleCategory $model): bool
     {
-        $sql = 'SELECT kac.*, a.*
-                FROM support_kb_article_category kac
-                LEFT JOIN support_kb_article ka
-                ON kac.id  = ka.kb_article_category_id
-                ';
-
-        return $this->di['db']->getAll($sql);
-    }
-
-    public function kbCategoryGetPairs(): array
-    {
-        $sql = 'SELECT id, title FROM support_kb_article_category';
-
-        return $this->di['db']->getAssoc($sql);
-    }
-
-    public function kbCategoryRm(\Model_SupportKbArticleCategory $model): bool
-    {
-        $bindings = [
-            ':kb_article_category_id' => $model->id,
-        ];
-
-        $articlesCount = $this->di['db']->getCell('SELECT count(*) as cnt FROM support_kb_article WHERE kb_article_category_id = :kb_article_category_id', $bindings);
+        $id = $model->getId();
+        $articlesCount = $id !== null ? $this->getKbArticleRepository()->countByCategoryId($id) : 0;
 
         if ($articlesCount > 0) {
             throw new InformationException('Cannot remove category which has articles');
         }
 
-        $id = $model->id;
-
-        $this->di['db']->trash($model);
+        $this->di['em']->remove($model);
+        $this->di['em']->flush();
 
         $this->di['logger']->info('Deleted knowledge base category #%s', $id);
 
         return true;
     }
 
-    public function kbCategoryToApiArray(\Model_SupportKbArticleCategory $model, \Model_Admin|\Model_Client|\Model_Guest|null $identity = null, ?string $query = null): array
-    {
-        $data = $this->di['db']->toArray($model);
-
-        $sql = 'kb_article_category_id = :category_id';
-        $bindings = [
-            ':category_id' => $model->id,
-        ];
-
-        if (!$identity instanceof \Model_Admin) {
-            $sql .= " AND status = 'active'";
-        }
-
-        if ($query) {
-            $sql .= ' AND (title LIKE :title OR content LIKE :content)';
-            $query = "%$query%";
-            $bindings[':content'] = $query;
-            $bindings[':title'] = $query;
-        }
-
-        $sql .= ' ORDER BY title';
-
-        $articles = $this->di['db']->find('SupportKbArticle', $sql, $bindings);
-
-        foreach ($articles as $article) {
-            $data['articles'][] = $this->kbToApiArray($article, false, $identity);
-        }
-
-        return $data;
-    }
-
     public function kbCreateCategory(string $title, ?string $description = null): int
     {
-        $model = $this->di['db']->dispense('SupportKbArticleCategory');
-        $model->title = $title;
-        $model->description = $description;
-        $model->slug = $this->di['tools']->slug($title);
-        $model->updated_at = date('Y-m-d H:i:s');
-        $model->created_at = date('Y-m-d H:i:s');
+        $model = (new KbArticleCategory())
+            ->setTitle($title)
+            ->setDescription($description)
+            ->setSlug($this->di['tools']->slug($title));
 
-        $id = $this->di['db']->store($model);
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
 
+        $id = (int) $model->getId();
         $this->di['logger']->info('Created new knowledge base category #%s', $id);
 
         return $id;
     }
 
-    public function kbUpdateCategory(\Model_SupportKbArticleCategory $model, ?string $title = null, ?string $slug = null, ?string $description = null): bool
+    public function kbUpdateCategory(KbArticleCategory $model, ?string $title = null, ?string $slug = null, ?string $description = null): bool
     {
         if (isset($title)) {
-            $model->title = $title;
+            $model->setTitle($title);
         }
 
         if (isset($slug)) {
-            $model->slug = $slug;
+            $model->setSlug($slug);
         }
 
         if (isset($description)) {
-            $model->description = $description;
+            $model->setDescription($description);
         }
 
-        $model->updated_at = date('Y-m-d H:i:s');
+        $this->di['em']->flush();
 
-        $this->di['db']->store($model);
-
-        $this->di['logger']->info('Updated Knowledge Base category #%s', $model->id);
+        $this->di['logger']->info('Updated Knowledge Base category #%s', $model->getId());
 
         return true;
-    }
-
-    public function kbFindCategoryById(int $id): \Model_SupportKbArticleCategory
-    {
-        return $this->di['db']->getExistingModelById('SupportKbArticleCategory', $id, 'Knowledge Base category not found');
-    }
-
-    public function kbFindCategoryBySlug(string $slug): ?\Model_SupportKbArticleCategory
-    {
-        $bindings = [
-            ':slug' => $slug,
-        ];
-
-        return $this->di['db']->findOne('SupportKbArticleCategory', 'slug = :slug', $bindings);
     }
 }

@@ -10,6 +10,9 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Support\Entity\Helpdesk;
+use Box\Mod\Support\Repository\HelpdeskRepository;
+
 use function Tests\Helpers\container;
 
 test('ticket get list', function (): void {
@@ -89,9 +92,13 @@ test('ticket get', function (): void {
 
 test('helpdesk get pairs', function (): void {
     $clientApi = new Box\Mod\Support\Api\Client();
-    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('helpdeskGetPairs')->atLeast()->once()
+    $repoMock = Mockery::mock(HelpdeskRepository::class);
+    $repoMock->shouldReceive('getPairs')->atLeast()->once()
         ->andReturn([0 => 'General']);
+
+    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldReceive('getHelpdeskRepository')->atLeast()->once()
+        ->andReturn($repoMock);
 
     $clientApi->setService($serviceMock);
 
@@ -103,17 +110,16 @@ test('helpdesk get pairs', function (): void {
 test('ticket create', function (): void {
     $clientApi = new Box\Mod\Support\Api\Client();
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $repoMock = Mockery::mock(HelpdeskRepository::class);
+    $repoMock->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn(new Helpdesk());
+    $serviceMock->shouldReceive('getHelpdeskRepository')->atLeast()->once()
+        ->andReturn($repoMock);
     $serviceMock->shouldReceive('ticketCreateForClient')->atLeast()->once()
         ->andReturn(1);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Model_SupportHelpdesk());
-
     $di = container();
-    $di['db'] = $dbMock;
     $clientApi->setDi($di);
 
     $client = new Model_Client();
