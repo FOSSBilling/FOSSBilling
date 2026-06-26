@@ -55,8 +55,8 @@ class AdminGroup implements ApiArrayInterface
             'system_name' => $this->getSystemName(),
             'permissions' => $this->getPermissions(),
             'protected' => $this->isProtected(),
-            'created_at' => $this->getCreatedAt(),
-            'updated_at' => $this->getUpdatedAt(),
+            'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
+            'updated_at' => $this->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];
     }
 

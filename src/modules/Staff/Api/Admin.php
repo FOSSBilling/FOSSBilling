@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Staff\Api;
 
+use Box\Mod\Staff\Entity\AdminGroup;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -206,6 +207,16 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         return true;
     }
 
+    private function getAdminGroupById(int $id): AdminGroup
+    {
+        $group = $this->getService()->getAdminGroupRepository()->findById($id);
+        if (!$group instanceof AdminGroup) {
+            throw new \FOSSBilling\Exception('Group not found');
+        }
+
+        return $group;
+    }
+
     /**
      * Return pairs of staff member groups.
      *
@@ -215,7 +226,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('staff', 'view');
 
-        return $this->getService()->getAdminGroupPair();
+        return $this->getService()->getAdminGroupRepository()->getPairs();
     }
 
     /**
@@ -227,15 +238,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('staff', 'manage_groups');
 
-        [$sql, $params] = $this->getService()->getAdminGroupSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $qb = $this->getService()->getAdminGroupRepository()->getSearchQueryBuilder($data);
 
-        foreach ($pager['list'] as $key => $item) {
-            $model = $this->getDi()['db']->getExistingModelById('AdminGroup', $item['id'], 'Post not found');
-            $pager['list'][$key] = $this->getService()->toAdminGroupApiArray($model, false, $this->getIdentity());
-        }
-
-        return $pager;
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
     }
 
     /**
@@ -250,7 +255,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('staff', 'manage_groups');
 
-        return $this->getService()->createGroup($data['name']);
+        if (isset($data['permissions']) && !is_array($data['permissions'])) {
+            throw new \FOSSBilling\InformationException('Parameter "permissions" must be an array');
+        }
+
+        return $this->getService()->createGroup($data['name'], $data['permissions'] ?? []);
     }
 
     /**
@@ -265,9 +274,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('staff', 'manage_groups');
 
-        $model = $this->getDi()['db']->getExistingModelById('AdminGroup', $data['id'], 'Group not found');
+        $model = $this->getAdminGroupById((int) $data['id']);
 
-        return $this->getService()->toAdminGroupApiArray($model, true, $this->getIdentity());
+        return $model->toApiArray();
     }
 
     /**
@@ -282,7 +291,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('staff', 'manage_groups');
 
-        $model = $this->getDi()['db']->getExistingModelById('AdminGroup', $data['id'], 'Group not found');
+        $model = $this->getAdminGroupById((int) $data['id']);
 
         return $this->getService()->deleteGroup($model);
     }
@@ -301,7 +310,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('staff', 'manage_groups');
 
-        $model = $this->getDi()['db']->getExistingModelById('AdminGroup', $data['id'], 'Group not found');
+        $model = $this->getAdminGroupById((int) $data['id']);
 
         return $this->getService()->updateGroup($model, $data);
     }

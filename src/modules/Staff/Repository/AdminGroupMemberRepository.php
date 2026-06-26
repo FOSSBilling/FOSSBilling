@@ -93,4 +93,17 @@ class AdminGroupMemberRepository extends EntityRepository
             ],
         );
     }
+
+    public function countMembersInGroup(int $groupId): int
+    {
+        return (int) $this->getEntityManager()->getConnection()->fetchOne(
+            'SELECT COUNT(DISTINCT admin_id)
+             FROM (
+                SELECT admin_id FROM admin_group_member WHERE admin_group_id = :group_id
+                UNION
+                SELECT id AS admin_id FROM admin WHERE admin_group_id = :group_id
+             ) members',
+            ['group_id' => $groupId],
+        );
+    }
 }

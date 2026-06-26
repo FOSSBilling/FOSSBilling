@@ -15,6 +15,7 @@ namespace Box\Mod\Staff;
 use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Entity\AdminGroupMember;
 use Box\Mod\Staff\Repository\AdminGroupMemberRepository;
+use Box\Mod\Staff\Repository\AdminGroupRepository;
 use Box\Mod\Support\Entity\Helpdesk;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\PaginationOptions;
@@ -24,14 +25,16 @@ class Service implements InjectionAwareInterface
     private array $permissionCache = [];
     private array $superAdministratorCache = [];
 
-    private ?AdminGroupMemberRepository $adminGroupMemberRepository = null;
+    private AdminGroupRepository $adminGroupRepository;
+    private AdminGroupMemberRepository $adminGroupMemberRepository;
 
     protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
-        $this->adminGroupMemberRepository = $this->di['em']->getRepository(AdminGroupMember::class);
+        $this->adminGroupRepository = $di['em']->getRepository(AdminGroup::class);
+        $this->adminGroupMemberRepository = $di['em']->getRepository(AdminGroupMember::class);
     }
 
     public function getDi(): ?\Pimple\Container
@@ -39,9 +42,20 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    private function getAdminGroupMemberRepository(): AdminGroupMemberRepository
+    public function getAdminGroupRepository(): AdminGroupRepository
+    {
+        return $this->adminGroupRepository;
+    }
+
+    public function getAdminGroupMemberRepository(): AdminGroupMemberRepository
     {
         return $this->adminGroupMemberRepository;
+    }
+
+    private function clearPermissionCache(): void
+    {
+        $this->permissionCache = [];
+        $this->superAdministratorCache = [];
     }
 
     private function getPermissionsFromCache(int|string $memberId): ?array
@@ -245,7 +259,7 @@ class Service implements InjectionAwareInterface
             return $cachedPermissions;
         }
 
-        $permissions = $this->getAdminGroupMemberRepository()->getPermissionsForAdmin((int) $member_id);
+        $permissions = $this->adminGroupMemberRepository->getPermissionsForAdmin((int) $member_id);
 
         $this->permissionCache[(string) $member_id] = $permissions;
 
@@ -257,7 +271,7 @@ class Service implements InjectionAwareInterface
         $cacheKey = (string) $memberId;
 
         if (!array_key_exists($cacheKey, $this->superAdministratorCache)) {
-            $this->superAdministratorCache[$cacheKey] = $this->getAdminGroupMemberRepository()->adminBelongsToSystemGroup((int) $memberId, AdminGroup::SYSTEM_SUPER_ADMIN);
+            $this->superAdministratorCache[$cacheKey] = $this->adminGroupMemberRepository->adminBelongsToSystemGroup((int) $memberId, AdminGroup::SYSTEM_SUPER_ADMIN);
         }
 
         return $this->superAdministratorCache[$cacheKey];
@@ -697,94 +711,69 @@ class Service implements InjectionAwareInterface
         return (int) $newId;
     }
 
-    /**
-     * @return mixed[]
-     */
-    public function getAdminGroupPair(): array
-    {
-        $sql = 'SELECT id, name
-                FROM  admin_group';
-        $rows = $this->di['db']->getAll($sql);
-        $result = [];
-
-        foreach ($rows as $row) {
-            $result[$row['id']] = $row['name'];
-        }
-
-        return $result;
-    }
-
-    public function getAdminGroupSearchQuery($data): array
-    {
-        $sql = 'SELECT *
-                FROM admin_group
-                order by id asc';
-
-        return [$sql, []];
-    }
-
-    public function createGroup($name): int
+    public function createGroup(string $name, array $permissions = []): int
     {
         $this->checkPermissionsAndThrowException('staff', 'manage_groups');
 
-        $model = $this->di['db']->dispense('AdminGroup');
-        $model->name = $name;
+        $group = (new AdminGroup())
+            ->setName($name)
+            ->setPermissions($permissions);
 
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $groupId = $this->di['db']->store($model);
+        $this->di['em']->persist($group);
+        $this->di['em']->flush();
 
-        $this->di['logger']->info('Created new staff group %s', $groupId);
+        $this->di['logger']->info('Created new staff group %s', $group->getId());
 
-        return (int) $groupId;
+        return (int) $group->getId();
     }
 
-    public function toAdminGroupApiArray(\Model_AdminGroup $model, $deep = false, $identity = null): array
-    {
-        $data = [];
-        $data['id'] = $model->id;
-        $data['name'] = $model->name;
-        $data['created_at'] = $model->created_at;
-        $data['updated_at'] = $model->updated_at;
-
-        return $data;
-    }
-
-    public function deleteGroup(\Model_AdminGroup $model): bool
+    public function deleteGroup(AdminGroup $model): bool
     {
         $this->checkPermissionsAndThrowException('staff', 'manage_groups');
 
-        $id = $model->id;
-        if ($model->id == 1) {
-            throw new \FOSSBilling\InformationException('Administrators group cannot be removed');
+        $id = $model->getId();
+        if ($model->isProtected()) {
+            throw new \FOSSBilling\InformationException('Protected staff groups cannot be removed');
         }
 
-        $sql = 'SELECT count(1)
-                FROM admin
-                WHERE admin_group_id = :id';
-        $staffMembersInGroup = $this->di['db']->getCell($sql, ['id' => $model->id]);
-        if ($staffMembersInGroup > 0) {
+        if ($this->adminGroupMemberRepository->countMembersInGroup((int) $id) > 0) {
             throw new \FOSSBilling\InformationException('Cannot remove group which has staff members');
         }
 
-        $this->di['db']->trash($model);
+        $this->di['em']->remove($model);
+        $this->di['em']->flush();
+        $this->clearPermissionCache();
 
         $this->di['logger']->info('Deleted staff group %s', $id);
 
         return true;
     }
 
-    public function updateGroup(\Model_AdminGroup $model, $data): bool
+    public function updateGroup(AdminGroup $model, array $data): bool
     {
         $this->checkPermissionsAndThrowException('staff', 'manage_groups');
 
-        if (isset($data['name'])) {
-            $model->name = $data['name'];
+        if ($model->isProtected()) {
+            throw new \FOSSBilling\InformationException('Protected staff groups cannot be modified');
         }
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
 
-        $this->di['logger']->info('Updated staff group %s', $model->id);
+        if (isset($data['name'])) {
+            $model->setName($data['name']);
+        }
+
+        if (array_key_exists('permissions', $data)) {
+            if (!is_array($data['permissions'])) {
+                throw new \FOSSBilling\InformationException('Parameter "permissions" must be an array');
+            }
+
+            $model->setPermissions($data['permissions']);
+        }
+
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
+        $this->clearPermissionCache();
+
+        $this->di['logger']->info('Updated staff group %s', $model->getId());
 
         return true;
     }

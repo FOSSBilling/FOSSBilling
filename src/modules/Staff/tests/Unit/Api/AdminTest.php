@@ -10,6 +10,9 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Staff\Entity\AdminGroup;
+use Box\Mod\Staff\Repository\AdminGroupRepository;
+
 use function Tests\Helpers\container;
 
 function staffAdminIdentity(): Model_Admin
@@ -310,10 +313,15 @@ test('permissions update', function (): void {
 test('group get pairs', function (): void {
     $api = new Box\Mod\Staff\Api\Admin();
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
-    $serviceMock
-    ->shouldReceive('getAdminGroupPair')
+    $groupRepository = Mockery::mock(AdminGroupRepository::class);
+    $groupRepository
+    ->shouldReceive('getPairs')
     ->atLeast()->once()
     ->andReturn([]);
+    $serviceMock
+    ->shouldReceive('getAdminGroupRepository')
+    ->atLeast()->once()
+    ->andReturn($groupRepository);
 
     $api->setService($serviceMock);
     $result = $api->group_get_pairs([]);
@@ -323,16 +331,22 @@ test('group get pairs', function (): void {
 test('group get list', function (): void {
     $api = new Box\Mod\Staff\Api\Admin();
     $data = [];
+    $queryBuilder = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
 
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
-    $serviceMock
-    ->shouldReceive('getAdminGroupSearchQuery')
+    $groupRepository = Mockery::mock(AdminGroupRepository::class);
+    $groupRepository
+    ->shouldReceive('getSearchQueryBuilder')
     ->atLeast()->once()
-    ->andReturn(['sqlString', []]);
+    ->andReturn($queryBuilder);
+    $serviceMock
+    ->shouldReceive('getAdminGroupRepository')
+    ->atLeast()->once()
+    ->andReturn($groupRepository);
 
     $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $pagerMock
-    ->shouldReceive('getPaginatedResultSet')
+    ->shouldReceive('paginateDoctrineQuery')
     ->atLeast()->once()
     ->andReturn(['list' => []]);
 
@@ -366,24 +380,31 @@ test('group create', function (): void {
     expect($result)->toEqual($newGroupId);
 });
 
+test('group create rejects non-array permissions', function (): void {
+    $api = new Box\Mod\Staff\Api\Admin();
+
+    expect(fn () => $api->group_create(['name' => 'Prime Group', 'permissions' => 'nope']))
+        ->toThrow(FOSSBilling\InformationException::class, 'Parameter "permissions" must be an array');
+});
+
 test('group get', function (): void {
     $api = new Box\Mod\Staff\Api\Admin();
     $data['id'] = '1';
+    $group = (new AdminGroup())->setName('Support');
 
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $groupRepository = Mockery::mock(AdminGroupRepository::class);
+    $groupRepository
+    ->shouldReceive('findById')
+    ->atLeast()->once()
+    ->with(1)
+    ->andReturn($group);
     $serviceMock
-    ->shouldReceive('toAdminGroupApiArray')
+    ->shouldReceive('getAdminGroupRepository')
     ->atLeast()->once()
-    ->andReturn([]);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Model_AdminGroup());
+    ->andReturn($groupRepository);
 
     $di = container();
-    $di['db'] = $dbMock;
 
     $api->setIdentity(staffAdminIdentity());
     $api->setDi($di);
@@ -391,26 +412,32 @@ test('group get', function (): void {
 
     $result = $api->group_get($data);
     expect($result)->toBeArray();
+    expect($result['name'])->toBe('Support');
 });
 
 test('group delete', function (): void {
     $api = new Box\Mod\Staff\Api\Admin();
     $data['id'] = '1';
+    $group = new AdminGroup();
 
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $groupRepository = Mockery::mock(AdminGroupRepository::class);
+    $groupRepository
+    ->shouldReceive('findById')
+    ->atLeast()->once()
+    ->with(1)
+    ->andReturn($group);
+    $serviceMock
+    ->shouldReceive('getAdminGroupRepository')
+    ->atLeast()->once()
+    ->andReturn($groupRepository);
     $serviceMock
     ->shouldReceive('deleteGroup')
     ->atLeast()->once()
+    ->with($group)
     ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Model_AdminGroup());
-
     $di = container();
-    $di['db'] = $dbMock;
 
     $api->setIdentity(staffAdminIdentity());
     $api->setDi($di);
@@ -424,21 +451,26 @@ test('group delete', function (): void {
 test('group update', function (): void {
     $api = new Box\Mod\Staff\Api\Admin();
     $data['id'] = '1';
+    $group = new AdminGroup();
 
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $groupRepository = Mockery::mock(AdminGroupRepository::class);
+    $groupRepository
+    ->shouldReceive('findById')
+    ->atLeast()->once()
+    ->with(1)
+    ->andReturn($group);
+    $serviceMock
+    ->shouldReceive('getAdminGroupRepository')
+    ->atLeast()->once()
+    ->andReturn($groupRepository);
     $serviceMock
     ->shouldReceive('updateGroup')
     ->atLeast()->once()
+    ->with($group, $data)
     ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Model_AdminGroup());
-
     $di = container();
-    $di['db'] = $dbMock;
 
     $api->setIdentity(staffAdminIdentity());
     $api->setDi($di);

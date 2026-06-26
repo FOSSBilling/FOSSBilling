@@ -23,6 +23,11 @@ class AdminGroupRepository extends EntityRepository
         return $this->findOneBy(['systemName' => AdminGroup::SYSTEM_SUPER_ADMIN]);
     }
 
+    public function findById(int $id): ?AdminGroup
+    {
+        return $this->find($id);
+    }
+
     /**
      * @return array<int, string|null>
      */
