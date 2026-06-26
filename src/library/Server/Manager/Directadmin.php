@@ -40,6 +40,7 @@ class Server_Manager_Directadmin extends Server_Manager
                             'label' => 'Username',
                             'placeholder' => 'Username used to connect to the server',
                             'required' => true,
+                            'secret' => true,
                         ],
                         [
                             'name' => 'password',
@@ -47,6 +48,7 @@ class Server_Manager_Directadmin extends Server_Manager
                             'label' => 'Password / Login Key',
                             'placeholder' => 'Password or login key used to connect to the server',
                             'required' => true,
+                            'secret' => true,
                         ],
                     ],
                 ],

@@ -27,6 +27,12 @@ class Server_Manager_Plesk extends Server_Manager
         ];
     }
 
+    #[Override]
+    public static function getSecretFields(): array
+    {
+        return ['username', 'password'];
+    }
+
     /**
      * Initializes the Plesk client with the host, port, username, and password from the configuration.
      * If the port is not set in the configuration, it defaults to 8443.
