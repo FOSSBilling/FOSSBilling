@@ -143,10 +143,6 @@
                                     <label class="form-label" for="postcode">{{ 'Zip/Postal Code'|trans }}</label>
                                     <input type="text" class="form-control" id="postcode" name="postcode" value="{{ profile.postcode }}" {% if "postcode" in required %} required {% endif %}>
                                 </div>
-                                <div class="mb-3 col-md-5">
-                                    <label class="form-label" for="document_nr">{{ 'Passport Number'|trans }}</label>
-                                    <input type="text" class="form-control" name="document_nr" id="document_nr" value="{{ profile.document_nr }}">
-                                </div>
                             </div>
                             {% for i in 1..10 %}
                                 {% set custom = 'custom_' ~ i %}

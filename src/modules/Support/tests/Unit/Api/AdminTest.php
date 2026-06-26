@@ -12,14 +12,14 @@ declare(strict_types=1);
 
 use Box\Mod\Support\Entity\CannedResponse;
 use Box\Mod\Support\Entity\CannedResponseCategory;
+use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
-use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Repository\CannedResponseCategoryRepository;
 use Box\Mod\Support\Repository\CannedResponseRepository;
+use Box\Mod\Support\Repository\HelpdeskRepository;
 use Box\Mod\Support\Repository\KbArticleCategoryRepository;
 use Box\Mod\Support\Repository\KbArticleRepository;
-use Box\Mod\Support\Repository\HelpdeskRepository;
 use Doctrine\ORM\QueryBuilder;
 
 use function Tests\Helpers\container;

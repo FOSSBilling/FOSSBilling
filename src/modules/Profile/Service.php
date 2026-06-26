@@ -175,14 +175,6 @@ class Service implements InjectionAwareInterface
         $client->postcode = $data['postcode'] ?? $client->postcode;
         $client->city = $data['city'] ?? $client->city;
         $client->state = $data['state'] ?? $client->state;
-        $client->document_type = $data['document_type'] ?? $client->document_type;
-        $client->document_nr = $data['document_nr'] ?? $client->document_nr;
-
-        if (isset($data['document_nr'])) {
-            $client->document_type = ClientValidator::validateDocument(
-                $data['document_type'] ?? \Model_Client::DOC_PASSPORT,
-            );
-        }
         $lang = $data['lang'] ?? $client->lang;
         if (!empty($lang) && !Locales::exists($lang)) {
             throw new InformationException('Invalid locale code: :code', [':code' => $lang]);
