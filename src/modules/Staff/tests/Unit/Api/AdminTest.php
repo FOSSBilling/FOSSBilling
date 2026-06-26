@@ -20,7 +20,6 @@ function staffAdminIdentity(): Model_Admin
 {
     $admin = new Model_Admin();
     $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->role = Model_Admin::ROLE_ADMIN;
 
     return $admin;
 }

@@ -124,7 +124,6 @@ test('login returns admin details on successful login', function (): void {
     $admin->id = 1;
     $admin->email = $email;
     $admin->name = 'Admin';
-    $admin->role = 'admin';
 
     $emMock = Mockery::mock('\Box_EventManager');
     $emMock->shouldReceive('fire')->atLeast()->once()
@@ -159,7 +158,6 @@ test('login returns admin details on successful login', function (): void {
         'id' => 1,
         'email' => $email,
         'name' => 'Admin',
-        'role' => 'admin',
     ];
 
     expect($result)->toBe($expected);
@@ -198,7 +196,6 @@ test('login throws exception when credentials are invalid', function (): void {
 test('hasPermission returns true for super administrator group member', function (): void {
     $member = new Model_Admin();
     $member->loadBean(new Tests\Helpers\DummyBean());
-    $member->role = 'admin';
     $member->id = 1;
 
     $service = staffServiceWithGroupPermissions(isSuperAdministrator: true);
@@ -207,10 +204,9 @@ test('hasPermission returns true for super administrator group member', function
     expect($result)->toBeTrue();
 });
 
-test('hasPermission does not allow admin role without group permissions', function (): void {
+test('hasPermission does not allow staff without group permissions', function (): void {
     $member = new Model_Admin();
     $member->loadBean(new Tests\Helpers\DummyBean());
-    $member->role = 'admin';
     $member->id = 1;
 
     $service = staffServiceWithGroupPermissions();
@@ -222,7 +218,7 @@ test('hasPermission does not allow admin role without group permissions', functi
 test('hasPermission falls back to cron admin only within cron context', function (): void {
     $cronAdmin = new Model_Admin();
     $cronAdmin->loadBean(new Tests\Helpers\DummyBean());
-    $cronAdmin->role = Model_Admin::ROLE_CRON;
+    $cronAdmin->system_name = Model_Admin::SYSTEM_CRON;
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getCronAdmin')
@@ -264,7 +260,6 @@ test('hasPermission stays fail-closed outside cron context when no admin is logg
 test('hasPermission returns false for staff without groups', function (): void {
     $member = new Model_Admin();
     $member->loadBean(new Tests\Helpers\DummyBean());
-    $member->role = 'staff';
     $member->id = 1;
 
     $service = staffServiceWithGroupPermissions();
@@ -276,7 +271,6 @@ test('hasPermission returns false for staff without groups', function (): void {
 test('hasPermission returns true for staff with group permission', function (): void {
     $member = new Model_Admin();
     $member->loadBean(new Tests\Helpers\DummyBean());
-    $member->role = 'staff';
     $member->id = 1;
 
     $group = (new AdminGroup())->setPermissions([
@@ -295,7 +289,6 @@ test('hasPermission returns true for staff with group permission', function (): 
 test('hasPermission returns false for staff without method permission', function (): void {
     $member = new Model_Admin();
     $member->loadBean(new Tests\Helpers\DummyBean());
-    $member->role = 'staff';
     $member->id = 1;
 
     $group = (new AdminGroup())->setPermissions([
@@ -724,7 +717,6 @@ test('onAfterClientOpenTicket sends mod_staff_ticket_open email', function (): v
     $di['em'] = $emMock;
     $admin = new Model_Admin();
     $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->role = Model_Admin::ROLE_ADMIN;
     $di['loggedin_admin'] = $admin;
 
     $eventMock = Mockery::mock('\Box_Event');
@@ -785,7 +777,6 @@ test('onAfterClientOpenTicket sends mod_support_helpdesk_ticket_open email', fun
     $di['em'] = $emMock;
     $admin = new Model_Admin();
     $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->role = Model_Admin::ROLE_ADMIN;
     $di['loggedin_admin'] = $admin;
 
     $eventMock = Mockery::mock('\Box_Event');
@@ -833,8 +824,8 @@ dataset('searchFilters', fn (): array => [
     ],
     'filter by no_cron' => [
         ['no_cron' => 'true'],
-        'role != :role',
-        [':role' => Model_Admin::ROLE_CRON],
+        'system_name != :system_name',
+        [':system_name' => Model_Admin::SYSTEM_CRON],
     ],
 ]);
 
@@ -906,9 +897,9 @@ test('toModel_AdminApiArray returns admin array data', function (): void {
     $expected =
         [
             'id' => '',
-            'role' => '',
             'email' => '',
             'name' => '',
+            'system_name' => '',
             'status' => '',
             'signature' => '',
             'created_at' => '',
@@ -967,7 +958,6 @@ test('update rejects deactivating last active super administrator', function ():
     $adminModel = new Model_Admin();
     $adminModel->loadBean(new Tests\Helpers\DummyBean());
     $adminModel->id = 3;
-    $adminModel->role = Model_Admin::ROLE_ADMIN;
     $adminModel->status = Model_Admin::STATUS_ACTIVE;
 
     $groupRepository = Mockery::mock(AdminGroupRepository::class);
@@ -1021,7 +1011,6 @@ test('delete rejects removing last active super administrator', function (): voi
     $adminModel = new Model_Admin();
     $adminModel->loadBean(new Tests\Helpers\DummyBean());
     $adminModel->id = 3;
-    $adminModel->role = Model_Admin::ROLE_ADMIN;
     $adminModel->status = Model_Admin::STATUS_ACTIVE;
 
     $groupRepository = Mockery::mock(AdminGroupRepository::class);

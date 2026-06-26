@@ -24,7 +24,7 @@
 {% endblock %}
 
 {% block content %}
-	{% if staff.role == 'cron' %}
+	{% if staff.system_name == 'cron' %}
 		<div class="alert alert-info" role="alert" id="external-ip">
 			{{ 'This staff member is used by FOSSBilling to perform system tasks and cannot be removed.'|trans }}
 		</div>

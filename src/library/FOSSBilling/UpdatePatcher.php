@@ -482,6 +482,7 @@ class UpdatePatcher implements InjectionAwareInterface
             74 => 'patch74',
             75 => 'patch75',
             76 => 'patch76',
+            77 => 'patch77',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1971,6 +1972,22 @@ class UpdatePatcher implements InjectionAwareInterface
             }
 
             $this->executeSql('ALTER TABLE `admin` DROP COLUMN `admin_group_id`;');
+        }
+    }
+
+    private function patch77(): void
+    {
+        if (!$this->tableHasColumn('admin', 'system_name')) {
+            $this->executeSql('ALTER TABLE `admin` ADD COLUMN `system_name` varchar(100) DEFAULT NULL AFTER `id`;');
+        }
+
+        if ($this->tableHasColumn('admin', 'role')) {
+            $this->executeSql("UPDATE `admin` SET `system_name` = 'cron' WHERE `role` = 'cron' AND (`system_name` IS NULL OR `system_name` = '') ORDER BY `id` ASC LIMIT 1;");
+            $this->executeSql('ALTER TABLE `admin` DROP COLUMN `role`;');
+        }
+
+        if (!$this->tableHasIndex('admin', 'system_name')) {
+            $this->executeSql('ALTER TABLE `admin` ADD UNIQUE KEY `system_name` (`system_name`);');
         }
     }
 

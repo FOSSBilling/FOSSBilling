@@ -92,11 +92,11 @@ class AdminGroupMemberRepository extends EntityRepository
              FROM admin a
              INNER JOIN admin_group_member m ON m.admin_id = a.id
              WHERE m.admin_group_id = :group_id
-             AND a.role != :cron_role
+             AND (a.system_name IS NULL OR a.system_name != :system_name)
              ORDER BY a.id ASC',
             [
                 'group_id' => $groupId,
-                'cron_role' => \Model_Admin::ROLE_CRON,
+                'system_name' => \Model_Admin::SYSTEM_CRON,
             ],
         ));
     }

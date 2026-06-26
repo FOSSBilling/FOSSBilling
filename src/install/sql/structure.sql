@@ -95,7 +95,7 @@ CREATE TABLE `activity_system` (
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `admin` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `role` varchar(30) DEFAULT 'staff' COMMENT 'admin, staff',
+  `system_name` varchar(100) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
   `pass` varchar(255) DEFAULT NULL,
   `salt` varchar(255) DEFAULT NULL,
@@ -108,7 +108,8 @@ CREATE TABLE `admin` (
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `email` (`email`)
+  UNIQUE KEY `email` (`email`),
+  UNIQUE KEY `system_name` (`system_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

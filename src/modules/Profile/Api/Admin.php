@@ -30,7 +30,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Array
      * (
      * 		[id] => 1
-     *		[role] => staff
      *		[email] => demo@fossbilling.org
      *		[pass] => 89e495e7941cf9e40e6980d14a16bf023ccd4c91
      *		[name] => Demo Administrator

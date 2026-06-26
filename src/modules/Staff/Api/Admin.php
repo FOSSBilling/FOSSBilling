@@ -91,8 +91,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     public function update($data)
     {
         $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
-        $role = $model->role === 'admin' ? 'admin' : 'staff';
-        $this->checkPermissions('staff', $role === 'admin' ? 'create_and_edit_admin' : 'create_and_edit_staff');
+        $this->checkPermissions('staff', 'create_and_edit_staff');
 
         if (isset($data['email'])) {
             $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
@@ -112,8 +111,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     public function delete($data)
     {
         $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
-        $role = $model->role === 'admin' ? 'admin' : 'staff';
-        $this->checkPermissions('staff', $role === 'admin' ? 'delete_admin' : 'delete_staff');
+        $this->checkPermissions('staff', 'delete_staff');
 
         return $this->getService()->delete($model);
     }
@@ -137,8 +135,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->getDi()['validator']->isPasswordStrong($data['password']);
 
         $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
-        $role = $model->role === 'admin' ? 'admin' : 'staff';
-        $this->checkPermissions('staff', $role === 'admin' ? 'reset_admin_password' : 'reset_staff_password');
+        $this->checkPermissions('staff', 'reset_staff_password');
 
         return $this->getService()->changePassword($model, $data['password']);
     }
@@ -159,8 +156,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     ])]
     public function create($data)
     {
-        $role = $data['role'] ?? 'staff';
-        $this->checkPermissions('staff', $role === 'admin' ? 'create_and_edit_admin' : 'create_and_edit_staff');
+        $this->checkPermissions('staff', 'create_and_edit_staff');
 
         $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
 

@@ -156,7 +156,6 @@ class Service implements InjectionAwareInterface
             'id' => $model->id,
             'email' => $model->email,
             'name' => $model->name,
-            'role' => $model->role,
         ];
 
         $this->di['session']->regenerateId();
@@ -227,7 +226,7 @@ class Service implements InjectionAwareInterface
             $member = $this->getLoggedInAdminOrCronAdmin();
         }
 
-        if ($member->role == \Model_Admin::ROLE_CRON || in_array($module, $alwaysAllowed)) {
+        if ($member->isCron() || in_array($module, $alwaysAllowed)) {
             return true;
         }
 
@@ -457,8 +456,8 @@ class Service implements InjectionAwareInterface
         }
 
         if ($no_cron) {
-            $where[] = 'role != :role';
-            $bindings[':role'] = \Model_Admin::ROLE_CRON;
+            $where[] = '(system_name IS NULL OR system_name != :system_name)';
+            $bindings[':system_name'] = \Model_Admin::SYSTEM_CRON;
         }
 
         if (!empty($where)) {
@@ -474,7 +473,7 @@ class Service implements InjectionAwareInterface
      */
     public function getCronAdmin()
     {
-        $cron = $this->di['db']->findOne('Admin', 'role = :role', [':role' => \Model_Admin::ROLE_CRON]);
+        $cron = $this->di['db']->findOne('Admin', 'system_name = :system_name', [':system_name' => \Model_Admin::SYSTEM_CRON]);
         if ($cron instanceof \Model_Admin) {
             return $cron;
         }
@@ -485,7 +484,7 @@ class Service implements InjectionAwareInterface
         $cronPass = $this->di['tools']->generatePassword(256, 4);
 
         $cron = $this->di['db']->dispense('Admin');
-        $cron->role = \Model_Admin::ROLE_CRON;
+        $cron->system_name = \Model_Admin::SYSTEM_CRON;
         $cron->email = $cronEmail;
         $cron->pass = $this->di['password']->hashIt($cronPass);
         $cron->name = 'System Cron Job';
@@ -503,9 +502,9 @@ class Service implements InjectionAwareInterface
     {
         $data = [
             'id' => $model->id,
-            'role' => $model->role,
             'email' => $model->email,
             'name' => $model->name,
+            'system_name' => $model->system_name,
             'status' => $model->status,
             'signature' => $model->signature,
             'created_at' => $model->created_at,
@@ -527,11 +526,7 @@ class Service implements InjectionAwareInterface
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffUpdate', 'params' => ['id' => $model->id]]);
 
-        if ($model->role === 'admin') {
-            $this->checkPermissionsAndThrowException('staff', 'create_and_edit_admin');
-        } else {
-            $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
-        }
+        $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
 
         $previousStatus = $model->status;
 
@@ -568,11 +563,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('This administrator account is protected and cannot be removed');
         }
 
-        if ($model->role === 'admin') {
-            $this->checkPermissionsAndThrowException('staff', 'delete_admin');
-        } else {
-            $this->checkPermissionsAndThrowException('staff', 'delete_staff');
-        }
+        $this->checkPermissionsAndThrowException('staff', 'delete_staff');
 
         $this->assertCanRemoveActiveSuperAdministrator($model);
 
@@ -590,11 +581,7 @@ class Service implements InjectionAwareInterface
 
     public function changePassword(\Model_Admin $model, $password): bool
     {
-        if ($model->role === 'admin') {
-            $this->checkPermissionsAndThrowException('staff', 'reset_admin_password');
-        } else {
-            $this->checkPermissionsAndThrowException('staff', 'reset_staff_password');
-        }
+        $this->checkPermissionsAndThrowException('staff', 'reset_staff_password');
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffPasswordChange', 'params' => ['id' => $model->id]]);
 
@@ -622,7 +609,6 @@ class Service implements InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffCreate', 'params' => $data]);
 
         $model = $this->di['db']->dispense('Admin');
-        $model->role = \Model_Admin::ROLE_STAFF;
         $model->email = $data['email'];
         $model->pass = $this->di['password']->hashIt($data['password']);
         $model->name = $data['name'];
@@ -833,7 +819,10 @@ class Service implements InjectionAwareInterface
 
     public function authorizeAdmin($email, $plainTextPassword)
     {
-        $model = $this->di['db']->findOne('Admin', 'email = ? AND status = ? AND role != ?', [$email, \Model_Admin::STATUS_ACTIVE, \Model_Admin::ROLE_CRON]);
+        $model = $this->di['db']->findOne('Admin', 'email = ? AND status = ?', [$email, \Model_Admin::STATUS_ACTIVE]);
+        if ($model instanceof \Model_Admin && $model->isCron()) {
+            $model = null;
+        }
 
         return $this->di['auth']->authorizeUser($model, $plainTextPassword);
     }

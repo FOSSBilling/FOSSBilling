@@ -22,13 +22,13 @@ function createControllerDiWithRequest(): Pimple\Container
     return $di;
 }
 
-function buildAdminModel(int $id, string $apiToken, string $role): Model_Admin
+function buildAdminModel(int $id, string $apiToken, ?string $systemName = null): Model_Admin
 {
     $admin = new Model_Admin();
     $bean = new stdClass();
     $bean->id = $id;
     $bean->api_token = $apiToken;
-    $bean->role = $role;
+    $bean->system_name = $systemName;
     $bean->status = Model_Admin::STATUS_ACTIVE;
 
     $property = new ReflectionProperty(RedBeanPHP\SimpleModel::class, 'bean');
@@ -136,11 +136,11 @@ test('try token login rejects cron admin token', function (): void {
     $cronToken = 'cron-api-token';
     $_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode('admin:' . $cronToken);
 
-    $dbAdmin = buildAdminModel(1, $cronToken, Model_Admin::ROLE_ADMIN);
-    $cronAdmin = buildAdminModel(1, $cronToken, Model_Admin::ROLE_CRON);
+    $dbAdmin = buildAdminModel(1, $cronToken);
+    $cronAdmin = buildAdminModel(1, $cronToken, Model_Admin::SYSTEM_CRON);
 
     $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('findOne')->with('Admin', 'api_token = ? AND status = ? AND role != ?', [$cronToken, Model_Admin::STATUS_ACTIVE, Model_Admin::ROLE_CRON])->once()->andReturn($dbAdmin);
+    $dbMock->shouldReceive('findOne')->with('Admin', 'api_token = ? AND status = ?', [$cronToken, Model_Admin::STATUS_ACTIVE])->once()->andReturn($dbAdmin);
 
     $staffService = new CronStaffServiceDouble($cronAdmin);
 
@@ -177,7 +177,7 @@ test('try token login requires active non-cron admin token', function (): void {
     $_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode('admin:' . $apiToken);
 
     $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('findOne')->with('Admin', 'api_token = ? AND status = ? AND role != ?', [$apiToken, Model_Admin::STATUS_ACTIVE, Model_Admin::ROLE_CRON])->once()->andReturn(null);
+    $dbMock->shouldReceive('findOne')->with('Admin', 'api_token = ? AND status = ?', [$apiToken, Model_Admin::STATUS_ACTIVE])->once()->andReturn(null);
 
     $di = new Pimple\Container();
     $di['db'] = $dbMock;
