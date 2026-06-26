@@ -406,6 +406,10 @@ test('testServerUpdate', function (): void {
     ->shouldReceive('updateServer')
     ->atLeast()->once()
     ->andReturn(true);
+    $serviceMock
+    ->shouldReceive('getServerManager')
+    ->atLeast()->once()
+    ->andReturn(new Server_Manager_Custom([]));
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
@@ -421,6 +425,34 @@ test('testServerUpdate', function (): void {
     $result = $api->server_update($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
+});
+
+test('testServerUpdateSurfacesServerManagerErrorsAsInformationException', function (): void {
+    $api = new Admin();
+    $data['id'] = 1;
+
+    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock
+    ->shouldReceive('updateServer')
+    ->atLeast()->once()
+    ->andReturn(true);
+    $serviceMock
+    ->shouldReceive('getServerManager')
+    ->atLeast()->once()
+    ->andThrow(new Server_Exception('Server manager is not fully configured.'));
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock
+    ->shouldReceive('getExistingModelById')
+    ->atLeast()->once()
+    ->andReturn(new Model_ServiceHostingServer());
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect(fn (): bool => $api->server_update($data))->toThrow(FOSSBilling\InformationException::class);
 });
 
 test('testServerTestConnection', function (): void {

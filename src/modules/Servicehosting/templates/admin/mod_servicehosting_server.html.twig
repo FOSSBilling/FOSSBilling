@@ -74,7 +74,7 @@
             <div class="mb-5">
                 <div class="mb-3">
                     <h4 class="card-title mb-1">{{ 'Connection Settings'|trans }}</h4>
-                    <p class="text-secondary mb-0">{{ 'Choose the control panel adapter and provide the credentials used for API communication.'|trans }}</p>
+                    <p class="text-secondary mb-0">{{ 'Choose the control panel adapter and provide the credentials used for API communication. Saved credentials are never displayed again — submit a new value to rotate them.'|trans }}</p>
                 </div>
                 <div class="row g-3">
                     <div class="col-lg-6">
@@ -184,6 +184,9 @@
 
 {% block js %}
 <script>
+    const KEEP_SENTINEL = '{{ constant('Box\\Mod\\Servicehosting\\Service::CREDENTIAL_KEEP_SENTINEL')|e('js') }}';
+    const KEEP_PLACEHOLDER = '{{ 'Leave blank to keep the saved credential.'|trans|e('js') }}';
+    const CONFIGURED_BADGE = '{{ 'Configured'|trans|e('js') }}';
     function handleManagerChange(select) {
         const pairs = {{ admin.servicehosting_manager_get_pairs|json_encode|raw }};
         const defaults = {
@@ -215,6 +218,8 @@
             ? pairs[manager].form.credentials.fields
             : defaults.form.credentials.fields;
 
+        const secretFields = values.secret_fields || [];
+
         credentials.innerHTML = '';
 
         fields.forEach((field, index) => {
@@ -227,16 +232,51 @@
             label.textContent = field.label;
             wrapper.appendChild(label);
 
+            const isSecret = secretFields.indexOf(field.name) !== -1;
+            const isSet = isSecret && values[field.name + '_set'] === true;
+
             const input = document.createElement('input');
             input.className = 'form-control';
-            input.type = field.type;
             input.name = field.name;
-            input.value = values[field.name] || '';
-            input.placeholder = field.placeholder || '';
-            input.required = !!field.required;
+
+            if (isSecret && isSet) {
+                input.type = 'password';
+                input.value = '';
+                input.placeholder = KEEP_PLACEHOLDER;
+                input.autocomplete = 'new-password';
+                input.dataset.credentialKeep = 'true';
+                input.required = false;
+
+                const badge = document.createElement('span');
+                badge.className = 'badge text-bg-success ms-2 align-middle';
+                badge.textContent = CONFIGURED_BADGE;
+                label.appendChild(badge);
+            } else {
+                input.type = field.type || 'text';
+                input.value = isSecret ? '' : (values[field.name] || '');
+                input.placeholder = field.placeholder || '';
+                input.required = !!field.required;
+            }
+
             wrapper.appendChild(input);
 
+            if (isSecret && isSet) {
+                const hint = document.createElement('div');
+                hint.className = 'form-text';
+                hint.textContent = KEEP_PLACEHOLDER;
+                wrapper.appendChild(hint);
+            }
+
             credentials.appendChild(wrapper);
+        });
+    }
+
+    function fillKeepSentinels(formElement) {
+        const inputs = formElement.querySelectorAll('input[data-credential-keep="true"]');
+        inputs.forEach((input) => {
+            if (input.value === '') {
+                input.value = KEEP_SENTINEL;
+            }
         });
     }
 
@@ -247,8 +287,14 @@
 
         handleManagerChange(managerSelect);
 
+        formElement.addEventListener('submit', function() {
+            fillKeepSentinels(formElement);
+        });
+
         testConnectionButton.addEventListener('click', function(event) {
             event.preventDefault();
+
+            fillKeepSentinels(formElement);
 
             const formData = new FormData(formElement);
             const data = formElement.getAttribute('method').toLowerCase() !== 'get'

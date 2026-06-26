@@ -989,3 +989,150 @@ test('get free tlds', function (): void {
     expect($result)->toBeArray();
     expect($result)->not->toBeEmpty();
 });
+
+test('get server manager secret fields', function (string $manager, array $expected): void {
+    $service = new Service();
+    $di = container();
+    $service->setDi($di);
+
+    $result = $service->getServerManagerSecretFields($manager);
+
+    sort($expected);
+    $sorted = $result;
+    sort($sorted);
+
+    expect($sorted)->toBe($expected);
+})->with([
+    'WHM' => ['Whm', ['username', 'accesshash', 'password']],
+    'Hestia' => ['Hestia', ['username', 'accesshash', 'password']],
+    'CWP' => ['CWP', ['accesshash', 'password']],
+    'DirectAdmin' => ['Directadmin', ['username', 'password', 'accesshash']],
+    'Plesk' => ['Plesk', ['username', 'password', 'accesshash']],
+    'unknown manager' => ['DoesNotExist', ['password', 'accesshash']],
+]);
+
+test('to hosting server api array masks secrets for an admin', function (): void {
+    $service = new Service();
+
+    $identity = new Model_Admin();
+    $identity->loadBean(new Tests\Helpers\DummyBean());
+
+    $hostingServerModel = new Model_ServiceHostingServer();
+    $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
+    $hostingServerModel->id = 1;
+    $hostingServerModel->name = 'Test';
+    $hostingServerModel->hostname = 'host.example.com';
+    $hostingServerModel->ip = '127.0.0.1';
+    $hostingServerModel->manager = 'Whm';
+    $hostingServerModel->username = 'real-admin';
+    $hostingServerModel->accesshash = 'super-secret-hash';
+
+    $di = container();
+    $service->setDi($di);
+
+    $result = $service->toHostingServerApiArray($hostingServerModel, true, $identity);
+
+    expect($result['username'])->toBeNull();
+    expect($result['accesshash'])->toBeNull();
+    expect($result['password'])->toBeNull();
+    expect($result['username_set'])->toBeTrue();
+    expect($result['accesshash_set'])->toBeTrue();
+    expect($result['password_set'])->toBeFalse();
+    expect($result['secret_fields'])->toContain('username');
+    expect($result['secret_fields'])->toContain('accesshash');
+});
+
+test('to hosting server api array does not leak secrets to non-admin callers', function (): void {
+    $service = new Service();
+
+    $identity = new Model_Client();
+    $identity->loadBean(new Tests\Helpers\DummyBean());
+
+    $hostingServerModel = new Model_ServiceHostingServer();
+    $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
+    $hostingServerModel->id = 1;
+    $hostingServerModel->name = 'Test';
+    $hostingServerModel->ip = '127.0.0.1';
+    $hostingServerModel->manager = 'Whm';
+    $hostingServerModel->accesshash = 'super-secret-hash';
+
+    $di = container();
+    $service->setDi($di);
+
+    $result = $service->toHostingServerApiArray($hostingServerModel, true, $identity);
+
+    expect($result)->not->toHaveKey('username');
+    expect($result)->not->toHaveKey('password');
+    expect($result)->not->toHaveKey('accesshash');
+    expect($result)->not->toHaveKey('secret_fields');
+});
+
+test('updateServer keeps the existing secret when the incoming value is blank', function (): void {
+    $service = new Service();
+    $data = [
+        'name' => 'Test',
+        'ip' => '127.0.0.1',
+        'manager' => 'Whm',
+        'username' => '',
+        'accesshash' => Service::CREDENTIAL_KEEP_SENTINEL,
+        'password' => '   ',
+    ];
+
+    $hostingServerModel = new Model_ServiceHostingServer();
+    $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
+    $hostingServerModel->id = 1;
+    $hostingServerModel->name = 'Test';
+    $hostingServerModel->ip = '127.0.0.1';
+    $hostingServerModel->manager = 'Whm';
+    $hostingServerModel->username = 'real-admin';
+    $hostingServerModel->accesshash = 'super-secret-hash';
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Box_Log();
+    $di['loggedin_admin'] = (object) ['id' => 7];
+    $service->setDi($di);
+
+    $result = $service->updateServer($hostingServerModel, $data);
+    expect($result)->toBeTrue();
+    expect($hostingServerModel->username)->toBe('real-admin');
+    expect($hostingServerModel->accesshash)->toBe('super-secret-hash');
+    expect($hostingServerModel->password)->toBeNull();
+});
+
+test('updateServer replaces the stored secret when a new value is submitted', function (): void {
+    $service = new Service();
+    $data = [
+        'name' => 'Test',
+        'ip' => '127.0.0.1',
+        'manager' => 'Whm',
+        'username' => 'new-admin',
+        'accesshash' => 'new-hash',
+    ];
+
+    $hostingServerModel = new Model_ServiceHostingServer();
+    $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
+    $hostingServerModel->id = 1;
+    $hostingServerModel->name = 'Test';
+    $hostingServerModel->ip = '127.0.0.1';
+    $hostingServerModel->manager = 'Whm';
+    $hostingServerModel->username = 'real-admin';
+    $hostingServerModel->accesshash = 'old-hash';
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Box_Log();
+    $di['loggedin_admin'] = (object) ['id' => 7];
+    $service->setDi($di);
+
+    $result = $service->updateServer($hostingServerModel, $data);
+    expect($result)->toBeTrue();
+    expect($hostingServerModel->username)->toBe('new-admin');
+    expect($hostingServerModel->accesshash)->toBe('new-hash');
+});
