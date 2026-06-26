@@ -963,7 +963,13 @@ class Service implements InjectionAwareInterface
             return $existing;
         }
 
-        if (is_string($incoming) && (trim($incoming) === '' || $incoming === self::CREDENTIAL_KEEP_SENTINEL)) {
+        if (!is_scalar($incoming)) {
+            return $existing;
+        }
+
+        $incoming = (string) $incoming;
+
+        if (trim($incoming) === '' || $incoming === self::CREDENTIAL_KEEP_SENTINEL) {
             return $existing;
         }
 
