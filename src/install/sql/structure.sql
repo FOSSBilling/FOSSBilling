@@ -104,7 +104,6 @@ CREATE TABLE `admin` (
   `protected` tinyint(1) DEFAULT '0',
   `status` varchar(30) DEFAULT 'active' COMMENT 'active, inactive',
   `api_token` varchar(128) DEFAULT NULL,
-  `permissions` text,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),

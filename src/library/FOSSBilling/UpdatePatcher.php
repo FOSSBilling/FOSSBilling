@@ -483,6 +483,7 @@ class UpdatePatcher implements InjectionAwareInterface
             75 => 'patch75',
             76 => 'patch76',
             77 => 'patch77',
+            78 => 'patch78',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1988,6 +1989,13 @@ class UpdatePatcher implements InjectionAwareInterface
 
         if (!$this->tableHasIndex('admin', 'system_name')) {
             $this->executeSql('ALTER TABLE `admin` ADD UNIQUE KEY `system_name` (`system_name`);');
+        }
+    }
+
+    private function patch78(): void
+    {
+        if ($this->tableHasColumn('admin', 'permissions')) {
+            $this->executeSql('ALTER TABLE `admin` DROP COLUMN `permissions`;');
         }
     }
 
