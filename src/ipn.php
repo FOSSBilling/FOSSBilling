@@ -40,6 +40,8 @@ if ($gatewayID !== null) {
     }
 }
 
+$rawBody = $request->getContent();
+
 $ipn = [
     'invoice_id' => $invoiceID,
     'gateway_id' => $gatewayID,
@@ -47,8 +49,13 @@ $ipn = [
     'get' => $request->query->all(),
     'post' => $request->request->all(),
     'server' => $request->server->all(),
-    'http_raw_post_data' => $request->getContent(),
+    'http_raw_post_data' => $rawBody,
 ];
+
+$contentType = $request->headers->get('Content-Type', '');
+if (str_contains($contentType, 'application/json') && !empty($rawBody)) {
+    $ipn['skip_validation'] = true;
+}
 
 try {
     $service = $di['mod_service']('invoice', 'transaction');
